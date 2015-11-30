@@ -33,7 +33,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
     public AuthOutcome authenticate(HttpFacade exchange)  {
         List<String> authHeaders = exchange.getRequest().getHeaders("Authorization");
         if (authHeaders == null || authHeaders.size() == 0) {
-            challenge = challengeResponse(exchange, null, null);
+            challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.NO_AUTHORIZATION_HEADER, null, null);
             return AuthOutcome.NOT_ATTEMPTED;
         }
 
@@ -46,7 +46,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
         }
 
         if (tokenString == null) {
-            challenge = challengeResponse(exchange, null, null);
+            challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.INVALID_TOKEN, null, null);
             return AuthOutcome.NOT_ATTEMPTED;
         }
 
@@ -59,7 +59,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
             tokenString = atr.getToken();
         } catch (Exception e) {
             log.debug("Failed to obtain token", e);
-            challenge = challengeResponse(exchange, "no_token", e.getMessage());
+            challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.INVALID_TOKEN, "no_token", e.getMessage());
             return AuthOutcome.FAILED;
         }
 

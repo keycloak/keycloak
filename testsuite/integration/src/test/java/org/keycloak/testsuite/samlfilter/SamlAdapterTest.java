@@ -5,7 +5,6 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.testsuite.keycloaksaml.SamlAdapterTestStrategy;
-import org.keycloak.testsuite.keycloaksaml.SamlSPFacade;
 import org.keycloak.testsuite.keycloaksaml.SendUsernameServlet;
 import org.openqa.selenium.WebDriver;
 
@@ -25,6 +24,7 @@ public class SamlAdapterTest {
              ClassLoader classLoader = SamlAdapterTest.class.getClassLoader();
 
             initializeSamlSecuredWar("/keycloak-saml/simple-post", "/sales-post",  "post.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/simple-post-passive", "/sales-post-passive", "post-passive.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post", "/sales-post-sig",  "post-sig.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-email", "/sales-post-sig-email",  "post-sig-email.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-transient", "/sales-post-sig-transient",  "post-sig-transient.war", classLoader);
@@ -37,9 +37,6 @@ public class SamlAdapterTest {
             initializeSamlSecuredWar("/keycloak-saml/bad-realm-signed-post", "/bad-realm-sales-post-sig",  "bad-realm-post-sig.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/encrypted-post", "/sales-post-enc", "post-enc.war", classLoader);
             SamlAdapterTestStrategy.uploadSP("http://localhost:8081/auth");
-
-
-
         }
 
         @Override
@@ -53,12 +50,7 @@ public class SamlAdapterTest {
 
     @Test
     public void testPostBadRealmSignature() {
-        testStrategy.testPostBadRealmSignature( new SamlAdapterTestStrategy.CheckAuthError() {
-            @Override
-            public void check(WebDriver driver) {
-                Assert.assertTrue(driver.getPageSource().contains("Forbidden"));
-            }
-        });
+        testStrategy.testPostBadRealmSignature();
     }
 
     @Test
@@ -72,7 +64,7 @@ public class SamlAdapterTest {
             testStrategy.testPostSimpleUnauthorized(new SamlAdapterTestStrategy.CheckAuthError() {
                 @Override
                 public void check(WebDriver driver) {
-                    Assert.assertTrue(driver.getPageSource().contains("Forbidden"));
+                    Assert.assertTrue(driver.getPageSource().contains("Error Page"));
                 }
             });
         } finally {
@@ -108,6 +100,11 @@ public class SamlAdapterTest {
     @Test
     public void testPostSimpleLoginLogout() {
         testStrategy.testPostSimpleLoginLogout();
+    }
+
+    @Test
+    public void testPostPassiveLoginLogout() {
+        testStrategy.testPostPassiveLoginLogout(false);
     }
 
     @Test

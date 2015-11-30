@@ -7,7 +7,7 @@ var configUrl = consoleBaseUrl + "/config";
 
 var auth = {};
 
-var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload', 'pascalprecht.translate', 'ngCookies', 'ngSanitize']);
+var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload', 'angularTreeview', 'pascalprecht.translate', 'ngCookies', 'ngSanitize']);
 var resourceRequests = 0;
 var loadingTimer = -1;
 
@@ -176,6 +176,27 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmTokenDetailCtrl'
         })
+        .when('/realms/:realm/client-initial-access', {
+            templateUrl : resourceUrl + '/partials/client-initial-access.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientInitialAccess : function(ClientInitialAccessLoader) {
+                    return ClientInitialAccessLoader();
+                }
+            },
+            controller : 'ClientInitialAccessCtrl'
+        })
+        .when('/realms/:realm/client-initial-access/create', {
+            templateUrl : resourceUrl + '/partials/client-initial-access-create.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'ClientInitialAccessCreateCtrl'
+        })
         .when('/realms/:realm/keys-settings', {
             templateUrl : resourceUrl + '/partials/realm-keys.html',
             resolve : {
@@ -199,6 +220,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 providerFactory : function(IdentityProviderFactoryLoader) {
                     return {};
+                },
+                authFlows : function(AuthenticationFlowsLoader) {
+                    return {};
                 }
             },
             controller : 'RealmIdentityProviderCtrl'
@@ -217,6 +241,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 providerFactory : function(IdentityProviderFactoryLoader) {
                     return new IdentityProviderFactoryLoader();
+                },
+                authFlows : function(AuthenticationFlowsLoader) {
+                    return AuthenticationFlowsLoader();
                 }
             },
             controller : 'RealmIdentityProviderCtrl'
@@ -235,6 +262,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 providerFactory : function(IdentityProviderFactoryLoader) {
                     return IdentityProviderFactoryLoader();
+                },
+                authFlows : function(AuthenticationFlowsLoader) {
+                    return AuthenticationFlowsLoader();
                 }
             },
             controller : 'RealmIdentityProviderCtrl'
@@ -438,6 +468,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'UserRoleMappingCtrl'
         })
+        .when('/realms/:realm/users/:user/groups', {
+            templateUrl : resourceUrl + '/partials/user-group-membership.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                },
+                groups : function(GroupListLoader) {
+                    return GroupListLoader();
+                }
+            },
+            controller : 'UserGroupMembershipCtrl'
+        })
         .when('/realms/:realm/users/:user/sessions', {
             templateUrl : resourceUrl + '/partials/user-sessions.html',
             resolve : {
@@ -574,6 +619,97 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RoleListCtrl'
         })
+        .when('/realms/:realm/groups', {
+            templateUrl : resourceUrl + '/partials/group-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                groups : function(GroupListLoader) {
+                    return GroupListLoader();
+                }
+            },
+            controller : 'GroupListCtrl'
+        })
+        .when('/create/group/:realm/parent/:parentId', {
+            templateUrl : resourceUrl + '/partials/create-group.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                parentId : function($route) {
+                    return $route.current.params.parentId;
+                }
+            },
+            controller : 'GroupCreateCtrl'
+        })
+        .when('/realms/:realm/groups/:group', {
+            templateUrl : resourceUrl + '/partials/group-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                group : function(GroupLoader) {
+                    return GroupLoader();
+                }
+            },
+            controller : 'GroupDetailCtrl'
+        })
+        .when('/realms/:realm/groups/:group/attributes', {
+            templateUrl : resourceUrl + '/partials/group-attributes.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                group : function(GroupLoader) {
+                    return GroupLoader();
+                }
+            },
+            controller : 'GroupDetailCtrl'
+        })
+        .when('/realms/:realm/groups/:group/members', {
+            templateUrl : resourceUrl + '/partials/group-members.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                group : function(GroupLoader) {
+                    return GroupLoader();
+                }
+            },
+            controller : 'GroupMembersCtrl'
+        })
+        .when('/realms/:realm/groups/:group/role-mappings', {
+            templateUrl : resourceUrl + '/partials/group-role-mappings.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                group : function(GroupLoader) {
+                    return GroupLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
+                },
+                client : function() {
+                    return {};
+                }
+            },
+            controller : 'GroupRoleMappingCtrl'
+        })
+        .when('/realms/:realm/default-groups', {
+            templateUrl : resourceUrl + '/partials/default-groups.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                groups : function(GroupListLoader) {
+                    return GroupListLoader();
+                }
+            },
+            controller : 'DefaultGroupsCtrl'
+        })
+
 
         .when('/create/role/:realm/clients/:client', {
             templateUrl : resourceUrl + '/partials/client-role-detail.html',
@@ -1339,11 +1475,14 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmOtpPolicyCtrl'
         })
-        .when('/realms/:realm/authentication/config/:provider/:config', {
+        .when('/realms/:realm/authentication/flows/:flow/config/:provider/:config', {
             templateUrl : resourceUrl + '/partials/authenticator-config.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                flow : function(AuthenticationFlowLoader) {
+                    return AuthenticationFlowLoader();
                 },
                 configType : function(AuthenticationConfigDescriptionLoader) {
                     return AuthenticationConfigDescriptionLoader();
@@ -1354,11 +1493,14 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'AuthenticationConfigCtrl'
         })
-        .when('/create/authentication/:realm/execution/:executionId/provider/:provider', {
+        .when('/create/authentication/:realm/flows/:flow/execution/:executionId/provider/:provider', {
             templateUrl : resourceUrl + '/partials/authenticator-config.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                flow : function(AuthenticationFlowLoader) {
+                    return AuthenticationFlowLoader();
                 },
                 configType : function(AuthenticationConfigDescriptionLoader) {
                     return AuthenticationConfigDescriptionLoader();
@@ -1853,6 +1995,24 @@ module.directive('kcTabsUser', function () {
         restrict: 'E',
         replace: true,
         templateUrl: resourceUrl + '/templates/kc-tabs-user.html'
+    }
+});
+
+module.directive('kcTabsGroup', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-group.html'
+    }
+});
+
+module.directive('kcTabsGroupList', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-group-list.html'
     }
 });
 

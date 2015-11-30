@@ -5,6 +5,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OTPPolicy;
@@ -60,6 +61,7 @@ public class CachedRealm implements Serializable {
     private int ssoSessionMaxLifespan;
     private int offlineSessionIdleTimeout;
     private int accessTokenLifespan;
+    private int accessTokenLifespanForImplicitFlow;
     private int accessCodeLifespan;
     private int accessCodeLifespanUserAction;
     private int accessCodeLifespanLogin;
@@ -106,6 +108,8 @@ public class CachedRealm implements Serializable {
     protected Set<String> adminEnabledEventOperations = new HashSet<String>();
     protected boolean adminEventsDetailsEnabled;
     private List<String> defaultRoles = new LinkedList<String>();
+    private List<String> defaultGroups = new LinkedList<String>();
+    private Set<String> groups = new HashSet<String>();
     private Map<String, String> realmRoles = new HashMap<String, String>();
     private Map<String, String> clients = new HashMap<String, String>();
     private boolean internationalizationEnabled;
@@ -143,6 +147,7 @@ public class CachedRealm implements Serializable {
         ssoSessionMaxLifespan = model.getSsoSessionMaxLifespan();
         offlineSessionIdleTimeout = model.getOfflineSessionIdleTimeout();
         accessTokenLifespan = model.getAccessTokenLifespan();
+        accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
         accessCodeLifespanUserAction = model.getAccessCodeLifespanUserAction();
         accessCodeLifespanLogin = model.getAccessCodeLifespanLogin();
@@ -216,12 +221,19 @@ public class CachedRealm implements Serializable {
                 executionsById.put(execution.getId(), execution);
             }
         }
+        for (GroupModel group : model.getGroups()) {
+            groups.add(group.getId());
+        }
         for (AuthenticatorConfigModel authenticator : model.getAuthenticatorConfigs()) {
             authenticatorConfigs.put(authenticator.getId(), authenticator);
         }
         for (RequiredActionProviderModel action : model.getRequiredActionProviders()) {
             requiredActionProviders.put(action.getId(), action);
             requiredActionProvidersByAlias.put(action.getAlias(), action);
+        }
+
+        for (GroupModel group : model.getDefaultGroups()) {
+            defaultGroups.add(group.getId());
         }
 
         browserFlow = model.getBrowserFlow();
@@ -335,6 +347,10 @@ public class CachedRealm implements Serializable {
 
     public int getAccessTokenLifespan() {
         return accessTokenLifespan;
+    }
+
+    public int getAccessTokenLifespanForImplicitFlow() {
+        return accessTokenLifespanForImplicitFlow;
     }
 
     public int getAccessCodeLifespan() {
@@ -506,5 +522,13 @@ public class CachedRealm implements Serializable {
 
     public AuthenticationFlowModel getClientAuthenticationFlow() {
         return clientAuthenticationFlow;
+    }
+
+    public Set<String> getGroups() {
+        return groups;
+    }
+
+    public List<String> getDefaultGroups() {
+        return defaultGroups;
     }
 }

@@ -7,11 +7,13 @@ import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoGroupEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoMigrationModelEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
@@ -119,6 +121,14 @@ public class MongoRealmProvider implements RealmProvider {
         if (role.getRealmId() != null && !role.getRealmId().equals(realm.getId())) return null;
         if (role.getClientId() != null && realm.getClientById(role.getClientId()) == null) return null;
         return new RoleAdapter(session, realm, role, null, invocationContext);
+    }
+
+    @Override
+    public GroupModel getGroupById(String id, RealmModel realm) {
+        MongoGroupEntity group = getMongoStore().loadEntity(MongoGroupEntity.class, id, invocationContext);
+        if (group == null) return null;
+        if (group.getRealmId() != null && !group.getRealmId().equals(realm.getId())) return null;
+        return new GroupAdapter(session, realm, group, invocationContext);
     }
 
     @Override

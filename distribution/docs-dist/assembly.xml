@@ -9,7 +9,7 @@
 
     <fileSets>
         <fileSet>
-            <directory>../../target/site/apidocs</directory>
+            <directory>target/site/apidocs</directory>
             <outputDirectory>javadocs</outputDirectory>
         </fileSet>
         <fileSet>

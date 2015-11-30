@@ -12,7 +12,7 @@
 
     <form action="${url.accountUrl}" class="form-horizontal" method="post">
 
-        <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
+        <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker?html}">
 
         <div class="form-group ${messagesPerField.printIfExists('username','has-error')}">
             <div class="col-sm-2 col-md-2">

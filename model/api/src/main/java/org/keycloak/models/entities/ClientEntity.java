@@ -17,6 +17,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private boolean enabled;
     private String clientAuthenticatorType;
     private String secret;
+    private String registrationToken;
     private String protocol;
     private int notBefore;
     private boolean publicClient;
@@ -29,6 +30,9 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private String baseUrl;
     private boolean bearerOnly;
     private boolean consentRequired;
+    private boolean standardFlowEnabled;
+    private boolean implicitFlowEnabled;
+    private boolean directAccessGrantsEnabled;
     private boolean serviceAccountsEnabled;
     private boolean directGrantsOnly;
     private int nodeReRegistrationTimeout;
@@ -88,6 +92,14 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setSecret(String secret) {
         this.secret = secret;
+    }
+
+    public String getRegistrationToken() {
+        return registrationToken;
+    }
+
+    public void setRegistrationToken(String registrationToken) {
+        this.registrationToken = registrationToken;
     }
 
     public int getNotBefore() {
@@ -232,6 +244,30 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setConsentRequired(boolean consentRequired) {
         this.consentRequired = consentRequired;
+    }
+
+    public boolean isStandardFlowEnabled() {
+        return standardFlowEnabled;
+    }
+
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        this.standardFlowEnabled = standardFlowEnabled;
+    }
+
+    public boolean isImplicitFlowEnabled() {
+        return implicitFlowEnabled;
+    }
+
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        this.implicitFlowEnabled = implicitFlowEnabled;
+    }
+
+    public boolean isDirectAccessGrantsEnabled() {
+        return directAccessGrantsEnabled;
+    }
+
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        this.directAccessGrantsEnabled = directAccessGrantsEnabled;
     }
 
     public boolean isServiceAccountsEnabled() {

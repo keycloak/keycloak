@@ -3,6 +3,7 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -17,6 +18,7 @@ import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.GET;
@@ -24,11 +26,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -57,6 +55,10 @@ public class RealmsResource {
 
     public static UriBuilder protocolUrl(UriInfo uriInfo) {
         return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getProtocol");
+    }
+
+    public static UriBuilder clientRegistrationUrl(UriInfo uriInfo) {
+        return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getClientsService");
     }
 
     public static UriBuilder brokerUrl(UriInfo uriInfo) {
@@ -113,11 +115,11 @@ public class RealmsResource {
         return service;
     }
 
-    @Path("{realm}/client-registration")
+    @Path("{realm}/clients")
     public ClientRegistrationService getClientsService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        ClientRegistrationService service = new ClientRegistrationService(realm, event);
+        ClientRegistrationService service = new ClientRegistrationService(event);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         return service;
     }
@@ -186,7 +188,7 @@ public class RealmsResource {
         init(name);
 
         WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, providerName);
-        return Response.ok(wellKnown.getConfig()).build();
+        return Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.getDefaultCacheControl()).build();
     }
 
 }

@@ -12,6 +12,8 @@ import javax.ws.rs.core.SecurityContext;
 
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.OIDCHttpFacade;
+import org.keycloak.adapters.spi.AuthenticationError;
+import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.common.util.HostUtils;
 
 /**
@@ -93,6 +95,17 @@ public class JaxrsHttpFacade implements OIDCHttpFacade {
             // TODO: implement properly
             return HostUtils.getIpAddress();
         }
+
+        @Override
+        public void setError(AuthenticationError error) {
+            requestContext.setProperty(AuthenticationError.class.getName(), error);
+        }
+
+        @Override
+        public void setError(LogoutError error) {
+            requestContext.setProperty(LogoutError.class.getName(), error);
+
+        }
     }
 
     protected class ResponseFacade implements OIDCHttpFacade.Response {
@@ -130,6 +143,13 @@ public class JaxrsHttpFacade implements OIDCHttpFacade {
         public OutputStream getOutputStream() {
             // For now doesn't need to be supported
             throw new IllegalStateException("Not supported yet");
+        }
+
+        @Override
+        public void sendError(int code) {
+            javax.ws.rs.core.Response response = responseBuilder.status(code).build();
+            requestContext.abortWith(response);
+            responseFinished = true;
         }
 
         @Override

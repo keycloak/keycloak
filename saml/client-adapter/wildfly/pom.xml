@@ -15,6 +15,6 @@
 
     <modules>
         <module>wildfly-adapter</module>
-        <module>wildfly9-subsystem</module>
+        <module>wildfly-subsystem</module>
     </modules>
 </project>

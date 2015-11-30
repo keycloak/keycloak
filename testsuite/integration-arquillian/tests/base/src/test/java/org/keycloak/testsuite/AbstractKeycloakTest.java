@@ -32,6 +32,7 @@ import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.util.Timer;
+import org.keycloak.testsuite.util.WaitUtils;
 
 /**
  *
@@ -86,6 +87,7 @@ public abstract class AbstractKeycloakTest {
         driverSettings();
 
         if (!suiteContext.isAdminPasswordUpdated()) {
+            log.debug("updating admin password");
             updateMasterAdminPassword();
             suiteContext.setAdminPasswordUpdated(true);
         }
@@ -115,9 +117,9 @@ public abstract class AbstractKeycloakTest {
     }
 
     protected void driverSettings() {
-        driver.manage().timeouts().pageLoadTimeout(5, TimeUnit.SECONDS);
-        driver.manage().timeouts().implicitlyWait(3, TimeUnit.SECONDS);
-        driver.manage().timeouts().setScriptTimeout(3, TimeUnit.SECONDS);
+        driver.manage().timeouts().pageLoadTimeout(WaitUtils.PAGELOAD_TIMEOUT, TimeUnit.MILLISECONDS);
+        driver.manage().timeouts().implicitlyWait(WaitUtils.IMPLICIT_TIMEOUT, TimeUnit.MILLISECONDS);
+        driver.manage().timeouts().setScriptTimeout(WaitUtils.SCRIPT_TIMEOUT, TimeUnit.MILLISECONDS);
         driver.manage().window().maximize();
     }
 

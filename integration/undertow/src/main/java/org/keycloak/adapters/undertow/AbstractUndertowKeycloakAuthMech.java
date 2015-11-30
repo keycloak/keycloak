@@ -56,16 +56,16 @@ public abstract class AbstractUndertowKeycloakAuthMech implements Authentication
     public ChallengeResult sendChallenge(HttpServerExchange exchange, SecurityContext securityContext) {
         AuthChallenge challenge = exchange.getAttachment(KEYCLOAK_CHALLENGE_ATTACHMENT_KEY);
         if (challenge != null) {
-            if (challenge.errorPage() && errorPage != null) {
-                Integer code = servePage(exchange, errorPage);
-                return new ChallengeResult(true, code);
-            }
-            UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
+            UndertowHttpFacade facade = createFacade(exchange);
             if (challenge.challenge(facade)) {
                 return new ChallengeResult(true, exchange.getResponseCode());
             }
         }
         return new ChallengeResult(false);
+    }
+
+    public UndertowHttpFacade createFacade(HttpServerExchange exchange) {
+        return new OIDCUndertowHttpFacade(exchange);
     }
 
     protected Integer servePage(final HttpServerExchange exchange, final String location) {
@@ -89,7 +89,7 @@ public abstract class AbstractUndertowKeycloakAuthMech implements Authentication
                 if (notification.getEventType() != SecurityNotification.EventType.LOGGED_OUT) return;
 
                 HttpServerExchange exchange = notification.getExchange();
-                UndertowHttpFacade facade = new OIDCUndertowHttpFacade(exchange);
+                UndertowHttpFacade facade = createFacade(exchange);
                 KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
                 KeycloakSecurityContext ksc = exchange.getAttachment(OIDCUndertowHttpFacade.KEYCLOAK_SECURITY_CONTEXT_KEY);
                 if (ksc != null && ksc instanceof RefreshableKeycloakSecurityContext) {

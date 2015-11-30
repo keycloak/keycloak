@@ -30,7 +30,7 @@ module.controller('ClientRoleListCtrl', function($scope, $location, realm, clien
     });
 });
 
-module.controller('ClientCredentialsCtrl', function($scope, $location, realm, client, clientAuthenticatorProviders, clientConfigProperties, Client) {
+module.controller('ClientCredentialsCtrl', function($scope, $location, realm, client, clientAuthenticatorProviders, clientConfigProperties, Client, ClientRegistrationAccessToken, Notifications) {
     $scope.realm = realm;
     $scope.client = angular.copy(client);
     $scope.clientAuthenticatorProviders = clientAuthenticatorProviders;
@@ -68,6 +68,17 @@ module.controller('ClientCredentialsCtrl', function($scope, $location, realm, cl
         }
     }, true);
 
+    $scope.regenerateRegistrationAccessToken = function() {
+        var secret = ClientRegistrationAccessToken.update({ realm : $scope.realm.realm, client : $scope.client.id },
+            function(data) {
+                Notifications.success('The registration access token has been updated.');
+                $scope.client['registrationAccessToken'] = data.registrationAccessToken;
+            },
+            function() {
+                Notifications.error('Failed to update the registration access token');
+            }
+        );
+    };
 });
 
 module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, Notifications) {
@@ -788,13 +799,75 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
         } else if ($scope.client.attributes['saml_name_id_format'] == 'persistent') {
             $scope.nameIdFormat = $scope.nameIdFormats[3];
         }
+        if ($scope.client.attributes["saml.server.signature"]) {
+            if ($scope.client.attributes["saml.server.signature"] == "true") {
+                $scope.samlServerSignature = true;
+            } else {
+                $scope.samlServerSignature = false;
+
+            }
+        }
+        if ($scope.client.attributes["saml.assertion.signature"]) {
+            if ($scope.client.attributes["saml.assertion.signature"] == "true") {
+                $scope.samlAssertionSignature = true;
+            } else {
+                $scope.samlAssertionSignature = false;
+            }
+        }
+        if ($scope.client.attributes["saml.client.signature"]) {
+            if ($scope.client.attributes["saml.client.signature"] == "true") {
+                $scope.samlClientSignature = true;
+            } else {
+                $scope.samlClientSignature = false;
+            }
+        }
+        if ($scope.client.attributes["saml.encrypt"]) {
+            if ($scope.client.attributes["saml.encrypt"] == "true") {
+                $scope.samlEncrypt = true;
+            } else {
+                $scope.samlEncrypt = false;
+            }
+        }
+        if ($scope.client.attributes["saml.authnstatement"]) {
+            if ($scope.client.attributes["saml.authnstatement"] == "true") {
+                $scope.samlAuthnStatement = true;
+            } else {
+                $scope.samlAuthnStatement = false;
+            }
+        }
+        if ($scope.client.attributes["saml_force_name_id_format"]) {
+            if ($scope.client.attributes["saml_force_name_id_format"] == "true") {
+                $scope.samlForceNameIdFormat = true;
+            } else {
+                $scope.samlForceNameIdFormat = false;
+            }
+        }
+        if ($scope.client.attributes["saml.multivalued.roles"]) {
+            if ($scope.client.attributes["saml.multivalued.roles"] == "true") {
+                $scope.samlMultiValuedRoles = true;
+            } else {
+                $scope.samlMultiValuedRoles = false;
+            }
+        }
+        if ($scope.client.attributes["saml.force.post.binding"]) {
+            if ($scope.client.attributes["saml.force.post.binding"] == "true") {
+                $scope.samlForcePostBinding = true;
+            } else {
+                $scope.samlForcePostBinding = false;
+            }
+        }
     }
 
     if (!$scope.create) {
         $scope.client = angular.copy(client);
         updateProperties();
     } else {
-        $scope.client = { enabled: true, attributes: {}};
+        $scope.client = {
+            enabled: true,
+            standardFlowEnabled: true,
+            directAccessGrantsEnabled: true,
+            attributes: {}
+        };
         $scope.client.attributes['saml_signature_canonicalization_method'] = $scope.canonicalization[0].value;
         $scope.client.redirectUris = [];
         $scope.accessType = $scope.accessTypes[0];
@@ -805,63 +878,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
         $scope.samlForceNameIdFormat = false;
     }
 
-    if ($scope.client.attributes["saml.server.signature"]) {
-        if ($scope.client.attributes["saml.server.signature"] == "true") {
-            $scope.samlServerSignature = true;
-        } else {
-            $scope.samlServerSignature = false;
-
-        }
-    }
-    if ($scope.client.attributes["saml.assertion.signature"]) {
-        if ($scope.client.attributes["saml.assertion.signature"] == "true") {
-            $scope.samlAssertionSignature = true;
-        } else {
-            $scope.samlAssertionSignature = false;
-        }
-    }
-    if ($scope.client.attributes["saml.client.signature"]) {
-        if ($scope.client.attributes["saml.client.signature"] == "true") {
-            $scope.samlClientSignature = true;
-        } else {
-            $scope.samlClientSignature = false;
-        }
-    }
-    if ($scope.client.attributes["saml.encrypt"]) {
-        if ($scope.client.attributes["saml.encrypt"] == "true") {
-            $scope.samlEncrypt = true;
-        } else {
-            $scope.samlEncrypt = false;
-        }
-    }
-    if ($scope.client.attributes["saml.authnstatement"]) {
-        if ($scope.client.attributes["saml.authnstatement"] == "true") {
-            $scope.samlAuthnStatement = true;
-        } else {
-            $scope.samlAuthnStatement = false;
-        }
-    }
-    if ($scope.client.attributes["saml_force_name_id_format"]) {
-        if ($scope.client.attributes["saml_force_name_id_format"] == "true") {
-            $scope.samlForceNameIdFormat = true;
-        } else {
-            $scope.samlForceNameIdFormat = false;
-        }
-    }
-    if ($scope.client.attributes["saml.multivalued.roles"]) {
-        if ($scope.client.attributes["saml.multivalued.roles"] == "true") {
-            $scope.samlMultiValuedRoles = true;
-        } else {
-            $scope.samlMultiValuedRoles = false;
-        }
-    }
-    if ($scope.client.attributes["saml.force.post.binding"]) {
-        if ($scope.client.attributes["saml.force.post.binding"] == "true") {
-            $scope.samlForcePostBinding = true;
-        } else {
-            $scope.samlForcePostBinding = false;
-        }
-    }
 
     $scope.importFile = function(fileContent){
         console.debug(fileContent);
@@ -877,7 +893,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
     $scope.viewImportDetails = function() {
         $modal.open({
             templateUrl: resourceUrl + '/partials/modal/view-object.html',
-            controller: 'JsonModalCtrl',
+            controller: 'ObjectModalCtrl',
             resolve: {
                 object: function () {
                     return $scope.client;
@@ -1028,7 +1044,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
         $scope.client.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
         $scope.client.attributes['saml_name_id_format'] = $scope.nameIdFormat;
 
-        if ($scope.client.protocol != 'saml' && !$scope.client.bearerOnly && !$scope.client.directGrantsOnly && (!$scope.client.redirectUris || $scope.client.redirectUris.length == 0)) {
+        if ($scope.client.protocol != 'saml' && !$scope.client.bearerOnly && ($scope.client.standardFlowEnabled || $scope.client.implicitFlowEnabled) && (!$scope.client.redirectUris || $scope.client.redirectUris.length == 0)) {
             Notifications.error("You must specify at least one redirect uri");
         } else {
             if ($scope.create) {

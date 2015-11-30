@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
+import org.keycloak.testsuite.console.page.clients.Client;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
 import org.openqa.selenium.By;
@@ -54,7 +55,7 @@ public class LoginEventsTest extends AbstractConsoleTest {
 
         List<WebElement> resultList = loginEventsPage.table().rows();
 
-        assertEquals(7, resultList.size());
+        assertEquals(8, resultList.size());
         resultList.get(0).findElement(By.xpath("//td[text()='LOGIN']"));
         resultList.get(0).findElement(By.xpath("//td[text()='User']/../td[text()='" + testUser.getId() + "']"));
         resultList.get(0).findElement(By.xpath("//td[text()='Client']/../td[text()='security-admin-console']"));
@@ -83,5 +84,7 @@ public class LoginEventsTest extends AbstractConsoleTest {
         resultList.get(0).findElement(By.xpath("//td[text()='Client']/../td[text()='security-admin-console']"));
         resultList.get(0).findElement(By.xpath("//td[text()='Error']/../td[text()='invalid_user_credentials']"));
         resultList.get(0).findElement(By.xpath("//td[text()='IP Address']/../td[text()='127.0.0.1']"));
+
+
     }
 }

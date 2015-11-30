@@ -107,6 +107,9 @@ public interface RealmModel extends RoleContainerModel {
 
     void setAccessTokenLifespan(int seconds);
 
+    int getAccessTokenLifespanForImplicitFlow();
+    void setAccessTokenLifespanForImplicitFlow(int seconds);
+
     int getAccessCodeLifespan();
 
     void setAccessCodeLifespan(int seconds);
@@ -164,6 +167,12 @@ public interface RealmModel extends RoleContainerModel {
     void addDefaultRole(String name);
 
     void updateDefaultRoles(String[] defaultRoles);
+
+    List<GroupModel> getDefaultGroups();
+
+    void addDefaultGroup(GroupModel group);
+
+    void removeDefaultGroup(GroupModel group);
 
     // Key is clientId
     Map<String, ClientModel> getClientNameMap();
@@ -328,4 +337,20 @@ public interface RealmModel extends RoleContainerModel {
     void setSupportedLocales(Set<String> locales);
     String getDefaultLocale();
     void setDefaultLocale(String locale);
+
+    GroupModel createGroup(String name);
+    GroupModel createGroup(String id, String name);
+
+    /**
+     * Move Group to top realm level.  Basically just sets group parent to null.  You need to call this though
+     * to make sure caches are set properly
+     *
+     * @param subGroup
+     */
+    void addTopLevelGroup(GroupModel subGroup);
+    GroupModel getGroupById(String id);
+    List<GroupModel> getGroups();
+    List<GroupModel> getTopLevelGroups();
+    boolean removeGroup(GroupModel group);
+    void moveGroup(GroupModel group, GroupModel toParent);
 }

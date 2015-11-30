@@ -23,6 +23,13 @@ import org.keycloak.provider.Provider;
  */
 public interface LoginFormsProvider extends Provider {
 
+    String UPDATE_PROFILE_CONTEXT_ATTR = "updateProfileCtx";
+
+    String IDENTITY_PROVIDER_BROKER_CONTEXT = "identityProviderBrokerCtx";
+
+    String USERNAME_EDIT_DISABLED = "usernameEditDisabled";
+
+
     /**
      * Adds a script to the html header
      *
@@ -43,6 +50,12 @@ public interface LoginFormsProvider extends Provider {
     public Response createRegistration();
 
     public Response createInfoPage();
+
+    public Response createUpdateProfilePage();
+
+    public Response createIdpLinkConfirmLinkPage();
+
+    public Response createIdpLinkEmailPage();
 
     public Response createErrorPage();
 

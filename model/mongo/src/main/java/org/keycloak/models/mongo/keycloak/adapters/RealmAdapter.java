@@ -9,6 +9,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -34,6 +35,7 @@ import org.keycloak.models.entities.RequiredCredentialEntity;
 import org.keycloak.models.entities.UserFederationMapperEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoGroupEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -367,6 +369,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public int getAccessTokenLifespanForImplicitFlow() {
+        return realm.getAccessTokenLifespanForImplicitFlow();
+    }
+
+    @Override
+    public void setAccessTokenLifespanForImplicitFlow(int seconds) {
+        realm.setAccessTokenLifespanForImplicitFlow(seconds);
+        updateRealm();
+    }
+
+    @Override
     public int getAccessCodeLifespan() {
         return realm.getAccessCodeLifespan();
     }
@@ -608,6 +621,94 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public GroupModel createGroup(String name) {
+        String id = KeycloakModelUtils.generateId();
+        return createGroup(id, name);
+    }
+
+    @Override
+    public GroupModel createGroup(String id, String name) {
+        if (id == null) id = KeycloakModelUtils.generateId();
+        MongoGroupEntity group = new MongoGroupEntity();
+        group.setId(id);
+        group.setName(name);
+        group.setRealmId(getId());
+
+        getMongoStore().insertEntity(group, invocationContext);
+
+        return new GroupAdapter(session, this, group, invocationContext);
+    }
+
+    @Override
+    public void addTopLevelGroup(GroupModel subGroup) {
+        subGroup.setParent(null);
+
+    }
+
+    @Override
+    public void moveGroup(GroupModel group, GroupModel toParent) {
+        if (toParent != null && group.getId().equals(toParent.getId())) {
+            return;
+        }
+        if (group.getParentId() != null) {
+            group.getParent().removeChild(group);
+        }
+        group.setParent(toParent);
+        if (toParent != null) toParent.addChild(group);
+        else addTopLevelGroup(group);
+    }
+
+    @Override
+    public GroupModel getGroupById(String id) {
+        return model.getGroupById(id, this);
+    }
+
+    @Override
+    public List<GroupModel> getGroups() {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(getId())
+                .get();
+        List<MongoGroupEntity> groups = getMongoStore().loadEntities(MongoGroupEntity.class, query, invocationContext);
+
+        List<GroupModel> result = new LinkedList<>();
+
+        if (groups == null) return result;
+        for (MongoGroupEntity group : groups) {
+            result.add(model.getGroupById(group.getId(), this));
+        }
+
+        return result;
+    }
+
+    @Override
+    public List<GroupModel> getTopLevelGroups() {
+        List<GroupModel> all = getGroups();
+        Iterator<GroupModel> it = all.iterator();
+        while (it.hasNext()) {
+            GroupModel group = it.next();
+            if (group.getParentId() != null) {
+                it.remove();
+            }
+        }
+        return all;
+    }
+
+    @Override
+    public boolean removeGroup(GroupModel group) {
+        if (realm.getDefaultGroups() != null) {
+            getMongoStore().pullItemFromList(realm, "defaultGroups", group.getId(), invocationContext);
+        }
+        for (GroupModel subGroup : group.getSubGroups()) {
+            removeGroup(subGroup);
+        }
+        session.users().preRemove(this, group);
+        moveGroup(group, null);
+        return getMongoStore().removeEntity(MongoGroupEntity.class, group.getId(), invocationContext);
+    }
+
+
+
+    @Override
     public List<String> getDefaultRoles() {
         return realm.getDefaultRoles();
     }
@@ -636,6 +737,27 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
         realm.setDefaultRoles(roleNames);
         updateRealm();
+    }
+
+    @Override
+    public List<GroupModel> getDefaultGroups() {
+        List<GroupModel> defaultGroups = new LinkedList<>();
+        for (String id : realm.getDefaultGroups()) {
+            defaultGroups.add(session.realms().getGroupById(id, this));
+        }
+        return defaultGroups;
+    }
+
+    @Override
+    public void addDefaultGroup(GroupModel group) {
+        getMongoStore().pushItemToList(realm, "defaultGroups", group.getId(), true, invocationContext);
+
+    }
+
+    @Override
+    public void removeDefaultGroup(GroupModel group) {
+        getMongoStore().pullItemFromList(realm, "defaultGroups", group.getId(), invocationContext);
+
     }
 
     @Override
@@ -688,6 +810,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         clientEntity.setClientId(clientId);
         clientEntity.setRealmId(getId());
         clientEntity.setEnabled(true);
+        clientEntity.setStandardFlowEnabled(true);
+        clientEntity.setDirectAccessGrantsEnabled(true);
         getMongoStore().insertEntity(clientEntity, invocationContext);
 
         final ClientModel model = new ClientAdapter(session, this, clientEntity, invocationContext);
@@ -823,9 +947,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             identityProviderModel.setInternalId(entity.getInternalId());
             identityProviderModel.setConfig(entity.getConfig());
             identityProviderModel.setEnabled(entity.isEnabled());
-            identityProviderModel.setUpdateProfileFirstLoginMode(entity.getUpdateProfileFirstLoginMode());
             identityProviderModel.setTrustEmail(entity.isTrustEmail());
             identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
+            identityProviderModel.setFirstBrokerLoginFlowId(entity.getFirstBrokerLoginFlowId());
             identityProviderModel.setStoreToken(entity.isStoreToken());
             identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
 
@@ -854,11 +978,11 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setAlias(identityProvider.getAlias());
         entity.setProviderId(identityProvider.getProviderId());
         entity.setEnabled(identityProvider.isEnabled());
-        entity.setUpdateProfileFirstLoginMode(identityProvider.getUpdateProfileFirstLoginMode());
         entity.setTrustEmail(identityProvider.isTrustEmail());
         entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
         entity.setStoreToken(identityProvider.isStoreToken());
         entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
+        entity.setFirstBrokerLoginFlowId(identityProvider.getFirstBrokerLoginFlowId());
         entity.setConfig(identityProvider.getConfig());
 
         realm.getIdentityProviders().add(entity);
@@ -882,9 +1006,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             if (entity.getInternalId().equals(identityProvider.getInternalId())) {
                 entity.setAlias(identityProvider.getAlias());
                 entity.setEnabled(identityProvider.isEnabled());
-                entity.setUpdateProfileFirstLoginMode(identityProvider.getUpdateProfileFirstLoginMode());
                 entity.setTrustEmail(identityProvider.isTrustEmail());
                 entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
+                entity.setFirstBrokerLoginFlowId(identityProvider.getFirstBrokerLoginFlowId());
                 entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
                 entity.setStoreToken(identityProvider.isStoreToken());
                 entity.setConfig(identityProvider.getConfig());
@@ -1148,7 +1272,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public ClientModel getMasterAdminClient() {
         MongoClientEntity appData = getMongoStore().loadEntity(MongoClientEntity.class, realm.getMasterAdminClient(), invocationContext);
-        return appData != null ? new ClientAdapter(session, this, appData, invocationContext) : null;
+        if (appData == null) {
+            return null;
+        }
+
+        MongoRealmEntity masterRealm = getMongoStore().loadEntity(MongoRealmEntity.class, appData.getRealmId(), invocationContext);
+        RealmModel masterRealmModel = new RealmAdapter(session, masterRealm, invocationContext);
+        return new ClientAdapter(session, masterRealmModel, appData, invocationContext);
     }
 
     @Override

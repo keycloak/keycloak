@@ -15,7 +15,18 @@
         <exclude.console>-</exclude.console>
         <exclude.account>-</exclude.account>
     </properties>
-
+	<dependencies>
+	    <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-util-embedded-ldap</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+	</dependencies>
     <build>
         <plugins>
             <plugin>

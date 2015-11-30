@@ -12,6 +12,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.models.CredentialValidationOutput;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -106,11 +107,16 @@ public class KerberosFederationProvider implements UserFederationProvider {
     }
 
     @Override
+    public void preRemove(RealmModel realm, GroupModel group) {
+
+    }
+
+    @Override
     public boolean isValid(RealmModel realm, UserModel local) {
         // KerberosUsernamePasswordAuthenticator.isUserAvailable is an overhead, so avoid it for now
 
         String kerberosPrincipal = local.getUsername() + "@" + kerberosConfig.getKerberosRealm();
-        return kerberosPrincipal.equals(local.getFirstAttribute(KERBEROS_PRINCIPAL));
+        return kerberosPrincipal.equalsIgnoreCase(local.getFirstAttribute(KERBEROS_PRINCIPAL));
     }
 
     @Override

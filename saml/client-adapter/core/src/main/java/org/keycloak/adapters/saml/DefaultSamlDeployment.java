@@ -1,12 +1,12 @@
 package org.keycloak.adapters.saml;
 
-import org.keycloak.common.enums.SslRequired;
-import org.keycloak.saml.SignatureAlgorithm;
-
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Set;
+
+import org.keycloak.common.enums.SslRequired;
+import org.keycloak.saml.SignatureAlgorithm;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -31,7 +31,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
             return validateResponseSignature;
         }
 
-         @Override
+        @Override
         public Binding getRequestBinding() {
             return requestBinding;
         }
@@ -97,7 +97,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
             return signResponse;
         }
 
-         @Override
+        @Override
         public Binding getRequestBinding() {
             return requestBinding;
         }
@@ -150,11 +150,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
         }
     }
 
-
-
     public static class DefaultIDP implements IDP {
-
-
 
         private String entityID;
         private PublicKey signatureValidationKey;
@@ -204,6 +200,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
     private String entityID;
     private String nameIDPolicyFormat;
     private boolean forceAuthentication;
+    private boolean isPassive;
     private PrivateKey decryptionKey;
     private KeyPair signingKeyPair;
     private String assertionConsumerServiceUrl;
@@ -213,7 +210,6 @@ public class DefaultSamlDeployment implements SamlDeployment {
     private String logoutPage;
     private SignatureAlgorithm signatureAlgorithm;
     private String signatureCanonicalizationMethod;
-
 
     @Override
     public IDP getIDP() {
@@ -244,6 +240,11 @@ public class DefaultSamlDeployment implements SamlDeployment {
     public boolean isForceAuthentication() {
         return forceAuthentication;
     }
+    
+   @Override
+    public boolean isIsPassive() {
+        return isPassive;
+    }
 
     @Override
     public PrivateKey getDecryptionKey() {
@@ -265,7 +266,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
         return roleAttributeNames;
     }
 
-   @Override
+    @Override
     public PrincipalNamePolicy getPrincipalNamePolicy() {
         return principalNamePolicy;
     }
@@ -297,6 +298,10 @@ public class DefaultSamlDeployment implements SamlDeployment {
 
     public void setForceAuthentication(boolean forceAuthentication) {
         this.forceAuthentication = forceAuthentication;
+    }
+    
+    public void setIsPassive(boolean isPassive){
+        this.isPassive = isPassive;
     }
 
     public void setDecryptionKey(PrivateKey decryptionKey) {
@@ -332,7 +337,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
         this.logoutPage = logoutPage;
     }
 
-     @Override
+    @Override
     public String getSignatureCanonicalizationMethod() {
         return signatureCanonicalizationMethod;
     }

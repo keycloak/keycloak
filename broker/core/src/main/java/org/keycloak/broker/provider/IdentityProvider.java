@@ -103,4 +103,10 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
      */
     Response export(UriInfo uriInfo, RealmModel realm, String format);
 
+    /**
+     * Implementation of marshaller to serialize/deserialize attached data to Strings, which can be saved in clientSession
+     * @return
+     */
+    IdentityProviderDataMarshaller getMarshaller();
+
 }

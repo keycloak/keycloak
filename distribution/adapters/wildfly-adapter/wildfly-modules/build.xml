@@ -1,0 +1,91 @@
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2012, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<project name="module-repository" basedir="." default="all">
+
+    <import file="lib.xml"/>
+
+    <property name="output.dir" value="target"/>
+
+    <target name="all">
+        <antcall target="modules">
+            <param name="mavenized.modules" value="false"/>
+            <param name="output.dir" value="target"/>
+        </antcall>
+    </target>
+
+
+    <target name="modules">
+
+        <!-- server min dependencies -->
+
+        <module-def name="org.keycloak.keycloak-common">
+            <maven-resource group="org.keycloak" artifact="keycloak-common"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-core">
+            <maven-resource group="org.keycloak" artifact="keycloak-core"/>
+        </module-def>
+
+
+        <!-- subsystems -->
+
+        <module-def name="org.keycloak.keycloak-adapter-spi">
+            <maven-resource group="org.keycloak" artifact="keycloak-adapter-spi"/>
+            <maven-resource group="org.keycloak" artifact="keycloak-undertow-adapter-spi"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-adapter-core">
+            <maven-resource group="org.keycloak" artifact="keycloak-adapter-core"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-jboss-adapter-core">
+            <maven-resource group="org.keycloak" artifact="keycloak-jboss-adapter-core"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-undertow-adapter">
+            <maven-resource group="org.keycloak" artifact="keycloak-undertow-adapter"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-wildfly-adapter">
+            <maven-resource group="org.keycloak" artifact="keycloak-wildfly-adapter"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-wildfly-subsystem">
+            <maven-resource group="org.keycloak" artifact="keycloak-wildfly-subsystem"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-servlet-oauth-client">
+            <maven-resource group="org.keycloak" artifact="keycloak-servlet-oauth-client"/>
+        </module-def>
+
+    </target>
+
+    <target name="clean-target">
+        <delete dir="${output.dir}"/>
+    </target>
+
+    <target name="clean" depends="clean-target">
+        <delete file="maven-ant-tasks.jar"/>
+    </target>
+
+</project>

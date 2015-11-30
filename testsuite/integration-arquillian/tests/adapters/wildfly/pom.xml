@@ -13,7 +13,7 @@
     
     <properties>
         <app.server.wildfly.home>${containers.home}/wildfly-${wildfly.version}</app.server.wildfly.home>
-        <adapter.libs.wildfly>${containers.home}/keycloak-wf9-adapter-dist</adapter.libs.wildfly>
+        <adapter.libs.wildfly>${containers.home}/keycloak-wildfly-adapter-dist</adapter.libs.wildfly>
     </properties>
 
     <dependencies>
@@ -28,7 +28,7 @@
         </dependency>                
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wf9-adapter-dist</artifactId>
+            <artifactId>keycloak-wildfly-adapter-dist</artifactId>
             <type>zip</type>
         </dependency>
     </dependencies>
@@ -63,7 +63,7 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-wf9-adapter-dist</artifactId>
+                                    <artifactId>keycloak-wildfly-adapter-dist</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${adapter.libs.wildfly}</outputDirectory>

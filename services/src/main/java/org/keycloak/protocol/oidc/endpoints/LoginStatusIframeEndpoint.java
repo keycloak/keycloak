@@ -12,6 +12,7 @@ import org.keycloak.common.util.UriUtils;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -38,13 +39,17 @@ public class LoginStatusIframeEndpoint {
     @Produces(MediaType.TEXT_HTML)
     public Response getLoginStatusIframe(@QueryParam("client_id") String client_id,
                                          @QueryParam("origin") String origin) {
+        if (client_id == null || origin == null) {
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+        }
+
         if (!UriUtils.isOrigin(origin)) {
-            throw new BadRequestException("Invalid origin");
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
         }
 
         ClientModel client = realm.getClientByClientId(client_id);
         if (client == null) {
-            throw new NotFoundException("could not find client");
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
         }
 
         InputStream is = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");
@@ -71,7 +76,7 @@ public class LoginStatusIframeEndpoint {
         }
 
         if (!valid) {
-            throw new BadRequestException("Invalid origin");
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
         }
 
         try {
@@ -84,7 +89,7 @@ public class LoginStatusIframeEndpoint {
 
             return Response.ok(file).cacheControl(cacheControl).build();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
         }
     }
 

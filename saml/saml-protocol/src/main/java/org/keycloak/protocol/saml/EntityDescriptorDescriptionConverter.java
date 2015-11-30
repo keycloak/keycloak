@@ -33,6 +33,8 @@ import java.util.Map;
  */
 public class EntityDescriptorDescriptionConverter implements ClientDescriptionConverter, ClientDescriptionConverterFactory {
 
+    public static final String ID = "saml2-entity-descriptor";
+
     @Override
     public boolean isSupported(String description) {
         description = description.trim();
@@ -161,7 +163,7 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
 
     @Override
     public String getId() {
-        return "saml2-entity-descriptor";
+        return ID;
     }
 
 }

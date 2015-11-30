@@ -113,15 +113,7 @@ public class LocaleHelper {
                                            RealmModel realm,
                                            String locale) {
         boolean secure = realm.getSslRequired().isRequired(session.getContext().getUri().getRequestUri().getHost());
-        addCookie(LOCALE_COOKIE, locale, AuthenticationManager.getRealmCookiePath(realm, session.getContext().getUri()), null, null, -1, secure, true);
-    }
-
-    private static void addCookie(String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly) {
-        HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
-        StringBuffer cookieBuf = new StringBuffer();
-        ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure, httpOnly);
-        String cookie = cookieBuf.toString();
-        response.getOutputHeaders().add(HttpHeaders.SET_COOKIE, cookie);
+        CookieHelper.addCookie(LOCALE_COOKIE, locale, AuthenticationManager.getRealmCookiePath(realm, session.getContext().getUri()), null, null, -1, secure, true);
     }
 
     private static Locale findLocale(Set<String> supportedLocales, String... localeStrings) {

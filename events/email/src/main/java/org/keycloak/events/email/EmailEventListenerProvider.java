@@ -2,7 +2,7 @@ package org.keycloak.events.email;
 
 import org.jboss.logging.Logger;
 import org.keycloak.email.EmailException;
-import org.keycloak.email.EmailProvider;
+import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -23,13 +23,13 @@ public class EmailEventListenerProvider implements EventListenerProvider {
 
     private KeycloakSession session;
     private RealmProvider model;
-    private EmailProvider emailProvider;
+    private EmailTemplateProvider emailTemplateProvider;
     private Set<EventType> includedEvents;
 
-    public EmailEventListenerProvider(KeycloakSession session, EmailProvider emailProvider, Set<EventType> includedEvents) {
+    public EmailEventListenerProvider(KeycloakSession session, EmailTemplateProvider emailTemplateProvider, Set<EventType> includedEvents) {
         this.session = session;
         this.model = session.realms();
-        this.emailProvider = emailProvider;
+        this.emailTemplateProvider = emailTemplateProvider;
         this.includedEvents = includedEvents;
     }
 
@@ -41,7 +41,7 @@ public class EmailEventListenerProvider implements EventListenerProvider {
                 UserModel user = session.users().getUserById(event.getUserId(), realm);
                 if (user != null && user.getEmail() != null && user.isEmailVerified()) {
                     try {
-                        emailProvider.setRealm(realm).setUser(user).sendEvent(event);
+                        emailTemplateProvider.setRealm(realm).setUser(user).sendEvent(event);
                     } catch (EmailException e) {
                         log.error("Failed to send type mail", e);
                     }

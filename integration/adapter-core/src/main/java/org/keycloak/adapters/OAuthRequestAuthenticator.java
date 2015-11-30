@@ -11,6 +11,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -174,30 +175,9 @@ public class OAuthRequestAuthenticator {
         final String state = getStateCode();
         final String redirect = getRedirectUri(state);
         if (redirect == null) {
-            return new AuthChallenge() {
-                @Override
-                public boolean challenge(HttpFacade exchange) {
-                    exchange.getResponse().setStatus(403);
-                    return true;
-                }
-
-                @Override
-                public boolean errorPage() {
-                    return true;
-                }
-
-                @Override
-                public int getResponseCode() {
-                    return 403;
-                }
-            };
+            return challenge(403, OIDCAuthenticationError.Reason.NO_REDIRECT_URI, null);
         }
         return new AuthChallenge() {
-
-            @Override
-            public boolean errorPage() {
-                return false;
-            }
 
             @Override
             public int getResponseCode() {
@@ -221,7 +201,7 @@ public class OAuthRequestAuthenticator {
 
         if (stateCookie == null) {
             log.warn("No state cookie");
-            return challenge(400);
+            return challenge(400, OIDCAuthenticationError.Reason.INVALID_STATE_COOKIE, null);
         }
         // reset the cookie
         log.debug("** reseting application state cookie");
@@ -231,13 +211,13 @@ public class OAuthRequestAuthenticator {
         String state = getQueryParamValue(OAuth2Constants.STATE);
         if (state == null) {
             log.warn("state parameter was null");
-            return challenge(400);
+            return challenge(400, OIDCAuthenticationError.Reason.INVALID_STATE_COOKIE, null);
         }
         if (!state.equals(stateCookieValue)) {
             log.warn("state parameter invalid");
             log.warn("cookie: " + stateCookieValue);
             log.warn("queryParam: " + state);
-            return challenge(400);
+            return challenge(400, OIDCAuthenticationError.Reason.INVALID_STATE_COOKIE, null);
         }
         return null;
 
@@ -251,7 +231,7 @@ public class OAuthRequestAuthenticator {
             if (error != null) {
                 // todo how do we send a response?
                 log.warn("There was an error: " + error);
-                challenge = challenge(400);
+                challenge = challenge(400, OIDCAuthenticationError.Reason.OAUTH_ERROR, error);
                 return AuthOutcome.FAILED;
             } else {
                 log.debug("redirecting to auth server");
@@ -269,13 +249,8 @@ public class OAuthRequestAuthenticator {
 
     }
 
-    protected AuthChallenge challenge(final int code) {
+    protected AuthChallenge challenge(final int code, final OIDCAuthenticationError.Reason reason, final String description) {
         return new AuthChallenge() {
-            @Override
-            public boolean errorPage() {
-                return true;
-            }
-
             @Override
             public int getResponseCode() {
                 return code;
@@ -283,7 +258,9 @@ public class OAuthRequestAuthenticator {
 
             @Override
             public boolean challenge(HttpFacade exchange) {
-                exchange.getResponse().setStatus(code);
+                OIDCAuthenticationError error = new OIDCAuthenticationError(reason, description);
+                exchange.getRequest().setError(error);
+                exchange.getResponse().sendError(code);
                 return true;
             }
         };
@@ -305,7 +282,7 @@ public class OAuthRequestAuthenticator {
         // abort if not HTTPS
         if (!isRequestSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
             log.error("Adapter requires SSL. Request: " + facade.getRequest().getURI());
-            return challenge(403);
+            return challenge(403, OIDCAuthenticationError.Reason.SSL_REQUIRED, null);
         }
 
         log.debug("checking state cookie for after code");
@@ -324,11 +301,11 @@ public class OAuthRequestAuthenticator {
             if (failure.getStatus() == 400 && failure.getError() != null) {
                 log.error("   " + failure.getError());
             }
-            return challenge(403);
+            return challenge(403, OIDCAuthenticationError.Reason.CODE_TO_TOKEN_FAILURE, null);
 
         } catch (IOException e) {
             log.error("failed to turn code into token", e);
-            return challenge(403);
+            return challenge(403, OIDCAuthenticationError.Reason.CODE_TO_TOKEN_FAILURE, null);
         }
 
         tokenString = tokenResponse.getToken();
@@ -337,24 +314,24 @@ public class OAuthRequestAuthenticator {
         try {
             token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
             if (idTokenString != null) {
-                JWSInput input = new JWSInput(idTokenString);
                 try {
+                    JWSInput input = new JWSInput(idTokenString);
                     idToken = input.readJsonContent(IDToken.class);
-                } catch (IOException e) {
+                } catch (JWSInputException e) {
                     throw new VerificationException();
                 }
             }
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token: " + e.getMessage());
-            return challenge(403);
+            return challenge(403, OIDCAuthenticationError.Reason.INVALID_TOKEN, null);
         }
         if (tokenResponse.getNotBeforePolicy() > deployment.getNotBefore()) {
             deployment.setNotBefore(tokenResponse.getNotBeforePolicy());
         }
         if (token.getIssuedAt() < deployment.getNotBefore()) {
             log.error("Stale token");
-            return challenge(403);
+            return challenge(403, OIDCAuthenticationError.Reason.STALE_TOKEN, null);
         }
         log.debug("successful authenticated");
         return null;

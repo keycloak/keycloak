@@ -145,7 +145,7 @@ public class TokenEndpoint {
     }
 
     private void checkClient() {
-        AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event, realm);
+        AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event);
         client = clientAuth.getClient();
         clientAuthAttributes = clientAuth.getClientAuthAttributes();
 
@@ -202,7 +202,7 @@ public class TokenEndpoint {
 
         ClientSessionModel clientSession = accessCode.getClientSession();
         event.detail(Details.CODE_ID, clientSession.getId());
-        if (!accessCode.isValid(ClientSessionModel.Action.CODE_TO_TOKEN.name())) {
+        if (!accessCode.isValid(ClientSessionModel.Action.CODE_TO_TOKEN.name(), ClientSessionCode.ActionType.CLIENT)) {
             event.error(Errors.INVALID_CODE);
             throw new ErrorResponseException("invalid_grant", "Code is expired", Response.Status.BAD_REQUEST);
         }
@@ -327,7 +327,7 @@ public class TokenEndpoint {
     }
 
     public Response buildResourceOwnerPasswordCredentialsGrant() {
-        event.detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
+        event.detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD);
 
         if (client.isConsentRequired()) {
             event.error(Errors.CONSENT_DENIED);
@@ -393,7 +393,7 @@ public class TokenEndpoint {
             throw new ErrorResponseException("unauthorized_client", "Client not enabled to retrieve service account", Response.Status.UNAUTHORIZED);
         }
 
-        event.detail(Details.RESPONSE_TYPE, ServiceAccountConstants.CLIENT_AUTH);
+        event.detail(Details.RESPONSE_TYPE, OAuth2Constants.CLIENT_CREDENTIALS);
 
         UserModel clientUser = session.users().getUserByServiceAccountClient(client);
 

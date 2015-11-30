@@ -17,6 +17,8 @@
  */
 package org.keycloak.dom.saml.v2.protocol;
 
+import java.io.Serializable;
+
 /**
  * <p>
  * Java class for StatusType complex type.
@@ -38,7 +40,7 @@ package org.keycloak.dom.saml.v2.protocol;
  * &lt;/complexType>
  * </pre>
  */
-public class StatusType {
+public class StatusType implements Serializable {
 
     protected String statusMessage;
     protected StatusCodeType statusCode;
@@ -96,6 +98,11 @@ public class StatusType {
      */
     public void setStatusDetail(StatusDetailType value) {
         this.statusDetail = value;
+    }
+
+    @Override
+    public String toString() {
+        return "StatusType [statusCode=" + statusCode + ", statusMessage=" + statusMessage + ", statusDetail=" + statusDetail + "]";
     }
 
 }

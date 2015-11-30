@@ -3,6 +3,7 @@ package org.keycloak.adapters;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.UserSessionManagement;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jws.JWSInput;
@@ -178,18 +179,17 @@ public class PreAuthActionsHandler {
             return null;
         }
 
-        JWSInput input = new JWSInput(token);
-        boolean verified = false;
         try {
-            verified = RSAProvider.verify(input, deployment.getRealmKey());
-        } catch (Exception ignore) {
+            JWSInput input = new JWSInput(token);
+            if (RSAProvider.verify(input, deployment.getRealmKey())) {
+                return input;
+            }
+        } catch (JWSInputException ignore) {
         }
-        if (!verified) {
-            log.warn("admin request failed, unable to verify token");
-            facade.getResponse().sendError(403, "no token");
-            return null;
-        }
-        return input;
+
+        log.warn("admin request failed, unable to verify token");
+        facade.getResponse().sendError(403, "no token");
+        return null;
     }
 
 

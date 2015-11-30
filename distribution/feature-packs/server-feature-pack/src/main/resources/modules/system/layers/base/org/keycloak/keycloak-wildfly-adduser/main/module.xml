@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.3" name="org.keycloak.keycloak-wildfly-adduser">
+    <main-class name="org.keycloak.wildfly.adduser.AddUser"/>
+    <resources>
+        <artifact name="${org.keycloak:keycloak-wildfly-adduser}"/>
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-common"/>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.jboss.aesh" slot="0.65"/>
+        <module name="org.jboss.as.domain-management"/>
+        <module name="org.codehaus.jackson.jackson-core-asl"/>
+    </dependencies>
+</module>

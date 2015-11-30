@@ -17,6 +17,8 @@ public class ModalDialog {
 
     @FindBy(xpath = ".//button[@ng-click='ok()']")
     private WebElement okButton;
+    @FindBy(id = "name")
+    private WebElement nameInput;
 
     public void ok() {
         waitAjaxForElement(okButton);
@@ -31,6 +33,12 @@ public class ModalDialog {
     public void cancel() {
         waitAjaxForElement(cancelButton);
         cancelButton.click();
+    }
+    
+    public void setName(String name) {
+        waitAjaxForElement(nameInput);
+        nameInput.clear();
+        nameInput.sendKeys(name);
     }
 
 }

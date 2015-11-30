@@ -276,6 +276,10 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createFlow(AuthenticationFlowModel model) {
         this.auth.requireManage();
+        
+        if (model.getAlias() == null || model.getAlias().isEmpty()) {
+            return ErrorResponse.exists("Failed to create flow with empty alias name");
+        }
 
         if (realm.getFlowByAlias(model.getAlias()) != null) {
             return ErrorResponse.exists("Flow " + model.getAlias() + " already exists");
@@ -711,6 +715,12 @@ public class AuthenticationManagementResource {
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to remove execution from a built in flow");
         }
+        
+        if(model.getFlowId() != null) {
+        	AuthenticationFlowModel nonTopLevelFlow = realm.getAuthenticationFlowById(model.getFlowId());
+        	realm.removeAuthenticationFlow(nonTopLevelFlow);
+        }
+		
         realm.removeAuthenticatorExecution(model);
     }
 

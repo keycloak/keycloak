@@ -1,7 +1,9 @@
 package org.keycloak.adapters.springsecurity.facade;
 
+import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.HttpFacade.Cookie;
 import org.keycloak.adapters.spi.HttpFacade.Request;
+import org.keycloak.adapters.spi.LogoutError;
 import org.springframework.util.Assert;
 
 import javax.servlet.http.HttpServletRequest;
@@ -109,4 +111,17 @@ class WrappedHttpServletRequest implements Request {
     public String getRemoteAddr() {
         return request.getRemoteAddr();
     }
+
+    @Override
+    public void setError(AuthenticationError error) {
+        request.setAttribute(AuthenticationError.class.getName(), error);
+
+    }
+
+    @Override
+    public void setError(LogoutError error) {
+        request.setAttribute(LogoutError.class.getName(), error);
+    }
+
+
 }

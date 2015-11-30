@@ -5,6 +5,7 @@ import org.keycloak.migration.migrators.MigrateTo1_3_0;
 import org.keycloak.migration.migrators.MigrateTo1_4_0;
 import org.keycloak.migration.migrators.MigrateTo1_5_0;
 import org.keycloak.migration.migrators.MigrateTo1_6_0;
+import org.keycloak.migration.migrators.MigrateTo1_7_0;
 import org.keycloak.migration.migrators.MigrationTo1_2_0_CR1;
 import org.keycloak.models.KeycloakSession;
 
@@ -53,6 +54,12 @@ public class MigrationModelManager {
                 logger.debug("Migrating older model to 1.6.0 updates");
             }
             new MigrateTo1_6_0().migrate(session);
+        }
+        if (stored == null || stored.lessThan(MigrateTo1_7_0.VERSION)) {
+            if (stored != null) {
+                logger.debug("Migrating older model to 1.7.0 updates");
+            }
+            new MigrateTo1_7_0().migrate(session);
         }
 
         model.setStoredVersion(MigrationModel.LATEST_VERSION);

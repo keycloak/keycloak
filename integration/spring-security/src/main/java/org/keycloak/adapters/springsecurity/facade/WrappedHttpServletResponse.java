@@ -96,6 +96,15 @@ class WrappedHttpServletResponse implements Response {
     }
 
     @Override
+    public void sendError(int code) {
+        try {
+            response.sendError(code);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to set HTTP status", e);
+        }
+    }
+
+    @Override
     public void sendError(int code, String message) {
         try {
             response.sendError(code, message);

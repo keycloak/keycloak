@@ -16,7 +16,7 @@
         </para>
         <para>
             For example to implement the Event Listener SPI you start by implementing EventListenerProviderFactory:
-<programlisting><![CDATA[{
+<programlisting><![CDATA[
 package org.acme.provider;
 
 import ...
@@ -43,7 +43,7 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
     }
 
 }
-}]]></programlisting>
+]]></programlisting>
             The example uses an imagined MaxList which has a maximum size and is concurrency safe. When the maximum size is reached
             and new entries are added the oldest entry is removed. Keycloak creates a single instance of
             EventListenerProviderFactory which makes it possible to store state for multiple requests. EventListenerProvider
@@ -51,7 +51,7 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
         </para>
         <para>
             Next you would implement EventListenerProvider:
-<programlisting><![CDATA[{
+<programlisting><![CDATA[
 package org.acme.provider;
 
 import ...
@@ -75,13 +75,61 @@ public class MyEventListenerProvider implements EventListenerProvider {
     }
 
 }
-}]]></programlisting>
+]]></programlisting>
         </para>
         <para>
             The file <literal>META-INF/services/org.keycloak.events.EventListenerProviderFactory</literal> should
             contain the full name of your ProviderFactory implementation:
 <programlisting><![CDATA[org.acme.provider.MyEventListenerProviderFactory]]></programlisting>
         </para>
+        
+        <section>
+            <title>Show info from you SPI implementation in Keycloak admin console</title>
+            <para>
+                Sometimes it is useful to show additional info about your Provider to a Keycloak administrator.
+                You can show provider build time informations (eg. version of custom provider currently installed), 
+                current configuration of the provider (eg. url of remote system your provider talks to) or some operational 
+                info (average time of response from remote system your provider talks to). 
+                Keycloak admin console provides Server Info page to show this kind of information.
+             </para>
+             <para>   
+                To show info from your provider it is enough to implement 
+                <literal>org.keycloak.provider.ServerInfoAwareProviderFactory</literal> interface in your ProviderFactory. 
+                Example implementation for MyEventListenerProviderFactory from previous example:
+                <programlisting><![CDATA[
+package org.acme.provider;
+
+import ...
+
+public class MyEventListenerProviderFactory implements EventListenerProviderFactory, ServerInfoAwareProviderFactory {
+
+    private List<Event> events;
+    private int max;
+     
+...
+
+    @Override
+    public void init(Config.Scope config) {
+        max = config.getInt("max");
+        events = new MaxList(max);
+    }
+
+...
+
+    @Override
+    public Map<String, String> getOperationalInfo() {
+        Map<String, String> ret = new LinkedHashMap<>();
+        ret.put("version", "1.0");
+        ret.put("listSizeMax", max + "");
+        ret.put("listSizeCurrent", events.size() + "");
+        return ret;
+    }
+
+}
+]]></programlisting>
+            
+            </para>
+        </section>    
     </section>
 
     <section>
@@ -98,13 +146,13 @@ public class MyEventListenerProvider implements EventListenerProvider {
                 To register a provider using Modules first create a module. To do this you can either use the jboss-cli
                 script or manually create a folder inside KEYCLOAK_HOME/modules and add your jar and a <literal>module.xml</literal>.
                 For example to add the event listener sysout example provider using the jboss-cli script execute:
-<programlisting><![CDATA[{
+<programlisting><![CDATA[
     KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.examples.event-sysout --resources=target/event-listener-sysout-example.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-model-api,org.keycloak.keycloak-events-api"
-}]]></programlisting>
+]]></programlisting>
                 Or to manually create it start by creating the folder <literal>KEYCLOAK_HOME/modules/org/keycloak/examples/event-sysout/main</literal>.
                 Then copy <literal>event-listener-sysout-example.jar</literal> to this folder and create <literal>module.xml</literal>
                 with the following content:
-<programlisting><![CDATA[{
+<programlisting><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
 <module xmlns="urn:jboss:module:1.1" name="org.keycloak.examples.event-sysout">
     <resources>
@@ -116,7 +164,7 @@ public class MyEventListenerProvider implements EventListenerProvider {
         <module name="org.keycloak.keycloak-events-api"/>
     </dependencies>
 </module>
-}]]></programlisting>
+]]></programlisting>
             </para>
             <para>
                 Once you've created the module you need to register this module with Keycloak. This is done by editing

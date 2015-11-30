@@ -7,6 +7,7 @@ import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.common.util.MimeTypeUtil;
+import org.keycloak.services.util.CacheControlUtil;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -49,11 +50,7 @@ public class ThemeResource {
             Theme theme = themeProvider.getTheme(themeName, Theme.Type.valueOf(themType.toUpperCase()));
             InputStream resource = theme.getResourceAsStream(path);
             if (resource != null) {
-                CacheControl cacheControl = new CacheControl();
-                cacheControl.setNoTransform(false);
-                cacheControl.setMaxAge(Config.scope("theme").getInt("staticMaxAge", -1));
-
-                return Response.ok(resource).type(MimeTypeUtil.getContentType(path)).cacheControl(cacheControl).build();
+                return Response.ok(resource).type(MimeTypeUtil.getContentType(path)).cacheControl(CacheControlUtil.getDefaultCacheControl()).build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }

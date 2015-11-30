@@ -8,7 +8,6 @@ import java.util.Map;
 public class SpiInfoRepresentation {
 
     private boolean internal;
-    private boolean systemInfo;
 
     private Map<String, ProviderRepresentation> providers;
 
@@ -18,14 +17,6 @@ public class SpiInfoRepresentation {
 
     public void setInternal(boolean internal) {
         this.internal = internal;
-    }
-
-    public boolean isSystemInfo() {
-        return systemInfo;
-    }
-
-    public void setSystemInfo(boolean systemInfo) {
-        this.systemInfo = systemInfo;
     }
 
     public Map<String, ProviderRepresentation> getProviders() {

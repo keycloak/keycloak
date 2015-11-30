@@ -13,9 +13,12 @@ import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.dom.saml.v2.protocol.StatusType;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
 import java.security.Principal;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,6 +37,7 @@ public class ServletSamlSessionStore implements SamlSessionStore {
     private final SecurityContext securityContext;
     private final SessionIdMapper idMapper;
 
+
     public ServletSamlSessionStore(HttpServerExchange exchange, UndertowUserSessionManagement sessionManagement,
                                    SecurityContext securityContext,
                                    SessionIdMapper idMapper) {
@@ -41,6 +45,28 @@ public class ServletSamlSessionStore implements SamlSessionStore {
         this.sessionManagement = sessionManagement;
         this.securityContext = securityContext;
         this.idMapper = idMapper;
+    }
+
+    @Override
+    public void setCurrentAction(CurrentAction action) {
+        if (action == CurrentAction.NONE && getRequest().getSession(false) == null) return;
+        getRequest().getSession().setAttribute(CURRENT_ACTION, action);
+    }
+
+    @Override
+    public boolean isLoggingIn() {
+        HttpSession session = getRequest().getSession(false);
+        if (session == null) return false;
+        CurrentAction action = (CurrentAction)session.getAttribute(CURRENT_ACTION);
+        return action == CurrentAction.LOGGING_IN;
+    }
+
+    @Override
+    public boolean isLoggingOut() {
+        HttpSession session = getRequest().getSession(false);
+        if (session == null) return false;
+        CurrentAction action = (CurrentAction)session.getAttribute(CURRENT_ACTION);
+        return action == CurrentAction.LOGGING_OUT;
     }
 
     @Override
@@ -170,8 +196,18 @@ public class ServletSamlSessionStore implements SamlSessionStore {
     }
 
     protected HttpSession getSession(boolean create) {
-        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
-        HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
+        HttpServletRequest req = getRequest();
         return req.getSession(create);
+    }
+
+    private HttpServletResponse getResponse() {
+        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+        return (HttpServletResponse)servletRequestContext.getServletResponse();
+
+    }
+
+    private HttpServletRequest getRequest() {
+        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+        return (HttpServletRequest) servletRequestContext.getServletRequest();
     }
 }

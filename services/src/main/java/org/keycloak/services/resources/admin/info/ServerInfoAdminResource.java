@@ -1,5 +1,17 @@
 package org.keycloak.services.resources.admin.info;
 
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.core.Context;
+
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.events.EventType;
@@ -20,10 +32,6 @@ import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
 import org.keycloak.social.SocialIdentityProvider;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.core.Context;
-import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -73,7 +81,6 @@ public class ServerInfoAdminResource {
         for (Spi spi : spis) {
             SpiInfoRepresentation spiRep = new SpiInfoRepresentation();
             spiRep.setInternal(spi.isInternal());
-            spiRep.setSystemInfo(ServerInfoAwareProviderFactory.class.isAssignableFrom(spi.getProviderFactoryClass()));
 
             List<String> providerIds = new LinkedList<>(session.listProviderIds(spi.getProviderClass()));
             Collections.sort(providerIds);
@@ -83,8 +90,9 @@ public class ServerInfoAdminResource {
             if (providerIds != null) {
                 for (String name : providerIds) {
                     ProviderRepresentation provider = new ProviderRepresentation();
-                    if (spiRep.isSystemInfo()) {
-                        provider.setOperationalInfo(((ServerInfoAwareProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(spi.getProviderClass(), name)).getOperationalInfo());
+                    ProviderFactory<?> pi = session.getKeycloakSessionFactory().getProviderFactory(spi.getProviderClass(), name);
+                    if (ServerInfoAwareProviderFactory.class.isAssignableFrom(pi.getClass())) {
+                        provider.setOperationalInfo(((ServerInfoAwareProviderFactory) pi).getOperationalInfo());
                     }
                     providers.put(name, provider);
                 }

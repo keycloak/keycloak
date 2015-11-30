@@ -1090,3 +1090,64 @@ module.controller('UserFederationMapperCreateCtrl', function($scope, realm, prov
 
 });
 
+module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, groups, user, UserGroupMembership, UserGroupMapping, Notifications, $location, Dialog) {
+    $scope.realm = realm;
+    $scope.user = user;
+    $scope.groupList = groups;
+    $scope.selectedGroup = null;
+    $scope.tree = [];
+
+    UserGroupMembership.query({realm: realm.realm, userId: user.id}, function(data) {
+        $scope.groupMemberships = data;
+
+    });
+
+    $scope.joinGroup = function() {
+        if (!$scope.tree.currentNode) {
+            Notifications.error('Please select a group to add');
+            return;
+        };
+        UserGroupMapping.update({realm: realm.realm, userId: user.id, groupId: $scope.tree.currentNode.id}, function() {
+            Notifications.success('Added group membership');
+            $route.reload();
+        });
+
+    };
+
+    $scope.leaveGroup = function() {
+        UserGroupMapping.remove({realm: realm.realm, userId: user.id, groupId: $scope.selectedGroup.id}, function() {
+            Notifications.success('Removed group membership');
+            $route.reload();
+        });
+
+    };
+
+    var isLeaf = function(node) {
+        return node.id != "realm" && (!node.subGroups || node.subGroups.length == 0);
+    };
+
+    $scope.getGroupClass = function(node) {
+        if (node.id == "realm") {
+            return 'pficon pficon-users';
+        }
+        if (isLeaf(node)) {
+            return 'normal';
+        }
+        if (node.subGroups.length && node.collapsed) return 'collapsed';
+        if (node.subGroups.length && !node.collapsed) return 'expanded';
+        return 'collapsed';
+
+    }
+
+    $scope.getSelectedClass = function(node) {
+        if (node.selected) {
+            return 'selected';
+        } else if ($scope.cutNode && $scope.cutNode.id == node.id) {
+            return 'cut';
+        }
+        return undefined;
+    }
+
+});
+
+

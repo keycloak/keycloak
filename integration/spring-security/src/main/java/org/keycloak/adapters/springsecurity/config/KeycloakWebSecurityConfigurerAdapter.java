@@ -8,7 +8,9 @@ import org.keycloak.adapters.springsecurity.filter.KeycloakAuthenticationProcess
 import org.keycloak.adapters.springsecurity.filter.KeycloakCsrfRequestMatcher;
 import org.keycloak.adapters.springsecurity.filter.KeycloakPreAuthActionsFilter;
 import org.keycloak.adapters.springsecurity.management.HttpSessionManager;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.Resource;
 import org.springframework.security.config.annotation.web.WebSecurityConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -26,19 +28,20 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
  *
  * @author <a href="mailto:srossillo@smartling.com">Scott Rossillo</a>
  * @version $Revision: 1 $
- *
  * @see EnableWebSecurity
  * @see EnableWebMvcSecurity
  */
 public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter implements WebSecurityConfigurer<WebSecurity> {
 
+    @Value("${keycloak.configurationFile:WEB-INF/keycloak.json}")
+    private Resource keycloakConfigFileResource;
+
     @Bean
     protected AdapterDeploymentContextBean adapterDeploymentContextBean() {
-        return new AdapterDeploymentContextBean();
+        return new AdapterDeploymentContextBean(keycloakConfigFileResource);
     }
 
-    protected AuthenticationEntryPoint authenticationEntryPoint()
-    {
+    protected AuthenticationEntryPoint authenticationEntryPoint() {
         return new KeycloakAuthenticationEntryPoint();
     }
 
@@ -48,7 +51,7 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
 
     @Bean
     protected KeycloakAuthenticationProcessingFilter keycloakAuthenticationProcessingFilter() throws Exception {
-        KeycloakAuthenticationProcessingFilter filter  = new KeycloakAuthenticationProcessingFilter(authenticationManagerBean());
+        KeycloakAuthenticationProcessingFilter filter = new KeycloakAuthenticationProcessingFilter(authenticationManagerBean());
         filter.setSessionAuthenticationStrategy(sessionAuthenticationStrategy());
         return filter;
     }
@@ -64,7 +67,7 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
 
     @Bean
     protected HttpSessionManager httpSessionManager() {
-        return  new HttpSessionManager();
+        return new HttpSessionManager();
     }
 
     protected KeycloakLogoutHandler keycloakLogoutHandler() {

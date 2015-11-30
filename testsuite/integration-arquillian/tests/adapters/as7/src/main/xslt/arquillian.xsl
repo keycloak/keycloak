@@ -18,6 +18,7 @@
                     <property name="jbossHome">${app.server.as7.home}</property>
                     <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${app.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
                     <property name="managementAddress">localhost</property>
+                    <property name="managementProtocol">remote</property>
                     <property name="managementPort">${app.server.management.port.jmx}</property>
                 </configuration>
             </container>

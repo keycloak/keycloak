@@ -25,6 +25,7 @@
     <script src="${resourceUrl}/lib/angular/angular-sanitize.js"></script>
     <script src="${resourceUrl}/lib/angular/angular-translate.js"></script>
     <script src="${resourceUrl}/lib/angular/angular-translate-loader-url.js"></script>
+    <script src="${resourceUrl}/lib/angular/treeview/angular.treeview.js"></script>
     <script src="${resourceUrl}/lib/angular/ui-bootstrap-tpls-0.11.0.js"></script>
 
     <script src="${resourceUrl}/lib/angular/select2.js" type="text/javascript"></script>
@@ -37,6 +38,7 @@
     <script src="${resourceUrl}/js/controllers/realm.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/controllers/clients.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/controllers/users.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/js/controllers/groups.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/loaders.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/services.js" type="text/javascript"></script>
 </head>
@@ -51,10 +53,10 @@
 </div>
 </div>
 
-<div class="feedback-aligner" data-ng-show="notification">
+<div class="feedback-aligner" data-ng-show="notification.display">
     <div class="alert alert-{{notification.type}} alert-dismissable">
-        <button type="button" class="close">
-            <span class="pficon pficon-close" data-ng-click="notification = null"/>
+        <button type="button" class="close" data-ng-click="notification.remove()" id="notification-close">
+            <span class="pficon pficon-close"/>
         </button>
 
         <span class="pficon pficon-ok" ng-show="notification.type == 'success'"></span>

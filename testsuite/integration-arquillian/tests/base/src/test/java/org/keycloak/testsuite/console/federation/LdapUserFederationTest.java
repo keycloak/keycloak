@@ -1,71 +1,194 @@
 package org.keycloak.testsuite.console.federation;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Properties;
+
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.*;
-import org.keycloak.models.LDAPConstants;
-
-import org.keycloak.representations.idm.UserRepresentation;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
-import org.keycloak.testsuite.console.page.federation.LdapUserProviderForm;
-import org.keycloak.testsuite.console.page.federation.UserFederation;
-import org.keycloak.testsuite.console.page.users.Users;
-import org.keycloak.testsuite.util.LDAPTestConfiguration;
-
-import java.util.Map;
-
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
-import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import org.keycloak.testsuite.console.page.federation.CreateLdapUserProvider;
+import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
 /**
- * Created by fkiss.
+ * @author fkiss, pdrozd
  */
 public class LdapUserFederationTest extends AbstractConsoleTest {
 
-    @Page
-    private LdapUserProviderForm ldapUserProviderForm;
+    private static final String UNSYNCED = "UNSYNCED";
+
+    private static final String READ_ONLY = "READ_ONLY";
+
+    private static final String RED_HAT_DIRECTORY_SERVER = "Red Hat Directory Server";
+
+    private static final String WRITABLE = "WRITABLE";
+
+    private static final String ACTIVE_DIRECTORY = "Active Directory";
 
     @Page
-    private UserFederation userFederationPage;
+    private CreateLdapUserProvider createLdapUserProvider;
 
-    @Page
-    private Users usersPage;
+    @Test
+    public void configureAdProvider() {
+        createLdapUserProvider.navigateTo();
+        createLdapUserProvider.form().selectVendor(ACTIVE_DIRECTORY);
+        createLdapUserProvider.form().setConsoleDisplayNameInput("ldap");
+        createLdapUserProvider.form().selectEditMode(WRITABLE);
+        createLdapUserProvider.form().setLdapConnectionUrlInput("ldap://localhost:389");
+        createLdapUserProvider.form().setLdapBindDnInput("KEYCLOAK/Administrator");
+        createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
+        createLdapUserProvider.form().setLdapBindCredentialInput("secret");
+        createLdapUserProvider.form().setAccountAfterPasswordUpdateEnabled(false);
+        // enable kerberos
+        createLdapUserProvider.form().setAllowKerberosAuthEnabled(true);
+        createLdapUserProvider.form().setKerberosRealmInput("KEYCLOAK.ORG");
+        createLdapUserProvider.form().setServerPrincipalInput("HTTP/localhost@KEYCLOAK.ORG");
+        createLdapUserProvider.form().setKeyTabInput("http.keytab");
+        createLdapUserProvider.form().setDebugEnabled(true);
+        createLdapUserProvider.form().save();
+        assertFlashMessageSuccess();
 
-    @Before
-    public void beforeTestLdapUserFederation() {
-        //configure().userFederation();
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        UserFederationProviderRepresentation ufpr = realm.getUserFederationProviders().get(0);
+        assertLdapProviderSetting(ufpr, "ldap", 0, WRITABLE, "false", "ad", "1", "true", "true", "false");
+        assertLdapBasicMapping(ufpr, "cn", "cn", "objectGUID", "person, organizationalPerson, user",
+                "ou=People,dc=keycloak,dc=org");
+        assertLdapSyncSetings(ufpr, "1000", 0, 0);
+        assertLdapKerberosSetings(ufpr, "KEYCLOAK.ORG", "HTTP/localhost@KEYCLOAK.ORG", "http.keytab", "true", "false");
     }
 
-    @Ignore
     @Test
-    public void addAndConfigureProvider() {
-        adminConsolePage.navigateTo();
-        testRealmLoginPage.form().login(testUser);
+    public void configureRhdsProvider() {
+        createLdapUserProvider.navigateTo();
+        createLdapUserProvider.form().selectVendor(RED_HAT_DIRECTORY_SERVER);
+        createLdapUserProvider.form().setConsoleDisplayNameInput("ldap");
+        createLdapUserProvider.form().selectEditMode(READ_ONLY);
+        createLdapUserProvider.form().setLdapConnectionUrlInput("ldap://localhost:389");
+        createLdapUserProvider.form().setLdapBindDnInput("uid=admin,ou=system");
+        createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
+        createLdapUserProvider.form().setLdapBindCredentialInput("secret");
+        createLdapUserProvider.form().save();
+        assertFlashMessageSuccess();
 
-        String name = "ldapname";
-
-        String LDAP_CONNECTION_PROPERTIES_LOCATION = "ldap/ldap-connection.properties";
-        LDAPTestConfiguration ldapTestConfiguration = LDAPTestConfiguration.readConfiguration(LDAP_CONNECTION_PROPERTIES_LOCATION);
-
-        UserRepresentation newUser = new UserRepresentation();
-        String testUsername = "defaultrole tester";
-        newUser.setUsername(testUsername);
-        setPasswordFor(newUser, PASSWORD);
-
-        Map<String,String> ldapConfig = ldapTestConfiguration.getLDAPConfig();
-
-        //addLdapProviderTest
-        configure().userFederation();
-        userFederationPage.addProvider("ldap");
-        ldapUserProviderForm.configureLdap(ldapConfig.get(LDAPConstants.LDAP_PROVIDER), ldapConfig.get(LDAPConstants.EDIT_MODE), ldapConfig.get(LDAPConstants.VENDOR), ldapConfig.get(LDAPConstants.CONNECTION_URL), ldapConfig.get(LDAPConstants.USERS_DN), ldapConfig.get(LDAPConstants.BIND_DN), ldapConfig.get(LDAPConstants.BIND_CREDENTIAL));
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        UserFederationProviderRepresentation ufpr = realm.getUserFederationProviders().get(0);
+        assertLdapProviderSetting(ufpr, "ldap", 0, READ_ONLY, "false", "rhds", "1", "true", "true", "true");
+        assertLdapBasicMapping(ufpr, "uid", "uid", "nsuniqueid", "inetOrgPerson, organizationalPerson",
+                "ou=People,dc=keycloak,dc=org");
+        assertLdapSyncSetings(ufpr, "1000", 0, 0);
     }
 
-    @Ignore
     @Test
-    public void caseSensitiveSearch() {
-        // This should fail for now due to case-sensitivity
-        adminConsolePage.navigateTo();
-        testRealmLoginPage.form().login("johnKeycloak", "Password1");
-        assertTrue(flashMessage.getText(), flashMessage.isDanger());
+    @Ignore
+    public void invalidSettingsTest() {
+        createLdapUserProvider.navigateTo();
+        createLdapUserProvider.form().selectVendor(ACTIVE_DIRECTORY);
+        createLdapUserProvider.form().setConsoleDisplayNameInput("ldap");
+        createLdapUserProvider.form().selectEditMode(UNSYNCED);
+        createLdapUserProvider.form().setLdapBindDnInput("uid=admin,ou=system");
+        createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
+        createLdapUserProvider.form().setLdapBindCredentialInput("secret");
+        createLdapUserProvider.form().save();
+        assertFlashMessageDanger();
+        createLdapUserProvider.form().setLdapUserDnInput("");
+        createLdapUserProvider.form().setLdapConnectionUrlInput("ldap://localhost:389");
+        createLdapUserProvider.form().save();
+        assertFlashMessageDanger();
+        createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
+        createLdapUserProvider.form().setLdapBindDnInput("");
+        createLdapUserProvider.form().save();
+        assertFlashMessageDanger();
+        createLdapUserProvider.form().setLdapBindDnInput("uid=admin,ou=system");
+        createLdapUserProvider.form().setLdapBindCredentialInput("");
+        createLdapUserProvider.form().save();
+        assertFlashMessageDanger();
+        createLdapUserProvider.form().setLdapBindCredentialInput("secret");
+        createLdapUserProvider.form().save();
+        assertFlashMessageSuccess();
+    }
+
+    @Test
+    public void testConnection() throws Exception {
+        createLdapUserProvider.navigateTo();
+        createLdapUserProvider.form().selectVendor("Other");
+        createLdapUserProvider.form().setConsoleDisplayNameInput("ldap");
+        createLdapUserProvider.form().selectEditMode(WRITABLE);
+        createLdapUserProvider.form().setLdapConnectionUrlInput("ldap://localhost:10389");
+        createLdapUserProvider.form().setLdapBindDnInput("uid=admin,ou=system");
+        createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
+        createLdapUserProvider.form().setLdapBindCredentialInput("secret");
+        createLdapUserProvider.form().setAccountAfterPasswordUpdateEnabled(true);
+        createLdapUserProvider.form().save();
+        assertFlashMessageSuccess();
+        LDAPEmbeddedServer ldapServer = null;
+        try {
+            ldapServer = startEmbeddedLdapServer();
+            createLdapUserProvider.form().testConnection();
+            assertFlashMessageSuccess();
+            createLdapUserProvider.form().testAuthentication();
+            assertFlashMessageSuccess();
+            createLdapUserProvider.form().synchronizeAllUsers();
+            assertFlashMessageSuccess();
+            createLdapUserProvider.form().setLdapBindCredentialInput("secret1");
+            createLdapUserProvider.form().testAuthentication();
+            assertFlashMessageDanger();
+        } finally {
+            if (ldapServer != null) {
+                ldapServer.stop();
+            }
+        }
+    }
+
+    private void assertLdapProviderSetting(UserFederationProviderRepresentation ufpr, String name, int priority,
+            String editMode, String syncRegistrations, String vendor, String searchScope, String connectionPooling,
+            String pagination, String enableAccountAfterPasswordUpdate) {
+        assertEquals(name, ufpr.getDisplayName());
+        assertEquals(priority, ufpr.getPriority());
+        assertEquals(editMode, ufpr.getConfig().get("editMode"));
+        assertEquals(syncRegistrations, ufpr.getConfig().get("syncRegistrations"));
+        assertEquals(vendor, ufpr.getConfig().get("vendor"));
+        assertEquals(searchScope, ufpr.getConfig().get("searchScope"));
+        assertEquals(connectionPooling, ufpr.getConfig().get("connectionPooling"));
+        assertEquals(pagination, ufpr.getConfig().get("pagination"));
+        assertEquals(enableAccountAfterPasswordUpdate, ufpr.getConfig().get("userAccountControlsAfterPasswordUpdate"));
+    }
+
+    private void assertLdapBasicMapping(UserFederationProviderRepresentation ufpr, String usernameLdapAttribute,
+            String rdnLdapAttr, String uuidLdapAttr, String userObjectClasses, String userDN) {
+        assertEquals(usernameLdapAttribute, ufpr.getConfig().get("usernameLDAPAttribute"));
+        assertEquals(rdnLdapAttr, ufpr.getConfig().get("rdnLDAPAttribute"));
+        assertEquals(uuidLdapAttr, ufpr.getConfig().get("uuidLDAPAttribute"));
+        assertEquals(userObjectClasses, ufpr.getConfig().get("userObjectClasses"));
+        assertEquals(userDN, ufpr.getConfig().get("usersDn"));
+    }
+
+    private void assertLdapKerberosSetings(UserFederationProviderRepresentation ufpr, String kerberosRealm,
+            String serverPrincipal, String keyTab, String debug, String useKerberosForPasswordAuthentication) {
+        assertEquals(kerberosRealm, ufpr.getConfig().get("kerberosRealm"));
+        assertEquals(serverPrincipal, ufpr.getConfig().get("serverPrincipal"));
+        assertEquals(keyTab, ufpr.getConfig().get("keyTab"));
+        assertEquals(debug, ufpr.getConfig().get("debug"));
+        assertEquals(useKerberosForPasswordAuthentication,
+                ufpr.getConfig().get("useKerberosForPasswordAuthentication"));
+    }
+
+    private void assertLdapSyncSetings(UserFederationProviderRepresentation ufpr, String batchSize,
+            int periodicFullSync, int periodicChangedUsersSync) {
+        assertEquals(batchSize, ufpr.getConfig().get("batchSizeForSync"));
+        assertEquals(periodicFullSync, ufpr.getFullSyncPeriod());
+        assertEquals(periodicChangedUsersSync, ufpr.getChangedSyncPeriod());
+    }
+
+    private LDAPEmbeddedServer startEmbeddedLdapServer() throws Exception {
+        Properties defaultProperties = new Properties();
+        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_DSF, LDAPEmbeddedServer.DSF_INMEMORY);
+        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_LDIF_FILE, "classpath:ldap/users.ldif");
+        LDAPEmbeddedServer ldapEmbeddedServer = new LDAPEmbeddedServer(defaultProperties);
+        ldapEmbeddedServer.init();
+        ldapEmbeddedServer.start();
+        return ldapEmbeddedServer;
     }
 }

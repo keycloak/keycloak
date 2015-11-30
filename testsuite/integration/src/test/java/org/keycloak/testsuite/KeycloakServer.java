@@ -161,10 +161,17 @@ public class KeycloakServer {
 
             if (!System.getProperties().containsKey("keycloak.theme.dir")) {
                 System.setProperty("keycloak.theme.dir", file(dir.getAbsolutePath(), "forms", "common-themes", "src", "main", "resources", "theme").getAbsolutePath());
+            } else {
+                String foo = System.getProperty("keycloak.theme.dir");
+                System.out.println(foo);
             }
 
             if (!System.getProperties().containsKey("keycloak.theme.cacheTemplates")) {
                 System.setProperty("keycloak.theme.cacheTemplates", "false");
+            }
+
+            if (!System.getProperties().containsKey("keycloak.theme.cacheThemes")) {
+                System.setProperty("keycloak.theme.cacheThemes", "false");
             }
 
             if (!System.getProperties().containsKey("keycloak.theme.staticMaxAge")) {

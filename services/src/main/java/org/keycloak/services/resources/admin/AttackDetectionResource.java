@@ -53,7 +53,7 @@ public class AttackDetectionResource {
         this.realm = realm;
         this.adminEvent = adminEvent.realm(realm);
 
-        auth.init(RealmAuth.Resource.REALM);
+        auth.init(RealmAuth.Resource.USER);
     }
 
     /**
@@ -75,7 +75,7 @@ public class AttackDetectionResource {
         data.put("lastIPFailure", "n/a");
         if (!realm.isBruteForceProtected()) return data;
 
-        UsernameLoginFailureModel model = session.sessions().getUserLoginFailure(realm, username);
+        UsernameLoginFailureModel model = session.sessions().getUserLoginFailure(realm, username.toLowerCase());
         if (model == null) return data;
         if (protector.isTemporarilyDisabled(session, realm, username)) {
             data.put("disabled", true);
@@ -97,7 +97,7 @@ public class AttackDetectionResource {
     @DELETE
     public void clearBruteForceForUser(@PathParam("username") String username) {
         auth.requireManage();
-        UsernameLoginFailureModel model = session.sessions().getUserLoginFailure(realm, username);
+        UsernameLoginFailureModel model = session.sessions().getUserLoginFailure(realm, username.toLowerCase());
         if (model != null) {
             session.sessions().removeUserLoginFailure(realm, username);
             adminEvent.operation(OperationType.DELETE).success();

@@ -3,14 +3,8 @@ language: java
 jdk:
   - oraclejdk8
 
-cache:
-    directories:
-        - $HOME/.m2
-
-before_cache:
-  - rm -rf $HOME/.m2/repository/org/keycloak
-
-install: mvn install -Pdistribution -DskipTests=true -B -V
+install: 
+  - travis_wait mvn install -Pdistribution -DskipTests=true -B -V -q
 
 script:
   - mvn test -B

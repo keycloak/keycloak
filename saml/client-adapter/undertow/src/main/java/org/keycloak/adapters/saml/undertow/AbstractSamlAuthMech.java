@@ -16,6 +16,15 @@
  */
 package org.keycloak.adapters.saml.undertow;
 
+import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.adapters.saml.SamlDeploymentContext;
+import org.keycloak.adapters.saml.SamlSessionStore;
+import org.keycloak.adapters.spi.AuthChallenge;
+import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.undertow.UndertowHttpFacade;
+import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
+
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.NotificationReceiver;
 import io.undertow.security.api.SecurityContext;
@@ -24,14 +33,6 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
 import io.undertow.util.StatusCodes;
-import org.keycloak.adapters.spi.AuthChallenge;
-import org.keycloak.adapters.spi.AuthOutcome;
-import org.keycloak.adapters.spi.HttpFacade;
-import org.keycloak.adapters.saml.SamlDeployment;
-import org.keycloak.adapters.saml.SamlDeploymentContext;
-import org.keycloak.adapters.saml.SamlSessionStore;
-import org.keycloak.adapters.undertow.UndertowHttpFacade;
-import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 
 /**
  * Abstract base class for a Keycloak-enabled Undertow AuthenticationMechanism.
@@ -44,8 +45,7 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
     protected UndertowUserSessionManagement sessionManagement;
     protected String errorPage;
 
-    public AbstractSamlAuthMech(SamlDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement,
-                                String errorPage) {
+    public AbstractSamlAuthMech(SamlDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement, String errorPage) {
         this.deploymentContext = deploymentContext;
         this.sessionManagement = sessionManagement;
         this.errorPage = errorPage;
@@ -55,10 +55,6 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
     public ChallengeResult sendChallenge(HttpServerExchange exchange, SecurityContext securityContext) {
         AuthChallenge challenge = exchange.getAttachment(KEYCLOAK_CHALLENGE_ATTACHMENT_KEY);
         if (challenge != null) {
-            if (challenge.errorPage() && errorPage != null) {
-                Integer code = servePage(exchange, errorPage);
-                return new ChallengeResult(true, code);
-            }
             UndertowHttpFacade facade = createFacade(exchange);
             if (challenge.challenge(facade)) {
                 return new ChallengeResult(true, exchange.getResponseCode());
@@ -73,19 +69,19 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
     }
 
     static void sendRedirect(final HttpServerExchange exchange, final String location) {
-        // TODO - String concatenation to construct URLS is extremely error prone - switch to a URI which will better handle this.
+        // TODO - String concatenation to construct URLS is extremely error prone - switch to a URI which will better
+        // handle this.
         String loc = exchange.getRequestScheme() + "://" + exchange.getHostAndPort() + location;
         exchange.getResponseHeaders().put(Headers.LOCATION, loc);
     }
-
-
 
     protected void registerNotifications(final SecurityContext securityContext) {
 
         final NotificationReceiver logoutReceiver = new NotificationReceiver() {
             @Override
             public void handleNotification(SecurityNotification notification) {
-                if (notification.getEventType() != SecurityNotification.EventType.LOGGED_OUT) return;
+                if (notification.getEventType() != SecurityNotification.EventType.LOGGED_OUT)
+                    return;
 
                 HttpServerExchange exchange = notification.getExchange();
                 UndertowHttpFacade facade = createFacade(exchange);
@@ -108,12 +104,15 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
         }
         SamlSessionStore sessionStore = getTokenStore(exchange, facade, deployment, securityContext);
-        UndertowSamlAuthenticator authenticator = new UndertowSamlAuthenticator(securityContext, facade,
-                deploymentContext.resolveDeployment(facade), sessionStore);
+        UndertowSamlAuthenticator authenticator = new UndertowSamlAuthenticator(securityContext, facade, deploymentContext.resolveDeployment(facade), sessionStore);
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             registerNotifications(securityContext);
             return AuthenticationMechanismOutcome.AUTHENTICATED;
+        }
+        if (outcome == AuthOutcome.NOT_AUTHENTICATED) {
+            // we are in passive mode and user is not authenticated, let app server to try another auth mechanism
+            return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
         }
         if (outcome == AuthOutcome.LOGGED_OUT) {
             securityContext.logout();

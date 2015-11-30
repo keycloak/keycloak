@@ -1,19 +1,8 @@
 package org.keycloak.models.sessions.infinispan.compat;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.models.*;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.compat.entities.ClientSessionEntity;
-import org.keycloak.models.sessions.infinispan.compat.entities.UserSessionEntity;
-import org.keycloak.models.sessions.infinispan.compat.entities.UsernameLoginFailureEntity;
-import org.keycloak.models.sessions.infinispan.compat.entities.UsernameLoginFailureKey;
+import org.keycloak.models.sessions.infinispan.compat.entities.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmInfoUtil;
 import org.keycloak.common.util.Time;
@@ -41,11 +30,12 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     private final ConcurrentHashMap<String, UserSessionEntity> offlineUserSessions;
     private final ConcurrentHashMap<String, ClientSessionEntity> offlineClientSessions;
+    private ConcurrentHashMap<String, ClientInitialAccessEntity> clientInitialAccess;
 
     public MemUserSessionProvider(KeycloakSession session, ConcurrentHashMap<String, UserSessionEntity> userSessions, ConcurrentHashMap<String, String> userSessionsByBrokerSessionId,
                                   ConcurrentHashMap<String, Set<String>> userSessionsByBrokerUserId, ConcurrentHashMap<String, ClientSessionEntity> clientSessions,
                                   ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures,
-                                  ConcurrentHashMap<String, UserSessionEntity> offlineUserSessions, ConcurrentHashMap<String, ClientSessionEntity> offlineClientSessions) {
+                                  ConcurrentHashMap<String, UserSessionEntity> offlineUserSessions, ConcurrentHashMap<String, ClientSessionEntity> offlineClientSessions, ConcurrentHashMap<String, ClientInitialAccessEntity> clientInitialAccess) {
         this.session = session;
         this.userSessions = userSessions;
         this.clientSessions = clientSessions;
@@ -54,6 +44,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
         this.userSessionsByBrokerUserId = userSessionsByBrokerUserId;
         this.offlineUserSessions = offlineUserSessions;
         this.offlineClientSessions = offlineClientSessions;
+        this.clientInitialAccess = clientInitialAccess;
     }
 
     @Override
@@ -341,6 +332,15 @@ public class MemUserSessionProvider implements UserSessionProvider {
                 persister.removeClientSession(s.getId(), true);
             }
         }
+
+        // Remove expired initial access
+        Iterator<ClientInitialAccessEntity> iaitr = clientInitialAccess.values().iterator();
+        while (iaitr.hasNext()) {
+            ClientInitialAccessEntity e = iaitr.next();
+            if (e.getRealmId().equals(realm.getId()) && (e.getExpires() < Time.currentTime())) {
+                iaitr.remove();
+            }
+        }
     }
 
     @Override
@@ -572,6 +572,43 @@ public class MemUserSessionProvider implements UserSessionProvider {
     @Override
     public List<UserSessionModel> getOfflineUserSessions(RealmModel realm, ClientModel client, int first, int max) {
         return getUserSessions(realm, client, first, max, true);
+    }
+
+    @Override
+    public ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count) {
+        String id = KeycloakModelUtils.generateId();
+
+        ClientInitialAccessEntity entity = new ClientInitialAccessEntity();
+        entity.setId(id);
+        entity.setRealmId(realm.getId());
+        entity.setTimestamp(Time.currentTime());
+        entity.setExpiration(expiration);
+        entity.setCount(count);
+        entity.setRemainingCount(count);
+
+        clientInitialAccess.put(id, entity);
+
+        return new ClientInitialAccessAdapter(realm, entity);
+    }
+
+    @Override
+    public ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id) {
+        ClientInitialAccessEntity entity = clientInitialAccess.get(id);
+        return entity != null ? new ClientInitialAccessAdapter(realm, entity) : null;
+    }
+
+    @Override
+    public void removeClientInitialAccessModel(RealmModel realm, String id) {
+        clientInitialAccess.remove(id);
+    }
+
+    @Override
+    public List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm) {
+        List<ClientInitialAccessModel> models = new LinkedList<>();
+        for (ClientInitialAccessEntity e : clientInitialAccess.values()) {
+            models.add(new ClientInitialAccessAdapter(realm, e));
+        }
+        return models;
     }
 
     @Override

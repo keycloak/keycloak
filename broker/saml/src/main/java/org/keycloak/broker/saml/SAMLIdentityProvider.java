@@ -22,6 +22,7 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
@@ -263,4 +264,8 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         return SignatureAlgorithm.RSA_SHA256;
     }
 
+    @Override
+    public IdentityProviderDataMarshaller getMarshaller() {
+        return new SAMLDataMarshaller();
+    }
 }

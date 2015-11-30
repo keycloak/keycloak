@@ -8,6 +8,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -195,10 +196,10 @@ public class KeycloakInstalled {
 
         token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
         if (idTokenString != null) {
-            JWSInput input = new JWSInput(idTokenString);
             try {
+                JWSInput input = new JWSInput(idTokenString);
                 idToken = input.readJsonContent(IDToken.class);
-            } catch (IOException e) {
+            } catch (JWSInputException e) {
                 throw new VerificationException();
             }
         }

@@ -47,7 +47,7 @@ public class URLAssert {
 //            }
 //        };
 //        wait.until(urlStartsWith);
-        assertTrue(startsWithNormalized(driver.getCurrentUrl(), url));
+        assertTrue("'" + driver.getCurrentUrl() + " does not start with '" + url + "'", startsWithNormalized(driver.getCurrentUrl(), url));
     }
 
     public static void assertCurrentUrlDoesntStartWith(AbstractPage page) {

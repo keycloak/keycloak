@@ -38,7 +38,7 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
     }
 
     protected boolean validateForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
-        return validateUser(context, formData) && validatePassword(context, formData);
+        return validateUserAndPassword(context, formData);
     }
 
     @Override

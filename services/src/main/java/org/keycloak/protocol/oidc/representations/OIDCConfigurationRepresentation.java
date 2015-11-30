@@ -7,7 +7,6 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -47,6 +46,9 @@ public class OIDCConfigurationRepresentation {
 
     @JsonProperty("response_modes_supported")
     private List<String> responseModesSupported;
+
+    @JsonProperty("registration_endpoint")
+    private String registrationEndpoint;
 
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
@@ -136,6 +138,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setResponseModesSupported(List<String> responseModesSupported) {
         this.responseModesSupported = responseModesSupported;
+    }
+
+    public String getRegistrationEndpoint() {
+        return registrationEndpoint;
+    }
+
+    public void setRegistrationEndpoint(String registrationEndpoint) {
+        this.registrationEndpoint = registrationEndpoint;
     }
 
     @JsonAnyGetter

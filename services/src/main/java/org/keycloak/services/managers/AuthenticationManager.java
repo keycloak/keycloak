@@ -36,6 +36,7 @@ import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
@@ -379,7 +380,8 @@ public class AuthenticationManager {
 
     public static Response redirectAfterSuccessfulFlow(KeycloakSession session, RealmModel realm, UserSessionModel userSession,
                                                 ClientSessionModel clientSession,
-                                                HttpRequest request, UriInfo uriInfo, ClientConnection clientConnection) {
+                                                HttpRequest request, UriInfo uriInfo, ClientConnection clientConnection,
+                                                EventBuilder event) {
         Cookie sessionCookie = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_SESSION_COOKIE);
         if (sessionCookie != null) {
 
@@ -406,7 +408,8 @@ public class AuthenticationManager {
         LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
         protocol.setRealm(realm)
                 .setHttpHeaders(request.getHttpHeaders())
-                .setUriInfo(uriInfo);
+                .setUriInfo(uriInfo)
+                .setEventBuilder(event);
         RestartLoginCookie.expireRestartCookie(realm, clientConnection, uriInfo);
         return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));
 
@@ -428,7 +431,7 @@ public class AuthenticationManager {
         }
         event.success();
         RealmModel realm = clientSession.getRealm();
-        return redirectAfterSuccessfulFlow(session, realm , userSession, clientSession, request, uriInfo, clientConnection);
+        return redirectAfterSuccessfulFlow(session, realm , userSession, clientSession, request, uriInfo, clientConnection, event);
 
     }
 
@@ -521,9 +524,11 @@ public class AuthenticationManager {
                 LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getClientSession().getAuthMethod());
                 protocol.setRealm(context.getRealm())
                         .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
-                        .setUriInfo(context.getUriInfo());
+                        .setUriInfo(context.getUriInfo())
+                        .setEventBuilder(event);
+                Response response = protocol.sendError(context.getClientSession(), Error.CONSENT_DENIED);
                 event.error(Errors.REJECTED_BY_USER);
-                return protocol.consentDenied(context.getClientSession());
+                return response;
             }
             else if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
                 clientSession.setNote(CURRENT_REQUIRED_ACTION, model.getProviderId());

@@ -29,6 +29,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.RealmModel;
@@ -282,40 +283,41 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             throw new IdentityBrokerException("No token from server.");
         }
 
+        JsonWebToken token;
         try {
             JWSInput jws = new JWSInput(encodedToken);
             if (!verify(jws, key)) {
                 throw new IdentityBrokerException("token signature validation failed");
             }
-            JsonWebToken token = jws.readJsonContent(JsonWebToken.class);
-
-            String iss = token.getIssuer();
-
-            if (!token.hasAudience(getConfig().getClientId())) {
-                throw new IdentityBrokerException("Wrong audience from token.");
-            }
-
-            if (!token.isActive()) {
-                throw new IdentityBrokerException("Token is no longer valid");
-            }
-
-            String trustedIssuers = getConfig().getIssuer();
-
-            if (trustedIssuers != null) {
-                String[] issuers = trustedIssuers.split(",");
-
-                for (String trustedIssuer : issuers) {
-                    if (iss != null && iss.equals(trustedIssuer.trim())) {
-                        return token;
-                    }
-                }
-
-                throw new IdentityBrokerException("Wrong issuer from token. Got: " + iss + " expected: " + getConfig().getIssuer());
-            }
-            return token;
-        } catch (IOException e) {
-            throw new IdentityBrokerException("Could not decode token.", e);
+            token = jws.readJsonContent(JsonWebToken.class);
+        } catch (JWSInputException e) {
+            throw new IdentityBrokerException("Invalid token", e);
         }
+
+        String iss = token.getIssuer();
+
+        if (!token.hasAudience(getConfig().getClientId())) {
+            throw new IdentityBrokerException("Wrong audience from token.");
+        }
+
+        if (!token.isActive()) {
+            throw new IdentityBrokerException("Token is no longer valid");
+        }
+
+        String trustedIssuers = getConfig().getIssuer();
+
+        if (trustedIssuers != null) {
+            String[] issuers = trustedIssuers.split(",");
+
+            for (String trustedIssuer : issuers) {
+                if (iss != null && iss.equals(trustedIssuer.trim())) {
+                    return token;
+                }
+            }
+
+            throw new IdentityBrokerException("Wrong issuer from token. Got: " + iss + " expected: " + getConfig().getIssuer());
+        }
+        return token;
     }
 
     @Override

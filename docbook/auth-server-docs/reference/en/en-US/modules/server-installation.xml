@@ -43,9 +43,9 @@
 
 
         <section id="overlay_install">
-            <title>Install on existing WildFly 9.0.1.Final</title>
+            <title>Install on existing WildFly &wildfly.version;</title>
             <para>
-                Keycloak can be installed into an existing WildFly 9.0.0.Final server. To do this download
+                Keycloak can be installed into an existing WildFly &wildfly.version; server. To do this download
                 <literal>keycloak-overlay-&project.version;.zip</literal> or <literal>keycloak-overlay-&project.version;.tar.gz</literal>.
                 Once downloaded extract into the root directory of your WildFly installation. To start WildFly with Keycloak
                 run:
@@ -62,11 +62,15 @@
             <para>
                 To add Keycloak to other sever configurations (standalone.xml, standalone-ha.xml, etc.) start the server with
                 the desired server-config. If you are running the server in standalone mode run:
-                <programlisting>cd &lt;WILDFLY_HOME&gt;/bin
-                    ./jboss-cli.sh -c --file=keycloak-install.cli</programlisting>
+<programlisting>
+cd &lt;WILDFLY_HOME&gt;/bin
+./jboss-cli.sh -c --file=keycloak-install.cli
+</programlisting>
                 Or if you are running in clustering (HA) mode (by having used -c standalone-ha.xml) then run:
-                <programlisting>cd &lt;WILDFLY_HOME&gt;/bin
-                    ./jboss-cli.sh -c --file=keycloak-install-ha.cli</programlisting>
+<programlisting>
+cd &lt;WILDFLY_HOME&gt;/bin
+./jboss-cli.sh -c --file=keycloak-install-ha.cli
+</programlisting>
                 You may see exceptions in the server log, but after restarting the server they should be gone.
                 You can restart the server with:
                 <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c :reload</programlisting>
@@ -75,7 +79,7 @@
         <section>
             <title>Install on existing JBoss EAP 6.4.0.GA</title>
             <para>
-                Same procedure as WildFly 9.0.1.Final, but download <literal>keycloak-overlay-eap6-&project.version;.zip</literal> or <literal>keycloak-overlay-eap6-&project.version;.tar.gz</literal>.
+                Same procedure as WildFly &wildfly.version;, but download <literal>keycloak-overlay-eap6-&project.version;.zip</literal> or <literal>keycloak-overlay-eap6-&project.version;.tar.gz</literal>.
             </para>
         </section>
         <section>
@@ -85,7 +89,7 @@
                 To install it first download <literal>keycloak-demo-&project.version;.zip</literal> or
                 <literal>keycloak-demo-&project.version;.tar.gz</literal>. Once downloaded extract it inside
                 <literal>keycloak-demo-&project.version;</literal> you'll find <literal>keycloak</literal> which contains
-                a full WildFly 9.0.0.Final server with Keycloak Server and Adapters included. You'll also find <literal>docs</literal>
+                a full WildFly &wildfly.version; server with Keycloak Server and Adapters included. You'll also find <literal>docs</literal>
                 and <literal>examples</literal> which contains everything you need to get started developing applications that use Keycloak.
             </para>
             <para>
@@ -123,6 +127,25 @@
                 </listitem>
             </itemizedlist>
         </para>
+        <section>
+            <title>Admin User</title>
+            <para>
+                To access the admin console you need an account to login. Currently, there's a default account added
+                with the username <literal>admin</literal> and password <literal>admin</literal>. You will be required
+                to change the password on first login. We are planning on removing the built-in account soon and will
+                instead have an initial step to create the user.
+            </para>
+            <para>
+                You can also create a user with the <literal>add-user</literal> script found in <literal>bin</literal>.
+                This script will create a temporary file with the details of the user, which are imported at startup.
+                To add a user with this script run:
+<programlisting><![CDATA[
+bin/add-user.[sh|bat] -r master -u <username> -p <password>
+]]></programlisting>
+                Then restart the server.
+            </para>
+        </section>
+
         <section>
             <title>Relational Database Configuration</title>
             <para>
@@ -437,12 +460,12 @@ All configuration options are optional. Default value for directory is <literal>
                 settings you can specify before boot time.  This is configured in the
                 <literal>standalone/configuration/keycloak-server.json</literal>.
                 By default the setting is like this:
-                <programlisting><![CDATA[
-    "connectionsHttpClient": {
-        "default": {
-            "disable-trust-manager": true
-        }
-    },
+<programlisting><![CDATA[
+"connectionsHttpClient": {
+    "default": {
+        "disable-trust-manager": true
+    }
+},
 ]]></programlisting>
                 Possible configuration options are:
                 <variablelist>
@@ -659,25 +682,25 @@ All configuration options are optional. Default value for directory is <literal>
                             to do with the <literal>keytool</literal> utility that comes with the Java jdk.
                         </para>
                         <para>
-    <programlisting>
-    $ keytool -genkey -alias localhost -keyalg RSA -keystore keycloak.jks -validity 10950
-        Enter keystore password: secret
-        Re-enter new password: secret
-        What is your first and last name?
-        [Unknown]:  localhost
-        What is the name of your organizational unit?
-        [Unknown]:  Keycloak
-        What is the name of your organization?
-        [Unknown]:  Red Hat
-        What is the name of your City or Locality?
-        [Unknown]:  Westford
-        What is the name of your State or Province?
-        [Unknown]:  MA
-        What is the two-letter country code for this unit?
-        [Unknown]:  US
-        Is CN=localhost, OU=Keycloak, O=Test, L=Westford, ST=MA, C=US correct?
-        [no]:  yes
-    </programlisting>
+<programlisting>
+$ keytool -genkey -alias localhost -keyalg RSA -keystore keycloak.jks -validity 10950
+    Enter keystore password: secret
+    Re-enter new password: secret
+    What is your first and last name?
+    [Unknown]:  localhost
+    What is the name of your organizational unit?
+    [Unknown]:  Keycloak
+    What is the name of your organization?
+    [Unknown]:  Red Hat
+    What is the name of your City or Locality?
+    [Unknown]:  Westford
+    What is the name of your State or Province?
+    [Unknown]:  MA
+    What is the two-letter country code for this unit?
+    [Unknown]:  US
+    Is CN=localhost, OU=Keycloak, O=Test, L=Westford, ST=MA, C=US correct?
+    [no]:  yes
+</programlisting>
                         </para>
                         <para>
                             You should answer <literal>What is your first and last name ?</literal> question with
@@ -693,44 +716,44 @@ All configuration options are optional. Default value for directory is <literal>
                         </para>
                         <para>
                             The first thing to do is generate a Certificate Request:
-    <programlisting>
-    $ keytool -certreq -alias yourdomain -keystore keycloak.jks > keycloak.careq
-    </programlisting>
+<programlisting>
+$ keytool -certreq -alias yourdomain -keystore keycloak.jks > keycloak.careq
+</programlisting>
                         </para>
                         <para>
                              Where <literal>yourdomain</literal> is a DNS name for which this certificate is generated for.
                              Keytool generates the request:
-    <programlisting>
-    -----BEGIN NEW CERTIFICATE REQUEST-----
-    MIIC2jCCAcICAQAwZTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAk1BMREwDwYDVQQHEwhXZXN0Zm9y
-    ZDEQMA4GA1UEChMHUmVkIEhhdDEQMA4GA1UECxMHUmVkIEhhdDESMBAGA1UEAxMJbG9jYWxob3N0
-    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr7kck2TaavlEOGbcpi9c0rncY4HhdzmY
-    Ax2nZfq1eZEaIPqI5aTxwQZzzLDK9qbeAd8Ji79HzSqnRDxNYaZu7mAYhFKHgixsolE3o5Yfzbw1
-    29Rvy+eUVe+WZxv5oo9wolVVpdSINIMEL2LaFhtX/c1dqiqYVpfnvFshZQaIg2nL8juzZcBjj4as
-    H98gIS7khql/dkZKsw9NLvyxgJvp7PaXurX29fNf3ihG+oFrL22oFyV54BWWxXCKU/GPn61EGZGw
-    Ft2qSIGLdctpMD1aJR2bcnlhEjZKDksjQZoQ5YMXaAGkcYkG6QkgrocDE2YXDbi7GIdf9MegVJ35
-    2DQMpwIDAQABoDAwLgYJKoZIhvcNAQkOMSEwHzAdBgNVHQ4EFgQUQwlZJBA+fjiDdiVzaO9vrE/i
-    n2swDQYJKoZIhvcNAQELBQADggEBAC5FRvMkhal3q86tHPBYWBuTtmcSjs4qUm6V6f63frhveWHf
-    PzRrI1xH272XUIeBk0gtzWo0nNZnf0mMCtUBbHhhDcG82xolikfqibZijoQZCiGiedVjHJFtniDQ
-    9bMDUOXEMQ7gHZg5q6mJfNG9MbMpQaUVEEFvfGEQQxbiFK7hRWU8S23/d80e8nExgQxdJWJ6vd0X
-    MzzFK6j4Dj55bJVuM7GFmfdNC52pNOD5vYe47Aqh8oajHX9XTycVtPXl45rrWAH33ftbrS8SrZ2S
-    vqIFQeuLL3BaHwpl3t7j2lMWcK1p80laAxEASib/fAwrRHpLHBXRcq6uALUOZl4Alt8=
-    -----END NEW CERTIFICATE REQUEST-----
-     </programlisting>
+<programlisting>
+-----BEGIN NEW CERTIFICATE REQUEST-----
+MIIC2jCCAcICAQAwZTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAk1BMREwDwYDVQQHEwhXZXN0Zm9y
+ZDEQMA4GA1UEChMHUmVkIEhhdDEQMA4GA1UECxMHUmVkIEhhdDESMBAGA1UEAxMJbG9jYWxob3N0
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr7kck2TaavlEOGbcpi9c0rncY4HhdzmY
+Ax2nZfq1eZEaIPqI5aTxwQZzzLDK9qbeAd8Ji79HzSqnRDxNYaZu7mAYhFKHgixsolE3o5Yfzbw1
+29Rvy+eUVe+WZxv5oo9wolVVpdSINIMEL2LaFhtX/c1dqiqYVpfnvFshZQaIg2nL8juzZcBjj4as
+H98gIS7khql/dkZKsw9NLvyxgJvp7PaXurX29fNf3ihG+oFrL22oFyV54BWWxXCKU/GPn61EGZGw
+Ft2qSIGLdctpMD1aJR2bcnlhEjZKDksjQZoQ5YMXaAGkcYkG6QkgrocDE2YXDbi7GIdf9MegVJ35
+2DQMpwIDAQABoDAwLgYJKoZIhvcNAQkOMSEwHzAdBgNVHQ4EFgQUQwlZJBA+fjiDdiVzaO9vrE/i
+n2swDQYJKoZIhvcNAQELBQADggEBAC5FRvMkhal3q86tHPBYWBuTtmcSjs4qUm6V6f63frhveWHf
+PzRrI1xH272XUIeBk0gtzWo0nNZnf0mMCtUBbHhhDcG82xolikfqibZijoQZCiGiedVjHJFtniDQ
+9bMDUOXEMQ7gHZg5q6mJfNG9MbMpQaUVEEFvfGEQQxbiFK7hRWU8S23/d80e8nExgQxdJWJ6vd0X
+MzzFK6j4Dj55bJVuM7GFmfdNC52pNOD5vYe47Aqh8oajHX9XTycVtPXl45rrWAH33ftbrS8SrZ2S
+vqIFQeuLL3BaHwpl3t7j2lMWcK1p80laAxEASib/fAwrRHpLHBXRcq6uALUOZl4Alt8=
+-----END NEW CERTIFICATE REQUEST-----
+</programlisting>
                         </para>
                         <para>
                             Send this ca request to your CA.  The CA will issue you a signed certificate and send it to you.
                             Before you import your new cert, you must obtain and import the root certificate of the CA.
                             You can download the cert from CA (ie.: root.crt) and import as follows:
-    <programlisting>
-    $ keytool -import -keystore keycloak.jks -file root.crt -alias root
-    </programlisting>
+<programlisting>
+$ keytool -import -keystore keycloak.jks -file root.crt -alias root
+</programlisting>
                         </para>
                         <para>
                             Last step is import your new CA generated certificate to your keystore:
-    <programlisting>
-    $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificate.cer
-    </programlisting>
+<programlisting>
+$ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificate.cer
+</programlisting>
                         </para>
                     </section>
                 </section>
@@ -744,18 +767,19 @@ All configuration options are optional. Default value for directory is <literal>
                     </para>
                     <para>
                         To the <literal>security-realms</literal> element add:
-                        <programlisting><![CDATA[<security-realm name="UndertowRealm">
-        <server-identities>
-            <ssl>
-                <keystore path="keycloak.jks" relative-to="jboss.server.config.dir" keystore-password="secret" />
-            </ssl>
-        </server-identities>
-    </security-realm>]]></programlisting>
+<programlisting><![CDATA[
+<security-realm name="UndertowRealm">
+    <server-identities>
+        <ssl>
+            <keystore path="keycloak.jks" relative-to="jboss.server.config.dir" keystore-password="secret" />
+        </ssl>
+    </server-identities>
+</security-realm>
+]]></programlisting>
                     </para>
                     <para>
                         Find the element <literal>&lt;server name="default-server"&gt;</literal> (it's a child element of <literal>&lt;subsystem xmlns="urn:jboss:domain:undertow:1.0"&gt;</literal>) and add:
-                        <programlisting><![CDATA[<https-listener name="https" socket-binding="https" security-realm="UndertowRealm"/>
-    ]]></programlisting>
+                        <programlisting><![CDATA[<https-listener name="https" socket-binding="https" security-realm="UndertowRealm"/>]]></programlisting>
                     </para>
                     <para>
                         Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">Wildfly Undertow</ulink> documentation for more information on fine tuning the socket connections.
@@ -813,43 +837,19 @@ All configuration options are optional. Default value for directory is <literal>
     </section>
 
     <section>
-        <title>Adding Keycloak server in Domain Mode</title>
+        <title>Keycloak server in Domain Mode</title>
         <para>
             In domain mode, you start the server with the "domain" command instead of the "standalone" command.  In this case, the Keycloak subsystem is
             defined in domain/configuration/domain.xml instead of standalone/configuration.standalone.xml.  Inside domain.xml, you will see more than one
-            profile.  A Keycloak subsystem can be defined in zero or more of those profiles.
+            profile.  The Keycloak subsystem is defined for all initial profiles.
         </para>
         <para>
-            To enable Keycloak for a server profile edit domain/configuration/domain.xml. To the <literal>extensions</literal>
-            element add the Keycloak extension:
-<programlisting><![CDATA[
-<extensions>
-    ...
-    <extension module="org.keycloak.keycloak-subsystem"/>
-</extensions>
-]]></programlisting>
-            Then you need to add the server to the required server profiles. By default WildFly starts two servers
-            in the main-server-group which uses the full profile. To add Keycloak for this profile add the Keycloak
-            subsystem to the <literal>profile</literal> element with <literal>name</literal> full:
-<programlisting><![CDATA[
-<profile name="full">
-    ...
-    <subsystem xmlns="urn:jboss:domain:keycloak:1.0">
-        <auth-server name="main-auth-server">
-            <enabled>true</enabled>
-            <web-context>auth</web-context>
-        </auth-server>
-    </subsystem>
-]]></programlisting>
+            THe server is also added to server profiles. By default two servers are started
+            in the main-server-group which uses the full profile.
         </para>
         <para>
-            To configure the server copy <literal>standalone/configuration/keycloak-server.json</literal> to
-            <literal>domain/servers/&lt;SERVER NAME&gt;/configuration</literal>. The configuration should be identical
+            You need to make sure <literal>domain/servers/&lt;SERVER NAME&gt;/configuration</literal> is identical
             for all servers in a group.
-        </para>
-        <para>
-            Follow the <link linkend='clustering'>Clustering</link> section of the documentation to configure Keycloak
-            for clustering. In domain mode it doesn't make much sense to not configure Keycloak in cluster mode.
         </para>
         <para>
             To deploy custom providers and themes you should deploys these as modules and make sure the modules are
@@ -865,12 +865,12 @@ All configuration options are optional. Default value for directory is <literal>
         </para>
         <para>
             To do this, add the <literal>default-web-module</literal> attribute in the Undertow subystem in standalone.xml.
-            <programlisting><![CDATA[
+<programlisting><![CDATA[
 <subsystem xmlns="urn:jboss:domain:undertow:2.0">
-            <server name="default-server">
-                <host name="default-host" alias="localhost" default-web-module="keycloak-server.war">
-                    <location name="/" handler="welcome-content"/>
-                </host>
+    <server name="default-server">
+        <host name="default-host" alias="localhost" default-web-module="keycloak-server.war">
+            <location name="/" handler="welcome-content"/>
+        </host>
 ]]></programlisting>
         </para>
         <para>

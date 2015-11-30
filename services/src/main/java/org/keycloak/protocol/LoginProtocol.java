@@ -17,6 +17,28 @@ import javax.ws.rs.core.UriInfo;
  * @version $Revision: 1 $
  */
 public interface LoginProtocol extends Provider {
+
+    public static enum Error {
+
+        /**
+         * Login cancelled by the user
+         */
+        CANCELLED_BY_USER,
+        /**
+         * Consent denied by the user
+         */
+        CONSENT_DENIED,
+        /**
+         * Passive authentication mode requested but nobody is logged in
+         */
+        PASSIVE_LOGIN_REQUIRED,
+        /**
+         * Passive authentication mode requested, user is logged in, but some other user interaction is necessary (eg. some required login actions exist or Consent approval is necessary for logged in
+         * user)
+         */
+        PASSIVE_INTERACTION_REQUIRED;
+    }
+
     LoginProtocol setSession(KeycloakSession session);
 
     LoginProtocol setRealm(RealmModel realm);
@@ -27,11 +49,12 @@ public interface LoginProtocol extends Provider {
 
     LoginProtocol setEventBuilder(EventBuilder event);
 
-    Response cancelLogin(ClientSessionModel clientSession);
     Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode);
-    Response consentDenied(ClientSessionModel clientSession);
+
+    Response sendError(ClientSessionModel clientSession, Error error);
 
     void backchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession);
     Response frontchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession);
     Response finishLogout(UserSessionModel userSession);
+
 }

@@ -80,15 +80,37 @@
     <section>
         <title>Version specific migration</title>
         <section>
+            <title>Migrating to 1.7.0.CR1</title>
+            <simplesect>
+                <title>Option 'Update Profile On First Login' moved from Identity provider to Review Profile authenticator</title>
+                <para>
+                    form-error-page in web.xml will no longer work for client adapter authentication errors.  You must define an error-page for
+                    the the various HTTP error codes.  See documentation for more details if you want to catch and handle adapter error conditions.
+                </para>
+                <para>
+                    In this version, we added <literal>First Broker Login</literal>, which allows you to specify what exactly should be done
+                    when new user is logged through Identity provider (or Social provider), but there is no existing Keycloak user
+                    yet linked to the social account. As part of this work, we added option <literal>First Login Flow</literal> to identity providers where
+                    you can specify the flow and then you can configure this flow under <literal>Authentication</literal> tab in admin console.
+                </para>
+                <para>
+                    We also removed the option <literal>Update Profile On First Login</literal> from the Identity provider settings and moved it
+                    to the configuration of <literal>Review Profile</literal> authenticator. So once you specify which flow should be used for your
+                    Identity provider (by default it's <literal>First Broker Login</literal> flow), you go to <literal>Authentication</literal> tab, select the flow
+                    and then you configure the option under <literal>Review Profile</literal> authenticator.
+                </para>
+            </simplesect>
+        </section>
+        <section>
             <title>Migrating to 1.6.0.Final</title>
             <simplesect>
-                <title>Refresh tokens are not reusable anymore</title>
+                <title>Option that refresh tokens are not reusable anymore</title>
                 <para>
-                    Old versions of Keycloak allowed reusing refresh tokens multiple times. Keycloak no longer permits
-                    this by default. When a refresh token is used to obtain a new access token a new refresh token is also
-                    included. This new refresh token should be used next time the access token is refreshed. If this is
-                    a problem for you it's possible to enable reuse of refresh tokens in the admin console under token
-                    settings.
+                    Old versions of Keycloak allowed reusing refresh tokens multiple times. Keycloak still permits this,
+                    but also have an option <literal>Revoke refresh token</literal> to disallow it. Option is in in admin console under token settings.
+                    When a refresh token is used to obtain a new access token a new refresh token is also
+                    included. When option is enabled, then this new refresh token should be used next time the access token is refreshed.
+                    It won't be possible to reuse old refresh token multiple times.
                 </para>
             </simplesect>
             <simplesect>

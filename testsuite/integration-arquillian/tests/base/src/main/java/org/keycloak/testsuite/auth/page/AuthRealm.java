@@ -1,15 +1,16 @@
 package org.keycloak.testsuite.auth.page;
 
-import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
-import java.net.URI;
-import javax.ws.rs.core.UriBuilder;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
+
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
 
 /**
  * Keycloak realm.
- * 
+ * <p>
  * URL: http://localhost:${auth.server.http.port}/auth/realms/{authRealm}
- * 
+ *
  * @author tkyjovsk
  */
 public class AuthRealm extends AuthServer implements PageWithLoginUrl {
@@ -22,7 +23,7 @@ public class AuthRealm extends AuthServer implements PageWithLoginUrl {
     public static final String EXAMPLE = "example";
 
     public static final String ADMIN = "admin";
-    
+
     public AuthRealm() {
         setUriParameter(AUTH_REALM, MASTER);
     }
@@ -46,12 +47,16 @@ public class AuthRealm extends AuthServer implements PageWithLoginUrl {
     }
 
     /**
-     *
      * @return OIDC Login URL for authRealm
      */
     @Override
     public URI getOIDCLoginUrl() {
         return OIDCLoginProtocolService.authUrl(UriBuilder.fromPath(getAuthRoot()))
+                .build(getAuthRealm());
+    }
+
+    public URI getOIDCLogoutUrl() {
+        return OIDCLoginProtocolService.logoutUrl(UriBuilder.fromPath(getAuthRoot()))
                 .build(getAuthRealm());
     }
 

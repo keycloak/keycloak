@@ -15,6 +15,15 @@
     <para>
         <variablelist>
             <varlistentry>
+                <term>Client ID</term>
+                <listitem>
+                    <para>
+                        This value must match the issuer value sent with AuthNRequests.  Keycloak will pull the issuer
+                        from the Authn SAML request and match it to a client by this value.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
                 <term>Include AuthnStatement</term>
                 <listitem>
                     <para>

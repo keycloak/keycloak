@@ -17,9 +17,9 @@ public class UserRepresentation {
     protected String id;
     protected Long createdTimestamp;
     protected String username;
-    protected boolean enabled;
-    protected boolean totp;
-    protected boolean emailVerified;
+    protected Boolean enabled;
+    protected Boolean totp;
+    protected Boolean emailVerified;
     protected String firstName;
     protected String lastName;
     protected String email;
@@ -39,6 +39,8 @@ public class UserRepresentation {
     protected Map<String, List<String>> applicationRoles;
     @Deprecated
     protected List<SocialLinkRepresentation> socialLinks;
+
+    protected List<String> groups;
 
     public String getSelf() {
         return self;
@@ -96,27 +98,27 @@ public class UserRepresentation {
         this.username = username;
     }
 
-    public boolean isEnabled() {
+    public Boolean isEnabled() {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
 
-    public boolean isTotp() {
+    public Boolean isTotp() {
         return totp;
     }
 
-    public void setTotp(boolean totp) {
+    public void setTotp(Boolean totp) {
         this.totp = totp;
     }
 
-    public boolean isEmailVerified() {
+    public Boolean isEmailVerified() {
         return emailVerified;
     }
 
-    public void setEmailVerified(boolean emailVerified) {
+    public void setEmailVerified(Boolean emailVerified) {
         this.emailVerified = emailVerified;
     }
 
@@ -215,5 +217,13 @@ public class UserRepresentation {
 
     public void setServiceAccountClientId(String serviceAccountClientId) {
         this.serviceAccountClientId = serviceAccountClientId;
+    }
+
+    public List<String> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(List<String> groups) {
+        this.groups = groups;
     }
 }

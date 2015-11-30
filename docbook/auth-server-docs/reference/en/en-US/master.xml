@@ -20,6 +20,7 @@
                 <!ENTITY SpringSecurityAdapter SYSTEM "modules/spring-security-adapter.xml">
                 <!ENTITY InstalledApplications SYSTEM "modules/installed-applications.xml">
                 <!ENTITY Logout SYSTEM "modules/logout.xml">
+                <!ENTITY ErrorHandling SYSTEM "modules/adapter_error_handling.xml">
                 <!ENTITY SAML SYSTEM "modules/saml.xml">
                 <!ENTITY JAAS SYSTEM "modules/jaas.xml">
                 <!ENTITY IdentityBroker SYSTEM "modules/identity-broker.xml">
@@ -27,6 +28,7 @@
                 <!ENTITY Migration SYSTEM "modules/MigrationFromOlderVersions.xml">
                 <!ENTITY Email SYSTEM "modules/email.xml">
                 <!ENTITY Roles SYSTEM "modules/roles.xml">
+                <!ENTITY Groups SYSTEM "modules/groups.xml">
                 <!ENTITY DirectAccess SYSTEM "modules/direct-access.xml">
                 <!ENTITY ServiceAccounts SYSTEM "modules/service-accounts.xml">
                 <!ENTITY CORS SYSTEM "modules/cors.xml">
@@ -36,7 +38,6 @@
                 <!ENTITY UserFederation SYSTEM "modules/user-federation.xml">
                 <!ENTITY Kerberos SYSTEM "modules/kerberos.xml">
                 <!ENTITY ExportImport SYSTEM "modules/export-import.xml">
-                <!ENTITY AdminRecovery SYSTEM "modules/admin-recovery.xml">
                 <!ENTITY ServerCache SYSTEM "modules/cache.xml">
                 <!ENTITY SecurityVulnerabilities SYSTEM "modules/security-vulnerabilities.xml">
                 <!ENTITY Clustering SYSTEM "modules/clustering.xml">
@@ -48,6 +49,7 @@
                 <!ENTITY Recaptcha SYSTEM "modules/recaptcha.xml">
                 <!ENTITY AuthSPI SYSTEM "modules/auth-spi.xml">
                 <!ENTITY FilterAdapter SYSTEM "modules/servlet-filter-adapter.xml">
+                <!ENTITY ClientRegistration SYSTEM "modules/client-registration.xml">
                 ]>
 
 <book>
@@ -113,9 +115,11 @@ This one is short
         &SpringSecurityAdapter;
         &InstalledApplications;
         &Logout;
+        &ErrorHandling;
         &MultiTenancy;
         &JAAS;
     </chapter>
+    &ClientRegistration;
 
     &IdentityBroker;
     &Themes;
@@ -131,6 +135,7 @@ This one is short
     </chapter>
     &AccessTypes;
     &Roles;
+    &Groups;
     &DirectAccess;
     &ServiceAccounts;
     &CORS;

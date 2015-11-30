@@ -77,7 +77,7 @@ public class UserEntity {
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     protected Collection<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
 
-    @Column(name="federation_link")
+    @Column(name="FEDERATION_LINK")
     protected String federationLink;
 
     @Column(name="SERVICE_ACCOUNT_CLIENT_LINK")

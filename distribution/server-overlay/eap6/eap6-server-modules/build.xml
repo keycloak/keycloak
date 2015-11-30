@@ -173,10 +173,6 @@
             <maven-resource group="org.keycloak" artifact="keycloak-connections-jpa-liquibase"/>
         </module-def>
 
-        <module-def name="org.keycloak.keycloak-connections-file">
-            <maven-resource group="org.keycloak" artifact="keycloak-connections-file"/>
-        </module-def>
-
         <module-def name="org.keycloak.keycloak-connections-infinispan">
             <maven-resource group="org.keycloak" artifact="keycloak-connections-infinispan"/>
         </module-def>
@@ -224,11 +220,11 @@
         <module-def name="org.keycloak.keycloak-social-facebook">
             <maven-resource group="org.keycloak" artifact="keycloak-social-facebook"/>
         </module-def>
-    	
+
     	  <module-def name="org.keycloak.keycloak-social-linkedin">
     	      <maven-resource group="org.keycloak" artifact="keycloak-social-linkedin"/>
     	  </module-def>
-    	
+
       	<module-def name="org.keycloak.keycloak-social-stackoverflow">
     	      <maven-resource group="org.keycloak" artifact="keycloak-social-stackoverflow"/>
     	  </module-def>
@@ -248,12 +244,6 @@
         </module-def>
         <module-def name="org.keycloak.keycloak-saml-protocol">
             <maven-resource group="org.keycloak" artifact="keycloak-saml-protocol"/>
-        </module-def>
-
-        <!-- file -->
-
-        <module-def name="org.keycloak.keycloak-model-file">
-            <maven-resource group="org.keycloak" artifact="keycloak-model-file"/>
         </module-def>
 
         <!-- mongo -->
@@ -284,8 +274,8 @@
 
         <!-- subsystems -->
 
-        <module-def name="org.keycloak.keycloak-as7-server-subsystem">
-            <maven-resource group="org.keycloak" artifact="keycloak-as7-server-subsystem"/>
+        <module-def name="org.keycloak.keycloak-eap6-server-subsystem">
+            <maven-resource group="org.keycloak" artifact="keycloak-eap6-server-subsystem"/>
         </module-def>
 
         <module-def name="org.keycloak.keycloak-server-subsystem"/>

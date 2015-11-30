@@ -83,6 +83,15 @@ public class PasswordPolicyTest {
         Assert.assertEquals("invalidPasswordNotUsernameMessage", policy.validate("jdoe", "jdoe").getMessage());
         Assert.assertNull(policy.validate("jdoe", "ab&d1234"));
     }
+
+    @Test
+    public void testInvalidPolicyName() {
+        try {
+            PasswordPolicy policy = new PasswordPolicy("noSuchPolicy");
+            Assert.fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+        }
+    }
     
     @Test
     public void testRegexPatterns() {

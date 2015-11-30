@@ -19,6 +19,7 @@ public class SamlAdapterTest {
              ClassLoader classLoader = SamlAdapterTest.class.getClassLoader();
 
             initializeSamlSecuredWar("/keycloak-saml/simple-post", "/sales-post",  "post.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/simple-post-passive", "/sales-post-passive", "post-passive.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post", "/sales-post-sig",  "post-sig.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-email", "/sales-post-sig-email",  "post-sig-email.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-transient", "/sales-post-sig-transient",  "post-sig-transient.war", classLoader);
@@ -48,12 +49,7 @@ public class SamlAdapterTest {
 
     @Test
     public void testPostBadRealmSignature() {
-        testStrategy.testPostBadRealmSignature( new SamlAdapterTestStrategy.CheckAuthError() {
-            @Override
-            public void check(WebDriver driver) {
-                Assert.assertTrue(driver.getPageSource().contains("Forbidden"));
-            }
-        });
+        testStrategy.testPostBadRealmSignature();
     }
 
     @Test
@@ -61,11 +57,16 @@ public class SamlAdapterTest {
         testStrategy.testPostSimpleUnauthorized( new SamlAdapterTestStrategy.CheckAuthError() {
             @Override
             public void check(WebDriver driver) {
-                Assert.assertTrue(driver.getPageSource().contains("Forbidden"));
+                String pageSource = driver.getPageSource();
+                Assert.assertTrue(pageSource.contains("Error Page"));
             }
         });
     }
 
+    @Test
+    public void testErrorHandling() throws Exception {
+        testStrategy.testErrorHandling();
+    }
     @Test
     public void testMetadataPostSignedLoginLogout() throws Exception {
         testStrategy.testMetadataPostSignedLoginLogout();
@@ -94,6 +95,11 @@ public class SamlAdapterTest {
     @Test
     public void testPostSimpleLoginLogout() {
         testStrategy.testPostSimpleLoginLogout();
+    }
+
+    @Test
+    public void testPostPassiveLoginLogout() {
+        testStrategy.testPostPassiveLoginLogout(true);
     }
 
     @Test

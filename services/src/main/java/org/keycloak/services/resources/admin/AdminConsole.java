@@ -40,12 +40,7 @@ import javax.ws.rs.ext.Providers;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import javax.ws.rs.QueryParam;
 
 /**
@@ -318,10 +313,10 @@ public class AdminConsole {
         }
 
         try {
-            Properties msgs = AdminMessagesLoader.getMessages(getTheme(), lang);
+            Properties msgs = getTheme().getMessages("admin-messages", Locale.forLanguageTag(lang));
             if (msgs.isEmpty()) {
                 logger.warn("Message bundle not found for language code '" + lang + "'");
-                msgs = AdminMessagesLoader.getMessages(getTheme(), "en"); // fall back to en
+                msgs = getTheme().getMessages("admin-messages", Locale.ENGLISH);
             }
 
             if (msgs.isEmpty()) logger.fatal("Message bundle not found for language code 'en'");

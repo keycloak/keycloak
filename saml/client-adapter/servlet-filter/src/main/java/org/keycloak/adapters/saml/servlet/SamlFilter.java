@@ -1,18 +1,11 @@
 package org.keycloak.adapters.saml.servlet;
 
-import org.keycloak.adapters.spi.AuthChallenge;
-import org.keycloak.adapters.spi.AuthOutcome;
-import org.keycloak.adapters.spi.InMemorySessionIdMapper;
-import org.keycloak.adapters.spi.SessionIdMapper;
-import org.keycloak.adapters.saml.DefaultSamlDeployment;
-import org.keycloak.adapters.saml.SamlAuthenticator;
-import org.keycloak.adapters.saml.SamlDeployment;
-import org.keycloak.adapters.saml.SamlDeploymentContext;
-import org.keycloak.adapters.saml.SamlSession;
-import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
-import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
-import org.keycloak.adapters.servlet.ServletHttpFacade;
-import org.keycloak.saml.common.exceptions.ParsingException;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -24,12 +17,20 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.keycloak.adapters.saml.DefaultSamlDeployment;
+import org.keycloak.adapters.saml.SamlAuthenticator;
+import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.adapters.saml.SamlDeploymentContext;
+import org.keycloak.adapters.saml.SamlSession;
+import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
+import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
+import org.keycloak.adapters.servlet.ServletHttpFacade;
+import org.keycloak.adapters.spi.AuthChallenge;
+import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.InMemorySessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.saml.common.exceptions.ParsingException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -38,7 +39,7 @@ import java.util.logging.Logger;
 public class SamlFilter implements Filter {
     protected SamlDeploymentContext deploymentContext;
     protected SessionIdMapper idMapper = new InMemorySessionIdMapper();
-    private final static Logger log = Logger.getLogger(""+SamlFilter.class);
+    private final static Logger log = Logger.getLogger("" + SamlFilter.class);
 
     @Override
     public void init(final FilterConfig filterConfig) throws ServletException {
@@ -46,12 +47,14 @@ public class SamlFilter implements Filter {
         if (configResolverClass != null) {
             try {
                 throw new RuntimeException("Not implemented yet");
-                //KeycloakConfigResolver configResolver = (KeycloakConfigResolver) context.getLoader().getClassLoader().loadClass(configResolverClass).newInstance();
-                //deploymentContext = new SamlDeploymentContext(configResolver);
-                //log.log(Level.INFO, "Using {0} to resolve Keycloak configuration on a per-request basis.", configResolverClass);
+                // KeycloakConfigResolver configResolver = (KeycloakConfigResolver)
+                // context.getLoader().getClassLoader().loadClass(configResolverClass).newInstance();
+                // deploymentContext = new SamlDeploymentContext(configResolver);
+                // log.log(Level.INFO, "Using {0} to resolve Keycloak configuration on a per-request basis.",
+                // configResolverClass);
             } catch (Exception ex) {
-                log.log(Level.FINE, "The specified resolver {0} could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: {1}", new Object[]{configResolverClass, ex.getMessage()});
-                //deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
+                log.log(Level.FINE, "The specified resolver {0} could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: {1}", new Object[] { configResolverClass, ex.getMessage() });
+                // deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
             }
         } else {
             String fp = filterConfig.getInitParameter("keycloak.config.file");
@@ -65,7 +68,8 @@ public class SamlFilter implements Filter {
             } else {
                 String path = "/WEB-INF/keycloak-saml.xml";
                 String pathParam = filterConfig.getInitParameter("keycloak.config.path");
-                if (pathParam != null) path = pathParam;
+                if (pathParam != null)
+                    path = pathParam;
                 is = filterConfig.getServletContext().getResourceAsStream(path);
             }
             final SamlDeployment deployment;
@@ -105,7 +109,6 @@ public class SamlFilter implements Filter {
         }
         FilterSamlSessionStore tokenStore = new FilterSamlSessionStore(request, facade, 100000, idMapper);
 
-
         SamlAuthenticator authenticator = new SamlAuthenticator(facade, deployment, tokenStore) {
             @Override
             protected void completeAuthentication(SamlSession account) {
@@ -137,13 +140,18 @@ public class SamlFilter implements Filter {
         if (challenge != null) {
             log.fine("challenge");
             challenge.challenge(facade);
-            if (challenge.errorPage()) {
-                response.sendError(challenge.getResponseCode());
-                return;
-            }
-            log.fine("sending challenge");
             return;
         }
+
+        if (deployment.isIsPassive() && outcome == AuthOutcome.NOT_AUTHENTICATED) {
+            log.fine("PASSIVE_NOT_AUTHENTICATED");
+            if (facade.isEnded()) {
+                return;
+            }
+            chain.doFilter(req, res);
+            return;
+        }
+
         if (!facade.isEnded()) {
             response.sendError(403);
         }

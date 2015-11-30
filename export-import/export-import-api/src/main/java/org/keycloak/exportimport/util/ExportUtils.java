@@ -7,6 +7,7 @@ import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -15,6 +16,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -293,6 +295,12 @@ public class ExportUtils {
                 userRep.setServiceAccountClientId(client.getClientId());
             }
         }
+
+        List<String> groups = new LinkedList<>();
+        for (GroupModel group : user.getGroups()) {
+            groups.add(ModelToRepresentation.buildGroupPath(group));
+        }
+        userRep.setGroups(groups);
 
         return userRep;
     }

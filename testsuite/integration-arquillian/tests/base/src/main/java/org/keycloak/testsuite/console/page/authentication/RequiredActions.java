@@ -7,11 +7,17 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author tkyjovsk
  * @author mhajas
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class RequiredActions extends Authentication {
 
-    public final static String ENABLED = "enabled";
-    public final static String DEFAULT_ACTION = "defaultAction";
+    public final static String ENABLED = ".enabled";
+    public final static String DEFAULT = ".defaultAction";
+    public final static String CONFIGURE_TOTP = "CONFIGURE_TOTP";
+    public final static String UPDATE_PROFILE = "UPDATE_PROFILE";
+    public final static String TERMS_AND_CONDITIONS = "terms_and_conditions";
+    public final static String UPDATE_PASSWORD = "UPDATE_PASSWORD";
+    public final static String VERIFY_EMAIL = "VERIFY_EMAIL";
 
     @FindBy(tagName = "table")
     private WebElement requiredActionTable;
@@ -21,51 +27,59 @@ public class RequiredActions extends Authentication {
         return super.getUriFragment() + "/required-actions";
     }
 
-    private void setRequiredActionValue(String row, String column, boolean value) {
-        WebElement checkbox = requiredActionTable.findElement(By.xpath("//td[text()='" + row + "']/..//input[@ng-model='requiredAction." + column + "']"));
+    private void setRequiredActionValue(String id, boolean value) {
+        WebElement checkbox = requiredActionTable.findElement(By.id(id));
 
         if (checkbox.isSelected() != value) {
             checkbox.click();
         }
     }
 
+    private void setRequiredActionEnabledValue(String id, boolean value) {
+        setRequiredActionValue(id + ENABLED, value);
+    }
+
+    private void setRequiredActionDefaultValue(String id, boolean value) {
+        setRequiredActionValue(id + DEFAULT, value);
+    }
+
     public void setTermsAndConditionEnabled(boolean value) {
-        setRequiredActionValue("Terms and Conditions", ENABLED, value);
+        setRequiredActionEnabledValue(TERMS_AND_CONDITIONS, value);
     }
 
     public void setTermsAndConditionDefaultAction(boolean value) {
-        setRequiredActionValue("Terms and Conditions", DEFAULT_ACTION, value);
+        setRequiredActionDefaultValue(TERMS_AND_CONDITIONS, value);
     }
 
     public void setVerifyEmailEnabled(boolean value) {
-        setRequiredActionValue("Verify Email", ENABLED, value);
+        setRequiredActionEnabledValue(VERIFY_EMAIL, value);
     }
 
     public void setVerifyEmailDefaultAction(boolean value) {
-        setRequiredActionValue("Verify Email", DEFAULT_ACTION, value);
+        setRequiredActionDefaultValue(VERIFY_EMAIL, value);
     }
 
     public void setUpdatePasswordEnabled(boolean value) {
-        setRequiredActionValue("Update Password", ENABLED, value);
+        setRequiredActionEnabledValue(UPDATE_PASSWORD, value);
     }
 
     public void setUpdatePasswordDefaultAction(boolean value) {
-        setRequiredActionValue("Update Password", DEFAULT_ACTION, value);
+        setRequiredActionDefaultValue(UPDATE_PASSWORD, value);
     }
 
     public void setConfigureTotpEnabled(boolean value) {
-        setRequiredActionValue("Configure Totp", ENABLED, value);
+        setRequiredActionEnabledValue(CONFIGURE_TOTP, value);
     }
 
     public void setConfigureTotpDefaultAction(boolean value) {
-        setRequiredActionValue("Configure Totp", DEFAULT_ACTION, value);
+        setRequiredActionDefaultValue(CONFIGURE_TOTP, value);
     }
 
     public void setUpdateProfileEnabled(boolean value) {
-        setRequiredActionValue("Update Profile", ENABLED, value);
+        setRequiredActionEnabledValue(UPDATE_PROFILE, value);
     }
 
     public void setUpdateProfileDefaultAction(boolean value) {
-        setRequiredActionValue("Update Profile", DEFAULT_ACTION, value);
+        setRequiredActionDefaultValue(UPDATE_PROFILE, value);
     }
 }

@@ -1,9 +1,9 @@
 package org.keycloak.protocol.saml.mappers;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
+import org.keycloak.Config;
+import org.keycloak.models.*;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -19,7 +19,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RoleNameMapper extends AbstractOIDCProtocolMapper implements SAMLRoleNameMapper {
+public class RoleNameMapper implements SAMLRoleNameMapper, ProtocolMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -49,23 +49,19 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements SAMLRo
         return configProperties;
     }
 
-    @Override
     public String getId() {
         return PROVIDER_ID;
     }
 
-    @Override
     public String getDisplayType() {
         return "Role Name Mapper";
     }
 
-    @Override
     public String getDisplayCategory() {
         return "Role Mapper";
 
     }
 
-    @Override
     public String getHelpText() {
         return "Map an assigned role to a new name";
     }
@@ -109,4 +105,26 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements SAMLRo
 
     }
 
+    @Override
+    public String getProtocol() {
+        return SamlProtocol.LOGIN_PROTOCOL;
+    }
+
+    @Override
+    public void close() {
+    }
+
+    @Override
+    public void init(Config.Scope config) {
+    }
+
+    @Override
+    public final ProtocolMapper create(KeycloakSession session) {
+        throw new RuntimeException("UNSUPPORTED METHOD");
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
+    }
 }
