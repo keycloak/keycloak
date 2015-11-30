@@ -37,13 +37,16 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
     private String code;
     private String token;
 
+    @JsonIgnore
+    private boolean emailAsUsername;
+
     private String identityProviderId;
     private Map<String, ContextDataEntry> contextData = new HashMap<>();
 
     @JsonIgnore
     @Override
     public boolean isEditUsernameAllowed() {
-        return true;
+        return !emailAsUsername;
     }
 
     public String getId() {
@@ -261,6 +264,8 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         ctx.setToken(context.getToken());
         ctx.setIdentityProviderId(context.getIdpConfig().getAlias());
 
+        ctx.emailAsUsername = context.getClientSession().getRealm().isRegistrationEmailAsUsername();
+
         IdentityProviderDataMarshaller serializer = context.getIdp().getMarshaller();
 
         for (Map.Entry<String, Object> entry : context.getContextData().entrySet()) {
@@ -289,7 +294,9 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
             return null;
         } else {
             try {
-                return JsonSerialization.readValue(asString, SerializedBrokeredIdentityContext.class);
+                SerializedBrokeredIdentityContext serializedCtx = JsonSerialization.readValue(asString, SerializedBrokeredIdentityContext.class);
+                serializedCtx.emailAsUsername = clientSession.getRealm().isRegistrationEmailAsUsername();
+                return serializedCtx;
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }

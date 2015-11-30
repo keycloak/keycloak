@@ -94,7 +94,8 @@ public class IdpReviewProfileAuthenticatorFactory implements AuthenticatorFactor
         property.setDefaultValue(updateProfileValues);
         property.setHelpText("Define conditions under which a user has to review and update his profile after first-time login. Value 'On' means that"
                 + " page for reviewing profile will be displayed and user can review and update his profile. Value 'off' means that page won't be displayed."
-                + " Value 'missing' means that page is displayed just when some required attribute is missing (wasn't downloaded from identity provider). Value 'missing' is the default one");
+                + " Value 'missing' means that page is displayed just when some required attribute is missing (wasn't downloaded from identity provider). Value 'missing' is the default one."
+                + " WARN: In case that user clicks 'Review profile info' on link duplications page, the update page will be always displayed. You would need to disable this authenticator to never display the page.");
 
         configProperties.add(property);
     }
