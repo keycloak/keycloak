@@ -618,10 +618,10 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemProperties>
-                                <arq.extension.graphene.waitGuiInterval>3</arq.extension.graphene.waitGuiInterval>
-                                <arq.extension.graphene.waitAjaxInterval>9</arq.extension.graphene.waitAjaxInterval>
-                                <arq.extension.graphene.waitModelInterval>15</arq.extension.graphene.waitModelInterval>
-                                <arq.extension.graphene.waitGuardInterval>15</arq.extension.graphene.waitGuardInterval>
+                                <arq.extension.graphene.waitGuiInterval>2</arq.extension.graphene.waitGuiInterval>
+                                <arq.extension.graphene.waitAjaxInterval>4</arq.extension.graphene.waitAjaxInterval>
+                                <arq.extension.graphene.waitModelInterval>10</arq.extension.graphene.waitModelInterval>
+                                <arq.extension.graphene.waitGuardInterval>4</arq.extension.graphene.waitGuardInterval>
                             </systemProperties>
                         </configuration>
                     </plugin>
