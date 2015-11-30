@@ -275,7 +275,7 @@
                 </div>
                 <kc-tooltip>{{:: 'idp-sso-relay-state.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group" data-ng-show="!client.bearerOnly && !create && protocol == 'openid-connect'">
+            <div class="form-group" data-ng-show="!client.bearerOnly && !create && protocol == 'openid-connect' && (client.standardFlowEnabled || client.implicitFlowEnabled)">
                 <label class="col-md-2 control-label" for="newWebOrigin">{{:: 'web-origins' | translate}}</label>
 
                 <div class="col-sm-6">
