@@ -60,7 +60,7 @@ public class RequiredActionsTest extends AbstractConsoleTest {
     public void termsAndConditionsDefaultActionTest() {
         requiredActionsPage.setTermsAndConditionEnabled(true);
         requiredActionsPage.setTermsAndConditionDefaultAction(true);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         allowTestRealmUserRegistration();
 
@@ -74,7 +74,7 @@ public class RequiredActionsTest extends AbstractConsoleTest {
     @Test
     public void configureTotpDefaultActionTest() {
         requiredActionsPage.setConfigureTotpDefaultAction(true);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         allowTestRealmUserRegistration();
 

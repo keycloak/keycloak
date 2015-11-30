@@ -17,7 +17,9 @@
  */
 package org.keycloak.testsuite.console;
 
+import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
@@ -27,6 +29,7 @@ import org.keycloak.testsuite.console.page.AdminConsoleRealm.ConfigureMenu;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ManageMenu;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.auth.page.login.Login;
+import org.keycloak.testsuite.console.page.fragment.AdminConsoleAlert;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -46,9 +49,12 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
 
     @Page
     protected AdminConsole testRealmAdminConsolePage;
-    
+
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
+
+    @FindBy(className = "alert")
+    protected AdminConsoleAlert alert;
 
     protected boolean adminLoggedIn = false;
 
@@ -98,6 +104,18 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
         assertCurrentUrlStartsWith(adminConsole);
         adminConsole.logOut();
         assertCurrentUrlStartsWithLoginUrlOf(adminConsole);
+    }
+
+    public void assertAlertSuccess() {
+        alert.waitUntilPresentAndClassSet();
+        assertTrue(alert.isSuccess());
+        alert.close();
+    }
+
+    public void assertAlertDanger() {
+        alert.waitUntilPresentAndClassSet();
+        assertTrue(alert.isDanger());
+        alert.close();
     }
 
     public ConfigureMenu configure() {
