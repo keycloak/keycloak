@@ -12,9 +12,9 @@
         <relativePath>../../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-wf9-modules</artifactId>
+    <artifactId>keycloak-wildfly-modules</artifactId>
 
-    <name>Keycloak Wildfly 9 Modules</name>
+    <name>Keycloak Wildfly Modules</name>
     <packaging>pom</packaging>
     <dependencies>
         <dependency>
@@ -51,7 +51,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wf9-subsystem</artifactId>
+            <artifactId>keycloak-wildfly-subsystem</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

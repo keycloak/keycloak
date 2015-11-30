@@ -21,7 +21,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wf9-adapter-dist</artifactId>
+            <artifactId>keycloak-wildfly-adapter-dist</artifactId>
             <type>zip</type>
         </dependency>
         <dependency>
@@ -99,9 +99,9 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-wf9-adapter-dist</artifactId>
+                                    <artifactId>keycloak-wildfly-adapter-dist</artifactId>
                                     <type>zip</type>
-                                    <outputDirectory>${project.build.directory}/unpacked/keycloak-wf9-adapter-${project.version}</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/unpacked/keycloak-wildfly-adapter-${project.version}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-wf9-subsystem">
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-adapter-subsystem">
 
     <resources>
         <resource-root path="."/>
@@ -30,16 +30,6 @@
     </resources>
 
     <dependencies>
-        <module name="javax.api"/>
-        <module name="org.jboss.staxmapper"/>
-        <module name="org.jboss.as.controller"/>
-        <module name="org.jboss.as.ee"/>
-        <module name="org.jboss.as.server"/>
-        <module name="org.jboss.modules"/>
-        <module name="org.jboss.msc"/>
-        <module name="org.jboss.logging"/>
-        <module name="org.jboss.vfs"/>
-        <module name="org.jboss.as.web-common"/>
-        <module name="org.jboss.metadata"/>
+        <module name="org.keycloak.keycloak-wildfly-subsystem" export="true" services="export"/>
     </dependencies>
 </module>

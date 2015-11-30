@@ -34,7 +34,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-wf9-subsystem</artifactId>
+            <artifactId>keycloak-wildfly-subsystem</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
