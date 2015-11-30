@@ -338,12 +338,12 @@
 
                                <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-wf9-adapter-dist</artifactId>
+                                    <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
                                     <type>zip</type>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-wf9-adapter-dist</artifactId>
+                                    <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
                                     <type>tar.gz</type>
                                 </artifactItem>
                             </artifactItems>
