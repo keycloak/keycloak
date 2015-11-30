@@ -602,12 +602,6 @@ public class AccountService extends AbstractSecuredLocalService {
 
         require(AccountRoles.MANAGE_ACCOUNT);
 
-        String action = formData.getFirst("submitAction");
-        if (action != null && action.equals("Cancel")) {
-            setReferrerOnPage();
-            return account.createResponse(AccountPages.PASSWORD);
-        }
-
         csrfCheck(formData);
         UserModel user = auth.getUser();
 
