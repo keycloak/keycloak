@@ -71,6 +71,10 @@
             <maven-resource group="com.google.zxing" artifact="core"/>
         </module-def>
 
+        <module-def name="org.jboss.aesh" slot="0.65">
+            <maven-resource group="org.jboss.aesh" artifact="aesh"/>
+        </module-def>
+
         <module-def name="com.google.zxing.javase">
             <maven-resource group="com.google.zxing" artifact="javase"/>
         </module-def>
@@ -244,6 +248,10 @@
         </module-def>
         <module-def name="org.keycloak.keycloak-saml-protocol">
             <maven-resource group="org.keycloak" artifact="keycloak-saml-protocol"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-wildfly-adduser">
+            <maven-resource group="org.keycloak" artifact="keycloak-wildfly-adduser"/>
         </module-def>
 
         <!-- mongo -->

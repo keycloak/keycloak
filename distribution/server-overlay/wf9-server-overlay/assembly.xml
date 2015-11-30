@@ -15,6 +15,7 @@
             <includes>
                 <include>com/google/zxing/**</include>
                 <include>org/freemarker/**</include>
+                <include>org/jboss/aesh/**</include>
                 <include>org/keycloak/**</include>
                 <include>org/liquibase/**</include>
                 <include>org/mongodb/**</include>
@@ -70,6 +71,11 @@
         <file>
             <source>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/keycloak-server.json</source>
             <outputDirectory>standalone/configuration</outputDirectory>
+        </file>
+        <file>
+            <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user.sh</source>
+            <outputDirectory>bin</outputDirectory>
+            <destName>add-user-keycloak.sh</destName>
         </file>
     </files>
 

@@ -105,7 +105,7 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
                         emailLookup.put(realm, user.getEmail(), user.getId());
                     }
 
-                    log.tracev("User added realm={0}, id={1}, username={2}", realm, event.getValue().getId(), event.getValue().getUsername());
+                    log.tracev("User added realm={0}, id={1}, username={2}", realm, user.getId(), user.getUsername());
                 }
             }
         }
