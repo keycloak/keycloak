@@ -30,6 +30,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.UserInfo;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
@@ -56,7 +57,14 @@ import static org.junit.Assert.assertNotNull;
 public class UserInfoTest {
 
     @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule();
+    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
+
+        @Override
+        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+            appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
+        }
+
+    });
 
     @Rule
     public WebRule webRule = new WebRule(this);

@@ -865,7 +865,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
         $scope.client = {
             enabled: true,
             standardFlowEnabled: true,
-            directAccessGrantsEnabled: true,
             attributes: {}
         };
         $scope.client.attributes['saml_signature_canonicalization_method'] = $scope.canonicalization[0].value;

@@ -1,6 +1,7 @@
 package org.keycloak.migration;
 
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
@@ -20,5 +21,7 @@ public interface MigrationProvider extends Provider {
     List<ProtocolMapperRepresentation> getMappersForClaimMask(Long claimMask);
 
     List<ProtocolMapperModel> getBuiltinMappers(String protocol);
+
+    void setupAdminCli(RealmModel realm);
 
 }

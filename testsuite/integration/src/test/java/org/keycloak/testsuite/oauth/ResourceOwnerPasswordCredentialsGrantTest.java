@@ -35,9 +35,11 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             ClientModel app = new ClientManager(manager).createClient(appRealm, "resource-owner");
+            app.setDirectAccessGrantsEnabled(true);
             app.setSecret("secret");
 
             ClientModel app2 = new ClientManager(manager).createClient(appRealm, "resource-owner-public");
+            app2.setDirectAccessGrantsEnabled(true);
             app2.setPublicClient(true);
 
             UserModel user = session.users().addUser(appRealm, "direct-login");
@@ -94,7 +96,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .client(clientId)
                 .user(userId)
                 .session(accessToken.getSessionState())
-                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.USERNAME, login)
@@ -130,7 +132,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         events.expectLogin()
                 .client("resource-owner")
                 .session(accessToken.getSessionState())
-                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .removeDetail(Details.CODE_ID)
@@ -189,6 +191,41 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .error(Errors.INVALID_CLIENT_CREDENTIALS)
                 .user((String) null)
                 .assertEvent();
+    }
+
+    @Test
+    public void grantAccessTokenClientNotAllowed() throws Exception {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                ClientModel client = appRealm.getClientByClientId("resource-owner");
+                client.setDirectAccessGrantsEnabled(false);
+            }
+        });
+
+        oauth.clientId("resource-owner");
+
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
+
+        assertEquals(400, response.getStatusCode());
+
+        assertEquals("invalid_grant", response.getError());
+
+        events.expectLogin()
+                .client("resource-owner")
+                .session((String) null)
+                .clearDetails()
+                .error(Errors.NOT_ALLOWED)
+                .user((String) null)
+                .assertEvent();
+
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                ClientModel client = appRealm.getClientByClientId("resource-owner");
+                client.setDirectAccessGrantsEnabled(true);
+            }
+        });
     }
 
     @Test
@@ -286,7 +323,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         events.expectLogin()
                 .client("resource-owner")
                 .session((String) null)
-                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT)
@@ -308,7 +345,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .client("resource-owner")
                 .user((String) null)
                 .session((String) null)
-                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.USERNAME, "invalid")
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)

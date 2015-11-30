@@ -77,6 +77,8 @@ public class FederationProvidersIntegrationTest {
             ldapFedProvider.getLdapIdentityStore().updatePassword(john, "Password1");
 
             LDAPObject existing = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "existing", "Existing", "Foo", "existing@email.org", null, "5678");
+
+            appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
         }
     });
 

@@ -187,7 +187,7 @@ public class AdapterTestStrategy extends ExternalResource {
         Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
         // View stats
-        List<Map<String, String>> stats = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", "security-admin-console").realm("demo").getClientSessionStats();
+        List<Map<String, String>> stats = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID).realm("demo").getClientSessionStats();
         Map<String, String> customerPortalStats = null;
         Map<String, String> productPortalStats = null;
         for (Map<String, String> s : stats) {
@@ -594,7 +594,7 @@ public class AdapterTestStrategy extends ExternalResource {
         loginAndCheckSession(driver, loginPage);
 
         // logout mposolda with admin client
-        Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
+        Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
         ApiUtil.findClientByClientId(keycloakAdmin.realm("demo"), "session-portal").logoutUser("mposolda");
 
         // bburke should be still logged with original httpSession in our browser window

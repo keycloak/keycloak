@@ -77,6 +77,8 @@ public class BruteForceTest {
 
             appRealm.setBruteForceProtected(true);
             appRealm.setFailureFactor(2);
+
+            appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
         }
 
     });
@@ -116,7 +118,7 @@ public class BruteForceTest {
     }
 
     public String getAdminToken() throws Exception {
-        String clientId = Constants.ADMIN_CONSOLE_CLIENT_ID;
+        String clientId = Constants.ADMIN_CLI_CLIENT_ID;
         return oauth.doGrantAccessTokenRequest("master", "admin", "admin", null, clientId, null).getAccessToken();
     }
 

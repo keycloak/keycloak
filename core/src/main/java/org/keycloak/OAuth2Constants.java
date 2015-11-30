@@ -27,6 +27,8 @@ public interface OAuth2Constants {
 
     String AUTHORIZATION_CODE = "authorization_code";
 
+    String IMPLICIT = "implicit";
+
     String PASSWORD = "password";
 
     String CLIENT_CREDENTIALS = "client_credentials";
