@@ -69,7 +69,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
                     // Backwards compatibility
                     if (cacheManager.getCacheConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME) == null) {
-                        logger.warnf("No configuration provided for '%s' cache. Using '%s' configuration as template",
+                        logger.debugf("No configuration provided for '%s' cache. Using '%s' configuration as template",
                                 InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, InfinispanConnectionProvider.SESSION_CACHE_NAME);
 
                         Configuration sessionCacheConfig = cacheManager.getCacheConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME);
