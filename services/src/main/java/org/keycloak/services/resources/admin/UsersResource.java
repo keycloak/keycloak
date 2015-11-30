@@ -144,7 +144,7 @@ public class UsersResource {
             }
 
             if (rep.isEnabled() != null && rep.isEnabled()) {
-                UsernameLoginFailureModel failureModel = session.sessions().getUserLoginFailure(realm, rep.getUsername());
+                UsernameLoginFailureModel failureModel = session.sessions().getUserLoginFailure(realm, rep.getUsername().toLowerCase());
                 if (failureModel != null) {
                     failureModel.clearFailures();
                 }
@@ -828,40 +828,9 @@ public class UsersResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response sendVerifyEmail(@PathParam("id") String id, @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
-        auth.requireManage();
-
-        UserModel user = session.users().getUserById(id, realm);
-        if (user == null) {
-            return ErrorResponse.error("User not found", Response.Status.NOT_FOUND);
-        }
-
-        if (user.getEmail() == null) {
-            return ErrorResponse.error("User email missing", Response.Status.BAD_REQUEST);
-        }
-
-        ClientSessionModel clientSession = createClientSession(user, redirectUri, clientId);
-        ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
-
-        accessCode.setAction(ClientSessionModel.Action.VERIFY_EMAIL.name());
-
-        try {
-            UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
-            builder.queryParam("key", accessCode.getCode());
-
-            String link = builder.build(realm.getName()).toString();
-            long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
-
-            this.session.getProvider(EmailTemplateProvider.class).setRealm(realm).setUser(user).sendVerifyEmail(link, expiration);
-
-            //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
-
-            adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
-
-            return Response.ok().build();
-        } catch (EmailException e) {
-            logger.error("Failed to send verification email", e);
-            return ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
-        }
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.VERIFY_EMAIL.name());
+        return executeActionsEmail(id, redirectUri, clientId, actions);
     }
 
     private ClientSessionModel createClientSession(UserModel user, String redirectUri, String clientId) {

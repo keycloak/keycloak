@@ -301,6 +301,18 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public int getAccessTokenLifespanForImplicitFlow() {
+        if (updated != null) return updated.getAccessTokenLifespanForImplicitFlow();
+        return cached.getAccessTokenLifespanForImplicitFlow();
+    }
+
+    @Override
+    public void setAccessTokenLifespanForImplicitFlow(int seconds) {
+        getDelegateForUpdate();
+        updated.setAccessTokenLifespanForImplicitFlow(seconds);
+    }
+
+    @Override
     public int getAccessCodeLifespan() {
         if (updated != null) return updated.getAccessCodeLifespan();
         return cached.getAccessCodeLifespan();

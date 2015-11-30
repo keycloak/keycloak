@@ -44,6 +44,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private int ssoSessionMaxLifespan;
     private int offlineSessionIdleTimeout;
     private int accessTokenLifespan;
+    private int accessTokenLifespanForImplicitFlow;
     private int accessCodeLifespan;
     private int accessCodeLifespanUserAction;
     private int accessCodeLifespanLogin;
@@ -270,6 +271,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setAccessTokenLifespan(int accessTokenLifespan) {
         this.accessTokenLifespan = accessTokenLifespan;
+    }
+
+    public int getAccessTokenLifespanForImplicitFlow() {
+        return accessTokenLifespanForImplicitFlow;
+    }
+
+    public void setAccessTokenLifespanForImplicitFlow(int accessTokenLifespanForImplicitFlow) {
+        this.accessTokenLifespanForImplicitFlow = accessTokenLifespanForImplicitFlow;
     }
 
     public int getAccessCodeLifespan() {

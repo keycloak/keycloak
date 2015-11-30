@@ -141,8 +141,10 @@ public class KeycloakApplication extends Application {
 
             if (node == null) {
                 URL resource = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
-                log.info("Load config from " + resource);
-                node = new ObjectMapper().readTree(resource);
+                if (resource != null) {
+                    log.info("Load config from " + resource);
+                    node = new ObjectMapper().readTree(resource);
+                }
             }
 
             if (node != null) {
@@ -150,7 +152,7 @@ public class KeycloakApplication extends Application {
                 Config.init(new JsonConfigProvider(node, properties));
                 return;
             } else {
-                log.warn("Config 'keycloak-server.json' not found");
+                throw new RuntimeException("Config 'keycloak-server.json' not found");
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to load config", e);

@@ -3,7 +3,7 @@
     <para>
         To be able to secure WAR apps deployed on JBoss EAP 6.x or Wildfly, you must install and
         configure the Keycloak SAML Adapter Subsystem.  You then provide a keycloak
-        config, <literal>/WEB-INF/keycloak-saml</literal> file in your WAR and change the auth-method to KEYCLOAK-SAML within web.xml.
+        config, <literal>/WEB-INF/keycloak-saml.xml</literal> file in your WAR and change the auth-method to KEYCLOAK-SAML within web.xml.
         Both methods are described in this section.
     </para>
     <section id="jboss-adapter-installation">
@@ -13,10 +13,10 @@
         the Keycloak download site.  They are also available as a maven artifact.
     </para>
     <para>
-        Install on Wildfly 9:
+        Install on Wildfly 9 or 10:
 <programlisting>
 $ cd $WILDFLY_HOME
-$ unzip keycloak-saml-wf9-adapter-dist.zip
+$ unzip keycloak-saml-wildfly-adapter-dist.zip
 </programlisting>
     </para>
     <para>
@@ -38,7 +38,7 @@ $ unzip keycloak-saml-eap6-adapter-dist.zip
         from the server's bin directory:
 <programlisting>
 $ cd $JBOSS_HOME/bin
-$ jboss-cli.sh -c --file=adapter-install.cli
+$ jboss-cli.sh -c --file=adapter-install-saml.cli
 </programlisting>
         The script will add the extension, subsystem, and optional security-domain as described below.
     </para>
@@ -52,7 +52,7 @@ $ jboss-cli.sh -c --file=adapter-install.cli
     </extensions>
 
     <profile>
-        <subsystem xmlns="urn:jboss:domain:keycloak-saml:1.6"/>
+        <subsystem xmlns="urn:jboss:domain:keycloak-saml:1.1"/>
          ...
     </profile>
 ]]>
@@ -183,6 +183,94 @@ public class CustomerService {
 </web-app>
 ]]>
 </programlisting>
+        </para>
+    </section>
+    <section>
+        <title>Securing WARs via Keycloak SAML Subsystem</title>
+        <para>
+            You do not have to crack open a WAR to secure it with Keycloak.  Alternatively, you can externally secure
+            it via the Keycloak SAML Adapter Subsystem.  While you don't have to specify KEYCLOAK-SAML as an <literal>auth-method</literal>,
+            you still have to define the <literal>security-constraints</literal> in <literal>web.xml</literal>.  You do
+            not, however, have to create a <literal>WEB-INF/keycloak-saml.xml</literal> file.  This metadata is instead defined
+            within XML in your server's <literal>domain.xml</literal> or <literal>standalone.xml</literal> subsystem
+            configuration section.
+        </para>
+        <para>
+            <programlisting><![CDATA[
+<extensions>
+  <extension module="org.keycloak.keycloak-saml-adapter-subsystem"/>
+</extensions>
+
+<profile>
+  <subsystem xmlns="urn:jboss:domain:keycloak-saml:1.1">
+    <secure-deployment name="WAR MODULE NAME.war">
+      <SP entityID="APPLICATION URL">
+        ...
+      </SP>
+    </secure-deployment>
+  </subsystem>
+</profile>
+]]>
+            </programlisting>
+        </para>
+        <para>
+            The <literal>secure-deployment</literal> <literal>name</literal> attribute identifies the WAR you want
+            to secure.  Its value is the <literal>module-name</literal> defined in <literal>web.xml</literal> with
+            <literal>.war</literal> appended.  The rest of the configuration uses the same XML syntax as
+            <literal>keycloak-saml.xml</literal> configuration defined in <link linkend='adapter-config'>general adapter configuration</link>.
+        </para>
+        <para>
+            An example configuration:
+        </para>
+        <para>
+            <programlisting><![CDATA[
+<subsystem xmlns="urn:jboss:domain:keycloak-saml:1.1">
+  <secure-deployment name="saml-post-encryption.war">
+    <SP entityID="http://localhost:8080/sales-post-enc/"
+        sslPolicy="EXTERNAL"
+        nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+        logoutPage="/logout.jsp"
+        forceAuthentication="false">
+      <Keys>
+        <Key signing="true" encryption="true">
+          <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+            <PrivateKey alias="http://localhost:8080/sales-post-enc/" password="test123"/>
+            <Certificate alias="http://localhost:8080/sales-post-enc/"/>
+          </KeyStore>
+        </Key>
+      </Keys>
+      <PrincipalNameMapping policy="FROM_NAME_ID"/>
+      <RoleIdentifiers>
+        <Attribute name="Role"/>
+      </RoleIdentifiers>
+      <IDP entityID="idp">
+        <SingleSignOnService signRequest="true"
+            validateResponseSignature="true"
+            requestBinding="POST"
+            bindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"/>
+
+        <SingleLogoutService
+            validateRequestSignature="true"
+            validateResponseSignature="true"
+            signRequest="true"
+            signResponse="true"
+            requestBinding="POST"
+            responseBinding="POST"
+            postBindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"
+            redirectBindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"/>
+        <Keys>
+          <Key signing="true" >
+            <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+              <Certificate alias="saml-demo"/>
+            </KeyStore>
+          </Key>
+        </Keys>
+      </IDP>
+    </SP>
+   </secure-deployment>
+</subsystem>
+]]>
+            </programlisting>
         </para>
     </section>
 </chapter>

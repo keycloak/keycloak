@@ -86,6 +86,8 @@ public class RealmEntity {
     private int offlineSessionIdleTimeout;
     @Column(name="ACCESS_TOKEN_LIFESPAN")
     protected int accessTokenLifespan;
+    @Column(name="ACCESS_TOKEN_LIFE_IMPLICIT")
+    protected int accessTokenLifespanForImplicitFlow;
     @Column(name="ACCESS_CODE_LIFESPAN")
     protected int accessCodeLifespan;
     @Column(name="USER_ACTION_LIFESPAN")
@@ -334,6 +336,14 @@ public class RealmEntity {
 
     public void setAccessTokenLifespan(int accessTokenLifespan) {
         this.accessTokenLifespan = accessTokenLifespan;
+    }
+
+    public int getAccessTokenLifespanForImplicitFlow() {
+        return accessTokenLifespanForImplicitFlow;
+    }
+
+    public void setAccessTokenLifespanForImplicitFlow(int accessTokenLifespanForImplicitFlow) {
+        this.accessTokenLifespanForImplicitFlow = accessTokenLifespanForImplicitFlow;
     }
 
     public int getAccessCodeLifespan() {

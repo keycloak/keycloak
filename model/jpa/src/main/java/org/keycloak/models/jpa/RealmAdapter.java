@@ -361,6 +361,16 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public int getAccessTokenLifespanForImplicitFlow() {
+        return realm.getAccessTokenLifespanForImplicitFlow();
+    }
+
+    @Override
+    public void setAccessTokenLifespanForImplicitFlow(int seconds) {
+        realm.setAccessTokenLifespanForImplicitFlow(seconds);
+    }
+
+    @Override
     public int getSsoSessionIdleTimeout() {
         return realm.getSsoSessionIdleTimeout();
     }
@@ -715,6 +725,8 @@ public class RealmAdapter implements RealmModel {
         entity.setId(id);
         entity.setClientId(clientId);
         entity.setEnabled(true);
+        entity.setStandardFlowEnabled(true);
+        entity.setDirectAccessGrantsEnabled(true);
         entity.setRealm(realm);
         realm.getClients().add(entity);
         em.persist(entity);

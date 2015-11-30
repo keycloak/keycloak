@@ -59,6 +59,8 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -165,25 +167,25 @@ public class LoginActionsService {
         ClientSessionCode clientCode;
         Response response;
 
-        boolean verifyCode(String code, String requiredAction) {
+        boolean verifyCode(String code, String requiredAction, ClientSessionCode.ActionType actionType) {
             if (!verifyCode(code)) {
                 return false;
             }
-            if (!verifyAction(requiredAction)) {
+            if (!verifyAction(requiredAction, actionType)) {
                 return false;
             } else {
                 return true;
             }
         }
 
-        public boolean verifyAction(String requiredAction) {
+        public boolean verifyAction(String requiredAction, ClientSessionCode.ActionType actionType) {
             if (!clientCode.isValidAction(requiredAction)) {
                 event.client(clientCode.getClientSession().getClient());
                 event.error(Errors.INVALID_CODE);
                 response = ErrorPage.error(session, Messages.INVALID_CODE);
                 return false;
             }
-            if (!clientCode.isActionActive(requiredAction)) {
+            if (!clientCode.isActionActive(actionType)) {
                 event.client(clientCode.getClientSession().getClient());
                 event.clone().error(Errors.EXPIRED_CODE);
                 if (clientCode.getClientSession().getAction().equals(ClientSessionModel.Action.AUTHENTICATE.name())) {
@@ -264,7 +266,7 @@ public class LoginActionsService {
                                  @QueryParam("execution") String execution) {
         event.event(EventType.LOGIN);
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
@@ -315,7 +317,7 @@ public class LoginActionsService {
                                      @QueryParam("execution") String execution) {
         event.event(EventType.LOGIN);
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
         final ClientSessionCode clientCode = checks.clientCode;
@@ -374,7 +376,7 @@ public class LoginActionsService {
     protected Response resetCredentials(String code, String execution) {
         event.event(EventType.RESET_PASSWORD);
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.USER)) {
             return checks.response;
         }
         final ClientSessionCode clientCode = checks.clientCode;
@@ -438,7 +440,7 @@ public class LoginActionsService {
         }
 
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
@@ -468,7 +470,7 @@ public class LoginActionsService {
             return ErrorPage.error(session, Messages.REGISTRATION_NOT_ALLOWED);
         }
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
 
@@ -496,7 +498,7 @@ public class LoginActionsService {
         event.event(EventType.IDENTITY_PROVIDER_FIRST_LOGIN);
 
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
@@ -546,7 +548,7 @@ public class LoginActionsService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processConsent(final MultivaluedMap<String, String> formData) {
-        event.event(EventType.LOGIN).detail(Details.RESPONSE_TYPE, "code");
+        event.event(EventType.LOGIN);
 
 
         if (!checkSsl()) {
@@ -556,43 +558,33 @@ public class LoginActionsService {
         String code = formData.getFirst("code");
 
         ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
-        if (accessCode == null || !accessCode.isValid(ClientSessionModel.Action.OAUTH_GRANT.name())) {
+        if (accessCode == null || !accessCode.isValid(ClientSessionModel.Action.OAUTH_GRANT.name(), ClientSessionCode.ActionType.LOGIN)) {
             event.error(Errors.INVALID_CODE);
             return ErrorPage.error(session, Messages.INVALID_ACCESS_CODE);
         }
         ClientSessionModel clientSession = accessCode.getClientSession();
-        event.detail(Details.CODE_ID, clientSession.getId());
 
-        String redirect = clientSession.getRedirectUri();
+        initEvent(clientSession);
+
         UserSessionModel userSession = clientSession.getUserSession();
         UserModel user = userSession.getUser();
         ClientModel client = clientSession.getClient();
-
-        event.client(client)
-                .user(user)
-                .detail(Details.RESPONSE_TYPE, "code")
-                .detail(Details.REDIRECT_URI, redirect);
-
-        event.detail(Details.AUTH_METHOD, userSession.getAuthMethod());
-        event.detail(Details.USERNAME, userSession.getLoginUsername());
-        if (userSession.isRememberMe()) {
-            event.detail(Details.REMEMBER_ME, "true");
-        }
 
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
             AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
             event.error(Errors.INVALID_CODE);
             return ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE);
         }
-        event.session(userSession);
 
         if (formData.containsKey("cancel")) {
             LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
             protocol.setRealm(realm)
                     .setHttpHeaders(headers)
-                    .setUriInfo(uriInfo);
+                    .setUriInfo(uriInfo)
+                    .setEventBuilder(event);
+            Response response = protocol.sendError(clientSession, Error.CONSENT_DENIED);
             event.error(Errors.REJECTED_BY_USER);
-            return protocol.sendError(clientSession, Error.CONSENT_DENIED);
+            return response;
         }
 
         UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
@@ -613,7 +605,7 @@ public class LoginActionsService {
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
         event.success();
 
-        return authManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection);
+        return authManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection, event);
     }
 
     @Path("email-verification")
@@ -622,7 +614,7 @@ public class LoginActionsService {
         event.event(EventType.VERIFY_EMAIL);
         if (key != null) {
             Checks checks = new Checks();
-            if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name())) {
+            if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
@@ -665,7 +657,7 @@ public class LoginActionsService {
             return AuthenticationProcessor.createRequiredActionRedirect(realm, clientSession, uriInfo);
         } else {
             Checks checks = new Checks();
-            if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name())) {
+            if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
@@ -697,7 +689,7 @@ public class LoginActionsService {
         event.event(EventType.EXECUTE_ACTIONS);
         if (key != null) {
             Checks checks = new Checks();
-            if (!checks.verifyCode(key, ClientSessionModel.Action.EXECUTE_ACTIONS.name())) {
+            if (!checks.verifyCode(key, ClientSessionModel.Action.EXECUTE_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
                 return checks.response;
             }
             ClientSessionModel clientSession = checks.clientCode.getClientSession();
@@ -727,22 +719,27 @@ public class LoginActionsService {
     }
 
     private void initEvent(ClientSessionModel clientSession) {
+        UserSessionModel userSession = clientSession.getUserSession();
+
+        String responseType = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        if (responseType == null) {
+            responseType = "code";
+        }
+        String respMode = clientSession.getNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
+        OIDCResponseMode responseMode = OIDCResponseMode.parse(respMode, OIDCResponseType.parse(responseType));
+
         event.event(EventType.LOGIN).client(clientSession.getClient())
-                .user(clientSession.getUserSession().getUser())
-                .session(clientSession.getUserSession().getId())
+                .user(userSession.getUser())
+                .session(userSession.getId())
                 .detail(Details.CODE_ID, clientSession.getId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.USERNAME, clientSession.getNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME))
-                .detail(Details.RESPONSE_TYPE, "code");
-
-        UserSessionModel userSession = clientSession.getUserSession();
-
-        if (userSession != null) {
-            event.detail(Details.AUTH_METHOD, userSession.getAuthMethod());
-            event.detail(Details.USERNAME, userSession.getLoginUsername());
-            if (userSession.isRememberMe()) {
-                event.detail(Details.REMEMBER_ME, "true");
-            }
+                .detail(Details.AUTH_METHOD, userSession.getAuthMethod())
+                .detail(Details.USERNAME, userSession.getLoginUsername())
+                .detail(Details.RESPONSE_TYPE, responseType)
+                .detail(Details.RESPONSE_MODE, responseMode.toString().toLowerCase());
+        if (userSession.isRememberMe()) {
+            event.detail(Details.REMEMBER_ME, "true");
         }
     }
 
@@ -767,7 +764,7 @@ public class LoginActionsService {
         event.event(EventType.CUSTOM_REQUIRED_ACTION);
         event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name())) {
+        if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
             return checks.response;
         }
         final ClientSessionCode clientCode = checks.clientCode;
@@ -827,9 +824,14 @@ public class LoginActionsService {
             LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getClientSession().getAuthMethod());
             protocol.setRealm(context.getRealm())
                     .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
-                    .setUriInfo(context.getUriInfo());
-            event.detail(Details.CUSTOM_REQUIRED_ACTION, action).error(Errors.REJECTED_BY_USER);
-            return protocol.sendError(context.getClientSession(), Error.CONSENT_DENIED);
+                    .setUriInfo(context.getUriInfo())
+                    .setEventBuilder(event);
+
+            event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
+            Response response = protocol.sendError(context.getClientSession(), Error.CONSENT_DENIED);
+            event.error(Errors.REJECTED_BY_USER);
+            return response;
+
         }
 
         throw new RuntimeException("Unreachable");

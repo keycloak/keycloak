@@ -470,7 +470,8 @@ public class AuthenticationProcessor {
             LoginProtocol protocol = getSession().getProvider(LoginProtocol.class, getClientSession().getAuthMethod());
             protocol.setRealm(getRealm())
                     .setHttpHeaders(getHttpRequest().getHttpHeaders())
-                    .setUriInfo(getUriInfo());
+                    .setUriInfo(getUriInfo())
+                    .setEventBuilder(event);
             Response response = protocol.sendError(getClientSession(), Error.CANCELLED_BY_USER);
             forceChallenge(response);
         }
@@ -754,7 +755,7 @@ public class AuthenticationProcessor {
         if (!code.isValidAction(action)) {
             throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CLIENT_SESSION);
         }
-        if (!code.isActionActive(action)) {
+        if (!code.isActionActive(ClientSessionCode.ActionType.LOGIN)) {
             throw new AuthenticationFlowException(AuthenticationFlowError.EXPIRED_CODE);
         }
         clientSession.setTimestamp(Time.currentTime());
@@ -808,7 +809,7 @@ public class AuthenticationProcessor {
     public Response finishAuthentication() {
         event.success();
         RealmModel realm = clientSession.getRealm();
-        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, connection);
+        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, connection, event);
 
     }
 

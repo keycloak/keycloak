@@ -342,6 +342,17 @@ public class KeycloakUriBuilder {
     }
 
     /**
+     * Set fragment, but not encode it. It assumes that given fragment was already properly encoded
+     *
+     * @param fragment
+     * @return
+     */
+    public KeycloakUriBuilder encodedFragment(String fragment) {
+        this.fragment = fragment;
+        return this;
+    }
+
+    /**
      * Only replace path params in path of URI.  This changes state of URIBuilder.
      *
      * @param name

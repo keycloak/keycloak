@@ -3,6 +3,7 @@ package org.keycloak.models.jpa;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -328,7 +329,7 @@ public class ClientAdapter implements ClientModel {
     @Override
     public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
         if (getProtocolMapperByName(model.getProtocol(), model.getName()) != null) {
-            throw new RuntimeException("protocol mapper name must be unique per protocol");
+            throw new ModelDuplicateException("Protocol mapper name must be unique per protocol");
         }
         String id = model.getId() != null ? model.getId() : KeycloakModelUtils.generateId();
         ProtocolMapperEntity entity = new ProtocolMapperEntity();
@@ -498,6 +499,36 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public boolean isStandardFlowEnabled() {
+        return entity.isStandardFlowEnabled();
+    }
+
+    @Override
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        entity.setStandardFlowEnabled(standardFlowEnabled);
+    }
+
+    @Override
+    public boolean isImplicitFlowEnabled() {
+        return entity.isImplicitFlowEnabled();
+    }
+
+    @Override
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        entity.setImplicitFlowEnabled(implicitFlowEnabled);
+    }
+
+    @Override
+    public boolean isDirectAccessGrantsEnabled() {
+        return entity.isDirectAccessGrantsEnabled();
+    }
+
+    @Override
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        entity.setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
+    }
+
+    @Override
     public boolean isServiceAccountsEnabled() {
         return entity.isServiceAccountsEnabled();
     }
@@ -505,16 +536,6 @@ public class ClientAdapter implements ClientModel {
     @Override
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         entity.setServiceAccountsEnabled(serviceAccountsEnabled);
-    }
-
-    @Override
-    public boolean isDirectGrantsOnly() {
-        return entity.isDirectGrantsOnly();
-    }
-
-    @Override
-    public void setDirectGrantsOnly(boolean flag) {
-        entity.setDirectGrantsOnly(flag);
     }
 
     @Override

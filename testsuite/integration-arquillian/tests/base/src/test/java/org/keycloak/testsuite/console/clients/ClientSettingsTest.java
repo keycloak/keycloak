@@ -111,7 +111,9 @@ public class ClientSettingsTest extends AbstractClientTest {
         assertEqualsStringAttributes(c1.getName(), c2.getName());
         assertEqualsBooleanAttributes(c1.isEnabled(), c2.isEnabled());
         assertEqualsBooleanAttributes(c1.isConsentRequired(), c2.isConsentRequired());
-        assertEqualsBooleanAttributes(c1.isDirectGrantsOnly(), c2.isDirectGrantsOnly());
+        assertEqualsBooleanAttributes(c1.isStandardFlowEnabled(), c2.isStandardFlowEnabled());
+        assertEqualsBooleanAttributes(c1.isImplicitFlowEnabled(), c2.isImplicitFlowEnabled());
+        assertEqualsBooleanAttributes(c1.isDirectAccessGrantsEnabled(), c2.isDirectAccessGrantsEnabled());
         assertEqualsStringAttributes(c1.getProtocol(), c2.getProtocol());
 
         assertEqualsBooleanAttributes(c1.isBearerOnly(), c2.isBearerOnly());

@@ -5,6 +5,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
@@ -51,7 +52,13 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
         @POST
         @Path(AdapterConstants.K_LOGOUT)
         public Response backchannelLogout(String input) {
-            JWSInput token = new JWSInput(input);
+            JWSInput token = null;
+            try {
+                token = new JWSInput(input);
+            } catch (JWSInputException e) {
+                logger.warn("Failed to verify logout request");
+                return Response.status(400).build();
+            }
             PublicKey key = getExternalIdpKey();
             if (key != null) {
                 if (!verify(token, key)) {

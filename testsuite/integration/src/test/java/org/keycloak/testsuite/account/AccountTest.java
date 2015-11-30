@@ -28,6 +28,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.migration.MigrationModel;
@@ -459,6 +460,104 @@ public class AccountTest {
             events.clear();
 
             // reset realm
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setEditUsernameAllowed(false);
+                }
+            });
+        }
+    }
+
+    @Test
+    public void changeUsernameLoginWithOldUsername() {
+        KeycloakSession session = keycloakRule.startSession();
+        UserModel user = session.users().addUser(session.realms().getRealm("test"), "change-username");
+        user.setEnabled(true);
+        user.setEmail("change-username@localhost");
+        user.setFirstName("first");
+        user.setLastName("last");
+        user.updateCredential(UserCredentialModel.password("password"));
+        keycloakRule.stopSession(session, true);
+
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setEditUsernameAllowed(true);
+            }
+        });
+
+        try {
+            profilePage.open();
+            loginPage.login("change-username", "password");
+
+            profilePage.updateUsername("change-username-updated");
+
+            Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
+
+            profilePage.logout();
+
+            profilePage.open();
+
+            Assert.assertTrue(loginPage.isCurrent());
+
+            loginPage.login("change-username", "password");
+
+            Assert.assertTrue(loginPage.isCurrent());
+            Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+            loginPage.login("change-username-updated", "password");
+        } finally {
+            events.clear();
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setEditUsernameAllowed(false);
+                }
+            });
+        }
+    }
+
+    @Test
+    public void changeEmailLoginWithOldEmail() {
+        KeycloakSession session = keycloakRule.startSession();
+        UserModel user = session.users().addUser(session.realms().getRealm("test"), "change-email");
+        user.setEnabled(true);
+        user.setEmail("change-username@localhost");
+        user.setFirstName("first");
+        user.setLastName("last");
+        user.updateCredential(UserCredentialModel.password("password"));
+        keycloakRule.stopSession(session, true);
+
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setEditUsernameAllowed(true);
+            }
+        });
+
+        try {
+            profilePage.open();
+            loginPage.login("change-username@localhost", "password");
+
+            profilePage.updateEmail("change-username-updated@localhost");
+
+            Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
+
+            profilePage.logout();
+
+            profilePage.open();
+
+            Assert.assertTrue(loginPage.isCurrent());
+
+            loginPage.login("change-username@localhost", "password");
+
+            Assert.assertTrue(loginPage.isCurrent());
+            Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+            loginPage.login("change-username-updated@localhost", "password");
+        } finally {
+            events.clear();
             keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {

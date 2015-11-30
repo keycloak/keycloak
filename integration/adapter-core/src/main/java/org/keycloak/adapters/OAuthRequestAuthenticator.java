@@ -11,6 +11,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -313,10 +314,10 @@ public class OAuthRequestAuthenticator {
         try {
             token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
             if (idTokenString != null) {
-                JWSInput input = new JWSInput(idTokenString);
                 try {
+                    JWSInput input = new JWSInput(idTokenString);
                     idToken = input.readJsonContent(IDToken.class);
-                } catch (IOException e) {
+                } catch (JWSInputException e) {
                     throw new VerificationException();
                 }
             }

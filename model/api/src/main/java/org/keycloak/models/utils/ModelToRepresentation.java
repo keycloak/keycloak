@@ -205,6 +205,7 @@ public class ModelToRepresentation {
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
         rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());
+        rep.setAccessTokenLifespanForImplicitFlow(realm.getAccessTokenLifespanForImplicitFlow());
         rep.setSsoSessionIdleTimeout(realm.getSsoSessionIdleTimeout());
         rep.setSsoSessionMaxLifespan(realm.getSsoSessionMaxLifespan());
         rep.setOfflineSessionIdleTimeout(realm.getOfflineSessionIdleTimeout());
@@ -418,8 +419,10 @@ public class ModelToRepresentation {
         rep.setFullScopeAllowed(clientModel.isFullScopeAllowed());
         rep.setBearerOnly(clientModel.isBearerOnly());
         rep.setConsentRequired(clientModel.isConsentRequired());
+        rep.setStandardFlowEnabled(clientModel.isStandardFlowEnabled());
+        rep.setImplicitFlowEnabled(clientModel.isImplicitFlowEnabled());
+        rep.setDirectAccessGrantsEnabled(clientModel.isDirectAccessGrantsEnabled());
         rep.setServiceAccountsEnabled(clientModel.isServiceAccountsEnabled());
-        rep.setDirectGrantsOnly(clientModel.isDirectGrantsOnly());
         rep.setSurrogateAuthRequired(clientModel.isSurrogateAuthRequired());
         rep.setRootUrl(clientModel.getRootUrl());
         rep.setBaseUrl(clientModel.getBaseUrl());

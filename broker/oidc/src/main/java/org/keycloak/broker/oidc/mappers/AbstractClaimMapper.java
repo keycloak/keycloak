@@ -89,7 +89,7 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
         } else if (value instanceof List) {
             List list = (List)value;
             for (Object val : list) {
-                return valueEquals(desiredValue, val);
+            	if (valueEquals(desiredValue, val)) return true;
             }
         }
         return false;

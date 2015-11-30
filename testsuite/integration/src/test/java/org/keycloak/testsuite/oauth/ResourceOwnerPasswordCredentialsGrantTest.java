@@ -6,6 +6,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -93,7 +94,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .client(clientId)
                 .user(userId)
                 .session(accessToken.getSessionState())
-                .detail(Details.RESPONSE_TYPE, "token")
+                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.USERNAME, login)
@@ -129,7 +130,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         events.expectLogin()
                 .client("resource-owner")
                 .session(accessToken.getSessionState())
-                .detail(Details.RESPONSE_TYPE, "token")
+                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .removeDetail(Details.CODE_ID)
@@ -285,7 +286,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         events.expectLogin()
                 .client("resource-owner")
                 .session((String) null)
-                .detail(Details.RESPONSE_TYPE, "token")
+                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT)
@@ -307,7 +308,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .client("resource-owner")
                 .user((String) null)
                 .session((String) null)
-                .detail(Details.RESPONSE_TYPE, "token")
+                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.USERNAME, "invalid")
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)

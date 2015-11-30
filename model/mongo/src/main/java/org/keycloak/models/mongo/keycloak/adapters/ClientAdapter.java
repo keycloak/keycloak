@@ -5,6 +5,7 @@ import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -342,7 +343,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     @Override
     public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
         if (getProtocolMapperByName(model.getProtocol(), model.getName()) != null) {
-            throw new RuntimeException("protocol mapper name must be unique per protocol");
+            throw new ModelDuplicateException("Protocol mapper name must be unique per protocol");
         }
         ProtocolMapperEntity entity = new ProtocolMapperEntity();
         String id = model.getId() != null ? model.getId() : KeycloakModelUtils.generateId();
@@ -504,6 +505,39 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
+    public boolean isStandardFlowEnabled() {
+        return getMongoEntity().isStandardFlowEnabled();
+    }
+
+    @Override
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        getMongoEntity().setStandardFlowEnabled(standardFlowEnabled);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isImplicitFlowEnabled() {
+        return getMongoEntity().isImplicitFlowEnabled();
+    }
+
+    @Override
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        getMongoEntity().setImplicitFlowEnabled(implicitFlowEnabled);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isDirectAccessGrantsEnabled() {
+        return getMongoEntity().isDirectAccessGrantsEnabled();
+    }
+
+    @Override
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        getMongoEntity().setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
+        updateMongoEntity();
+    }
+
+    @Override
     public boolean isServiceAccountsEnabled() {
         return getMongoEntity().isServiceAccountsEnabled();
     }
@@ -511,17 +545,6 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     @Override
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         getMongoEntity().setServiceAccountsEnabled(serviceAccountsEnabled);
-        updateMongoEntity();
-    }
-
-    @Override
-    public boolean isDirectGrantsOnly() {
-        return getMongoEntity().isDirectGrantsOnly();
-    }
-
-    @Override
-    public void setDirectGrantsOnly(boolean flag) {
-        getMongoEntity().setDirectGrantsOnly(flag);
         updateMongoEntity();
     }
 

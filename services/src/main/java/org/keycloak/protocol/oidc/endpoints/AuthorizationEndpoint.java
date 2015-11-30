@@ -1,19 +1,11 @@
 package org.keycloak.protocol.oidc.endpoints;
 
-import java.util.List;
-
 import javax.ws.rs.GET;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -24,12 +16,12 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.AuthorizationEndpointBase;
-import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.Urls;
@@ -55,11 +47,13 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     private ClientSessionModel clientSession;
 
     private Action action;
+    private OIDCResponseType parsedResponseType;
 
     private String clientId;
     private String redirectUri;
     private String redirectUriParam;
     private String responseType;
+    private String responseMode;
     private String state;
     private String scope;
     private String loginHint;
@@ -80,6 +74,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         clientId = params.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM);
         responseType = params.getFirst(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        responseMode = params.getFirst(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
         redirectUriParam = params.getFirst(OIDCLoginProtocol.REDIRECT_URI_PARAM);
         state = params.getFirst(OIDCLoginProtocol.STATE_PARAM);
         scope = params.getFirst(OIDCLoginProtocol.SCOPE_PARAM);
@@ -90,8 +85,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         checkSsl();
         checkRealm();
-        checkClient();
         checkResponseType();
+        checkClient();
         checkRedirectUri();
 
         createClientSession();
@@ -172,9 +167,14 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             throw new ErrorPageException(session, Messages.BEARER_ONLY);
         }
 
-        if (client.isDirectGrantsOnly()) {
+        if ((parsedResponseType.hasResponseType(OIDCResponseType.CODE) || parsedResponseType.hasResponseType(OIDCResponseType.NONE)) && !client.isStandardFlowEnabled()) {
             event.error(Errors.NOT_ALLOWED);
-            throw new ErrorPageException(session, Messages.DIRECT_GRANTS_ONLY);
+            throw new ErrorPageException(session, Messages.STANDARD_FLOW_DISABLED);
+        }
+
+        if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
+            event.error(Errors.NOT_ALLOWED);
+            throw new ErrorPageException(session, Messages.IMPLICIT_FLOW_DISABLED);
         }
 
         session.getContext().setClient(client);
@@ -192,13 +192,31 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         event.detail(Details.RESPONSE_TYPE, responseType);
 
-        if (responseType.equals(OAuth2Constants.CODE)) {
+        try {
+            parsedResponseType = OIDCResponseType.parse(responseType);
             if (action == null) {
                 action = Action.CODE;
             }
-        } else {
+        } catch (IllegalArgumentException iae) {
+            logger.error(iae.getMessage());
             event.error(Errors.INVALID_REQUEST);
             throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        }
+
+        try {
+            OIDCResponseMode parsedResponseMode = OIDCResponseMode.parse(responseMode, parsedResponseType);
+            event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
+
+            // Disallowed by OIDC specs
+            if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
+                logger.error("Response_mode 'query' not allowed for implicit or hybrid flow");
+                event.error(Errors.INVALID_REQUEST);
+                throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_MODE_PARAM);
+            }
+
+        } catch (IllegalArgumentException iae) {
+            event.error(Errors.INVALID_REQUEST);
+            throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_MODE_PARAM);
         }
     }
 
@@ -228,6 +246,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         if (loginHint != null) clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         if (prompt != null) clientSession.setNote(OIDCLoginProtocol.PROMPT_PARAM, prompt);
         if (idpHint != null) clientSession.setNote(AdapterConstants.KC_IDP_HINT, idpHint);
+        if (responseMode != null) clientSession.setNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM, responseMode);
     }
 
     private Response buildAuthorizationCodeAuthorizationResponse() {

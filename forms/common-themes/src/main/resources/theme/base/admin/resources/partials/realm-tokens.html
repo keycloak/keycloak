@@ -83,6 +83,23 @@
         </div>
 
         <div class="form-group">
+            <label class="col-md-2 control-label" for="accessTokenLifespanForImplicitFlow">{{:: 'access-token-lifespan-for-implicit-flow' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1"
+                       max="31536000" data-ng-model="realm.accessTokenLifespanForImplicitFlow"
+                       id="accessTokenLifespanForImplicitFlow" name="accessTokenLifespanForImplicitFlow"/>
+                <select class="form-control" name="accessTokenLifespanForImplicitFlowUnit" data-ng-model="realm.accessTokenLifespanForImplicitFlowUnit">
+                    <option data-ng-selected="!realm.accessTokenLifespanForImplicitFlowUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'access-token-lifespan-for-implicit-flow.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
             <label class="col-md-2 control-label" for="accessCodeLifespan">{{:: 'client-login-timeout' | translate}}</label>
 
             <div class="col-md-6 time-selector">

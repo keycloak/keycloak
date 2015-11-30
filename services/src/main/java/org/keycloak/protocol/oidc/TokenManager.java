@@ -9,6 +9,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -25,6 +26,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -51,7 +53,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Stateful object that creates tokens and manages oauth access codes
+ * Stateless object that creates tokens and manages oauth access codes
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -195,44 +197,46 @@ public class TokenManager {
     }
 
     public RefreshToken verifyRefreshToken(RealmModel realm, String encodedRefreshToken) throws OAuthErrorException {
-        JWSInput jws = new JWSInput(encodedRefreshToken);
-        RefreshToken refreshToken = null;
         try {
+            JWSInput jws = new JWSInput(encodedRefreshToken);
+            RefreshToken refreshToken = null;
             if (!RSAProvider.verify(jws, realm.getPublicKey())) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
             }
             refreshToken = jws.readJsonContent(RefreshToken.class);
-        } catch (Exception e) {
+
+            if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
+            }
+
+            if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
+            }
+            return refreshToken;
+        } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
         }
-        if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
-        }
-
-        if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
-        }
-        return refreshToken;
     }
     public IDToken verifyIDToken(RealmModel realm, String encodedIDToken) throws OAuthErrorException {
-        JWSInput jws = new JWSInput(encodedIDToken);
-        IDToken idToken = null;
         try {
+            JWSInput jws = new JWSInput(encodedIDToken);
+            IDToken idToken;
             if (!RSAProvider.verify(jws, realm.getPublicKey())) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken");
             }
             idToken = jws.readJsonContent(IDToken.class);
-        } catch (IOException e) {
+
+            if (idToken.isExpired()) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "IDToken expired");
+            }
+
+            if (idToken.getIssuedAt() < realm.getNotBefore()) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale IDToken");
+            }
+            return idToken;
+        } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken", e);
         }
-        if (idToken.isExpired()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "IDToken expired");
-        }
-
-        if (idToken.getIssuedAt() < realm.getNotBefore()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale IDToken");
-        }
-        return idToken;
     }
 
     public AccessToken createClientAccessToken(KeycloakSession session, Set<RoleModel> requestedRoles, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession, ClientSessionModel clientSession) {
@@ -452,14 +456,24 @@ public class TokenManager {
         if (session != null) {
             token.setSessionState(session.getId());
         }
-        if (realm.getAccessTokenLifespan() > 0) {
-            token.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
+        int tokenLifespan = getTokenLifespan(realm, clientSession);
+        if (tokenLifespan > 0) {
+            token.expiration(Time.currentTime() + tokenLifespan);
         }
         Set<String> allowedOrigins = client.getWebOrigins();
         if (allowedOrigins != null) {
             token.setAllowedOrigins(WebOriginsUtils.resolveValidWebOrigins(uriInfo, client));
         }
         return token;
+    }
+
+    private int getTokenLifespan(RealmModel realm, ClientSessionModel clientSession) {
+        boolean implicitFlow = false;
+        String responseType = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        if (responseType != null) {
+            implicitFlow = OIDCResponseType.parse(responseType).isImplicitFlow();
+        }
+        return implicitFlow ? realm.getAccessTokenLifespanForImplicitFlow() : realm.getAccessTokenLifespan();
     }
 
     protected void addComposites(AccessToken token, RoleModel role) {
@@ -579,9 +593,7 @@ public class TokenManager {
             idToken.issuer(accessToken.getIssuer());
             idToken.setNonce(accessToken.getNonce());
             idToken.setSessionState(accessToken.getSessionState());
-            if (realm.getAccessTokenLifespan() > 0) {
-                idToken.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
-            }
+            idToken.expiration(accessToken.getExpiration());
             transformIDToken(session, idToken, realm, client, userSession.getUser(), userSession, clientSession);
             return this;
         }

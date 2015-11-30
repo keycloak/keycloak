@@ -26,6 +26,9 @@ public class ClientRepresentation {
     protected Integer notBefore;
     protected Boolean bearerOnly;
     protected Boolean consentRequired;
+    protected Boolean standardFlowEnabled;
+    protected Boolean implicitFlowEnabled;
+    protected Boolean directAccessGrantsEnabled;
     protected Boolean serviceAccountsEnabled;
     protected Boolean directGrantsOnly;
     protected Boolean publicClient;
@@ -179,6 +182,30 @@ public class ClientRepresentation {
 
     public void setConsentRequired(Boolean consentRequired) {
         this.consentRequired = consentRequired;
+    }
+
+    public Boolean isStandardFlowEnabled() {
+        return standardFlowEnabled;
+    }
+
+    public void setStandardFlowEnabled(Boolean standardFlowEnabled) {
+        this.standardFlowEnabled = standardFlowEnabled;
+    }
+
+    public Boolean isImplicitFlowEnabled() {
+        return implicitFlowEnabled;
+    }
+
+    public void setImplicitFlowEnabled(Boolean implicitFlowEnabled) {
+        this.implicitFlowEnabled = implicitFlowEnabled;
+    }
+
+    public Boolean isDirectAccessGrantsEnabled() {
+        return directAccessGrantsEnabled;
+    }
+
+    public void setDirectAccessGrantsEnabled(Boolean directAccessGrantsEnabled) {
+        this.directAccessGrantsEnabled = directAccessGrantsEnabled;
     }
 
     public Boolean isServiceAccountsEnabled() {

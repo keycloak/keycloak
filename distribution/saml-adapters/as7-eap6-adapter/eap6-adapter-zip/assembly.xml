@@ -29,7 +29,7 @@
     </fileSets>
     <files>
         <file>
-             <source>../../shared-cli/adapter-install.cli</source>
+             <source>../../shared-cli/adapter-install-saml.cli</source>
              <outputDirectory>bin</outputDirectory>
         </file>
     </files>

@@ -8,6 +8,6 @@ install:
 
 script:
   - mvn test -B
-  - mvn -file testsuite/integration-arquillian test -B
+  - mvn -file testsuite/integration-arquillian test -B -Pno-console
 
 sudo: false

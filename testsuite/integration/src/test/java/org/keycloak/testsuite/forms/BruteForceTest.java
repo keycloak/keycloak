@@ -303,6 +303,15 @@ public class BruteForceTest {
     }
 
     @Test
+    public void testBrowserInvalidPasswordDifferentCase() throws Exception {
+        loginSuccess("test-user@localhost");
+        loginInvalidPassword("test-User@localhost");
+        loginInvalidPassword("Test-user@localhost");
+        expectTemporarilyDisabled();
+        clearAllUserFailures();
+    }
+
+    @Test
     public void testBrowserMissingPassword() throws Exception {
         loginSuccess();
         loginMissingPassword();
@@ -333,8 +342,12 @@ public class BruteForceTest {
     }
 
     public void expectTemporarilyDisabled() throws Exception {
+        expectTemporarilyDisabled("test-user@localhost");
+    }
+
+    public void expectTemporarilyDisabled(String username) throws Exception {
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login(username, "password");
 
         loginPage.assertCurrent();
         String src = driver.getPageSource();
@@ -345,9 +358,11 @@ public class BruteForceTest {
                 .assertEvent();
     }
 
-
-
     public void loginSuccess() throws Exception {
+        loginSuccess("test-user@localhost");
+    }
+
+    public void loginSuccess(String username) throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -391,10 +406,13 @@ public class BruteForceTest {
         events.clear();
     }
 
-
     public void loginInvalidPassword() throws Exception {
+        loginInvalidPassword("test-user@localhost");
+    }
+
+    public void loginInvalidPassword(String username) throws Exception {
         loginPage.open();
-        loginPage.login("test-user@localhost", "invalid");
+        loginPage.login(username, "invalid");
 
         loginPage.assertCurrent();
 
