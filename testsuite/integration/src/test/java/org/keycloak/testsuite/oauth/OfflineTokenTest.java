@@ -67,6 +67,7 @@ public class OfflineTokenTest {
             appRealm.setSsoSessionIdleTimeout(30);
 
             ClientModel app = new ClientManager(manager).createClient(appRealm, "offline-client");
+            app.setDirectAccessGrantsEnabled(true);
             app.setSecret("secret1");
             String testAppRedirectUri = appRealm.getClientByClientId("test-app").getRedirectUris().iterator().next();
             offlineClientAppUri = UriUtils.getOrigin(testAppRedirectUri) + "/offline-client";

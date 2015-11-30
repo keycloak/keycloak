@@ -225,6 +225,11 @@ public class TokenEndpoint {
             throw new ErrorResponseException("invalid_grant", "Auth error", Response.Status.BAD_REQUEST);
         }
 
+        if (!client.isStandardFlowEnabled()) {
+            event.error(Errors.NOT_ALLOWED);
+            throw new ErrorResponseException("invalid_grant", "Client not allowed to exchange code", Response.Status.BAD_REQUEST);
+        }
+
         UserModel user = session.users().getUserById(userSession.getUser().getId(), realm);
         if (user == null) {
             event.error(Errors.USER_NOT_FOUND);
@@ -330,6 +335,11 @@ public class TokenEndpoint {
 
     public Response buildResourceOwnerPasswordCredentialsGrant() {
         event.detail(Details.AUTH_METHOD, "oauth_credentials");
+
+        if (!client.isDirectAccessGrantsEnabled()) {
+            event.error(Errors.NOT_ALLOWED);
+            throw new ErrorResponseException("invalid_grant", "Client not allowed for direct access grants", Response.Status.BAD_REQUEST);
+        }
 
         if (client.isConsentRequired()) {
             event.error(Errors.CONSENT_DENIED);

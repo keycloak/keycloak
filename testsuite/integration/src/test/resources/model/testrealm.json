@@ -156,6 +156,7 @@
             "name": "Applicationn",
             "enabled": true,
             "implicitFlowEnabled": true,
+            "directAccessGrantsEnabled": true,
             "nodeReRegistrationTimeout": 50,
             "registeredNodes": {
                 "node1": 10,

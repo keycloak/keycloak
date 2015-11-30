@@ -62,7 +62,11 @@ public class GroupTest {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             ClientModel app = new ClientManager(manager).createClient(appRealm, "resource-owner");
+            app.setDirectAccessGrantsEnabled(true);
             app.setSecret("secret");
+
+            app = appRealm.getClientByClientId("test-app");
+            app.setDirectAccessGrantsEnabled(true);
 
             UserModel user = session.users().addUser(appRealm, "direct-login");
             user.setEmail("direct-login@localhost");
@@ -70,7 +74,7 @@ public class GroupTest {
 
 
             session.users().updateCredential(appRealm, user, UserCredentialModel.password("password"));
-            keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
+            keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
         }
     });
 

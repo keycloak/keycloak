@@ -2,6 +2,7 @@ package org.keycloak.migration.migrators;
 
 import java.util.List;
 
+import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -18,6 +19,9 @@ public class MigrateTo1_7_0 {
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
             realm.setAccessTokenLifespanForImplicitFlow(Constants.DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT);
+
+            MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
+            migrationProvider.setupAdminCli(realm);
         }
     }
 }

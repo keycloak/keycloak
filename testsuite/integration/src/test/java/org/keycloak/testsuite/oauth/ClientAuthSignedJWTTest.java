@@ -61,6 +61,7 @@ public class ClientAuthSignedJWTTest {
             app1.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
 
             ClientModel app2 = appRealm.addClient("client2");
+            app2.setDirectAccessGrantsEnabled(true);
             new ClientManager(manager).enableServiceAccount(app2);
             app2.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
 

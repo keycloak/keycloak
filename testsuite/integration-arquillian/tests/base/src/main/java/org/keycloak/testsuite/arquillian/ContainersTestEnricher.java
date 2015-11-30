@@ -183,7 +183,7 @@ public class ContainersTestEnricher {
     private void initializeAdminClient() {
         adminClient.set(Keycloak.getInstance(
                 getAuthServerContextRootFromSystemProperty() + "/auth",
-                MASTER, ADMIN, ADMIN, Constants.ADMIN_CONSOLE_CLIENT_ID));
+                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID));
     }
 
     private void initializeOAuthClient() {

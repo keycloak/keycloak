@@ -131,7 +131,7 @@ public class RelativeUriAdapterTest {
         Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
         // View stats
-        List<Map<String, String>> stats = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", "security-admin-console").realm("demo").getClientSessionStats();
+        List<Map<String, String>> stats = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID).realm("demo").getClientSessionStats();
         Map<String, String> customerPortalStats = null;
         Map<String, String> productPortalStats = null;
         for (Map<String, String> s : stats) {

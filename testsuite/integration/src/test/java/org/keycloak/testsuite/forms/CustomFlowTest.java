@@ -127,7 +127,11 @@ public class CustomFlowTest {
             // Set passthrough clientAuthenticator for our clients
             ClientModel dummyClient = new ClientManager().createClient(appRealm, "dummy-client");
             dummyClient.setClientAuthenticatorType(PassThroughClientAuthenticator.PROVIDER_ID);
-            appRealm.getClientByClientId("test-app").setClientAuthenticatorType(PassThroughClientAuthenticator.PROVIDER_ID);
+            dummyClient.setDirectAccessGrantsEnabled(true);
+
+            ClientModel testApp = appRealm.getClientByClientId("test-app");
+            testApp.setClientAuthenticatorType(PassThroughClientAuthenticator.PROVIDER_ID);
+            testApp.setDirectAccessGrantsEnabled(true);
         }
     });
 

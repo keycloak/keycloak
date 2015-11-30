@@ -8,6 +8,7 @@ import org.keycloak.OAuth2Constants;
  */
 public interface Constants {
     String ADMIN_CONSOLE_CLIENT_ID = "security-admin-console";
+    String ADMIN_CLI_CLIENT_ID = "admin-cli";
 
     String ACCOUNT_MANAGEMENT_CLIENT_ID = "account";
     String IMPERSONATION_SERVICE_CLIENT_ID = "impersonation";

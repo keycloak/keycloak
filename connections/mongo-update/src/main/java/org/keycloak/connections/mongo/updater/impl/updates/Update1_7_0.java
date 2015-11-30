@@ -27,7 +27,7 @@ public class Update1_7_0 extends Update {
                 boolean directGrantsOnly = client.getBoolean("directGrantsOnly", false);
                 client.append("standardFlowEnabled", !directGrantsOnly);
                 client.append("implicitFlowEnabled", false);
-                client.append("directAccessGrantsEnabled", true);
+                client.append("directAccessGrantsEnabled", directGrantsOnly);
                 client.removeField("directGrantsOnly");
 
                 clients.save(client);

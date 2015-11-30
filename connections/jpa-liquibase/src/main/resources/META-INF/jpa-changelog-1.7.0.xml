@@ -90,6 +90,7 @@
 
         <update tableName="CLIENT">
             <column name="STANDARD_FLOW_ENABLED" valueBoolean="false"/>
+            <column name="DIRECT_ACCESS_GRANTS_ENABLED" valueBoolean="true"/>
             <where>DIRECT_GRANTS_ONLY = :value</where>
             <whereParams>
                 <param valueBoolean="true" />

@@ -457,7 +457,7 @@ public class SamlBindingTest {
 
     public static void uploadSP() {
         try {
-            Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID, null);
+            Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID, null);
             RealmResource admin = keycloak.realm("demo");
 
             admin.toRepresentation();
