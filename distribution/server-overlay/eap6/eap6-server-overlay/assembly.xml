@@ -52,6 +52,11 @@
             <source>src/main/providers/README.txt</source>
             <outputDirectory>standalone/configuration/providers</outputDirectory>
         </file>
+        <file>
+            <source>../../../feature-packs/server-feature-pack/src/main/resources/content/bin/add-user.sh</source>
+            <outputDirectory>bin</outputDirectory>
+            <destName>add-user-keycloak.sh</destName>
+        </file>
     </files>
 
 </assembly>
