@@ -15,7 +15,7 @@
                     ng-options="r.name for r in realmRoles | orderBy:'toString()'">
                 <option style="display:none" value="">Select a role</option>
             </select>
-            <button class="btn btn-default" type="submit" ng-click="selectRealmRole()" tooltip-trigger="mouseover mouseout" tooltip="Select realm role" tooltip-placement="right">
+            <button class="btn btn-default" type="submit" data-ng-disabled="!selectedRealmRole.role" ng-click="selectRealmRole()" tooltip-trigger="mouseover mouseout" tooltip="Select realm role" tooltip-placement="right">
                 Select Realm Role</i>
             </button>
         </div>
@@ -32,7 +32,7 @@
                     ng-options="r.name for r in clientRoles | orderBy:'toString()'">
                 <option style="display:none" value="">Select a role</option>
             </select>
-            <button class="btn btn-default" type="submit" ng-click="selectClientRole()" tooltip-trigger="mouseover mouseout" tooltip="Select client role" tooltip-placement="right">
+            <button class="btn btn-default" type="submit" data-ng-disabled="!selectedClientRole.role" ng-click="selectClientRole()" tooltip-trigger="mouseover mouseout" tooltip="Select client role" tooltip-placement="right">
                 Select Client Role
             </button>
         </div>
