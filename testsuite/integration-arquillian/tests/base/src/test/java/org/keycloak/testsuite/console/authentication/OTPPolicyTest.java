@@ -67,19 +67,18 @@ public class OTPPolicyTest extends AbstractConsoleTest {
     }      
     
     @Test
-    @Ignore //KEYCLOAK-2051 when you close notification, it is not displayed again
     public void invalidValuesTest() {
-        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "", "30");
+        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.SIX, "", "30");
         assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         otpPolicyPage.closeNotification();
         otpPolicyPage.navigateTo();// workaround: input.clear() doesn't work when <input type="number" ...
         
-        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, " ", "30");
+        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.SIX, " ", "30");
         assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         otpPolicyPage.closeNotification();
         otpPolicyPage.navigateTo();
         
-        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "no number", "30");
+        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.SIX, "no number", "30");
         assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         otpPolicyPage.closeNotification();
         otpPolicyPage.navigateTo();
@@ -87,17 +86,17 @@ public class OTPPolicyTest extends AbstractConsoleTest {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         assertEquals(Integer.valueOf(1), realm.getOtpPolicyLookAheadWindow());
 
-        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", "");
+        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.SIX, "1", "");
         assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         otpPolicyPage.closeNotification();
         otpPolicyPage.navigateTo();
         
-        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", " ");
+        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.SIX, "1", " ");
         assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         otpPolicyPage.closeNotification();
         otpPolicyPage.navigateTo();
         
-        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", "no number");
+        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.SIX, "1", "no number");
         assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         otpPolicyPage.closeNotification();
         otpPolicyPage.navigateTo();
@@ -105,17 +104,17 @@ public class OTPPolicyTest extends AbstractConsoleTest {
         realm = testRealmResource().toRepresentation();
         assertEquals(Integer.valueOf(30), realm.getOtpPolicyPeriod());
         
-        otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", "");
+        otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA1, Digits.SIX, "1", "");
         assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         otpPolicyPage.closeNotification();
         otpPolicyPage.navigateTo();
         
-        otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", " ");
+        otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA1, Digits.SIX, "1", " ");
         assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         otpPolicyPage.closeNotification();
         otpPolicyPage.navigateTo();
         
-        otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA1, Digits.EMPTY, "1", "no number");
+        otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA1, Digits.SIX, "1", "no number");
         assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
         otpPolicyPage.closeNotification();
         otpPolicyPage.navigateTo();

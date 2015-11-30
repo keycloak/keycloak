@@ -17,6 +17,7 @@
  */
 package org.keycloak.dom.saml.v2.protocol;
 
+import java.io.Serializable;
 import java.net.URI;
 
 /**
@@ -39,7 +40,7 @@ import java.net.URI;
  * &lt;/complexType>
  * </pre>
  */
-public class StatusCodeType {
+public class StatusCodeType implements Serializable {
 
     protected StatusCodeType statusCode;
     protected URI value;
@@ -79,4 +80,10 @@ public class StatusCodeType {
     public void setValue(URI value) {
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return "StatusCodeType [value=" + value + ", statusCode=" + statusCode + "]";
+    }
+
 }

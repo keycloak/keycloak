@@ -12,6 +12,7 @@ public class RealmRepresentation {
     protected Integer notBefore;
     protected Boolean revokeRefreshToken;
     protected Integer accessTokenLifespan;
+    protected Integer accessTokenLifespanForImplicitFlow;
     protected Integer ssoSessionIdleTimeout;
     protected Integer ssoSessionMaxLifespan;
     protected Integer offlineSessionIdleTimeout;
@@ -49,6 +50,7 @@ public class RealmRepresentation {
     protected RolesRepresentation roles;
     protected List<GroupRepresentation> groups;
     protected List<String> defaultRoles;
+    protected List<String> defaultGroups;
     @Deprecated
     protected Set<String> requiredCredentials;
     protected String passwordPolicy;
@@ -83,6 +85,7 @@ public class RealmRepresentation {
     private List<IdentityProviderRepresentation> identityProviders;
     private List<IdentityProviderMapperRepresentation> identityProviderMappers;
     private List<ProtocolMapperRepresentation> protocolMappers;
+    @Deprecated
     private Boolean identityFederationEnabled;
     protected Boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
@@ -185,6 +188,14 @@ public class RealmRepresentation {
         this.accessTokenLifespan = accessTokenLifespan;
     }
 
+    public Integer getAccessTokenLifespanForImplicitFlow() {
+        return accessTokenLifespanForImplicitFlow;
+    }
+
+    public void setAccessTokenLifespanForImplicitFlow(Integer accessTokenLifespanForImplicitFlow) {
+        this.accessTokenLifespanForImplicitFlow = accessTokenLifespanForImplicitFlow;
+    }
+
     public Integer getSsoSessionIdleTimeout() {
         return ssoSessionIdleTimeout;
     }
@@ -267,6 +278,14 @@ public class RealmRepresentation {
 
     public void setDefaultRoles(List<String> defaultRoles) {
         this.defaultRoles = defaultRoles;
+    }
+
+    public List<String> getDefaultGroups() {
+        return defaultGroups;
+    }
+
+    public void setDefaultGroups(List<String> defaultGroups) {
+        this.defaultGroups = defaultGroups;
     }
 
     public String getPrivateKey() {
@@ -604,6 +623,7 @@ public class RealmRepresentation {
         identityProviders.add(identityProviderRepresentation);
     }
 
+    @Deprecated
     public boolean isIdentityFederationEnabled() {
         return identityProviders != null && !identityProviders.isEmpty();
     }

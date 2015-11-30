@@ -114,6 +114,7 @@ public abstract class SamlKeycloakRule extends AbstractKeycloakRule {
                 .addFilter(samlFilter)
                 .addFilterUrlMapping("saml-filter", "/*", DispatcherType.REQUEST)
                 .addServletExtension(new SamlServletExtension());
+        addErrorPage("/error.html", deploymentInfo);
         server.getServer().deploy(deploymentInfo);
     }
 

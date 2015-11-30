@@ -104,6 +104,9 @@ public class GroupAdapter implements GroupModel {
     @Override
     public void setParent(GroupModel parent) {
         if (parent == null) group.setParent(null);
+        else if (parent.getId().equals(getId())) {
+            return;
+        }
         else {
             GroupEntity parentEntity = toEntity(parent, em);
             group.setParent(parentEntity);
@@ -112,11 +115,17 @@ public class GroupAdapter implements GroupModel {
 
     @Override
     public void addChild(GroupModel subGroup) {
+        if (subGroup.getId().equals(getId())) {
+            return;
+        }
         subGroup.setParent(this);
     }
 
     @Override
     public void removeChild(GroupModel subGroup) {
+        if (subGroup.getId().equals(getId())) {
+            return;
+        }
         subGroup.setParent(null);
     }
 
@@ -312,9 +321,9 @@ public class GroupAdapter implements GroupModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof UserModel)) return false;
+        if (o == null || !(o instanceof GroupModel)) return false;
 
-        UserModel that = (UserModel) o;
+        GroupModel that = (GroupModel) o;
         return that.getId().equals(getId());
     }
 

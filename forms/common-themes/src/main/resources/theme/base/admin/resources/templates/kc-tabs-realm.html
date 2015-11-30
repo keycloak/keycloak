@@ -13,6 +13,7 @@
         <li ng-class="{active: path[2] == 'theme-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/theme-settings">{{:: 'realm-tab-themes' | translate}}</a></li>
         <li ng-class="{active: path[2] == 'cache-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/cache-settings">{{:: 'realm-tab-cache' | translate}}</a></li>
         <li ng-class="{active: path[2] == 'token-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/token-settings">{{:: 'realm-tab-tokens' | translate}}</a></li>
+        <li ng-class="{active: path[2] == 'client-initial-access'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/client-initial-access">{{:: 'realm-tab-client-initial-access' | translate}}</a></li>
         <li ng-class="{active: path[2] == 'defense'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/defense/headers">{{:: 'realm-tab-security-defenses' | translate}}</a></li>
     </ul>
 </div>

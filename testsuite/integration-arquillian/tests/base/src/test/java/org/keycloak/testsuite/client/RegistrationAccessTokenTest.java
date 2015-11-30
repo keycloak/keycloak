@@ -7,8 +7,6 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.representations.idm.ClientRepresentation;
 
-import javax.ws.rs.core.Response;
-
 import static org.junit.Assert.*;
 
 /**
@@ -22,13 +20,13 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
     public void before() throws Exception {
         super.before();
 
-        client = new ClientRepresentation();
-        client.setEnabled(true);
-        client.setClientId("RegistrationAccessTokenTest");
-        client.setSecret("RegistrationAccessTokenTestClientSecret");
-        client.setRegistrationAccessToken("RegistrationAccessTokenTestRegistrationAccessToken");
-        client.setRootUrl("http://root");
-        client = createClient(client);
+        ClientRepresentation c = new ClientRepresentation();
+        c.setEnabled(true);
+        c.setClientId("RegistrationAccessTokenTest");
+        c.setSecret("RegistrationAccessTokenTestClientSecret");
+        c.setRootUrl("http://root");
+
+        client = createClient(c);
 
         reg.auth(Auth.token(client.getRegistrationAccessToken()));
     }
@@ -36,7 +34,7 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
     private ClientRepresentation assertRead(String id, String registrationAccess, boolean expectSuccess) throws ClientRegistrationException {
         if (expectSuccess) {
             reg.auth(Auth.token(registrationAccess));
-            ClientRepresentation rep = reg.get(client.getClientId());
+            ClientRepresentation rep = reg.get(id);
             assertNotNull(rep);
             return rep;
         } else {
@@ -76,6 +74,7 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
     @Test
     public void updateClientWithRegistrationToken() throws ClientRegistrationException {
         client.setRootUrl("http://newroot");
+
         ClientRepresentation rep = reg.update(client);
 
         assertEquals("http://newroot", getClient(client.getId()).getRootUrl());

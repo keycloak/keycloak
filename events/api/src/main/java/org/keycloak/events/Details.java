@@ -11,6 +11,7 @@ public interface Details {
     String CODE_ID = "code_id";
     String REDIRECT_URI = "redirect_uri";
     String RESPONSE_TYPE = "response_type";
+    String RESPONSE_MODE = "response_mode";
     String AUTH_TYPE = "auth_type";
     String AUTH_METHOD = "auth_method";
     String IDENTITY_PROVIDER = "identity_provider";

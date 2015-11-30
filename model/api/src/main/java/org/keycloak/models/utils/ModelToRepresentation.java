@@ -205,6 +205,7 @@ public class ModelToRepresentation {
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
         rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());
+        rep.setAccessTokenLifespanForImplicitFlow(realm.getAccessTokenLifespanForImplicitFlow());
         rep.setSsoSessionIdleTimeout(realm.getSsoSessionIdleTimeout());
         rep.setSsoSessionMaxLifespan(realm.getSsoSessionMaxLifespan());
         rep.setOfflineSessionIdleTimeout(realm.getOfflineSessionIdleTimeout());
@@ -238,6 +239,14 @@ public class ModelToRepresentation {
             List<String> roleStrings = new ArrayList<String>();
             roleStrings.addAll(defaultRoles);
             rep.setDefaultRoles(roleStrings);
+        }
+        List<GroupModel> defaultGroups = realm.getDefaultGroups();
+        if (!defaultGroups.isEmpty()) {
+            List<String> groupPaths = new LinkedList<>();
+            for (GroupModel group : defaultGroups) {
+                groupPaths.add(ModelToRepresentation.buildGroupPath(group));
+            }
+            rep.setDefaultGroups(groupPaths);
         }
 
         List<RequiredCredentialModel> requiredCredentialModels = realm.getRequiredCredentials();
@@ -279,8 +288,14 @@ public class ModelToRepresentation {
         if (internal) {
             exportAuthenticationFlows(realm, rep);
             exportRequiredActions(realm, rep);
+            exportGroups(realm, rep);
         }
         return rep;
+    }
+
+    public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
+        List<GroupRepresentation> groups = toGroupHierarchy(realm, true);
+        rep.setGroups(groups);
     }
 
     public static void exportAuthenticationFlows(RealmModel realm, RealmRepresentation rep) {
@@ -404,15 +419,16 @@ public class ModelToRepresentation {
         rep.setFullScopeAllowed(clientModel.isFullScopeAllowed());
         rep.setBearerOnly(clientModel.isBearerOnly());
         rep.setConsentRequired(clientModel.isConsentRequired());
+        rep.setStandardFlowEnabled(clientModel.isStandardFlowEnabled());
+        rep.setImplicitFlowEnabled(clientModel.isImplicitFlowEnabled());
+        rep.setDirectAccessGrantsEnabled(clientModel.isDirectAccessGrantsEnabled());
         rep.setServiceAccountsEnabled(clientModel.isServiceAccountsEnabled());
-        rep.setDirectGrantsOnly(clientModel.isDirectGrantsOnly());
         rep.setSurrogateAuthRequired(clientModel.isSurrogateAuthRequired());
         rep.setRootUrl(clientModel.getRootUrl());
         rep.setBaseUrl(clientModel.getBaseUrl());
         rep.setNotBefore(clientModel.getNotBefore());
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
         rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
-        rep.setRegistrationAccessToken(clientModel.getRegistrationSecret());
 
         Set<String> redirectUris = clientModel.getRedirectUris();
         if (redirectUris != null) {

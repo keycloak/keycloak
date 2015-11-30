@@ -115,6 +115,7 @@ public abstract class SamlKeycloakRule extends AbstractKeycloakRule {
                 .addServlets(regularServletInfo)
                 .addSecurityConstraint(constraint)
                 .addServletExtension(new SamlServletExtension());
+        addErrorPage("/error.html", deploymentInfo);
         server.getServer().deploy(deploymentInfo);
     }
 

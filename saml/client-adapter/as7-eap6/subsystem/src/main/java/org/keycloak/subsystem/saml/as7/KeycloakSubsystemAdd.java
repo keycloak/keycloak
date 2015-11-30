@@ -16,13 +16,12 @@
  */
 package org.keycloak.subsystem.saml.as7;
 
-
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
+import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -43,17 +42,20 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
         context.addStep(new AbstractDeploymentChainStep() {
             @Override
             protected void execute(DeploymentProcessorTarget processorTarget) {
-                processorTarget.addDeploymentProcessor(Phase.DEPENDENCIES, 0, new KeycloakDependencyProcessorAS7());
-                processorTarget.addDeploymentProcessor(
+                processorTarget.addDeploymentProcessor(KeycloakSamlExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, 0, chooseDependencyProcessor());
+                processorTarget.addDeploymentProcessor(KeycloakSamlExtension.SUBSYSTEM_NAME,
                         Phase.POST_MODULE, // PHASE
                         Phase.POST_MODULE_VALIDATOR_FACTORY - 1, // PRIORITY
-                        new KeycloakAdapterConfigDeploymentProcessor());
+                        chooseConfigDeploymentProcessor());
             }
         }, OperationContext.Stage.RUNTIME);
     }
 
-    @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        model.setEmptyObject();
+    private DeploymentUnitProcessor chooseDependencyProcessor() {
+        return new KeycloakDependencyProcessorAS7();
+    }
+
+    private DeploymentUnitProcessor chooseConfigDeploymentProcessor() {
+        return new KeycloakAdapterConfigDeploymentProcessor();
     }
 }

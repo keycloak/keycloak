@@ -475,6 +475,13 @@ module.factory('GroupLoader', function(Loader, Group, $route, $q) {
     });
 });
 
+module.factory('ClientInitialAccessLoader', function(Loader, ClientInitialAccess, $route) {
+    return Loader.query(ClientInitialAccess, function() {
+        return {
+            realm: $route.current.params.realm
+        }
+    });
+});
 
 
 

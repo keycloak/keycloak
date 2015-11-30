@@ -6,6 +6,7 @@ import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -146,7 +148,11 @@ public class GroupAdapter extends AbstractMongoAdapter<MongoGroupEntity> impleme
         if (group.getRoleIds() == null || group.getRoleIds().isEmpty()) return Collections.EMPTY_SET;
         Set<RoleModel> roles = new HashSet<>();
         for (String id : group.getRoleIds()) {
-            roles.add(realm.getRoleById(id));
+            RoleModel roleById = realm.getRoleById(id);
+            if (roleById == null) {
+                throw new ModelException("role does not exist in group role mappings");
+            }
+            roles.add(roleById);
         }
         return roles;
      }
@@ -198,24 +204,40 @@ public class GroupAdapter extends AbstractMongoAdapter<MongoGroupEntity> impleme
 
     @Override
     public Set<GroupModel> getSubGroups() {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .and("parentId").is(getId())
+                .get();
+        List<MongoGroupEntity> groups = getMongoStore().loadEntities(MongoGroupEntity.class, query, invocationContext);
+
         Set<GroupModel> subGroups = new HashSet<>();
-        for (GroupModel groupModel : realm.getGroups()) {
-            if (groupModel.getParent().equals(this)) {
-                subGroups.add(groupModel);
-            }
+
+        if (groups == null) return subGroups;
+        for (MongoGroupEntity group : groups) {
+            subGroups.add(realm.getGroupById(group.getId()));
         }
+
         return subGroups;
     }
 
     @Override
-    public void setParent(GroupModel group) {
-        this.group.setParentId(group.getId());
+    public void setParent(GroupModel parent) {
+        if (parent == null) group.setParentId(null);
+        else if (parent.getId().equals(getId())) {
+            return;
+        }
+        else {
+            group.setParentId(parent.getId());
+        }
         updateGroup();
 
     }
 
     @Override
     public void addChild(GroupModel subGroup) {
+        if (subGroup.getId().equals(getId())) {
+            return;
+        }
         subGroup.setParent(this);
         updateGroup();
 
@@ -223,6 +245,9 @@ public class GroupAdapter extends AbstractMongoAdapter<MongoGroupEntity> impleme
 
     @Override
     public void removeChild(GroupModel subGroup) {
+        if (subGroup.getId().equals(getId())) {
+            return;
+        }
         subGroup.setParent(null);
         updateGroup();
 

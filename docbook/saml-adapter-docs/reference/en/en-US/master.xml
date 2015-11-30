@@ -8,7 +8,9 @@
                 <!ENTITY Jetty9Adapter SYSTEM "modules/jetty9-adapter.xml">
                 <!ENTITY Jetty8Adapter SYSTEM "modules/jetty8-adapter.xml">
                 <!ENTITY FilterAdapter SYSTEM "modules/servlet-filter-adapter.xml">
+                <!ENTITY Assertions SYSTEM "modules/assertion-api.xml">
                 <!ENTITY Logout SYSTEM "modules/logout.xml">
+                <!ENTITY ErrorHandling SYSTEM "modules/adapter_error_handling.xml">
                 ]>
 
 <book>
@@ -49,6 +51,8 @@ This one is short
     &Jetty8Adapter;
     &FilterAdapter;
     &Logout;
+    &Assertions;
+    &ErrorHandling;
 
 
 

@@ -1,6 +1,8 @@
 package org.keycloak.adapters.jetty.spi;
 
+import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 
@@ -125,6 +127,18 @@ public class JettyHttpFacade implements HttpFacade {
         public String getRemoteAddr() {
             return request.getRemoteAddr();
         }
+
+        @Override
+        public void setError(AuthenticationError error) {
+            request.setAttribute(AuthenticationError.class.getName(), error);
+
+        }
+
+        @Override
+        public void setError(LogoutError error) {
+            request.setAttribute(LogoutError.class.getName(), error);
+        }
+
     }
 
     protected class ResponseFacade implements Response {
@@ -165,6 +179,15 @@ public class JettyHttpFacade implements HttpFacade {
         public OutputStream getOutputStream() {
             try {
                 return response.getOutputStream();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public void sendError(int code) {
+            try {
+                response.sendError(code);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

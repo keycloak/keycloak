@@ -61,6 +61,30 @@
                 "test-app": [ "customer-user" ],
                 "account": [ "view-profile", "manage-account" ]
             }
+        },
+        {
+            "username" : "topGroupUser",
+            "enabled": true,
+            "email" : "top@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/topGroup"
+            ]
+        },
+        {
+            "username" : "level2GroupUser",
+            "enabled": true,
+            "email" : "level2@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/topGroup/level2group"
+            ]
         }
     ],
     "scopeMappings": [
@@ -120,6 +144,31 @@
         }
 
     },
+    "groups" : [
+        {
+            "name": "topGroup",
+            "attributes": {
+                "topAttribute": ["true"]
+
+            },
+            "realmRoles": ["user"],
+
+            "subGroups": [
+                {
+                    "name": "level2group",
+                    "realmRoles": ["admin"],
+                    "clientRoles": {
+                        "test-app": ["customer-user"]
+                    },
+                    "attributes": {
+                        "level2Attribute": ["true"]
+
+                    }
+                }
+            ]
+        }
+    ],
+
 
     "clientScopeMappings": {
         "test-app": [

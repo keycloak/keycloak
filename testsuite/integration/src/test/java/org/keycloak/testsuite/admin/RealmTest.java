@@ -180,7 +180,6 @@ public class RealmTest extends AbstractClientTest {
         String description = IOUtils.toString(getClass().getResourceAsStream("/client-descriptions/client-oidc.json"));
 
         ClientRepresentation converted = realm.convertClientDescription(description);
-        assertEquals(36, converted.getClientId().length());
         assertEquals(1, converted.getRedirectUris().size());
         assertEquals("http://localhost", converted.getRedirectUris().get(0));
     }

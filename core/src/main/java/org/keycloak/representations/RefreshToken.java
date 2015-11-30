@@ -28,6 +28,7 @@ public class RefreshToken extends AccessToken {
         this.subject = token.subject;
         this.issuedFor = token.issuedFor;
         this.sessionState = token.sessionState;
+        this.nonce = token.nonce;
         if (token.realmAccess != null) {
             realmAccess = token.realmAccess.clone();
         }

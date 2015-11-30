@@ -361,6 +361,16 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public int getAccessTokenLifespanForImplicitFlow() {
+        return realm.getAccessTokenLifespanForImplicitFlow();
+    }
+
+    @Override
+    public void setAccessTokenLifespanForImplicitFlow(int seconds) {
+        realm.setAccessTokenLifespanForImplicitFlow(seconds);
+    }
+
+    @Override
     public int getSsoSessionIdleTimeout() {
         return realm.getSsoSessionIdleTimeout();
     }
@@ -648,6 +658,44 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public List<GroupModel> getDefaultGroups() {
+        Collection<GroupEntity> entities = realm.getDefaultGroups();
+        List<GroupModel> defaultGroups = new LinkedList<>();
+        for (GroupEntity entity : entities) {
+            defaultGroups.add(session.realms().getGroupById(entity.getId(), this));
+        }
+        return defaultGroups;
+    }
+
+    @Override
+    public void addDefaultGroup(GroupModel group) {
+        Collection<GroupEntity> entities = realm.getDefaultGroups();
+        for (GroupEntity entity : entities) {
+            if (entity.getId().equals(group.getId())) return;
+        }
+        GroupEntity groupEntity = GroupAdapter.toEntity(group, em);
+        realm.getDefaultGroups().add(groupEntity);
+        em.flush();
+
+    }
+
+    @Override
+    public void removeDefaultGroup(GroupModel group) {
+        GroupEntity found = null;
+        for (GroupEntity defaultGroup : realm.getDefaultGroups()) {
+            if (defaultGroup.getId().equals(group.getId())) {
+                found = defaultGroup;
+                break;
+            }
+        }
+        if (found != null) {
+            realm.getDefaultGroups().remove(found);
+            em.flush();
+        }
+
+    }
+
+    @Override
     public Map<String, ClientModel> getClientNameMap() {
         Map<String, ClientModel> map = new HashMap<String, ClientModel>();
         for (ClientModel app : getClients()) {
@@ -677,6 +725,8 @@ public class RealmAdapter implements RealmModel {
         entity.setId(id);
         entity.setClientId(clientId);
         entity.setEnabled(true);
+        entity.setStandardFlowEnabled(true);
+        entity.setDirectAccessGrantsEnabled(true);
         entity.setRealm(realm);
         realm.getClients().add(entity);
         em.persist(entity);
@@ -1000,6 +1050,7 @@ public class RealmAdapter implements RealmModel {
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
         em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
+        em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
 
         em.remove(roleEntity);
 
@@ -1955,6 +2006,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void moveGroup(GroupModel group, GroupModel toParent) {
+        if (toParent != null && group.getId().equals(toParent.getId())) {
+            return;
+        }
         if (group.getParentId() != null) {
             group.getParent().removeChild(group);
         }
@@ -1971,7 +2025,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<GroupModel> getGroups() {
         List<GroupModel> list = new LinkedList<>();
-        Collection<GroupEntity> groups = realm.getGroups();
+        Collection<GroupEntity> groups =  em.createNamedQuery("getAllGroupsByRealm").setParameter("realm", realm).getResultList();
         if (groups == null) return list;
         for (GroupEntity entity : groups) {
             list.add(new GroupAdapter(this, em, entity));
@@ -2001,6 +2055,7 @@ public class RealmAdapter implements RealmModel {
         if (!groupEntity.getRealm().getId().equals(getId())) {
             return false;
         }
+        realm.getDefaultGroups().remove(groupEntity);
         for (GroupModel subGroup : group.getSubGroups()) {
             removeGroup(subGroup);
         }
@@ -2008,7 +2063,6 @@ public class RealmAdapter implements RealmModel {
 
         session.users().preRemove(this, group);
         moveGroup(group, null);
-        realm.getGroups().remove(groupEntity);
         em.createNamedQuery("deleteGroupAttributesByGroup").setParameter("group", groupEntity).executeUpdate();
         em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", groupEntity).executeUpdate();
         em.remove(groupEntity);
@@ -2019,8 +2073,15 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public GroupModel createGroup(String name) {
+        String id = KeycloakModelUtils.generateId();
+        return createGroup(id, name);
+    }
+
+    @Override
+    public GroupModel createGroup(String id, String name) {
+        if (id == null) id = KeycloakModelUtils.generateId();
         GroupEntity groupEntity = new GroupEntity();
-        groupEntity.setId(KeycloakModelUtils.generateId());
+        groupEntity.setId(id);
         groupEntity.setName(name);
         groupEntity.setRealm(realm);
         em.persist(groupEntity);

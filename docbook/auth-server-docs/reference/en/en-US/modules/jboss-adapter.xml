@@ -14,10 +14,10 @@
         the Keycloak download site.  They are also available as a maven artifact.
     </para>
     <para>
-        Install on Wildfly 9:
+        Install on Wildfly 9 or 10:
 <programlisting>
 $ cd $WILDFLY_HOME
-$ unzip keycloak-wf9-adapter-dist.zip
+$ unzip keycloak-wildfly-adapter-dist.zip
 </programlisting>
     </para>
     <para>

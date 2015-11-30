@@ -33,6 +33,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
+import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
+import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 
@@ -62,6 +66,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String LOGOUT_REDIRECT_URI = "OIDC_LOGOUT_REDIRECT_URI";
     public static final String ISSUER = "iss";
 
+    public static final String RESPONSE_MODE_PARAM = "response_mode";
+
     private static final Logger log = Logger.getLogger(OIDCLoginProtocol.class);
 
     protected KeycloakSession session;
@@ -74,6 +80,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     protected EventBuilder event;
 
+    protected OIDCResponseType responseType;
+    protected OIDCResponseMode responseMode;
+
     public OIDCLoginProtocol(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, EventBuilder event) {
         this.session = session;
         this.realm = realm;
@@ -82,8 +91,17 @@ public class OIDCLoginProtocol implements LoginProtocol {
         this.event = event;
     }
 
-    public OIDCLoginProtocol(){
+    public OIDCLoginProtocol() {
 
+    }
+
+    private void setupResponseTypeAndMode(ClientSessionModel clientSession) {
+        String responseType = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        String responseMode = clientSession.getNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
+        this.responseType = OIDCResponseType.parse(responseType);
+        this.responseMode = OIDCResponseMode.parse(responseMode, this.responseType);
+        this.event.detail(Details.RESPONSE_TYPE, responseType);
+        this.event.detail(Details.RESPONSE_MODE, this.responseMode.toString().toLowerCase());
     }
 
     @Override
@@ -105,7 +123,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     }
 
     @Override
-    public OIDCLoginProtocol setHttpHeaders(HttpHeaders headers){
+    public OIDCLoginProtocol setHttpHeaders(HttpHeaders headers) {
         this.headers = headers;
         return this;
     }
@@ -116,62 +134,84 @@ public class OIDCLoginProtocol implements LoginProtocol {
         return this;
     }
 
-    @Override
-    public Response cancelLogin(ClientSessionModel clientSession) {
-        String redirect = clientSession.getRedirectUri();
-        String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
-        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
-        if (state != null) {
-            redirectUri.queryParam(OAuth2Constants.STATE, state);
-        }
-        session.sessions().removeClientSession(realm, clientSession);
-        RestartLoginCookie.expireRestartCookie(realm, session.getContext().getConnection(), uriInfo);
-        return Response.status(302).location(redirectUri.build()).build();
-    }
 
     @Override
     public Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode) {
         ClientSessionModel clientSession = accessCode.getClientSession();
+        setupResponseTypeAndMode(clientSession);
+
         String redirect = clientSession.getRedirectUri();
+        OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode);
         String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
-        accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN.name());
-        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, accessCode.getCode());
         log.debugv("redirectAccessCode: state: {0}", state);
         if (state != null)
-            redirectUri.queryParam(OAuth2Constants.STATE, state);
-        Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
+            redirectUri.addParam(OAuth2Constants.STATE, state);
 
-        return location.build();
+        // Standard or hybrid flow
+        if (responseType.hasResponseType(OIDCResponseType.CODE)) {
+            accessCode.setAction(ClientSessionModel.Action.CODE_TO_TOKEN.name());
+            redirectUri.addParam(OAuth2Constants.CODE, accessCode.getCode());
+        }
+
+        // Implicit or hybrid flow
+        if (responseType.isImplicitOrHybridFlow()) {
+            TokenManager tokenManager = new TokenManager();
+            AccessTokenResponse res = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSession)
+                    .generateAccessToken()
+                    .generateIDToken()
+                    .build();
+
+            if (responseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
+                redirectUri.addParam("id_token", res.getIdToken());
+            }
+
+            if (responseType.hasResponseType(OIDCResponseType.TOKEN)) {
+                redirectUri.addParam("access_token", res.getToken());
+                redirectUri.addParam("token_type", res.getTokenType());
+                redirectUri.addParam("session-state", res.getSessionState());
+                redirectUri.addParam("expires_in", String.valueOf(res.getExpiresIn()));
+            }
+
+            redirectUri.addParam("not-before-policy", String.valueOf(res.getNotBeforePolicy()));
+        }
+
+        return redirectUri.build();
     }
 
-    public Response consentDenied(ClientSessionModel clientSession) {
+
+    @Override
+    public Response sendError(ClientSessionModel clientSession, Error error) {
+        setupResponseTypeAndMode(clientSession);
+
         String redirect = clientSession.getRedirectUri();
         String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
-        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
+        OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode).addParam(OAuth2Constants.ERROR, translateError(error));
         if (state != null)
-            redirectUri.queryParam(OAuth2Constants.STATE, state);
+            redirectUri.addParam(OAuth2Constants.STATE, state);
         session.sessions().removeClientSession(realm, clientSession);
         RestartLoginCookie.expireRestartCookie(realm, session.getContext().getConnection(), uriInfo);
-        Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
-        return location.build();
+        return redirectUri.build();
     }
 
-
-    public Response invalidSessionError(ClientSessionModel clientSession) {
-        String redirect = clientSession.getRedirectUri();
-        String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
-        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
-        if (state != null) {
-            redirectUri.queryParam(OAuth2Constants.STATE, state);
+    private String translateError(Error error) {
+        switch (error) {
+            case CANCELLED_BY_USER:
+            case CONSENT_DENIED:
+                return "access_denied";
+            case PASSIVE_INTERACTION_REQUIRED:
+                return "interaction_required";
+            case PASSIVE_LOGIN_REQUIRED:
+                return "login_required";
+            default:
+                log.warn("Untranslated protocol Error: " + error.name() + " so we return default SAML error");
+                return "access_denied";
         }
-        return Response.status(302).location(redirectUri.build()).build();
     }
 
     @Override
     public void backchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!(clientSession.getClient() instanceof ClientModel)) return;
-        ClientModel app = clientSession.getClient();
-        new ResourceAdminManager(session).logoutClientSession(uriInfo.getRequestUri(), realm, app, clientSession);
+        ClientModel client = clientSession.getClient();
+        new ResourceAdminManager(session).logoutClientSession(uriInfo.getRequestUri(), realm, client, clientSession);
     }
 
     @Override
@@ -190,10 +230,10 @@ public class OIDCLoginProtocol implements LoginProtocol {
         }
         event.user(userSession.getUser()).session(userSession).success();
 
-
         if (redirectUri != null) {
             UriBuilder uriBuilder = UriBuilder.fromUri(redirectUri);
-            if (state != null) uriBuilder.queryParam(STATE_PARAM, state);
+            if (state != null)
+                uriBuilder.queryParam(STATE_PARAM, state);
             return Response.status(302).location(uriBuilder.build()).build();
         } else {
             return Response.ok().build();

@@ -300,6 +300,9 @@ public class MongoUserProvider implements UserProvider {
                     userModel.grantRole(application.getRole(r));
                 }
             }
+            for (GroupModel g : realm.getDefaultGroups()) {
+                userModel.joinGroup(g);
+            }
         }
 
         if (addDefaultRequiredActions) {

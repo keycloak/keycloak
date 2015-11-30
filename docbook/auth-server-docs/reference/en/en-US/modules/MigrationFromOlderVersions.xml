@@ -84,6 +84,10 @@
             <simplesect>
                 <title>Option 'Update Profile On First Login' moved from Identity provider to Review Profile authenticator</title>
                 <para>
+                    form-error-page in web.xml will no longer work for client adapter authentication errors.  You must define an error-page for
+                    the the various HTTP error codes.  See documentation for more details if you want to catch and handle adapter error conditions.
+                </para>
+                <para>
                     In this version, we added <literal>First Broker Login</literal>, which allows you to specify what exactly should be done
                     when new user is logged through Identity provider (or Social provider), but there is no existing Keycloak user
                     yet linked to the social account. As part of this work, we added option <literal>First Login Flow</literal> to identity providers where

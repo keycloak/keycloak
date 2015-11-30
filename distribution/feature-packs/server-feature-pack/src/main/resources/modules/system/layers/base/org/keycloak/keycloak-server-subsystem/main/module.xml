@@ -29,6 +29,6 @@
     </resources>
 
     <dependencies>
-        <module name="org.keycloak.keycloak-wf9-server-subsystem" services="export" export="true"/>
+        <module name="org.keycloak.keycloak-wildfly-server-subsystem" services="export" export="true"/>
     </dependencies>
 </module>

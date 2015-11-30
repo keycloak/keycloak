@@ -113,6 +113,11 @@ public class TomcatSamlTest {
     }
 
     @Test
+    public void testErrorHandling() throws Exception {
+        testStrategy.testErrorHandling();
+    }
+
+    @Test
     public void testPostSignedLoginLogoutEmailNameID() {
         testStrategy.testPostSignedLoginLogoutEmailNameID();
     }
@@ -149,12 +154,7 @@ public class TomcatSamlTest {
 
     @Test
     public void testPostBadRealmSignature() {
-        testStrategy.testPostBadRealmSignature( new SamlAdapterTestStrategy.CheckAuthError() {
-            @Override
-            public void check(WebDriver driver) {
-                Assert.assertEquals(driver.getPageSource(), "");
-            }
-        });
+        testStrategy.testPostBadRealmSignature();
     }
 
     @Test

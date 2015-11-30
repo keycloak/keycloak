@@ -21,10 +21,7 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
@@ -39,13 +36,8 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.MailUtil;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.InfoPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.LoginPasswordResetPage;
-import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.rule.GreenMailRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -59,6 +51,7 @@ import javax.mail.internet.MimeMessage;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -113,6 +106,9 @@ public class ResetPasswordTest {
 
     @WebResource
     protected InfoPage infoPage;
+
+    @WebResource
+    protected VerifyEmailPage verifyEmailPage;
 
     @WebResource
     protected LoginPasswordResetPage resetPasswordPage;
@@ -419,6 +415,59 @@ public class ResetPasswordTest {
             events.expectRequiredAction(EventType.RESET_PASSWORD).error("expired_code").client("test-app").user((String) null).session((String) null).clearDetails().assertEvent();
         } finally {
             Time.setOffset(0);
+        }
+    }
+
+    @Test
+    public void resetPasswordExpiredCodeShort() throws IOException, MessagingException, InterruptedException {
+        final AtomicInteger originalValue = new AtomicInteger();
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                originalValue.set(appRealm.getAccessCodeLifespan());
+                appRealm.setAccessCodeLifespanUserAction(60);
+            }
+        });
+
+        try {
+            loginPage.open();
+            loginPage.resetPassword();
+
+            resetPasswordPage.assertCurrent();
+
+            resetPasswordPage.changePassword("login-test");
+
+            loginPage.assertCurrent();
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+
+            events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+                    .session((String)null)
+                    .user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent();
+
+            assertEquals(1, greenMail.getReceivedMessages().length);
+
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+
+            String changePasswordUrl = getPasswordResetEmailLink(message);
+
+            Time.setOffset(70);
+
+            driver.navigate().to(changePasswordUrl.trim());
+
+            loginPage.assertCurrent();
+
+            assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
+
+            events.expectRequiredAction(EventType.RESET_PASSWORD).error("expired_code").client("test-app").user((String) null).session((String) null).clearDetails().assertEvent();
+        } finally {
+            Time.setOffset(0);
+
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setAccessCodeLifespanUserAction(originalValue.get());
+                }
+            });
         }
     }
 

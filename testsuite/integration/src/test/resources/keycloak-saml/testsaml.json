@@ -40,6 +40,30 @@
                 { "type" : "password",
                     "value" : "password" }
             ]
+        },
+        {
+            "username" : "topGroupUser",
+            "enabled": true,
+            "email" : "top@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/top"
+            ]
+        },
+        {
+            "username" : "level2GroupUser",
+            "enabled": true,
+            "email" : "level2@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/top/level2"
+            ]
         }
     ],
     "applications": [
@@ -59,6 +83,24 @@
                 "saml_single_logout_service_url_post": "http://localhost:8081/sales-post/",
                 "saml_single_logout_service_url_redirect": "http://localhost:8081/sales-post/",
                 "saml_idp_initiated_sso_url_name": "sales-post"
+            }
+        },
+        {
+            "name": "http://localhost:8081/sales-post-passive/",
+            "enabled": true,
+            "fullScopeAllowed": true,
+            "protocol": "saml",
+            "baseUrl": "http://localhost:8081/sales-post-passive",
+            "redirectUris": [
+                "http://localhost:8081/sales-post-passive/*"
+            ],
+            "attributes": {
+                "saml.authnstatement": "true",
+                "saml_assertion_consumer_url_post": "http://localhost:8081/sales-post-passive/",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8081/sales-post-passive/",
+                "saml_single_logout_service_url_post": "http://localhost:8081/sales-post-passive/",
+                "saml_single_logout_service_url_redirect": "http://localhost:8081/sales-post-passive/",
+                "saml_idp_initiated_sso_url_name": "sales-post-passive"
             }
         },
         {
@@ -347,6 +389,27 @@
             }
         }
     ],
+    "groups" : [
+        {
+            "name": "top",
+            "attributes": {
+                "topAttribute": ["true"]
+
+            },
+            "realmRoles": ["manager"],
+            "subGroups": [
+                {
+                    "name": "level2",
+                    "realmRoles": ["user"],
+                    "attributes": {
+                        "level2Attribute": ["true"]
+
+                    }
+                }
+            ]
+        }
+    ],
+
     "roles" : {
         "realm" : [
             {

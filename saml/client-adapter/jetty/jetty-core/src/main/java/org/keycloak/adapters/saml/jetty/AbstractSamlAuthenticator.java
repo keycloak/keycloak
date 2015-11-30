@@ -260,15 +260,6 @@ public abstract class AbstractSamlAuthenticator extends LoginAuthenticator {
         AuthChallenge challenge = authenticator.getChallenge();
         if (challenge != null) {
             challenge.challenge(facade);
-            if (challenge.errorPage() && errorPage != null) {
-                Response response = (Response)res;
-                try {
-                    response.sendRedirect(response.encodeRedirectURL(URIUtil.addPaths(request.getContextPath(), errorPage)));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-
-            }
         }
         return Authentication.SEND_CONTINUE;
     }

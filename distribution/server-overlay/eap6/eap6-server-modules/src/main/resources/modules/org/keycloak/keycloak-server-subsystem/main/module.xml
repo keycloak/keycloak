@@ -30,6 +30,6 @@
     </resources>
 
     <dependencies>
-        <module name="org.keycloak.keycloak-as7-server-subsystem" services="export" export="true"/>
+        <module name="org.keycloak.keycloak-eap6-server-subsystem" services="export" export="true"/>
     </dependencies>
 </module>

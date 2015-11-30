@@ -33,8 +33,14 @@ public class CreateClientForm extends Form {
     @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='consentRequired']]")
     private OnOffSwitch consentRequiredSwitch;
 
-    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='directGrantsOnly']]")
-    private OnOffSwitch directGrantsOnlySwitch;
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='standardFlowEnabled']]")
+    private OnOffSwitch standardFlowEnabledSwitch;
+
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='implicitFlowEnabled']]")
+    private OnOffSwitch implicitFlowEnabledSwitch;
+
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='directAccessGrantsEnabled']]")
+    private OnOffSwitch directAccessGrantsEnabledSwitch;
 
     @FindBy(id = "protocol")
     private Select protocolSelect;
@@ -67,7 +73,9 @@ public class CreateClientForm extends Form {
         setName(client.getName());
         setEnabled(client.isEnabled());
         setConsentRequired(client.isConsentRequired());
-        setDirectGrantsOnly(client.isDirectGrantsOnly());
+        setStandardFlowEnabled(client.isStandardFlowEnabled());
+        setImplicitFlowEnabled(client.isImplicitFlowEnabled());
+        setDirectAccessGrantsEnabled(client.isDirectAccessGrantsEnabled());
         setProtocol(client.getProtocol());
         if (OIDC.equals(client.getProtocol())) {
             setAccessType(client);
@@ -86,7 +94,9 @@ public class CreateClientForm extends Form {
         values.setName(getName());
         values.setEnabled(isEnabled());
         values.setConsentRequired(isConsentRequired());
-        values.setDirectGrantsOnly(isDirectGrantsOnly());
+        values.setStandardFlowEnabled(isStandardFlowEnabled());
+        values.setImplicitFlowEnabled(isImplicitFlowEnabled());
+        values.setDirectAccessGrantsEnabled(isDirectAccessGrantsEnabled());
         values.setProtocol(getProtocol());
         if (OIDC.equals(values.getProtocol())) {
             values.setBearerOnly(isBearerOnly());
@@ -186,12 +196,28 @@ public class CreateClientForm extends Form {
         consentRequiredSwitch.setOn(consentRequired);
     }
 
-    public boolean isDirectGrantsOnly() {
-        return directGrantsOnlySwitch.isOn();
+    public boolean isStandardFlowEnabled() {
+        return standardFlowEnabledSwitch.isOn();
     }
 
-    public void setDirectGrantsOnly(boolean directGrantsOnly) {
-        directGrantsOnlySwitch.setOn(directGrantsOnly);
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        standardFlowEnabledSwitch.setOn(standardFlowEnabled);
+    }
+
+    public boolean isImplicitFlowEnabled() {
+        return implicitFlowEnabledSwitch.isOn();
+    }
+
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        implicitFlowEnabledSwitch.setOn(implicitFlowEnabled);
+    }
+
+    public boolean isDirectAccessGrantsEnabled() {
+        return directAccessGrantsEnabledSwitch.isOn();
+    }
+
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        directAccessGrantsEnabledSwitch.setOn(directAccessGrantsEnabled);
     }
 
     public String getProtocol() {

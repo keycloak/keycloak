@@ -20,7 +20,7 @@ public class Authentication extends AdminConsoleRealm {
     @FindBy(xpath = "//div[contains(@class, 'alert-success')]")
     private WebElement success;
     
-    @FindBy(xpath = "//button[@class='close']/span")
+    @FindBy(id = "notification-close")
     private WebElement close;
     
     public String getSuccessMessage() {

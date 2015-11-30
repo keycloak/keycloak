@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.rule;
 
 import io.undertow.servlet.api.DeploymentInfo;
+import io.undertow.servlet.api.ErrorPage;
 import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.LoginConfig;
 import io.undertow.servlet.api.SecurityConstraint;
@@ -156,7 +157,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         return new DeploymentBuilder();
     }
 
-    public void addErrorPage(DeploymentInfo di) {
+    public void addErrorPage(String errorPage, DeploymentInfo di) {
         ServletInfo servlet = new ServletInfo("Error Page", ErrorServlet.class);
         servlet.addMapping("/error.html");
         SecurityConstraint constraint = new SecurityConstraint();
@@ -166,6 +167,11 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         constraint.setEmptyRoleSemantic(SecurityInfo.EmptyRoleSemantic.PERMIT);
         di.addSecurityConstraint(constraint);
         di.addServlet(servlet);
+        di
+                .addErrorPage(new ErrorPage(errorPage, 400))
+                .addErrorPage(new ErrorPage(errorPage, 401))
+                .addErrorPage(new ErrorPage(errorPage, 403))
+                .addErrorPage(new ErrorPage(errorPage, 500));
     }
 
     public void deployJaxrsApplication(String name, String contextPath, Class<? extends Application> applicationClass, Map<String,String> initParams) {
@@ -346,9 +352,9 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
                 constraint.addRoleAllowed(role);
                 di.addSecurityConstraint(constraint);
             }
-            LoginConfig loginConfig = new LoginConfig("KEYCLOAK", "demo", null, errorPage);
+            LoginConfig loginConfig = new LoginConfig("KEYCLOAK", "demo", null, null);
             di.setLoginConfig(loginConfig);
-            addErrorPage(di);
+            addErrorPage(errorPage, di);
 
             server.getServer().deploy(di);
         }

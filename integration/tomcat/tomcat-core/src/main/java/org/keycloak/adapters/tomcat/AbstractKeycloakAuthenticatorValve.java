@@ -195,12 +195,6 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
         }
         AuthChallenge challenge = authenticator.getChallenge();
         if (challenge != null) {
-            if (loginConfig == null) {
-                loginConfig = request.getContext().getLoginConfig();
-            }
-            if (challenge.errorPage()) {
-                if (forwardToErrorPageInternal(request, response, loginConfig))return false;
-            }
             challenge.challenge(facade);
         }
         return false;

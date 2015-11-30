@@ -2,9 +2,12 @@ package org.keycloak.adapters.undertow;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.CookieImpl;
+import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
+import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.common.util.KeycloakUriBuilder;
 
 import javax.security.cert.X509Certificate;
@@ -22,6 +25,9 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class UndertowHttpFacade implements HttpFacade {
+    public static final AttachmentKey<AuthenticationError> AUTH_ERROR_ATTACHMENT_KEY = AttachmentKey.create(AuthenticationError.class);
+    public static final AttachmentKey<LogoutError> LOGOUT_ERROR_ATTACHMENT_KEY = AttachmentKey.create(LogoutError.class);
+
     protected HttpServerExchange exchange;
     protected RequestFacade requestFacade = new RequestFacade();
     protected ResponseFacade responseFacade = new ResponseFacade();
@@ -127,6 +133,17 @@ public class UndertowHttpFacade implements HttpFacade {
             }
             return address.getHostAddress();
         }
+
+        @Override
+        public void setError(AuthenticationError error) {
+            exchange.putAttachment(AUTH_ERROR_ATTACHMENT_KEY, error);
+        }
+
+        @Override
+        public void setError(LogoutError error) {
+            exchange.putAttachment(LOGOUT_ERROR_ATTACHMENT_KEY, error);
+
+        }
     }
 
     protected class ResponseFacade implements Response {
@@ -168,6 +185,11 @@ public class UndertowHttpFacade implements HttpFacade {
         public OutputStream getOutputStream() {
             if (!exchange.isBlocking()) exchange.startBlocking();
             return exchange.getOutputStream();
+        }
+
+        @Override
+        public void sendError(int code) {
+            exchange.setResponseCode(code);
         }
 
         @Override

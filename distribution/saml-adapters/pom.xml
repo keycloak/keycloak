@@ -15,7 +15,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>wf9-adapter</module>
+        <module>wildfly-adapter</module>
         <module>tomcat6-adapter-zip</module>
         <module>tomcat7-adapter-zip</module>
         <module>tomcat8-adapter-zip</module>

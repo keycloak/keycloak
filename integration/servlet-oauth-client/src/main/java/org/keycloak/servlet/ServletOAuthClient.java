@@ -6,7 +6,10 @@ import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.ServerRequest;
+import org.keycloak.adapters.spi.AuthenticationError;
+import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -151,10 +154,10 @@ public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
 
     public static IDToken extractIdToken(String idToken) {
         if (idToken == null) return null;
-        JWSInput input = new JWSInput(idToken);
         try {
+            JWSInput input = new JWSInput(idToken);
             return input.readJsonContent(IDToken.class);
-        } catch (IOException e) {
+        } catch (JWSInputException e) {
             throw new RuntimeException(e);
         }
     }
@@ -237,6 +240,18 @@ public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
                 public String getRemoteAddr() {
                     return servletRequest.getRemoteAddr();
                 }
+
+                @Override
+                public void setError(AuthenticationError error) {
+                    servletRequest.setAttribute(AuthenticationError.class.getName(), error);
+
+                }
+
+                @Override
+                public void setError(LogoutError error) {
+                    servletRequest.setAttribute(LogoutError.class.getName(), error);
+                }
+
             };
         }
 

@@ -87,6 +87,18 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
         submitButton.click();
     }
 
+    public void updateUsername(String username) {
+        usernameInput.clear();
+        usernameInput.sendKeys(username);
+        submitButton.click();
+    }
+
+    public void updateEmail(String email) {
+        emailInput.clear();
+        emailInput.sendKeys(email);
+        submitButton.click();
+    }
+
     public void clickCancel() {
         cancelButton.click();
     }

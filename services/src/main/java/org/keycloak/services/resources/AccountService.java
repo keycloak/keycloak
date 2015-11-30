@@ -117,8 +117,6 @@ public class AccountService extends AbstractSecuredLocalService {
         LOG_DETAILS.add(Details.AUTH_METHOD);
     }
 
-    public static final String KEYCLOAK_STATE_CHECKER = "KEYCLOAK_STATE_CHECKER";
-
     // Used when some other context (ie. IdentityBrokerService) wants to forward error to account management and display it here
     public static final String ACCOUNT_MGMT_FORWARDED_ERROR_NOTE = "ACCOUNT_MGMT_FORWARDED_ERROR";
 
@@ -603,12 +601,6 @@ public class AccountService extends AbstractSecuredLocalService {
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
-
-        String action = formData.getFirst("submitAction");
-        if (action != null && action.equals("Cancel")) {
-            setReferrerOnPage();
-            return account.createResponse(AccountPages.PASSWORD);
-        }
 
         csrfCheck(formData);
         UserModel user = auth.getUser();

@@ -27,6 +27,12 @@ public class ClientSessionCode {
     private final RealmModel realm;
     private final ClientSessionModel clientSession;
 
+    public enum ActionType {
+        CLIENT,
+        LOGIN,
+        USER
+    }
+
     public ClientSessionCode(RealmModel realm, ClientSessionModel clientSession) {
         this.realm = realm;
         this.clientSession = clientSession;
@@ -128,23 +134,29 @@ public class ClientSessionCode {
         return clientSession;
     }
 
-    public boolean isValid(String requestedAction) {
+    public boolean isValid(String requestedAction, ActionType actionType) {
         if (!isValidAction(requestedAction)) return false;
-        return isActionActive(requestedAction);
+        return isActionActive(actionType);
     }
 
-    public boolean isActionActive(String requestedAction) {
+    public boolean isActionActive(ActionType actionType) {
         int timestamp = clientSession.getTimestamp();
 
         int lifespan;
-        if (requestedAction.equals(ClientSessionModel.Action.CODE_TO_TOKEN.name())) {
-            lifespan = realm.getAccessCodeLifespan();
-
-        } else if (requestedAction.equals(ClientSessionModel.Action.AUTHENTICATE.name())) {
-            lifespan = realm.getAccessCodeLifespanLogin() > 0 ? realm.getAccessCodeLifespanLogin() : realm.getAccessCodeLifespanUserAction();
-        } else {
-            lifespan = realm.getAccessCodeLifespanUserAction();
+        switch (actionType) {
+            case CLIENT:
+                lifespan = realm.getAccessCodeLifespan();
+                break;
+            case LOGIN:
+                lifespan = realm.getAccessCodeLifespanLogin() > 0 ? realm.getAccessCodeLifespanLogin() : realm.getAccessCodeLifespanUserAction();
+                break;
+            case USER:
+                lifespan = realm.getAccessCodeLifespanUserAction();
+                break;
+            default:
+                throw new IllegalArgumentException();
         }
+
         return timestamp + lifespan > Time.currentTime();
     }
 

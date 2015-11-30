@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.Properties;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
@@ -81,6 +82,7 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
     }
 
     @Test
+    @Ignore
     public void invalidSettingsTest() {
         createLdapUserProvider.navigateTo();
         createLdapUserProvider.form().selectVendor(ACTIVE_DIRECTORY);

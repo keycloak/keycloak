@@ -68,6 +68,7 @@ public class XmlParserTest {
         Assert.assertEquals("ssl", sp.getSslPolicy());
         Assert.assertEquals("format", sp.getNameIDPolicyFormat());
         Assert.assertTrue(sp.isForceAuthentication());
+        Assert.assertTrue(sp.isIsPassive());
         Assert.assertEquals(2, sp.getKeys().size());
         Key signing = sp.getKeys().get(0);
         Assert.assertTrue(signing.isSigning());

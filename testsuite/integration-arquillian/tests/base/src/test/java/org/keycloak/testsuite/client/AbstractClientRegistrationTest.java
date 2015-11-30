@@ -2,6 +2,7 @@ package org.keycloak.testsuite.client;
 
 import org.junit.After;
 import org.junit.Before;
+import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.models.AdminRoles;
@@ -13,7 +14,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,7 +29,7 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
 
     @Before
     public void before() throws Exception {
-        reg = new ClientRegistration(testContext.getAuthServerContextRoot() + "/auth", "test");
+        reg = ClientRegistration.create().url(testContext.getAuthServerContextRoot() + "/auth", "test").build();
     }
 
     @After
@@ -76,13 +76,11 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
         testRealms.add(rep);
     }
 
-    public ClientRepresentation createClient(ClientRepresentation client) {
-        Response response = adminClient.realm(REALM_NAME).clients().create(client);
-        String id = response.getLocation().toString();
-        id = id.substring(id.lastIndexOf('/') + 1);
-        client.setId(id);
-        response.close();
-        return client;
+    public ClientRepresentation createClient(ClientRepresentation client) throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation response = reg.create(client);
+        reg.auth(null);
+        return response;
     }
 
     public ClientRepresentation getClient(String clientId) {
@@ -91,6 +89,22 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
         } catch (NotFoundException e) {
             return null;
         }
+    }
+
+    void authCreateClients() {
+        reg.auth(Auth.token(getToken("create-clients", "password")));
+    }
+
+    void authManageClients() {
+        reg.auth(Auth.token(getToken("manage-clients", "password")));
+    }
+
+    void authNoAccess() {
+        reg.auth(Auth.token(getToken("no-access", "password")));
+    }
+
+    private String getToken(String username, String password) {
+        return oauthClient.getToken(REALM_NAME, "security-admin-console", null, username, password).getToken();
     }
 
 }

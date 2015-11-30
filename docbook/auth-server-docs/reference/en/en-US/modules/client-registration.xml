@@ -1,0 +1,215 @@
+<chapter id="client-registration">
+    <title>Client Registration</title>
+
+    <para>
+        In order for an application or service to utilize Keycloak it has to register a client in Keycloak. An
+        admin can do this through the admin console (or admin REST endpoints), but clients can also register themselves
+        through Keycloak's client registration service.
+    </para>
+
+    <para>
+        The Client Registration Service provides built-in support for Keycloak Client Representations, OpenID Connect
+        Client Meta Data and SAML Entity Descriptors. It's also possible to plugin custom client registration providers
+        if required. The Client Registration Service endpoint is <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;</literal>.
+    </para>
+    <para>
+        The built-in supported <literal>providers</literal> are:
+        <itemizedlist>
+            <listitem><literal>default</literal> Keycloak Representations</listitem>
+            <listitem><literal>install</literal> Keycloak Adapter Configuration</listitem>
+            <listitem><literal>openid-connect</literal> OpenID Connect Dynamic Client Registration</listitem>
+            <listitem><literal>saml2-entity-descriptor</literal> SAML Entity Descriptors</listitem>
+        </itemizedlist>
+        The following sections will describe how to use the different providers.
+    </para>
+
+    <section>
+        <title>Authentication</title>
+        <para>
+            To invoke the Client Registration Services you need a token. The token can be a standard bearer token, a
+            initial access token or a registration access token.
+        </para>
+
+        <section>
+            <title>Bearer Token</title>
+            <para>
+                The bearertoken can be issued on behalf of a user or a Service Account. The following permissions are required
+                to invoke the endpoints (see <link linkend='admin-permissions'>Admin Permissions</link> for more details):
+                <itemizedlist>
+                    <listitem>
+                        <literal>create-client</literal> or <literal>manage-client</literal> - To create clients
+                    </listitem>
+                    <listitem>
+                        <literal>view-client</literal> or <literal>manage-client</literal> - To view clients
+                    </listitem>
+                    <listitem>
+                        <literal>manage-client</literal> - To update or delete clients
+                    </listitem>
+                </itemizedlist>
+                If you are using a regular bearer token to create clients we recommend using a token from on behalf of a
+                Service Account with only the <literal>create-client</literal> role. See the
+                <link linkend="service-accounts">Service Account</link> section for more details.
+            </para>
+        </section>
+
+        <section>
+            <title>Initial Access Token</title>
+            <para>
+                The best approach to create new clients is by using initial access tokens. An initial access token can
+                only be used to create clients and has a configurable expiration as well as a configurable limit on
+                how many clients can be created.
+            </para>
+            <para>
+                An initial access token can be created through the admin console. To create a new initial access token
+                first select the realm in the admin console, then click on <literal>Realm Settings</literal> in the menu
+                on the left, followed by <literal>Initial Access Tokens</literal> in the tabs displayed in the page.
+            </para>
+            <para>
+                You will now be able to see any existing initial access tokens. If you have access you can delete tokens
+                that are no longer required. You can only retrieve the value of the token when you are creating it. To
+                create a new token click on <literal>Create</literal>. You can now optionally add how long the token
+                should be valid, also how many clients can be created using the token. After you click on <literal>Save</literal>
+                the token value is displayed. It is important that you copy/paste this token now as you won't be able
+                to retrieve it later. If you forget to copy/paste it, then delete the token and create another one.
+                The token value is used as a standard bearer token when invoking the Client Registration Services, by
+                adding it to the Authorization header in the request. For example:
+<programlisting><![CDATA[
+Authorization: bearer eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJmMjJmNzQyYy04ZjNlLTQ2M....
+]]></programlisting>
+            </para>
+        </section>
+
+        <section>
+            <title>Registration Access Token</title>
+            <para>
+                When you create a client through the Client Registration Service the response will include a registration
+                access token. The registration access token provides access to retrieve the client configuration later, but
+                also to update or delete the client. The registration access token is included with the request in the
+                same way as a bearer token or initial access token. Registration access tokens are only valid once
+                when it's used the response will include a new token.
+            </para>
+            <para>
+                If a client was created outside of the Client Registration Service it won't have a registration access
+                token associated with it. You can create one through the admin console. This can also be useful if
+                you loose the token for a particular client. To create a new token find the client in the admin console
+                and click on <literal>Credentials</literal>. Then click on <literal>Generate registration access token</literal>.
+            </para>
+        </section>
+    </section>
+
+    <section>
+        <title>Keycloak Representations</title>
+        <para>
+            The <literal>default</literal> client registration provider can be used to create, retrieve, update and delete a client. It uses
+            Keycloaks Client Representation format which provides support for configuring clients exactly as they can
+            be configured through the admin console, including for example configuring protocol mappers.
+        </para>
+        <para>
+            To create a client create a Client Representation (JSON) then do a HTTP POST to:
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/default</literal>. It will return a Client Representation
+            that also includes the registration access token. You should save the registration access token somewhere
+            if you want to retrieve the config, update or delete the client later.
+        </para>
+        <para>
+            To retrieve the Client Representation then do a HTTP GET to:
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;clients/&lt;provider&gt;/default/&lt;client id&gt;</literal>. It will also
+            return a new registration access token.
+        </para>
+        <para>
+            To update the Client Representation then do a HTTP PUT to with the updated Client Representation to:
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/default/&lt;client id&gt;</literal>. It will also
+            return a new registration access token.
+        </para>
+        <para>
+            To delete the Client Representation then do a HTTP DELETE to:
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/default/&lt;client id&gt;</literal>
+        </para>
+    </section>
+
+    <section>
+        <title>Keycloak Adapter Configuration</title>
+        <para>
+            The <literal>installation</literal> client registration provider can be used to retrieve the adapter configuration
+            for a client. In addition to token authentication you can also authenticate with client credentials using
+            HTTP basic authentication. To do this include the following header in the request:
+<programlisting><![CDATA[
+Authorization: basic BASE64(client-id + ':' + client-secret)
+]]></programlisting>
+        </para>
+        <para>
+            To retrieve the Adapter Configuration then do a HTTP GET to:
+            <literal>&lt;KEYCLOAK URL&gt;//realms/&lt;realm&gt;clients/&lt;provider&gt;/installation/&lt;client id&gt;</literal>
+        </para>
+        <para>
+            No authentication is required for public clients. This means that for the JavaScript adapter you can
+            load the client configuration directly from Keycloak using the above URL.
+        </para>
+    </section>
+
+    <section>
+        <title>OpenID Connect Dynamic Client Registration</title>
+        <para>
+            Keycloak implements <ulink url="https://openid.net/specs/openid-connect-registration-1_0.html">OpenID Connect Dynamic Client Registration</ulink>,
+            which extends <ulink url="https://tools.ietf.org/html/rfc7591">OAuth 2.0 Dynamic Client Registration Protocol</ulink> and
+            <ulink url="https://tools.ietf.org/html/rfc7592">OAuth 2.0 Dynamic Client Registration Management Protocol</ulink>.
+        </para>
+        <para>
+            The endpoint to use these specifications to register clients in Keycloak is:
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/oidc[/&lt;client id&gt;]</literal>.
+        </para>
+        <para>
+            This endpoints can also be found in the OpenID Connect Discovery endpoint for the realm:
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/.well-known/openid-configuration</literal>.
+        </para>
+    </section>
+
+    <section>
+        <title>SAML Entity Descriptors</title>
+        <para>
+            The SAML Entity Descriptor endpoint only supports using SAML v2 Entity Descriptors to create clients. It
+            doesn't support retrieving, updating or deleting clients. For those operations the Keycloak representation
+            endpoints should be used. When creating a client a Keycloak Client Representation is returned with details
+            about the created client, including a registration access token.
+        </para>
+        <para>
+            To create a client do a HTTP POST with the SAML Entity Descriptor to:
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/saml2-entity-descriptor</literal>.
+        </para>
+    </section>
+
+    <section>
+        <title>Client Registration Java API</title>
+        <para>
+            The Client Registration Java API makes it easy to use the Client Registration Service using Java. To use
+            include the dependency <literal>org.keycloak:keycloak-client-registration-api:&gt;VERSION&lt;</literal> from
+            Maven.
+        </para>
+        <para>
+            For full instructions on using the Client Registration refer to the JavaDocs. Below is an example of creating
+            a client:
+<programlisting><![CDATA[
+String initialAccessToken = "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJmMjJmNzQyYy04ZjNlLTQ2M....";
+
+ClientRepresentation client = new ClientRepresentation();
+client.setClientId(CLIENT_ID);
+
+ClientRegistration reg = ClientRegistration.create().url("http://keycloak/auth/realms/myrealm").build();
+reg.auth(initialAccessToken);
+
+client = reg.create(client);
+
+String registrationAccessToken = client.getRegistrationAccessToken();
+]]></programlisting>
+        </para>
+    </section>
+
+    <!--
+    <section>
+        <title>Client Registration CLI</title>
+        <para>
+            TODO
+        </para>
+    </section>
+    -->
+
+</chapter>

@@ -301,6 +301,18 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public int getAccessTokenLifespanForImplicitFlow() {
+        if (updated != null) return updated.getAccessTokenLifespanForImplicitFlow();
+        return cached.getAccessTokenLifespanForImplicitFlow();
+    }
+
+    @Override
+    public void setAccessTokenLifespanForImplicitFlow(int seconds) {
+        getDelegateForUpdate();
+        updated.setAccessTokenLifespanForImplicitFlow(seconds);
+    }
+
+    @Override
     public int getAccessCodeLifespan() {
         if (updated != null) return updated.getAccessCodeLifespan();
         return cached.getAccessCodeLifespan();
@@ -479,6 +491,30 @@ public class RealmAdapter implements RealmModel {
         if (updated != null) return updated.getRoleById(id);
         return cacheSession.getRoleById(id, this);
      }
+
+    @Override
+    public List<GroupModel> getDefaultGroups() {
+        List<GroupModel> defaultGroups = new LinkedList<>();
+        for (String id : cached.getDefaultGroups()) {
+            defaultGroups.add(cacheSession.getGroupById(id, this));
+        }
+        return defaultGroups;
+
+    }
+
+    @Override
+    public void addDefaultGroup(GroupModel group) {
+        getDelegateForUpdate();
+        updated.addDefaultGroup(group);
+
+    }
+
+    @Override
+    public void removeDefaultGroup(GroupModel group) {
+        getDelegateForUpdate();
+        updated.removeDefaultGroup(group);
+
+    }
 
     @Override
     public List<String> getDefaultRoles() {
@@ -1305,6 +1341,12 @@ public class RealmAdapter implements RealmModel {
     public GroupModel createGroup(String name) {
         getDelegateForUpdate();
         return updated.createGroup(name);
+    }
+
+    @Override
+    public GroupModel createGroup(String id, String name) {
+        getDelegateForUpdate();
+        return updated.createGroup(id, name);
     }
 
     @Override

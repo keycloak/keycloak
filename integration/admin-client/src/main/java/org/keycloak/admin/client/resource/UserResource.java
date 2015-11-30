@@ -2,6 +2,7 @@ package org.keycloak.admin.client.resource;
 
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 
@@ -33,6 +34,21 @@ public interface UserResource {
 
     @DELETE
     public void remove();
+
+    @Path("groups")
+    @GET
+    List<GroupRepresentation> groups();
+
+    @Path("groups/{groupId}")
+    @PUT
+    void joinGroup(@PathParam("groupId") String groupId);
+
+    @Path("groups/{groupId}")
+    @DELETE
+    void leaveGroup(@PathParam("groupId") String groupId);
+
+
+
 
     @POST
     @Path("logout")

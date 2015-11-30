@@ -23,7 +23,7 @@
             </div>
         </#if>
 
-        <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
+        <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker?html}">
 
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
@@ -49,7 +49,6 @@
             <div id="kc-form-buttons" class="col-md-offset-2 col-md-10 submit">
                 <div class="">
                     <button type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="submitAction" value="Save">${msg("doSave")}</button>
-                    <button type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" name="submitAction" value="Cancel">${msg("doCancel")}</button>
                 </div>
             </div>
         </div>

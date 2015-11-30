@@ -27,11 +27,6 @@ public class InitiateLogin implements AuthChallenge {
     }
 
     @Override
-    public boolean errorPage() {
-        return false;
-    }
-
-    @Override
     public int getResponseCode() {
         return 0;
     }
@@ -53,7 +48,7 @@ public class InitiateLogin implements AuthChallenge {
             SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
                     .destination(destinationUrl)
                     .issuer(issuerURL)
-                    .forceAuthn(deployment.isForceAuthentication())
+                    .forceAuthn(deployment.isForceAuthentication()).isPassive(deployment.isIsPassive())
                     .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
             if (deployment.getIDP().getSingleSignOnService().getResponseBinding() != null) {
                 String protocolBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
@@ -87,6 +82,7 @@ public class InitiateLogin implements AuthChallenge {
             Document document = authnRequestBuilder.toDocument();
             SamlDeployment.Binding samlBinding = deployment.getIDP().getSingleSignOnService().getRequestBinding();
             SamlUtil.sendSaml(true, httpFacade, actionUrl, binding, document, samlBinding);
+            sessionStore.setCurrentAction(SamlSessionStore.CurrentAction.LOGGING_IN);
         } catch (Exception e) {
             throw new RuntimeException("Could not create authentication request.", e);
         }

@@ -16,6 +16,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -23,12 +24,14 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CacheUserProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -141,6 +144,18 @@ public class RealmAdminResource {
     }
 
     /**
+     * Base path for managing client initial access tokens
+     *
+     * @return
+     */
+    @Path("clients-initial-access")
+    public ClientInitialAccessResource getClientInitialAccess() {
+        ClientInitialAccessResource resource = new ClientInitialAccessResource(realm, auth, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
+
+    /**
      * base path for managing realm-level roles of this realm
      *
      * @return
@@ -221,7 +236,7 @@ public class RealmAdminResource {
         } catch (ModelDuplicateException e) {
             throw e;
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.getMessage(), e);
             return ErrorResponse.error("Failed to update " + rep.getRealm() + " Realm.", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
@@ -619,11 +634,69 @@ public class RealmAdminResource {
         return new IdentityProvidersResource(realm, session, this.auth, adminEvent);
     }
 
+    /**
+     * Get group hierarchy.  Only name and ids are returned.
+     *
+     * @return
+     */
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("default-groups")
+    public List<GroupRepresentation> getDefaultGroups() {
+        this.auth.requireView();
+        List<GroupRepresentation> defaults = new LinkedList<>();
+        for (GroupModel group : realm.getDefaultGroups()) {
+            defaults.add(ModelToRepresentation.toRepresentation(group, false));
+        }
+        return defaults;
+    }
+    @PUT
+    @NoCache
+    @Path("default-groups/{groupId}")
+    public void addDefaultGroup(@PathParam("groupId") String groupId) {
+        this.auth.requireManage();
+        GroupModel group = realm.getGroupById(groupId);
+        if (group == null) {
+            throw new NotFoundException("Group not found");
+        }
+        realm.addDefaultGroup(group);
+    }
+
+    @DELETE
+    @NoCache
+    @Path("default-groups/{groupId}")
+    public void removeDefaultGroup(@PathParam("groupId") String groupId) {
+        this.auth.requireManage();
+        GroupModel group = realm.getGroupById(groupId);
+        if (group == null) {
+            throw new NotFoundException("Group not found");
+        }
+        realm.removeDefaultGroup(group);
+    }
+
+
     @Path("groups")
-    public GroupResource getGroups() {
-        GroupResource resource =  new GroupResource(realm, session, this.auth, adminEvent);
+    public GroupsResource getGroups() {
+        GroupsResource resource =  new GroupsResource(realm, session, this.auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }
+
+
+    @GET
+    @Path("group-by-path/{path: .*}")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public GroupRepresentation getGroupByPath(@PathParam("path") String path) {
+        this.auth.requireView();
+        GroupModel found = KeycloakModelUtils.findGroupByPath(realm, path);
+        if (found == null) {
+            throw new NotFoundException("Group path does not exist");
+
+        }
+        return ModelToRepresentation.toGroupHierarchy(found, true);
+    }
+
 
 }

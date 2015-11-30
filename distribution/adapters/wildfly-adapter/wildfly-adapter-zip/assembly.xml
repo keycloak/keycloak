@@ -1,0 +1,37 @@
+<assembly>
+    <id>war-dist</id>
+
+    <formats>
+        <format>zip</format>
+        <format>tar.gz</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked</directory>
+            <includes>
+                <include>org/keycloak/keycloak-common/**</include>
+                <include>org/keycloak/keycloak-core/**</include>
+                <include>org/keycloak/keycloak-adapter-core/**</include>
+                <include>org/keycloak/keycloak-adapter-spi/**</include>
+                <include>org/keycloak/keycloak-jboss-adapter-core/**</include>
+                <include>org/keycloak/keycloak-undertow-adapter/**</include>
+                <include>org/keycloak/keycloak-wildfly-adapter/**</include>
+                <include>org/keycloak/keycloak-wildfly-subsystem/**</include>
+                <include>org/keycloak/keycloak-adapter-subsystem/**</include>
+                <include>org/keycloak/keycloak-servlet-oauth-client/**</include>
+            </includes>
+            <excludes>
+                <exclude>**/*.war</exclude>
+            </excludes>
+            <outputDirectory>modules/system/layers/base</outputDirectory>
+        </fileSet>
+    </fileSets>
+    <files>
+        <file>
+             <source>../../shared-cli/adapter-install.cli</source>
+             <outputDirectory>bin</outputDirectory>
+        </file>
+    </files>
+</assembly>

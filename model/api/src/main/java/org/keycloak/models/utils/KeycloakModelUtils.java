@@ -1,6 +1,7 @@
 package org.keycloak.models.utils;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -27,8 +28,15 @@ import org.keycloak.common.util.PemUtils;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.security.*;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,13 +51,21 @@ import java.util.UUID;
  */
 public final class KeycloakModelUtils {
 
-    private static final int RANDOM_PASSWORD_BYTES = 32;
-
     private KeycloakModelUtils() {
     }
 
     public static String generateId() {
         return UUID.randomUUID().toString();
+    }
+
+    public static String generateSecret() {
+        return generateSecret(32);
+    }
+
+    public static String generateSecret(int bytes) {
+        byte[] buf = new byte[bytes];
+        new SecureRandom().nextBytes(buf);
+        return Base64Url.encode(buf);
     }
 
     public static PublicKey getPublicKey(String publicKeyPem) {
@@ -180,16 +196,6 @@ public final class KeycloakModelUtils {
         UserCredentialModel secret = UserCredentialModel.generateSecret();
         client.setSecret(secret.getValue());
         return secret;
-    }
-
-    public static void generateRegistrationAccessToken(ClientModel client) {
-        client.setRegistrationSecret(generatePassword());
-    }
-
-    public static String generatePassword() {
-        byte[] buf = new byte[RANDOM_PASSWORD_BYTES];
-        new SecureRandom().nextBytes(buf);
-        return Base64Url.encode(buf);
     }
 
     public static String getDefaultClientAuthenticatorType() {
@@ -417,5 +423,102 @@ public final class KeycloakModelUtils {
                 result.add(execution);
             }
         }
+    }
+
+    public static String resolveFirstAttribute(GroupModel group, String name) {
+        String value = group.getFirstAttribute(name);
+        if (value != null) return value;
+        if (group.getParentId() == null) return null;
+        return resolveFirstAttribute(group.getParent(), name);
+
+    }
+
+    /**
+     *
+     *
+     * @param user
+     * @param name
+     * @return
+     */
+    public static String resolveFirstAttribute(UserModel user, String name) {
+        String value = user.getFirstAttribute(name);
+        if (value != null) return value;
+        for (GroupModel group : user.getGroups()) {
+            value = resolveFirstAttribute(group, name);
+            if (value != null) return value;
+        }
+        return null;
+
+    }
+
+    public static List<String>  resolveAttribute(GroupModel group, String name) {
+        List<String> values = group.getAttribute(name);
+        if (values != null && !values.isEmpty()) return values;
+        if (group.getParentId() == null) return null;
+        return resolveAttribute(group.getParent(), name);
+
+    }
+
+
+    public static List<String> resolveAttribute(UserModel user, String name) {
+        List<String> values = user.getAttribute(name);
+        if (!values.isEmpty()) return values;
+        for (GroupModel group : user.getGroups()) {
+            values = resolveAttribute(group, name);
+            if (values != null) return values;
+        }
+        return Collections.emptyList();
+    }
+
+
+    private static GroupModel findSubGroup(String[] path, int index, GroupModel parent) {
+        for (GroupModel group : parent.getSubGroups()) {
+            if (group.getName().equals(path[index])) {
+                if (path.length == index + 1) {
+                    return group;
+                }
+                else {
+                    if (index + 1 < path.length) {
+                        GroupModel found = findSubGroup(path, index + 1, group);
+                        if (found != null) return found;
+                    } else {
+                        return null;
+                    }
+                }
+
+            }
+        }
+        return null;
+    }
+
+    public static GroupModel findGroupByPath(RealmModel realm, String path) {
+        if (path == null) {
+            return null;
+        }
+        if (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        if (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        String[] split = path.split("/");
+        if (split.length == 0) return null;
+        GroupModel found = null;
+        for (GroupModel group : realm.getTopLevelGroups()) {
+            if (group.getName().equals(split[0])) {
+                if (split.length == 1) {
+                    found = group;
+                    break;
+                }
+                else {
+                    if (split.length > 1) {
+                        found = findSubGroup(split, 1, group);
+                        if (found != null) break;
+                    }
+                }
+
+            }
+        }
+        return found;
     }
 }

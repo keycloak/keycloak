@@ -43,6 +43,12 @@
             application not knowing if the user's permissions have changed.  This value is usually in minutes.
         </para>
         <para>
+            The <code class="literal">Access Token Lifespan For Implicit Flow</code> is how long an access token is valid for when using OpenID Connect implicit flow.
+            With implicit flow, there is no refresh token available, so that's why the lifespan is usually bigger than default Access Token Lifespan mentioned above.
+            See <ulink url="http://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth">OpenID Connect specification</ulink> for details about implicit flow and
+            <link linkend="javascript-adapter">Javascript Adapter</link> for some additional details.
+        </para>
+        <para>
             The <literal>Client login timeout</literal> is how long an access code is valid for.  An access code is obtained
             on the 1st leg of the OAuth 2.0 redirection protocol.  This should be a short time limit.  Usually seconds.
         </para>

@@ -176,6 +176,27 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmTokenDetailCtrl'
         })
+        .when('/realms/:realm/client-initial-access', {
+            templateUrl : resourceUrl + '/partials/client-initial-access.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientInitialAccess : function(ClientInitialAccessLoader) {
+                    return ClientInitialAccessLoader();
+                }
+            },
+            controller : 'ClientInitialAccessCtrl'
+        })
+        .when('/realms/:realm/client-initial-access/create', {
+            templateUrl : resourceUrl + '/partials/client-initial-access-create.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'ClientInitialAccessCreateCtrl'
+        })
         .when('/realms/:realm/keys-settings', {
             templateUrl : resourceUrl + '/partials/realm-keys.html',
             resolve : {
@@ -675,6 +696,18 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'GroupRoleMappingCtrl'
+        })
+        .when('/realms/:realm/default-groups', {
+            templateUrl : resourceUrl + '/partials/default-groups.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                groups : function(GroupListLoader) {
+                    return GroupListLoader();
+                }
+            },
+            controller : 'DefaultGroupsCtrl'
         })
 
 
@@ -1971,6 +2004,15 @@ module.directive('kcTabsGroup', function () {
         restrict: 'E',
         replace: true,
         templateUrl: resourceUrl + '/templates/kc-tabs-group.html'
+    }
+});
+
+module.directive('kcTabsGroupList', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-group-list.html'
     }
 });
 

@@ -67,8 +67,11 @@
         var o = 'Token Expires:\t\t' + new Date((keycloak.tokenParsed.exp + keycloak.timeSkew) * 1000).toLocaleString() + '\n';
         o += 'Token Expires in:\t' + Math.round(keycloak.tokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds\n';
 
-        o += 'Refresh Token Expires:\t' + new Date((keycloak.refreshTokenParsed.exp + keycloak.timeSkew) * 1000).toLocaleString() + '\n';
-        o += 'Refresh Expires in:\t' + Math.round(keycloak.refreshTokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds';
+        if (keycloak.refreshTokenParsed) {
+            o += 'Refresh Token Expires:\t' + new Date((keycloak.refreshTokenParsed.exp + keycloak.timeSkew) * 1000).toLocaleString() + '\n';
+            o += 'Refresh Expires in:\t' + Math.round(keycloak.refreshTokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds';
+        }
+
         output(o);
     }
 
@@ -106,7 +109,17 @@
         event('Auth Logout');
     };
 
-    keycloak.init().success(function(authenticated) {
+    keycloak.onTokenExpired = function () {
+        event('Access token expired.');
+    };
+
+    // Flow can be changed to 'implicit' or 'hybrid', but then client must enable implicit flow in admin console too 
+    var initOptions = {
+        responseMode: 'fragment',
+        flow: 'standard'
+    };
+
+    keycloak.init(initOptions).success(function(authenticated) {
         output('Init Success (' + (authenticated ? 'Authenticated' : 'Not Authenticated') + ')');
     }).error(function() {
         output('Init Error');

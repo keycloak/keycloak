@@ -274,8 +274,8 @@
 
         <!-- subsystems -->
 
-        <module-def name="org.keycloak.keycloak-as7-server-subsystem">
-            <maven-resource group="org.keycloak" artifact="keycloak-as7-server-subsystem"/>
+        <module-def name="org.keycloak.keycloak-eap6-server-subsystem">
+            <maven-resource group="org.keycloak" artifact="keycloak-eap6-server-subsystem"/>
         </module-def>
 
         <module-def name="org.keycloak.keycloak-server-subsystem"/>

@@ -17,6 +17,5 @@
         <module>as7-adapter-spi</module>
         <module>as7-adapter</module>
         <module>as7-subsystem</module>
-        <module>as7-server-subsystem</module>
     </modules>
 </project>

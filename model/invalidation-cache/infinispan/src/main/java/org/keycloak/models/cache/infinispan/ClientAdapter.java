@@ -120,14 +120,14 @@ public class ClientAdapter implements ClientModel {
         getDelegateForUpdate();
         updated.setSecret(secret);
     }
-    public String getRegistrationSecret() {
-        if (updated != null) return updated.getRegistrationSecret();
-        return cached.getRegistrationSecret();
+    public String getRegistrationToken() {
+        if (updated != null) return updated.getRegistrationToken();
+        return cached.getRegistrationToken();
     }
 
-    public void setRegistrationSecret(String registrationsecret) {
+    public void setRegistrationToken(String registrationToken) {
         getDelegateForUpdate();
-        updated.setRegistrationSecret(registrationsecret);
+        updated.setRegistrationToken(registrationToken);
     }
 
     public boolean isPublicClient() {
@@ -161,16 +161,6 @@ public class ClientAdapter implements ClientModel {
         getDelegateForUpdate();
         updated.setFullScopeAllowed(value);
 
-    }
-
-    public boolean isDirectGrantsOnly() {
-        if (updated != null) return updated.isDirectGrantsOnly();
-        return cached.isDirectGrantsOnly();
-    }
-
-    public void setDirectGrantsOnly(boolean flag) {
-        getDelegateForUpdate();
-        updated.setDirectGrantsOnly(flag);
     }
 
     public Set<RoleModel> getScopeMappings() {
@@ -449,6 +439,42 @@ public class ClientAdapter implements ClientModel {
     public void setConsentRequired(boolean consentRequired) {
         getDelegateForUpdate();
         updated.setConsentRequired(consentRequired);
+    }
+
+    @Override
+    public boolean isStandardFlowEnabled() {
+        if (updated != null) return updated.isStandardFlowEnabled();
+        return cached.isStandardFlowEnabled();
+    }
+
+    @Override
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        getDelegateForUpdate();
+        updated.setStandardFlowEnabled(standardFlowEnabled);
+    }
+
+    @Override
+    public boolean isImplicitFlowEnabled() {
+        if (updated != null) return updated.isImplicitFlowEnabled();
+        return cached.isImplicitFlowEnabled();
+    }
+
+    @Override
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        getDelegateForUpdate();
+        updated.setImplicitFlowEnabled(implicitFlowEnabled);
+    }
+
+    @Override
+    public boolean isDirectAccessGrantsEnabled() {
+        if (updated != null) return updated.isDirectAccessGrantsEnabled();
+        return cached.isDirectAccessGrantsEnabled();
+    }
+
+    @Override
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        getDelegateForUpdate();
+        updated.setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
     }
 
     @Override

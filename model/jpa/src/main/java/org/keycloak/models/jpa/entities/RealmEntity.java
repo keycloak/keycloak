@@ -86,6 +86,8 @@ public class RealmEntity {
     private int offlineSessionIdleTimeout;
     @Column(name="ACCESS_TOKEN_LIFESPAN")
     protected int accessTokenLifespan;
+    @Column(name="ACCESS_TOKEN_LIFE_IMPLICIT")
+    protected int accessTokenLifespanForImplicitFlow;
     @Column(name="ACCESS_CODE_LIFESPAN")
     protected int accessCodeLifespan;
     @Column(name="USER_ACTION_LIFESPAN")
@@ -133,9 +135,6 @@ public class RealmEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<GroupEntity> groups = new ArrayList<GroupEntity>();
-
     @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
@@ -145,6 +144,10 @@ public class RealmEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="REALM_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
     protected Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
+
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="REALM_DEFAULT_GROUPS", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="GROUP_ID")})
+    protected Collection<GroupEntity> defaultGroups = new ArrayList<>();
 
     @Column(name="EVENTS_ENABLED")
     protected boolean eventsEnabled;
@@ -335,6 +338,14 @@ public class RealmEntity {
         this.accessTokenLifespan = accessTokenLifespan;
     }
 
+    public int getAccessTokenLifespanForImplicitFlow() {
+        return accessTokenLifespanForImplicitFlow;
+    }
+
+    public void setAccessTokenLifespanForImplicitFlow(int accessTokenLifespanForImplicitFlow) {
+        this.accessTokenLifespanForImplicitFlow = accessTokenLifespanForImplicitFlow;
+    }
+
     public int getAccessCodeLifespan() {
         return accessCodeLifespan;
     }
@@ -427,6 +438,14 @@ public class RealmEntity {
 
     public void setDefaultRoles(Collection<RoleEntity> defaultRoles) {
         this.defaultRoles = defaultRoles;
+    }
+
+    public Collection<GroupEntity> getDefaultGroups() {
+        return defaultGroups;
+    }
+
+    public void setDefaultGroups(Collection<GroupEntity> defaultGroups) {
+        this.defaultGroups = defaultGroups;
     }
 
     public String getPasswordPolicy() {
@@ -720,21 +739,6 @@ public class RealmEntity {
 
     public void setClientAuthenticationFlow(String clientAuthenticationFlow) {
         this.clientAuthenticationFlow = clientAuthenticationFlow;
-    }
-
-    public Collection<GroupEntity> getGroups() {
-        return groups;
-    }
-
-    public void setGroups(Collection<GroupEntity> groups) {
-        this.groups = groups;
-    }
-
-    public void addGroup(GroupEntity group) {
-        if (groups == null) {
-            groups = new ArrayList<GroupEntity>();
-        }
-        groups.add(group);
     }
 
 }

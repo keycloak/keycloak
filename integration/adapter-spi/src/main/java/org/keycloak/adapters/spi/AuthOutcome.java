@@ -5,8 +5,5 @@ package org.keycloak.adapters.spi;
  * @version $Revision: 1 $
  */
 public enum AuthOutcome {
-    NOT_ATTEMPTED,
-    FAILED,
-    AUTHENTICATED,
-    LOGGED_OUT
+    NOT_ATTEMPTED, FAILED, AUTHENTICATED, NOT_AUTHENTICATED, LOGGED_OUT
 }

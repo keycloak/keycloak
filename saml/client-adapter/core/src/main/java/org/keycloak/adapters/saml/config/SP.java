@@ -33,6 +33,7 @@ public class SP implements Serializable {
     private String entityID;
     private String sslPolicy;
     private boolean forceAuthentication;
+    private boolean isPassive;
     private String logoutPage;
     private List<Key> keys;
     private String nameIDPolicyFormat;
@@ -62,6 +63,14 @@ public class SP implements Serializable {
 
     public void setForceAuthentication(boolean forceAuthentication) {
         this.forceAuthentication = forceAuthentication;
+    }
+
+    public boolean isIsPassive() {
+        return isPassive;
+    }
+
+    public void setIsPassive(boolean isPassive) {
+        this.isPassive = isPassive;
     }
 
     public List<Key> getKeys() {
