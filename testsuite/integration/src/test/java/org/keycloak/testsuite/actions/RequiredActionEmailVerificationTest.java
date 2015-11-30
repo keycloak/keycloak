@@ -277,7 +277,7 @@ public class RequiredActionEmailVerificationTest {
                 .assertEvent();
     }
     
-    private String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
+    public static String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
     	Multipart multipart = (Multipart) message.getContent();
     	
         final String textContentType = multipart.getBodyPart(0).getContentType();

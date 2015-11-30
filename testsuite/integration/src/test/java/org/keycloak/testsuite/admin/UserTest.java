@@ -6,6 +6,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -15,9 +17,9 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest;
 import org.keycloak.testsuite.forms.ResetPasswordTest;
-import org.keycloak.testsuite.pages.LoginPasswordResetPage;
-import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.rule.GreenMailRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -57,6 +59,9 @@ public class UserTest extends AbstractClientTest {
 
     @WebResource
     protected WebDriver driver;
+
+    @WebResource
+    protected InfoPage infoPage;
 
     @Before
     public void before() {
@@ -475,7 +480,7 @@ public class UserTest extends AbstractClientTest {
 
 
     @Test
-    public void sendVerifyEmail() {
+    public void sendVerifyEmail() throws IOException, MessagingException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setUsername("user1");
         Response response = realm.users().create(userRep);
@@ -517,6 +522,15 @@ public class UserTest extends AbstractClientTest {
             ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
             Assert.assertEquals("invalidClientId not enabled", error.getErrorMessage());
         }
+
+        user.sendVerifyEmail();
+        assertEquals(1, greenMail.getReceivedMessages().length);
+
+        String link = RequiredActionEmailVerificationTest.getPasswordResetEmailLink(greenMail.getReceivedMessages()[0]);
+
+        driver.navigate().to(link);
+
+        Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
     }
 
     @Test
