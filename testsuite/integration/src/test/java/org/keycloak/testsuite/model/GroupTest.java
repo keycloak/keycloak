@@ -257,7 +257,7 @@ public class GroupTest {
                 .client(clientId)
                 .user(userId)
                 .session(accessToken.getSessionState())
-                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.USERNAME, login)

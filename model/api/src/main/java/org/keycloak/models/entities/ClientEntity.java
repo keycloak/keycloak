@@ -34,7 +34,6 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private boolean implicitFlowEnabled;
     private boolean directAccessGrantsEnabled;
     private boolean serviceAccountsEnabled;
-    private boolean directGrantsOnly;
     private int nodeReRegistrationTimeout;
 
     // We are using names of defaultRoles (not ids)
@@ -276,14 +275,6 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
-    }
-
-    public boolean isDirectGrantsOnly() {
-        return directGrantsOnly;
-    }
-
-    public void setDirectGrantsOnly(boolean directGrantsOnly) {
-        this.directGrantsOnly = directGrantsOnly;
     }
 
     public List<String> getDefaultRoles() {

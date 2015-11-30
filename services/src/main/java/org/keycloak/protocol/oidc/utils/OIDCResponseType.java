@@ -46,15 +46,22 @@ public class OIDCResponseType {
         return new OIDCResponseType(allowedTypes);
     }
 
+    public static OIDCResponseType parse(List<String> responseTypes) {
+        OIDCResponseType result = new OIDCResponseType(new ArrayList<String>());
+        for (String respType : responseTypes) {
+            OIDCResponseType responseType = parse(respType);
+            result.responseTypes.addAll(responseType.responseTypes);
+        }
+
+        return result;
+    }
+
     private static void validateAllowedTypes(List<String> responseTypes) {
         if (responseTypes.size() == 0) {
             throw new IllegalStateException("No responseType provided");
         }
         if (responseTypes.contains(NONE) && responseTypes.size() > 1) {
             throw new IllegalArgumentException("None not allowed with some other response_type");
-        }
-        if (responseTypes.contains(ID_TOKEN) && responseTypes.size() == 1) {
-            throw new IllegalArgumentException("Not supported to use response_type=id_token alone");
         }
         if (responseTypes.contains(TOKEN) && responseTypes.size() == 1) {
             throw new IllegalArgumentException("Not supported to use response_type=token alone");
@@ -72,7 +79,7 @@ public class OIDCResponseType {
     }
 
     public boolean isImplicitFlow() {
-        return hasResponseType(TOKEN) && hasResponseType(ID_TOKEN) && !hasResponseType(CODE);
+        return hasResponseType(ID_TOKEN) && !hasResponseType(CODE);
     }
 
 

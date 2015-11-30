@@ -23,4 +23,19 @@ public class CollectionUtil {
         }
         return sb.toString();
     }
+
+    // Return true if all items from col1 are in col2 and viceversa. Order is not taken into account
+    public static <T> boolean collectionEquals(Collection<T> col1, Collection<T> col2) {
+        if (col1.size() != col2.size()) {
+            return false;
+        }
+
+        for (T item : col1) {
+            if (!col2.contains(item)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
