@@ -147,7 +147,7 @@
                 "clientId": "clientId",
                 "clientSecret": "clientSecret",
                 "prompt": "prompt",
-                "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/tokens/login",
+                "authorizationUrl": "http://localhost:8081/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/auth",
                 "tokenUrl": "http://localhost:8081/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/token",
                 "userInfoUrl": "http://localhost:8081/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/userinfo",
                 "defaultScope": "email profile"
@@ -163,10 +163,10 @@
                 "clientId": "broker-app",
                 "clientSecret": "secret",
                 "prompt": "login",
-                "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/tokens/login",
+                "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/auth",
                 "tokenUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/token",
                 "userInfoUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/userinfo",
-                "logoutUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/tokens/logout",
+                "logoutUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/logout",
                 "defaultScope": "email profile",
                 "backchannelSupported": "true"
             }
