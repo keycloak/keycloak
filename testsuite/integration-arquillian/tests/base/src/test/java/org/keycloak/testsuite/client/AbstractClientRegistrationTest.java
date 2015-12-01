@@ -104,7 +104,7 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
     }
 
     private String getToken(String username, String password) {
-        return oauthClient.getToken(REALM_NAME, "security-admin-console", null, username, password).getToken();
+        return oauthClient.getToken(REALM_NAME, Constants.ADMIN_CLI_CLIENT_ID, null, username, password).getToken();
     }
 
 }

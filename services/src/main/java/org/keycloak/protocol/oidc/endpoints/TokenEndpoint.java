@@ -178,6 +178,8 @@ public class TokenEndpoint {
         } else {
             throw new ErrorResponseException(Errors.INVALID_REQUEST, "Invalid " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
         }
+
+        event.detail(Details.GRANT_TYPE, grantType);
     }
 
     public Response buildAuthorizationCodeAccessTokenResponse() {
@@ -221,6 +223,11 @@ public class TokenEndpoint {
         if (!client.getClientId().equals(clientSession.getClient().getClientId())) {
             event.error(Errors.INVALID_CODE);
             throw new ErrorResponseException("invalid_grant", "Auth error", Response.Status.BAD_REQUEST);
+        }
+
+        if (!client.isStandardFlowEnabled()) {
+            event.error(Errors.NOT_ALLOWED);
+            throw new ErrorResponseException("invalid_grant", "Client not allowed to exchange code", Response.Status.BAD_REQUEST);
         }
 
         UserModel user = session.users().getUserById(userSession.getUser().getId(), realm);
@@ -327,7 +334,12 @@ public class TokenEndpoint {
     }
 
     public Response buildResourceOwnerPasswordCredentialsGrant() {
-        event.detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD);
+        event.detail(Details.AUTH_METHOD, "oauth_credentials");
+
+        if (!client.isDirectAccessGrantsEnabled()) {
+            event.error(Errors.NOT_ALLOWED);
+            throw new ErrorResponseException("invalid_grant", "Client not allowed for direct access grants", Response.Status.BAD_REQUEST);
+        }
 
         if (client.isConsentRequired()) {
             event.error(Errors.CONSENT_DENIED);
@@ -392,8 +404,6 @@ public class TokenEndpoint {
             event.error(Errors.INVALID_CLIENT);
             throw new ErrorResponseException("unauthorized_client", "Client not enabled to retrieve service account", Response.Status.UNAUTHORIZED);
         }
-
-        event.detail(Details.RESPONSE_TYPE, OAuth2Constants.CLIENT_CREDENTIALS);
 
         UserModel clientUser = session.users().getUserByServiceAccountClient(client);
 

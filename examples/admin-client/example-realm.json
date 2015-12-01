@@ -24,6 +24,7 @@
     "clients": [
         {
             "clientId": "examples-admin-client",
+            "directAccessGrantsEnabled": true,
             "enabled": true,
             "fullScopeAllowed": true,
             "baseUrl": "/examples-admin-client",

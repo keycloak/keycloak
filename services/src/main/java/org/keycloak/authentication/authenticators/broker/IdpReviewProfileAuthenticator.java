@@ -83,7 +83,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
 
         RealmModel realm = context.getRealm();
 
-        List<FormMessage> errors = Validation.validateUpdateProfileForm(true, formData);
+        List<FormMessage> errors = Validation.validateUpdateProfileForm(!realm.isRegistrationEmailAsUsername(), formData);
         if (errors != null && !errors.isEmpty()) {
             Response challenge = context.form()
                     .setErrors(errors)
@@ -94,7 +94,8 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             return;
         }
 
-        userCtx.setUsername(formData.getFirst(UserModel.USERNAME));
+        String username = realm.isRegistrationEmailAsUsername() ? formData.getFirst(UserModel.EMAIL) : formData.getFirst(UserModel.USERNAME);
+        userCtx.setUsername(username);
         userCtx.setFirstName(formData.getFirst(UserModel.FIRST_NAME));
         userCtx.setLastName(formData.getFirst(UserModel.LAST_NAME));
 

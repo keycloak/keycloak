@@ -14,9 +14,9 @@ public class OIDCClientRepresentation {
 
     private String token_endpoint_auth_method;
 
-    private String grant_types;
+    private List<String> grant_types;
 
-    private String response_types;
+    private List<String> response_types;
 
     private String client_id;
 
@@ -68,19 +68,19 @@ public class OIDCClientRepresentation {
         this.token_endpoint_auth_method = token_endpoint_auth_method;
     }
 
-    public String getGrantTypes() {
+    public List<String> getGrantTypes() {
         return grant_types;
     }
 
-    public void setGrantTypes(String grantTypes) {
+    public void setGrantTypes(List<String> grantTypes) {
         this.grant_types = grantTypes;
     }
 
-    public String getResponseTypes() {
+    public List<String> getResponseTypes() {
         return response_types;
     }
 
-    public void setResponseTypes(String responseTypes) {
+    public void setResponseTypes(List<String> responseTypes) {
         this.response_types = responseTypes;
     }
 

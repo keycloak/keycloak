@@ -48,6 +48,7 @@ public class JaxrsBasicAuthTest {
             app.setEnabled(true);
             app.setSecret("password");
             app.setFullScopeAllowed(true);
+            app.setDirectAccessGrantsEnabled(true);
 
             JaxrsBasicAuthTest.appRealm = appRealm;
         }

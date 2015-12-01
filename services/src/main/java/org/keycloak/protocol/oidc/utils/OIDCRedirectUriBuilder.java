@@ -42,7 +42,7 @@ public abstract class OIDCRedirectUriBuilder {
 
 
     // http://openid.net/specs/oauth-v2-multiple-response-types-1_0.html#ResponseModes
-    public static class QueryRedirectUriBuilder extends OIDCRedirectUriBuilder {
+    private static class QueryRedirectUriBuilder extends OIDCRedirectUriBuilder {
 
         protected QueryRedirectUriBuilder(KeycloakUriBuilder uriBuilder) {
             super(uriBuilder);
@@ -64,7 +64,7 @@ public abstract class OIDCRedirectUriBuilder {
 
 
     // http://openid.net/specs/oauth-v2-multiple-response-types-1_0.html#ResponseModes
-    public static class FragmentRedirectUriBuilder extends OIDCRedirectUriBuilder {
+    private static class FragmentRedirectUriBuilder extends OIDCRedirectUriBuilder {
 
         private StringBuilder fragment;
 
@@ -98,7 +98,7 @@ public abstract class OIDCRedirectUriBuilder {
 
 
     // http://openid.net/specs/oauth-v2-form-post-response-mode-1_0.html
-    public static class FormPostRedirectUriBuilder extends OIDCRedirectUriBuilder {
+    private static class FormPostRedirectUriBuilder extends OIDCRedirectUriBuilder {
 
         private Map<String, String> params = new HashMap<>();
 

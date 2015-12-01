@@ -127,7 +127,11 @@ public class CustomFlowTest {
             // Set passthrough clientAuthenticator for our clients
             ClientModel dummyClient = new ClientManager().createClient(appRealm, "dummy-client");
             dummyClient.setClientAuthenticatorType(PassThroughClientAuthenticator.PROVIDER_ID);
-            appRealm.getClientByClientId("test-app").setClientAuthenticatorType(PassThroughClientAuthenticator.PROVIDER_ID);
+            dummyClient.setDirectAccessGrantsEnabled(true);
+
+            ClientModel testApp = appRealm.getClientByClientId("test-app");
+            testApp.setClientAuthenticatorType(PassThroughClientAuthenticator.PROVIDER_ID);
+            testApp.setDirectAccessGrantsEnabled(true);
         }
     });
 
@@ -218,7 +222,7 @@ public class CustomFlowTest {
                 .client(clientId)
                 .user(userId)
                 .session(accessToken.getSessionState())
-                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.USERNAME, login)

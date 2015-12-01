@@ -4,6 +4,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -42,7 +43,7 @@ public class ClientTest extends AbstractClientTest {
 
     @Test
     public void getClients() {
-        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker");
+        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
     private String createClient() {
@@ -60,7 +61,7 @@ public class ClientTest extends AbstractClientTest {
         String id = createClient();
 
         assertNotNull(realm.clients().get(id));
-        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", "my-app");
+        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", "my-app", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
     @Test

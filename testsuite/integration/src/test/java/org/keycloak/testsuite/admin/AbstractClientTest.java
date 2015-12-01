@@ -45,10 +45,12 @@ public abstract class AbstractClientTest {
                 testRealm.setEnabled(true);
                 testRealm.setAccessCodeLifespanUserAction(600);
                 KeycloakModelUtils.generateRealmKeys(testRealm);
+
+                appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
             }
         });
 
-        keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID);
+        keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
         realm = keycloak.realm(REALM_NAME);
     }
 

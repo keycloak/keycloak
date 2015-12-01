@@ -67,6 +67,7 @@ public class OfflineTokenTest {
             appRealm.setSsoSessionIdleTimeout(30);
 
             ClientModel app = new ClientManager(manager).createClient(appRealm, "offline-client");
+            app.setDirectAccessGrantsEnabled(true);
             app.setSecret("secret1");
             String testAppRedirectUri = appRealm.getClientByClientId("test-app").getRedirectUris().iterator().next();
             offlineClientAppUri = UriUtils.getOrigin(testAppRedirectUri) + "/offline-client";
@@ -319,7 +320,7 @@ public class OfflineTokenTest {
                 .client("offline-client")
                 .user(userId)
                 .session(token.getSessionState())
-                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.TOKEN_ID, token.getId())
                 .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
@@ -361,7 +362,7 @@ public class OfflineTokenTest {
                 .client("offline-client")
                 .user(userId)
                 .session(token.getSessionState())
-                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.TOKEN_ID, token.getId())
                 .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)

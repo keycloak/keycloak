@@ -117,7 +117,7 @@ public class ImpersonationTest {
             RealmManager manager = new RealmManager(session);
 
             RealmModel adminRealm = manager.getRealm(realm);
-            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+            ClientModel adminConsole = adminRealm.getClientByClientId(Constants.ADMIN_CLI_CLIENT_ID);
             TokenManager tm = new TokenManager();
             UserModel admin = session.users().getUserByUsername(username, adminRealm);
             ClientSessionModel clientSession = session.sessions().createClientSession(adminRealm, adminConsole);

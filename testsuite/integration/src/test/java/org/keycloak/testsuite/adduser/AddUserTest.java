@@ -43,7 +43,7 @@ public class AddUserTest {
         try {
             server.start();
 
-            Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "addusertest-admin", "password", Constants.ADMIN_CONSOLE_CLIENT_ID);
+            Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "addusertest-admin", "password", Constants.ADMIN_CLI_CLIENT_ID);
             keycloak.realms().findAll();
 
             RealmRepresentation testRealm = new RealmRepresentation();

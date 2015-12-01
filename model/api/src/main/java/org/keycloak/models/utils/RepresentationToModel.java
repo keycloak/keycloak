@@ -460,6 +460,10 @@ public class RepresentationToModel {
             newRealm.setClientAuthenticationFlow(newRealm.getFlowByAlias(rep.getClientAuthenticationFlow()));
         }
 
+        // Added in 1.7
+        if (newRealm.getFlowByAlias(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW) == null) {
+            DefaultAuthenticationFlows.firstBrokerLoginFlow(newRealm, true);
+        }
     }
 
     private static void convertDeprecatedSocialProviders(RealmRepresentation rep) {
@@ -776,16 +780,18 @@ public class RepresentationToModel {
         if (resourceRep.getBaseUrl() != null) client.setBaseUrl(resourceRep.getBaseUrl());
         if (resourceRep.isBearerOnly() != null) client.setBearerOnly(resourceRep.isBearerOnly());
         if (resourceRep.isConsentRequired() != null) client.setConsentRequired(resourceRep.isConsentRequired());
-        if (resourceRep.isStandardFlowEnabled() != null) client.setStandardFlowEnabled(resourceRep.isStandardFlowEnabled());
-        if (resourceRep.isImplicitFlowEnabled() != null) client.setImplicitFlowEnabled(resourceRep.isImplicitFlowEnabled());
-        if (resourceRep.isDirectAccessGrantsEnabled() != null) client.setDirectAccessGrantsEnabled(resourceRep.isDirectAccessGrantsEnabled());
-        if (resourceRep.isServiceAccountsEnabled() != null) client.setServiceAccountsEnabled(resourceRep.isServiceAccountsEnabled());
 
         // Backwards compatibility only
         if (resourceRep.isDirectGrantsOnly() != null) {
             logger.warn("Using deprecated 'directGrantsOnly' configuration in JSON representation. It will be removed in future versions");
             client.setStandardFlowEnabled(!resourceRep.isDirectGrantsOnly());
+            client.setDirectAccessGrantsEnabled(resourceRep.isDirectGrantsOnly());
         }
+
+        if (resourceRep.isStandardFlowEnabled() != null) client.setStandardFlowEnabled(resourceRep.isStandardFlowEnabled());
+        if (resourceRep.isImplicitFlowEnabled() != null) client.setImplicitFlowEnabled(resourceRep.isImplicitFlowEnabled());
+        if (resourceRep.isDirectAccessGrantsEnabled() != null) client.setDirectAccessGrantsEnabled(resourceRep.isDirectAccessGrantsEnabled());
+        if (resourceRep.isServiceAccountsEnabled() != null) client.setServiceAccountsEnabled(resourceRep.isServiceAccountsEnabled());
 
         if (resourceRep.isPublicClient() != null) client.setPublicClient(resourceRep.isPublicClient());
         if (resourceRep.isFrontchannelLogout() != null) client.setFrontchannelLogout(resourceRep.isFrontchannelLogout());

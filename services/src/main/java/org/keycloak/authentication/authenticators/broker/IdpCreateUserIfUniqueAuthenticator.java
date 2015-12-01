@@ -41,13 +41,21 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
             return;
         }
 
-        ExistingUserInfo duplication = checkExistingUser(context, serializedCtx, brokerContext);
+        String username = getUsername(context, serializedCtx, brokerContext);
+        if (username == null) {
+            logger.warnf("%s is null. Reset flow and enforce showing reviewProfile page", realm.isRegistrationEmailAsUsername() ? "Email" : "Username");
+            context.getClientSession().setNote(ENFORCE_UPDATE_PROFILE, "true");
+            context.resetFlow();
+            return;
+        }
+
+        ExistingUserInfo duplication = checkExistingUser(context, username, serializedCtx, brokerContext);
 
         if (duplication == null) {
             logger.debugf("No duplication detected. Creating account for user '%s' and linking with identity provider '%s' .",
-                    brokerContext.getModelUsername(), brokerContext.getIdpConfig().getAlias());
+                    username, brokerContext.getIdpConfig().getAlias());
 
-            UserModel federatedUser = session.users().addUser(realm, brokerContext.getModelUsername());
+            UserModel federatedUser = session.users().addUser(realm, username);
             federatedUser.setEnabled(true);
             federatedUser.setEmail(brokerContext.getEmail());
             federatedUser.setFirstName(brokerContext.getFirstName());
@@ -92,7 +100,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
     }
 
     // Could be overriden to detect duplication based on other criterias (firstName, lastName, ...)
-    protected ExistingUserInfo checkExistingUser(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
+    protected ExistingUserInfo checkExistingUser(AuthenticationFlowContext context, String username, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
 
         if (brokerContext.getEmail() != null) {
             UserModel existingUser = context.getSession().users().getUserByEmail(brokerContext.getEmail(), context.getRealm());
@@ -101,12 +109,17 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
             }
         }
 
-        UserModel existingUser = context.getSession().users().getUserByUsername(brokerContext.getModelUsername(), context.getRealm());
+        UserModel existingUser = context.getSession().users().getUserByUsername(username, context.getRealm());
         if (existingUser != null) {
             return new ExistingUserInfo(existingUser.getId(), UserModel.USERNAME, existingUser.getUsername());
         }
 
         return null;
+    }
+
+    protected String getUsername(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
+        RealmModel realm = context.getRealm();
+        return realm.isRegistrationEmailAsUsername() ? brokerContext.getEmail() : brokerContext.getModelUsername();
     }
 
 

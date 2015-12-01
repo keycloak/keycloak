@@ -12,6 +12,7 @@ public interface Details {
     String REDIRECT_URI = "redirect_uri";
     String RESPONSE_TYPE = "response_type";
     String RESPONSE_MODE = "response_mode";
+    String GRANT_TYPE = "grant_type";
     String AUTH_TYPE = "auth_type";
     String AUTH_METHOD = "auth_method";
     String IDENTITY_PROVIDER = "identity_provider";

@@ -120,6 +120,7 @@
         {
             "name": "customer-portal",
             "enabled": true,
+            "directAccessGrantsEnabled": true,
             "adminUrl": "http://localhost:8081/customer-portal",
             "baseUrl": "http://localhost:8081/customer-portal",
             "redirectUris": [

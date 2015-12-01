@@ -113,6 +113,7 @@ public class RealmManager implements RealmImporter {
         setupAccountManagement(realm);
         setupBrokerService(realm);
         setupAdminConsole(realm);
+        setupAdminCli(realm);
         setupImpersonationService(realm);
         setupAuthenticationFlows(realm);
         setupRequiredActions(realm);
@@ -156,6 +157,30 @@ public class RealmManager implements RealmImporter {
             adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
         }
         adminConsole.addScopeMapping(adminRole);
+    }
+
+    public void setupAdminCli(RealmModel realm) {
+        ClientModel adminCli = realm.getClientByClientId(Constants.ADMIN_CLI_CLIENT_ID);
+        if (adminCli == null) {
+            adminCli = new ClientManager(this).createClient(realm, Constants.ADMIN_CLI_CLIENT_ID);
+            adminCli.setName("${client_" + Constants.ADMIN_CLI_CLIENT_ID + "}");
+            adminCli.setEnabled(true);
+            adminCli.setPublicClient(true);
+            adminCli.setFullScopeAllowed(false);
+            adminCli.setStandardFlowEnabled(false);
+            adminCli.setDirectAccessGrantsEnabled(true);
+
+            RoleModel adminRole;
+            if (realm.getName().equals(Config.getAdminRealm())) {
+                adminRole = realm.getRole(AdminRoles.ADMIN);
+            } else {
+                String realmAdminApplicationClientId = getRealmAdminClientId(realm);
+                ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
+                adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
+            }
+            adminCli.addScopeMapping(adminRole);
+        }
+
     }
 
     public String getRealmAdminClientId(RealmModel realm) {
@@ -375,6 +400,16 @@ public class RealmManager implements RealmImporter {
 
         if (!hasBrokerClient(rep)) setupBrokerService(realm);
         if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
+
+        boolean postponeAdminCliSetup = false;
+        if (!hasAdminCliClient(rep)) {
+            if (hasRealmAdminManagementClient(rep)) {
+                postponeAdminCliSetup = true;
+            } else {
+                setupAdminCli(realm);
+            }
+        }
+
         if (!hasRealmRole(rep, Constants.OFFLINE_ACCESS_ROLE)) setupOfflineTokens(realm);
 
         RepresentationToModel.importRealm(session, rep, realm);
@@ -387,6 +422,10 @@ public class RealmManager implements RealmImporter {
         // I need to postpone impersonation because it needs "realm-management" client and its roles set
         if (postponeImpersonationSetup) {
             setupImpersonationService(realm);
+        }
+
+        if (postponeAdminCliSetup) {
+            setupAdminCli(realm);
         }
 
         setupAuthenticationFlows(realm);
@@ -426,6 +465,10 @@ public class RealmManager implements RealmImporter {
 
     private boolean hasAdminConsoleClient(RealmRepresentation rep) {
         return hasClient(rep, Constants.ADMIN_CONSOLE_CLIENT_ID);
+    }
+
+    private boolean hasAdminCliClient(RealmRepresentation rep) {
+        return hasClient(rep, Constants.ADMIN_CLI_CLIENT_ID);
     }
 
     private boolean hasClient(RealmRepresentation rep, String clientId) {
