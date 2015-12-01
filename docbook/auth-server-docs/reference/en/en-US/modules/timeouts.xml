@@ -44,9 +44,9 @@
         </para>
         <para>
             The <code class="literal">Access Token Lifespan For Implicit Flow</code> is how long an access token is valid for when using OpenID Connect implicit flow.
-            With implicit flow, there is no refresh token available, so that's why the lifespan is usually bigger than default Access Token Lifespan mentioned above.
+            With implicit flow, there is no refresh token available. That's why the lifespan is usually bigger than default Access Token Lifespan mentioned above.
             See <ulink url="http://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth">OpenID Connect specification</ulink> for details about implicit flow and
-            <link linkend="javascript-adapter">Javascript Adapter</link> for some additional details.
+            <link linkend="javascript-adapter">Javascript Adapter</link> for some additional details on how to use it in Keycloak.
         </para>
         <para>
             The <literal>Client login timeout</literal> is how long an access code is valid for.  An access code is obtained

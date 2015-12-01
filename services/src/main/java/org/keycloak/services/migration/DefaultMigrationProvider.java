@@ -10,12 +10,14 @@ import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.services.managers.RealmManager;
 
 /**
  * Various common utils needed for migration from older version to newer
@@ -57,6 +59,11 @@ public class DefaultMigrationProvider implements MigrationProvider {
     public List<ProtocolMapperModel> getBuiltinMappers(String protocol) {
         LoginProtocolFactory providerFactory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
         return providerFactory.getBuiltinMappers();
+    }
+
+    @Override
+    public void setupAdminCli(RealmModel realm) {
+        new RealmManager(session).setupAdminCli(realm);
     }
 
     @Override

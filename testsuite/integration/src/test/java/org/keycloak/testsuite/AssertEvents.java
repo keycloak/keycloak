@@ -135,7 +135,7 @@ public class AssertEvents implements TestRule, EventListenerProviderFactory {
         return expect(EventType.CLIENT_LOGIN)
                 .detail(Details.CODE_ID, isCodeId())
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .detail(Details.RESPONSE_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
+                .detail(Details.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
                 .removeDetail(Details.CODE_ID)
                 .session(isUUID());
     }

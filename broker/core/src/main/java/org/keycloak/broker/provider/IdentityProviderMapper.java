@@ -20,8 +20,10 @@ public interface IdentityProviderMapper extends Provider, ProviderFactory<Identi
     String getDisplayType();
 
     /**
-     * Called to determine what keycloak username and email to use to process the login request from the external IDP
-     * Usually used to map BrokeredIdentityContet.username or email.
+     * Called to determine what keycloak username and email to use to process the login request from the external IDP.
+     * It's called before "FirstBrokerLogin" flow, so can be used to map attributes to BrokeredIdentityContext ( BrokeredIdentityContext.setUserAttribute ),
+     * which will be available on "Review Profile" page and in authenticators during FirstBrokerLogin flow
+     *
      *
      * @param session
      * @param realm
@@ -31,7 +33,7 @@ public interface IdentityProviderMapper extends Provider, ProviderFactory<Identi
     void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context);
 
     /**
-     * Called after UserModel is created for first time for this user.
+     * Called after UserModel is created for first time for this user. Called after "FirstBrokerLogin" flow
      *
      * @param session
      * @param realm

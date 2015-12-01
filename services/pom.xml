@@ -51,6 +51,10 @@
             <artifactId>keycloak-email-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>mail</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-login-api</artifactId>
         </dependency>

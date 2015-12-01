@@ -178,7 +178,8 @@
             "clientId": "admin-client",
             "enabled": true,
             "publicClient": true,
-            "directGrantsOnly": true
+            "standardFlowEnabled": false,
+            "directAccessGrantsEnabled": true
         },
         {
             "clientId": "product-sa-client",

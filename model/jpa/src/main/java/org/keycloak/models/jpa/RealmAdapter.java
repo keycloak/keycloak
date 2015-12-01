@@ -726,7 +726,6 @@ public class RealmAdapter implements RealmModel {
         entity.setClientId(clientId);
         entity.setEnabled(true);
         entity.setStandardFlowEnabled(true);
-        entity.setDirectAccessGrantsEnabled(true);
         entity.setRealm(realm);
         realm.getClients().add(entity);
         em.persist(entity);

@@ -18,9 +18,13 @@
 package org.keycloak.broker.provider;
 
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -150,6 +154,22 @@ public class BrokeredIdentityContext {
 
     public void setContextData(Map<String, Object> contextData) {
         this.contextData = contextData;
+    }
+
+    // Set the attribute, which will be available on "Update profile" page and in authenticators
+    public void setUserAttribute(String attributeName, String attributeValue) {
+        List<String> list = new ArrayList<>();
+        list.add(attributeValue);
+        getContextData().put(Constants.USER_ATTRIBUTES_PREFIX + attributeName, list);
+    }
+
+    public String getUserAttribute(String attributeName) {
+        List<String> userAttribute = (List<String>) getContextData().get(Constants.USER_ATTRIBUTES_PREFIX + attributeName);
+        if (userAttribute == null || userAttribute.isEmpty()) {
+            return null;
+        } else {
+            return userAttribute.get(0);
+        }
     }
 
     public String getFirstName() {

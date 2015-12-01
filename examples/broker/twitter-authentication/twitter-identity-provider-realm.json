@@ -49,6 +49,7 @@
           "enabled": true,
           "fullScopeAllowed": true,
           "baseUrl": "/admin-client",
+          "directAccessGrantsEnabled": true,
           "redirectUris": [
             "/admin-client/*"
           ],

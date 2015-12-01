@@ -30,6 +30,7 @@ public class ClientRepresentation {
     protected Boolean implicitFlowEnabled;
     protected Boolean directAccessGrantsEnabled;
     protected Boolean serviceAccountsEnabled;
+    @Deprecated
     protected Boolean directGrantsOnly;
     protected Boolean publicClient;
     protected Boolean frontchannelLogout;
@@ -216,6 +217,7 @@ public class ClientRepresentation {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
     }
 
+    @Deprecated
     public Boolean isDirectGrantsOnly() {
         return directGrantsOnly;
     }

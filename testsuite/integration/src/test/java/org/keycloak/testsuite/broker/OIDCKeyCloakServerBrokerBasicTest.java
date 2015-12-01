@@ -116,11 +116,6 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
     }
 
     @Test
-    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername_emailNotProvided() {
-        super.testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername_emailNotProvided();
-    }
-
-    @Test
     public void testTokenStorageAndRetrievalByApplication() {
         super.testTokenStorageAndRetrievalByApplication();
     }

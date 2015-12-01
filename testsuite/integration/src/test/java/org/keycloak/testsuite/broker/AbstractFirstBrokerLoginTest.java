@@ -179,6 +179,48 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractIdentityProvi
 
 
     /**
+     * Test user registers with IdentityProvider with emailAsUsername
+     */
+    @Test
+    public void testRegistrationWithEmailAsUsername() {
+        // Require updatePassword after user registered with broker
+        brokerServerRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel realmWithBroker) {
+                setUpdateProfileFirstLogin(realmWithBroker, IdentityProviderRepresentation.UPFLM_ON);
+                realmWithBroker.setRegistrationEmailAsUsername(true);
+            }
+
+        }, APP_REALM_ID);
+
+        loginIDP("pedroigor");
+        this.updateProfileWithUsernamePage.assertCurrent();
+
+        try {
+            this.updateProfileWithUsernamePage.update("Test", "User", "some-user@redhat.com", "some-user");
+            Assert.fail("It is not expected to see username field");
+        } catch (NoSuchElementException expected) {
+        }
+
+        this.updateProfileWithUsernamePage.update("Test", "User", "some-user@redhat.com");
+
+        // assert authenticated
+        assertFederatedUser("some-user@redhat.com", "some-user@redhat.com", "pedroigor");
+
+        brokerServerRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel realmWithBroker) {
+                setUpdateProfileFirstLogin(realmWithBroker, IdentityProviderRepresentation.UPFLM_MISSING);
+                realmWithBroker.setRegistrationEmailAsUsername(false);
+            }
+
+        }, APP_REALM_ID);
+    }
+
+
+    /**
      * Tests that duplication is detected, the confirmation page is displayed, user clicks on "Review profile" and goes back to updateProfile page and resolves duplication
      * by create new user
      */

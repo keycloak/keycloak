@@ -96,15 +96,15 @@ keycloak.init({ onLoad: 'login-required' })
     }
 </script>
 
-<button onclick="loadData()">Submit</button>
+<button onclick="reloadData()">Submit</button>
 ]]></programlisting>
      </para>
     <para>
         The <literal>loadData()</literal> method builds an HTTP request setting the <literal>Authorization</literal>
         header to a bearer token.  The <literal>keycloak.token</literal> points to the access token the browser obtained
         when it logged you in.  The <literal>loadFailure()</literal> method is invoked on a failure.  The <literal>reloadData()</literal>
-        function calls <literal>keycloak.onValidAccessToken()</literal> passing in the <literal>loadData()</literal> and
-        <literal>loadFailure()</literal> callbacks.  The <literal>keycloak.onValidAcessToken()</literal> method checks to
+        function calls <literal>keycloak.updateToken()</literal> passing in the <literal>loadData()</literal> and
+        <literal>loadFailure()</literal> callbacks.  The <literal>keycloak.updateToken()</literal> method checks to
         see if the access token hasn't expired.  If it hasn't, and your oauth login returned a refresh token, this method
         will refresh the access token.  Finally, if successful, it will invoke the success callback, which in this case
         is the <literal>loadData()</literal> method.
@@ -133,6 +133,43 @@ keycloak.updateToken(30).success(function() {
             This does not require any network traffic, instead the status is retrieved from a special status cookie. This feature can be disabled
             by setting <literal>checkLoginIframe: false</literal> in the options passed to the <literal>init</literal>
             method.
+        </para>
+    </section>
+
+    <section id="javascript-implicit-flow">
+        <title>Implicit and Hybrid Flow</title>
+
+        <para>
+            By default the JavaScript adapter uses <ulink url="http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth">OpenID Connect standard (Authorization code) flow</ulink>, which
+            means that after authentication will Keycloak server redirects back to your application and Javascript adapter will exchange <literal>code</literal> for access token and refresh token.
+        </para>
+        <para>
+            However Keycloak also supports <ulink url="http://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth">OpenID Connect Implicit flow</ulink>
+            where access token is directly sent after successful authentication from Keycloak and there is no additional request for exchange code.
+            This might have better performance than standard flow as there is no additional request for exchange code-to-token. However sending access token
+            in URL fragment might be security issue in some environments (Token can be more easily stolen from the network etc).
+        </para>
+        <para>To enable implicit flow, you need to enable the flag <literal>Implicit Flow Enabled</literal> for the client in Keycloak admin console. You also need to pass
+            the parameter <literal>flow</literal> with value <literal>implicit</literal> to <literal>init</literal> method, so that Javascript adapter will use implicit flow instead of standard flow.
+            The example is here:
+<programlisting><![CDATA[
+keycloak.init({ flow: 'implicit' })
+]]></programlisting>
+            Note that with implicit flow, you don't have refresh token available after authentication. This makes it harder for your application to periodically update
+            access token in background (without browser redirection). It's recommended that you implement <literal>onTokenExpired</literal> callback method on keycloak object, so you
+            have possibility to do something after token is expired (For example you can call keycloak.login, which will redirect browser to Keycloak login screen and it will immediately
+            redirect you back if SSO session is still valid and user is still logged. However make sure to save the application state before doing redirect.)
+        </para>
+        <para>
+            Keycloak also have support for <ulink url="http://openid.net/specs/openid-connect-core-1_0.html#HybridFlowAuth">OpenID Connect Hybrid flow</ulink>. This requires
+            that client in admin console has both flags <literal>Standard Flow Enabled</literal> and <literal>Implicit Flow Enabled</literal> enabled in admin console.
+            The Keycloak will send both the code and tokens to your application. Access token can be immediately used and in the meantime, code can be exchanged for access token and refresh token.
+            Hybrid flow is good for performance similarly like implicit flow, because access token is available immediatelly to your application. But similarly like implicit flow, the token is
+            sent in URL fragment, so security may not be so good.
+            One advantage over implicit flow is, that you have also refresh token available in your application (after code-to-token request is finished in background).
+        </para>
+        <para>
+            For hybrid flow, you need to pass the parameter <literal>flow</literal> with value <literal>hybrid</literal> to <literal>init</literal> method.
         </para>
     </section>
 
@@ -178,6 +215,10 @@ new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp'
                 <listitem>refreshToken - the base64 encoded token that can be used to retrieve a new token</listitem>
                 <listitem>refreshTokenParsed - the parsed refresh token</listitem>
                 <listitem>timeSkew - estimated skew between local time and Keycloak server in seconds</listitem>
+                <listitem>responseMode - responseMode passed during initialization. See below for details. Default value is <literal>fragment</literal></listitem>
+                <listitem>flow - OpenID Connect flow passed during initialization. See <link linkend="javascript-implicit-flow">Implicit flow</link> for details.</listitem>
+                <listitem>responseType - responseType used for send to Keycloak server at login request. This is determined based on the <literal>flow</literal> value used during initialization,
+                    but you have possibility to override it by directly set this value</listitem>
             </itemizedlist>
         </section>
 
@@ -195,6 +236,12 @@ new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp'
                         <listitem>refreshToken - set an initial value for the refresh token</listitem>
                         <listitem>checkLoginIframe - set to enable/disable monitoring login state (default is true)</listitem>
                         <listitem>checkLoginIframeInterval - set the interval to check login state (default is 5 seconds)</listitem>
+                        <listitem>responseMode - set the OpenID Connect response mode send to Keycloak server at login request. Valid values are <literal>query</literal> or <literal>fragment</literal> .
+                            Default value is <literal>fragment</literal>, which means that after successful authentication will Keycloak redirect to javascript application
+                            with OpenID Connect parameters added in URL fragment. This is generally safer and recommended over <literal>query</literal>.
+                        </listitem>
+                        <listitem>flow - set the OpenID Connect flow. Valid values are <literal>standard</literal>, <literal>implicit</literal> or <literal>hybrid</literal>.
+                            See <link linkend="javascript-implicit-flow">Implicit flow</link> for details.</listitem>
                     </itemizedlist>
                 </para>
                 <para>Returns promise to set functions to be invoked on success or error.</para>
@@ -357,6 +404,7 @@ keycloak.onAuthSuccess = function() { alert('authenticated'); }
                 <listitem>onAuthRefreshSuccess - called when the token is refreshed</listitem>
                 <listitem>onAuthRefreshError - called if there was an error while trying to refresh the token</listitem>
                 <listitem>onAuthLogout - called if the user is logged out (will only be called if the session status iframe is enabled, or in Cordova mode)</listitem>
+                <listitem>onTokenExpired - called when access token expired. When this happens you can for example refresh token, or if refresh not available (ie. with implicit flow) you can redirect to login screen</listitem>
             </itemizedlist>
         </section>
     </section>

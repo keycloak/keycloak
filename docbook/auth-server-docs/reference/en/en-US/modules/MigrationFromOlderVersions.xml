@@ -82,11 +82,24 @@
         <section>
             <title>Migrating to 1.7.0.CR1</title>
             <simplesect>
-                <title>Option 'Update Profile On First Login' moved from Identity provider to Review Profile authenticator</title>
+                <title>Direct access grants disabled by default for clients</title>
                 <para>
-                    form-error-page in web.xml will no longer work for client adapter authentication errors.  You must define an error-page for
-                    the the various HTTP error codes.  See documentation for more details if you want to catch and handle adapter error conditions.
+                    In order to add more compliance with OpenID Connect specification, we added flags into admin console to Client Settings page,
+                    where you can enable/disable various kinds of OpenID Connect/OAuth2 flows (Standard flow, Implicit flow, Direct Access Grants, Service Accounts).
+                    As part of this, we have <literal>Direct Access Grants</literal> (corresponds to OAuth2 <literal>Resource Owner Password Credentials Grant</literal>) disabled by default for new clients.
                 </para>
+                <para>
+                    Clients migrated from previous version have <literal>Direct Access Grants</literal> enabled just if they had flag <literal>Direct Grants Only</literal> on. The
+                    <literal>Direct Grants Only</literal> flag was removed as if you enable Direct Access Grants and disable both Standard+Implicit flow, you will achieve same effect.
+                </para>
+                <para>
+                    We also added builtin client <literal>admin-cli</literal> to each realm. This client has <literal>Direct Access Grants</literal> enabled.
+                    So if you're using Admin REST API or Keycloak admin-client, you should update your configuration to use <literal>admin-cli</literal> instead
+                    of <literal>security-admin-console</literal> as the latter one doesn't have direct access grants enabled anymore by default.
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>Option 'Update Profile On First Login' moved from Identity provider to Review Profile authenticator</title>
                 <para>
                     In this version, we added <literal>First Broker Login</literal>, which allows you to specify what exactly should be done
                     when new user is logged through Identity provider (or Social provider), but there is no existing Keycloak user
@@ -98,6 +111,23 @@
                     to the configuration of <literal>Review Profile</literal> authenticator. So once you specify which flow should be used for your
                     Identity provider (by default it's <literal>First Broker Login</literal> flow), you go to <literal>Authentication</literal> tab, select the flow
                     and then you configure the option under <literal>Review Profile</literal> authenticator.
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>Element 'form-error-page' in web.xml not supported anymore</title>
+                <para>
+                    form-error-page in web.xml will no longer work for client adapter authentication errors.  You must define an error-page for
+                    the various HTTP error codes.  See documentation for more details if you want to catch and handle adapter error conditions.
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>IdentityProviderMapper changes</title>
+                <para>
+                    There is no change in the interface itself or method signatures. However there is some change in behaviour. We added <literal>First Broker Login</literal> flow
+                    in this release and the method <literal>IdentityProviderMapper.importNewUser</literal> is now called after <literal>First Broker Login</literal> flow is finished.
+                    So if you want to have any attribute available in <literal>Review Profile</literal> page, you would need to use
+                    the method <literal>preprocessFederatedIdentity</literal> instead of <literal>importNewUser</literal> . You can set any attribute by
+                    invoke <literal>BrokeredIdentityContext.setUserAttribute</literal> and that will be available on <literal>Review profile</literal> page.
                 </para>
             </simplesect>
         </section>

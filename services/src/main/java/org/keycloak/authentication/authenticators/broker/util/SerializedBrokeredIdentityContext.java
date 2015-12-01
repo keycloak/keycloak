@@ -1,6 +1,8 @@
 package org.keycloak.authentication.authenticators.broker.util;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +16,7 @@ import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -37,13 +40,16 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
     private String code;
     private String token;
 
+    @JsonIgnore
+    private boolean emailAsUsername;
+
     private String identityProviderId;
     private Map<String, ContextDataEntry> contextData = new HashMap<>();
 
     @JsonIgnore
     @Override
     public boolean isEditUsernameAllowed() {
-        return true;
+        return !emailAsUsername;
     }
 
     public String getId() {
@@ -159,50 +165,69 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         this.contextData = contextData;
     }
 
+    @JsonIgnore
     @Override
     public Map<String, List<String>> getAttributes() {
         Map<String, List<String>> result = new HashMap<>();
 
         for (Map.Entry<String, ContextDataEntry> entry : this.contextData.entrySet()) {
-            if (entry.getKey().startsWith("user.attributes.")) {
-                ContextDataEntry ctxEntry = entry.getValue();
-                String asString = ctxEntry.getData();
-                try {
-                    List<String> asList = JsonSerialization.readValue(asString, List.class);
-                    result.put(entry.getKey().substring(16), asList);
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
-                }
+            if (entry.getKey().startsWith(Constants.USER_ATTRIBUTES_PREFIX)) {
+                String attrName = entry.getKey().substring(16); // length of USER_ATTRIBUTES_PREFIX
+                List<String> asList = getAttribute(attrName);
+                result.put(attrName, asList);
             }
         }
 
         return result;
     }
 
+    @JsonIgnore
+    @Override
+    public void setSingleAttribute(String name, String value) {
+        List<String> list = new ArrayList<>();
+        list.add(value);
+        setAttribute(name, list);
+    }
+
+    @JsonIgnore
     @Override
     public void setAttribute(String key, List<String> value) {
         try {
-            String listStr = JsonSerialization.writeValueAsString(value);
+            byte[] listBytes = JsonSerialization.writeValueAsBytes(value);
+            String listStr = Base64Url.encode(listBytes);
             ContextDataEntry ctxEntry = ContextDataEntry.create(List.class.getName(), listStr);
-            this.contextData.put("user.attributes." + key, ctxEntry);
+            this.contextData.put(Constants.USER_ATTRIBUTES_PREFIX + key, ctxEntry);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
     }
 
+    @JsonIgnore
     @Override
     public List<String> getAttribute(String key) {
-        ContextDataEntry ctxEntry = this.contextData.get("user.attributes." + key);
+        ContextDataEntry ctxEntry = this.contextData.get(Constants.USER_ATTRIBUTES_PREFIX + key);
         if (ctxEntry != null) {
             try {
                 String asString = ctxEntry.getData();
-                List<String> asList = JsonSerialization.readValue(asString, List.class);
+                byte[] asBytes = Base64Url.decode(asString);
+                List<String> asList = JsonSerialization.readValue(asBytes, List.class);
                 return asList;
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }
         } else {
             return null;
+        }
+    }
+
+    @JsonIgnore
+    @Override
+    public String getFirstAttribute(String name) {
+        List<String> attrs = getAttribute(name);
+        if (attrs == null || attrs.isEmpty()) {
+            return null;
+        } else {
+            return attrs.get(0);
         }
     }
 
@@ -261,6 +286,8 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         ctx.setToken(context.getToken());
         ctx.setIdentityProviderId(context.getIdpConfig().getAlias());
 
+        ctx.emailAsUsername = context.getClientSession().getRealm().isRegistrationEmailAsUsername();
+
         IdentityProviderDataMarshaller serializer = context.getIdp().getMarshaller();
 
         for (Map.Entry<String, Object> entry : context.getContextData().entrySet()) {
@@ -289,7 +316,9 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
             return null;
         } else {
             try {
-                return JsonSerialization.readValue(asString, SerializedBrokeredIdentityContext.class);
+                SerializedBrokeredIdentityContext serializedCtx = JsonSerialization.readValue(asString, SerializedBrokeredIdentityContext.class);
+                serializedCtx.emailAsUsername = clientSession.getRealm().isRegistrationEmailAsUsername();
+                return serializedCtx;
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }

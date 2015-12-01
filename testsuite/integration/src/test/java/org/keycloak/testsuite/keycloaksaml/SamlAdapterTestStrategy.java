@@ -456,7 +456,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
 
     public static void uploadSP(String AUTH_SERVER_URL) {
         try {
-            Keycloak keycloak = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CONSOLE_CLIENT_ID, null);
+            Keycloak keycloak = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID, null);
             RealmResource admin = keycloak.realm("demo");
 
             admin.toRepresentation();

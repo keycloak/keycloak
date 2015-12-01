@@ -1,5 +1,6 @@
 package org.keycloak.services.clientregistration.oidc;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
@@ -9,6 +10,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
 import org.keycloak.services.clientregistration.ClientRegistrationAuth;
+import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.clientregistration.ErrorCodes;
 
 import javax.ws.rs.*;
@@ -20,6 +22,8 @@ import java.net.URI;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class OIDCClientRegistrationProvider extends AbstractClientRegistrationProvider {
+
+    private static final Logger log = Logger.getLogger(OIDCClientRegistrationProvider.class);
 
     public OIDCClientRegistrationProvider(KeycloakSession session) {
         super(session);
@@ -33,12 +37,17 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier included", Response.Status.BAD_REQUEST);
         }
 
-        ClientRepresentation client = DescriptionConverter.toInternal(clientOIDC);
-        client = create(client);
-        URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
-        clientOIDC = DescriptionConverter.toExternalResponse(client, uri);
-        clientOIDC.setClientIdIssuedAt(Time.currentTime());
-        return Response.created(uri).entity(clientOIDC).build();
+        try {
+            ClientRepresentation client = DescriptionConverter.toInternal(clientOIDC);
+            client = create(client);
+            URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
+            clientOIDC = DescriptionConverter.toExternalResponse(client, uri);
+            clientOIDC.setClientIdIssuedAt(Time.currentTime());
+            return Response.created(uri).entity(clientOIDC).build();
+        } catch (ClientRegistrationException cre) {
+            log.error(cre.getMessage());
+            throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
+        }
     }
 
     @GET
@@ -54,11 +63,16 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @Path("{clientId}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateOIDC(@PathParam("clientId") String clientId, OIDCClientRepresentation clientOIDC) {
-        ClientRepresentation client = DescriptionConverter.toInternal(clientOIDC);
-        client = update(clientId, client);
-        URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
-        clientOIDC = DescriptionConverter.toExternalResponse(client, uri);
-        return Response.ok(clientOIDC).build();
+        try {
+            ClientRepresentation client = DescriptionConverter.toInternal(clientOIDC);
+            client = update(clientId, client);
+            URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
+            clientOIDC = DescriptionConverter.toExternalResponse(client, uri);
+            return Response.ok(clientOIDC).build();
+        } catch (ClientRegistrationException cre) {
+            log.error(cre.getMessage());
+            throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
+        }
     }
 
     @DELETE

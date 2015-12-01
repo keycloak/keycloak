@@ -46,6 +46,7 @@
             "fullScopeAllowed": true,
             "adminUrl": "http://localhost:8080/customer-portal",
             "baseUrl": "http://localhost:8080/customer-portal",
+            "directAccessGrantsEnabled": true,
             "redirectUris": [
                 "http://localhost:8080/customer-portal/*"
             ],

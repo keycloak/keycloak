@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
@@ -29,11 +30,12 @@ public class AttributeFormDataProcessor {
 
     public static void process(MultivaluedMap<String, String> formData, RealmModel realm, UpdateProfileContext user) {
         for (String key : formData.keySet()) {
-            if (!key.startsWith("user.attributes.")) continue;
-            String attribute = key.substring("user.attributes.".length());
+            if (!key.startsWith(Constants.USER_ATTRIBUTES_PREFIX)) continue;
+            String attribute = key.substring(Constants.USER_ATTRIBUTES_PREFIX.length());
 
             // Need to handle case when attribute has multiple values, but in UI was displayed just first value
-            List<String> modelValue = new ArrayList<>(user.getAttribute(attribute));
+            List<String> modelVal = user.getAttribute(attribute);
+            List<String> modelValue = modelVal==null ? new ArrayList<String>() : new ArrayList<>(modelVal);
 
             int index = 0;
             for (String value : formData.get(key)) {

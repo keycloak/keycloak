@@ -429,6 +429,10 @@ public class DefaultAuthenticationFlows {
         if (migrate) {
             // Try to read OTP requirement from browser flow
             AuthenticationFlowModel browserFlow = realm.getBrowserFlow();
+            if (browserFlow == null) {
+                browserFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+            }
+
             List<AuthenticationExecutionModel> browserExecutions = new LinkedList<>();
             KeycloakModelUtils.deepFindAuthenticationExecutions(realm, browserFlow, browserExecutions);
             for (AuthenticationExecutionModel browserExecution : browserExecutions) {

@@ -8,6 +8,7 @@ import org.keycloak.OAuth2Constants;
  */
 public interface Constants {
     String ADMIN_CONSOLE_CLIENT_ID = "security-admin-console";
+    String ADMIN_CLI_CLIENT_ID = "admin-cli";
 
     String ACCOUNT_MANAGEMENT_CLIENT_ID = "account";
     String IMPERSONATION_SERVICE_CLIENT_ID = "impersonation";
@@ -27,4 +28,7 @@ public interface Constants {
 
     String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
     String KEY = "key";
+
+    // Prefix for user attributes used in various "context"data maps
+    public static final String USER_ATTRIBUTES_PREFIX = "user.attributes.";
 }

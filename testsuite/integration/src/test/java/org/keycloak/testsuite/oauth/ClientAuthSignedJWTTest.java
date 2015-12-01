@@ -61,6 +61,7 @@ public class ClientAuthSignedJWTTest {
             app1.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
 
             ClientModel app2 = appRealm.addClient("client2");
+            app2.setDirectAccessGrantsEnabled(true);
             new ClientManager(manager).enableServiceAccount(app2);
             app2.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
 
@@ -189,7 +190,7 @@ public class ClientAuthSignedJWTTest {
         events.expectLogin()
                 .client("client2")
                 .session(accessToken.getSessionState())
-                .detail(Details.RESPONSE_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.USERNAME, "test-user@localhost")

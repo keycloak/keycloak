@@ -267,48 +267,6 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
     }
 
     @Test
-    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername_emailNotProvided() {
-
-        getRealm().setRegistrationEmailAsUsername(true);
-        brokerServerRule.stopSession(this.session, true);
-        this.session = brokerServerRule.startSession();
-
-        try {
-            IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-            setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
-
-            authenticateWithIdentityProvider(identityProviderModel, "test-user-noemail", false);
-
-            brokerServerRule.stopSession(session, true);
-            session = brokerServerRule.startSession();
-
-            // check correct user is created with username from provider as email is not available
-            RealmModel realm = getRealm();
-            UserModel federatedUser = getFederatedUser();
-            assertNotNull(federatedUser);
-
-            doAssertFederatedUserNoEmail(federatedUser);
-
-            Set<FederatedIdentityModel> federatedIdentities = this.session.users().getFederatedIdentities(federatedUser, realm);
-
-            assertEquals(1, federatedIdentities.size());
-
-            FederatedIdentityModel federatedIdentityModel = federatedIdentities.iterator().next();
-
-            assertEquals(getProviderId(), federatedIdentityModel.getIdentityProvider());
-            revokeGrant();
-
-            driver.navigate().to("http://localhost:8081/test-app/logout");
-            driver.navigate().to("http://localhost:8081/test-app");
-
-            assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
-
-        } finally {
-            getRealm().setRegistrationEmailAsUsername(false);
-        }
-    }
-
-    @Test
     public void testDisabled() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
 
@@ -395,6 +353,8 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
     public void testAccountManagementLinkedIdentityAlreadyExists() {
         // Login as "test-user" through broker
         IdentityProviderModel identityProvider = getIdentityProviderModel();
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
+
         assertSuccessfulAuthentication(identityProvider, "test-user", "test-user@localhost", false);
 
         // Login as pedroigor to account management
@@ -480,6 +440,9 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         identityProviderModel.setStoreToken(true);
 
         authenticateWithIdentityProvider(identityProviderModel, "test-user", true);
+
+        brokerServerRule.stopSession(session, true);
+        session = brokerServerRule.startSession();
 
         UserModel federatedUser = getFederatedUser();
         RealmModel realm = getRealm();

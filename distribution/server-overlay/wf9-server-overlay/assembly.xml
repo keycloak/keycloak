@@ -15,7 +15,7 @@
             <includes>
                 <include>com/google/zxing/**</include>
                 <include>org/freemarker/**</include>
-                <include>org/jboss/aesh/**</include>
+                <include>org/jboss/aesh/0.65/**</include>
                 <include>org/keycloak/**</include>
                 <include>org/liquibase/**</include>
                 <include>org/mongodb/**</include>
