@@ -432,7 +432,7 @@ public class DefaultAuthenticationFlows {
             if (browserFlow == null) {
                 browserFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
             }
-            
+
             List<AuthenticationExecutionModel> browserExecutions = new LinkedList<>();
             KeycloakModelUtils.deepFindAuthenticationExecutions(realm, browserFlow, browserExecutions);
             for (AuthenticationExecutionModel browserExecution : browserExecutions) {

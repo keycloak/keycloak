@@ -69,8 +69,8 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 	 * @param user context to store profile data into
 	 * @param profile to store into context
 	 * @param provider identification of social provider to be used in log dump
-	 * 
-	 * @see #importNewUser(KeycloakSession, RealmModel, UserModel, IdentityProviderMapperModel, BrokeredIdentityContext)
+	 *
+	 * @see #preprocessFederatedIdentity(KeycloakSession, RealmModel, IdentityProviderMapperModel, BrokeredIdentityContext)
 	 * @see BrokeredIdentityContext#getContextData()
 	 */
 	public static void storeUserProfileForMapper(BrokeredIdentityContext user, JsonNode profile, String provider) {
@@ -100,17 +100,17 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 	}
 
 	@Override
-	public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+	public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 		String attribute = mapperModel.getConfig().get(CONF_USER_ATTRIBUTE);
 		if (attribute == null || attribute.trim().isEmpty()) {
-			logger.debug("Attribute is not configured");
+			logger.warnf("Attribute is not configured for mapper %s", mapperModel.getName());
 			return;
 		}
 		attribute = attribute.trim();
 
 		String value = getJsonValue(mapperModel, context);
 		if (value != null) {
-			user.setSingleAttribute(attribute, value);
+			context.setUserAttribute(attribute, value);
 		}
 	}
 
@@ -123,13 +123,13 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 
 		String jsonField = mapperModel.getConfig().get(CONF_JSON_FIELD);
 		if (jsonField == null || jsonField.trim().isEmpty()) {
-			logger.debug("JSON field path is not configured");
+			logger.warnf("JSON field path is not configured for mapper %s", mapperModel.getName());
 			return null;
 		}
 		jsonField = jsonField.trim();
 
 		if (jsonField.startsWith(JSON_PATH_DELIMITER) || jsonField.endsWith(JSON_PATH_DELIMITER) || jsonField.startsWith("[")) {
-			logger.debug("JSON field path is invalid " + jsonField);
+			logger.warnf("JSON field path is invalid %s", jsonField);
 			return null;
 		}
 
@@ -138,7 +138,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 		String value = getJsonValue(profileJsonNode, jsonField);
 
 		if (value == null) {
-			logger.debug("User profile JSON value '" + jsonField + "' is not available.");
+			logger.debugf("User profile JSON value '%s' is not available.", jsonField);
 		}
 
 		return value;

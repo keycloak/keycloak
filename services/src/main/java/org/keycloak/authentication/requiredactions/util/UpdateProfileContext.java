@@ -31,7 +31,11 @@ public interface UpdateProfileContext {
 
     Map<String, List<String>> getAttributes();
 
+    void setSingleAttribute(String name, String value);
+
     void setAttribute(String key, List<String> value);
+
+    String getFirstAttribute(String name);
 
     List<String> getAttribute(String key);
 

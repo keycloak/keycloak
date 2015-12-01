@@ -70,11 +70,11 @@ public class UserAttributeMapper extends AbstractClaimMapper {
     }
 
     @Override
-    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+    public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
         Object value = getClaimValue(mapperModel, context);
         if (value != null) {
-            user.setSingleAttribute(attribute, value.toString());
+            context.setUserAttribute(attribute, value.toString());
         }
     }
 
