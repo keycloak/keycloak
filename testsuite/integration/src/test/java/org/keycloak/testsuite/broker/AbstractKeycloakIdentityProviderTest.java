@@ -441,6 +441,9 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
         authenticateWithIdentityProvider(identityProviderModel, "test-user", true);
 
+        brokerServerRule.stopSession(session, true);
+        session = brokerServerRule.startSession();
+
         UserModel federatedUser = getFederatedUser();
         RealmModel realm = getRealm();
         Set<FederatedIdentityModel> federatedIdentities = this.session.users().getFederatedIdentities(federatedUser, realm);
