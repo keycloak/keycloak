@@ -1,6 +1,7 @@
 package org.keycloak.broker.provider;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
@@ -26,15 +27,20 @@ public class DefaultDataMarshaller implements IdentityProviderDataMarshaller {
 
     @Override
     public <T> T deserialize(String serialized, Class<T> clazz) {
-        if (clazz.equals(String.class)) {
-            return clazz.cast(serialized);
-        } else {
-            byte[] bytes = Base64Url.decode(serialized);
-            try {
-                return JsonSerialization.readValue(bytes, clazz);
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
+        try {
+            if (clazz.equals(String.class)) {
+                return clazz.cast(serialized);
+            } else {
+                byte[] bytes = Base64Url.decode(serialized);
+                if (List.class.isAssignableFrom(clazz)) {
+                    List list = JsonSerialization.readValue(bytes, List.class);
+                    return clazz.cast(list);
+                } else {
+                    return JsonSerialization.readValue(bytes, clazz);
+                }
             }
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
     }
 }
