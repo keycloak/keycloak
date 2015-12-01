@@ -120,6 +120,16 @@
                     the various HTTP error codes.  See documentation for more details if you want to catch and handle adapter error conditions.
                 </para>
             </simplesect>
+            <simplesect>
+                <title>IdentityProviderMapper changes</title>
+                <para>
+                    There is no change in the interface itself or method signatures. However there is some change in behaviour. We added <literal>First Broker Login</literal> flow
+                    in this release and the method <literal>IdentityProviderMapper.importNewUser</literal> is now called after <literal>First Broker Login</literal> flow is finished.
+                    So if you want to have any attribute available in <literal>Review Profile</literal> page, you would need to use
+                    the method <literal>preprocessFederatedIdentity</literal> instead of <literal>importNewUser</literal> . You can set any attribute by
+                    invoke <literal>BrokeredIdentityContext.setUserAttribute</literal> and that will be available on <literal>Review profile</literal> page.
+                </para>
+            </simplesect>
         </section>
         <section>
             <title>Migrating to 1.6.0.Final</title>
