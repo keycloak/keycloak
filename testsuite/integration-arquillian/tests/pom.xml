@@ -610,25 +610,6 @@
             </build>
         </profile>
         
-        <profile>
-            <id>travis</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemProperties>
-                                <arq.extension.graphene.waitGuiInterval>2</arq.extension.graphene.waitGuiInterval>
-                                <arq.extension.graphene.waitAjaxInterval>4</arq.extension.graphene.waitAjaxInterval>
-                                <arq.extension.graphene.waitModelInterval>10</arq.extension.graphene.waitModelInterval>
-                                <arq.extension.graphene.waitGuardInterval>4</arq.extension.graphene.waitGuardInterval>
-                            </systemProperties>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        
     </profiles>
     
 </project>
