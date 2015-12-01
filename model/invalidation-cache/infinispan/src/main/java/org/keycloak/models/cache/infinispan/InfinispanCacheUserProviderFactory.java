@@ -112,21 +112,25 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
 
         @CacheEntryRemoved
         public void userRemoved(CacheEntryRemovedEvent<String, CachedUser> event) {
-            CachedUser user = event.getOldValue();
-            if (event.isPre() &&  user != null) {
-                removeUser(user);
+            if (event.isPre()) {
+                CachedUser user = event.getValue();
+                if (user != null) {
+                    removeUser(user);
 
-                log.tracev("User invalidated realm={0}, id={1}, username={2}", user.getRealm(), user.getId(), user.getUsername());
+                    log.tracev("User invalidated realm={0}, id={1}, username={2}", user.getRealm(), user.getId(), user.getUsername());
+                }
             }
         }
 
         @CacheEntryInvalidated
         public void userInvalidated(CacheEntryInvalidatedEvent<String, CachedUser> event) {
-            CachedUser user = event.getValue();
-            if (event.isPre() && user != null) {
-                removeUser(user);
+            if (event.isPre()) {
+                CachedUser user = event.getValue();
+                if (user != null) {
+                    removeUser(user);
 
-                log.tracev("User invalidated realm={0}, id={1}, username={2}", user.getRealm(), user.getId(), user.getUsername());
+                    log.tracev("User invalidated realm={0}, id={1}, username={2}", user.getRealm(), user.getId(), user.getUsername());
+                }
             }
         }
 
