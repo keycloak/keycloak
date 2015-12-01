@@ -9,12 +9,15 @@
         <property name="browser">${browser}</property>
     </extension>
     
+    <extension qualifier="graphene">
+        <property name="waitGuiInterval">3</property>
+        <property name="waitAjaxInterval">3</property>
+        <property name="waitModelInterval">5</property>
+        <property name="waitGuardInterval">3</property>
+    </extension>
+    
     <extension qualifier="graphene-secondbrowser">
         <property name="browser">${browser}</property>
-        <property name="waitGuiInterval">1</property>
-        <property name="waitAjaxInterval">2</property>
-        <property name="waitModelInterval">5</property>
-        <property name="waitGuardInterval">2</property>
     </extension>
     
     <engine>
