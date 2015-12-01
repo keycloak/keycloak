@@ -30,7 +30,7 @@
         <audit-log>
             <formatters>
                <json-formatter name="json-formatter"/>
-            </formatters>        
+            </formatters>
             <handlers>
                <file-handler name="file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
             </handlers>
@@ -75,6 +75,7 @@
                  To secure JacORB you need to setup SSL -->
             <inet-address value="${jboss.bind.address.unsecure:127.0.0.1}"/>
         </interface>
+        <?INTERFACES?>
     </interfaces>
 
     <socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
