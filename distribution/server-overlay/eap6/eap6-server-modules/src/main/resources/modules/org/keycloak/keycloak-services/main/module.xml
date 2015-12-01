@@ -59,6 +59,7 @@
         <module name="org.keycloak.keycloak-wildfly-extensions" services="import"/>
 
         <module name="javax.ws.rs.api"/>
+        <module name="javax.mail.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         <module name="org.jboss.resteasy.resteasy-multipart-provider"/>
         <module name="javax.servlet.api"/>
