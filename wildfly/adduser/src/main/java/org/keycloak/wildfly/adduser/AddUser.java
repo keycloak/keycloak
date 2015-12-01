@@ -154,9 +154,9 @@ public class AddUser {
             roles = rolesString.split(",");
         } else {
             if (realmName.equals("master")) {
-                roles = new String[] { "admin" };
+                roles = new String[] { "admin", "account/manage-account" };
             } else {
-                roles = new String[] { "realm-management/realm-admin" };
+                roles = new String[] { "realm-management/realm-admin", "account/manage-account" };
             }
         }
 
