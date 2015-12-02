@@ -62,7 +62,7 @@ public class InfinispanUserCache implements UserCache {
     @Override
     public void addCachedUser(String realmId, CachedUser user) {
         logger.tracev("Adding user {0}", user.getId());
-        cache.put(user.getId(), user);
+        cache.putForExternalRead(user.getId(), user);
     }
 
     @Override
