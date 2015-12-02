@@ -70,8 +70,18 @@ public class UserUpdateProfileContext implements UpdateProfileContext {
     }
 
     @Override
+    public void setSingleAttribute(String name, String value) {
+        user.setSingleAttribute(name, value);
+    }
+
+    @Override
     public void setAttribute(String key, List<String> value) {
         user.setAttribute(key, value);
+    }
+
+    @Override
+    public String getFirstAttribute(String name) {
+        return user.getFirstAttribute(name);
     }
 
     @Override

@@ -164,9 +164,12 @@ keycloak.init({ flow: 'implicit' })
             Keycloak also have support for <ulink url="http://openid.net/specs/openid-connect-core-1_0.html#HybridFlowAuth">OpenID Connect Hybrid flow</ulink>. This requires
             that client in admin console has both flags <literal>Standard Flow Enabled</literal> and <literal>Implicit Flow Enabled</literal> enabled in admin console.
             The Keycloak will send both the code and tokens to your application. Access token can be immediately used and in the meantime, code can be exchanged for access token and refresh token.
-            Hybrid flow is good for performance similarly like implicit flow, because access token is available. But similarly like implicit flow, the token is sent in URL fragment, so security may not be so good.
-            In addition to implicit flow, you have also refresh token available in your application. For hybrid flow, you need to pass the parameter
-            <literal>flow</literal> with value <literal>hybrid</literal> to <literal>init</literal> method.
+            Hybrid flow is good for performance similarly like implicit flow, because access token is available immediatelly to your application. But similarly like implicit flow, the token is
+            sent in URL fragment, so security may not be so good.
+            One advantage over implicit flow is, that you have also refresh token available in your application (after code-to-token request is finished in background).
+        </para>
+        <para>
+            For hybrid flow, you need to pass the parameter <literal>flow</literal> with value <literal>hybrid</literal> to <literal>init</literal> method.
         </para>
     </section>
 

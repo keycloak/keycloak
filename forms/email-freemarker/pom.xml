@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-forms-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.7.0.Final-SNAPSHOT</version>
+        <version>1.8.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -52,11 +52,6 @@
         <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.mail</groupId>
-            <artifactId>mail</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>

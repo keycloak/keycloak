@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-wildfly-parent</artifactId>
-        <version>1.7.0.Final-SNAPSHOT</version>
+        <version>1.8.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-eap6-server-subsystem</artifactId>

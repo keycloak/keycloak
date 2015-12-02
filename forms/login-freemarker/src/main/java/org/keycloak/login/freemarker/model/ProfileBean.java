@@ -47,8 +47,9 @@ public class ProfileBean {
         this.user = user;
         this.formData = formData;
 
-        if (user.getAttributes() != null) {
-            for (Map.Entry<String, List<String>> attr : user.getAttributes().entrySet()) {
+        Map<String, List<String>> modelAttrs = user.getAttributes();
+        if (modelAttrs != null) {
+            for (Map.Entry<String, List<String>> attr : modelAttrs.entrySet()) {
                 List<String> attrValue = attr.getValue();
                 if (attrValue != null && attrValue.size() > 0) {
                     attributes.put(attr.getKey(), attrValue.get(0));
