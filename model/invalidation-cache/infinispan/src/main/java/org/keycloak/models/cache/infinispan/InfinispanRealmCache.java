@@ -104,6 +104,12 @@ public class InfinispanRealmCache implements RealmCache {
     }
 
     @Override
+    public void evictCachedApplicationById(String id) {
+        logger.tracev("Evicting application {0}", id);
+        cache.evict(id);
+    }
+
+    @Override
     public CachedGroup getGroup(String id) {
         if (!enabled) return null;
         return get(id, CachedGroup.class);

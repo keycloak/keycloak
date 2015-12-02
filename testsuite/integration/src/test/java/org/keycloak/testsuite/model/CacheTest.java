@@ -7,10 +7,12 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.models.*;
+import org.keycloak.models.cache.infinispan.ClientAdapter;
 import org.keycloak.models.cache.infinispan.RealmAdapter;
 import org.keycloak.testsuite.rule.KeycloakRule;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -27,10 +29,12 @@ public class CacheTest {
             // load up cache
             KeycloakSession session = kc.startSession();
             RealmModel realm = session.realms().getRealmByName("test");
+            assertTrue(realm instanceof RealmAdapter);
             ClientModel testApp = realm.getClientByClientId("test-app");
+            assertTrue(testApp instanceof ClientAdapter);
             assertNotNull(testApp);
             appId = testApp.getId();
-            Assert.assertTrue(testApp.isEnabled());
+            assertTrue(testApp.isEnabled());
             kc.stopSession(session, true);
         }
         {
@@ -40,16 +44,18 @@ public class CacheTest {
             // KEYCLOAK-1240 - obtain the realm via session.realms().getRealms()
             RealmModel realm = null;
             List<RealmModel> realms = session.realms().getRealms();
+
             for (RealmModel current : realms) {
+                assertTrue(current instanceof RealmAdapter);
                 if ("test".equals(current.getName())) {
                     realm = current;
                     break;
                 }
             }
 
-            Assert.assertTrue(realm instanceof RealmAdapter);
             realm.setAccessCodeLifespanLogin(200);
             ClientModel testApp = realm.getClientByClientId("test-app");
+
             assertNotNull(testApp);
             testApp.setEnabled(false);
             kc.stopSession(session, true);
@@ -62,10 +68,7 @@ public class CacheTest {
             ClientModel testApp = session.realms().getClientById(appId, realm);
             Assert.assertFalse(testApp.isEnabled());
             kc.stopSession(session, true);
-
         }
-
-
     }
 
     @Test
