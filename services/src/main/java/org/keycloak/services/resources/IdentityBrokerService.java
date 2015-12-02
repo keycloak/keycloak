@@ -214,7 +214,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
                 AccessToken.Access brokerRoles = resourceAccess == null ? null : resourceAccess.get(Constants.BROKER_SERVICE_CLIENT_ID);
                 if (brokerRoles == null || !brokerRoles.isUserInRole(Constants.READ_TOKEN_ROLE)) {
-                    return corsResponse(forbidden("Client [" + audience + "] not authorized to retrieve tokens from identity provider [" + providerId + "]."), clientModel);
+                    return corsResponse(forbidden("Client [" + clientModel.getClientId() + "] not authorized to retrieve tokens from identity provider [" + providerId + "]."), clientModel);
 
                 }
 
