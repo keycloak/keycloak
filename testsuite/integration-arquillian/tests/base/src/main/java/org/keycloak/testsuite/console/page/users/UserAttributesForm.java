@@ -4,7 +4,7 @@ import java.util.List;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -125,7 +125,7 @@ public class UserAttributesForm extends Form {
     }
 
     public void setValues(UserRepresentation user) {
-        waitAjaxForElement(usernameInput);
+        waitUntilElement(usernameInput).is().present();
         setUsername(user.getUsername());
         setEmail(user.getEmail());
         setFirstName(user.getFirstName());

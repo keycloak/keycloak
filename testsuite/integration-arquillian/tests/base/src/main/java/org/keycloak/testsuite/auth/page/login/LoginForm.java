@@ -70,20 +70,20 @@ public class LoginForm extends Form {
 
     public void register() {
         waitForUsernameInputPresent();
-        waitAjaxForElement(registerLink);
+        waitUntilElement(registerLink).is().present();
         registerLink.click();
     }
 
     public void login() {
-        waitAjaxForElement(loginButton);
+        waitUntilElement(loginButton).is().present();
         loginButton.click();
     }
-    
+
     public void forgotPassword() {
-        waitAjaxForElement(forgottenPassword);
+        waitUntilElement(forgottenPassword).is().present();
         forgottenPassword.click();
     }
-    
+
     public void rememberMe(boolean value) {
         waitForRememberMePresent();
         boolean selected = rememberMe.isSelected();
@@ -94,32 +94,31 @@ public class LoginForm extends Form {
 
 //    @Override
 //    public void cancel() {
-//        waitAjaxForElement(cancelButton);
+//        waitUntilElement(cancelButton).is().present();
 //        cancelButton.click();
 //    }
-    
     public void waitForUsernameInputPresent() {
         accountFields.waitForUsernameInputPresent();
     }
 
     public void waitForRegisterLinkNotPresent() {
-        waitAjaxForElementNotPresent(registerLink);
+        waitUntilElement(registerLink).is().not().present();
     }
 
     public void waitForResetPasswordLinkNotPresent() {
-        waitAjaxForElementNotPresent(forgottenPassword);
+        waitUntilElement(forgottenPassword).is().not().present();
     }
 
     public void waitForRememberMePresent() {
-        waitAjaxForElement(rememberMe);
+        waitUntilElement(rememberMe).is().present();
     }
 
     public void waitForRememberMeNotPresent() {
-        waitAjaxForElementNotPresent(rememberMe);
+        waitUntilElement(rememberMe).is().not().present();
     }
-    
+
     public void waitForLoginButtonPresent() {
-        waitGuiForElement(loginButton);
+        waitUntilElement(loginButton).is().present();
     }
 
 }

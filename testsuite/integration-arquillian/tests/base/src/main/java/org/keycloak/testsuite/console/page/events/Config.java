@@ -104,7 +104,7 @@ public class Config extends Events {
         }
         
         public void waitForClearEventsButtonPresent() {
-            waitAjaxForElement(clearLoginEventsButton);
+            waitUntilElement(clearLoginEventsButton).is().present();
         }
     }
 }

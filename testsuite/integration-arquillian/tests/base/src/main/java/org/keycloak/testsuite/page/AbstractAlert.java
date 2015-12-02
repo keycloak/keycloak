@@ -4,7 +4,7 @@ import com.google.common.base.Predicate;
 import static org.jboss.arquillian.graphene.Graphene.waitModel;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.jboss.logging.Logger;
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElementPresent;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
@@ -20,7 +20,7 @@ public abstract class AbstractAlert {
     protected WebElement root;
 
     public void waitUntilPresent() {
-        waitGuiForElementPresent(root, "Flash message should be visible.");
+        waitUntilElement(root, "Flash message should be present.").is().present();
     }
 
     public void waitUntilPresentAndClassSet() {

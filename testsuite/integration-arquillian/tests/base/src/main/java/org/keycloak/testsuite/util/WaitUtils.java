@@ -19,8 +19,8 @@ package org.keycloak.testsuite.util;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static org.jboss.arquillian.graphene.Graphene.waitAjax;
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
+import org.jboss.arquillian.graphene.wait.ElementBuilder;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
@@ -35,38 +35,16 @@ public final class WaitUtils {
 
     public static final Integer PAGELOAD_TIMEOUT = Integer.parseInt(System.getProperty(PAGELOAD_TIMEOUT_PROP, "60000"));
 
-    public static void waitAjaxForElement(WebElement element) {
-        waitAjax()
-                .until().element(element).is().present();
+    public static ElementBuilder<Void> waitUntilElement(By by) {
+        return waitGui().until().element(by);
     }
 
-    public static void waitAjaxForElementNotPresent(WebElement element) {
-        waitAjax()
-                .until().element(element).is().not().present();
+    public static ElementBuilder<Void> waitUntilElement(WebElement element) {
+        return waitGui().until().element(element);
     }
 
-    public static void waitAjaxForElementNotVisible(WebElement element) {
-        waitAjax()
-                .until().element(element).is().not().visible();
-    }
-
-    public static void waitGuiForElement(By element) {
-        waitGui()
-                .until().element(element).is().present();
-    }
-
-    public static void waitGuiForElement(WebElement element) {
-        waitGuiForElementPresent(element, null);
-    }
-
-    public static void waitGuiForElementPresent(WebElement element, String message) {
-        waitGui()
-                .until(message).element(element).is().present();
-    }
-
-    public static void waitGuiForElementNotPresent(WebElement element) {
-        waitGui()
-                .until().element(element).is().not().present();
+    public static ElementBuilder<Void> waitUntilElement(WebElement element, String failMessage) {
+        return waitGui().until(failMessage).element(element);
     }
 
     public static void pause(long millis) {

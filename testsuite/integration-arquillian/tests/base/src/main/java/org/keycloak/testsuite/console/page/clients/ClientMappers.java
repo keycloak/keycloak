@@ -38,17 +38,17 @@ public class ClientMappers extends Client {
         }
 
         public void createMapper() {
-            waitAjaxForBody();
+            waitForBody();
             clickHeaderLink(CREATE);
         }
 
         public void addBuiltin() {
-            waitAjaxForBody();
+            waitForBody();
             clickHeaderLink(ADD_BUILTIN);
         }
 
         public void clickMapper(String mapperName) {
-            waitAjaxForBody();
+            waitForBody();
             body().findElement(By.linkText(mapperName)).click();
         }
 
@@ -57,7 +57,7 @@ public class ClientMappers extends Client {
         }
 
         private void clickMapperActionButton(String mapperName, String buttonText) {
-            waitAjaxForBody();
+            waitForBody();
             clickRowActionButton(getRowByLinkText(mapperName), buttonText);
         }
 

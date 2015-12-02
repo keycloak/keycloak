@@ -8,7 +8,7 @@ import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
 import static org.keycloak.testsuite.page.Form.getInputValue;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.keycloak.testsuite.util.Timer;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -69,7 +69,7 @@ public class CreateClientForm extends Form {
     private List<WebElement> deleteRedirectUriIcons;
 
     public void setValues(ClientRepresentation client) {
-        waitAjaxForElement(clientIdInput);
+        waitUntilElement(clientIdInput).is().present();
 
         setClientId(client.getClientId());
         setName(client.getName());
@@ -230,7 +230,7 @@ public class CreateClientForm extends Form {
     }
 
     public String getProtocol() {
-        waitAjaxForElement(protocolSelect.getFirstSelectedOption());
+        waitUntilElement(protocolSelect.getFirstSelectedOption()).is().present();
         return protocolSelect.getFirstSelectedOption().getText();
     }
 

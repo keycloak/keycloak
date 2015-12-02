@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.console.page.fragment;
 
 import java.util.List;
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.By;
 
 import org.openqa.selenium.WebElement;
@@ -53,7 +53,7 @@ public class Menu {
     }
 
     public String getCurrentRealm() {
-        waitGuiForElement(By.cssSelector(MENU_LOCATOR));
+        waitUntilElement(By.cssSelector(MENU_LOCATOR)).is().present();
         return toggle.get(1).getText();
     }
 
@@ -67,7 +67,7 @@ public class Menu {
                 menuOrder = 0;
                 break;
         }
-        waitGuiForElement(By.cssSelector(MENU_LOCATOR));
+        waitUntilElement(By.cssSelector(MENU_LOCATOR)).is().present();
         if (!menuList.get(menuOrder).isDisplayed()) {
             toggle.get(menuOrder).click();
         }

@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.console.page.federation;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
@@ -156,17 +156,14 @@ public class LdapUserProviderForm extends Form {
     }
 
     public void setKerberosRealmInput(String kerberosRealm) {
-        waitAjaxForElement(kerberosRealmInput);
         setInputValue(kerberosRealmInput, kerberosRealm);
     }
 
     public void setServerPrincipalInput(String serverPrincipal) {
-        waitAjaxForElement(serverPrincipalInput);
         setInputValue(serverPrincipalInput, serverPrincipal);
     }
 
     public void setKeyTabInput(String keyTab) {
-        waitAjaxForElement(keyTabInput);
         setInputValue(keyTabInput, keyTab);
     }
 
@@ -175,22 +172,22 @@ public class LdapUserProviderForm extends Form {
     }
 
     public void selectEditMode(String mode) {
-        waitGuiForElement(By.id("editMode"));
+        waitUntilElement(By.id("editMode")).is().present();
         editModeSelect.selectByVisibleText(mode);
     }
 
     public void selectVendor(String vendor) {
-        waitGuiForElement(By.id("vendor"));
+        waitUntilElement(By.id("vendor")).is().present();
         vendorSelect.selectByVisibleText(vendor);
     }
 
     public void selectAuthenticationType(String authenticationType) {
-        waitGuiForElement(By.id("authType"));
+        waitUntilElement(By.id("authType")).is().present();
         authTypeSelect.selectByVisibleText(authenticationType);
     }
 
     public void selectSearchScope(String searchScope) {
-        waitGuiForElement(By.id("searchScope"));
+        waitUntilElement(By.id("searchScope")).is().present();
         searchScopeSelect.selectByVisibleText(searchScope);
     }
 
@@ -248,7 +245,7 @@ public class LdapUserProviderForm extends Form {
     }
 
     public void synchronizeAllUsers() {
-        waitAjaxForElement(synchronizeAllUsersButton);
+        waitUntilElement(synchronizeAllUsersButton).is().present();
         synchronizeAllUsersButton.click();
     }
 }
