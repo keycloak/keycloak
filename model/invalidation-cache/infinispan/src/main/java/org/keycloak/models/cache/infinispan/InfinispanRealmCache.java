@@ -38,9 +38,10 @@ public class InfinispanRealmCache implements RealmCache {
 
     @Override
     public void setEnabled(boolean enabled) {
-        clear();
+        if (this.enabled && !enabled) {
+            clear();
+        }
         this.enabled = enabled;
-        clear();
     }
 
     @Override

@@ -8,6 +8,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CacheRealmProviderFactory;
 import org.keycloak.models.cache.RealmCache;
+import org.keycloak.models.cache.entities.CachedUser;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -19,11 +20,23 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
 
     protected final ConcurrentHashMap<String, String> realmLookup = new ConcurrentHashMap<String, String>();
 
+    protected volatile InfinispanRealmCache realmCache;
+
     @Override
     public CacheRealmProvider create(KeycloakSession session) {
-        Cache<String, Object> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
-        RealmCache realmCache = new InfinispanRealmCache(cache, realmLookup);
+        lazyInit(session);
         return new DefaultCacheRealmProvider(realmCache, session);
+    }
+
+    private void lazyInit(KeycloakSession session) {
+        if (realmCache == null) {
+            synchronized (this) {
+                if (realmCache == null) {
+                    Cache<String, Object> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
+                    realmCache = new InfinispanRealmCache(cache, realmLookup);
+                }
+            }
+        }
     }
 
     @Override
