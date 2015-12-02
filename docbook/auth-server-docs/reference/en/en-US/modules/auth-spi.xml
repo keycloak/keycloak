@@ -802,7 +802,7 @@ public class SecretQuestionRequiredActionFactory implements RequiredActionFactor
         <section>
             <title>Packaging the Action</title>
             <para>
-                You will package your classes within a single jar.  This jar must contain a file named  <literal>org.keycloak.authentication.ForActionFactory</literal>
+                You will package your classes within a single jar.  This jar must contain a file named  <literal>org.keycloak.authentication.FormActionFactory</literal>
                 and must be contained in the <literal>META-INF/services/</literal> directory of your jar.  This file must list the fully qualified classname
                 of each FormActionFactory implementation you have in the jar.  For example:
                 <programlisting>
