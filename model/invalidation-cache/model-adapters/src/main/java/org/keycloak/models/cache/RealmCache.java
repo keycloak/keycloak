@@ -26,6 +26,8 @@ public interface RealmCache {
 
     void invalidateApplication(CachedClient app);
 
+    void evictCachedApplicationById(String id);
+
     void addCachedClient(CachedClient app);
 
     void invalidateCachedApplicationById(String id);
