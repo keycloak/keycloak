@@ -80,7 +80,7 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         return client;
     }
     
-    public ClientRepresentation findClientRepByClientId(String clientId) {
+    public ClientRepresentation findClientByClientId(String clientId) {
         ClientRepresentation found = null;
         for (ClientRepresentation clientRepresentation : testRealmResource().clients().findAll()) {
             if (clientRepresentation.getClientId().equals(clientId)) {

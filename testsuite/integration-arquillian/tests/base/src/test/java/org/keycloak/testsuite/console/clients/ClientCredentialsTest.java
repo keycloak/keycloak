@@ -49,7 +49,7 @@ public class ClientCredentialsTest extends AbstractClientTest {
         newClient = createClientRepresentation(TEST_CLIENT_ID, TEST_REDIRECT_URIS);
         testRealmResource().clients().create(newClient).close();
         
-        ClientRepresentation found = findClientRepByClientId(TEST_CLIENT_ID);
+        ClientRepresentation found = findClientByClientId(TEST_CLIENT_ID);
         assertNotNull("Client " + TEST_CLIENT_ID + " was not found.", found);
         clientCredentials.setId(found.getId());
         clientCredentials.navigateTo();

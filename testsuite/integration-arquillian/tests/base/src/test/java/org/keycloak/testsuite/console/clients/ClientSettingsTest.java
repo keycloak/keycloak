@@ -53,7 +53,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         assertFlashMessageSuccess();
 
         // read & verify
-        ClientRepresentation found = findClientRepByClientId(newClient.getClientId());
+        ClientRepresentation found = findClientByClientId(newClient.getClientId());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
         assertClientSettingsEqual(newClient, found);
         
@@ -80,14 +80,14 @@ public class ClientSettingsTest extends AbstractClientTest {
         clientSettingsPage.form().save();
         assertFlashMessageSuccess();
         
-        found = findClientRepByClientId(newClient.getClientId());
+        found = findClientByClientId(newClient.getClientId());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
         assertClientSettingsEqual(newClient, found);
 
         // delete
         clientPage.delete();
         assertFlashMessageSuccess();
-        found = findClientRepByClientId(newClient.getClientId());
+        found = findClientByClientId(newClient.getClientId());
         assertNull("Deleted client " + newClient.getClientId() + " was found.", found);
     }
 
@@ -98,7 +98,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClient(newClient);
         assertFlashMessageSuccess();
 
-        ClientRepresentation found = findClientRepByClientId(newClient.getClientId());
+        ClientRepresentation found = findClientByClientId(newClient.getClientId());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
         assertClientSettingsEqual(newClient, found);
     }
@@ -112,7 +112,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClient(newClient);
         assertFlashMessageSuccess();
 
-        ClientRepresentation found = findClientRepByClientId(newClient.getClientId());
+        ClientRepresentation found = findClientByClientId(newClient.getClientId());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
         assertClientSettingsEqual(newClient, found);
     }
@@ -129,7 +129,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClient(newClient);
         assertFlashMessageSuccess();
 
-        ClientRepresentation found = findClientRepByClientId(newClient.getClientId());
+        ClientRepresentation found = findClientByClientId(newClient.getClientId());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
         assertClientSettingsEqual(newClient, found);
         assertClientSamlAttributes(getSAMLAttributes(), found.getAttributes());

@@ -21,8 +21,6 @@
  */
 package org.keycloak.testsuite.console.clients;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.*;
 import org.junit.Before;
@@ -30,8 +28,6 @@ import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
 
 /**
  *
@@ -49,7 +45,7 @@ public class ClientsTest extends AbstractClientTest {
         newClient = createClientRepresentation(TEST_CLIENT_ID, TEST_REDIRECT_URIS);
         testRealmResource().clients().create(newClient).close();
         
-        ClientRepresentation found = findClientRepByClientId(TEST_CLIENT_ID);
+        ClientRepresentation found = findClientByClientId(TEST_CLIENT_ID);
         assertNotNull("Client " + TEST_CLIENT_ID + " was not found.", found);
         clientSettingsPage.setId(found.getId());
     }
@@ -71,93 +67,7 @@ public class ClientsTest extends AbstractClientTest {
         modalDialog.confirmDeletion();
         assertFlashMessageSuccess();
         
-        ClientRepresentation found = findClientRepByClientId(TEST_CLIENT_ID);
+        ClientRepresentation found = findClientByClientId(TEST_CLIENT_ID);
         assertNull("Deleted client " + TEST_CLIENT_ID + " was found.", found);
-    }
-    
-    @Test
-    public void tabs() {
-        clientSettingsPage.navigateTo();
-        
-        //oidc-confidential
-        WebElement tabs = clientPage.tabs().getTabs();
-        List<String> visibleTabs = new ArrayList<>();
-        visibleTabs.add("Settings");
-        visibleTabs.add("Credentials");
-        visibleTabs.add("Roles");
-        visibleTabs.add("Mappers");
-        visibleTabs.add("Scope");
-        visibleTabs.add("Revocation");
-        visibleTabs.add("Sessions");
-        visibleTabs.add("Offline Access");
-        visibleTabs.add("Clustering");
-        visibleTabs.add("Installation");
-        
-        List<String> invisibleTabs = new ArrayList<>();
-        invisibleTabs.add("SAML Keys");
-        invisibleTabs.add("Service Account Roles");
-        
-        assertVisibilityOfTabs(tabs, visibleTabs, invisibleTabs);
-        
-        //oidc-public
-        newClient.setPublicClient(true);
-        clientSettingsPage.form().setAccessType(newClient);
-        clientSettingsPage.form().save();
-        assertFlashMessageSuccess();
-        
-        tabs = clientPage.tabs().getTabs();
-        visibleTabs.clear();
-        invisibleTabs.clear();
-        
-        visibleTabs.add("Settings");
-        visibleTabs.add("Roles");
-        visibleTabs.add("Mappers");
-        visibleTabs.add("Scope");
-        visibleTabs.add("Revocation");
-        visibleTabs.add("Sessions");
-        visibleTabs.add("Offline Access");
-        visibleTabs.add("Installation");
-        
-        invisibleTabs.add("Credentials");
-        invisibleTabs.add("SAML Keys");
-        invisibleTabs.add("Clustering");
-        invisibleTabs.add("Service Account Roles");
-        
-        assertVisibilityOfTabs(tabs, visibleTabs, invisibleTabs);
-        
-        //oidc-bearer-only
-        newClient.setPublicClient(false);
-        newClient.setBearerOnly(true);
-        clientSettingsPage.form().setAccessType(newClient);
-        clientSettingsPage.form().save();
-        assertFlashMessageSuccess();
-        
-        tabs = clientPage.tabs().getTabs();
-        visibleTabs.clear();
-        invisibleTabs.clear();
-        
-        visibleTabs.add("Settings");
-        visibleTabs.add("Credentials");
-        visibleTabs.add("Roles");
-        visibleTabs.add("Revocation");
-        visibleTabs.add("Clustering");
-        visibleTabs.add("Installation");
-        
-        invisibleTabs.add("SAML Keys");
-        invisibleTabs.add("Mappers");
-        invisibleTabs.add("Scope");
-        invisibleTabs.add("Sessions");
-        invisibleTabs.add("Service Account Roles");
-        
-        assertVisibilityOfTabs(tabs, visibleTabs, invisibleTabs);
-    }
-    
-    private void assertVisibilityOfTabs(WebElement tabs, List<String> visible, List<String> invisible) {
-        for (String visibleLink : visible) {
-            assertTrue(tabs.findElement(By.linkText(visibleLink)).isDisplayed());
-        }
-        for (String invisibleLink : invisible) {
-            assertTrue(tabs.findElements(By.linkText(invisibleLink)).isEmpty());
-        }
     }
 }

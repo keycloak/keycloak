@@ -9,9 +9,9 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.testsuite.console.page.clients.ClientRole;
-import org.keycloak.testsuite.console.page.clients.ClientRoles;
-import org.keycloak.testsuite.console.page.clients.CreateClientRole;
+import org.keycloak.testsuite.console.page.clients.roles.ClientRole;
+import org.keycloak.testsuite.console.page.clients.roles.ClientRoles;
+import org.keycloak.testsuite.console.page.clients.roles.CreateClientRole;
 import org.keycloak.testsuite.console.page.users.User;
 import org.keycloak.testsuite.util.URLAssert;
 
@@ -41,7 +41,7 @@ public class ClientRolesTest extends AbstractClientTest {
         ClientRepresentation newClient = createClientRepresentation(TEST_CLIENT_ID, TEST_REDIRECT_URIS);
         testRealmResource().clients().create(newClient).close();
         
-        id = findClientRepByClientId(TEST_CLIENT_ID).getId();
+        id = findClientByClientId(TEST_CLIENT_ID).getId();
         clientPage.setId(id);
         clientRolePage.setId(id);
         clientRolesPage.setId(id);

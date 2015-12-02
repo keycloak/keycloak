@@ -17,6 +17,7 @@
  */
 package org.keycloak.testsuite.console.page.fragment;
 
+import java.util.concurrent.TimeUnit;
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import org.jboss.arquillian.graphene.fragment.Root;
 
@@ -42,7 +43,9 @@ public class FlashMessage {
     }
     
     public boolean isSuccess() {
-        waitGui().until("Flash message should be success")
+        waitGui().withTimeout(SCRIPT_TIMEOUT, TimeUnit.MILLISECONDS)
+                .pollingEvery(POLLING_INTERVAL, TimeUnit.MILLISECONDS)
+                .until("Flash message should be success")
                 .element(root)
                 .attribute("class")
                 .contains("success");
@@ -50,7 +53,9 @@ public class FlashMessage {
     }
 
     public boolean isError() {
-        waitGui().until("Flash message should be error")
+        waitGui().withTimeout(SCRIPT_TIMEOUT, TimeUnit.MILLISECONDS)
+                .pollingEvery(POLLING_INTERVAL, TimeUnit.MILLISECONDS)
+                .until("Flash message should be error")
                 .element(root)
                 .attribute("class")
                 .contains("error");
@@ -58,7 +63,9 @@ public class FlashMessage {
     }
 
     public boolean isDanger() {
-        waitGui().until("Flash message should be danger")
+        waitGui().withTimeout(SCRIPT_TIMEOUT, TimeUnit.MILLISECONDS)
+                .pollingEvery(POLLING_INTERVAL, TimeUnit.MILLISECONDS)
+                .until("Flash message should be danger")
                 .element(root)
                 .attribute("class")
                 .contains("danger");
