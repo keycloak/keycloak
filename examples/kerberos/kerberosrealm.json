@@ -71,7 +71,6 @@
             "changedSyncPeriod": -1,
             "config": {
                 "syncRegistrations" : "false",
-                "userAccountControlsAfterPasswordUpdate" : "true",
                 "connectionPooling" : "true",
                 "pagination" : "true",
                 "allowKerberosAuthentication" : "true",
@@ -79,13 +78,16 @@
                 "editMode" : "WRITABLE",
                 "vendor" : "other",
                 "usernameLDAPAttribute" : "uid",
+                "rdnLDAPAttribute" : "uid",
+                "uuidLDAPAttribute" : "entryUUID",
                 "userObjectClasses" : "inetOrgPerson, organizationalPerson",
                 "connectionUrl" : "ldap://localhost:10389",
-                "userDnSuffix" : "ou=People,dc=keycloak,dc=org",
+                "usersDn" : "ou=People,dc=keycloak,dc=org",
                 "bindDn" : "uid=admin,ou=system",
                 "bindCredential" : "secret",
                 "kerberosRealm" : "KEYCLOAK.ORG",
                 "serverPrincipal" : "HTTP/localhost@KEYCLOAK.ORG",
+                "useKerberosForPasswordAuthentication": "true",
                 "keyTab" : "http.keytab"
             }
         }
