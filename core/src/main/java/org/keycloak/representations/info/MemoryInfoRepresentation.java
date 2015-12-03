@@ -1,15 +1,25 @@
-package org.keycloak.services.resources.admin.info;
+package org.keycloak.representations.info;
 
 public class MemoryInfoRepresentation {
 
     protected long total;
+    protected String totalFormated;
     protected long used;
+    protected String usedFormated;
+    protected long free;
+    protected long freePercentage;
+    protected String freeFormated;
 
     public static MemoryInfoRepresentation create() {
         MemoryInfoRepresentation rep = new MemoryInfoRepresentation();
         Runtime runtime = Runtime.getRuntime();
         rep.total = runtime.maxMemory();
+        rep.totalFormated = formatMemory(rep.total);
         rep.used = runtime.totalMemory() - runtime.freeMemory();
+        rep.usedFormated = formatMemory(rep.used);
+        rep.free = rep.total - rep.used;
+        rep.freeFormated = formatMemory(rep.free);
+        rep.freePercentage = rep.free * 100 / rep.total;
         return rep;
     }
 
@@ -18,15 +28,15 @@ public class MemoryInfoRepresentation {
     }
 
     public String getTotalFormated() {
-        return formatMemory(getTotal());
+        return totalFormated;
     }
 
     public long getFree() {
-        return getTotal() - getUsed();
+        return free;
     }
 
     public String getFreeFormated() {
-        return formatMemory(getFree());
+        return freeFormated;
     }
 
     public long getUsed() {
@@ -34,14 +44,14 @@ public class MemoryInfoRepresentation {
     }
 
     public String getUsedFormated() {
-        return formatMemory(getUsed());
+        return usedFormated;
     }
 
     public long getFreePercentage() {
-        return getFree() * 100 / getTotal();
+        return freePercentage;
     }
 
-    private String formatMemory(long bytes) {
+    private static String formatMemory(long bytes) {
         if (bytes > 1024L * 1024L) {
             return bytes / (1024L * 1024L) + " MB";
         } else if (bytes > 1024L) {

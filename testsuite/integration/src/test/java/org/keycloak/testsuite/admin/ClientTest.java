@@ -1,24 +1,26 @@
 package org.keycloak.testsuite.admin;
 
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -46,19 +48,21 @@ public class ClientTest extends AbstractClientTest {
         assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
-    private String createClient() {
+    private ClientRepresentation createClient() {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");
         rep.setDescription("my-app description");
         rep.setEnabled(true);
         Response response = realm.clients().create(rep);
         response.close();
-        return ApiUtil.getCreatedId(response);
+        String id = ApiUtil.getCreatedId(response);
+        rep.setId(id);
+        return rep;
     }
 
     @Test
     public void createClientVerify() {
-        String id = createClient();
+        String id = createClient().getId();
 
         assertNotNull(realm.clients().get(id));
         assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", "my-app", Constants.ADMIN_CLI_CLIENT_ID);
@@ -66,14 +70,14 @@ public class ClientTest extends AbstractClientTest {
 
     @Test
     public void removeClient() {
-        String id = createClient();
+        String id = createClient().getId();
 
         realm.clients().get(id).remove();
     }
 
     @Test
     public void getClientRepresentation() {
-        String id = createClient();
+        String id = createClient().getId();
 
         ClientRepresentation rep = realm.clients().get(id).toRepresentation();
         assertEquals(id, rep.getId());
@@ -86,8 +90,7 @@ public class ClientTest extends AbstractClientTest {
      */
     @Test
     public void getClientDescription() {
-
-        String id = createClient();
+        String id = createClient().getId();
 
         ClientRepresentation rep = realm.clients().get(id).toRepresentation();
         assertEquals(id, rep.getId());
@@ -145,6 +148,28 @@ public class ClientTest extends AbstractClientTest {
         protocolMappersTest(mappersResource);
     }
 
+    @Test
+    public void updateClient() {
+        ClientRepresentation client = createClient();
+
+        ClientRepresentation newClient = new ClientRepresentation();
+        newClient.setId(client.getId());
+        newClient.setClientId(client.getClientId());
+        newClient.setBaseUrl("http://baseurl");
+
+        realm.clients().get(client.getId()).update(newClient);
+
+        ClientRepresentation storedClient = realm.clients().get(client.getId()).toRepresentation();
+
+        assertClient(client, storedClient);
+
+        newClient.setSecret("new-secret");
+
+        realm.clients().get(client.getId()).update(newClient);
+
+        storedClient = realm.clients().get(client.getId()).toRepresentation();
+        assertClient(client, storedClient);
+    }
 
     public static void protocolMappersTest(ProtocolMappersResource mappersResource) {
         // assert default mappers found
@@ -194,6 +219,64 @@ public class ClientTest extends AbstractClientTest {
             mappersResource.getMapperById(fooMapperId);
             fail("Not expected to find deleted mapper");
         } catch (NotFoundException nfe) {
+        }
+    }
+
+    public static void assertClient(ClientRepresentation client, ClientRepresentation storedClient) {
+        if (client.getClientId() != null) Assert.assertEquals(client.getClientId(), storedClient.getClientId());
+        if (client.getName() != null) Assert.assertEquals(client.getName(), storedClient.getName());
+        if (client.isEnabled() != null) Assert.assertEquals(client.isEnabled(), storedClient.isEnabled());
+        if (client.isBearerOnly() != null) Assert.assertEquals(client.isBearerOnly(), storedClient.isBearerOnly());
+        if (client.isPublicClient() != null) Assert.assertEquals(client.isPublicClient(), storedClient.isPublicClient());
+        if (client.isFullScopeAllowed() != null) Assert.assertEquals(client.isFullScopeAllowed(), storedClient.isFullScopeAllowed());
+        if (client.getRootUrl() != null) Assert.assertEquals(client.getRootUrl(), storedClient.getRootUrl());
+        if (client.getAdminUrl() != null) Assert.assertEquals(client.getAdminUrl(), storedClient.getAdminUrl());
+        if (client.getBaseUrl() != null) Assert.assertEquals(client.getBaseUrl(), storedClient.getBaseUrl());
+        if (client.isSurrogateAuthRequired() != null) Assert.assertEquals(client.isSurrogateAuthRequired(), storedClient.isSurrogateAuthRequired());
+        if (client.getClientAuthenticatorType() != null) Assert.assertEquals(client.getClientAuthenticatorType(), storedClient.getClientAuthenticatorType());
+
+        if (client.getNotBefore() != null) {
+            Assert.assertEquals(client.getNotBefore(), storedClient.getNotBefore());
+        }
+        if (client.getDefaultRoles() != null) {
+            Set<String> set = new HashSet<String>();
+            for (String val : client.getDefaultRoles()) {
+                set.add(val);
+            }
+            Set<String> storedSet = new HashSet<String>();
+            for (String val : storedClient.getDefaultRoles()) {
+                storedSet.add(val);
+            }
+
+            Assert.assertEquals(set, storedSet);
+        }
+
+        List<String> redirectUris = client.getRedirectUris();
+        if (redirectUris != null) {
+            Set<String> set = new HashSet<String>();
+            for (String val : client.getRedirectUris()) {
+                set.add(val);
+            }
+            Set<String> storedSet = new HashSet<String>();
+            for (String val : storedClient.getRedirectUris()) {
+                storedSet.add(val);
+            }
+
+            Assert.assertEquals(set, storedSet);
+        }
+
+        List<String> webOrigins = client.getWebOrigins();
+        if (webOrigins != null) {
+            Set<String> set = new HashSet<String>();
+            for (String val : client.getWebOrigins()) {
+                set.add(val);
+            }
+            Set<String> storedSet = new HashSet<String>();
+            for (String val : storedClient.getWebOrigins()) {
+                storedSet.add(val);
+            }
+
+            Assert.assertEquals(set, storedSet);
         }
     }
 
