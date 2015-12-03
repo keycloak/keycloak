@@ -17,7 +17,6 @@
  */
 package org.keycloak.testsuite.console.page.fragment;
 
-import java.util.List;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;

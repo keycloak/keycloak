@@ -24,6 +24,10 @@ public class CreateClientMappersForm extends Form {
     public static final String USER_ATTRIBUTE = "User Attribute";
     public static final String USER_PROPERTY = "User Property";
     public static final String GROUP_MEMBERSHIP = "Group Membership";
+    public static final String ROLE_LIST = "Role list";
+    public static final String HARDCODED_ATTRIBUTE = "Hardcoded attribute";
+    public static final String GROUP_LIST = "Group list";
+    public static final String HARDCODED_ROLE_SAML = "Hardcoded role";
 
     // Role types
     public static final String REALM_ROLE = "realm";
@@ -256,5 +260,54 @@ public class CreateClientMappersForm extends Form {
     public void setFullGroupPath(boolean value) {
         fullGroupPath.setOn(value);
     }
+    
+    //SAML
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Role attribute name']//following-sibling::node()//input[@type='text']")
+    private WebElement roleAttributeNameInput;
+    
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Friendly Name']//following-sibling::node()//input[@type='text']")
+    private WebElement friendlyNameInput;
+    
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='SAML Attribute NameFormat']//following-sibling::node()//select")
+    private Select samlAttributeNameFormatSelect;
+    
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Single Role Attribute']//following-sibling::node()//div[@class='onoffswitch']")
+    private OnOffSwitch singleRoleAttributeSwitch;
+    
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Attribute value']//following-sibling::node()//input[@type='text']")
+    private WebElement attributeValueInput;
+    
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Group attribute name']//following-sibling::node()//input[@type='text']")
+    private WebElement groupAttributeNameInput;
+    
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Single Group Attribute']//following-sibling::node()//div[@class='onoffswitch']")
+    private OnOffSwitch singleGroupAttributeSwitch;
+    
+    public void setRoleAttributeName(String value) {
+        setInputValue(roleAttributeNameInput, value);
+    }
+    
+    public void setFriendlyName(String value) {
+        setInputValue(friendlyNameInput, value);
+    }
 
+    public void setSamlAttributeNameFormat(String value) {
+        samlAttributeNameFormatSelect.selectByVisibleText(value);
+    }
+    
+    public void setSingleRoleAttribute(boolean value) {
+        singleRoleAttributeSwitch.setOn(value);
+    }
+    
+    public void setAttributeValue(String value) {
+        setInputValue(attributeValueInput, value);
+    }
+    
+    public void setGroupAttributeName(String value) {
+        setInputValue(groupAttributeNameInput, value);
+    }
+    
+    public void setSingleGroupAttribute(boolean value) {
+        singleGroupAttributeSwitch.setOn(value);
+    }
 }

@@ -18,9 +18,7 @@
 package org.keycloak.testsuite.console.clients;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.*;
@@ -28,10 +26,8 @@ import org.junit.Test;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
-import static org.keycloak.testsuite.auth.page.login.Login.SAML;
 import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.*;
 import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
-import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.*;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import org.keycloak.testsuite.util.Timer;
 
@@ -132,7 +128,7 @@ public class ClientSettingsTest extends AbstractClientTest {
 
     @Test
     public void createSAML() {
-        newClient = createSamlClientRep("saml", getSAMLAttributes());
+        newClient = createSamlClientRep("saml");
         createClient(newClient);
         assertFlashMessageSuccess();
 
@@ -185,25 +181,5 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClients("test_client_", 100);
         clientsPage.navigateTo();
         pause(120000);
-    }
-    
-    private Map<String, String> getSAMLAttributes() {
-        Map<String, String> attributes = new HashMap<>();
-        attributes.put(SAML_ASSERTION_SIGNATURE, "true");
-        attributes.put(SAML_AUTHNSTATEMENT, "false");
-	attributes.put(SAML_CLIENT_SIGNATURE,	"true");
-	attributes.put(SAML_ENCRYPT, "true");
-	attributes.put(SAML_FORCE_POST_BINDING, "true");
-	attributes.put(SAML_MULTIVALUED_ROLES, "false");
-	attributes.put(SAML_SERVER_SIGNATURE,	"true");
-	attributes.put(SAML_SIGNATURE_ALGORITHM, "RSA_SHA512");
-	attributes.put(SAML_ASSERTION_CONSUMER_URL_POST, "http://example0.test");
-	attributes.put(SAML_ASSERTION_CONSUMER_URL_REDIRECT, "http://example1.test");
-	attributes.put(SAML_FORCE_NAME_ID_FORMAT, "true");
-	attributes.put(SAML_NAME_ID_FORMAT, "email");
-	attributes.put(SAML_SIGNATURE_CANONICALIZATION_METHOD, "http://www.w3.org/2001/10/xml-exc-c14n#WithComments");
-	attributes.put(SAML_SINGLE_LOGOUT_SERVICE_URL_POST, "http://example2.test");
-	attributes.put(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT, "http://example3.test");
-        return attributes;
     }
 }

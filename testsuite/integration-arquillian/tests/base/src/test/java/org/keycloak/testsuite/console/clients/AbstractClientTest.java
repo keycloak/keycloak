@@ -9,6 +9,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import static org.keycloak.testsuite.auth.page.login.OIDCLogin.OIDC;
 import static org.keycloak.testsuite.auth.page.login.OIDCLogin.SAML;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
@@ -106,13 +107,13 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         return client;
     }
     
-    public static ClientRepresentation createSamlClientRep(String clinetId, Map<String, String> samlAttributes) {
+    public static ClientRepresentation createSamlClientRep(String clinetId) {
         ClientRepresentation client = createClientRep(clinetId);
         
         client.setProtocol(SAML);
         
         client.setFrontchannelLogout(true);
-        client.setAttributes(samlAttributes);
+        client.setAttributes(getSAMLAttributes());
         
         return client;
     }
@@ -170,5 +171,34 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
             assertEquals("Expected attribute " + key, expected.get(key), actual.get(key));
         }
     }
-
+    
+    protected static Map<String, String> getSAMLAttributes() {
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put(SAML_ASSERTION_SIGNATURE, "true");
+        attributes.put(SAML_AUTHNSTATEMENT, "false");
+	attributes.put(SAML_CLIENT_SIGNATURE,	"true");
+	attributes.put(SAML_ENCRYPT, "true");
+	attributes.put(SAML_FORCE_POST_BINDING, "true");
+	attributes.put(SAML_MULTIVALUED_ROLES, "false");
+	attributes.put(SAML_SERVER_SIGNATURE,	"true");
+	attributes.put(SAML_SIGNATURE_ALGORITHM, "RSA_SHA512");
+	attributes.put(SAML_ASSERTION_CONSUMER_URL_POST, "http://example0.test");
+	attributes.put(SAML_ASSERTION_CONSUMER_URL_REDIRECT, "http://example1.test");
+	attributes.put(SAML_FORCE_NAME_ID_FORMAT, "true");
+	attributes.put(SAML_NAME_ID_FORMAT, "email");
+	attributes.put(SAML_SIGNATURE_CANONICALIZATION_METHOD, "http://www.w3.org/2001/10/xml-exc-c14n#WithComments");
+	attributes.put(SAML_SINGLE_LOGOUT_SERVICE_URL_POST, "http://example2.test");
+	attributes.put(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT, "http://example3.test");
+        return attributes;
+    }
+    
+    public ProtocolMapperRepresentation findClientMapperByName(String clientId, String mapperName) {
+        ProtocolMapperRepresentation found = null;
+        for (ProtocolMapperRepresentation mapper : testRealmResource().clients().get(clientId).getProtocolMappers().getMappers()) {
+            if (mapperName.equals(mapper.getName())) {
+                found = mapper;
+            }
+        }
+        return found;
+    }
 }
