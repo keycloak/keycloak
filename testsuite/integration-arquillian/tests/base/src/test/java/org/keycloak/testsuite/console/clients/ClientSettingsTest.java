@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
 import static org.keycloak.testsuite.auth.page.login.Login.SAML;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.*;
 import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
 import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.*;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
@@ -48,10 +49,12 @@ public class ClientSettingsTest extends AbstractClientTest {
 
     @Test
     public void crudOIDCConfidential() {
-        newClient = createClientRepresentation("oidc-confidential", TEST_REDIRECT_URIS);
+        newClient = createOidcClientRep(CONFIDENTIAL, "oidc-confidential", TEST_REDIRECT_URIS);
         createClient(newClient);
         assertFlashMessageSuccess();
 
+        setExpectedWebOrigins(newClient);
+        
         // read & verify
         ClientRepresentation found = findClientByClientId(newClient.getClientId());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
@@ -93,8 +96,21 @@ public class ClientSettingsTest extends AbstractClientTest {
 
     @Test
     public void createOIDCPublic() {
-        newClient = createClientRepresentation("oidc-public", TEST_REDIRECT_URIS);
-        newClient.setPublicClient(true);
+        newClient = createOidcClientRep(PUBLIC, "oidc-public", TEST_REDIRECT_URIS);
+        createClient(newClient);
+        assertFlashMessageSuccess();
+
+        setExpectedWebOrigins(newClient);
+        
+        ClientRepresentation found = findClientByClientId(newClient.getClientId());
+        assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
+        assertClientSettingsEqual(newClient, found);
+    }
+    
+    @Test
+    public void createOIDCPublicWithoutRedirectURIs() {
+        newClient = createOidcClientRep(PUBLIC, "oidc-public");
+        newClient.setStandardFlowEnabled(false);
         createClient(newClient);
         assertFlashMessageSuccess();
 
@@ -105,10 +121,7 @@ public class ClientSettingsTest extends AbstractClientTest {
 
     @Test
     public void createOIDCBearerOnly() {
-        newClient = createClientRepresentation("oidc-bearer-only", TEST_REDIRECT_URIS);
-        newClient.setBearerOnly(true);
-        newClient.setRedirectUris(null);
-        newClient.setWebOrigins(null);
+        newClient = createOidcClientRep(BEARER_ONLY, "oidc-bearer-only");
         createClient(newClient);
         assertFlashMessageSuccess();
 
@@ -119,22 +132,17 @@ public class ClientSettingsTest extends AbstractClientTest {
 
     @Test
     public void createSAML() {
-        newClient = createClientRepresentation("saml", "http://example.test/app/*");
-        newClient.setProtocol(SAML);
-        newClient.setFrontchannelLogout(true);
-        newClient.setRedirectUris(null);
-        newClient.setWebOrigins(null);
-        newClient.setAttributes(getSAMLAttributes());
-        
+        newClient = createSamlClientRep("saml", getSAMLAttributes());
         createClient(newClient);
         assertFlashMessageSuccess();
 
         ClientRepresentation found = findClientByClientId(newClient.getClientId());
+        System.out.println("...." + found.isFrontchannelLogout());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
         assertClientSettingsEqual(newClient, found);
         assertClientSamlAttributes(getSAMLAttributes(), found.getAttributes());
     }
-
+    
     @Test
     public void invalidSettings() {
         clientsPage.table().createClient();
@@ -148,7 +156,7 @@ public class ClientSettingsTest extends AbstractClientTest {
 
 //    @Test
     public void createInconsistentClient() {
-        ClientRepresentation c = createClientRepresentation("inconsistent_client");
+        ClientRepresentation c = createOidcClientRep(CONFIDENTIAL, "inconsistent_client");
         c.setPublicClient(true);
         c.setBearerOnly(true);
 
@@ -164,7 +172,7 @@ public class ClientSettingsTest extends AbstractClientTest {
     public void createClients(String clientIdPrefix, int count) {
         for (int i = 0; i < count; i++) {
             String clientId = String.format("%s%02d", clientIdPrefix, i);
-            ClientRepresentation cr = createClientRepresentation(clientId, "http://example.test/*");
+            ClientRepresentation cr = createOidcClientRep(CONFIDENTIAL, clientId, "http://example.test/*");
             Timer.time();
             Response r = testRealmResource().clients().create(cr);
             r.close();
@@ -198,11 +206,4 @@ public class ClientSettingsTest extends AbstractClientTest {
 	attributes.put(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT, "http://example3.test");
         return attributes;
     }
-    
-    private void assertClientSamlAttributes(Map<String, String> expected, Map<String, String> actual) {
-        for (String key : expected.keySet()) {
-            assertEquals("Expected attribute " + key, expected.get(key), actual.get(key));
-        }
-    }
-
 }

@@ -87,17 +87,6 @@ public class ClientSettingsForm extends CreateClientForm {
     }
 
     @Override
-    public ClientRepresentation getValues() {
-        ClientRepresentation values = super.getValues();
-        values.setBaseUrl(getBaseUrl());
-        if (OIDC.equals(values.getProtocol())) {
-            values.setAdminUrl(getAdminUrl());
-            values.setWebOrigins(getWebOrigins());
-        }
-        return values;
-    }
-
-    @Override
     public void setConsentRequired(boolean value) {
         consentRequired.setOn(value);
     }

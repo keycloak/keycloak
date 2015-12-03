@@ -17,6 +17,7 @@
  */
 package org.keycloak.testsuite.console.page.fragment;
 
+import java.util.List;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
@@ -51,7 +52,7 @@ public class OnOffSwitch {
 
     private void click() {
         waitAjaxForElement(root);
-        actions.moveToElement(root.findElements(By.tagName("span")).get(0))
+        actions.moveToElement(root.findElement(By.tagName("label")))
                 .click().build().perform();
     }
 

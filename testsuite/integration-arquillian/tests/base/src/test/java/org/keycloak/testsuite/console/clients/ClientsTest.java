@@ -26,6 +26,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.CONFIDENTIAL;
 import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 
@@ -42,7 +43,7 @@ public class ClientsTest extends AbstractClientTest {
     
     @Before
     public void beforeClientsTest() {
-        newClient = createClientRepresentation(TEST_CLIENT_ID, TEST_REDIRECT_URIS);
+        newClient = createOidcClientRep(CONFIDENTIAL, TEST_CLIENT_ID, TEST_REDIRECT_URIS);
         testRealmResource().clients().create(newClient).close();
         
         ClientRepresentation found = findClientByClientId(TEST_CLIENT_ID);

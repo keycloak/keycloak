@@ -2,17 +2,36 @@ package org.keycloak.testsuite.console.clients;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.jboss.arquillian.graphene.page.Page;
+import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import static org.keycloak.testsuite.auth.page.login.OIDCLogin.OIDC;
 import static org.keycloak.testsuite.auth.page.login.OIDCLogin.SAML;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.clients.Client;
 import org.keycloak.testsuite.console.page.clients.Clients;
 import org.keycloak.testsuite.console.page.clients.CreateClient;
+import org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.*;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_ASSERTION_CONSUMER_URL_POST;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_ASSERTION_CONSUMER_URL_REDIRECT;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_ASSERTION_SIGNATURE;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_AUTHNSTATEMENT;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_CLIENT_SIGNATURE;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_ENCRYPT;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_FORCE_NAME_ID_FORMAT;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_FORCE_POST_BINDING;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_MULTIVALUED_ROLES;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_NAME_ID_FORMAT;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_SERVER_SIGNATURE;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_SIGNATURE_ALGORITHM;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_SIGNATURE_CANONICALIZATION_METHOD;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_SINGLE_LOGOUT_SERVICE_URL_POST;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT;
 import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsBooleanAttributes;
 import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsListAttributes;
 import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsStringAttributes;
@@ -50,34 +69,68 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         createClientPage.form().save();
     }
 
-    public static ClientRepresentation createClientRepresentation(String clientId, String... redirectUris) {
+    private static ClientRepresentation createClientRep(String clientId) {
         ClientRepresentation client = new ClientRepresentation();
         client.setClientId(clientId);
         client.setEnabled(true);
         client.setConsentRequired(false);
-        client.setStandardFlowEnabled(true);
-        client.setImplicitFlowEnabled(false);
-        client.setDirectAccessGrantsEnabled(true);
-        
+        return client;
+    }
+    
+    public static ClientRepresentation createOidcClientRep(OidcAccessType accessType, String clientId, String... redirectUris) {
+        ClientRepresentation client = createClientRep(clientId);
+       
         client.setProtocol(OIDC);
         
-        client.setBearerOnly(false);
-        client.setPublicClient(false);
-        client.setServiceAccountsEnabled(false);
+        switch (accessType) {
+            case BEARER_ONLY:
+                client.setBearerOnly(true);
+                break;
+            case PUBLIC:
+                client.setBearerOnly(false);
+                client.setPublicClient(true);
+                client.setStandardFlowEnabled(true);
+                client.setImplicitFlowEnabled(false);
+                client.setDirectAccessGrantsEnabled(true);
+                setRedirectUris(client, redirectUris);
+                break;
+            case CONFIDENTIAL:
+                client.setBearerOnly(false);
+                client.setPublicClient(false);
+                client.setStandardFlowEnabled(true);
+                client.setDirectAccessGrantsEnabled(true);
+                client.setServiceAccountsEnabled(true);
+                setRedirectUris(client, redirectUris);
+                break;
+        }
+        return client;
+    }
+    
+    public static ClientRepresentation createSamlClientRep(String clinetId, Map<String, String> samlAttributes) {
+        ClientRepresentation client = createClientRep(clinetId);
         
+        client.setProtocol(SAML);
+        
+        client.setFrontchannelLogout(true);
+        client.setAttributes(samlAttributes);
+        
+        return client;
+    }
+    
+    private static void setRedirectUris(ClientRepresentation client, String... redirectUris) {
         List<String> redirectUrisList = new ArrayList();
         redirectUrisList.addAll(Arrays.asList(redirectUris));
         client.setRedirectUris(redirectUrisList);
-        
-        //set expected web origins to newClient
+    }
+    
+    protected static void setExpectedWebOrigins(ClientRepresentation client) {
         List<String> webOrigins = new ArrayList<>();
-        for (String redirectUri : redirectUris) {
+        for (String redirectUri : client.getRedirectUris()) {
             //parse webOrigin from redirectUri: take substring from index 0 to 
             //first occurence of "/", excluded "http://" by starting search on index 7
             webOrigins.add(redirectUri.substring(0, redirectUri.indexOf("/", 7)));
         }
         client.setWebOrigins(webOrigins);
-        return client;
     }
     
     public ClientRepresentation findClientByClientId(String clientId) {
@@ -96,7 +149,7 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         assertEqualsStringAttributes(c1.getName(), c2.getName());
         assertEqualsBooleanAttributes(c1.isEnabled(), c2.isEnabled());
         assertEqualsBooleanAttributes(c1.isConsentRequired(), c2.isConsentRequired());
-        assertEqualsBooleanAttributes(c1.isDirectGrantsOnly(), c2.isDirectGrantsOnly());
+        assertEqualsBooleanAttributes(c1.isDirectAccessGrantsEnabled(), c2.isDirectAccessGrantsEnabled());
         assertEqualsStringAttributes(c1.getProtocol(), c2.getProtocol());
 
         assertEqualsBooleanAttributes(c1.isBearerOnly(), c2.isBearerOnly());
@@ -110,6 +163,12 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         assertEqualsStringAttributes(c1.getBaseUrl(), c2.getBaseUrl());
         assertEqualsStringAttributes(c1.getAdminUrl(), c2.getAdminUrl());
         assertEqualsListAttributes(c1.getWebOrigins(), c2.getWebOrigins());
+    }
+    
+    public void assertClientSamlAttributes(Map<String, String> expected, Map<String, String> actual) {
+        for (String key : expected.keySet()) {
+            assertEquals("Expected attribute " + key, expected.get(key), actual.get(key));
+        }
     }
 
 }

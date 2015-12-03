@@ -1,11 +1,9 @@
 package org.keycloak.testsuite.console.page.clients;
 
-import java.util.List;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.testsuite.console.page.fragment.Breadcrumb;
 import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 

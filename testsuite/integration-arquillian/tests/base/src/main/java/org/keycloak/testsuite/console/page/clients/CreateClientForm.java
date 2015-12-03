@@ -6,6 +6,7 @@ import java.util.Map;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.ClientRepresentation;
 import static org.keycloak.testsuite.auth.page.login.OIDCLogin.OIDC;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.*;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
 import static org.keycloak.testsuite.page.Form.getInputValue;
@@ -73,42 +74,22 @@ public class CreateClientForm extends Form {
         setName(client.getName());
         setEnabled(client.isEnabled());
         setConsentRequired(client.isConsentRequired());
-        setStandardFlowEnabled(client.isStandardFlowEnabled());
-        setImplicitFlowEnabled(client.isImplicitFlowEnabled());
-        setDirectAccessGrantsEnabled(client.isDirectAccessGrantsEnabled());
         setProtocol(client.getProtocol());
         if (OIDC.equals(client.getProtocol())) {
             setAccessType(client);
             if (!client.isBearerOnly()) {
-                if (!client.isPublicClient()) {
+                setStandardFlowEnabled(client.isStandardFlowEnabled());
+                setDirectAccessGrantsEnabled(client.isDirectAccessGrantsEnabled());
+                if (client.isPublicClient()) {
+                    setImplicitFlowEnabled(client.isImplicitFlowEnabled());
+                } else {//confidential
                     setServiceAccountsEnabled(client.isServiceAccountsEnabled());
                 }
-                setRedirectUris(client.getRedirectUris());
-            }
-        }
-    }
-
-    public ClientRepresentation getValues() {
-        ClientRepresentation values = new ClientRepresentation();
-        values.setClientId(getClientId());
-        values.setName(getName());
-        values.setEnabled(isEnabled());
-        values.setConsentRequired(isConsentRequired());
-        values.setStandardFlowEnabled(isStandardFlowEnabled());
-        values.setImplicitFlowEnabled(isImplicitFlowEnabled());
-        values.setDirectAccessGrantsEnabled(isDirectAccessGrantsEnabled());
-        values.setProtocol(getProtocol());
-        if (OIDC.equals(values.getProtocol())) {
-            values.setBearerOnly(isBearerOnly());
-            if (!values.isBearerOnly()) {
-                values.setPublicClient(isPublicClient());
-                if (!values.isPublicClient()) {
-                    values.setServiceAccountsEnabled(isServiceAccountsEnabled());
+                if (client.isStandardFlowEnabled() || client.isImplicitFlowEnabled()) {
+                    setRedirectUris(client.getRedirectUris());
                 }
-                values.setRedirectUris(getRedirectUris());
             }
         }
-        return values;
     }
 
     public String getClientId() {
@@ -135,27 +116,29 @@ public class CreateClientForm extends Form {
         enabledSwitch.setOn(enabled);
     }
 
-    public static final String BEARER_ONLY = "bearer-only";
-    public static final String PUBLIC = "public";
-    public static final String CONFIDENTIAL = "confidential";
+    public enum OidcAccessType {
+        BEARER_ONLY("bearer-only"),
+        PUBLIC("public"),
+        CONFIDENTIAL("confidential");
         
-    public boolean isBearerOnly() {
-        return BEARER_ONLY.equals(
-                accessTypeSelect.getFirstSelectedOption().getAttribute(VALUE));
-    }
+        private final String name;
 
-    public boolean isPublicClient() {
-        return PUBLIC.equals(
-                accessTypeSelect.getFirstSelectedOption().getAttribute(VALUE));
-    }
+        private OidcAccessType(String name) {
+            this.name = name;
+        }
 
+        public String getName() {
+            return name;
+        }
+    }
+    
     public void setAccessType(ClientRepresentation client) {
         if (client.isBearerOnly()) {
-            accessTypeSelect.selectByVisibleText(BEARER_ONLY);
+            accessTypeSelect.selectByVisibleText(BEARER_ONLY.getName());
         } else if (client.isPublicClient()) {
-            accessTypeSelect.selectByVisibleText(PUBLIC);
+            accessTypeSelect.selectByVisibleText(PUBLIC.getName());
         } else {
-            accessTypeSelect.selectByVisibleText(CONFIDENTIAL);
+            accessTypeSelect.selectByVisibleText(CONFIDENTIAL.getName());
         }
     }
 
