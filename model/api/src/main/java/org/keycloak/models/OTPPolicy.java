@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.HmacOTP;
 
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -13,7 +14,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OTPPolicy {
+public class OTPPolicy implements Serializable {
 
     protected static final Logger logger = Logger.getLogger(OTPPolicy.class);
 
