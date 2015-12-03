@@ -26,7 +26,7 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
 
     private static final Logger log = Logger.getLogger(InfinispanCacheUserProviderFactory.class);
 
-    protected InfinispanUserCache userCache;
+    protected volatile InfinispanUserCache userCache;
 
     protected final RealmLookup usernameLookup = new RealmLookup();
 

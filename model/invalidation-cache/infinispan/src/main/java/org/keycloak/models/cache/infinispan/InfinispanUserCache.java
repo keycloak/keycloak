@@ -35,9 +35,10 @@ public class InfinispanUserCache implements UserCache {
 
     @Override
     public void setEnabled(boolean enabled) {
-        clear();
+        if (this.enabled && !enabled) {
+            clear();
+        }
         this.enabled = enabled;
-        clear();
     }
 
     @Override
@@ -62,7 +63,7 @@ public class InfinispanUserCache implements UserCache {
     @Override
     public void addCachedUser(String realmId, CachedUser user) {
         logger.tracev("Adding user {0}", user.getId());
-        cache.put(user.getId(), user);
+        cache.putForExternalRead(user.getId(), user);
     }
 
     @Override
