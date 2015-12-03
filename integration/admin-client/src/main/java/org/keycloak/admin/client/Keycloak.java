@@ -6,6 +6,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
+import org.keycloak.admin.client.resource.ServerInfoResource;
 import org.keycloak.admin.client.token.TokenManager;
 
 /**
@@ -49,6 +50,10 @@ public class Keycloak {
 
     public RealmResource realm(String realmName){
         return realms().realm(realmName);
+    }
+
+    public ServerInfoResource serverInfo(){
+        return target.proxy(ServerInfoResource.class);
     }
 
     public TokenManager tokenManager(){

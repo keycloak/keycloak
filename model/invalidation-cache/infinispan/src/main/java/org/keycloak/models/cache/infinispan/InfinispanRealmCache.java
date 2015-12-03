@@ -38,9 +38,10 @@ public class InfinispanRealmCache implements RealmCache {
 
     @Override
     public void setEnabled(boolean enabled) {
-        clear();
+        if (this.enabled && !enabled) {
+            clear();
+        }
         this.enabled = enabled;
-        clear();
     }
 
     @Override
@@ -66,7 +67,7 @@ public class InfinispanRealmCache implements RealmCache {
     public void addCachedRealm(CachedRealm realm) {
         if (!enabled) return;
         logger.tracev("Adding realm {0}", realm.getId());
-        cache.put(realm.getId(), realm);
+        cache.putForExternalRead(realm.getId(), realm);
         realmLookup.put(realm.getName(), realm.getId());
     }
 
@@ -93,13 +94,19 @@ public class InfinispanRealmCache implements RealmCache {
     public void addCachedClient(CachedClient app) {
         if (!enabled) return;
         logger.tracev("Adding application {0}", app.getId());
-        cache.put(app.getId(), app);
+        cache.putForExternalRead(app.getId(), app);
     }
 
     @Override
     public void invalidateCachedApplicationById(String id) {
         logger.tracev("Removing application {0}", id);
         cache.remove(id);
+    }
+
+    @Override
+    public void evictCachedApplicationById(String id) {
+        logger.tracev("Evicting application {0}", id);
+        cache.evict(id);
     }
 
     @Override
@@ -112,15 +119,13 @@ public class InfinispanRealmCache implements RealmCache {
     public void invalidateGroup(CachedGroup role) {
         logger.tracev("Removing group {0}", role.getId());
         cache.remove(role.getId());
-
     }
 
     @Override
     public void addCachedGroup(CachedGroup role) {
         if (!enabled) return;
         logger.tracev("Adding group {0}", role.getId());
-        cache.put(role.getId(), role);
-
+        cache.putForExternalRead(role.getId(), role);
     }
 
     @Override
@@ -134,7 +139,6 @@ public class InfinispanRealmCache implements RealmCache {
     public void invalidateGroupById(String id) {
         logger.tracev("Removing group {0}", id);
         cache.remove(id);
-
     }
 
     @Override
@@ -142,8 +146,6 @@ public class InfinispanRealmCache implements RealmCache {
         if (!enabled) return null;
         return get(id, CachedRole.class);
     }
-
-
 
     @Override
     public void invalidateRole(CachedRole role) {
@@ -161,7 +163,7 @@ public class InfinispanRealmCache implements RealmCache {
     public void addCachedRole(CachedRole role) {
         if (!enabled) return;
         logger.tracev("Adding role {0}", role.getId());
-        cache.put(role.getId(), role);
+        cache.putForExternalRead(role.getId(), role);
     }
 
     @Override
