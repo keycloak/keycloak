@@ -31,6 +31,7 @@ import org.keycloak.provider.Spi;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
+import org.keycloak.representations.info.*;
 import org.keycloak.social.SocialIdentityProvider;
 
 /**
@@ -51,7 +52,7 @@ public class ServerInfoAdminResource {
     @GET
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
-        info.setSystemInfo(SystemInfoRepresentation.create(session));
+        info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp()));
         info.setMemoryInfo(MemoryInfoRepresentation.create());
 
         setSocialProviders(info);
