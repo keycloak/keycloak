@@ -9,8 +9,6 @@ import org.openqa.selenium.support.ui.Select;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
- *
- * TODO: SAML
  */
 public class CreateClientMappersForm extends Form {
 

@@ -41,39 +41,39 @@ public class ClientCredentialsTest extends AbstractClientTest {
     private ClientRepresentation newClient;
     
     @Page
-    private ClientCredentials clientCredentials;
+    private ClientCredentials clientCredentialsPage;
     @Page
     private ClientCredentialsGeneratePrivateKeys generatePrivateKeysPage;
     
     @Before
-    public void beforeClientsTest() {
+    public void before() {
         newClient = createOidcClientRep(CONFIDENTIAL, TEST_CLIENT_ID, TEST_REDIRECT_URIS);
         testRealmResource().clients().create(newClient).close();
         
         ClientRepresentation found = findClientByClientId(TEST_CLIENT_ID);
         assertNotNull("Client " + TEST_CLIENT_ID + " was not found.", found);
-        clientCredentials.setId(found.getId());
-        clientCredentials.navigateTo();
+        clientCredentialsPage.setId(found.getId());
+        clientCredentialsPage.navigateTo();
     }
     
     @Test
     public void regenerateSecret() {
-        clientCredentials.form().selectClientIdAndSecret();
-        clientCredentials.form().regenerateSecret();
+        clientCredentialsPage.form().selectClientIdAndSecret();
+        clientCredentialsPage.form().regenerateSecret();
         assertFlashMessageSuccess();
     }
     
     @Test
     public void regenerateRegistrationAccessToken() {
-        clientCredentials.form().regenerateRegistrationAccessToken();
+        clientCredentialsPage.form().regenerateRegistrationAccessToken();
         assertFlashMessageSuccess();
     }
     
     @Test
     public void generateNewKeysAndCert() {
-        generatePrivateKeysPage.setId(clientCredentials.getId());
-        clientCredentials.form().selectSignedJwt();
-        clientCredentials.form().generateNewKeysAndCert();
+        generatePrivateKeysPage.setId(clientCredentialsPage.getId());
+        clientCredentialsPage.form().selectSignedJwt();
+        clientCredentialsPage.form().generateNewKeysAndCert();
         assertCurrentUrlEquals(generatePrivateKeysPage);
         
         generatePrivateKeysPage.generateForm().setKeyPassword("pass");
