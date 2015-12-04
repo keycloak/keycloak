@@ -164,7 +164,7 @@
         <!--<module>testsuite</module>-->
         <module>timer</module>
         <module>export-import</module>
-        <!--<module>util</module>-->
+        <module>util</module>
         <module>wildfly</module>
     </modules>
 
