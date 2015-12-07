@@ -77,7 +77,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         clientSettingsPage.form().setRedirectUris(redirectUris);
         clientSettingsPage.form().setWebOrigins(webOrigins);
         clientSettingsPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         found = findClientByClientId(newClient.getClientId());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
@@ -85,7 +85,7 @@ public class ClientSettingsTest extends AbstractClientTest {
 
         // delete
         clientPage.delete();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         found = findClientByClientId(newClient.getClientId());
         assertNull("Deleted client " + newClient.getClientId() + " was found.", found);
     }
@@ -108,7 +108,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         newClient = createOidcClientRep(PUBLIC, "oidc-public");
         newClient.setStandardFlowEnabled(false);
         createClient(newClient);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         ClientRepresentation found = findClientByClientId(newClient.getClientId());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
@@ -130,7 +130,7 @@ public class ClientSettingsTest extends AbstractClientTest {
     public void createSAML() {
         newClient = createSamlClientRep("saml");
         createClient(newClient);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         ClientRepresentation found = findClientByClientId(newClient.getClientId());
         System.out.println("...." + found.isFrontchannelLogout());

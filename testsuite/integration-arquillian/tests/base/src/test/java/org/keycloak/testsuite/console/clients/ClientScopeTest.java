@@ -62,7 +62,7 @@ public class ClientScopeTest extends AbstractClientTest {
     public void clientScopeTest() {
         assertTrue(found.isFullScopeAllowed());
         clientScopePage.scopeForm().setFullScopeAllowed(false);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         found = findClientByClientId(TEST_CLIENT_ID);
         assertFalse(found.isFullScopeAllowed());
@@ -70,11 +70,11 @@ public class ClientScopeTest extends AbstractClientTest {
         assertNull(getAllMappingsRepresentation().getClientMappings());
         
         clientScopePage.roleForm().addRealmRole("offline_access");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         clientScopePage.roleForm().selectClientRole("account");
         clientScopePage.roleForm().addClientRole("view-profile");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         found = findClientByClientId(TEST_CLIENT_ID);
         List<RoleRepresentation> realmMappings = getAllMappingsRepresentation().getRealmMappings();
@@ -85,9 +85,9 @@ public class ClientScopeTest extends AbstractClientTest {
         assertEquals("view-profile", clientMappings.get("account").getMappings().get(0).getName());
         
         clientScopePage.roleForm().removeAssignedRole("offline_access");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         clientScopePage.roleForm().removeAssignedClientRole("view-profile");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         assertNull(getAllMappingsRepresentation().getRealmMappings());
         assertNull(getAllMappingsRepresentation().getClientMappings());

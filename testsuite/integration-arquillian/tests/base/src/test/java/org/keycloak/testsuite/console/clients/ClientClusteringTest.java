@@ -59,40 +59,40 @@ public class ClientClusteringTest extends AbstractClientTest {
         
         clientClusteringPage.form().setNodeReRegistrationTimeout("10", "Seconds");
         clientClusteringPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         assertTrue(findClientByClientId(TEST_CLIENT_ID).getNodeReRegistrationTimeout() == 10);
         
         clientClusteringPage.form().setNodeReRegistrationTimeout("10", "Minutes");
         clientClusteringPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         assertTrue(findClientByClientId(TEST_CLIENT_ID).getNodeReRegistrationTimeout() == 600);
         
         clientClusteringPage.form().setNodeReRegistrationTimeout("1", "Hours");
         clientClusteringPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         assertTrue(findClientByClientId(TEST_CLIENT_ID).getNodeReRegistrationTimeout() == 3600);
         
         clientClusteringPage.form().setNodeReRegistrationTimeout("1", "Days");
         clientClusteringPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         assertTrue(findClientByClientId(TEST_CLIENT_ID).getNodeReRegistrationTimeout() == 86400);
         
         clientClusteringPage.form().setNodeReRegistrationTimeout("", "Days");
         clientClusteringPage.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
         
         clientClusteringPage.form().setNodeReRegistrationTimeout("text", "Days");
         clientClusteringPage.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
     }
     
     @Test
     public void registerNodeTest() {
         clientClusteringPage.form().addNode("new node");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         assertNotNull(findClientByClientId(TEST_CLIENT_ID).getRegisteredNodes().get("new node"));
         
         clientClusteringPage.form().addNode("");
-        assertFlashMessageDanger();
+        assertAlertDanger();
     }
 }

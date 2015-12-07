@@ -85,7 +85,7 @@ public class ClientRolesTest extends AbstractClientTest {
         
         //delete
         clientRolePage.delete();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         assertTrue("Role should be deleted.", testRealmResource().clients().get(id).roles().list().isEmpty());
     }
 

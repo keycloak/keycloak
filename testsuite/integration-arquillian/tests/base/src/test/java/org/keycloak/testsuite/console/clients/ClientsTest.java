@@ -66,7 +66,7 @@ public class ClientsTest extends AbstractClientTest {
         clientsPage.navigateTo();
         clientsPage.table().deleteClient(TEST_CLIENT_ID);
         modalDialog.confirmDeletion();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         ClientRepresentation found = findClientByClientId(TEST_CLIENT_ID);
         assertNull("Deleted client " + TEST_CLIENT_ID + " was found.", found);

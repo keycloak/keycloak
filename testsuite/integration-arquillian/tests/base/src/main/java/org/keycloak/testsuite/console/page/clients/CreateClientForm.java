@@ -276,7 +276,7 @@ public class CreateClientForm extends Form {
         private WebElement logoutRedirectBindingInput;
         
         public void setValues(ClientRepresentation client) {
-            waitAjaxForElementVisible(fineGrainCollapsor);
+            waitUntilElement(fineGrainCollapsor).is().visible();
             
             Map<String, String> attributes = client.getAttributes();
             samlAuthnStatement.setOn("true".equals(attributes.get(SAML_AUTHNSTATEMENT)));
@@ -294,7 +294,7 @@ public class CreateClientForm extends Form {
             samlNameIdFormat.selectByVisibleText(attributes.get(SAML_NAME_ID_FORMAT));
             
             fineGrainCollapsor.click();
-            waitAjaxForElement(consumerServicePostInput);
+            waitUntilElement(consumerServicePostInput).is().present();
             
             setInputValue(consumerServicePostInput, attributes.get(SAML_ASSERTION_CONSUMER_URL_POST));
             setInputValue(consumerServiceRedirectInput, attributes.get(SAML_ASSERTION_CONSUMER_URL_REDIRECT));

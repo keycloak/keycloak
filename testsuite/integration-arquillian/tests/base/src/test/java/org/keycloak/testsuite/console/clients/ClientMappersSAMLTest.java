@@ -77,7 +77,7 @@ public class ClientMappersSAMLTest extends AbstractClientTest {
         createClientMappersPage.form().setRole("offline_access");
         createClientMappersPage.form().setNewRole("new role");
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "role name");
@@ -99,7 +99,7 @@ public class ClientMappersSAMLTest extends AbstractClientTest {
         createClientMappersPage.form().setSamlAttributeNameFormat("URI Reference");
         createClientMappersPage.form().setSingleRoleAttribute(true);
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "new role list");
@@ -122,7 +122,7 @@ public class ClientMappersSAMLTest extends AbstractClientTest {
         setInitialValues("user property", false, null);
         createClientMappersPage.form().setMapperType(USER_PROPERTY);
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "user property");
@@ -136,7 +136,7 @@ public class ClientMappersSAMLTest extends AbstractClientTest {
         setInitialValues("user session note", false, null);
         createClientMappersPage.form().setMapperType(USER_SESSION_NOTE);
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "user session note");
@@ -154,7 +154,7 @@ public class ClientMappersSAMLTest extends AbstractClientTest {
         createClientMappersPage.form().setMapperType(HARDCODED_ATTRIBUTE);
         createClientMappersPage.form().setAttributeValue("attribute value");
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "hardcoded attribute");
@@ -177,7 +177,7 @@ public class ClientMappersSAMLTest extends AbstractClientTest {
         createClientMappersPage.form().setSingleGroupAttribute(true);
         createClientMappersPage.form().setFullGroupPath(true);
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "group list");
@@ -197,7 +197,7 @@ public class ClientMappersSAMLTest extends AbstractClientTest {
         createClientMappersPage.form().setMapperType(HARDCODED_ROLE_SAML);
         createClientMappersPage.form().selectRole(REALM_ROLE, "offline_access", null);
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "hardcoded role");

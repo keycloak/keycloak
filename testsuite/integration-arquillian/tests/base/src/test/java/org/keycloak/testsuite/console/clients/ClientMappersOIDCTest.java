@@ -79,7 +79,7 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         createClientMappersPage.form().setMapperType(HARDCODED_ROLE);
         createClientMappersPage.form().selectRole(REALM_ROLE, "offline_access", null);
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "hardcoded role");
@@ -96,7 +96,7 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         //edit
         createClientMappersPage.form().selectRole(CLIENT_ROLE, "view-profile", "account");
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         config = findClientMapperByName(id, "hardcoded role").getConfig();
@@ -105,7 +105,7 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         //delete
         clientMapperPage.setMapperId(found.getId());
         clientMapperPage.delete();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         assertNull(findClientMapperByName(id, "hardcoded role"));
@@ -123,7 +123,7 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         createClientMappersPage.form().setAddToIDToken(true);
         createClientMappersPage.form().setAddToAccessToken(true);
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "hardcoded claim");
@@ -152,7 +152,7 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         createClientMappersPage.form().setAddToIDToken(false);
         createClientMappersPage.form().setAddToAccessToken(false);
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "user session note");
@@ -178,7 +178,7 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         createClientMappersPage.form().setRole("offline_access");
         createClientMappersPage.form().setNewRole("new role");
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "role name");
@@ -196,7 +196,7 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         setInitialValues("user address", false, null);
         createClientMappersPage.form().setMapperType(USERS_FULL_NAME);
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "user address");
@@ -210,7 +210,7 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         setInitialValues("user full name", false, null);
         createClientMappersPage.form().setMapperType(USERS_FULL_NAME);
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "user full name");
@@ -226,7 +226,7 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         createClientMappersPage.form().setUserAttribute("user attribute");
         createClientMappersPage.form().setMultivalued(true);
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "user attribute");
@@ -245,7 +245,7 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         createClientMappersPage.form().setMapperType(USER_PROPERTY);
         createClientMappersPage.form().setProperty("property");
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "user property");
@@ -263,7 +263,7 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         createClientMappersPage.form().setMapperType(GROUP_MEMBERSHIP);
         createClientMappersPage.form().setFullGroupPath(true);
         createClientMappersPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         ProtocolMapperRepresentation found = findClientMapperByName(id, "group membership");
@@ -316,7 +316,7 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         //edit
         clientMapperPage.form().setConsentRequired(false);
         clientMapperPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         //check
         assertFalse(findClientMapperByName(id, "mapper name").isConsentRequired());
@@ -327,13 +327,13 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         clientMappersPage.mapperTable().addBuiltin();
         clientMappersPage.mapperTable().checkBuiltinMapper("locale");
         clientMappersPage.mapperTable().clickAddSelectedBuiltinMapper();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         assertTrue("Builtin mapper \"locale\" should be present.", isMapperPresent("locale"));
         
         clientMappersPage.mapperTable().deleteMapper("locale");
         modalDialog.confirmDeletion();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         assertFalse("Builtin mapper \"locale\" should not be present.", isMapperPresent("locale"));
     }
@@ -354,25 +354,25 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         //empty mapper type
         clientMappersPage.mapperTable().createMapper();
         createClientMappersPage.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
         
         //empty name
         createClientMappersPage.form().setMapperType(HARDCODED_ROLE);
         createClientMappersPage.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
         
         createClientMappersPage.form().setName("");
         createClientMappersPage.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
         
         createClientMappersPage.form().setName("name");
         createClientMappersPage.form().setName("");
         createClientMappersPage.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
         
         //existing name
         createClientMappersPage.form().setName("email");
         createClientMappersPage.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
     }
 }

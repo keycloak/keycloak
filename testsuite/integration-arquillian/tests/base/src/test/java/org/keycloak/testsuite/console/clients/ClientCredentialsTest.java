@@ -60,13 +60,13 @@ public class ClientCredentialsTest extends AbstractClientTest {
     public void regenerateSecret() {
         clientCredentialsPage.form().selectClientIdAndSecret();
         clientCredentialsPage.form().regenerateSecret();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
     }
     
     @Test
     public void regenerateRegistrationAccessToken() {
         clientCredentialsPage.form().regenerateRegistrationAccessToken();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
     }
     
     @Test
@@ -80,6 +80,6 @@ public class ClientCredentialsTest extends AbstractClientTest {
         generatePrivateKeysPage.generateForm().setStorePassword("pass2");
         generatePrivateKeysPage.generateForm().clickGenerateAndDownload();
         
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
     }
 }

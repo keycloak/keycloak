@@ -95,27 +95,6 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
         }
     }
 
-    public void assertFlashMessageSuccess() {
-        flashMessage.waitUntilPresent();
-        assertTrue(flashMessage.getText(), flashMessage.isSuccess());
-//        assertEquals(message, flashMessage.getText());
-        flashMessage.close();
-    }
-
-    public void assertFlashMessageDanger() {
-        flashMessage.waitUntilPresent();
-        assertTrue(flashMessage.getText(), flashMessage.isDanger());
-//        assertEquals(message, flashMessage.getText());
-        flashMessage.close();
-    }
-
-    public void assertFlashMessageError() {
-        flashMessage.waitUntilPresent();
-        assertTrue(flashMessage.getText(), flashMessage.isError());
-//        assertEquals(message, flashMessage.getText());
-        flashMessage.close();
-    }
-
     public RealmResource testRealmResource() {
         return adminClient.realm(testRealmPage.getAuthRealm());
     }
