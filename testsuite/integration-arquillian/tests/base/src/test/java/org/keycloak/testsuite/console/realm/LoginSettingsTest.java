@@ -41,13 +41,14 @@ import org.keycloak.testsuite.console.page.realm.LoginSettings.RequireSSLOption;
 import org.keycloak.testsuite.util.MailServer;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.Cookie;
 
 /**
  *
  * @author tkyjovsk
  */
-@Ignore
 public class LoginSettingsTest extends AbstractRealmTest {
 
     private static final String NEW_USERNAME = "newUsername";
@@ -84,7 +85,9 @@ public class LoginSettingsTest extends AbstractRealmTest {
 
         log.info("enabling registration");
         loginSettingsPage.form().setRegistrationAllowed(true);
+        assertTrue(loginSettingsPage.form().isRegistrationAllowed());
         loginSettingsPage.form().save();
+        assertFlashMessageSuccess();
         log.debug("enabled");
         
         testRealmAdminConsolePage.navigateTo();
@@ -98,7 +101,9 @@ public class LoginSettingsTest extends AbstractRealmTest {
         log.info("enabling email as username");
         loginSettingsPage.navigateTo();
         loginSettingsPage.form().setEmailAsUsername(true);
+        assertTrue(loginSettingsPage.form().isEmailAsUsername());
         loginSettingsPage.form().save();
+        assertFlashMessageSuccess();
         log.debug("enabled");
 
         testRealmAdminConsolePage.navigateTo();
@@ -112,8 +117,9 @@ public class LoginSettingsTest extends AbstractRealmTest {
         log.info("disabling registration");
         loginSettingsPage.navigateTo();
         loginSettingsPage.form().setRegistrationAllowed(false);
-        loginSettingsPage.form().save();
         assertFalse(loginSettingsPage.form().isRegistrationAllowed());
+        loginSettingsPage.form().save();
+        assertFlashMessageSuccess();
         log.debug("disabled");
         
         testRealmAdminConsolePage.navigateTo();
@@ -125,7 +131,9 @@ public class LoginSettingsTest extends AbstractRealmTest {
     public void editUsername() {
         log.info("enabling edit username");
         loginSettingsPage.form().setEditUsernameAllowed(true);
+        assertTrue(loginSettingsPage.form().isEditUsernameAllowed());
         loginSettingsPage.form().save();
+        assertFlashMessageSuccess();
         log.debug("enabled");
         
         log.info("edit username");
@@ -145,7 +153,9 @@ public class LoginSettingsTest extends AbstractRealmTest {
         log.info("disabling edit username");
         loginSettingsPage.navigateTo();
         loginSettingsPage.form().setEditUsernameAllowed(false);
+        assertFalse(loginSettingsPage.form().isEditUsernameAllowed());
         loginSettingsPage.form().save();
+        assertFlashMessageSuccess();
         log.debug("disabled");
         
         
@@ -156,7 +166,9 @@ public class LoginSettingsTest extends AbstractRealmTest {
         
         log.info("enabling reset password");
         loginSettingsPage.form().setResetPasswordAllowed(true);
+        assertTrue(loginSettingsPage.form().isResetPasswordAllowed());
         loginSettingsPage.form().save();
+        assertFlashMessageSuccess();
         log.debug("enabled");
         
         testRealmAdminConsolePage.navigateTo();
@@ -169,8 +181,9 @@ public class LoginSettingsTest extends AbstractRealmTest {
         log.info("disabling reset password");
         loginSettingsPage.navigateTo();
         loginSettingsPage.form().setResetPasswordAllowed(false);
-        loginSettingsPage.form().save();
         assertFalse(loginSettingsPage.form().isResetPasswordAllowed());
+        loginSettingsPage.form().save();
+        assertFlashMessageSuccess();
         log.debug("disabled");
         
         testRealmAdminConsolePage.navigateTo();
@@ -183,7 +196,9 @@ public class LoginSettingsTest extends AbstractRealmTest {
         
         log.info("enabling remember me");
         loginSettingsPage.form().setRememberMeAllowed(true);
+        assertTrue(loginSettingsPage.form().isRememberMeAllowed());
         loginSettingsPage.form().save();
+        assertFlashMessageSuccess();
         log.debug("enabled");
         
         log.info("login with remember me checked");
@@ -198,8 +213,9 @@ public class LoginSettingsTest extends AbstractRealmTest {
         log.info("disabling remember me");
         loginSettingsPage.navigateTo();
         loginSettingsPage.form().setRememberMeAllowed(false);
-        loginSettingsPage.form().save();
         assertFalse(loginSettingsPage.form().isRememberMeAllowed());
+        loginSettingsPage.form().save();
+        assertFlashMessageSuccess();
         log.debug("disabled");
         
         testAccountPage.navigateTo();
@@ -218,10 +234,12 @@ public class LoginSettingsTest extends AbstractRealmTest {
         
         log.info("enabling verify email in login settings");
         loginSettingsPage.form().setVerifyEmailAllowed(true);
+        assertTrue(loginSettingsPage.form().isVerifyEmailAllowed());
         loginSettingsPage.form().save();
+        assertFlashMessageSuccess();
         log.debug("enabled");
 
-        log.info("configure smpt server in test realm");
+        log.info("configure smtp server in test realm");
         RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
         testRealmRep.setSmtpServer(suiteContext.getSmtpServer());
         testRealmResource().update(testRealmRep);
@@ -236,8 +254,9 @@ public class LoginSettingsTest extends AbstractRealmTest {
         log.info("disabling verify email");
         loginSettingsPage.navigateTo();
         loginSettingsPage.form().setVerifyEmailAllowed(false);
-        loginSettingsPage.form().save();
         assertFalse(loginSettingsPage.form().isVerifyEmailAllowed());
+        loginSettingsPage.form().save();
+        assertFlashMessageSuccess();
         log.debug("disabled");
         
         log.debug("create new test user");
@@ -261,6 +280,7 @@ public class LoginSettingsTest extends AbstractRealmTest {
         log.info("set require ssl for all requests");
         loginSettingsPage.form().selectRequireSSL(RequireSSLOption.all);
         loginSettingsPage.form().save();
+        assertFlashMessageSuccess();
         log.debug("set");
         
         log.info("check HTTPS required");
