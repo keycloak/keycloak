@@ -29,7 +29,7 @@ public class ClientAdapter implements ClientModel {
     private void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerApplicationInvalidation(getId());
-            updated = updated = cacheSession.getDelegate().getClientById(getId(), cachedRealm);
+            updated = cacheSession.getDelegate().getClientById(getId(), cachedRealm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }

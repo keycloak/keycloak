@@ -11,6 +11,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -26,6 +27,7 @@ import org.keycloak.services.managers.UserManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.common.util.Time;
+import org.keycloak.testsuite.rule.LoggingRule;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -34,6 +36,9 @@ public class UserSessionProviderOfflineTest {
 
     @ClassRule
     public static KeycloakRule kc = new KeycloakRule();
+
+    @Rule
+    public LoggingRule loggingRule = new LoggingRule(this);
 
     private KeycloakSession session;
     private RealmModel realm;

@@ -1,4 +1,4 @@
-package org.keycloak.services.resources.admin.info;
+package org.keycloak.representations.info;
 
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;

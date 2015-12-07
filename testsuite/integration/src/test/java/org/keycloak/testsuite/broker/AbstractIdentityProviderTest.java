@@ -51,6 +51,7 @@ import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.rule.GreenMailRule;
+import org.keycloak.testsuite.rule.LoggingRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.util.JsonSerialization;
@@ -92,6 +93,9 @@ public abstract class AbstractIdentityProviderTest {
 
     @ClassRule
     public static BrokerKeyCloakRule brokerServerRule = new BrokerKeyCloakRule();
+
+    @Rule
+    public LoggingRule loggingRule = new LoggingRule(this);
 
     @Rule
     public WebRule webRule = new WebRule(this);

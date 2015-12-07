@@ -1,7 +1,6 @@
-package org.keycloak.services.resources.admin.info;
+package org.keycloak.representations.info;
 
 import org.keycloak.common.Version;
-import org.keycloak.models.KeycloakSession;
 
 import java.util.Date;
 import java.util.Locale;
@@ -27,11 +26,11 @@ public class SystemInfoRepresentation {
     private String userTimezone;
     private String userLocale;
 
-    public static SystemInfoRepresentation create(KeycloakSession session) {
+    public static SystemInfoRepresentation create(long serverStartupTime) {
         SystemInfoRepresentation rep = new SystemInfoRepresentation();
         rep.version = Version.VERSION;
         rep.serverTime = new Date().toString();
-        rep.uptimeMillis = System.currentTimeMillis() - session.getKeycloakSessionFactory().getServerStartupTimestamp();
+        rep.uptimeMillis = System.currentTimeMillis() - serverStartupTime;
         rep.uptime = formatUptime(rep.uptimeMillis);
         rep.javaVersion = System.getProperty("java.version");
         rep.javaVendor = System.getProperty("java.vendor");

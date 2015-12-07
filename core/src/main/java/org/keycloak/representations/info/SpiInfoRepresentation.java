@@ -1,4 +1,4 @@
-package org.keycloak.services.resources.admin.info;
+package org.keycloak.representations.info;
 
 import java.util.Map;
 
