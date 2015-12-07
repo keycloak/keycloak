@@ -42,7 +42,7 @@ public class RealmRolesTest extends AbstractRolesTest {
         assertCurrentUrlEquals(createRolePage);
         createRolePage.form().setBasicAttributes(roleRep);
         createRolePage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         createRolePage.form().setCompositeRoles(roleRep);
         // TODO add verification of notification message when KEYCLOAK-1497 gets resolved
     }
@@ -53,7 +53,7 @@ public class RealmRolesTest extends AbstractRolesTest {
 //        assertCurrentUrl(role); // can't do this, role id needed as uri param
         rolePage.form().setBasicAttributes(roleRep);
         rolePage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         rolePage.form().setCompositeRoles(roleRep);
     }
     
@@ -64,6 +64,7 @@ public class RealmRolesTest extends AbstractRolesTest {
     }
     
     @Test
+    @Ignore
     public void crudRole() {
         addRole(testRole);
         
@@ -77,7 +78,7 @@ public class RealmRolesTest extends AbstractRolesTest {
         testRole.setDescription("updated role description");
         rolePage.form().setDescription(testRole.getDescription());
         rolePage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         
         configure().roles();
         foundRole = realmRolesPage.table().findRole(testRole.getName()); // search & get role from table
@@ -111,13 +112,12 @@ public class RealmRolesTest extends AbstractRolesTest {
     @Test
     public void testAddExistingRole() {
         addRole(testRole);
-        assertFlashMessageSuccess();
         
         configure().roles();
         realmRolesPage.table().addRole();
         createRolePage.form().setBasicAttributes(testRole);
         createRolePage.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
     }
     
     public void createTestRoles(String namePrefix, int count) {

@@ -38,8 +38,7 @@ public class IdentityProviderTest extends AbstractConsoleTest {
 //	@Test
     public void testAddNewProvider() {
         idpSettingsPage.addNewProvider(new Provider(SocialProvider.FACEBOOK, "klic", "secret"));
-        flashMessage.waitUntilPresent();
-        assertTrue("Success message should be displayed", flashMessage.isSuccess());
+        assertAlertSuccess();
     }
 
 //	@Test(expected = NoSuchElementException.class)

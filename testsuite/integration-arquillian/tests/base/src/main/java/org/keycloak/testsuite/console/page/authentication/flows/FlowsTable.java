@@ -21,7 +21,7 @@
  */
 package org.keycloak.testsuite.console.page.authentication.flows;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -71,7 +71,7 @@ public class FlowsTable {
     
     private WebElement getRowByLabelText(String text) {
         WebElement row = tbody.findElement(By.xpath("//span[text() = '" + text + "']/../.."));
-        waitAjaxForElement(row);
+        waitUntilElement(row).is().present();
         return row;
     }
     

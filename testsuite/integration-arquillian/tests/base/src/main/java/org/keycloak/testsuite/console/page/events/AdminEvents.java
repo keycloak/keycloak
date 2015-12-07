@@ -33,17 +33,17 @@ public class AdminEvents extends Events {
         private AdminEventsTableFilterForm filterForm;
 
         public void update() {
-            waitAjaxForBody();
+            waitForBody();
             clickHeaderButton("Update");
         }
 
         public void reset() {
-            waitAjaxForBody();
+            waitForBody();
             clickHeaderButton("Reset");
         }
 
         public void filter() {
-            waitAjaxForBody();
+            waitForBody();
             filterButton.click();
         }
 

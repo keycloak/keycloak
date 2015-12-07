@@ -38,20 +38,20 @@ public class ChangePasswordTest extends AbstractAccountManagementTest {
     @Test
     public void invalidChangeAttempts() {
         testRealmChangePasswordPage.save();
-        assertFlashMessageError();
+        assertAlertError();
 
         testRealmChangePasswordPage.changePasswords(WRONG_PASSWORD, NEW_PASSWORD, NEW_PASSWORD);
-        assertFlashMessageError();
+        assertAlertError();
 
         testRealmChangePasswordPage.changePasswords(correctPassword, NEW_PASSWORD, NEW_PASSWORD + "-mismatch");
-        assertFlashMessageError();
+        assertAlertError();
     }
 
     @Test
     public void successfulChangeAttempts() {
         // change password successfully
         testRealmChangePasswordPage.changePasswords(correctPassword, NEW_PASSWORD, NEW_PASSWORD);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         // login using new password
         testRealmAccountManagementPage.signOut();
@@ -61,7 +61,7 @@ public class ChangePasswordTest extends AbstractAccountManagementTest {
         // change password back
         testRealmAccountManagementPage.password();
         testRealmChangePasswordPage.changePasswords(NEW_PASSWORD, correctPassword, correctPassword);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
     }
 
 }

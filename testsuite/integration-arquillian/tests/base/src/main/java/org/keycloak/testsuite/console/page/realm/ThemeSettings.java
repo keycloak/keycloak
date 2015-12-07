@@ -20,7 +20,7 @@ package org.keycloak.testsuite.console.page.realm;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.By;
 
 /**
@@ -47,7 +47,7 @@ public class ThemeSettings extends RealmSettings {
     private Select emailThemeSelect;
 
     public void changeLoginTheme(String themeName) {
-        waitGuiForElement(By.id("loginTheme"));
+        waitUntilElement(By.id("loginTheme")).is().present();
         loginThemeSelect.selectByVisibleText(themeName);
     }
 

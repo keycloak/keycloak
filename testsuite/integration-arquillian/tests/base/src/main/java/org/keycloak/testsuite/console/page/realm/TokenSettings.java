@@ -23,7 +23,7 @@ import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
 import static java.lang.String.valueOf;
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import static org.apache.commons.lang3.text.WordUtils.capitalize;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.page.Form;
@@ -70,7 +70,7 @@ public class TokenSettings extends RealmSettings {
 
         private void setTimeout(Select timeoutElement, WebElement unitElement,
                 int timeout, TimeUnit unit) {
-            waitGuiForElement(sessionTimeout);
+            waitUntilElement(sessionTimeout).is().present();
             timeoutElement.selectByValue(capitalize(unit.name().toLowerCase()));
             unitElement.clear();
             unitElement.sendKeys(valueOf(timeout));

@@ -50,18 +50,18 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
         passwordPolicyPage.navigateTo();
         passwordPolicyPage.addPolicy(HASH_ITERATIONS, 5);
         passwordPolicyPage.removePolicy(HASH_ITERATIONS);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
     }
 
     @Test
     public void testInvalidPolicyValues() {
         passwordPolicyPage.navigateTo();
         passwordPolicyPage.addPolicy(HASH_ITERATIONS, "asd");
-        assertFlashMessageDanger();
+        assertAlertDanger();
         passwordPolicyPage.removePolicy(HASH_ITERATIONS);
 
         passwordPolicyPage.addPolicy(REGEX_PATTERN, "([");
-        assertFlashMessageDanger();
+        assertAlertDanger();
     }
 
     @Test
@@ -72,10 +72,10 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("1234567");
-        assertFlashMessageDanger();
+        assertAlertDanger();
 
         testUserCredentialsPage.resetPassword("12345678");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
     }
 
     @Test
@@ -86,10 +86,10 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("invalidPassword1");
-        assertFlashMessageDanger();
+        assertAlertDanger();
 
         testUserCredentialsPage.resetPassword("validPassword12");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
     }
 
     @Test
@@ -100,10 +100,10 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("iNVALIDPASSWORD");
-        assertFlashMessageDanger();
+        assertAlertDanger();
 
         testUserCredentialsPage.resetPassword("vaLIDPASSWORD");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
     }
 
     @Test
@@ -114,10 +114,10 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("Invalidpassword");
-        assertFlashMessageDanger();
+        assertAlertDanger();
 
         testUserCredentialsPage.resetPassword("VAlidpassword");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
     }
 
     @Test
@@ -128,10 +128,10 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("invalidPassword*");
-        assertFlashMessageDanger();
+        assertAlertDanger();
 
         testUserCredentialsPage.resetPassword("validPassword*#");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
     }
 
     @Test
@@ -142,10 +142,10 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword(testUser.getUsername());
-        assertFlashMessageDanger();
+        assertAlertDanger();
 
         testUserCredentialsPage.resetPassword("validpassword");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
     }
 
     @Test
@@ -156,10 +156,10 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("invalidPassword");
-        assertFlashMessageDanger();
+        assertAlertDanger();
 
         testUserCredentialsPage.resetPassword("VALID#password");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
     }
 
     @Test
@@ -170,13 +170,13 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("firstPassword");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         testUserCredentialsPage.resetPassword("secondPassword");
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         testUserCredentialsPage.resetPassword("firstPassword");
-        assertFlashMessageDanger();
+        assertAlertDanger();
     }
 
 }

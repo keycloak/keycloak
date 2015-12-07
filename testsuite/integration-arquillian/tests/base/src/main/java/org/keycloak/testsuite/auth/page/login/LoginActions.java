@@ -19,7 +19,7 @@ package org.keycloak.testsuite.auth.page.login;
 
 import javax.ws.rs.core.UriBuilder;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElementPresent;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -45,7 +45,7 @@ public class LoginActions extends AuthRealm {
     private WebElement feedbackText;
     
     public String getFeedbackText() {
-        waitGuiForElementPresent(feedbackText, "Feedback message should be visible");
+        waitUntilElement(feedbackText, "Feedback message should be present").is().present();
         return feedbackText.getText();
     }
     
