@@ -2,6 +2,7 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserConsentModel;
@@ -24,9 +25,9 @@ import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
+import org.keycloak.hash.PasswordHashProvider;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -52,11 +53,13 @@ public class UserAdapter implements UserModel {
     protected UserEntity user;
     protected EntityManager em;
     protected RealmModel realm;
+    private final KeycloakSession session;
 
-    public UserAdapter(RealmModel realm, EntityManager em, UserEntity user) {
+    public UserAdapter(KeycloakSession session, RealmModel realm, EntityManager em, UserEntity user) {
         this.em = em;
         this.user = user;
         this.realm = realm;
+        this.session = session;
     }
 
     public UserEntity getUser() {
@@ -389,6 +392,7 @@ public class UserAdapter implements UserModel {
     private void setValue(CredentialEntity credentialEntity, UserCredentialModel cred) {
         byte[] salt = getSalt();
         int hashIterations = 1;
+        PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class);
         PasswordPolicy policy = realm.getPasswordPolicy();
         if (policy != null) {
             hashIterations = policy.getHashIterations();
@@ -396,7 +400,7 @@ public class UserAdapter implements UserModel {
                 hashIterations = 1;
         }
         credentialEntity.setCreatedDate(Time.toMillis(Time.currentTime()));
-        credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
+        credentialEntity.setValue(provider.encode(cred.getValue(), salt, hashIterations));
         credentialEntity.setSalt(salt);
         credentialEntity.setHashIterations(hashIterations);
     }

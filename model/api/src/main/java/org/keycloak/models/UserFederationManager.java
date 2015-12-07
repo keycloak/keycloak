@@ -403,7 +403,7 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
+    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> input) {
         UserFederationProvider link = getFederationLink(realm, user);
         if (link != null) {
             validateUser(realm, user);
@@ -421,10 +421,10 @@ public class UserFederationManager implements UserProvider {
                 if (!link.validCredentials(realm, user, fedCreds)) {
                     return false;
                 }
-                return session.userStorage().validCredentials(realm, user, localCreds);
+                return session.userStorage().validCredentials(session, realm, user, localCreds);
             }
         }
-        return session.userStorage().validCredentials(realm, user, input);
+        return session.userStorage().validCredentials(session, realm, user, input);
     }
 
     /**
@@ -466,12 +466,12 @@ public class UserFederationManager implements UserProvider {
 
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        return validCredentials(realm, user, Arrays.asList(input));
+    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel... input) {
+        return validCredentials(session, realm, user, Arrays.asList(input));
     }
 
     @Override
-    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input) {
+    public CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input) {
         List<UserFederationProviderModel> fedProviderModels = realm.getUserFederationProviders();
         List<UserFederationProvider> fedProviders = new ArrayList<UserFederationProvider>();
         for (UserFederationProviderModel fedProviderModel : fedProviderModels) {

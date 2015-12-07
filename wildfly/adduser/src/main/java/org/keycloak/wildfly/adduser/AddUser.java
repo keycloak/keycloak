@@ -12,6 +12,7 @@ import org.jboss.aesh.console.command.invocation.CommandInvocation;
 import org.jboss.aesh.console.command.registry.AeshCommandRegistryBuilder;
 import org.jboss.aesh.console.command.registry.CommandRegistry;
 import org.keycloak.common.util.Base64;
+import org.keycloak.hash.DefaultPasswordHashProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -145,7 +146,7 @@ public class AddUser {
         credentials.setType(CredentialRepresentation.PASSWORD);
         credentials.setHashIterations(iterations);
         credentials.setSalt(Base64.encodeBytes(salt));
-        credentials.setHashedSaltedValue(new Pbkdf2PasswordEncoder(salt).encode(password, iterations));
+        credentials.setHashedSaltedValue(new DefaultPasswordHashProvider().encode(password, salt, iterations));
 
         user.getCredentials().add(credentials);
 

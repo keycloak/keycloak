@@ -572,7 +572,7 @@ public class AccountService extends AbstractSecuredLocalService {
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(realm.getOTPPolicy().getType());
         cred.setValue(totp);
-        session.users().validCredentials(realm, user, cred);
+        session.users().validCredentials(session, realm, user, cred);
 
         event.event(EventType.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
@@ -619,7 +619,7 @@ public class AccountService extends AbstractSecuredLocalService {
             }
 
             UserCredentialModel cred = UserCredentialModel.password(password);
-            if (!session.users().validCredentials(realm, user, cred)) {
+            if (!session.users().validCredentials(session, realm, user, cred)) {
                 setReferrerOnPage();
                 return account.setError(Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
             }

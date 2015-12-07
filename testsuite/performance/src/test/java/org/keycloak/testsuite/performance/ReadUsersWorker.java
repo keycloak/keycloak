@@ -102,7 +102,7 @@ public class ReadUsersWorker implements Worker {
 
             // Validate password (shoould be same as username)
             if (readPassword) {
-                session.users().validCredentials(realm, user, UserCredentialModel.password(username));
+                session.users().validCredentials(session, realm, user, UserCredentialModel.password(username));
             }
 
             // Read federatedIdentities of user

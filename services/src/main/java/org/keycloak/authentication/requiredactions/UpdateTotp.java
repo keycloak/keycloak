@@ -73,7 +73,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(context.getRealm().getOTPPolicy().getType());
         cred.setValue(totp);
-        context.getSession().users().validCredentials(context.getRealm(), context.getUser(), cred);
+        context.getSession().users().validCredentials(context.getSession(), context.getRealm(), context.getUser(), cred);
 
         context.getUser().setOtpEnabled(true);
         context.success();
