@@ -64,6 +64,7 @@ public class RealmRolesTest extends AbstractRolesTest {
     }
     
     @Test
+    @Ignore
     public void crudRole() {
         addRole(testRole);
         
