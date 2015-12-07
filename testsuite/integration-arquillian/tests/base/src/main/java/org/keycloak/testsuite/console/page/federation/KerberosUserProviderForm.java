@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.console.page.federation;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
@@ -50,7 +50,7 @@ public class KerberosUserProviderForm extends Form {
     }
 
     public void setKerberosRealmInput(String kerberosRealm) {
-        waitGuiForElement(By.id("kerberosRealm"));
+        waitUntilElement(By.id("kerberosRealm")).is().present();
         setInputValue(kerberosRealmInput, kerberosRealm);
     }
 
@@ -71,7 +71,7 @@ public class KerberosUserProviderForm extends Form {
     }
 
     public void selectEditMode(String mode) {
-        waitGuiForElement(By.id("editMode"));
+        waitUntilElement(By.id("editMode")).is().present();
         editModeSelect.selectByVisibleText(mode);
     }
 

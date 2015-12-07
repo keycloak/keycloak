@@ -47,7 +47,7 @@ public class ClientSettingsTest extends AbstractClientTest {
     public void crudOIDCConfidential() {
         newClient = createOidcClientRep(CONFIDENTIAL, "oidc-confidential", TEST_REDIRECT_URIS);
         createClient(newClient);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         setExpectedWebOrigins(newClient);
         
@@ -94,7 +94,7 @@ public class ClientSettingsTest extends AbstractClientTest {
     public void createOIDCPublic() {
         newClient = createOidcClientRep(PUBLIC, "oidc-public", TEST_REDIRECT_URIS);
         createClient(newClient);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         setExpectedWebOrigins(newClient);
         
@@ -119,7 +119,7 @@ public class ClientSettingsTest extends AbstractClientTest {
     public void createOIDCBearerOnly() {
         newClient = createOidcClientRep(BEARER_ONLY, "oidc-bearer-only");
         createClient(newClient);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         ClientRepresentation found = findClientByClientId(newClient.getClientId());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
@@ -143,11 +143,11 @@ public class ClientSettingsTest extends AbstractClientTest {
     public void invalidSettings() {
         clientsPage.table().createClient();
         createClientPage.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
 
         createClientPage.form().setClientId("test-client");
         createClientPage.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
     }
 
 //    @Test

@@ -1044,35 +1044,14 @@ public class RepresentationToModel {
                 user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction));
             }
         }
-        if (userRep.getCredentials() != null) {
-            for (CredentialRepresentation cred : userRep.getCredentials()) {
-                updateCredential(user, cred);
-            }
-        }
+        createCredentials(userRep, user);
         if (userRep.getFederatedIdentities() != null) {
             for (FederatedIdentityRepresentation identity : userRep.getFederatedIdentities()) {
                 FederatedIdentityModel mappingModel = new FederatedIdentityModel(identity.getIdentityProvider(), identity.getUserId(), identity.getUserName());
                 session.users().addFederatedIdentity(newRealm, user, mappingModel);
             }
         }
-        if (userRep.getRealmRoles() != null) {
-            for (String roleString : userRep.getRealmRoles()) {
-                RoleModel role = newRealm.getRole(roleString.trim());
-                if (role == null) {
-                    role = newRealm.addRole(roleString.trim());
-                }
-                user.grantRole(role);
-            }
-        }
-        if (userRep.getClientRoles() != null) {
-            for (Map.Entry<String, List<String>> entry : userRep.getClientRoles().entrySet()) {
-                ClientModel client = clientMap.get(entry.getKey());
-                if (client == null) {
-                    throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
-                }
-                createClientRoleMappings(client, user, entry.getValue());
-            }
-        }
+        createRoleMappings(userRep, user, newRealm);
         if (userRep.getClientConsents() != null) {
             for (UserConsentRepresentation consentRep : userRep.getClientConsents()) {
                 UserConsentModel consentModel = toModel(newRealm, consentRep);
@@ -1098,6 +1077,14 @@ public class RepresentationToModel {
             }
         }
         return user;
+    }
+
+    public static void createCredentials(UserRepresentation userRep, UserModel user) {
+        if (userRep.getCredentials() != null) {
+            for (CredentialRepresentation cred : userRep.getCredentials()) {
+                updateCredential(user, cred);
+            }
+        }
     }
 
     // Detect if it is "plain-text" or "hashed" representation and update model according to it
@@ -1141,6 +1128,28 @@ public class RepresentationToModel {
     }
 
     // Role mappings
+
+    public static void createRoleMappings(UserRepresentation userRep, UserModel user, RealmModel realm) {
+        if (userRep.getRealmRoles() != null) {
+            for (String roleString : userRep.getRealmRoles()) {
+                RoleModel role = realm.getRole(roleString.trim());
+                if (role == null) {
+                    role = realm.addRole(roleString.trim());
+                }
+                user.grantRole(role);
+            }
+        }
+        if (userRep.getClientRoles() != null) {
+            Map<String, ClientModel> clientMap = realm.getClientNameMap();
+            for (Map.Entry<String, List<String>> entry : userRep.getClientRoles().entrySet()) {
+                ClientModel client = clientMap.get(entry.getKey());
+                if (client == null) {
+                    throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
+                }
+                createClientRoleMappings(client, user, entry.getValue());
+            }
+        }
+    }
 
     public static void createClientRoleMappings(ClientModel clientModel, UserModel user, List<String> roleNames) {
         if (user == null) {

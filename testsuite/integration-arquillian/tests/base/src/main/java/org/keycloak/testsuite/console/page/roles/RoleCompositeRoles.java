@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import org.keycloak.representations.idm.RoleRepresentation.Composites;
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -137,7 +137,7 @@ public class RoleCompositeRoles extends Form {
 
     // *** original methods ***
     public void addAvailableRole(String... roles) {
-        waitGuiForElement(By.id("available"));
+        waitUntilElement(By.id("available")).is().present();
         for (String role : roles) {
             availableRealmRolesSelect.selectByVisibleText(role);
             addSelectedRealmRolesButton.click();
@@ -145,13 +145,13 @@ public class RoleCompositeRoles extends Form {
     }
 
     public void removeAssignedRole(String role) {
-        waitGuiForElement(By.id("assigned"));
+        waitUntilElement(By.id("assigned")).is().present();
         assignedRealmRolesSelect.selectByVisibleText(role);
         removeSelectedRealmRolesButton.click();
     }
 
     public boolean isAssignedRole(String role) {
-        waitGuiForElement(By.id("assigned"));
+        waitUntilElement(By.id("assigned")).is().present();
         try {
             assignedRealmRolesSelect.selectByVisibleText(role);
         } catch (Exception ex) {
@@ -161,7 +161,7 @@ public class RoleCompositeRoles extends Form {
     }
 
     public boolean isAssignedClientRole(String role) {
-        waitGuiForElement(By.id("assigned"));
+        waitUntilElement(By.id("assigned")).is().present();
         try {
             assignedClientRolesSelect.selectByVisibleText(role);
         } catch (Exception ex) {
@@ -171,12 +171,12 @@ public class RoleCompositeRoles extends Form {
     }
 
     public void selectClientRole(String client) {
-        waitGuiForElement(By.id("clients"));
+        waitUntilElement(By.id("clients")).is().present();
         clientSelect.selectByVisibleText(client);
     }
 
     public void addAvailableClientRole(String... roles) {
-        waitGuiForElement(By.id("available-client"));
+        waitUntilElement(By.id("available-client")).is().present();
         for (String role : roles) {
             availableClientRolesSelect.selectByVisibleText(role);
             addSelectedClientRolesButton.click();
@@ -184,7 +184,7 @@ public class RoleCompositeRoles extends Form {
     }
 
     public void removeAssignedClientRole(String client) {
-        waitGuiForElement(By.id("assigned-client"));
+        waitUntilElement(By.id("assigned-client")).is().present();
         assignedClientRolesSelect.selectByVisibleText(client);
         removeSelectedClientRolesButton.click();
     }

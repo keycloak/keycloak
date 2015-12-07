@@ -49,7 +49,7 @@ public class UserAttributesTest extends AbstractUserTest {
         setPasswordFor(newTestRealmUser, "pass");
         newTestRealmUser.setEmail(invalidEmail);
         createUser(newTestRealmUser);
-        assertFlashMessageDanger();
+        assertAlertDanger();
 
         userAttributesPage.backToUsersViaBreadcrumb();
         assertNull(usersPage.table().findUser(testUsername));
@@ -58,7 +58,7 @@ public class UserAttributesTest extends AbstractUserTest {
     @Test
     public void noUsername() {
         createUser(newTestRealmUser);
-        assertFlashMessageDanger();
+        assertAlertDanger();
     }
 
     @Test
@@ -66,7 +66,7 @@ public class UserAttributesTest extends AbstractUserTest {
         String testUsername = "test_duplicated_user";
         newTestRealmUser.setUsername(testUsername);
         createUser(newTestRealmUser);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         userAttributesPage.backToUsersViaBreadcrumb();
         assertNotNull(usersPage.table().findUser(testUsername));
@@ -74,7 +74,7 @@ public class UserAttributesTest extends AbstractUserTest {
         UserRepresentation testUser2 = new UserRepresentation();
         testUser2.setUsername(testUsername);
         createUser(testUser2);
-        assertFlashMessageDanger();
+        assertAlertDanger();
     }
 
     @Test
@@ -83,7 +83,7 @@ public class UserAttributesTest extends AbstractUserTest {
         disabledUser.setEnabled(false);
         disabledUser.setUsername("disabled_user");
         createUser(disabledUser);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         // TODO try to log in
     }
 

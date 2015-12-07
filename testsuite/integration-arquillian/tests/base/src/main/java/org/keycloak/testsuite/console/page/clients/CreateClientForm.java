@@ -68,7 +68,7 @@ public class CreateClientForm extends Form {
     private List<WebElement> deleteRedirectUriIcons;
 
     public void setValues(ClientRepresentation client) {
-        waitAjaxForElement(clientIdInput);
+        waitUntilElement(clientIdInput).is().present();
 
         setClientId(client.getClientId());
         setName(client.getName());
@@ -204,7 +204,7 @@ public class CreateClientForm extends Form {
     }
 
     public String getProtocol() {
-        waitAjaxForElement(protocolSelect.getFirstSelectedOption());
+        waitUntilElement(protocolSelect.getFirstSelectedOption()).is().present();
         return protocolSelect.getFirstSelectedOption().getText();
     }
 

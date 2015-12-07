@@ -8,7 +8,7 @@ import org.openqa.selenium.support.ui.Select;
 
 import java.util.List;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author Petr Mensik
@@ -32,7 +32,7 @@ public class PasswordPolicy extends Authentication {
     private List<WebElement> allRows;
 
     public void addPolicy(PasswordPolicy.Type policy, String value) {
-        waitGuiForElement(addPolicySelectElement);
+        waitUntilElement(addPolicySelectElement).is().present();
         addPolicySelect.selectByVisibleText(policy.getName());
         setPolicyValue(policy, value);
         primaryButton.click();

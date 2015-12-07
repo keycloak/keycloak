@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.auth.page.account;
 
 import org.keycloak.testsuite.page.Form;
-import org.keycloak.testsuite.util.WaitUtils;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -54,6 +54,6 @@ public class PasswordFields extends Form {
     }
 
     public void waitForConfirmPasswordInputPresent() {
-        WaitUtils.waitGuiForElement(confirmPasswordInput);
+        waitUntilElement(confirmPasswordInput).is().present();
     }
 }

@@ -66,7 +66,7 @@ public class AccountTest extends AbstractAccountManagementTest {
         testRealmAccountPage.setFirstName(NEW_FIRST_NAME);
         testRealmAccountPage.setLastName(NEW_LAST_NAME);
         testRealmAccountPage.save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         testRealmAccountManagementPage.signOut();
         testRealmLoginPage.form().login(testUser);

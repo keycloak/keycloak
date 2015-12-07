@@ -3,8 +3,7 @@ package org.keycloak.testsuite.console.page;
 import org.keycloak.admin.client.resource.RealmResource;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
-import org.keycloak.testsuite.util.WaitUtils;
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -39,7 +38,7 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
     private ConfigureMenu configureMenu;
 
     public ConfigureMenu configure() {
-        waitGuiForElement(By.xpath("//div[./h2[text()='Configure']]"));
+        waitUntilElement(By.xpath("//div[./h2[text()='Configure']]")).is().present();
         return configureMenu;
     }
 
@@ -92,7 +91,7 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
     protected ManageMenu manageMenu;
 
     public ManageMenu manage() {
-        WaitUtils.waitGuiForElement(By.xpath("//div[./h2[text()='Manage']]"));
+        waitUntilElement(By.xpath("//div[./h2[text()='Manage']]")).is().present();
         return manageMenu;
     }
 

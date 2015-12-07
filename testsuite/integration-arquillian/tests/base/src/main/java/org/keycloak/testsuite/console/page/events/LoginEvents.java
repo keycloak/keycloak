@@ -33,17 +33,17 @@ public class LoginEvents extends Events {
         private LoginEventsTableFilterForm filterForm;
 
         public void update() {
-            waitAjaxForBody();
+            waitForBody();
             clickHeaderButton("Update");
         }
 
         public void reset() {
-            waitAjaxForBody();
+            waitForBody();
             clickHeaderButton("Reset");
         }
 
         public void filter() {
-            waitAjaxForBody();
+            waitForBody();
             filterButton.click();
         }
 

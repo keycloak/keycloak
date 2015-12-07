@@ -28,7 +28,7 @@ public class RolesTable extends DataTable {
     }
 
     public void clickRole(String name) {
-        waitAjaxForBody();
+        waitForBody();
         clickRowByLinkText(name);
     }
 

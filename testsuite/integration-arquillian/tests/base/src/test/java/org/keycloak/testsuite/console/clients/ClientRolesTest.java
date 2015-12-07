@@ -55,9 +55,8 @@ public class ClientRolesTest extends AbstractClientTest {
         clientRolesPage.roles().addRole();
         createClientRolePage.form().setBasicAttributes(roleRep);
         createClientRolePage.form().save();
-        assertFlashMessageSuccess();
-        System.out.println("TODO ClientRolesTest.addNewClientRole");
-//        createClientRolePage.form().setCompositeRoles(roleRep);
+        assertAlertSuccess();
+        createClientRolePage.form().setCompositeRoles(roleRep);
         // TODO add verification of notification message when KEYCLOAK-1497 gets resolved
     }
 

@@ -20,8 +20,7 @@ package org.keycloak.testsuite.auth.page.login;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElementNotPresent;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -62,11 +61,11 @@ public abstract class Login extends AuthRealm {
     private WebElement keycloakTheme;
 
     public void waitForKeycloakThemeNotPresent() {
-        waitGuiForElementNotPresent(keycloakTheme);
+        waitUntilElement(keycloakTheme).is().not().present();
     }
 
     public void waitForKeycloakThemePresent() {
-        waitGuiForElement(keycloakTheme);
+        waitUntilElement(keycloakTheme).is().present();
     }
 
 }

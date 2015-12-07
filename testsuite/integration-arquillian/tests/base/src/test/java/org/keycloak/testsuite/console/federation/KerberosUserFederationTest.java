@@ -33,7 +33,7 @@ public class KerberosUserFederationTest extends AbstractConsoleTest {
 		createKerberosUserProvider.form().selectEditMode(READ_ONLY);
 		createKerberosUserProvider.form().setUpdateProfileFirstLogin(true);
 		createKerberosUserProvider.form().save();
-		assertFlashMessageSuccess();
+		assertAlertSuccess();
 		RealmRepresentation realm = testRealmResource().toRepresentation();
 		UserFederationProviderRepresentation ufpr = realm.getUserFederationProviders().get(0);
 		assertKerberosSetings(ufpr, "KEYCLOAK.ORG", "HTTP/localhost@KEYCLOAK.ORG", "http.keytab", "true", "true", "true");
@@ -50,18 +50,18 @@ public class KerberosUserFederationTest extends AbstractConsoleTest {
 		createKerberosUserProvider.form().selectEditMode(UNSYNCED);
 		createKerberosUserProvider.form().setUpdateProfileFirstLogin(true);
 		createKerberosUserProvider.form().save();
-		assertFlashMessageDanger();
+		assertAlertDanger();
 		createKerberosUserProvider.form().setServerPrincipalInput("");
 		createKerberosUserProvider.form().setKerberosRealmInput("KEYCLOAK.ORG");;
 		createKerberosUserProvider.form().save();
-		assertFlashMessageDanger();
+		assertAlertDanger();
 		createKerberosUserProvider.form().setServerPrincipalInput("HTTP/localhost@KEYCLOAK.ORG");;
 		createKerberosUserProvider.form().setKeyTabInput("");
 		createKerberosUserProvider.form().save();
-		assertFlashMessageDanger();		
+		assertAlertDanger();		
 		createKerberosUserProvider.form().setKeyTabInput("http.keytab");;
 		createKerberosUserProvider.form().save();
-		assertFlashMessageSuccess();
+		assertAlertSuccess();
 	}
 
 	private void assertKerberosSetings(UserFederationProviderRepresentation ufpr, String kerberosRealm, String serverPrincipal, String keyTab, String debug, String useKerberosForPasswordAuthentication, String updateProfileFirstLogin) {

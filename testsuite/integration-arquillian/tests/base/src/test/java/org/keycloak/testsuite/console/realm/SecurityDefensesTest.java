@@ -74,7 +74,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
         bruteForceDetectionPage.form().setWaitIncrementSelect(BruteForceDetection.TimeSelectValues.SECONDS);
         bruteForceDetectionPage.form().setWaitIncrementInput(String.valueOf(secondsToWait));
         bruteForceDetectionPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         testRealmAccountPage.navigateTo();
 
@@ -115,7 +115,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
         bruteForceDetectionPage.form().setMinQuickLoginWaitSelect(BruteForceDetection.TimeSelectValues.SECONDS);
         bruteForceDetectionPage.form().setMinQuickLoginWaitInput(String.valueOf(secondsToWait));
         bruteForceDetectionPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         testRealmAccountPage.navigateTo();
 
@@ -195,7 +195,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
         bruteForceDetectionPage.form().setFailureResetTimeSelect(BruteForceDetection.TimeSelectValues.SECONDS);
         bruteForceDetectionPage.form().setFailureResetTimeInput(String.valueOf(secondsToWait));
         bruteForceDetectionPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         testRealmAccountPage.navigateTo();
 
@@ -228,7 +228,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
         bruteForceDetectionPage.form().setWaitIncrementSelect(BruteForceDetection.TimeSelectValues.MINUTES);
         bruteForceDetectionPage.form().setWaitIncrementInput("10");
         bruteForceDetectionPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         testRealmAccountPage.navigateTo();
 

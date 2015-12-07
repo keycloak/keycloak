@@ -83,13 +83,15 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
      */
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile_emailProvided_emailVerifyEnabled() throws IOException, MessagingException {
-        getRealm().setVerifyEmail(true);
+        RealmModel realm = getRealm();
+        realm.setVerifyEmail(true);
+        setUpdateProfileFirstLogin(realm, IdentityProviderRepresentation.UPFLM_OFF);
+
         brokerServerRule.stopSession(this.session, true);
         this.session = brokerServerRule.startSession();
 
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
         try {
-            setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
             identityProviderModel.setTrustEmail(false);
 
             UserModel federatedUser = assertSuccessfulAuthenticationWithEmailVerification(identityProviderModel, "test-user", "test-user@localhost", false);
@@ -152,13 +154,15 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
      */
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled() {
-        getRealm().setVerifyEmail(true);
+        RealmModel realm = getRealm();
+        realm.setVerifyEmail(true);
+        setUpdateProfileFirstLogin(realm, IdentityProviderRepresentation.UPFLM_OFF);
+
         brokerServerRule.stopSession(this.session, true);
         this.session = brokerServerRule.startSession();
 
         try {
             IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-            setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
 
             UserModel federatedUser = assertSuccessfulAuthentication(identityProviderModel, "test-user-noemail", null, false);
 
@@ -174,8 +178,10 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
      */
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile_emailProvided_emailVerifyEnabled_emailTrustEnabled() {
-        getRealm().setVerifyEmail(true);
-        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
+        RealmModel realmWithBroker = getRealm();
+        realmWithBroker.setVerifyEmail(true);
+        setUpdateProfileFirstLogin(realmWithBroker, IdentityProviderRepresentation.UPFLM_OFF);
+
         brokerServerRule.stopSession(this.session, true);
         this.session = brokerServerRule.startSession();
 
@@ -201,13 +207,15 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
      */
     @Test
     public void testSuccessfulAuthentication_emailTrustEnabled_emailVerifyEnabled_emailUpdatedOnFirstLogin() throws IOException, MessagingException {
-        getRealm().setVerifyEmail(true);
+        RealmModel realm = getRealm();
+        realm.setVerifyEmail(true);
+        setUpdateProfileFirstLogin(realm, IdentityProviderRepresentation.UPFLM_ON);
+
         brokerServerRule.stopSession(this.session, true);
         this.session = brokerServerRule.startSession();
 
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
         try {
-            setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_ON);
             identityProviderModel.setTrustEmail(true);
 
             UserModel user = assertSuccessfulAuthenticationWithEmailVerification(identityProviderModel, "test-user", "new@email.com", true);
@@ -220,14 +228,15 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() {
+        RealmModel realm = getRealm();
+        realm.setRegistrationEmailAsUsername(true);
+        setUpdateProfileFirstLogin(realm, IdentityProviderRepresentation.UPFLM_OFF);
 
-        getRealm().setRegistrationEmailAsUsername(true);
         brokerServerRule.stopSession(this.session, true);
         this.session = brokerServerRule.startSession();
 
         try {
             IdentityProviderModel identityProviderModel = getIdentityProviderModel();
-            setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
 
             authenticateWithIdentityProvider(identityProviderModel, "test-user", false);
 
@@ -238,7 +247,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
             session = brokerServerRule.startSession();
 
             // check correct user is created with email as username and bound to correct federated identity
-            RealmModel realm = getRealm();
+            realm = getRealm();
 
             UserModel federatedUser = session.users().getUserByUsername("test-user@localhost", realm);
 
