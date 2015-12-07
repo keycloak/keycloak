@@ -21,31 +21,26 @@
  */
 package org.keycloak.testsuite.console.clients;
 
-import java.util.List;
-import java.util.Map;
 import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.MappingsRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import static org.keycloak.testsuite.console.clients.AbstractClientTest.createOidcClientRep;
 import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.CONFIDENTIAL;
-import org.keycloak.testsuite.console.page.clients.scope.ClientScope;
+import org.keycloak.testsuite.console.page.clients.clustering.ClientClustering;
 
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
-public class ClientScopeTest extends AbstractClientTest {
+public class ClientClusteringTest extends AbstractClientTest {
 
     private ClientRepresentation newClient;
     private ClientRepresentation found;
     
     @Page
-    private ClientScope clientScopePage;
+    private ClientClustering clientClusteringPage;
     
     @Before
     public void before() {
@@ -54,46 +49,50 @@ public class ClientScopeTest extends AbstractClientTest {
         
         found = findClientByClientId(TEST_CLIENT_ID);
         assertNotNull("Client " + TEST_CLIENT_ID + " was not found.", found);
-        clientScopePage.setId(found.getId());
-        clientScopePage.navigateTo();
+        clientClusteringPage.setId(found.getId());
+        clientClusteringPage.navigateTo();
     }
     
     @Test
-    public void clientScopeTest() {
-        assertTrue(found.isFullScopeAllowed());
-        clientScopePage.scopeForm().setFullScopeAllowed(false);
+    public void basicConfigurationTest() {
+        assertTrue(found.getNodeReRegistrationTimeout() == -1);
+        
+        clientClusteringPage.form().setNodeReRegistrationTimeout("10", "Seconds");
+        clientClusteringPage.form().save();
         assertFlashMessageSuccess();
+        assertTrue(findClientByClientId(TEST_CLIENT_ID).getNodeReRegistrationTimeout() == 10);
         
-        found = findClientByClientId(TEST_CLIENT_ID);
-        assertFalse(found.isFullScopeAllowed());
-        assertNull(getAllMappingsRepresentation().getRealmMappings());
-        assertNull(getAllMappingsRepresentation().getClientMappings());
-        
-        clientScopePage.roleForm().addRealmRole("offline_access");
+        clientClusteringPage.form().setNodeReRegistrationTimeout("10", "Minutes");
+        clientClusteringPage.form().save();
         assertFlashMessageSuccess();
+        assertTrue(findClientByClientId(TEST_CLIENT_ID).getNodeReRegistrationTimeout() == 600);
         
-        clientScopePage.roleForm().selectClientRole("account");
-        clientScopePage.roleForm().addClientRole("view-profile");
+        clientClusteringPage.form().setNodeReRegistrationTimeout("1", "Hours");
+        clientClusteringPage.form().save();
         assertFlashMessageSuccess();
+        assertTrue(findClientByClientId(TEST_CLIENT_ID).getNodeReRegistrationTimeout() == 3600);
         
-        found = findClientByClientId(TEST_CLIENT_ID);
-        List<RoleRepresentation> realmMappings = getAllMappingsRepresentation().getRealmMappings();
-        assertEquals(1, realmMappings.size());
-        assertEquals("offline_access", realmMappings.get(0).getName());
-        Map<String, ClientMappingsRepresentation> clientMappings = getAllMappingsRepresentation().getClientMappings();
-        assertEquals(1, clientMappings.size());
-        assertEquals("view-profile", clientMappings.get("account").getMappings().get(0).getName());
-        
-        clientScopePage.roleForm().removeAssignedRole("offline_access");
+        clientClusteringPage.form().setNodeReRegistrationTimeout("1", "Days");
+        clientClusteringPage.form().save();
         assertFlashMessageSuccess();
-        clientScopePage.roleForm().removeAssignedClientRole("view-profile");
-        assertFlashMessageSuccess();
+        assertTrue(findClientByClientId(TEST_CLIENT_ID).getNodeReRegistrationTimeout() == 86400);
         
-        assertNull(getAllMappingsRepresentation().getRealmMappings());
-        assertNull(getAllMappingsRepresentation().getClientMappings());
+        clientClusteringPage.form().setNodeReRegistrationTimeout("", "Days");
+        clientClusteringPage.form().save();
+        assertFlashMessageDanger();
+        
+        clientClusteringPage.form().setNodeReRegistrationTimeout("text", "Days");
+        clientClusteringPage.form().save();
+        assertFlashMessageDanger();
     }
     
-    private MappingsRepresentation getAllMappingsRepresentation() {
-        return testRealmResource().clients().get(found.getId()).getScopeMappings().getAll();
+    @Test
+    public void registerNodeTest() {
+        clientClusteringPage.form().addNode("new node");
+        assertFlashMessageSuccess();
+        assertNotNull(findClientByClientId(TEST_CLIENT_ID).getRegisteredNodes().get("new node"));
+        
+        clientClusteringPage.form().addNode("");
+        assertFlashMessageDanger();
     }
 }
