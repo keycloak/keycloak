@@ -35,6 +35,7 @@ public class IdentityProviderEntity {
     protected boolean addReadTokenRoleOnCreate;
     private boolean authenticateByDefault;
     private String firstBrokerLoginFlowId;
+    private String postBrokerLoginFlowId;
 
     private Map<String, String> config = new HashMap<String, String>();
 
@@ -76,6 +77,14 @@ public class IdentityProviderEntity {
 
     public void setFirstBrokerLoginFlowId(String firstBrokerLoginFlowId) {
         this.firstBrokerLoginFlowId = firstBrokerLoginFlowId;
+    }
+
+    public String getPostBrokerLoginFlowId() {
+        return postBrokerLoginFlowId;
+    }
+
+    public void setPostBrokerLoginFlowId(String postBrokerLoginFlowId) {
+        this.postBrokerLoginFlowId = postBrokerLoginFlowId;
     }
 
     public boolean isStoreToken() {

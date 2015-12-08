@@ -41,7 +41,7 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
     }
 
     protected LoginFormsProvider setupForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData, UserModel existingUser) {
-        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(context.getClientSession());
+        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(context.getClientSession(), AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
         if (serializedCtx == null) {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }

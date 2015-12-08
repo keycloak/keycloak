@@ -103,6 +103,13 @@ public class Urls {
                 .build(realmName);
     }
 
+    public static URI identityProviderAfterPostBrokerLogin(URI baseUri, String realmName, String accessCode) {
+        return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
+                .path(IdentityBrokerService.class, "afterPostBrokerLoginFlow")
+                .replaceQueryParam(OAuth2Constants.CODE, accessCode)
+                .build(realmName);
+    }
+
     public static URI accountTotpPage(URI baseUri, String realmId) {
         return accountBase(baseUri).path(AccountService.class, "totpPage").build(realmId);
     }

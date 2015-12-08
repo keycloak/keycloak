@@ -22,6 +22,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
+import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -33,7 +34,6 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.login.LoginFormsProvider;
@@ -310,7 +310,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             clientSession.setTimestamp(Time.currentTime());
 
             SerializedBrokeredIdentityContext ctx = SerializedBrokeredIdentityContext.serialize(context);
-            ctx.saveToClientSession(clientSession);
+            ctx.saveToClientSession(clientSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
 
             URI redirect = LoginActionsService.firstBrokerLoginProcessor(uriInfo)
                     .queryParam(OAuth2Constants.CODE, context.getCode())
@@ -319,21 +319,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         } else {
             updateFederatedIdentity(context, federatedUser);
+            clientSession.setAuthenticatedUser(federatedUser);
 
-            boolean firstBrokerLoginInProgress = (clientSession.getNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE) != null);
-            if (firstBrokerLoginInProgress) {
-                LOGGER.debugf("Reauthenticated with broker '%s' when linking user '%s' with other broker", context.getIdpConfig().getAlias(), federatedUser.getUsername());
-
-                UserModel linkingUser = AbstractIdpAuthenticator.getExistingUser(session, realmModel, clientSession);
-                if (!linkingUser.getId().equals(federatedUser.getId())) {
-                    return redirectToErrorPage(Messages.IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE, federatedUser.getUsername(), linkingUser.getUsername());
-                }
-
-                clientSession.setAuthenticatedUser(federatedUser);
-                return afterFirstBrokerLogin(context.getCode());
-            }
-
-            return finishBrokerAuthentication(context, federatedUser, clientSession, providerId);
+            return finishOrRedirectToPostBrokerLogin(clientSession, context, false);
         }
     }
 
@@ -345,12 +333,18 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         ClientSessionModel clientSession = clientCode.getClientSession();
 
         try {
-            SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(clientSession);
+            this.event.detail(Details.CODE_ID, clientSession.getId())
+                    .removeDetail("auth_method");
+
+            SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(clientSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
             if (serializedCtx == null) {
                 throw new IdentityBrokerException("Not found serialized context in clientSession");
             }
             BrokeredIdentityContext context = serializedCtx.deserialize(session, clientSession);
             String providerId = context.getIdpConfig().getAlias();
+
+            event.detail(Details.IDENTITY_PROVIDER, providerId);
+            event.detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
 
             // firstBrokerLogin workflow finished. Removing note now
             clientSession.removeNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
@@ -360,8 +354,15 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 throw new IdentityBrokerException("Couldn't found authenticated federatedUser in clientSession");
             }
 
+            event.user(federatedUser);
+            event.detail(Details.USERNAME, federatedUser.getUsername());
+
             if (context.getIdpConfig().isAddReadTokenRoleOnCreate()) {
-                RoleModel readTokenRole = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID).getRole(Constants.READ_TOKEN_ROLE);
+                ClientModel brokerClient = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
+                if (brokerClient == null) {
+                    throw new IdentityBrokerException("Client 'broker' not available. Maybe realm has not migrated to support the broker token exchange service");
+                }
+                RoleModel readTokenRole = brokerClient.getRole(Constants.READ_TOKEN_ROLE);
                 federatedUser.grantRole(readTokenRole);
             }
 
@@ -370,12 +371,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     context.getUsername(), context.getToken());
             session.users().addFederatedIdentity(realmModel, federatedUser, federatedIdentityModel);
 
-            EventBuilder event = this.event.clone().user(federatedUser)
-                    .detail(Details.CODE_ID, clientSession.getId())
-                    .detail(Details.USERNAME, federatedUser.getUsername())
-                    .detail(Details.IDENTITY_PROVIDER, providerId)
-                    .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
-                    .removeDetail("auth_method");
 
             String isRegisteredNewUser = clientSession.getNote(AbstractIdpAuthenticator.BROKER_REGISTERED_NEW_USER);
             if (Boolean.parseBoolean(isRegisteredNewUser)) {
@@ -411,19 +406,107 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 updateFederatedIdentity(context, federatedUser);
             }
 
-            String isDifferentBrowser = clientSession.getNote(AbstractIdpAuthenticator.IS_DIFFERENT_BROWSER);
-            if (Boolean.parseBoolean(isDifferentBrowser)) {
-                session.sessions().removeClientSession(realmModel, clientSession);
-                return session.getProvider(LoginFormsProvider.class)
-                            .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, context.getIdpConfig().getAlias(), context.getUsername())
-                            .createInfoPage();
-            } else {
-                return finishBrokerAuthentication(context, federatedUser, clientSession, providerId);
-            }
+            return finishOrRedirectToPostBrokerLogin(clientSession, context, true);
+
         }  catch (Exception e) {
             return redirectToErrorPage(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
         }
     }
+
+
+    private Response finishOrRedirectToPostBrokerLogin(ClientSessionModel clientSession, BrokeredIdentityContext context, boolean wasFirstBrokerLogin) {
+        String postBrokerLoginFlowId = context.getIdpConfig().getPostBrokerLoginFlowId();
+        if (postBrokerLoginFlowId == null) {
+
+            LOGGER.debugf("Skip redirect to postBrokerLogin flow. PostBrokerLogin flow not set for identityProvider '%s'.", context.getIdpConfig().getAlias());
+            return afterPostBrokerLoginFlowSuccess(clientSession, context, wasFirstBrokerLogin);
+        } else {
+
+            LOGGER.debugf("Redirect to postBrokerLogin flow after authentication with identityProvider '%s'.", context.getIdpConfig().getAlias());
+
+            clientSession.setTimestamp(Time.currentTime());
+
+            SerializedBrokeredIdentityContext ctx = SerializedBrokeredIdentityContext.serialize(context);
+            ctx.saveToClientSession(clientSession, PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
+
+            clientSession.setNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN, String.valueOf(wasFirstBrokerLogin));
+
+            URI redirect = LoginActionsService.postBrokerLoginProcessor(uriInfo)
+                    .queryParam(OAuth2Constants.CODE, context.getCode())
+                    .build(realmModel.getName());
+            return Response.status(302).location(redirect).build();
+        }
+    }
+
+
+    // Callback from LoginActionsService after postBrokerLogin flow is finished
+    @GET
+    @Path("/after-post-broker-login")
+    public Response afterPostBrokerLoginFlow(@QueryParam("code") String code) {
+        ClientSessionCode clientCode = parseClientSessionCode(code);
+        ClientSessionModel clientSession = clientCode.getClientSession();
+
+        try {
+            SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(clientSession, PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
+            if (serializedCtx == null) {
+                throw new IdentityBrokerException("Not found serialized context in clientSession. Note " + PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT + " was null");
+            }
+            BrokeredIdentityContext context = serializedCtx.deserialize(session, clientSession);
+
+            String wasFirstBrokerLoginNote = clientSession.getNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN);
+            boolean wasFirstBrokerLogin = Boolean.parseBoolean(wasFirstBrokerLoginNote);
+
+            // Ensure the post-broker-login flow was successfully finished
+            String authStateNoteKey = PostBrokerLoginConstants.PBL_AUTH_STATE_PREFIX + context.getIdpConfig().getAlias();
+            String authState = clientSession.getNote(authStateNoteKey);
+            if (!Boolean.parseBoolean(authState)) {
+                throw new IdentityBrokerException("Invalid request. Not found the flag that post-broker-login flow was finished");
+            }
+
+            // remove notes
+            clientSession.removeNote(PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
+            clientSession.removeNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN);
+
+            return afterPostBrokerLoginFlowSuccess(clientSession, context, wasFirstBrokerLogin);
+        } catch (IdentityBrokerException e) {
+            return redirectToErrorPage(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
+        }
+    }
+
+    private Response afterPostBrokerLoginFlowSuccess(ClientSessionModel clientSession, BrokeredIdentityContext context, boolean wasFirstBrokerLogin) {
+        String providerId = context.getIdpConfig().getAlias();
+        UserModel federatedUser = clientSession.getAuthenticatedUser();
+
+        if (wasFirstBrokerLogin) {
+
+            String isDifferentBrowser = clientSession.getNote(AbstractIdpAuthenticator.IS_DIFFERENT_BROWSER);
+            if (Boolean.parseBoolean(isDifferentBrowser)) {
+                session.sessions().removeClientSession(realmModel, clientSession);
+                return session.getProvider(LoginFormsProvider.class)
+                        .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, context.getIdpConfig().getAlias(), context.getUsername())
+                        .createInfoPage();
+            } else {
+                return finishBrokerAuthentication(context, federatedUser, clientSession, providerId);
+            }
+
+        } else {
+
+            boolean firstBrokerLoginInProgress = (clientSession.getNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE) != null);
+            if (firstBrokerLoginInProgress) {
+                LOGGER.debugf("Reauthenticated with broker '%s' when linking user '%s' with other broker", context.getIdpConfig().getAlias(), federatedUser.getUsername());
+
+                UserModel linkingUser = AbstractIdpAuthenticator.getExistingUser(session, realmModel, clientSession);
+                if (!linkingUser.getId().equals(federatedUser.getId())) {
+                    return redirectToErrorPage(Messages.IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE, federatedUser.getUsername(), linkingUser.getUsername());
+                }
+
+                return afterFirstBrokerLogin(context.getCode());
+            } else {
+                return finishBrokerAuthentication(context, federatedUser, clientSession, providerId);
+            }
+        }
+    }
+
 
     private Response finishBrokerAuthentication(BrokeredIdentityContext context, UserModel federatedUser, ClientSessionModel clientSession, String providerId) {
         UserSessionModel userSession = this.session.sessions()
@@ -442,6 +525,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         return AuthenticationProcessor.createRequiredActionRedirect(realmModel, clientSession, uriInfo);
     }
+
 
     @Override
     public Response cancelled(String code) {

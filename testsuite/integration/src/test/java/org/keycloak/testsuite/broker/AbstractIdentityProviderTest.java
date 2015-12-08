@@ -261,7 +261,7 @@ public abstract class AbstractIdentityProviderTest {
         return getRealm(this.session);
     }
 
-    protected RealmModel getRealm(KeycloakSession session) {
+    protected static RealmModel getRealm(KeycloakSession session) {
         return session.realms().getRealm("realm-with-broker");
     }
 
@@ -312,7 +312,7 @@ public abstract class AbstractIdentityProviderTest {
         });
     }
 
-    protected void setUpdateProfileFirstLogin(RealmModel realm, String updateProfileFirstLogin) {
+    protected static void setUpdateProfileFirstLogin(RealmModel realm, String updateProfileFirstLogin) {
         AuthenticatorConfigModel reviewProfileConfig = realm.getAuthenticatorConfigByAlias(DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS);
         reviewProfileConfig.getConfig().put(IdpReviewProfileAuthenticatorFactory.UPDATE_PROFILE_ON_FIRST_LOGIN, updateProfileFirstLogin);
         realm.updateAuthenticatorConfig(reviewProfileConfig);

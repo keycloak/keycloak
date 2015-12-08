@@ -24,6 +24,7 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
+import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
 import org.keycloak.authentication.requiredactions.VerifyEmail;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -98,6 +99,7 @@ public class LoginActionsService {
     public static final String RESET_CREDENTIALS_PATH = "reset-credentials";
     public static final String REQUIRED_ACTION = "required-action";
     public static final String FIRST_BROKER_LOGIN_PATH = "first-broker-login";
+    public static final String POST_BROKER_LOGIN_PATH = "post-broker-login";
 
     private RealmModel realm;
 
@@ -142,6 +144,10 @@ public class LoginActionsService {
 
     public static UriBuilder firstBrokerLoginProcessor(UriInfo uriInfo) {
         return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "firstBrokerLoginGet");
+    }
+
+    public static UriBuilder postBrokerLoginProcessor(UriInfo uriInfo) {
+        return loginActionsBaseUrl(uriInfo).path(LoginActionsService.class, "postBrokerLoginGet");
     }
 
     public static UriBuilder loginActionsBaseUrl(UriBuilder baseUriBuilder) {
@@ -407,7 +413,7 @@ public class LoginActionsService {
 
                     logger.debugf("Forget-password flow finished when authenticated user '%s' after first broker login.", linkingUser.getUsername());
 
-                    return redirectToAfterFirstBrokerLoginEndpoint(clientSession);
+                    return redirectToAfterBrokerLoginEndpoint(clientSession, true);
                 } else {
                     return super.authenticationComplete();
                 }
@@ -480,22 +486,39 @@ public class LoginActionsService {
         return processRegistration(execution, clientSession, null);
     }
 
+
     @Path(FIRST_BROKER_LOGIN_PATH)
     @GET
     public Response firstBrokerLoginGet(@QueryParam("code") String code,
                                  @QueryParam("execution") String execution) {
-        return firstBrokerLogin(code, execution);
+        return brokerLoginFlow(code, execution, true);
     }
 
     @Path(FIRST_BROKER_LOGIN_PATH)
     @POST
     public Response firstBrokerLoginPost(@QueryParam("code") String code,
                                         @QueryParam("execution") String execution) {
-        return firstBrokerLogin(code, execution);
+        return brokerLoginFlow(code, execution, true);
     }
 
-    protected Response firstBrokerLogin(String code, String execution) {
-        event.event(EventType.IDENTITY_PROVIDER_FIRST_LOGIN);
+    @Path(POST_BROKER_LOGIN_PATH)
+    @GET
+    public Response postBrokerLoginGet(@QueryParam("code") String code,
+                                       @QueryParam("execution") String execution) {
+        return brokerLoginFlow(code, execution, false);
+    }
+
+    @Path(POST_BROKER_LOGIN_PATH)
+    @POST
+    public Response postBrokerLoginPost(@QueryParam("code") String code,
+                                        @QueryParam("execution") String execution) {
+        return brokerLoginFlow(code, execution, false);
+    }
+
+
+    protected Response brokerLoginFlow(String code, String execution, final boolean firstBrokerLogin) {
+        EventType eventType = firstBrokerLogin ? EventType.IDENTITY_PROVIDER_FIRST_LOGIN : EventType.IDENTITY_PROVIDER_POST_LOGIN;
+        event.event(eventType);
 
         Checks checks = new Checks();
         if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
@@ -503,16 +526,29 @@ public class LoginActionsService {
         }
         event.detail(Details.CODE_ID, code);
         ClientSessionCode clientSessionCode = checks.clientCode;
-        ClientSessionModel clientSession = clientSessionCode.getClientSession();
+        final ClientSessionModel clientSessionn = clientSessionCode.getClientSession();
 
-        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(clientSession);
+        String noteKey = firstBrokerLogin ? AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE : PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT;
+        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(clientSessionn, noteKey);
         if (serializedCtx == null) {
-            throw new WebApplicationException(ErrorPage.error(session, "Not found serialized context in clientSession"));
+            logger.errorf("Not found serialized context in clientSession under note '%s'", noteKey);
+            throw new WebApplicationException(ErrorPage.error(session, "Not found serialized context in clientSession."));
         }
-        BrokeredIdentityContext brokerContext = serializedCtx.deserialize(session, clientSession);
-        AuthenticationFlowModel firstBrokerLoginFlow = realm.getAuthenticationFlowById(brokerContext.getIdpConfig().getFirstBrokerLoginFlowId());
+        BrokeredIdentityContext brokerContext = serializedCtx.deserialize(session, clientSessionn);
+        final String identityProviderAlias = brokerContext.getIdpConfig().getAlias();
 
-        event.detail(Details.IDENTITY_PROVIDER, brokerContext.getIdpConfig().getAlias())
+        String flowId = firstBrokerLogin ? brokerContext.getIdpConfig().getFirstBrokerLoginFlowId() : brokerContext.getIdpConfig().getPostBrokerLoginFlowId();
+        if (flowId == null) {
+            logger.errorf("Flow not configured for identity provider '%s'", identityProviderAlias);
+            throw new WebApplicationException(ErrorPage.error(session, "Flow not configured for identity provider"));
+        }
+        AuthenticationFlowModel brokerLoginFlow = realm.getAuthenticationFlowById(flowId);
+        if (brokerLoginFlow == null) {
+            logger.errorf("Not found configured flow with ID '%s' for identity provider '%s'", flowId, identityProviderAlias);
+            throw new WebApplicationException(ErrorPage.error(session, "Flow not found for identity provider"));
+        }
+
+        event.detail(Details.IDENTITY_PROVIDER, identityProviderAlias)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername());
 
 
@@ -520,19 +556,26 @@ public class LoginActionsService {
 
             @Override
             protected Response authenticationComplete() {
-                return redirectToAfterFirstBrokerLoginEndpoint(clientSession);
+                if (!firstBrokerLogin) {
+                    String authStateNoteKey = PostBrokerLoginConstants.PBL_AUTH_STATE_PREFIX + identityProviderAlias;
+                    clientSessionn.setNote(authStateNoteKey, "true");
+                }
+
+                return redirectToAfterBrokerLoginEndpoint(clientSession, firstBrokerLogin);
             }
 
         };
 
-        return processFlow(execution, clientSession, FIRST_BROKER_LOGIN_PATH, firstBrokerLoginFlow, null, processor);
+        String flowPath = firstBrokerLogin ? FIRST_BROKER_LOGIN_PATH : POST_BROKER_LOGIN_PATH;
+        return processFlow(execution, clientSessionn, flowPath, brokerLoginFlow, null, processor);
     }
 
-    private Response redirectToAfterFirstBrokerLoginEndpoint(ClientSessionModel clientSession) {
+    private Response redirectToAfterBrokerLoginEndpoint(ClientSessionModel clientSession, boolean firstBrokerLogin) {
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
         clientSession.setTimestamp(Time.currentTime());
 
-        URI redirect = Urls.identityProviderAfterFirstBrokerLogin(uriInfo.getBaseUri(), realm.getName(), accessCode.getCode());
+        URI redirect = firstBrokerLogin ? Urls.identityProviderAfterFirstBrokerLogin(uriInfo.getBaseUri(), realm.getName(), accessCode.getCode()) :
+                Urls.identityProviderAfterPostBrokerLogin(uriInfo.getBaseUri(), realm.getName(), accessCode.getCode()) ;
         logger.debugf("Redirecting to '%s' ", redirect);
 
         return Response.status(302).location(redirect).build();
