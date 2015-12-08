@@ -1,11 +1,10 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
-
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.hash.PasswordHashManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.OTPPolicy;
@@ -329,19 +328,12 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     private void setValue(CredentialEntity credentialEntity, UserCredentialModel cred) {
-        byte[] salt = getSalt();
-        int hashIterations = 1;
-        PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class);
-        PasswordPolicy policy = realm.getPasswordPolicy();
-        if (policy != null) {
-            hashIterations = policy.getHashIterations();
-            if (hashIterations == -1)
-                hashIterations = 1;
-        }
+        UserCredentialValueModel encoded = PasswordHashManager.encode(session, realm, cred.getValue());
         credentialEntity.setCreatedDate(Time.toMillis(Time.currentTime()));
-        credentialEntity.setValue(provider.encode(cred.getValue(), salt, hashIterations));
-        credentialEntity.setSalt(salt);
-        credentialEntity.setHashIterations(hashIterations);
+        credentialEntity.setAlgorithm(encoded.getAlgorithm());
+        credentialEntity.setValue(encoded.getValue());
+        credentialEntity.setSalt(encoded.getSalt());
+        credentialEntity.setHashIterations(encoded.getHashIterations());
     }
 
     private CredentialEntity getCredentialEntity(MongoUserEntity userEntity, String credType) {

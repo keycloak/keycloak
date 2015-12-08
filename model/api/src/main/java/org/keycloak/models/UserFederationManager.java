@@ -395,7 +395,7 @@ public class UserFederationManager implements UserProvider {
     public void updateCredential(RealmModel realm, UserModel user, UserCredentialModel credential) {
         if (credential.getType().equals(UserCredentialModel.PASSWORD)) {
             if (realm.getPasswordPolicy() != null) {
-                PasswordPolicy.Error error = realm.getPasswordPolicy().validate(user, credential.getValue());
+                PasswordPolicy.Error error = realm.getPasswordPolicy().validate(session, user, credential.getValue());
                 if (error != null) throw new ModelException(error.getMessage(), error.getParameters());
             }
         }

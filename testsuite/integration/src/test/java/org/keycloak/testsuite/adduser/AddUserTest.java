@@ -1,16 +1,17 @@
 package org.keycloak.testsuite.adduser;
 
 import org.codehaus.jackson.type.TypeReference;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.RoleMappingResource;
-import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Base64;
+import org.keycloak.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.models.Constants;
-import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
@@ -19,7 +20,6 @@ import org.keycloak.wildfly.adduser.AddUser;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -59,7 +59,11 @@ public class AddUserTest {
         UserRepresentation user = realms.get(0).getUsers().get(0);
         assertEquals(new Integer(100000), user.getCredentials().get(0).getHashIterations());
         assertNull(user.getCredentials().get(0).getValue());
-        assertEquals(new Pbkdf2PasswordEncoder(Base64Url.decode(user.getCredentials().get(0).getSalt()), 100000).encode("password"), user.getCredentials().get(0).getHashedSaltedValue());
+
+        CredentialRepresentation credentials = user.getCredentials().get(0);
+
+        assertEquals(Pbkdf2PasswordHashProvider.ID, credentials.getAlgorithm());
+        assertEquals(new Integer(100000), credentials.getHashIterations());
 
         KeycloakServer server = new KeycloakServer();
         try {

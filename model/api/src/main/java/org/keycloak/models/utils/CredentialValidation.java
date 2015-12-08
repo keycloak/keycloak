@@ -1,7 +1,6 @@
 package org.keycloak.models.utils;
 
-import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
-
+import org.keycloak.hash.PasswordHashManager;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -17,7 +16,6 @@ import org.keycloak.representations.PasswordToken;
 import org.keycloak.common.util.Time;
 import org.keycloak.hash.PasswordHashProvider;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -61,30 +59,14 @@ public class CredentialValidation {
         if(unhashedCredValue == null){
             return false;
         }
-        String algorithm;
-        if (credential.getAlgorithm() == null || credential.getAlgorithm().trim().equals("")) {
-            algorithm = Constants.DEFAULT_HASH_ALGORITHM;
-        } else {
-            algorithm = credential.getAlgorithm();
-        }
 
-        byte[] salt = getSalt();
-
-        PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class, algorithm);
-
-        byte[] credSalt = credential.getSalt();
-
-        boolean validated = provider.verify(unhashedCredValue, credential.getValue(), credSalt);
+        boolean validated = PasswordHashManager.verify(session, realm, unhashedCredValue, credential);
 
         if (validated) {
             int iterations = hashIterations(realm);
             if (iterations > -1 && iterations != credential.getHashIterations()) {
-                UserCredentialValueModel newCred = new UserCredentialValueModel();
-                newCred.setType(credential.getType());
-                newCred.setDevice(credential.getDevice());
-                newCred.setSalt(credential.getSalt());
-                newCred.setHashIterations(iterations);
-                newCred.setValue(provider.encode(unhashedCredValue, salt, iterations));
+
+                UserCredentialValueModel newCred = PasswordHashManager.encode(session, realm, unhashedCredValue);
                 user.updateCredentialDirectly(newCred);
             }
 

@@ -1,5 +1,6 @@
 package org.keycloak.hash;
 
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.provider.Provider;
 
 /**
@@ -7,10 +8,8 @@ import org.keycloak.provider.Provider;
  */
 public interface PasswordHashProvider extends Provider {
 
-    String encode(String rawPassword, byte[] salt);
+    UserCredentialValueModel encode(String rawPassword, int iterations);
 
-    String encode(String rawPassword, byte[] salt, int iterations);
-
-    boolean verify(String rawPassword, String encodedPassword, byte[] salt);
+    boolean verify(String rawPassword, UserCredentialValueModel credential);
 
 }

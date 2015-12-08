@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.hash.PasswordHashManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -41,8 +42,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -390,19 +389,12 @@ public class UserAdapter implements UserModel {
     }
 
     private void setValue(CredentialEntity credentialEntity, UserCredentialModel cred) {
-        byte[] salt = getSalt();
-        int hashIterations = 1;
-        PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class);
-        PasswordPolicy policy = realm.getPasswordPolicy();
-        if (policy != null) {
-            hashIterations = policy.getHashIterations();
-            if (hashIterations == -1)
-                hashIterations = 1;
-        }
+        UserCredentialValueModel encoded = PasswordHashManager.encode(session, realm, cred.getValue());
         credentialEntity.setCreatedDate(Time.toMillis(Time.currentTime()));
-        credentialEntity.setValue(provider.encode(cred.getValue(), salt, hashIterations));
-        credentialEntity.setSalt(salt);
-        credentialEntity.setHashIterations(hashIterations);
+        credentialEntity.setAlgorithm(encoded.getAlgorithm());
+        credentialEntity.setValue(encoded.getValue());
+        credentialEntity.setSalt(encoded.getSalt());
+        credentialEntity.setHashIterations(encoded.getHashIterations());
     }
 
     private CredentialEntity getCredentialEntity(UserEntity userEntity, String credType) {
