@@ -8,25 +8,23 @@
     <a class="navbar-brand" href="#/"></a>
 </div>
 <div class="collapse navbar-collapse navbar-collapse-1">
-    <ul class="nav navbar-nav navbar-utility">
-        <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                <span class="pficon pficon-user"></span>
-                {{auth.user.displayName|capitalize}} <b class="caret"></b>
-            </a>
-            <ul class="dropdown-menu">
-                <li><a href="{{authUrl}}/realms/{{auth.user.realm}}/account?referrer=security-admin-console">Manage Account</a></li>
-                <li class="divider"></li>
-                <li><a href="" ng-click="auth.authz.logout()">Sign Out</a></li>
-            </ul>
-        </li>
+<ul class="nav navbar-nav navbar-utility">
+  <li class="dropdown">
+    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+      <span class="pficon pficon-user"></span>
+      {{auth.user.displayName|capitalize}} <b class="caret"></b>
+    </a>
+    <ul class="dropdown-menu">
+        <li><a href="{{authUrl}}/realms/{{auth.user.realm}}/account?referrer=security-admin-console">Manage Account</a></li>
+        <li><a href="#/server-info">Server Info</a></li>
+        <li class="divider"></li>
+        <li><a href="" ng-click="auth.authz.logout()">Sign Out</a></li>
     </ul>
-    <ul class="nav navbar-nav navbar-primary">
-        <li ng-class="homeClass">
-            <a href ng-class="homeClass" ng-click="menuGoHome()">Home</a>
-        </li>
-        <li ng-class="serverInfoClass">
-            <a href ng-class="serverInfoClass" ng-click="menuGoServerInfo()">Server Info</a>
-        </li>
-    </ul>
+  </li>
+</ul>
+<ul class="nav navbar-nav navbar-primary">
+  <li class="active">
+    <a href="#/" class="active">Home</a>
+  </li>
+</ul>
 </div>
