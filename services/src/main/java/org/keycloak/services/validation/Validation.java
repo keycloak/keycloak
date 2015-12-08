@@ -1,6 +1,7 @@
 package org.keycloak.services.validation;
 
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.FormMessage;
@@ -25,7 +26,7 @@ public class Validation {
     // Actually allow same emails like angular. See ValidationTest.testEmailValidation()
     private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*");
 
-    public static List<FormMessage> validateRegistrationForm(RealmModel realm, MultivaluedMap<String, String> formData, List<String> requiredCredentialTypes, PasswordPolicy policy) {
+    public static List<FormMessage> validateRegistrationForm(KeycloakSession session, RealmModel realm, MultivaluedMap<String, String> formData, List<String> requiredCredentialTypes, PasswordPolicy policy) {
         List<FormMessage> errors = new ArrayList<>();
 
         if (!realm.isRegistrationEmailAsUsername() && isBlank(formData.getFirst(FIELD_USERNAME))) {
@@ -55,7 +56,7 @@ public class Validation {
         }
 
         if (formData.getFirst(FIELD_PASSWORD) != null) {
-            PasswordPolicy.Error err = policy.validate(realm.isRegistrationEmailAsUsername()?formData.getFirst(FIELD_EMAIL):formData.getFirst(FIELD_USERNAME), formData.getFirst(FIELD_PASSWORD));
+            PasswordPolicy.Error err = policy.validate(session, realm.isRegistrationEmailAsUsername()?formData.getFirst(FIELD_EMAIL):formData.getFirst(FIELD_USERNAME), formData.getFirst(FIELD_PASSWORD));
             if (err != null)
                 errors.add(new FormMessage(FIELD_PASSWORD, err.getMessage(), err.getParameters()));
         }

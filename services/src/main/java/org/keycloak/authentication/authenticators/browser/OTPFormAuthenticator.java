@@ -49,7 +49,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
             return;
         }
         credentials.add(UserCredentialModel.otp(context.getRealm().getOTPPolicy().getType(), password));
-        boolean valid = context.getSession().users().validCredentials(context.getRealm(), context.getUser(), credentials);
+        boolean valid = context.getSession().users().validCredentials(context.getSession(), context.getRealm(), context.getUser(), credentials);
         if (!valid) {
             context.getEvent().user(context.getUser())
                     .error(Errors.INVALID_USER_CREDENTIALS);

@@ -299,18 +299,18 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        return getDelegate().validCredentials(realm, user, input);
+    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> input) {
+        return getDelegate().validCredentials(session, realm, user, input);
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        return getDelegate().validCredentials(realm, user, input);
+    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel... input) {
+        return getDelegate().validCredentials(session, realm, user, input);
     }
 
     @Override
-    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel... input) {
-        return getDelegate().validCredentials(realm, input);
+    public CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input) {
+        return getDelegate().validCredentials(session, realm, input);
     }
 
     @Override

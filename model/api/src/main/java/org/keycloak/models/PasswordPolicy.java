@@ -1,6 +1,7 @@
 package org.keycloak.models;
 
-import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
+import org.keycloak.hash.PasswordHashManager;
+import org.keycloak.hash.PasswordHashProvider;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -67,6 +68,8 @@ public class PasswordPolicy implements Serializable {
                 list.add(new SpecialChars(arg));
             } else if (name.equals(NotUsername.NAME)) {
                 list.add(new NotUsername(arg));
+            } else if (name.equals(HashAlgorithm.NAME)) {
+                list.add(new HashAlgorithm(arg));
             } else if (name.equals(HashIterations.NAME)) {
                 list.add(new HashIterations(arg));
             } else if (name.equals(RegexPatterns.NAME)) {
@@ -81,6 +84,18 @@ public class PasswordPolicy implements Serializable {
             }
         }
         return list;
+    }
+
+    public String getHashAlgorithm() {
+        if (policies == null)
+            return Constants.DEFAULT_HASH_ALGORITHM;
+        for (Policy p : policies) {
+            if (p instanceof HashAlgorithm) {
+                return ((HashAlgorithm) p).algorithm;
+            }
+
+        }
+        return Constants.DEFAULT_HASH_ALGORITHM;
     }
 
     /**
@@ -131,9 +146,9 @@ public class PasswordPolicy implements Serializable {
        return -1;
    }
 
-    public Error validate(UserModel user, String password) {
+    public Error validate(KeycloakSession session, UserModel user, String password) {
         for (Policy p : policies) {
-            Error error = p.validate(user, password);
+            Error error = p.validate(session, user, password);
             if (error != null) {
                 return error;
             }
@@ -141,9 +156,9 @@ public class PasswordPolicy implements Serializable {
         return null;
     }
     
-    public Error validate(String user, String password) {
+    public Error validate(KeycloakSession session, String user, String password) {
         for (Policy p : policies) {
-            Error error = p.validate(user, password);
+            Error error = p.validate(session, user, password);
             if (error != null) {
                 return error;
             }
@@ -152,8 +167,8 @@ public class PasswordPolicy implements Serializable {
     }
 
     private static interface Policy extends Serializable {
-        public Error validate(UserModel user, String password);
-        public Error validate(String user, String password);
+        public Error validate(KeycloakSession session, UserModel user, String password);
+        public Error validate(KeycloakSession session, String user, String password);
     }
 
     public static class Error {
@@ -174,6 +189,25 @@ public class PasswordPolicy implements Serializable {
         }
     }
 
+    private static class HashAlgorithm implements Policy {
+        private static final String NAME = "hashAlgorithm";
+        private String algorithm;
+
+        public HashAlgorithm(String arg) {
+            algorithm = stringArg(NAME, Constants.DEFAULT_HASH_ALGORITHM, arg);
+        }
+        
+        @Override
+        public Error validate(KeycloakSession session, String user, String password) {
+            return null;
+        }
+        
+        @Override
+        public Error validate(KeycloakSession session, UserModel user, String password) {
+            return null;
+        }
+    }
+
     private static class HashIterations implements Policy {
         private static final String NAME = "hashIterations";
         private int iterations;
@@ -181,14 +215,14 @@ public class PasswordPolicy implements Serializable {
         public HashIterations(String arg) {
             iterations = intArg(NAME, 1, arg);
         }
-        
+
         @Override
-        public Error validate(String user, String password) {
+        public Error validate(KeycloakSession session, String user, String password) {
             return null;
         }
-        
+
         @Override
-        public Error validate(UserModel user, String password) {
+        public Error validate(KeycloakSession session, UserModel user, String password) {
             return null;
         }
     }
@@ -200,13 +234,13 @@ public class PasswordPolicy implements Serializable {
         }
 
         @Override
-        public Error validate(String username, String password) {
+        public Error validate(KeycloakSession session, String username, String password) {
             return username.equals(password) ? new Error(INVALID_PASSWORD_NOT_USERNAME) : null;
         }
         
         @Override
-        public Error validate(UserModel user, String password) {
-            return validate(user.getUsername(), password);
+        public Error validate(KeycloakSession session, UserModel user, String password) {
+            return validate(session, user.getUsername(), password);
         }
     }
 
@@ -221,13 +255,13 @@ public class PasswordPolicy implements Serializable {
         
 
         @Override
-        public Error validate(String username, String password) {
+        public Error validate(KeycloakSession session, String username, String password) {
             return password.length() < min ? new Error(INVALID_PASSWORD_MIN_LENGTH_MESSAGE, min) : null;
         }
         
         @Override
-        public Error validate(UserModel user, String password) {
-            return validate(user.getUsername(), password);
+        public Error validate(KeycloakSession session, UserModel user, String password) {
+            return validate(session, user.getUsername(), password);
         }
     }
 
@@ -242,7 +276,7 @@ public class PasswordPolicy implements Serializable {
         
 
         @Override
-        public Error validate(String username, String password) {
+        public Error validate(KeycloakSession session, String username, String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (Character.isDigit(c)) {
@@ -253,8 +287,8 @@ public class PasswordPolicy implements Serializable {
         }
         
         @Override
-        public Error validate(UserModel user, String password) {
-            return validate(user.getUsername(), password);
+        public Error validate(KeycloakSession session, UserModel user, String password) {
+            return validate(session, user.getUsername(), password);
         }
     }
 
@@ -268,7 +302,7 @@ public class PasswordPolicy implements Serializable {
         }
         
         @Override
-        public Error validate(String username, String password) {
+        public Error validate(KeycloakSession session, String username, String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (Character.isLowerCase(c)) {
@@ -279,8 +313,8 @@ public class PasswordPolicy implements Serializable {
         }
         
         @Override
-        public Error validate(UserModel user, String password) {
-            return validate(user.getUsername(), password);
+        public Error validate(KeycloakSession session, UserModel user, String password) {
+            return validate(session, user.getUsername(), password);
         }
     }
 
@@ -293,7 +327,7 @@ public class PasswordPolicy implements Serializable {
         }
 
         @Override
-        public Error validate(String username, String password) {
+        public Error validate(KeycloakSession session, String username, String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (Character.isUpperCase(c)) {
@@ -304,8 +338,8 @@ public class PasswordPolicy implements Serializable {
         }
         
         @Override
-        public Error validate(UserModel user, String password) {
-            return validate(user.getUsername(), password);
+        public Error validate(KeycloakSession session, UserModel user, String password) {
+            return validate(session, user.getUsername(), password);
         }
     }
 
@@ -319,7 +353,7 @@ public class PasswordPolicy implements Serializable {
         }
         
         @Override
-        public Error validate(String username, String password) {
+        public Error validate(KeycloakSession session, String username, String password) {
             int count = 0;
             for (char c : password.toCharArray()) {
                 if (!Character.isLetterOrDigit(c)) {
@@ -330,8 +364,8 @@ public class PasswordPolicy implements Serializable {
         }
         
         @Override
-        public Error validate(UserModel user, String password) {
-            return validate(user.getUsername(), password);
+        public Error validate(KeycloakSession session, UserModel user, String password) {
+            return validate(session, user.getUsername(), password);
         }
     }
 
@@ -345,7 +379,7 @@ public class PasswordPolicy implements Serializable {
         }
 
         @Override
-        public Error validate(String username, String password) {
+        public Error validate(KeycloakSession session, String username, String password) {
             Pattern pattern = Pattern.compile(regexPattern);
             Matcher matcher = pattern.matcher(password);
             if (!matcher.matches()) {
@@ -355,8 +389,8 @@ public class PasswordPolicy implements Serializable {
         }
 
         @Override
-        public Error validate(UserModel user, String password) {
-            return validate(user.getUsername(), password);
+        public Error validate(KeycloakSession session, UserModel user, String password) {
+            return validate(session, user.getUsername(), password);
         }
     }
 
@@ -370,18 +404,19 @@ public class PasswordPolicy implements Serializable {
         }
         
         @Override
-        public Error validate(String user, String password) {
+        public Error validate(KeycloakSession session, String user, String password) {
             return null;
         }
 
         @Override
-        public Error validate(UserModel user, String password) {
+        public Error validate(KeycloakSession session, UserModel user, String password) {
             
             if (passwordHistoryPolicyValue != -1) {
             
                 UserCredentialValueModel cred = getCredentialValueModel(user, UserCredentialModel.PASSWORD);
                 if (cred != null) {
-                    if(new Pbkdf2PasswordEncoder(cred.getSalt()).verify(password, cred.getValue(), cred.getHashIterations())) {
+                    PasswordHashProvider hashProvider = session.getProvider(PasswordHashProvider.class, cred.getAlgorithm());
+                    if(hashProvider.verify(password, cred)) {
                         return new Error(INVALID_PASSWORD_HISTORY, passwordHistoryPolicyValue);
                     }
                 }
@@ -389,7 +424,8 @@ public class PasswordPolicy implements Serializable {
                 List<UserCredentialValueModel> passwordExpiredCredentials = getCredentialValueModels(user, passwordHistoryPolicyValue - 1,
                         UserCredentialModel.PASSWORD_HISTORY);
                 for (UserCredentialValueModel credential : passwordExpiredCredentials) {
-                    if (new Pbkdf2PasswordEncoder(credential.getSalt()).verify(password, credential.getValue(), credential.getHashIterations())) {
+                    PasswordHashProvider hashProvider = session.getProvider(PasswordHashProvider.class, cred.getAlgorithm());
+                    if (hashProvider.verify(password, credential)) {
                         return new Error(INVALID_PASSWORD_HISTORY, passwordHistoryPolicyValue);
                     }
                 }
@@ -444,12 +480,12 @@ public class PasswordPolicy implements Serializable {
         }
 
         @Override
-        public Error validate(String username, String password) {
+        public Error validate(KeycloakSession session, String username, String password) {
             return null;
         }
 
         @Override
-        public Error validate(UserModel user, String password) {
+        public Error validate(KeycloakSession session, UserModel user, String password) {
             return null;
         }
     }
@@ -459,6 +495,14 @@ public class PasswordPolicy implements Serializable {
             return defaultValue;
         } else {
             return Integer.parseInt(arg);
+        }
+    }
+
+    private static String stringArg(String policy, String defaultValue, String arg) {
+        if (arg == null) {
+            return defaultValue;
+        } else {
+            return arg;
         }
     }
 

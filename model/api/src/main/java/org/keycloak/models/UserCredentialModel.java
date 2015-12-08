@@ -21,6 +21,7 @@ public class UserCredentialModel {
     protected String type;
     protected String value;
     protected String device;
+    protected String algorithm;
 
     public UserCredentialModel() {
     }
@@ -106,5 +107,13 @@ public class UserCredentialModel {
 
     public void setDevice(String device) {
         this.device = device;
+    }
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
     }
 }

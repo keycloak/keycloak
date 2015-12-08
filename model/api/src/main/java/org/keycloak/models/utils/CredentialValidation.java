@@ -1,8 +1,11 @@
 package org.keycloak.models.utils;
 
+import org.keycloak.hash.PasswordHashManager;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -11,8 +14,8 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.PasswordToken;
 import org.keycloak.common.util.Time;
+import org.keycloak.hash.PasswordHashProvider;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -38,7 +41,7 @@ public class CredentialValidation {
      * @param password
      * @return
      */
-    public static boolean validPassword(RealmModel realm, UserModel user, String password) {
+    public static boolean validPassword(KeycloakSession session, RealmModel realm, UserModel user, String password) {
         UserCredentialValueModel passwordCred = null;
         for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
             if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
@@ -47,25 +50,23 @@ public class CredentialValidation {
         }
         if (passwordCred == null) return false;
 
-        return validateHashedCredential(realm, user, password, passwordCred);
+        return validateHashedCredential(session, realm, user, password, passwordCred);
 
     }
 
-    public static boolean validateHashedCredential(RealmModel realm, UserModel user, String unhashedCredValue, UserCredentialValueModel credential) {
+
+    public static boolean validateHashedCredential(KeycloakSession session, RealmModel realm, UserModel user, String unhashedCredValue, UserCredentialValueModel credential) {
         if(unhashedCredValue == null){
             return false;
         }
 
-        boolean validated = new Pbkdf2PasswordEncoder(credential.getSalt()).verify(unhashedCredValue, credential.getValue(), credential.getHashIterations());
+        boolean validated = PasswordHashManager.verify(session, realm, unhashedCredValue, credential);
+
         if (validated) {
             int iterations = hashIterations(realm);
             if (iterations > -1 && iterations != credential.getHashIterations()) {
-                UserCredentialValueModel newCred = new UserCredentialValueModel();
-                newCred.setType(credential.getType());
-                newCred.setDevice(credential.getDevice());
-                newCred.setSalt(credential.getSalt());
-                newCred.setHashIterations(iterations);
-                newCred.setValue(new Pbkdf2PasswordEncoder(newCred.getSalt()).encode(unhashedCredValue, iterations));
+
+                UserCredentialValueModel newCred = PasswordHashManager.encode(session, realm, unhashedCredValue);
                 user.updateCredentialDirectly(newCred);
             }
 
@@ -157,9 +158,9 @@ public class CredentialValidation {
      * @param credentials
      * @return
      */
-    public static boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> credentials) {
+    public static boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> credentials) {
         for (UserCredentialModel credential : credentials) {
-            if (!validCredential(realm, user, credential)) return false;
+            if (!validCredential(session, realm, user, credential)) return false;
         }
         return true;
     }
@@ -172,16 +173,16 @@ public class CredentialValidation {
      * @param credentials
      * @return
      */
-    public static boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... credentials) {
+    public static boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel... credentials) {
         for (UserCredentialModel credential : credentials) {
-            if (!validCredential(realm, user, credential)) return false;
+            if (!validCredential(session, realm, user, credential)) return false;
         }
         return true;
     }
 
-    private static boolean validCredential(RealmModel realm, UserModel user, UserCredentialModel credential) {
+    private static boolean validCredential(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel credential) {
         if (credential.getType().equals(UserCredentialModel.PASSWORD)) {
-            if (!validPassword(realm, user, credential.getValue())) {
+            if (!validPassword(session, realm, user, credential.getValue())) {
                 return false;
             }
         } else if (credential.getType().equals(UserCredentialModel.PASSWORD_TOKEN)) {

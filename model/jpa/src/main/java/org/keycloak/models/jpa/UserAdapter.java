@@ -1,7 +1,9 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.hash.PasswordHashManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserConsentModel;
@@ -24,9 +26,9 @@ import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
+import org.keycloak.hash.PasswordHashProvider;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -41,8 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -52,11 +52,13 @@ public class UserAdapter implements UserModel {
     protected UserEntity user;
     protected EntityManager em;
     protected RealmModel realm;
+    private final KeycloakSession session;
 
-    public UserAdapter(RealmModel realm, EntityManager em, UserEntity user) {
+    public UserAdapter(KeycloakSession session, RealmModel realm, EntityManager em, UserEntity user) {
         this.em = em;
         this.user = user;
         this.realm = realm;
+        this.session = session;
     }
 
     public UserEntity getUser() {
@@ -387,18 +389,12 @@ public class UserAdapter implements UserModel {
     }
 
     private void setValue(CredentialEntity credentialEntity, UserCredentialModel cred) {
-        byte[] salt = getSalt();
-        int hashIterations = 1;
-        PasswordPolicy policy = realm.getPasswordPolicy();
-        if (policy != null) {
-            hashIterations = policy.getHashIterations();
-            if (hashIterations == -1)
-                hashIterations = 1;
-        }
+        UserCredentialValueModel encoded = PasswordHashManager.encode(session, realm, cred.getValue());
         credentialEntity.setCreatedDate(Time.toMillis(Time.currentTime()));
-        credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
-        credentialEntity.setSalt(salt);
-        credentialEntity.setHashIterations(hashIterations);
+        credentialEntity.setAlgorithm(encoded.getAlgorithm());
+        credentialEntity.setValue(encoded.getValue());
+        credentialEntity.setSalt(encoded.getSalt());
+        credentialEntity.setHashIterations(encoded.getHashIterations());
     }
 
     private CredentialEntity getCredentialEntity(UserEntity userEntity, String credType) {

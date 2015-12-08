@@ -12,8 +12,8 @@ import org.jboss.aesh.console.command.invocation.CommandInvocation;
 import org.jboss.aesh.console.command.registry.AeshCommandRegistryBuilder;
 import org.jboss.aesh.console.command.registry.CommandRegistry;
 import org.keycloak.common.util.Base64;
-import org.keycloak.models.Constants;
-import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
+import org.keycloak.hash.Pbkdf2PasswordHashProvider;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -138,14 +138,14 @@ public class AddUser {
         user.setUsername(userName);
         user.setCredentials(new LinkedList<CredentialRepresentation>());
 
-        byte[] salt = Pbkdf2PasswordEncoder.getSalt();
-        iterations = iterations > 0 ? iterations : DEFAULT_HASH_ITERATIONS;
+        UserCredentialValueModel credentialValueModel = new Pbkdf2PasswordHashProvider().encode(password, iterations > 0 ? iterations : DEFAULT_HASH_ITERATIONS);
 
         CredentialRepresentation credentials = new CredentialRepresentation();
-        credentials.setType(CredentialRepresentation.PASSWORD);
-        credentials.setHashIterations(iterations);
-        credentials.setSalt(Base64.encodeBytes(salt));
-        credentials.setHashedSaltedValue(new Pbkdf2PasswordEncoder(salt).encode(password, iterations));
+        credentials.setType(credentialValueModel.getType());
+        credentials.setAlgorithm(credentialValueModel.getAlgorithm());
+        credentials.setHashIterations(credentialValueModel.getHashIterations());
+        credentials.setSalt(Base64.encodeBytes(credentialValueModel.getSalt()));
+        credentials.setHashedSaltedValue(credentialValueModel.getValue());
 
         user.getCredentials().add(credentials);
 

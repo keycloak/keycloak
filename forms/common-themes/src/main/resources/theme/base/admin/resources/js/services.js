@@ -1103,6 +1103,7 @@ module.factory('PasswordPolicy', function() {
     var p = {};
 
     p.policyMessages = {
+        hashAlgorithm: 	"Default hashing algorithm.  Default is 'pbkdf2'.",
         hashIterations: 	"Number of hashing iterations.  Default is 1.  Recommended is 50000.",
         length:         	"Minimal password length (integer type). Default value is 8.",
         digits:         	"Minimal number (integer type) of digits in password. Default value is 1.",
@@ -1116,6 +1117,7 @@ module.factory('PasswordPolicy', function() {
     }
 
     p.allPolicies = [
+        { name: 'hashAlgorithm', value: 'pbkdf2' },
         { name: 'hashIterations', value: 1 },
         { name: 'length', value: 8 },
         { name: 'digits', value: 1 },
