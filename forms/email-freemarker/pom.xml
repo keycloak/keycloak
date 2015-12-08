@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-forms-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.7.0.CR1-SNAPSHOT</version>
+        <version>1.7.0.Final</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>

@@ -3,7 +3,7 @@
     <parent>
         <artifactId>keycloak-examples-providers-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.7.0.CR1-SNAPSHOT</version>
+        <version>1.7.0.Final</version>
     </parent>
 
     <name>Authenticator Example</name>

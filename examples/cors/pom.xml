@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-examples-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.7.0.CR1-SNAPSHOT</version>
+        <version>1.7.0.Final</version>
     </parent>
 
     <name>Keycloak Examples - CORS</name>
