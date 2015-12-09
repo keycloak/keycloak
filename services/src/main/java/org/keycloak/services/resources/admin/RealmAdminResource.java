@@ -66,6 +66,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.PatternSyntaxException;
+import org.keycloak.partialimport.PartialImportManager;
+import org.keycloak.representations.idm.PartialImportRepresentation;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -241,7 +243,7 @@ public class RealmAdminResource {
             for (final UserFederationProviderModel fedProvider : federationProviders) {
                 usersSyncManager.refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, realm.getId());
             }
-            
+
             adminEvent.operation(OperationType.UPDATE).representation(rep).success();
             return Response.noContent().build();
         } catch (PatternSyntaxException e) {
@@ -466,7 +468,7 @@ public class RealmAdminResource {
         if (user != null) {
             query.user(user);
         }
-        
+
         if(dateFrom != null) {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             Date from = null;
@@ -477,7 +479,7 @@ public class RealmAdminResource {
             }
             query.fromDate(from);
         }
-        
+
         if(dateTo != null) {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             Date to = null;
@@ -501,7 +503,7 @@ public class RealmAdminResource {
 
         return query.getResultList();
     }
-    
+
     /**
      * Get admin events
      *
@@ -540,15 +542,15 @@ public class RealmAdminResource {
         if (authClient != null) {
             query.authClient(authClient);
         }
-        
+
         if (authUser != null) {
             query.authUser(authUser);
         }
-        
+
         if (authIpAddress != null) {
             query.authIpAddress(authIpAddress);
         }
-        
+
         if (resourcePath != null) {
             query.resourcePath(resourcePath);
         }
@@ -561,7 +563,7 @@ public class RealmAdminResource {
             }
             query.operation(t);
         }
-        
+
         if(dateFrom != null) {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             Date from = null;
@@ -572,7 +574,7 @@ public class RealmAdminResource {
             }
             query.fromTime(from);
         }
-        
+
         if(dateTo != null) {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             Date to = null;
@@ -606,7 +608,7 @@ public class RealmAdminResource {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clear(realm.getId());
     }
-    
+
     /**
      * Delete all admin events
      *
@@ -709,5 +711,19 @@ public class RealmAdminResource {
         return ModelToRepresentation.toGroupHierarchy(found, true);
     }
 
-
+    /**
+     * Partial import from a JSON file to an existing realm.
+     *
+     * @param uriInfo
+     * @param rep
+     * @return
+     */
+    @Path("partialImport")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response partialImport(final @Context UriInfo uriInfo, PartialImportRepresentation rep) {
+        auth.requireManage();
+        PartialImportManager partialImport = new PartialImportManager(rep, session, realm, uriInfo, adminEvent);
+        return partialImport.saveResources();
+    }
 }

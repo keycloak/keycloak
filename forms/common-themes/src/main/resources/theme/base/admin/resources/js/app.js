@@ -406,6 +406,16 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmEventsConfigCtrl'
         })
+        .when('/realms/:realm/partial-import', {
+            templateUrl : resourceUrl + '/partials/partial-import.html',
+            resolve : {
+                resourceName : function() { return 'users'},
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmImportCtrl'
+        })
         .when('/create/user/:realm', {
             templateUrl : resourceUrl + '/partials/user-detail.html',
             resolve : {
