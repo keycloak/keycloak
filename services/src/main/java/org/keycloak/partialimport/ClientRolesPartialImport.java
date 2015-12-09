@@ -135,16 +135,16 @@ public class ClientRolesPartialImport implements PartialImport {
         return new ErrorResponseException(error);
     }
 
-    protected PartialImportResult overwritten(String clientId, RoleRepresentation roleRep) {
-        return PartialImportResult.overwritten(getResourceType(), getCombinedName(clientId, roleRep), roleRep);
+    protected PartialImportResult overwritten(String clientId, String modelId, RoleRepresentation roleRep) {
+        return PartialImportResult.overwritten(getResourceType(), getCombinedName(clientId, roleRep), modelId, roleRep);
     }
 
-    protected PartialImportResult skipped(String clientId, RoleRepresentation roleRep) {
-        return PartialImportResult.skipped(getResourceType(), getCombinedName(clientId, roleRep), roleRep);
+    protected PartialImportResult skipped(String clientId, String modelId, RoleRepresentation roleRep) {
+        return PartialImportResult.skipped(getResourceType(), getCombinedName(clientId, roleRep), modelId, roleRep);
     }
 
-    protected PartialImportResult added(String clientId, RoleRepresentation roleRep) {
-        return PartialImportResult.added(getResourceType(), getCombinedName(clientId, roleRep), roleRep);
+    protected PartialImportResult added(String clientId, String modelId, RoleRepresentation roleRep) {
+        return PartialImportResult.added(getResourceType(), getCombinedName(clientId, roleRep), modelId, roleRep);
     }
 
     @Override
@@ -166,14 +166,16 @@ public class ClientRolesPartialImport implements PartialImport {
                     throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
                 }
 
-                results.addResult(overwritten(clientId, roleRep));
+                String modelId = getModelId(realm, clientId);
+                results.addResult(overwritten(clientId, modelId, roleRep));
             }
         }
 
         for (String clientId : toSkip.keySet()) {
             for (RoleRepresentation roleRep : toSkip.get(clientId)) {
                 System.out.println("skipping " + getResourceType() + " " + getCombinedName(clientId, roleRep));
-                results.addResult(skipped(clientId, roleRep));
+                String modelId = getModelId(realm, clientId);
+                results.addResult(skipped(clientId, modelId, roleRep));
             }
         }
 
@@ -185,7 +187,8 @@ public class ClientRolesPartialImport implements PartialImport {
                 try {
                     System.out.println("adding " + getResourceType() + " " + getCombinedName(clientId, roleRep));
                     create(realm, session, clientId, roleRep);
-                    results.addResult(added(clientId, roleRep));
+                    String modelId = getModelId(realm, clientId);
+                    results.addResult(added(clientId, modelId, roleRep));
                 } catch (Exception e) {
                     //e.printStackTrace();
                     throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
@@ -196,4 +199,7 @@ public class ClientRolesPartialImport implements PartialImport {
         return results;
     }
 
+    private String getModelId(RealmModel realm, String clientId) {
+        return realm.getClientByClientId(clientId).getId();
+    }
 }

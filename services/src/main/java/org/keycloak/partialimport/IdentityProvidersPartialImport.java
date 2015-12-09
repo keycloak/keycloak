@@ -43,6 +43,11 @@ public class IdentityProvidersPartialImport extends AbstractPartialImport<Identi
     }
 
     @Override
+    public String getModelId(RealmModel realm, KeycloakSession session, IdentityProviderRepresentation idpRep) {
+        return realm.getIdentityProviderByAlias(getName(idpRep)).getInternalId();
+    }
+
+    @Override
     public boolean exists(RealmModel realm, KeycloakSession session, IdentityProviderRepresentation idpRep) {
         return realm.getIdentityProviderByAlias(getName(idpRep)) != null;
     }

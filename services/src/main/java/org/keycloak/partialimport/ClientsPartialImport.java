@@ -43,6 +43,11 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
     }
 
     @Override
+    public String getModelId(RealmModel realm, KeycloakSession session, ClientRepresentation clientRep) {
+        return realm.getClientByClientId(getName(clientRep)).getId();
+    }
+
+    @Override
     public boolean exists(RealmModel realm, KeycloakSession session, ClientRepresentation clientRep) {
         return realm.getClientByClientId(getName(clientRep)) != null;
     }

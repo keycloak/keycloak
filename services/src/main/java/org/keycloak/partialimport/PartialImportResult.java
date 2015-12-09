@@ -28,25 +28,27 @@ public class PartialImportResult {
     private final Action action;
     private final String resourceType;
     private final String resourceName;
+    private final String id;
     private final Object representation;
 
-    private PartialImportResult(Action action, ResourceType resourceType, String resourceName, Object representation) {
+    private PartialImportResult(Action action, ResourceType resourceType, String resourceName, String id, Object representation) {
         this.action = action;
         this.resourceType = resourceType.toString();
         this.resourceName = resourceName;
+        this.id = id;
         this.representation = representation;
     };
 
-    public static PartialImportResult skipped(ResourceType resourceType, String resourceName, Object representation) {
-        return new PartialImportResult(Action.SKIPPED, resourceType, resourceName, representation);
+    public static PartialImportResult skipped(ResourceType resourceType, String resourceName, String id, Object representation) {
+        return new PartialImportResult(Action.SKIPPED, resourceType, resourceName, id, representation);
     }
 
-    public static PartialImportResult added(ResourceType resourceType, String resourceName, Object representation) {
-        return new PartialImportResult(Action.ADDED, resourceType, resourceName, representation);
+    public static PartialImportResult added(ResourceType resourceType, String resourceName, String id, Object representation) {
+        return new PartialImportResult(Action.ADDED, resourceType, resourceName, id, representation);
     }
 
-    public static PartialImportResult overwritten(ResourceType resourceType, String resourceName, Object representation) {
-        return new PartialImportResult(Action.OVERWRITTEN, resourceType, resourceName, representation);
+    public static PartialImportResult overwritten(ResourceType resourceType, String resourceName, String id, Object representation) {
+        return new PartialImportResult(Action.OVERWRITTEN, resourceType, resourceName, id, representation);
     }
 
     public Action getAction() {
@@ -59,6 +61,10 @@ public class PartialImportResult {
 
     public String getResourceName() {
         return resourceName;
+    }
+
+    public String getId() {
+        return id;
     }
 
     @JsonIgnore

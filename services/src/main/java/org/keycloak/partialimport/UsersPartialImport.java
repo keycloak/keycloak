@@ -45,6 +45,17 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
     }
 
     @Override
+    public String getModelId(RealmModel realm, KeycloakSession session, UserRepresentation user) {
+        String userName = user.getUsername();
+        if (userName != null) {
+            return session.users().getUserByUsername(userName, realm).getId();
+        } else {
+            String email = user.getEmail();
+            return session.users().getUserByEmail(email, realm).getId();
+        }
+    }
+
+    @Override
     public boolean exists(RealmModel realm, KeycloakSession session, UserRepresentation user) {
         return userNameExists(realm, session, user) || userEmailExists(realm, session, user);
     }

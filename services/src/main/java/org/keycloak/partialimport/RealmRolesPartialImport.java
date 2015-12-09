@@ -44,6 +44,15 @@ public class RealmRolesPartialImport extends AbstractPartialImport<RoleRepresent
     }
 
     @Override
+    public String getModelId(RealmModel realm, KeycloakSession session, RoleRepresentation roleRep) {
+        for (RoleModel role : realm.getRoles()) {
+            if (getName(roleRep).equals(role.getName())) return role.getId();
+        }
+
+        return null;
+    }
+
+    @Override
     public boolean exists(RealmModel realm, KeycloakSession session, RoleRepresentation roleRep) {
         for (RoleModel role : realm.getRoles()) {
             if (getName(roleRep).equals(role.getName())) return true;
