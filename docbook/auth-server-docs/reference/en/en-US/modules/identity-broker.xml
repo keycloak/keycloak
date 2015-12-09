@@ -332,6 +332,16 @@
                             More details in <link linkend="identity-broker-first-login">First Login section</link>.
                         </entry>
                     </row>
+                    <row>
+                        <entry>
+                            <literal>Post Login Flow</literal>
+                        </entry>
+                        <entry>Alias of authentication flow, which is triggered after each login with this identity provider. Useful if you want additional verification of each user
+                            authenticated with this identity provider (for example OTP). Leave this empty if you don't want any additional authenticators to be triggered after login
+                            with this identity provider. Also note, that authenticator implementations must assume that user is already
+                            set in ClientSession as identity provider already set it.
+                        </entry>
+                    </row>
                 </tbody>
             </tgroup>
         </table>
