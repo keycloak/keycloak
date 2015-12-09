@@ -11,4 +11,5 @@
     <include file="META-INF/jpa-changelog-1.5.0.xml"/>
     <include file="META-INF/jpa-changelog-1.6.1.xml"/>
     <include file="META-INF/jpa-changelog-1.7.0.xml"/>
+    <include file="META-INF/jpa-changelog-1.8.0.xml"/>
 </databaseChangeLog>

@@ -1204,6 +1204,17 @@ public class RepresentationToModel {
        }
        identityProviderModel.setFirstBrokerLoginFlowId(flowModel.getId());
 
+       flowAlias = representation.getPostBrokerLoginFlowAlias();
+       if (flowAlias == null || flowAlias.trim().length() == 0) {
+           identityProviderModel.setPostBrokerLoginFlowId(null);
+       } else {
+           flowModel = realm.getFlowByAlias(flowAlias);
+           if (flowModel == null) {
+               throw new ModelException("No available authentication flow with alias: " + flowAlias);
+           }
+           identityProviderModel.setPostBrokerLoginFlowId(flowModel.getId());
+       }
+
        return identityProviderModel;
     }
 

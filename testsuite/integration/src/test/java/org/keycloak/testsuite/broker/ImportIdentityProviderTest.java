@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
@@ -85,6 +86,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         identityProviderModel.setStoreToken(true);
         identityProviderModel.setAuthenticateByDefault(true);
         identityProviderModel.setFirstBrokerLoginFlowId(realm.getBrowserFlow().getId());
+        identityProviderModel.setPostBrokerLoginFlowId(realm.getDirectGrantFlow().getId());
 
         realm.updateIdentityProvider(identityProviderModel);
 
@@ -100,6 +102,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertTrue(identityProviderModel.isStoreToken());
         assertTrue(identityProviderModel.isAuthenticateByDefault());
         assertEquals(identityProviderModel.getFirstBrokerLoginFlowId(), realm.getBrowserFlow().getId());
+        assertEquals(identityProviderModel.getPostBrokerLoginFlowId(), realm.getDirectGrantFlow().getId());
 
         identityProviderModel.getConfig().remove("config-added");
         identityProviderModel.setEnabled(true);
@@ -221,6 +224,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals("clientId", config.getClientId());
         assertEquals("clientSecret", config.getClientSecret());
         assertEquals(realm.getBrowserFlow().getId(), identityProvider.getFirstBrokerLoginFlowId());
+        Assert.assertNull(identityProvider.getPostBrokerLoginFlowId());
         assertEquals(FacebookIdentityProvider.AUTH_URL, config.getAuthorizationUrl());
         assertEquals(FacebookIdentityProvider.TOKEN_URL, config.getTokenUrl());
         assertEquals(FacebookIdentityProvider.PROFILE_URL, config.getUserInfoUrl());
@@ -239,6 +243,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals("clientId", config.getClientId());
         assertEquals("clientSecret", config.getClientSecret());
         assertEquals(realm.getFlowByAlias(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW).getId(), identityProvider.getFirstBrokerLoginFlowId());
+        assertEquals(realm.getBrowserFlow().getId(), identityProvider.getPostBrokerLoginFlowId());
         assertEquals(GitHubIdentityProvider.AUTH_URL, config.getAuthorizationUrl());
         assertEquals(GitHubIdentityProvider.TOKEN_URL, config.getTokenUrl());
         assertEquals(GitHubIdentityProvider.PROFILE_URL, config.getUserInfoUrl());

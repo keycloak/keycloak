@@ -512,6 +512,15 @@ public class ModelToRepresentation {
             providerRep.setFirstBrokerLoginFlowAlias(flow.getAlias());
         }
 
+        String postBrokerLoginFlowId = identityProviderModel.getPostBrokerLoginFlowId();
+        if (postBrokerLoginFlowId != null) {
+            AuthenticationFlowModel flow = realm.getAuthenticationFlowById(postBrokerLoginFlowId);
+            if (flow == null) {
+                throw new ModelException("Couldn't find authentication flow with id " + postBrokerLoginFlowId);
+            }
+            providerRep.setPostBrokerLoginFlowAlias(flow.getAlias());
+        }
+
         return providerRep;
     }
 

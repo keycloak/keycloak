@@ -61,7 +61,7 @@ public class LoginTotpPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        if (driver.getTitle().equals("Log in to test")) {
+        if (driver.getTitle().startsWith("Log in to ")) {
             try {
                 driver.findElement(By.id("totp"));
                 return true;

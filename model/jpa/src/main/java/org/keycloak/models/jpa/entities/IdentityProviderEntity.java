@@ -57,6 +57,9 @@ public class IdentityProviderEntity {
     @Column(name="FIRST_BROKER_LOGIN_FLOW_ID")
     private String firstBrokerLoginFlowId;
 
+    @Column(name="POST_BROKER_LOGIN_FLOW_ID")
+    private String postBrokerLoginFlowId;
+
     @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE", columnDefinition = "TEXT")
@@ -125,6 +128,14 @@ public class IdentityProviderEntity {
 
     public void setFirstBrokerLoginFlowId(String firstBrokerLoginFlowId) {
         this.firstBrokerLoginFlowId = firstBrokerLoginFlowId;
+    }
+
+    public String getPostBrokerLoginFlowId() {
+        return postBrokerLoginFlowId;
+    }
+
+    public void setPostBrokerLoginFlowId(String postBrokerLoginFlowId) {
+        this.postBrokerLoginFlowId = postBrokerLoginFlowId;
     }
 
     public Map<String, String> getConfig() {

@@ -301,17 +301,17 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
     }
 
     // Save this context as note to clientSession
-    public void saveToClientSession(ClientSessionModel clientSession) {
+    public void saveToClientSession(ClientSessionModel clientSession, String noteKey) {
         try {
             String asString = JsonSerialization.writeValueAsString(this);
-            clientSession.setNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE, asString);
+            clientSession.setNote(noteKey, asString);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
     }
 
-    public static SerializedBrokeredIdentityContext readFromClientSession(ClientSessionModel clientSession) {
-        String asString = clientSession.getNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
+    public static SerializedBrokeredIdentityContext readFromClientSession(ClientSessionModel clientSession, String noteKey) {
+        String asString = clientSession.getNote(noteKey);
         if (asString == null) {
             return null;
         } else {

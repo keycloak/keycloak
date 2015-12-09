@@ -695,6 +695,13 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         }
     }
 
+    $scope.postBrokerAuthFlows = [];
+    var emptyFlow = { alias: "" };
+    $scope.postBrokerAuthFlows.push(emptyFlow);
+    for (var i=0 ; i<$scope.authFlows.length ; i++) {
+        $scope.postBrokerAuthFlows.push($scope.authFlows[i]);
+    }
+
     $scope.$watch(function() {
         return $location.path();
     }, function() {
