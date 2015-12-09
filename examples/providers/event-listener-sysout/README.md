@@ -21,7 +21,7 @@ CODE_TO_TOKEN events add the following to keycloak-server.json:
 
     ...
     "eventsListener": {
-        "sysout" {
+        "sysout": {
             "exclude": [ "REFRESH_TOKEN", "CODE_TO_TOKEN" ]
         }
     }
