@@ -58,7 +58,7 @@
         <wildfly.core.version>1.0.2.Final</wildfly.core.version>
         <wildfly.build-tools.version>1.0.0.Final</wildfly.build-tools.version>
 
-        <!-- this is EAP 6.4 alpha, publicly available -->
+        <!-- this is EAP 6.4.4 -->
         <jboss.version>7.5.4.Final-redhat-4</jboss.version>
 
         <!--<servlet.api.30.version>1.0.2.Final</servlet.api.30.version>-->
@@ -161,7 +161,7 @@
         <module>social</module>
         <module>forms</module>
         <module>examples</module>
-        <module>testsuite</module>
+        <!--<module>testsuite</module>-->
         <module>timer</module>
         <module>export-import</module>
         <module>util</module>
