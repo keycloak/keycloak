@@ -7,7 +7,8 @@ import org.openqa.selenium.support.FindBy;
 import java.util.List;
 
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import org.openqa.selenium.By;
 import static org.openqa.selenium.By.xpath;
 
 /**
@@ -32,18 +33,18 @@ public class DataTable {
     private WebElement infoRow;
 
     public void search(String pattern) {
-        waitAjaxForBody();
+        waitForBody();
         searchInput.sendKeys(pattern);
         searchButton.click();
     }
 
     public void clickHeaderButton(String buttonText) {
-        waitAjaxForBody();
+        waitForBody();
         header.findElement(By.xpath(".//button[text()='" + buttonText + "']")).click();
     }
 
     public void clickHeaderLink(String linkText) {
-        waitAjaxForBody();
+        waitForBody();
         header.findElement(By.linkText(linkText)).click();
     }
 
@@ -51,19 +52,19 @@ public class DataTable {
         return body;
     }
 
-    public void waitAjaxForBody() {
-        waitAjaxForElement(body);
+    public void waitForBody() {
+        waitUntilElement(body).is().present();
     }
 
     public List<WebElement> rows() {
-        waitAjaxForBody();
+        waitForBody();
         pause(250);
         return rows;
     }
 
     public WebElement getRowByLinkText(String text) {
         WebElement row = body.findElement(By.xpath(".//tr[./td/a[text()='" + text + "']]"));
-        waitAjaxForElement(row);
+        waitUntilElement(row).is().present();
         return row;
     }
 

@@ -27,7 +27,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
-import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import static org.openqa.selenium.By.*;
 
 /**
@@ -73,7 +73,7 @@ public class Users extends AdminConsoleRealm {
         }
 
         public void clickUser(String username) {
-            waitAjaxForElement(body());
+            waitUntilElement(body()).is().present();
             body().findElement(linkText(username)).click();
         }
 

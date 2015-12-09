@@ -149,7 +149,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         List<UserCredentialModel> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
         credentials.add(UserCredentialModel.password(password));
-        boolean valid = context.getSession().users().validCredentials(context.getRealm(), user, credentials);
+        boolean valid = context.getSession().users().validCredentials(context.getSession(), context.getRealm(), user, credentials);
         if (!valid) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);

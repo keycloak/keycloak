@@ -51,7 +51,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator {
             return;
         }
         credentials.add(UserCredentialModel.otp(context.getRealm().getOTPPolicy().getType(), otp));
-        boolean valid = context.getSession().users().validCredentials(context.getRealm(), context.getUser(), credentials);
+        boolean valid = context.getSession().users().validCredentials(context.getSession(), context.getRealm(), context.getUser(), credentials);
         if (!valid) {
             context.getEvent().user(context.getUser());
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);

@@ -67,7 +67,7 @@ public class RequiredUserActionsTest extends AbstractUserTest {
     public void updatePassword() {
         userAttributesPage.form().addRequiredAction(UPDATE_PASSWORD.getActionName());
         userAttributesPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         testRealmAccountPage.navigateTo();
 
@@ -91,7 +91,7 @@ public class RequiredUserActionsTest extends AbstractUserTest {
     public void updateProfile() {
         userAttributesPage.form().addRequiredAction(UPDATE_PROFILE.getActionName());
         userAttributesPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         testRealmAccountPage.navigateTo();
 
@@ -128,7 +128,7 @@ public class RequiredUserActionsTest extends AbstractUserTest {
 
         userAttributesPage.form().addRequiredAction(TERMS_AND_CONDITIONS.getActionName());
         userAttributesPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         testRealmAccountPage.navigateTo();
 

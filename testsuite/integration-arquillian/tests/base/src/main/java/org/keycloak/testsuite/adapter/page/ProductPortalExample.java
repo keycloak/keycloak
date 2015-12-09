@@ -5,7 +5,7 @@ import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-import org.keycloak.testsuite.util.WaitUtils;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebElement;
 
 /**
@@ -48,7 +48,7 @@ public class ProductPortalExample extends AbstractPageWithInjectedUrl {
     }
 
     public void waitForProductListingHeader() {
-        WaitUtils.waitGuiForElementNotPresent(productListingHeader);
+        waitUntilElement(productListingHeader).is().not().present();
     }
 
     public void logOut() {

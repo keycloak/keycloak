@@ -48,7 +48,7 @@ public class ClientSettingsTest extends AbstractClientTest {
     public void crudOIDCConfidential() {
         newClient = createClientRepresentation("oidc-confidential", "http://example.test/app/*");
         createClient(newClient);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         clientPage.backToClientsViaBreadcrumb();
         assertCurrentUrlEquals(clientsPage);
@@ -70,7 +70,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         newClient = createClientRepresentation("oidc-public", "http://example.test/app/*");
         newClient.setPublicClient(true);
         createClient(newClient);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         clientPage.backToClientsViaBreadcrumb();
         assertCurrentUrlEquals(clientsPage);
@@ -81,7 +81,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         newClient = createClientRepresentation("oidc-bearer-only", "http://example.test/app/*");
         newClient.setBearerOnly(true);
         createClient(newClient);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         clientPage.backToClientsViaBreadcrumb();
         assertCurrentUrlEquals(clientsPage);
@@ -99,11 +99,11 @@ public class ClientSettingsTest extends AbstractClientTest {
     public void invalidSettings() {
         clientsPage.table().createClient();
         createClientPage.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
 
         createClientPage.form().setClientId("test-client");
         createClientPage.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
     }
 
     public void assertClientSettingsEqual(ClientRepresentation c1, ClientRepresentation c2) {

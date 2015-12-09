@@ -5,7 +5,7 @@ import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.openqa.selenium.By;
 import org.openqa.selenium.support.ui.Select;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * Created by fkiss.
@@ -21,7 +21,7 @@ public class UserFederation extends AdminConsoleRealm {
     private Select addProviderSelect;
 
     public void addProvider(String provider) {
-        waitGuiForElement(By.cssSelector("select[ng-model*='selectedProvider']"));
+        waitUntilElement(By.cssSelector("select[ng-model*='selectedProvider']")).is().present();
         addProviderSelect.selectByVisibleText(provider);
     }
 

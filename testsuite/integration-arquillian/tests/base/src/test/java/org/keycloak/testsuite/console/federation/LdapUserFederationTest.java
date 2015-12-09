@@ -49,7 +49,7 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().setKeyTabInput("http.keytab");
         createLdapUserProvider.form().setDebugEnabled(true);
         createLdapUserProvider.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         RealmRepresentation realm = testRealmResource().toRepresentation();
         UserFederationProviderRepresentation ufpr = realm.getUserFederationProviders().get(0);
@@ -71,7 +71,7 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
         createLdapUserProvider.form().setLdapBindCredentialInput("secret");
         createLdapUserProvider.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         RealmRepresentation realm = testRealmResource().toRepresentation();
         UserFederationProviderRepresentation ufpr = realm.getUserFederationProviders().get(0);
@@ -92,22 +92,22 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
         createLdapUserProvider.form().setLdapBindCredentialInput("secret");
         createLdapUserProvider.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
         createLdapUserProvider.form().setLdapUserDnInput("");
         createLdapUserProvider.form().setLdapConnectionUrlInput("ldap://localhost:389");
         createLdapUserProvider.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
         createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
         createLdapUserProvider.form().setLdapBindDnInput("");
         createLdapUserProvider.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
         createLdapUserProvider.form().setLdapBindDnInput("uid=admin,ou=system");
         createLdapUserProvider.form().setLdapBindCredentialInput("");
         createLdapUserProvider.form().save();
-        assertFlashMessageDanger();
+        assertAlertDanger();
         createLdapUserProvider.form().setLdapBindCredentialInput("secret");
         createLdapUserProvider.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
     }
 
     @Test
@@ -122,19 +122,19 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().setLdapBindCredentialInput("secret");
         createLdapUserProvider.form().setAccountAfterPasswordUpdateEnabled(true);
         createLdapUserProvider.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         LDAPEmbeddedServer ldapServer = null;
         try {
             ldapServer = startEmbeddedLdapServer();
             createLdapUserProvider.form().testConnection();
-            assertFlashMessageSuccess();
+            assertAlertSuccess();
             createLdapUserProvider.form().testAuthentication();
-            assertFlashMessageSuccess();
+            assertAlertSuccess();
             createLdapUserProvider.form().synchronizeAllUsers();
-            assertFlashMessageSuccess();
+            assertAlertSuccess();
             createLdapUserProvider.form().setLdapBindCredentialInput("secret1");
             createLdapUserProvider.form().testAuthentication();
-            assertFlashMessageDanger();
+            assertAlertDanger();
         } finally {
             if (ldapServer != null) {
                 ldapServer.stop();

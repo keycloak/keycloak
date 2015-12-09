@@ -24,12 +24,12 @@ public class Authentication extends AdminConsoleRealm {
     private WebElement close;
     
     public String getSuccessMessage() {
-        waitAjaxForElement(success);
+        waitUntilElement(success).is().present();
         return success.getText();
     }
     
     public String getErrorMessage() {
-        waitAjaxForElement(error);
+        waitUntilElement(error).is().present();
         return error.getText();
     }
     
@@ -37,7 +37,7 @@ public class Authentication extends AdminConsoleRealm {
         if (close.isDisplayed()) {
             close.click();
         }
-        waitAjaxForElementNotVisible(close);
+        waitUntilElement(close).is().not().visible();
     }
     
     public AuthenticationTabs tabs() {

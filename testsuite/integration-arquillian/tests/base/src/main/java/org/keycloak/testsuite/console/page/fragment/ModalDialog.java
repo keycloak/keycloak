@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.console.page.fragment;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitAjaxForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -21,22 +21,22 @@ public class ModalDialog {
     private WebElement nameInput;
 
     public void ok() {
-        waitAjaxForElement(okButton);
+        waitUntilElement(okButton).is().present();
         okButton.click();
     }
     
     public void confirmDeletion() {
-        waitAjaxForElement(deleteButton);
+        waitUntilElement(deleteButton).is().present();
         deleteButton.click();
     }
 
     public void cancel() {
-        waitAjaxForElement(cancelButton);
+        waitUntilElement(cancelButton).is().present();
         cancelButton.click();
     }
     
     public void setName(String name) {
-        waitAjaxForElement(nameInput);
+        waitUntilElement(nameInput).is().present();
         nameInput.clear();
         nameInput.sendKeys(name);
     }

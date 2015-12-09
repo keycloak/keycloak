@@ -30,7 +30,7 @@ public class ConfigTest extends AbstractConsoleTest {
         configPage.form().removeSaveType("LOGIN");
         configPage.form().setExpiration("50", "Days");
         configPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         RealmRepresentation realm = testRealmResource().toRepresentation();
         assertTrue(realm.isEventsEnabled());
@@ -44,7 +44,7 @@ public class ConfigTest extends AbstractConsoleTest {
         configPage.form().setSaveAdminEvents(true);
         configPage.form().setIncludeRepresentation(true);
         configPage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         RealmRepresentation realm = testRealmResource().toRepresentation();
         assertTrue(realm.isAdminEventsEnabled());

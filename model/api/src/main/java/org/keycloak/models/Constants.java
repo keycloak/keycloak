@@ -21,6 +21,8 @@ public interface Constants {
     String[] BROKER_SERVICE_ROLES = {READ_TOKEN_ROLE};
     String OFFLINE_ACCESS_ROLE = OAuth2Constants.OFFLINE_ACCESS;
 
+    String DEFAULT_HASH_ALGORITHM = "pbkdf2";
+
     // 15 minutes
     int DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT = 900;
     // 30 days

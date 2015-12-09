@@ -36,7 +36,7 @@ public class ClientRolesTest extends AbstractClientTest {
 //        assertCurrentUrl(createClientRole); // can't do this, need client id to build uri
         createClientRolePage.form().setBasicAttributes(roleRep);
         createClientRolePage.form().save();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         createClientRolePage.form().setCompositeRoles(roleRep);
         // TODO add verification of notification message when KEYCLOAK-1497 gets resolved
     }
@@ -47,11 +47,10 @@ public class ClientRolesTest extends AbstractClientTest {
         RoleRepresentation newRole = new RoleRepresentation("client-role", "", false);
 
         createClient(newClient);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         clientPage.tabs().roles();
         addClientRole(newRole);
-        assertFlashMessageSuccess();
 
         clientRolePage.backToClientRolesViaBreadcrumb();
         assertFalse(clientRolesPage.roles().getRolesFromTableRows().isEmpty());
@@ -60,7 +59,7 @@ public class ClientRolesTest extends AbstractClientTest {
         clientsPage.table().search(newClient.getClientId());
         clientsPage.table().deleteClient(newClient.getClientId());
         modalDialog.confirmDeletion();
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
         assertNull(clientsPage.table().findClient(newClient.getClientId()));
     }
 

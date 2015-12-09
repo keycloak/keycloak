@@ -118,8 +118,6 @@ public abstract class AbstractKeycloakTest {
 
     protected void driverSettings() {
         driver.manage().timeouts().pageLoadTimeout(WaitUtils.PAGELOAD_TIMEOUT, TimeUnit.MILLISECONDS);
-        driver.manage().timeouts().implicitlyWait(WaitUtils.IMPLICIT_TIMEOUT, TimeUnit.MILLISECONDS);
-        driver.manage().timeouts().setScriptTimeout(WaitUtils.SCRIPT_TIMEOUT, TimeUnit.MILLISECONDS);
         driver.manage().window().maximize();
     }
 

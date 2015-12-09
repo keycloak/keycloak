@@ -39,10 +39,10 @@ public class MultipleRealmsTest extends AbstractModelTest {
         r1user1.updateCredential(UserCredentialModel.password("pass1"));
         r2user1.updateCredential(UserCredentialModel.password("pass2"));
 
-        Assert.assertTrue(session.users().validCredentials(realm1, r1user1, UserCredentialModel.password("pass1")));
-        Assert.assertFalse(session.users().validCredentials(realm1, r1user1, UserCredentialModel.password("pass2")));
-        Assert.assertFalse(session.users().validCredentials(realm2, r2user1, UserCredentialModel.password("pass1")));
-        Assert.assertTrue(session.users().validCredentials(realm2, r2user1, UserCredentialModel.password("pass2")));
+        Assert.assertTrue(session.users().validCredentials(session, realm1, r1user1, UserCredentialModel.password("pass1")));
+        Assert.assertFalse(session.users().validCredentials(session, realm1, r1user1, UserCredentialModel.password("pass2")));
+        Assert.assertFalse(session.users().validCredentials(session, realm2, r2user1, UserCredentialModel.password("pass1")));
+        Assert.assertTrue(session.users().validCredentials(session, realm2, r2user1, UserCredentialModel.password("pass2")));
 
         // Test searching
         Assert.assertEquals(2, session.users().searchForUser("user", realm1).size());

@@ -44,7 +44,7 @@ public class DefaultRolesTest extends AbstractRolesTest {
         String defaultRoleName = defaultRoleRep.getName();
 
         defaultRolesPage.form().addAvailableRole(defaultRoleName);
-        assertFlashMessageSuccess();
+        assertAlertSuccess();
 
         UserRepresentation newUser = new UserRepresentation();
         newUser.setUsername("new_user");

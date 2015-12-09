@@ -21,7 +21,7 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitGuiForElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -35,7 +35,7 @@ public class VerifyEmail extends Authenticate {
     private WebElement instruction;
     
     public String getInstructionMessage() {
-        waitGuiForElement(instruction);
+        waitUntilElement(instruction).is().present();
         return instruction.getText();
     }
 }
