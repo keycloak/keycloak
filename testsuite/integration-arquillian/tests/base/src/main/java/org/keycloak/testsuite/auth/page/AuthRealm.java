@@ -21,6 +21,8 @@ public class AuthRealm extends AuthServer implements PageWithLoginUrl {
     public static final String TEST = "test";
     public static final String DEMO = "demo";
     public static final String EXAMPLE = "example";
+    public static final String SAMLDEMO = "saml-demo";
+    public static final String SAMLSERVLETDEMO = "demo";
 
     public static final String ADMIN = "admin";
 

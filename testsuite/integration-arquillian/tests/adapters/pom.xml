@@ -244,6 +244,24 @@
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak</groupId>
+                                                <artifactId>saml-post-signatures</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak</groupId>
+                                                <artifactId>saml-post-encryption</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak</groupId>
+                                                <artifactId>saml-redirect-signatures</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
                                         </artifactItems>
                                         <outputDirectory>${examples.home}</outputDirectory>
                                         <overWriteIfNewer>true</overWriteIfNewer>
@@ -263,6 +281,13 @@
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
                                                 <includes>**/*realm.json</includes>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak</groupId>
+                                                <artifactId>keycloak-examples-dist</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                                <includes>**/testsaml.json</includes>
                                             </artifactItem>
                                         </artifactItems>
                                         <outputDirectory>${examples.home}</outputDirectory>
