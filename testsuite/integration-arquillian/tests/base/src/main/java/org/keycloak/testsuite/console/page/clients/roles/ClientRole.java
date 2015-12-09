@@ -1,6 +1,8 @@
-package org.keycloak.testsuite.console.page.clients;
+package org.keycloak.testsuite.console.page.clients.roles;
 
 import org.keycloak.testsuite.console.page.roles.*;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 /**
  *
@@ -9,6 +11,9 @@ import org.keycloak.testsuite.console.page.roles.*;
 public class ClientRole extends ClientRoles {
 
     public static final String ROLE_ID = "roleId";
+    
+    @FindBy(xpath = "//i[contains(@class, 'delete')]")
+    private WebElement deleteIcon;
 
     @Override
     public String getUriFragment() {
@@ -31,6 +36,12 @@ public class ClientRole extends ClientRoles {
 
     public void backToClientRolesViaBreadcrumb() {
         breadcrumb().clickItemOneLevelUp();
+    }
+    
+    @Override
+    public void delete() {
+        deleteIcon.click();
+        modalDialog.confirmDeletion();
     }
 
 }

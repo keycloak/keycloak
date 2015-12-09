@@ -76,9 +76,9 @@
                     </div>
                     <div class="row" data-ng-show="targetClient">
                         <div class="col-md-3">
-                            <label class="control-label" for="client-available">{{:: 'available-roles' | translate}}</label>
+                            <label class="control-label" for="available-client">{{:: 'available-roles' | translate}}</label>
                             <kc-tooltip>{{:: 'assign.available-roles.tooltip' | translate}}</kc-tooltip>
-                            <select id="client-available" class="form-control" multiple size="5"
+                            <select id="available-client" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedClientRoles"
                                     ng-options="r.name for r in clientRoles">
@@ -88,9 +88,9 @@
                             </button>
                         </div>
                         <div class="col-md-3">
-                            <label class="control-label" for="client-assigned">{{:: 'assigned-roles' | translate}}</label>
+                            <label class="control-label" for="assigned-client">{{:: 'assigned-roles' | translate}}</label>
                             <kc-tooltip>{{:: 'client.assigned-roles.tooltip' | translate}}</kc-tooltip>
-                            <select id="client-assigned" class="form-control" multiple size=5
+                            <select id="assigned-client" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedClientMappings"
                                     ng-options="r.name for r in clientMappings">

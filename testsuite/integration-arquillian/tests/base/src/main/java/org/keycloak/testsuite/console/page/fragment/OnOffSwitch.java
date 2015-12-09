@@ -51,7 +51,7 @@ public class OnOffSwitch {
 
     private void click() {
         waitUntilElement(root).is().present();
-        actions.moveToElement(root.findElements(By.tagName("span")).get(0))
+        actions.moveToElement(root.findElement(By.tagName("label")))
                 .click().build().perform();
     }
 
