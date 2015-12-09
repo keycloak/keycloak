@@ -34,11 +34,10 @@ public class ModalDialog {
         waitUntilElement(cancelButton).is().present();
         cancelButton.click();
     }
-    
+
     public void setName(String name) {
         waitUntilElement(nameInput).is().present();
         nameInput.clear();
         nameInput.sendKeys(name);
     }
-
 }

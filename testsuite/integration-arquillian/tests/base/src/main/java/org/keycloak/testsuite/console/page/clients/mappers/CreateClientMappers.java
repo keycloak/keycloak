@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.console.page.clients;
+package org.keycloak.testsuite.console.page.clients.mappers;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.AdminConsoleCreate;

@@ -18,6 +18,7 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.CONFIDENTIAL;
 
 
 /**
@@ -48,7 +49,7 @@ public class AdminEventsTest extends AbstractConsoleTest {
 
     @Test
     public void clientsAdminEventsTest() {
-        newClient = AbstractClientTest.createClientRepresentation("test_client", "http://example.test/test_client/*");
+        newClient = AbstractClientTest.createOidcClientRep(CONFIDENTIAL, "test_client", "http://example.test/test_client/*");
         Response response = clientsPage.clientsResource().create(newClient);
         String id = ApiUtil.getCreatedId(response);
         response.close();

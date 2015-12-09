@@ -1,7 +1,9 @@
 package org.keycloak.testsuite.console.page.roles;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -88,6 +90,14 @@ public class RoleCompositeRoles extends Form {
         button.click();
     }
 
+    public void addRealmRole(String role) {
+        addMissingRoles(availableRealmRolesSelect, addSelectedRealmRolesButton, Arrays.asList(role));
+    }
+    
+    public void addClientRole(String role) {
+        addMissingRoles(availableClientRolesSelect, addSelectedClientRolesButton, Arrays.asList(role));
+    }
+    
     protected void addMissingRoles(Select select, WebElement button, Collection<String> roles) {
         select.deselectAll();
         if (roles != null) { // if roles not provided, don't add any

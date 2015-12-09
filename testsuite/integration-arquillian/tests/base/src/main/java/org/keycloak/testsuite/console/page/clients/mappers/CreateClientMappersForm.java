@@ -1,20 +1,14 @@
-package org.keycloak.testsuite.console.page.clients;
+package org.keycloak.testsuite.console.page.clients.mappers;
 
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
-import java.util.List;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
- *
- * TODO: SAML
  */
 public class CreateClientMappersForm extends Form {
 
@@ -27,7 +21,16 @@ public class CreateClientMappersForm extends Form {
     public static final String USERS_FULL_NAME = "User's full name";
     public static final String USER_ATTRIBUTE = "User Attribute";
     public static final String USER_PROPERTY = "User Property";
+    public static final String GROUP_MEMBERSHIP = "Group Membership";
+    public static final String ROLE_LIST = "Role list";
+    public static final String HARDCODED_ATTRIBUTE = "Hardcoded attribute";
+    public static final String GROUP_LIST = "Group list";
+    public static final String HARDCODED_ROLE_SAML = "Hardcoded role";
 
+    // Role types
+    public static final String REALM_ROLE = "realm";
+    public static final String CLIENT_ROLE = "client";
+    
     @FindBy(id = "name")
     private WebElement nameElement;
 
@@ -52,7 +55,7 @@ public class CreateClientMappersForm extends Form {
     @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Multivalued']//following-sibling::node()//div[@class='onoffswitch']")
     private OnOffSwitch multivaluedInput;
 
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Role']//following-sibling::node()//input[@type='text']")
+    @FindBy(xpath = ".//button[text() = 'Select Role']/../..//input")
     private WebElement roleInput;
 
     @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='New Role Name']//following-sibling::node()//input[@type='text']")
@@ -72,7 +75,74 @@ public class CreateClientMappersForm extends Form {
 
     @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Add to access token']//following-sibling::node()//div[@class='onoffswitch']")
     private OnOffSwitch addToAccessTokenInput;
+    
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Full group path']//following-sibling::node()//div[@class='onoffswitch']")
+    private OnOffSwitch fullGroupPath;
 
+    @FindBy(xpath = ".//button[text() = 'Select Role']")
+    private WebElement selectRoleButton;
+            
+    @FindBy(xpath = "//div[@class='modal-dialog']")
+    private RoleSelectorModalDialog roleSelectorModalDialog;
+
+    public class RoleSelectorModalDialog {
+        @FindBy(id = "available")
+        private Select realmAvailable;
+        @FindBy(xpath = ".//button[@tooltip='Select realm role']")
+        private WebElement selectRealmRoleButton;
+        
+        @FindBy(id = "available-client")
+        private Select clientAvailable;
+        @FindBy(id = "clients")
+        private Select clientSelect;
+        @FindBy(xpath = ".//button[@tooltip='Select client role']")
+        private WebElement selectClientRoleButton;
+        @FindBy(xpath = ".//button[@class='close']")
+        private WebElement closeButton;
+        
+        public void closeRoleSelectorModalDialog() {
+            closeButton.click();
+        }
+        
+        public void selectRealmRole(String roleName) {
+            if (roleName != null) {
+                realmAvailable.selectByVisibleText(roleName);
+            }
+            selectRealmRoleButton.click();
+        }
+        
+        public void selectClientRole(String clientName, String roleName) {
+            if (roleName != null || clientName != null) {
+                clientSelect.selectByVisibleText(clientName);
+                clientAvailable.selectByVisibleText(roleName);
+            }
+            selectClientRoleButton.click();
+        }
+    }
+    
+    public void selectRole(String roleType, String roleName, String clientName) {
+        selectRoleButton.click();
+        switch (roleType) {
+            case REALM_ROLE:
+                roleSelectorModalDialog.selectRealmRole(roleName);
+                break;
+            case CLIENT_ROLE:
+                roleSelectorModalDialog.selectClientRole(clientName, roleName);
+                break;
+            default:
+                throw new IllegalArgumentException("No such role type, use \"" + 
+                        REALM_ROLE + "\" or \"" + CLIENT_ROLE + "\"");
+        }
+    }
+    
+    public void closeRoleSelectorModalDialog() {
+        roleSelectorModalDialog.closeRoleSelectorModalDialog();
+    }
+    
+    public void setName(String value) {
+        setInputValue(nameElement, value);
+    }
+    
     public boolean isConsentRequired() {
         return consentRequiredSwitch.isOn();
     }
@@ -87,10 +157,6 @@ public class CreateClientMappersForm extends Form {
 
     public void setConsentText(String consentText) {
         setInputValue(consentTextElement, consentText);
-    }
-
-    public String getMapperType() {
-        return mapperTypeSelect.getFirstSelectedOption().getText();
     }
 
     public void setMapperType(String type) {
@@ -183,5 +249,63 @@ public class CreateClientMappersForm extends Form {
 
     public void setAddToAccessToken(boolean value) {
         addToAccessTokenInput.setOn(value);
+    }
+    
+    public boolean isFullGroupPath() {
+        return fullGroupPath.isOn();
+    }
+    
+    public void setFullGroupPath(boolean value) {
+        fullGroupPath.setOn(value);
+    }
+    
+    //SAML
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Role attribute name']//following-sibling::node()//input[@type='text']")
+    private WebElement roleAttributeNameInput;
+    
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Friendly Name']//following-sibling::node()//input[@type='text']")
+    private WebElement friendlyNameInput;
+    
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='SAML Attribute NameFormat']//following-sibling::node()//select")
+    private Select samlAttributeNameFormatSelect;
+    
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Single Role Attribute']//following-sibling::node()//div[@class='onoffswitch']")
+    private OnOffSwitch singleRoleAttributeSwitch;
+    
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Attribute value']//following-sibling::node()//input[@type='text']")
+    private WebElement attributeValueInput;
+    
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Group attribute name']//following-sibling::node()//input[@type='text']")
+    private WebElement groupAttributeNameInput;
+    
+    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Single Group Attribute']//following-sibling::node()//div[@class='onoffswitch']")
+    private OnOffSwitch singleGroupAttributeSwitch;
+    
+    public void setRoleAttributeName(String value) {
+        setInputValue(roleAttributeNameInput, value);
+    }
+    
+    public void setFriendlyName(String value) {
+        setInputValue(friendlyNameInput, value);
+    }
+
+    public void setSamlAttributeNameFormat(String value) {
+        samlAttributeNameFormatSelect.selectByVisibleText(value);
+    }
+    
+    public void setSingleRoleAttribute(boolean value) {
+        singleRoleAttributeSwitch.setOn(value);
+    }
+    
+    public void setAttributeValue(String value) {
+        setInputValue(attributeValueInput, value);
+    }
+    
+    public void setGroupAttributeName(String value) {
+        setInputValue(groupAttributeNameInput, value);
+    }
+    
+    public void setSingleGroupAttribute(boolean value) {
+        singleGroupAttributeSwitch.setOn(value);
     }
 }

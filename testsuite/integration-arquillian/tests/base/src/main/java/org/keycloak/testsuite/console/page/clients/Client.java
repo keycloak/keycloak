@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.console.page.clients;
 
+import org.jboss.arquillian.graphene.fragment.Root;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.testsuite.console.page.fragment.Breadcrumb;
 import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
@@ -55,6 +56,9 @@ public class Client extends Clients {
 
     public class ClientTabs {
 
+        @Root
+        private WebElement tabs;
+        
         @FindBy(linkText = "Settings")
         private WebElement settingsLink;
         @FindBy(linkText = "Roles")
@@ -96,6 +100,10 @@ public class Client extends Clients {
 
         public void installation() {
             installationLink.click();
+        }
+        
+        public WebElement getTabs() {
+            return tabs;
         }
 
     }
