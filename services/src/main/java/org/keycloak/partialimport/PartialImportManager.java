@@ -107,14 +107,14 @@ public class PartialImportManager {
 
     private void addedEvent(PartialImportResult result) {
         adminEvent.operation(OperationType.CREATE)
-                  .resourcePath(uriInfo)
+                  .resourcePath(result.getResourceType().getPath(), result.getId())
                   .representation(result.getRepresentation())
                   .success();
     };
 
     private void overwrittenEvent(PartialImportResult result) {
         adminEvent.operation(OperationType.UPDATE)
-                  .resourcePath(uriInfo)
+                  .resourcePath(result.getResourceType().getPath(), result.getId())
                   .representation(result.getRepresentation())
                   .success();
     }

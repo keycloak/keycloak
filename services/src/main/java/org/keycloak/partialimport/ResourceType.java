@@ -24,6 +24,17 @@ package org.keycloak.partialimport;
 public enum ResourceType {
     USER, CLIENT, IDP, REALM_ROLE, CLIENT_ROLE;
 
+    public String getPath() {
+        switch(this) {
+            case USER: return "users";
+            case CLIENT: return "clients";
+            case IDP: return "identity-provider-settings";
+            case REALM_ROLE: return "realms";
+            case CLIENT_ROLE: return "clients";
+            default: return "";
+        }
+    }
+
     @Override
     public String toString() {
         switch(this) {

@@ -26,14 +26,14 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 public class PartialImportResult {
 
     private final Action action;
-    private final String resourceType;
+    private final ResourceType resourceType;
     private final String resourceName;
     private final String id;
     private final Object representation;
 
     private PartialImportResult(Action action, ResourceType resourceType, String resourceName, String id, Object representation) {
         this.action = action;
-        this.resourceType = resourceType.toString();
+        this.resourceType = resourceType;
         this.resourceName = resourceName;
         this.id = id;
         this.representation = representation;
@@ -55,7 +55,7 @@ public class PartialImportResult {
         return action;
     }
 
-    public String getResourceType() {
+    public ResourceType getResourceType() {
         return resourceType;
     }
 
