@@ -79,6 +79,18 @@
                 </div>
                 <kc-tooltip>{{:: 'first-broker-login-flow.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="postBrokerLoginFlowAlias">{{:: 'post-broker-login-flow' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="postBrokerLoginFlowAlias"
+                                ng-model="identityProvider.postBrokerLoginFlowAlias"
+                                ng-options="flow.alias as flow.alias for flow in postBrokerAuthFlows">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'post-broker-login-flow.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <fieldset>
             <legend uncollapsed><span class="text">{{:: 'openid-connect-config' | translate}}</span> <kc-tooltip>{{:: 'openid-connect-config.tooltip' | translate}}</kc-tooltip></legend>

@@ -42,6 +42,7 @@
             "providerId" : "github",
             "enabled": true,
             "storeToken": "false",
+            "postBrokerLoginFlowAlias" : "browser",
             "config": {
                 "authorizationUrl": "authorizationUrl",
                 "tokenUrl": "tokenUrl",

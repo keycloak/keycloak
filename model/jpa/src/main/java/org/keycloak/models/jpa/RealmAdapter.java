@@ -1277,6 +1277,7 @@ public class RealmAdapter implements RealmModel {
             identityProviderModel.setTrustEmail(entity.isTrustEmail());
             identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
             identityProviderModel.setFirstBrokerLoginFlowId(entity.getFirstBrokerLoginFlowId());
+            identityProviderModel.setPostBrokerLoginFlowId(entity.getPostBrokerLoginFlowId());
             identityProviderModel.setStoreToken(entity.isStoreToken());
             identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
 
@@ -1310,6 +1311,7 @@ public class RealmAdapter implements RealmModel {
         entity.setTrustEmail(identityProvider.isTrustEmail());
         entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
         entity.setFirstBrokerLoginFlowId(identityProvider.getFirstBrokerLoginFlowId());
+        entity.setPostBrokerLoginFlowId(identityProvider.getPostBrokerLoginFlowId());
         entity.setConfig(identityProvider.getConfig());
 
         realm.addIdentityProvider(entity);
@@ -1337,6 +1339,7 @@ public class RealmAdapter implements RealmModel {
                 entity.setTrustEmail(identityProvider.isTrustEmail());
                 entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
                 entity.setFirstBrokerLoginFlowId(identityProvider.getFirstBrokerLoginFlowId());
+                entity.setPostBrokerLoginFlowId(identityProvider.getPostBrokerLoginFlowId());
                 entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
                 entity.setStoreToken(identityProvider.isStoreToken());
                 entity.setConfig(identityProvider.getConfig());

@@ -422,7 +422,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractIdentityProvi
     }
 
 
-    protected void setExecutionRequirement(RealmModel realmWithBroker, String flowAlias, String authenticatorProvider, AuthenticationExecutionModel.Requirement requirement) {
+    protected static void setExecutionRequirement(RealmModel realmWithBroker, String flowAlias, String authenticatorProvider, AuthenticationExecutionModel.Requirement requirement) {
         AuthenticationFlowModel flowModel = realmWithBroker.getFlowByAlias(flowAlias);
         List<AuthenticationExecutionModel> authExecutions = realmWithBroker.getAuthenticationExecutions(flowModel.getId());
         for (AuthenticationExecutionModel execution : authExecutions) {
