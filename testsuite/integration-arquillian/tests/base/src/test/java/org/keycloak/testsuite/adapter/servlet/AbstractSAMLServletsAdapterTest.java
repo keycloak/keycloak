@@ -26,7 +26,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 /**
  * @author mhajas
  */
-public class AbstractSAMLServletsAdapterTest extends AbstractServletsAdapterTest {
+public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAdapterTest {
     @Page
     private BadClientSalesPostSigServlet badClientSalesPostSigServletPage;
 
