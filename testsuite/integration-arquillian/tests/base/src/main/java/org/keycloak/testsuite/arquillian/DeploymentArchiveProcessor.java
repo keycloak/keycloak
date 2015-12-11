@@ -98,6 +98,10 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                         adapterConfig.setAuthServerUrl(getAuthServerContextRootFromSystemProperty() + "/auth");
                         adapterConfig.setRealmKey(REALM_KEY);
                     }
+                    
+                    if ("true".equals(System.getProperty("app.server.ssl.required"))) {
+                        adapterConfig.setSslRequired("all");
+                    }
 
                     archive.add(new StringAsset(JsonSerialization.writeValueAsPrettyString(adapterConfig)),
                             adapterConfigPath);

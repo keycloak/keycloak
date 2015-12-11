@@ -22,6 +22,8 @@ public class URLProvider extends URLResourceProvider {
     public static final String LOCALHOST_ADDRESS = "127.0.0.1";
     public static final String LOCALHOST_HOSTNAME = "localhost";
 
+    private final boolean appServerSslRequired = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
+
     @Inject
     Instance<TestContext> testContext;
 
@@ -36,6 +38,9 @@ public class URLProvider extends URLResourceProvider {
             try {
                 url = fixLocalhost(url);
                 url = removeTrailingSlash(url);
+                if (appServerSslRequired) {
+                    url = fixSsl(url);
+                }
             } catch (MalformedURLException ex) {
                 log.log(Level.FATAL, null, ex);
             }
@@ -65,6 +70,12 @@ public class URLProvider extends URLResourceProvider {
             fixedUrl = new URL(fixedUrl.toExternalForm().replace(LOCALHOST_ADDRESS, LOCALHOST_HOSTNAME));
         }
         return fixedUrl;
+    }
+
+    public URL fixSsl(URL url) throws MalformedURLException {
+        URL fixedUrl = url;
+        String urlString = fixedUrl.toExternalForm().replace("http", "https").replace(System.getProperty("app.server.http.port", "8280"), System.getProperty("app.server.https.port", "8643"));
+        return new URL(urlString);
     }
 
     public URL removeTrailingSlash(URL url) throws MalformedURLException {
