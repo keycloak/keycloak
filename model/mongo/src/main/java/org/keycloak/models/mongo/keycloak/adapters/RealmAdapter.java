@@ -9,6 +9,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -35,6 +36,7 @@ import org.keycloak.models.entities.RequiredCredentialEntity;
 import org.keycloak.models.entities.UserFederationMapperEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoClientTemplateEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoGroupEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
@@ -2013,4 +2015,52 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         mapper.setConfig(config);
         return mapper;
     }
+
+    @Override
+    public List<ClientTemplateModel> getClientTemplates() {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(getId())
+                .get();
+        List<MongoClientTemplateEntity> clientEntities = getMongoStore().loadEntities(MongoClientTemplateEntity.class, query, invocationContext);
+
+        List<ClientTemplateModel> result = new LinkedList<>();
+        for (MongoClientTemplateEntity clientEntity : clientEntities) {
+            result.add(new ClientTemplateAdapter(session, this, clientEntity, invocationContext));
+        }
+        return result;
+    }
+
+    @Override
+    public ClientTemplateModel addClientTemplate(String name) {
+        return this.addClientTemplate(null, name);
+    }
+
+    @Override
+    public ClientTemplateModel addClientTemplate(String id, String name) {
+        MongoClientTemplateEntity clientEntity = new MongoClientTemplateEntity();
+        clientEntity.setId(id);
+        clientEntity.setName(name);
+        clientEntity.setRealmId(getId());
+        getMongoStore().insertEntity(clientEntity, invocationContext);
+
+        final ClientTemplateModel model = new ClientTemplateAdapter(session, this, clientEntity, invocationContext);
+        return model;
+    }
+
+    @Override
+    public boolean removeClientTemplate(String id) {
+        if (id == null) return false;
+        ClientTemplateModel client = getClientTemplateById(id);
+        if (client == null) return false;
+
+
+        return getMongoStore().removeEntity(MongoClientTemplateEntity.class, id, invocationContext);
+    }
+
+    @Override
+    public ClientTemplateModel getClientTemplateById(String id) {
+        return model.getClientTemplateById(id, this);
+    }
+
+
 }

@@ -435,7 +435,7 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
-    public void preRemove(ClientModel client, ProtocolMapperModel protocolMapper) {
+    public void preRemove(ProtocolMapperModel protocolMapper) {
         // Remove this protocol mapper from all consents, which has it
         DBObject query = new QueryBuilder()
                 .and("grantedProtocolMappers").is(protocolMapper.getId())

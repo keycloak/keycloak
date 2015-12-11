@@ -7,6 +7,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -38,7 +39,7 @@ import java.util.List;
 public class ProtocolMappersResource {
     protected static final Logger logger = Logger.getLogger(ProtocolMappersResource.class);
     
-    protected ClientModel client;
+    protected ProtocolMapperContainerModel client;
 
     protected RealmAuth auth;
     
@@ -50,7 +51,7 @@ public class ProtocolMappersResource {
     @Context
     protected KeycloakSession session;
 
-    public ProtocolMappersResource(ClientModel client, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public ProtocolMappersResource(ProtocolMapperContainerModel client, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.client = client;
         this.adminEvent = adminEvent;

@@ -132,6 +132,10 @@ public class RealmEntity {
     @JoinTable(name="REALM_CLIENT", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="CLIENT_ID") })
     Collection<ClientEntity> clients = new ArrayList<>();
 
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="REALM_CLIENT_TEMPLATE", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="CLIENT_TEMPLATE_ID") })
+    Collection<ClientTemplateEntity> clientTemplates = new ArrayList<>();
+
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
@@ -741,5 +745,12 @@ public class RealmEntity {
         this.clientAuthenticationFlow = clientAuthenticationFlow;
     }
 
+    public Collection<ClientTemplateEntity> getClientTemplates() {
+        return clientTemplates;
+    }
+
+    public void setClientTemplates(Collection<ClientTemplateEntity> clientTemplates) {
+        this.clientTemplates = clientTemplates;
+    }
 }
 

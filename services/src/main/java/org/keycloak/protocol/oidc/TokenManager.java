@@ -13,6 +13,7 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -258,13 +259,23 @@ public class TokenManager {
         Set<String> requestedRoles = new HashSet<String>();
         // todo scope param protocol independent
         String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
-        for (RoleModel r : TokenManager.getAccess(scopeParam, true, clientSession.getClient(), user)) {
+        ClientModel client = clientSession.getClient();
+        for (RoleModel r : TokenManager.getAccess(scopeParam, true, client, user)) {
             requestedRoles.add(r.getId());
         }
         clientSession.setRoles(requestedRoles);
 
         Set<String> requestedProtocolMappers = new HashSet<String>();
-        for (ProtocolMapperModel protocolMapper : clientSession.getClient().getProtocolMappers()) {
+        ClientTemplateModel clientTemplate = client.getClientTemplate();
+        if (clientTemplate != null) {
+            for (ProtocolMapperModel protocolMapper : clientTemplate.getProtocolMappers()) {
+                if (protocolMapper.getProtocol().equals(clientSession.getAuthMethod())) {
+                    requestedProtocolMappers.add(protocolMapper.getId());
+                }
+            }
+
+        }
+        for (ProtocolMapperModel protocolMapper : client.getProtocolMappers()) {
             if (protocolMapper.getProtocol().equals(clientSession.getAuthMethod())) {
                 requestedProtocolMappers.add(protocolMapper.getId());
             }

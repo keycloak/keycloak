@@ -58,6 +58,10 @@ public class ClientEntity {
     private boolean fullScopeAllowed;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CLIENT_TEMPLATE_ID")
+    protected ClientTemplateEntity clientTemplate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "REALM_ID")
     protected RealmEntity realm;
 
@@ -391,5 +395,13 @@ public class ClientEntity {
 
     public void setRegisteredNodes(Map<String, Integer> registeredNodes) {
         this.registeredNodes = registeredNodes;
+    }
+
+    public ClientTemplateEntity getClientTemplate() {
+        return clientTemplate;
+    }
+
+    public void setClientTemplate(ClientTemplateEntity clientTemplate) {
+        this.clientTemplate = clientTemplate;
     }
 }

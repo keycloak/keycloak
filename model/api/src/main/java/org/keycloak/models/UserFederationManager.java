@@ -388,8 +388,8 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public void preRemove(ClientModel client, ProtocolMapperModel protocolMapper) {
-        session.userStorage().preRemove(client, protocolMapper);
+    public void preRemove(ProtocolMapperModel protocolMapper) {
+        session.userStorage().preRemove(protocolMapper);
     }
 
     public void updateCredential(RealmModel realm, UserModel user, UserCredentialModel credential) {

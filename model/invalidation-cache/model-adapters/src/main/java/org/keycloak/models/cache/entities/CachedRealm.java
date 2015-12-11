@@ -5,6 +5,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -112,6 +113,7 @@ public class CachedRealm implements Serializable {
     private Set<String> groups = new HashSet<String>();
     private Map<String, String> realmRoles = new HashMap<String, String>();
     private Map<String, String> clients = new HashMap<String, String>();
+    private List<String> clientTemplates= new LinkedList<>();
     private boolean internationalizationEnabled;
     private Set<String> supportedLocales = new HashSet<String>();
     private String defaultLocale;
@@ -208,6 +210,12 @@ public class CachedRealm implements Serializable {
             clients.put(client.getClientId(), client.getId());
             CachedClient cachedClient = new CachedClient(cache, delegate, model, client);
             cache.addCachedClient(cachedClient);
+        }
+
+        for (ClientTemplateModel template : model.getClientTemplates()) {
+            clientTemplates.add(template.getId());
+            CachedClientTemplate cachedClient = new CachedClientTemplate(cache, delegate, model, template);
+            cache.addCachedClientTemplate(cachedClient);
         }
 
         internationalizationEnabled = model.isInternationalizationEnabled();
@@ -530,5 +538,9 @@ public class CachedRealm implements Serializable {
 
     public List<String> getDefaultGroups() {
         return defaultGroups;
+    }
+
+    public List<String> getClientTemplates() {
+        return clientTemplates;
     }
 }

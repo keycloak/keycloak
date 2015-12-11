@@ -7,6 +7,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -26,6 +27,7 @@ import org.keycloak.models.jpa.entities.AuthenticationExecutionEntity;
 import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
 import org.keycloak.models.jpa.entities.AuthenticatorConfigEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
+import org.keycloak.models.jpa.entities.ClientTemplateEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderMapperEntity;
@@ -2095,4 +2097,64 @@ public class RealmAdapter implements RealmModel {
     public void addTopLevelGroup(GroupModel subGroup) {
         subGroup.setParent(null);
     }
+
+    @Override
+    public List<ClientTemplateModel> getClientTemplates() {
+        List<ClientTemplateModel> list = new LinkedList<>();
+        if (realm.getClientTemplates() == null) return list;
+        for (ClientTemplateEntity entity : realm.getClientTemplates()) {
+            list.add(new ClientTemplateAdapter(this, em, session, entity));
+        }
+        return list;
+    }
+
+    @Override
+    public ClientTemplateModel addClientTemplate(String name) {
+        return this.addClientTemplate(KeycloakModelUtils.generateId(), name);
+    }
+
+    @Override
+    public ClientTemplateModel addClientTemplate(String id, String name) {
+        ClientTemplateEntity entity = new ClientTemplateEntity();
+        entity.setId(id);
+        entity.setName(name);
+        entity.setRealm(realm);
+        realm.getClientTemplates().add(entity);
+        em.persist(entity);
+        em.flush();
+        final ClientTemplateModel resource = new ClientTemplateAdapter(this, em, session, entity);
+        em.flush();
+        return resource;
+    }
+
+    @Override
+    public boolean removeClientTemplate(String id) {
+        if (id == null) return false;
+        ClientTemplateModel client = getClientTemplateById(id);
+        if (client == null) return false;
+
+        ClientTemplateEntity clientEntity = null;
+        Iterator<ClientTemplateEntity> it = realm.getClientTemplates().iterator();
+        while (it.hasNext()) {
+            ClientTemplateEntity ae = it.next();
+            if (ae.getId().equals(id)) {
+                clientEntity = ae;
+                it.remove();
+                break;
+            }
+        }
+        if (client == null) {
+            return false;
+        }
+        em.remove(clientEntity);
+        em.flush();
+
+        return true;
+    }
+
+    @Override
+    public ClientTemplateModel getClientTemplateById(String id) {
+        return session.realms().getClientTemplateById(id, this);
+    }
+
 }

@@ -48,6 +48,7 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private List<String> scopeIds = new ArrayList<String>();
     private List<ClientIdentityProviderMappingEntity> identityProviders = new ArrayList<ClientIdentityProviderMappingEntity>();
     private List<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
+    private String clientTemplate;
 
     public String getClientId() {
         return clientId;
@@ -299,6 +300,14 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setRegisteredNodes(Map<String, Integer> registeredNodes) {
         this.registeredNodes = registeredNodes;
+    }
+
+    public String getClientTemplate() {
+        return clientTemplate;
+    }
+
+    public void setClientTemplate(String clientTemplate) {
+        this.clientTemplate = clientTemplate;
     }
 }
 

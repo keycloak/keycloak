@@ -65,6 +65,7 @@ public class RealmRepresentation {
     protected List<ScopeMappingRepresentation> scopeMappings;
     protected Map<String, List<ScopeMappingRepresentation>> clientScopeMappings;
     protected List<ClientRepresentation> clients;
+    protected List<ClientTemplateRepresentation> clientTemplates;
     protected Map<String, String> browserSecurityHeaders;
     protected Map<String, String> smtpServer;
     protected List<UserFederationProviderRepresentation> userFederationProviders;
@@ -803,5 +804,13 @@ public class RealmRepresentation {
 
     public void setGroups(List<GroupRepresentation> groups) {
         this.groups = groups;
+    }
+
+    public List<ClientTemplateRepresentation> getClientTemplates() {
+        return clientTemplates;
+    }
+
+    public void setClientTemplates(List<ClientTemplateRepresentation> clientTemplates) {
+        this.clientTemplates = clientTemplates;
     }
 }

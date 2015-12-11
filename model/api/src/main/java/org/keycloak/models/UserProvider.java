@@ -57,7 +57,7 @@ public interface UserProvider extends Provider {
     void preRemove(RealmModel realm, GroupModel group);
 
     void preRemove(RealmModel realm, ClientModel client);
-    void preRemove(ClientModel realm, ProtocolMapperModel protocolMapper);
+    void preRemove(ProtocolMapperModel protocolMapper);
 
     boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> input);
     boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel... input);

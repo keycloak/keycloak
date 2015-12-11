@@ -55,6 +55,20 @@ public class ClientAdapter implements ClientModel {
         updated.setWebOrigins(webOrigins);
     }
 
+    @Override
+    public ClientTemplateModel getClientTemplate() {
+        if (updated != null) return updated.getClientTemplate();
+        if (cached.getClientTemplate() == null) return null;
+        return cacheSession.getClientTemplateById(cached.getClientTemplate(), cachedRealm);
+    }
+
+    @Override
+    public void setClientTemplate(ClientTemplateModel template) {
+        getDelegateForUpdate();
+        updated.setClientTemplate(template);
+
+    }
+
     public void addWebOrigin(String webOrigin) {
         getDelegateForUpdate();
         updated.addWebOrigin(webOrigin);

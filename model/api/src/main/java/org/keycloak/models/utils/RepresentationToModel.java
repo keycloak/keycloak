@@ -1,5 +1,6 @@
 package org.keycloak.models.utils;
 
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.Constants;
 import org.keycloak.common.util.Base64;
 import org.jboss.logging.Logger;
@@ -35,6 +36,7 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -181,6 +183,10 @@ public class RepresentationToModel {
 
         importIdentityProviders(rep, newRealm);
         importIdentityProviderMappers(rep, newRealm);
+
+        if (rep.getClientTemplates() != null) {
+            createClientTemplates(session, rep, newRealm);
+        }
 
         if (rep.getClients() != null) {
             createClients(session, rep, newRealm);
@@ -878,6 +884,15 @@ public class RepresentationToModel {
             }
         }
 
+        if (resourceRep.getClientTemplate() != null) {
+            for (ClientTemplateModel template : realm.getClientTemplates()) {
+                if (template.getName().equals(resourceRep.getClientTemplate())) {
+                    client.setClientTemplate(template);
+                    break;
+                }
+            }
+        }
+
         return client;
     }
 
@@ -934,6 +949,61 @@ public class RepresentationToModel {
             }
         }
 
+        if (rep.getClientTemplate() != null) {
+            if (rep.getClientTemplate().equals(ClientTemplateRepresentation.NONE)) {
+                resource.setClientTemplate(null);
+            } else {
+                RealmModel realm = resource.getRealm();
+                for (ClientTemplateModel template : realm.getClientTemplates()) {
+                    if (template.getName().equals(rep.getClientTemplate())) {
+                        resource.setClientTemplate(template);
+                        break;
+                    }
+                }
+            }
+        }
+
+
+    }
+
+    // CLIENT TEMPLATES
+
+    private static Map<String, ClientTemplateModel> createClientTemplates(KeycloakSession session, RealmRepresentation rep, RealmModel realm) {
+        Map<String, ClientTemplateModel> appMap = new HashMap<>();
+        for (ClientTemplateRepresentation resourceRep : rep.getClientTemplates()) {
+            ClientTemplateModel app = createClientTemplate(session, realm, resourceRep);
+            appMap.put(app.getName(), app);
+        }
+        return appMap;
+    }
+
+    public static ClientTemplateModel createClientTemplate(KeycloakSession session, RealmModel realm, ClientTemplateRepresentation resourceRep) {
+        logger.debug("Create client template: {0}" + resourceRep.getName());
+
+        ClientTemplateModel client = resourceRep.getId()!=null ? realm.addClientTemplate(resourceRep.getId(), resourceRep.getName()) : realm.addClientTemplate(resourceRep.getName());
+        if (resourceRep.getName() != null) client.setName(resourceRep.getName());
+        if(resourceRep.getDescription() != null) client.setDescription(resourceRep.getDescription());
+        if (resourceRep.getProtocol() != null) client.setProtocol(resourceRep.getProtocol());
+
+        if (resourceRep.getProtocolMappers() != null) {
+            // first, remove all default/built in mappers
+            Set<ProtocolMapperModel> mappers = client.getProtocolMappers();
+            for (ProtocolMapperModel mapper : mappers) client.removeProtocolMapper(mapper);
+
+            for (ProtocolMapperRepresentation mapper : resourceRep.getProtocolMappers()) {
+                client.addProtocolMapper(toModel(mapper));
+            }
+        }
+
+        return client;
+    }
+
+    public static void updateClientTemplate(ClientTemplateRepresentation rep, ClientTemplateModel resource) {
+        if (rep.getName() != null) resource.setName(rep.getName());
+        if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
+
+
+        if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
     }
 
     public static long getClaimsMask(ClaimRepresentation rep) {

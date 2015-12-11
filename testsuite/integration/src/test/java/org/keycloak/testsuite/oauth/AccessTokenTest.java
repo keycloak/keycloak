@@ -32,19 +32,24 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.VerificationException;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientTemplateResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
@@ -53,6 +58,9 @@ import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
@@ -63,7 +71,6 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.common.util.Time;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
@@ -75,7 +82,6 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -91,12 +97,15 @@ import static org.junit.Assert.*;
  */
 public class AccessTokenTest {
 
+    protected static Keycloak keycloak;
+
     @ClassRule
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
+            keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
         }
 
     });
@@ -393,7 +402,8 @@ public class AccessTokenTest {
         {
             Response response = validateTarget.queryParam("access_token", "bad token").request().get();
             Assert.assertEquals(400, response.getStatus());
-            HashMap<String, String> error = response.readEntity(new GenericType <HashMap<String, String>>() {});
+            HashMap<String, String> error = response.readEntity(new GenericType<HashMap<String, String>>() {
+            });
             Assert.assertNotNull(error.get("error"));
         }
 
@@ -428,7 +438,8 @@ public class AccessTokenTest {
         {
             Response response = validateTarget.queryParam("access_token", tokenResponse.getToken()).request().get();
             Assert.assertEquals(400, response.getStatus());
-            HashMap<String, String> error = response.readEntity(new GenericType <HashMap<String, String>>() {});
+            HashMap<String, String> error = response.readEntity(new GenericType<HashMap<String, String>>() {
+            });
             Assert.assertNotNull(error.get("error"));
         }
 
@@ -657,6 +668,7 @@ public class AccessTokenTest {
 
     }
 
+
     @Test
     public void testTokenMapping() throws Exception {
         Client client = ClientBuilder.newClient();
@@ -678,7 +690,8 @@ public class AccessTokenTest {
             ClientModel app = realm.getClientByClientId("test-app");
             ProtocolMapperModel mapper = AddressMapper.createAddressMapper(true, true);
             app.addProtocolMapper(mapper);
-            app.addProtocolMapper(HardcodedClaim.create("hard", "hard", "coded", "String", false, null, true, true));
+            ProtocolMapperModel hard = HardcodedClaim.create("hard", "hard", "coded", "String", false, null, true, true);
+            app.addProtocolMapper(hard);
             app.addProtocolMapper(HardcodedClaim.create("hard-nested", "nested.hard", "coded-nested", "String", false, null, true, true));
             app.addProtocolMapper(UserAttributeMapper.createClaimMapper("custom phone", "phone", "home_phone", "String", true, "", true, true, false));
             app.addProtocolMapper(UserAttributeMapper.createClaimMapper("nested phone", "phone", "home.phone", "String", true, "", true, true, false));
@@ -705,11 +718,11 @@ public class AccessTokenTest {
             Assert.assertNotNull(idToken.getOtherClaims().get("home_phone"));
             Assert.assertEquals("617-777-6666", idToken.getOtherClaims().get("home_phone"));
             Assert.assertEquals("coded", idToken.getOtherClaims().get("hard"));
-            Map nested = (Map)idToken.getOtherClaims().get("nested");
+            Map nested = (Map) idToken.getOtherClaims().get("nested");
             Assert.assertEquals("coded-nested", nested.get("hard"));
-            nested = (Map)idToken.getOtherClaims().get("home");
+            nested = (Map) idToken.getOtherClaims().get("home");
             Assert.assertEquals("617-777-6666", nested.get("phone"));
-            List<String> departments = (List<String>)idToken.getOtherClaims().get("department");
+            List<String> departments = (List<String>) idToken.getOtherClaims().get("department");
             Assert.assertEquals(2, departments.size());
             Assert.assertTrue(departments.contains("finance") && departments.contains("development"));
 
@@ -724,11 +737,11 @@ public class AccessTokenTest {
             Assert.assertNotNull(accessToken.getOtherClaims().get("home_phone"));
             Assert.assertEquals("617-777-6666", accessToken.getOtherClaims().get("home_phone"));
             Assert.assertEquals("coded", accessToken.getOtherClaims().get("hard"));
-            nested = (Map)accessToken.getOtherClaims().get("nested");
+            nested = (Map) accessToken.getOtherClaims().get("nested");
             Assert.assertEquals("coded-nested", nested.get("hard"));
-            nested = (Map)accessToken.getOtherClaims().get("home");
+            nested = (Map) accessToken.getOtherClaims().get("home");
             Assert.assertEquals("617-777-6666", nested.get("phone"));
-            departments = (List<String>)idToken.getOtherClaims().get("department");
+            departments = (List<String>) idToken.getOtherClaims().get("department");
             Assert.assertEquals(2, departments.size());
             Assert.assertTrue(departments.contains("finance") && departments.contains("development"));
             Assert.assertTrue(accessToken.getRealmAccess().getRoles().contains("hardcoded"));
@@ -739,7 +752,6 @@ public class AccessTokenTest {
 
             response.close();
         }
-        client.close();
 
         // undo mappers
         {
@@ -751,11 +763,12 @@ public class AccessTokenTest {
                         || model.getName().equals("hard")
                         || model.getName().equals("hard-nested")
                         || model.getName().equals("custom phone")
+                        || model.getName().equals("departments")
                         || model.getName().equals("nested phone")
                         || model.getName().equals("rename-app-role")
                         || model.getName().equals("hard-realm")
                         || model.getName().equals("hard-app")
-                        )   {
+                        ) {
                     app.removeProtocolMapper(model);
                 }
             }
@@ -763,7 +776,101 @@ public class AccessTokenTest {
             session.close();
         }
 
+        events.clear();
 
+
+        {
+            Response response = executeGrantAccessTokenRequest(grantTarget);
+            Assert.assertEquals(200, response.getStatus());
+            org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
+            IDToken idToken = getIdToken(tokenResponse);
+            Assert.assertNull(idToken.getAddress());
+            Assert.assertNull(idToken.getOtherClaims().get("home_phone"));
+            Assert.assertNull(idToken.getOtherClaims().get("hard"));
+            Assert.assertNull(idToken.getOtherClaims().get("nested"));
+            Assert.assertNull(idToken.getOtherClaims().get("department"));
+
+            response.close();
+        }
+
+
+        events.clear();
+        client.close();
+
+
+    }
+
+    @Test
+    public void testClientTemplate() throws Exception {
+        RealmResource realm = keycloak.realms().realm("test");
+        ClientTemplateRepresentation rep = new ClientTemplateRepresentation();
+        rep.setName("template");
+        rep.setProtocol("oidc");
+        Response response = realm.clientTemplates().create(rep);
+        Assert.assertEquals(201, response.getStatus());
+        URI templateUri = response.getLocation();
+        response.close();
+        ClientTemplateResource templateResource = keycloak.proxy(ClientTemplateResource.class, templateUri);
+        ProtocolMapperModel hard = HardcodedClaim.create("hard", "hard", "coded", "String", false, null, true, true);
+        ProtocolMapperRepresentation mapper = ModelToRepresentation.toRepresentation(hard);
+        response = templateResource.getProtocolMappers().createMapper(mapper);
+        Assert.assertEquals(201, response.getStatus());
+        response.close();
+        List<ClientRepresentation> clients = realm.clients().findAll();
+        ClientRepresentation clientRep = null;
+        for (ClientRepresentation c : clients) {
+            if (c.getClientId().equals("test-app")) {
+                clientRep = c;
+                break;
+            }
+
+        }
+        Assert.assertNotNull(clientRep);
+        clientRep.setClientTemplate("template");
+        realm.clients().get(clientRep.getId()).update(clientRep);
+
+        {
+            Client client = ClientBuilder.newClient();
+            UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+            URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
+            WebTarget grantTarget = client.target(grantUri);
+
+            response = executeGrantAccessTokenRequest(grantTarget);
+            Assert.assertEquals(200, response.getStatus());
+            org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
+            IDToken idToken = getIdToken(tokenResponse);
+            Assert.assertEquals("coded", idToken.getOtherClaims().get("hard"));
+
+            AccessToken accessToken = getAccessToken(tokenResponse);
+            Assert.assertEquals("coded", accessToken.getOtherClaims().get("hard"));
+
+
+            response.close();
+            client.close();
+        }
+        // undo mappers
+        clientRep.setClientTemplate(ClientTemplateRepresentation.NONE);
+        realm.clients().get(clientRep.getId()).update(clientRep);
+
+        {
+            Client client = ClientBuilder.newClient();
+            UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+            URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
+            WebTarget grantTarget = client.target(grantUri);
+
+            response = executeGrantAccessTokenRequest(grantTarget);
+            Assert.assertEquals(200, response.getStatus());
+            org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
+            IDToken idToken = getIdToken(tokenResponse);
+            Assert.assertNull(idToken.getOtherClaims().get("hard"));
+
+            AccessToken accessToken = getAccessToken(tokenResponse);
+            Assert.assertNull(accessToken.getOtherClaims().get("hard"));
+
+
+            response.close();
+            client.close();
+        }
         events.clear();
 
     }

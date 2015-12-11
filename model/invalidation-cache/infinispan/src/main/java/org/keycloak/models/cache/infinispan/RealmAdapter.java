@@ -1361,4 +1361,51 @@ public class RealmAdapter implements RealmModel {
         getDelegateForUpdate();
         updated.moveGroup(group, toParent);
     }
+
+    @Override
+    public List<ClientTemplateModel> getClientTemplates() {
+        if (updated != null) return updated.getClientTemplates();
+        List<ClientTemplateModel> apps = new LinkedList<ClientTemplateModel>();
+        for (String id : cached.getClientTemplates()) {
+            ClientTemplateModel model = cacheSession.getClientTemplateById(id, this);
+            if (model == null) {
+                throw new IllegalStateException("Cached clientemplate not found: " + id);
+            }
+            apps.add(model);
+        }
+        return apps;
+
+    }
+
+    @Override
+    public ClientTemplateModel addClientTemplate(String name) {
+        getDelegateForUpdate();
+        ClientTemplateModel app = updated.addClientTemplate(name);
+        cacheSession.registerClientTemplateInvalidation(app.getId());
+        return app;
+    }
+
+    @Override
+    public ClientTemplateModel addClientTemplate(String id, String name) {
+        getDelegateForUpdate();
+        ClientTemplateModel app =  updated.addClientTemplate(id, name);
+        cacheSession.registerClientTemplateInvalidation(app.getId());
+        return app;
+    }
+
+    @Override
+    public boolean removeClientTemplate(String id) {
+        cacheSession.registerClientTemplateInvalidation(id);
+        getDelegateForUpdate();
+        return updated.removeClientTemplate(id);
+    }
+
+    @Override
+    public ClientTemplateModel getClientTemplateById(String id) {
+        if (updated != null) return updated.getClientTemplateById(id);
+        return cacheSession.getClientTemplateById(id, this);
+    }
+
+
+
 }

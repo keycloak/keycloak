@@ -348,7 +348,7 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
-    public void preRemove(ClientModel client, ProtocolMapperModel protocolMapper) {
-        getDelegate().preRemove(client, protocolMapper);
+    public void preRemove(ProtocolMapperModel protocolMapper) {
+        getDelegate().preRemove(protocolMapper);
     }
 }

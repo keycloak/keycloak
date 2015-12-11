@@ -4,6 +4,7 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
@@ -363,7 +364,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     public void removeProtocolMapper(ProtocolMapperModel mapping) {
         for (ProtocolMapperEntity entity : getMongoEntity().getProtocolMappers()) {
             if (entity.getId().equals(mapping.getId())) {
-                session.users().preRemove(this, mapping);
+                session.users().preRemove(mapping);
 
                 getMongoEntity().getProtocolMappers().remove(entity);
                 updateMongoEntity();
@@ -713,5 +714,16 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
         return getId().hashCode();
     }
 
+    @Override
+    public ClientTemplateModel getClientTemplate() {
+        if (getMongoEntity().getClientTemplate() == null) return null;
+        return session.realms().getClientTemplateById(getMongoEntity().getClientTemplate(), realm);
+    }
 
+    @Override
+    public void setClientTemplate(ClientTemplateModel template) {
+        getMongoEntity().setClientTemplate(template.getId());
+        updateMongoEntity();
+
+    }
 }

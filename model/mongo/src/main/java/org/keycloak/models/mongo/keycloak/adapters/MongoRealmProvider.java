@@ -7,12 +7,14 @@ import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoClientTemplateEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoGroupEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoMigrationModelEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
@@ -143,4 +145,15 @@ public class MongoRealmProvider implements RealmProvider {
         return new ClientAdapter(session, realm, appData, invocationContext);
     }
 
+    @Override
+    public ClientTemplateModel getClientTemplateById(String id, RealmModel realm) {
+        MongoClientTemplateEntity appData = getMongoStore().loadEntity(MongoClientTemplateEntity.class, id, invocationContext);
+
+        // Check if application belongs to this realm
+        if (appData == null || !realm.getId().equals(appData.getRealmId())) {
+            return null;
+        }
+
+        return new ClientTemplateAdapter(session, realm, appData, invocationContext);
+    }
 }

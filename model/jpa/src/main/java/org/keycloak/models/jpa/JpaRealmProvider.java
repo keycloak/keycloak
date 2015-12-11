@@ -2,12 +2,14 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
+import org.keycloak.models.jpa.entities.ClientTemplateEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
@@ -145,4 +147,12 @@ public class JpaRealmProvider implements RealmProvider {
         return new ClientAdapter(realm, em, session, app);
     }
 
+    @Override
+    public ClientTemplateModel getClientTemplateById(String id, RealmModel realm) {
+        ClientTemplateEntity app = em.find(ClientTemplateEntity.class, id);
+
+        // Check if application belongs to this realm
+        if (app == null || !realm.getId().equals(app.getRealm().getId())) return null;
+        return new ClientTemplateAdapter(realm, em, session, app);
+    }
 }

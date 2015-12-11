@@ -7,6 +7,46 @@
                 <constraints nullable="true"/>
             </column>
         </addColumn>
+        <createTable tableName="CLIENT_TEMPLATE">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="DESCRIPTION" type="VARCHAR(255)"/>
+            <column name="PROTOCOL" type="VARCHAR(255)"/>
+        </createTable>
+
+
+
+        <dropNotNullConstraint tableName="PROTOCOL_MAPPER" columnName="CLIENT_ID" columnDataType="VARCHAR(36)"/>
+        <addColumn tableName="CLIENT">
+            <column name="CLIENT_TEMPLATE_ID" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="PROTOCOL_MAPPER">
+            <column name="CLIENT_TEMPLATE_ID" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <createTable tableName="REALM_CLIENT_TEMPLATE">
+            <column name="CLIENT_TEMPLATE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="ID" constraintName="PK_CLI_TEMPLATE" tableName="CLIENT_TEMPLATE"/>
+        <addUniqueConstraint columnNames="REALM_ID,NAME" constraintName="UK_CLI_TEMPLATE" tableName="CLIENT_TEMPLATE"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="CLIENT_TEMPLATE" constraintName="FK_REALM_CLI_TMPLT" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_TEMPLATE_ID" baseTableName="PROTOCOL_MAPPER" constraintName="FK_CLI_TMPLT_MAPPER" referencedColumnNames="ID" referencedTableName="CLIENT_TEMPLATE"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_TEMPLATE_ID" baseTableName="CLIENT" constraintName="FK_CLI_TMPLT_CLIENT" referencedColumnNames="ID" referencedTableName="CLIENT_TEMPLATE"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_CLIENT_TEMPLATE" constraintName="FK_RLM_CLI_TMPLT_RLM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_TEMPLATE_ID" baseTableName="REALM_CLIENT_TEMPLATE" constraintName="FK_RLM_CLI_TMPLT_CLI" referencedColumnNames="ID" referencedTableName="CLIENT_TEMPLATE"/>
+
 
     </changeSet>
 </databaseChangeLog>

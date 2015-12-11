@@ -145,6 +145,18 @@ public class RealmAdminResource {
     }
 
     /**
+     * Base path for managing client templates under this realm.
+     *
+     * @return
+     */
+    @Path("client-templates")
+    public ClientTemplatesResource getClientTemplates() {
+        ClientTemplatesResource clientsResource = new ClientTemplatesResource(realm, auth, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(clientsResource);
+        return clientsResource;
+    }
+
+    /**
      * Base path for managing client initial access tokens
      *
      * @return
