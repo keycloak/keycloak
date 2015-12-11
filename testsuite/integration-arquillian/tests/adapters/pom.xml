@@ -15,8 +15,10 @@
     <properties>
         <app.server.port.offset>200</app.server.port.offset>
         <app.server.http.port>8280</app.server.http.port>
+        <app.server.https.port>8643</app.server.https.port>
         <app.server.management.port>10190</app.server.management.port>
         <app.server.management.port.jmx>10199</app.server.management.port.jmx>
+        <app.server.ssl.required>false</app.server.ssl.required>
         <adapter.test.props>-Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</adapter.test.props>
         <exclude.adapters>-</exclude.adapters>
         
@@ -91,9 +93,11 @@
 
                             <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
                             <app.server.http.port>${app.server.http.port}</app.server.http.port>
+                            <app.server.https.port>${app.server.https.port}</app.server.https.port>
                             <app.server.management.port>${app.server.management.port}</app.server.management.port>
                             <app.server.management.port.jmx>${app.server.management.port.jmx}</app.server.management.port.jmx>
-                            
+                            <app.server.ssl.required>${app.server.ssl.required}</app.server.ssl.required>
+
                             <adapter.test.props>${adapter.test.props}</adapter.test.props>
 
                             <adapter.libs.mode>bundled</adapter.libs.mode>

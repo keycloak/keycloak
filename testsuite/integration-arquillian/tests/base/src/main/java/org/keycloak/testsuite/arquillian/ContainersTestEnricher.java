@@ -249,13 +249,19 @@ public class ContainersTestEnricher {
 
     public static String getAuthServerContextRootFromSystemProperty() {
         // TODO find if this can be extracted from ARQ metadata instead of System properties
-        return "http://localhost:" + Integer.parseInt(
-                System.getProperty("auth.server.http.port", "8180"));
+        boolean sslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
+        if (sslRequired) {
+            return "https://localhost:" + Integer.parseInt(System.getProperty("auth.server.https.port", "8543"));
+        }
+        return "http://localhost:" + Integer.parseInt(System.getProperty("auth.server.http.port", "8180"));
     }
 
     public static String getAppServerContextRootFromSystemProperty() {
-        return "http://localhost:" + Integer.parseInt(
-                System.getProperty("app.server.http.port", "8280"));
+        boolean sslRequired = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
+        if (sslRequired) {
+            return "https://localhost:" + Integer.parseInt(System.getProperty("app.server.https.port", "8643"));
+        }
+        return "http://localhost:" + Integer.parseInt(System.getProperty("app.server.http.port", "8280"));
     }
 
 }
