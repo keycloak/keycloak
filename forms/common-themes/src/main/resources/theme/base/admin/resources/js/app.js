@@ -784,7 +784,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'AddBuiltinProtocolMapperCtrl'
         })
         .when('/realms/:realm/clients/:client/mappers/:id', {
-            templateUrl : resourceUrl + '/partials/protocol-mapper-detail.html',
+            templateUrl : resourceUrl + '/partials/client-protocol-mapper-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -803,7 +803,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ClientProtocolMapperCtrl'
         })
         .when('/create/client/:realm/:client/mappers', {
-            templateUrl : resourceUrl + '/partials/protocol-mapper-detail.html',
+            templateUrl : resourceUrl + '/partials/client-protocol-mapper-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -816,6 +816,70 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ClientProtocolMapperCreateCtrl'
+        })
+        .when('/realms/:realm/client-templates/:template/mappers', {
+            templateUrl : resourceUrl + '/partials/client-template-mappers.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                template : function(ClientTemplateLoader) {
+                    return ClientTemplateLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'ClientTemplateProtocolMapperListCtrl'
+        })
+        .when('/realms/:realm/client-templates/:template/add-mappers', {
+            templateUrl : resourceUrl + '/partials/client-template-mappers-add.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                template : function(ClientTemplateLoader) {
+                    return ClientTemplateLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'ClientTemplateAddBuiltinProtocolMapperCtrl'
+        })
+        .when('/realms/:realm/client-templates/:template/mappers/:id', {
+            templateUrl : resourceUrl + '/partials/client-template-protocol-mapper-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                template : function(ClientTemplateLoader) {
+                    return ClientTemplateLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                mapper : function(ClientTemplateProtocolMapperLoader) {
+                    return ClientTemplateProtocolMapperLoader();
+                }
+
+            },
+            controller : 'ClientTemplateProtocolMapperCtrl'
+        })
+        .when('/create/client-template/:realm/:template/mappers', {
+            templateUrl : resourceUrl + '/partials/client-template-protocol-mapper-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                template : function(ClientTemplateLoader) {
+                    return ClientTemplateLoader();
+                }
+            },
+            controller : 'ClientTemplateProtocolMapperCreateCtrl'
         })
         .when('/realms/:realm/clients/:client/sessions', {
             templateUrl : resourceUrl + '/partials/client-sessions.html',
@@ -1063,6 +1127,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
+                templates : function(ClientTemplateListLoader) {
+                    return ClientTemplateListLoader();
+                },
                 clients : function(ClientListLoader) {
                     return ClientListLoader();
                 },
@@ -1081,6 +1148,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
+                templates : function(ClientTemplateListLoader) {
+                    return ClientTemplateListLoader();
+                },
                 clients : function(ClientListLoader) {
                     return ClientListLoader();
                 },
@@ -1092,6 +1162,42 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ClientDetailCtrl'
+        })
+        .when('/create/client-template/:realm', {
+            templateUrl : resourceUrl + '/partials/client-template-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                templates : function(ClientTemplateListLoader) {
+                    return ClientTemplateListLoader();
+                },
+                template : function() {
+                    return {};
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'ClientTemplateDetailCtrl'
+        })
+        .when('/realms/:realm/client-templates/:template', {
+            templateUrl : resourceUrl + '/partials/client-template-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                templates : function(ClientTemplateListLoader) {
+                    return ClientTemplateListLoader();
+                },
+                template : function(ClientTemplateLoader) {
+                    return ClientTemplateLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'ClientTemplateDetailCtrl'
         })
         .when('/realms/:realm/clients', {
             templateUrl : resourceUrl + '/partials/client-list.html',
@@ -1108,6 +1214,22 @@ module.config([ '$routeProvider', function($routeProvider) {
 
             },
             controller : 'ClientListCtrl'
+        })
+        .when('/realms/:realm/client-templates', {
+            templateUrl : resourceUrl + '/partials/client-template-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                templates : function(ClientTemplateListLoader) {
+                    return ClientTemplateListLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+
+            },
+            controller : 'ClientTemplateListCtrl'
         })
         .when('/import/client/:realm', {
             templateUrl : resourceUrl + '/partials/client-import.html',
@@ -2022,6 +2144,15 @@ module.directive('kcTabsClient', function () {
         restrict: 'E',
         replace: true,
         templateUrl: resourceUrl + '/templates/kc-tabs-client.html'
+    }
+});
+
+module.directive('kcTabsClientTemplate', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-client-template.html'
     }
 });
 

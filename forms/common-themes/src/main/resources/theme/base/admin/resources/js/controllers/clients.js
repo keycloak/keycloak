@@ -726,7 +726,10 @@ module.controller('ClientInstallationCtrl', function($scope, realm, client, Clie
     }
 });
 
-module.controller('ClientDetailCtrl', function($scope, realm, client, $route, serverInfo, Client, ClientDescriptionConverter, $location, $modal, Dialog, Notifications) {
+module.controller('ClientDetailCtrl', function($scope, realm, client, templates, $route, serverInfo, Client, ClientDescriptionConverter, $location, $modal, Dialog, Notifications) {
+
+
+
     $scope.accessTypes = [
         "confidential",
         "public",
@@ -734,6 +737,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, $route, se
     ];
 
     $scope.protocols = Object.keys(serverInfo.providers['login-protocol'].providers).sort();
+
+    $scope.templates = [ {name:'NONE'}];
+    for (var i = 0; i < templates.length; i++) {
+        var template = templates[i];
+        $scope.templates.push(template);
+    }
 
     $scope.signatureAlgorithms = [
         "RSA_SHA1",
@@ -1444,22 +1453,32 @@ module.controller('ClientProtocolMapperListCtrl', function($scope, realm, client
 });
 
 module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo, client, mapper, ClientProtocolMapper, Notifications, Dialog, $location) {
+    /*
     $scope.realm = realm;
     $scope.client = client;
     $scope.create = false;
-    if (client.protocol == null) {
-        client.protocol = 'openid-connect';
-    }
     $scope.protocol = client.protocol;
     $scope.mapper = angular.copy(mapper);
     $scope.changed = false;
-    $scope.boolval = true;
-    $scope.boolvalId = 'boolval';
+    */
+
+    if (client.protocol == null) {
+        client.protocol = 'openid-connect';
+    }
+
+    $scope.model = {
+        realm: realm,
+        client: client,
+        create: false,
+        protocol: client.protocol,
+        mapper: angular.copy(mapper),
+        changed: false
+    }
 
     var protocolMappers = serverInfo.protocolMapperTypes[client.protocol];
     for (var i = 0; i < protocolMappers.length; i++) {
         if (protocolMappers[i].id == mapper.protocolMapper) {
-            $scope.mapperType = protocolMappers[i];
+            $scope.model.mapperType = protocolMappers[i];
         }
     }
     $scope.$watch(function() {
@@ -1468,9 +1487,9 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
         $scope.path = $location.path().substring(1).split("/");
     });
 
-    $scope.$watch('mapper', function() {
-        if (!angular.equals($scope.mapper, mapper)) {
-            $scope.changed = true;
+    $scope.$watch('model.mapper', function() {
+        if (!angular.equals($scope.model.mapper, mapper)) {
+            $scope.model.changed = true;
         }
     }, true);
 
@@ -1479,17 +1498,17 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
             realm : realm.realm,
             client: client.id,
             id : mapper.id
-        }, $scope.mapper, function() {
-            $scope.changed = false;
+        }, $scope.model.mapper, function() {
+            $scope.model.changed = false;
             mapper = angular.copy($scope.mapper);
-            $location.url("/realms/" + realm.realm + '/clients/' + client.id + "/mappers/" + mapper.id);
+            $location.url("/realms/" + realm.realm + '/clients/' + client.id + "/mappers/" + $scope.model.mapper.id);
             Notifications.success("Your changes have been saved.");
         });
     };
 
     $scope.reset = function() {
-        $scope.mapper = angular.copy(mapper);
-        $scope.changed = false;
+        $scope.model.mapper = angular.copy(mapper);
+        $scope.model.changed = false;
     };
 
     $scope.cancel = function() {
@@ -1499,7 +1518,7 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
 
     $scope.remove = function() {
         Dialog.confirmDelete($scope.mapper.name, 'mapper', function() {
-            ClientProtocolMapper.remove({ realm: realm.realm, client: client.id, id : $scope.mapper.id }, function() {
+            ClientProtocolMapper.remove({ realm: realm.realm, client: client.id, id : $scope.model.mapper.id }, function() {
                 Notifications.success("The mapper has been deleted.");
                 $location.url("/realms/" + realm.realm + '/clients/' + client.id + "/mappers");
             });
@@ -1509,16 +1528,27 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
 });
 
 module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serverInfo, client, ClientProtocolMapper, Notifications, Dialog, $location) {
-    $scope.realm = realm;
-    $scope.client = client;
-    $scope.create = true;
     if (client.protocol == null) {
         client.protocol = 'openid-connect';
     }
     var protocol = client.protocol;
+    /*
+    $scope.realm = realm;
+    $scope.client = client;
+    $scope.create = true;
     $scope.protocol = protocol;
     $scope.mapper = { protocol :  client.protocol, config: {}};
     $scope.mapperTypes = serverInfo.protocolMapperTypes[protocol];
+    */
+    $scope.model = {
+        realm: realm,
+        client: client,
+        create: true,
+        protocol: client.protocol,
+        mapper: { protocol :  client.protocol, config: {}},
+        changed: false,
+        mapperTypes: serverInfo.protocolMapperTypes[protocol]
+    }
 
     $scope.$watch(function() {
         return $location.path();
@@ -1527,10 +1557,10 @@ module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serv
     });
 
     $scope.save = function() {
-        $scope.mapper.protocolMapper = $scope.mapperType.id;
+        $scope.model.mapper.protocolMapper = $scope.model.mapperType.id;
         ClientProtocolMapper.save({
             realm : realm.realm, client: client.id
-        }, $scope.mapper, function(data, headers) {
+        }, $scope.model.mapper, function(data, headers) {
             var l = headers().location;
             var id = l.substring(l.lastIndexOf("/") + 1);
             $location.url("/realms/" + realm.realm + '/clients/' + client.id + "/mappers/" + id);
@@ -1545,6 +1575,336 @@ module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serv
 
 
 });
+
+module.controller('ClientTemplateTabCtrl', function(Dialog, $scope, Current, Notifications, $location) {
+    $scope.removeClientTemplate = function() {
+        Dialog.confirmDelete($scope.template.name, 'client template', function() {
+            $scope.template.$remove({
+                realm : Current.realm.realm,
+                template : $scope.template.id
+            }, function() {
+                $location.url("/realms/" + Current.realm.realm + "/client-templates");
+                Notifications.success("The client template has been deleted.");
+            });
+        });
+    };
+});
+
+
+
+module.controller('ClientTemplateListCtrl', function($scope, realm, templates, ClientTemplate, serverInfo, $route, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.templates = templates;
+
+    $scope.removeClientTemplate = function(template) {
+        Dialog.confirmDelete(template.name, 'client template', function() {
+            ClientTemplate.remove({
+                realm : realm.realm,
+                template : template.id
+            }, function() {
+                $route.reload();
+                Notifications.success("The client template been deleted.");
+            });
+        });
+    };
+});
+
+module.controller('ClientTemplateDetailCtrl', function($scope, realm, template, $route, serverInfo, ClientTemplate, $location, $modal, Dialog, Notifications) {
+    $scope.protocols = Object.keys(serverInfo.providers['login-protocol'].providers).sort();
+
+    $scope.realm = realm;
+    $scope.create = !template.name;
+
+    function updateProperties() {
+        if ($scope.template.protocol) {
+            $scope.protocol = $scope.protocols[$scope.protocols.indexOf($scope.template.protocol)];
+        } else {
+            $scope.protocol = $scope.protocols[0];
+        }
+    }
+
+    if (!$scope.create) {
+        $scope.template = angular.copy(template);
+        updateProperties();
+    } else {
+        $scope.template = {
+        };
+        $scope.protocol = $scope.protocols[0];
+    }
+
+
+    $scope.switchChange = function() {
+        $scope.changed = true;
+    }
+
+    $scope.changeProtocol = function() {
+        if ($scope.protocol == "openid-connect") {
+            $scope.template.protocol = "openid-connect";
+        } else if ($scope.protocol == "saml") {
+            $scope.template.protocol = "saml";
+        }
+    };
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
+    function isChanged() {
+        if (!angular.equals($scope.template, template)) {
+            return true;
+        }
+        return false;
+    }
+
+    $scope.$watch('template', function() {
+        $scope.changed = isChanged();
+    }, true);
+
+    $scope.save = function() {
+        $scope.template.protocol = $scope.protocol;
+
+        if ($scope.create) {
+            ClientTemplate.save({
+                realm: realm.realm,
+                template: ''
+            }, $scope.template, function (data, headers) {
+                $scope.changed = false;
+                var l = headers().location;
+                var id = l.substring(l.lastIndexOf("/") + 1);
+                $location.url("/realms/" + realm.realm + "/client-templates/" + id);
+                Notifications.success("The client template has been created.");
+            });
+        } else {
+            ClientTemplate.update({
+                realm : realm.realm,
+                template : template.id
+            }, $scope.template, function() {
+                $scope.changed = false;
+                template = angular.copy($scope.template);
+                $location.url("/realms/" + realm.realm + "/client-templates/" + template.id);
+                Notifications.success("Your changes have been saved to the client template.");
+            });
+        }
+    };
+
+    $scope.reset = function() {
+        $route.reload();
+    };
+
+    $scope.cancel = function() {
+        $location.url("/realms/" + realm.realm + "/client-templates");
+    };
+});
+
+module.controller('ClientTemplateProtocolMapperListCtrl', function($scope, realm, template, serverInfo,
+                                                           ClientTemplateProtocolMappersByProtocol, ClientTemplateProtocolMapper,
+                                                           $route, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.template = template;
+    if (template.protocol == null) {
+        template.protocol = 'openid-connect';
+    }
+
+    var protocolMappers = serverInfo.protocolMapperTypes[template.protocol];
+    var mapperTypes = {};
+    for (var i = 0; i < protocolMappers.length; i++) {
+        mapperTypes[protocolMappers[i].id] = protocolMappers[i];
+    }
+    $scope.mapperTypes = mapperTypes;
+
+    $scope.removeMapper = function(mapper) {
+        console.debug(mapper);
+        Dialog.confirmDelete(mapper.name, 'mapper', function() {
+            ClientTemplateProtocolMapper.remove({ realm: realm.realm, template: template.id, id : mapper.id }, function() {
+                Notifications.success("The mapper has been deleted.");
+                $route.reload();
+            });
+        });
+    };
+
+    var updateMappers = function() {
+        $scope.mappers = ClientTemplateProtocolMappersByProtocol.query({realm : realm.realm, template : template.id, protocol : template.protocol});
+    };
+
+    updateMappers();
+});
+
+module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, serverInfo, template, mapper, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
+
+    if (template.protocol == null) {
+        template.protocol = 'openid-connect';
+    }
+
+    $scope.model = {
+        realm: realm,
+        template: template,
+        create: false,
+        protocol: template.protocol,
+        mapper: angular.copy(mapper),
+        changed: false
+    }
+
+    var protocolMappers = serverInfo.protocolMapperTypes[template.protocol];
+    for (var i = 0; i < protocolMappers.length; i++) {
+        if (protocolMappers[i].id == mapper.protocolMapper) {
+            $scope.model.mapperType = protocolMappers[i];
+        }
+    }
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
+    $scope.$watch('model.mapper', function() {
+        if (!angular.equals($scope.model.mapper, mapper)) {
+            $scope.model.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        ClientTemplateProtocolMapper.update({
+            realm : realm.realm,
+            template: template.id,
+            id : mapper.id
+        }, $scope.model.mapper, function() {
+            $scope.model.changed = false;
+            mapper = angular.copy($scope.mapper);
+            $location.url("/realms/" + realm.realm + '/client-templates/' + template.id + "/mappers/" + $scope.model.mapper.id);
+            Notifications.success("Your changes have been saved.");
+        });
+    };
+
+    $scope.reset = function() {
+        $scope.model.mapper = angular.copy(mapper);
+        $scope.model.changed = false;
+    };
+
+    $scope.cancel = function() {
+        //$location.url("/realms");
+        window.history.back();
+    };
+
+    $scope.remove = function() {
+        Dialog.confirmDelete($scope.mapper.name, 'mapper', function() {
+            ClientTemplateProtocolMapper.remove({ realm: realm.realm, template: template.id, id : $scope.model.mapper.id }, function() {
+                Notifications.success("The mapper has been deleted.");
+                $location.url("/realms/" + realm.realm + '/client-templates/' + template.id + "/mappers");
+            });
+        });
+    };
+
+});
+
+module.controller('ClientTemplateProtocolMapperCreateCtrl', function($scope, realm, serverInfo, template, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
+    if (template.protocol == null) {
+        template.protocol = 'openid-connect';
+    }
+    var protocol = template.protocol;
+    $scope.model = {
+        realm: realm,
+        template: template,
+        create: true,
+        protocol: template.protocol,
+        mapper: { protocol :  template.protocol, config: {}},
+        changed: false,
+        mapperTypes: serverInfo.protocolMapperTypes[protocol]
+    }
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
+    $scope.save = function() {
+        $scope.model.mapper.protocolMapper = $scope.model.mapperType.id;
+        ClientTemplateProtocolMapper.save({
+            realm : realm.realm, template: template.id
+        }, $scope.model.mapper, function(data, headers) {
+            var l = headers().location;
+            var id = l.substring(l.lastIndexOf("/") + 1);
+            $location.url("/realms/" + realm.realm + '/client-templates/' + template.id + "/mappers/" + id);
+            Notifications.success("Mapper has been created.");
+        });
+    };
+
+    $scope.cancel = function() {
+        //$location.url("/realms");
+        window.history.back();
+    };
+
+
+});
+
+module.controller('ClientTemplateAddBuiltinProtocolMapperCtrl', function($scope, realm, template, serverInfo,
+                                                           ClientTemplateProtocolMappersByProtocol,
+                                                           $http, $location, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.template = template;
+    if (template.protocol == null) {
+        template.protocol = 'openid-connect';
+    }
+
+    var protocolMappers = serverInfo.protocolMapperTypes[template.protocol];
+    var mapperTypes = {};
+    for (var i = 0; i < protocolMappers.length; i++) {
+        mapperTypes[protocolMappers[i].id] = protocolMappers[i];
+    }
+    $scope.mapperTypes = mapperTypes;
+
+
+
+
+    var updateMappers = function() {
+        var clientMappers = ClientTemplateProtocolMappersByProtocol.query({realm : realm.realm, template : template.id, protocol : template.protocol}, function() {
+            var builtinMappers = serverInfo.builtinProtocolMappers[template.protocol];
+            for (var i = 0; i < clientMappers.length; i++) {
+                for (var j = 0; j < builtinMappers.length; j++) {
+                    if (builtinMappers[j].name == clientMappers[i].name
+                        && builtinMappers[j].protocolMapper == clientMappers[i].protocolMapper) {
+                        builtinMappers.splice(j, 1);
+                        break;
+                    }
+                }
+            }
+            $scope.mappers = builtinMappers;
+            for (var i = 0; i < $scope.mappers.length; i++) {
+                $scope.mappers[i].isChecked = false;
+            }
+
+
+        });
+    };
+
+    updateMappers();
+
+    $scope.add = function() {
+        var toAdd = [];
+        for (var i = 0; i < $scope.mappers.length; i++) {
+            if ($scope.mappers[i].isChecked) {
+                delete $scope.mappers[i].isChecked;
+                toAdd.push($scope.mappers[i]);
+            }
+        }
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/client-templates/' + template.id + '/protocol-mappers/add-models',
+            toAdd).success(function() {
+                Notifications.success("Mappers added");
+                $location.url('/realms/' + realm.realm + '/client-templates/' + template.id +  '/mappers');
+            }).error(function() {
+                Notifications.error("Error adding mappers");
+                $location.url('/realms/' + realm.realm + '/client-templates/' + template.id +  '/mappers');
+            });
+    };
+
+});
+
+
+
+
+
 
 
 

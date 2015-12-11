@@ -309,6 +309,18 @@ module.factory('ClientProtocolMapper', function($resource) {
     });
 });
 
+module.factory('ClientTemplateProtocolMapper', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/protocol-mappers/models/:id', {
+        realm : '@realm',
+        template: '@template',
+        id : "@id"
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
 module.factory('User', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:userId', {
         realm : '@realm',
@@ -828,6 +840,14 @@ module.factory('ClientProtocolMappersByProtocol', function($resource) {
     });
 });
 
+module.factory('ClientTemplateProtocolMappersByProtocol', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/protocol-mappers/protocol/:protocol', {
+        realm : '@realm',
+        template : "@template",
+        protocol : "@protocol"
+    });
+});
+
 module.factory('ClientSessionStats', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/clients/:client/session-stats', {
         realm : '@realm',
@@ -955,6 +975,18 @@ module.factory('Client', function($resource) {
         }
     });
 });
+
+module.factory('ClientTemplate', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template', {
+        realm : '@realm',
+        template : '@template'
+    },  {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
 
 module.factory('ClientDescriptionConverter', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/client-description-converter', {

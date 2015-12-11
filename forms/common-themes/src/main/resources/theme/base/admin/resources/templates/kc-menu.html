@@ -29,7 +29,8 @@
     || path[2] == 'keys-settings' || path[2] == 'smtp-settings' || path[2] == 'ldap-settings' || path[2] == 'auth-settings') && path[3] != 'clients') && 'active'">
                 <a href="#/realms/{{realm.realm}}"><span class="pficon pficon-settings"></span> Realm Settings</a>
             </li>
-            <li data-ng-show="access.viewClients" data-ng-class="(path[2] == 'clients' || path[1] == 'client' || path[3] == 'clients') && 'active'"><a href="#/realms/{{realm.realm}}/clients"><i class="fa fa-cubes"></i> Clients</a></li>
+            <li data-ng-show="access.viewClients" data-ng-class="(path[2] == 'clients' || path[1] == 'client' || path[3] == 'clients') && 'active'"><a href="#/realms/{{realm.realm}}/clients"><i class="fa fa-cube"></i> Clients</a></li>
+            <li data-ng-show="access.viewClients" data-ng-class="(path[2] == 'client-templates' || path[1] == 'client-template' || path[3] == 'client-templates') && 'active'"><a href="#/realms/{{realm.realm}}/client-templates"><i class="fa fa-cubes"></i> Client Templates</a></li>
             <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'roles' || path[2] == 'default-roles' || (path[1] == 'role' && path[3] != 'clients')) && 'active'"><a href="#/realms/{{realm.realm}}/roles"><i class="fa fa-tasks"></i> Roles</a></li>
             <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'identity-provider-settings' || path[2] == 'identity-provider-mappers') && 'active'"><a href="#/realms/{{realm.realm}}/identity-provider-settings"><i class="fa fa-exchange"></i> Identity Providers</a></li>
             <li data-ng-show="access.viewRealm" data-ng-class="(path[1] == 'user-federation' || path[2] == 'user-federation') && 'active'"><a href="#/realms/{{realm.realm}}/user-federation"><i class="fa fa-database"></i> User Federation</a></li>

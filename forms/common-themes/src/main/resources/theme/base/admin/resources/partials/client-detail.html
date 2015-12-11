@@ -72,6 +72,18 @@
                 </div>
                 <kc-tooltip>{{:: 'client-protocol.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="protocol">Client Template</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="template"
+                                ng-model="client.clientTemplate"
+                                ng-options="template.name as template.name for template in templates">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>Client template this client inherits configuration from</kc-tooltip>
+            </div>
             <div class="form-group" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="accessType">{{:: 'access-type' | translate}}</label>
                 <div class="col-sm-6">
