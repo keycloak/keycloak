@@ -166,17 +166,17 @@
                     <groupId>org.jboss.arquillian.extension</groupId>
                     <artifactId>arquillian-phantom-driver</artifactId>
                 </dependency>
-                <!-- TODO: investigate if we need this dependency
-                <dependency>
-                    <groupId>org.jboss.arquillian.graphene</groupId>
-                    <artifactId>arquillian-graphene-impl</artifactId>
-                    <version>1.0.0.CR3</version>
-                </dependency>-->
                 <dependency>
                     <groupId>org.jboss.arquillian.graphene</groupId>
                     <artifactId>arquillian-browser-screenshooter</artifactId>
-                    <version>2.1.0.Alpha2</version>
+                    <version>2.1.0.Alpha3</version><!-- TODO upgrade <arquillian-graphene.version> and use ${arquillian-graphene.version} -->
                 </dependency>
+                
+<!--                <dependency>
+                    <groupId>org.arquillian.extension</groupId>
+                    <artifactId>arquillian-recorder-reporter-impl</artifactId>
+                    <version>1.1.0.Final</version>
+                </dependency>-->
                 
                 <dependency>
                     <groupId>log4j</groupId>
