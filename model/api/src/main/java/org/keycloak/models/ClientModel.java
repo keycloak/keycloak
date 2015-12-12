@@ -8,7 +8,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ClientModel extends RoleContainerModel {
+public interface ClientModel extends RoleContainerModel,  ProtocolMapperContainerModel {
 
     // COMMON ATTRIBUTES
 
@@ -134,6 +134,9 @@ public interface ClientModel extends RoleContainerModel {
 
     RealmModel getRealm();
 
+    ClientTemplateModel getClientTemplate();
+    void setClientTemplate(ClientTemplateModel template);
+
     /**
      * Time in seconds since epoc
      *
@@ -143,14 +146,7 @@ public interface ClientModel extends RoleContainerModel {
 
     void setNotBefore(int notBefore);
 
-    Set<ProtocolMapperModel> getProtocolMappers();
-    ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model);
-    void removeProtocolMapper(ProtocolMapperModel mapping);
-    void updateProtocolMapper(ProtocolMapperModel mapping);
-    ProtocolMapperModel getProtocolMapperById(String id);
-    ProtocolMapperModel getProtocolMapperByName(String protocol, String name);
-
-    Map<String, Integer> getRegisteredNodes();
+     Map<String, Integer> getRegisteredNodes();
 
     /**
      * Register node or just update the 'lastReRegistration' time if this node is already registered

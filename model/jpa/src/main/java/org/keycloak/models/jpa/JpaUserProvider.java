@@ -227,7 +227,7 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
-    public void preRemove(ClientModel client, ProtocolMapperModel protocolMapper) {
+    public void preRemove(ProtocolMapperModel protocolMapper) {
         em.createNamedQuery("deleteUserConsentProtMappersByProtocolMapper")
                 .setParameter("protocolMapperId", protocolMapper.getId())
                 .executeUpdate();

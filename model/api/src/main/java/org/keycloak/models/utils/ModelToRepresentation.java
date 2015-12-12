@@ -5,6 +5,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -27,6 +28,7 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -404,6 +406,24 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static ClientTemplateRepresentation toRepresentation(ClientTemplateModel clientModel) {
+        ClientTemplateRepresentation rep = new ClientTemplateRepresentation();
+        rep.setId(clientModel.getId());
+        rep.setName(clientModel.getName());
+        rep.setDescription(clientModel.getDescription());
+        rep.setProtocol(clientModel.getProtocol());
+        if (!clientModel.getProtocolMappers().isEmpty()) {
+            List<ProtocolMapperRepresentation> mappings = new LinkedList<>();
+            for (ProtocolMapperModel model : clientModel.getProtocolMappers()) {
+                mappings.add(toRepresentation(model));
+            }
+            rep.setProtocolMappers(mappings);
+        }
+
+        return rep;
+    }
+
+
     public static ClientRepresentation toRepresentation(ClientModel clientModel) {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setId(clientModel.getId());
@@ -429,6 +449,7 @@ public class ModelToRepresentation {
         rep.setNotBefore(clientModel.getNotBefore());
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
         rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
+        if (clientModel.getClientTemplate() != null) rep.setClientTemplate(clientModel.getClientTemplate().getName());
 
         Set<String> redirectUris = clientModel.getRedirectUris();
         if (redirectUris != null) {

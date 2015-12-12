@@ -353,4 +353,15 @@ public interface RealmModel extends RoleContainerModel {
     List<GroupModel> getTopLevelGroups();
     boolean removeGroup(GroupModel group);
     void moveGroup(GroupModel group, GroupModel toParent);
+
+    List<ClientTemplateModel> getClientTemplates();
+
+    ClientTemplateModel addClientTemplate(String name);
+
+    ClientTemplateModel addClientTemplate(String id, String name);
+
+    boolean removeClientTemplate(String id);
+
+    ClientTemplateModel getClientTemplateById(String id);
+
 }

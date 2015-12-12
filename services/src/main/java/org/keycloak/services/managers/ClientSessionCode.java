@@ -1,6 +1,8 @@
 package org.keycloak.services.managers;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -185,9 +187,15 @@ public class ClientSessionCode {
 
     public Set<ProtocolMapperModel> getRequestedProtocolMappers() {
         Set<ProtocolMapperModel> requestedProtocolMappers = new HashSet<ProtocolMapperModel>();
-        if (clientSession.getProtocolMappers() != null) {
-            for (String protocolMapperId : clientSession.getProtocolMappers()) {
-                ProtocolMapperModel protocolMapper = clientSession.getClient().getProtocolMapperById(protocolMapperId);
+        Set<String> protocolMappers = clientSession.getProtocolMappers();
+        ClientModel client = clientSession.getClient();
+        ClientTemplateModel template = client.getClientTemplate();
+        if (protocolMappers != null) {
+            for (String protocolMapperId : protocolMappers) {
+                ProtocolMapperModel protocolMapper = client.getProtocolMapperById(protocolMapperId);
+                if (protocolMapper == null && template != null) {
+                    protocolMapper = template.getProtocolMapperById(protocolMapperId);
+                }
                 if (protocolMapper != null) {
                     requestedProtocolMappers.add(protocolMapper);
                 }

@@ -18,14 +18,16 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
     protected boolean transactionActive;
     protected boolean setRollbackOnly;
 
-    protected Set<String> realmInvalidations = new HashSet<String>();
-    protected Set<String> appInvalidations = new HashSet<String>();
-    protected Set<String> roleInvalidations = new HashSet<String>();
-    protected Set<String> groupInvalidations = new HashSet<String>();
-    protected Map<String, RealmModel> managedRealms = new HashMap<String, RealmModel>();
-    protected Map<String, ClientModel> managedApplications = new HashMap<String, ClientModel>();
-    protected Map<String, RoleModel> managedRoles = new HashMap<String, RoleModel>();
-    protected Map<String, GroupModel> managedGroups = new HashMap<String, GroupModel>();
+    protected Set<String> realmInvalidations = new HashSet<>();
+    protected Set<String> appInvalidations = new HashSet<>();
+    protected Set<String> clientTemplateInvalidations = new HashSet<>();
+    protected Set<String> roleInvalidations = new HashSet<>();
+    protected Set<String> groupInvalidations = new HashSet<>();
+    protected Map<String, RealmModel> managedRealms = new HashMap<>();
+    protected Map<String, ClientModel> managedApplications = new HashMap<>();
+    protected Map<String, ClientTemplateModel> managedClientTemplates = new HashMap<>();
+    protected Map<String, RoleModel> managedRoles = new HashMap<>();
+    protected Map<String, GroupModel> managedGroups = new HashMap<>();
 
     protected boolean clearAll;
 
@@ -69,6 +71,10 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
     public void registerApplicationInvalidation(String id) {
         appInvalidations.add(id);
     }
+    @Override
+    public void registerClientTemplateInvalidation(String id) {
+        clientTemplateInvalidations.add(id);
+    }
 
     @Override
     public void registerRoleInvalidation(String id) {
@@ -93,6 +99,9 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
         }
         for (String id : appInvalidations) {
             cache.invalidateCachedApplicationById(id);
+        }
+        for (String id : clientTemplateInvalidations) {
+            cache.invalidateCachedClientTemplateById(id);
         }
     }
 
@@ -311,6 +320,29 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
         }
         ClientAdapter adapter = new ClientAdapter(realm, cached, this, cache);
         managedApplications.put(id, adapter);
+        return adapter;
+    }
+    @Override
+    public ClientTemplateModel getClientTemplateById(String id, RealmModel realm) {
+        if (!cache.isEnabled()) return getDelegate().getClientTemplateById(id, realm);
+        CachedClientTemplate cached = cache.getClientTemplate(id);
+        if (cached != null && !cached.getRealm().equals(realm.getId())) {
+            cached = null;
+        }
+
+        if (cached == null) {
+            ClientTemplateModel model = getDelegate().getClientTemplateById(id, realm);
+            if (model == null) return null;
+            if (clientTemplateInvalidations.contains(id)) return model;
+            cached = new CachedClientTemplate(cache, getDelegate(), realm, model);
+            cache.addCachedClientTemplate(cached);
+        } else if (clientTemplateInvalidations.contains(id)) {
+            return getDelegate().getClientTemplateById(id, realm);
+        } else if (managedClientTemplates.containsKey(id)) {
+            return managedClientTemplates.get(id);
+        }
+        ClientTemplateModel adapter = new ClientTemplateAdapter(realm, cached, this, cache);
+        managedClientTemplates.put(id, adapter);
         return adapter;
     }
 

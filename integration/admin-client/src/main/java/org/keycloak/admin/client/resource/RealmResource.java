@@ -26,6 +26,9 @@ public interface RealmResource {
     @Path("clients")
     ClientsResource clients();
 
+    @Path("client-templates")
+    ClientTemplatesResource clientTemplates();
+
     @Path("client-description-converter")
     @POST
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN })

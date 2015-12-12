@@ -4,6 +4,7 @@ import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.models.cache.RealmCache;
 import org.keycloak.models.cache.entities.CachedClient;
+import org.keycloak.models.cache.entities.CachedClientTemplate;
 import org.keycloak.models.cache.entities.CachedGroup;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
@@ -176,5 +177,37 @@ public class InfinispanRealmCache implements RealmCache {
         Object o = cache.get(id);
         return o != null && type.isInstance(o) ? type.cast(o) : null;
     }
+
+    @Override
+    public CachedClientTemplate getClientTemplate(String id) {
+        if (!enabled) return null;
+        return get(id, CachedClientTemplate.class);
+    }
+
+    @Override
+    public void invalidateClientTemplate(CachedClientTemplate app) {
+        logger.tracev("Removing client template {0}", app.getId());
+        cache.remove(app.getId());
+    }
+
+    @Override
+    public void addCachedClientTemplate(CachedClientTemplate app) {
+        if (!enabled) return;
+        logger.tracev("Adding client template {0}", app.getId());
+        cache.putForExternalRead(app.getId(), app);
+    }
+
+    @Override
+    public void invalidateCachedClientTemplateById(String id) {
+        logger.tracev("Removing client template {0}", id);
+        cache.remove(id);
+    }
+
+    @Override
+    public void evictCachedClientTemplateById(String id) {
+        logger.tracev("Evicting client template {0}", id);
+        cache.evict(id);
+    }
+
 
 }

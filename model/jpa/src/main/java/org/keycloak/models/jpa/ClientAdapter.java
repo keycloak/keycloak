@@ -2,6 +2,7 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
@@ -9,6 +10,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
+import org.keycloak.models.jpa.entities.ClientTemplateEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.ScopeMappingEntity;
@@ -298,6 +300,25 @@ public class ClientAdapter implements ClientModel {
         return copy;
     }
 
+    @Override
+    public ClientTemplateModel getClientTemplate() {
+        ClientTemplateEntity templateEntity = entity.getClientTemplate();
+        if (templateEntity == null) return null;
+        return session.realms().getClientTemplateById(templateEntity.getId(), realm);
+    }
+
+    @Override
+    public void setClientTemplate(ClientTemplateModel template) {
+        if (template == null) {
+            entity.setClientTemplate(null);
+
+        } else {
+            ClientTemplateEntity templateEntity = em.getReference(ClientTemplateEntity.class, template.getId());
+            entity.setClientTemplate(templateEntity);
+        }
+
+    }
+
     public static boolean contains(String str, String[] array) {
         for (String s : array) {
             if (str.equals(s)) return true;
@@ -371,7 +392,7 @@ public class ClientAdapter implements ClientModel {
     public void removeProtocolMapper(ProtocolMapperModel mapping) {
         ProtocolMapperEntity toDelete = getProtocolMapperEntity(mapping.getId());
         if (toDelete != null) {
-            session.users().preRemove(this, mapping);
+            session.users().preRemove(mapping);
 
             this.entity.getProtocolMappers().remove(toDelete);
             em.remove(toDelete);

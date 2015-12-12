@@ -40,6 +40,7 @@ public class ClientRepresentation {
     protected Integer nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
     protected List<ProtocolMapperRepresentation> protocolMappers;
+    protected String clientTemplate;
 
     public String getId() {
         return id;
@@ -290,4 +291,11 @@ public class ClientRepresentation {
         this.protocolMappers = protocolMappers;
     }
 
+    public String getClientTemplate() {
+        return clientTemplate;
+    }
+
+    public void setClientTemplate(String clientTemplate) {
+        this.clientTemplate = clientTemplate;
+    }
 }

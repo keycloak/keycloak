@@ -7,6 +7,7 @@ import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -19,6 +20,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -46,6 +48,15 @@ public class ExportUtils {
 
     public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, boolean includeUsers) {
         RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, true);
+
+        // Client Templates
+        List<ClientTemplateModel> templates = realm.getClientTemplates();
+        List<ClientTemplateRepresentation> templateReps = new ArrayList<>();
+        for (ClientTemplateModel app : templates) {
+            ClientTemplateRepresentation clientRep = ModelToRepresentation.toRepresentation(app);
+            templateReps.add(clientRep);
+        }
+        rep.setClientTemplates(templateReps);
 
         // Clients
         List<ClientModel> clients = realm.getClients();

@@ -1,6 +1,7 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.cache.entities.CachedClient;
+import org.keycloak.models.cache.entities.CachedClientTemplate;
 import org.keycloak.models.cache.entities.CachedGroup;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
@@ -55,4 +56,15 @@ public interface RealmCache {
     boolean isEnabled();
 
     void setEnabled(boolean enabled);
+
+    CachedClientTemplate getClientTemplate(String id);
+
+    void invalidateClientTemplate(CachedClientTemplate app);
+
+    void evictCachedClientTemplateById(String id);
+
+    void addCachedClientTemplate(CachedClientTemplate app);
+
+    void invalidateCachedClientTemplateById(String id);
+
 }

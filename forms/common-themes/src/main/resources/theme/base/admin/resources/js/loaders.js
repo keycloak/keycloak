@@ -107,6 +107,16 @@ module.factory('ClientProtocolMapperLoader', function(Loader, ClientProtocolMapp
     });
 });
 
+module.factory('ClientTemplateProtocolMapperLoader', function(Loader, ClientTemplateProtocolMapper, $route, $q) {
+    return Loader.get(ClientTemplateProtocolMapper, function() {
+        return {
+            realm : $route.current.params.realm,
+            template : $route.current.params.template,
+            id: $route.current.params.id
+        }
+    });
+});
+
 module.factory('UserLoader', function(Loader, User, $route, $q) {
     return Loader.get(User, function() {
         return {
@@ -305,6 +315,23 @@ module.factory('ClientLoader', function(Loader, Client, $route, $q) {
 
 module.factory('ClientListLoader', function(Loader, Client, $route, $q) {
     return Loader.query(Client, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
+module.factory('ClientTemplateLoader', function(Loader, ClientTemplate, $route, $q) {
+    return Loader.get(ClientTemplate, function() {
+        return {
+            realm : $route.current.params.realm,
+            template : $route.current.params.template
+        }
+    });
+});
+
+module.factory('ClientTemplateListLoader', function(Loader, ClientTemplate, $route, $q) {
+    return Loader.query(ClientTemplate, function() {
         return {
             realm : $route.current.params.realm
         }

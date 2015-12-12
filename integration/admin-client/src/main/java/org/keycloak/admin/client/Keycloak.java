@@ -9,6 +9,8 @@ import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.ServerInfoResource;
 import org.keycloak.admin.client.token.TokenManager;
 
+import java.net.URI;
+
 /**
  * Provides a Keycloak client. By default, this implementation uses a {@link ResteasyClient RESTEasy client} with the
  * default {@link ResteasyClientBuilder} settings. To customize the underling client, use a {@link KeycloakBuilder} to
@@ -58,6 +60,19 @@ public class Keycloak {
 
     public TokenManager tokenManager(){
         return tokenManager;
+    }
+
+    /**
+     * Create a secure proxy based on an absolute URI.
+     * All set up with appropriate token
+     *
+     * @param proxyClass
+     * @param absoluteURI
+     * @param <T>
+     * @return
+     */
+    public <T> T proxy(Class<T> proxyClass, URI absoluteURI) {
+        return client.target(absoluteURI).register(new BearerAuthFilter(tokenManager)).proxy(proxyClass);
     }
 
     /**

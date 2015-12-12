@@ -35,6 +35,7 @@
         <class>org.keycloak.models.jpa.entities.GroupAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.GroupRoleMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.UserGroupMembershipEntity</class>
+        <class>org.keycloak.models.jpa.entities.ClientTemplateEntity</class>
 
         <!-- JpaAuditProviders -->
         <class>org.keycloak.events.jpa.EventEntity</class>

@@ -55,6 +55,7 @@ public class CachedClient implements Serializable {
     private Map<String, String> roles = new HashMap<String, String>();
     private int nodeReRegistrationTimeout;
     private Map<String, Integer> registeredNodes;
+    private String clientTemplate;
 
     public CachedClient(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientModel model) {
         id = model.getId();
@@ -98,6 +99,9 @@ public class CachedClient implements Serializable {
 
         nodeReRegistrationTimeout = model.getNodeReRegistrationTimeout();
         registeredNodes = new TreeMap<String, Integer>(model.getRegisteredNodes());
+        if (model.getClientTemplate() != null) {
+            clientTemplate = model.getClientTemplate().getId();
+        }
     }
     public String getId() {
         return id;
@@ -229,5 +233,9 @@ public class CachedClient implements Serializable {
 
     public Map<String, Integer> getRegisteredNodes() {
         return registeredNodes;
+    }
+
+    public String getClientTemplate() {
+        return clientTemplate;
     }
 }
