@@ -3,7 +3,6 @@
 <config>
    <subsystems>
       <subsystem>logging.xml</subsystem>
-      <subsystem>batch.xml</subsystem>
       <subsystem>bean-validation.xml</subsystem>
       <subsystem>keycloak-datasources.xml</subsystem>
       <subsystem>ee.xml</subsystem>
@@ -18,17 +17,12 @@
       <subsystem>jsf.xml</subsystem>
       <subsystem>mail.xml</subsystem>
       <subsystem>naming.xml</subsystem>
-      <subsystem>pojo.xml</subsystem>
       <subsystem>remoting.xml</subsystem>
-      <subsystem>resource-adapters.xml</subsystem>
       <subsystem>request-controller.xml</subsystem>
-      <subsystem>sar.xml</subsystem>
       <subsystem>security-manager.xml</subsystem>
       <subsystem>security.xml</subsystem>
       <subsystem>transactions.xml</subsystem>
       <subsystem>undertow.xml</subsystem>
-      <subsystem>webservices.xml</subsystem>
-      <subsystem>weld.xml</subsystem>
       <subsystem>keycloak-server.xml</subsystem>
    </subsystems>
 </config>

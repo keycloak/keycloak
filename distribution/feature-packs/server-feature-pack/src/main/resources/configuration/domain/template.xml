@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
-<domain xmlns="urn:jboss:domain:3.0">
+<domain xmlns="urn:jboss:domain:4.0">
 
     <extensions>
         <?EXTENSIONS?>
@@ -24,18 +24,18 @@
     </management>
 
     <profiles>
-       <profile name="default">
-           <?SUBSYSTEMS socket-binding-group="standard-sockets"?>
-       </profile>
-       <profile name="ha">
-           <?SUBSYSTEMS socket-binding-group="ha-sockets"?>
-       </profile>
-       <profile name="full">
-           <?SUBSYSTEMS socket-binding-group="full-sockets"?>
-       </profile>
-       <profile name="full-ha">
-           <?SUBSYSTEMS socket-binding-group="full-ha-sockets"?>
-       </profile>
+        <profile name="default">
+            <?SUBSYSTEMS socket-binding-group="standard-sockets"?>
+        </profile>
+        <profile name="ha">
+            <?SUBSYSTEMS socket-binding-group="ha-sockets"?>
+        </profile>
+        <profile name="full">
+            <?SUBSYSTEMS socket-binding-group="full-sockets"?>
+        </profile>
+        <profile name="full-ha">
+            <?SUBSYSTEMS socket-binding-group="full-ha-sockets"?>
+        </profile>
     </profiles>
 
     <!--
@@ -48,7 +48,7 @@
     <interfaces>
         <interface name="management"/>
         <interface name="public"/>
-        <interface name="unsecure"/>
+        <?INTERFACES?>
     </interfaces>
 
     <socket-binding-groups>

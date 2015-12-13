@@ -48,9 +48,9 @@
         <dom4j.version>1.6.1</dom4j.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <slf4j.version>1.7.7</slf4j.version>
-        <wildfly.version>9.0.2.Final</wildfly.version>
-        <wildfly.core.version>1.0.2.Final</wildfly.core.version>
-        <wildfly.build-tools.version>1.0.0.Final</wildfly.build-tools.version>
+        <wildfly.version>10.0.0.CR4</wildfly.version>
+        <wildfly.core.version>2.0.1.Final</wildfly.core.version>
+        <wildfly.build-tools.version>1.1.0.Final</wildfly.build-tools.version>
 
         <!-- this is EAP 6.4 alpha, publicly available -->
         <jboss.version>7.5.0.Final-redhat-15</jboss.version>

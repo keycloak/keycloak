@@ -1,7 +1,7 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xalan="http://xml.apache.org/xalan"
-                xmlns:j="urn:jboss:domain:3.0"
-                xmlns:ds="urn:jboss:domain:datasources:3.0"
+                xmlns:j="urn:jboss:domain:4.0"
+                xmlns:ds="urn:jboss:domain:datasources:4.0"
                 xmlns:k="urn:jboss:domain:keycloak:1.1"
                 xmlns:sec="urn:jboss:domain:security:1.2"
                 version="2.0"
@@ -25,7 +25,7 @@
     <xsl:template match="//ds:datasources">
         <xsl:copy>
             <xsl:apply-templates select="node()[name(.)='datasource']"/>
-            <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
+            <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" use-java-context="true">
                 <connection-url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</connection-url>
                 <driver>h2</driver>
                 <security>

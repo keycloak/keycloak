@@ -33,6 +33,18 @@
            <artifactId>tomcat-embed-core</artifactId>
            <version>7.0.59</version>
        </dependency>
+
+       <!-- Undertow's fork of Jasper JSP parser -->
+       <dependency>
+           <groupId>io.undertow.jastow</groupId>
+           <artifactId>jastow</artifactId>
+           <version>2.0.0.Final</version>
+       </dependency>
+       <dependency>
+           <groupId>org.jboss.spec.javax.servlet.jsp</groupId>
+           <artifactId>jboss-jsp-api_2.3_spec</artifactId>
+           <version>1.0.1.Final</version>
+       </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-dependencies-server-all</artifactId>
@@ -203,12 +215,6 @@
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-chrome-driver</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-undertow</artifactId>
-            <version>${wildfly.version}</version>
-            <scope>test</scope>
         </dependency>
        <dependency>
            <groupId>org.keycloak</groupId>
