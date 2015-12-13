@@ -6,7 +6,7 @@
     <parent>
         <artifactId>keycloak-examples-broker-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.8.0.CR1-SNAPSHOT</version>
+        <version>1.8.0.Alpha1</version>
     </parent>
 
     <name>Keycloak Broker Examples - Twitter Authentication</name>
