@@ -14,10 +14,13 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.spi.RealmResourceProvider;
+import org.keycloak.services.resources.spi.RealmResourceProviderFactory;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.wellknown.WellKnownProvider;
 
@@ -27,6 +30,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.*;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -189,6 +193,28 @@ public class RealmsResource {
 
         WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, providerName);
         return Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.getDefaultCacheControl()).build();
+    }
+
+    @Path("{realm}/{unknow_path}")
+    public Object resolveUnknowPath(@PathParam("realm") String realmName, @PathParam("unknow_path") String spi) {
+        List<ProviderFactory> factory = this.session.getKeycloakSessionFactory().getProviderFactories(RealmResourceProvider.class);
+
+        if (factory != null) {
+            RealmModel realm = init(realmName);
+
+            for (ProviderFactory providerFactory : factory) {
+                RealmResourceProviderFactory realmFactory = (RealmResourceProviderFactory) providerFactory;
+                RealmResourceProvider resourceProvider = realmFactory.create(realm, this.session);
+                Object resource = resourceProvider.getResource(spi);
+
+                if (resource != null) {
+                    ResteasyProviderFactory.getInstance().injectProperties(resource);
+                    return resource;
+                }
+            }
+        }
+
+        return null;
     }
 
 }
