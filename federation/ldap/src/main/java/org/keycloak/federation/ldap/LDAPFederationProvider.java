@@ -5,7 +5,6 @@ import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticat
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
@@ -209,10 +208,10 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
             // Mapper should replace parameter with correct LDAP mapped attributes
             if (attributes.containsKey(FIRST_NAME)) {
-                ldapQuery.where(conditionsBuilder.equal(new QueryParameter(FIRST_NAME), attributes.get(FIRST_NAME)));
+                ldapQuery.addWhereCondition(conditionsBuilder.equal(FIRST_NAME, attributes.get(FIRST_NAME)));
             }
             if (attributes.containsKey(LAST_NAME)) {
-                ldapQuery.where(conditionsBuilder.equal(new QueryParameter(LAST_NAME), attributes.get(LAST_NAME)));
+                ldapQuery.addWhereCondition(conditionsBuilder.equal(LAST_NAME, attributes.get(LAST_NAME)));
             }
 
             List<LDAPObject> ldapObjects = ldapQuery.getResultList();
@@ -287,8 +286,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
         LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
         // Mapper should replace "email" in parameter name with correct LDAP mapped attribute
-        Condition emailCondition = conditionsBuilder.equal(new QueryParameter(UserModel.EMAIL), email);
-        ldapQuery.where(emailCondition);
+        Condition emailCondition = conditionsBuilder.equal(UserModel.EMAIL, email);
+        ldapQuery.addWhereCondition(emailCondition);
 
         return ldapQuery.getFirstResult();
     }
@@ -434,8 +433,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
         LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
         String usernameMappedAttribute = this.ldapIdentityStore.getConfig().getUsernameLdapAttribute();
-        Condition usernameCondition = conditionsBuilder.equal(new QueryParameter(usernameMappedAttribute), username);
-        ldapQuery.where(usernameCondition);
+        Condition usernameCondition = conditionsBuilder.equal(usernameMappedAttribute, username);
+        ldapQuery.addWhereCondition(usernameCondition);
 
         LDAPObject ldapUser = ldapQuery.getFirstResult();
         if (ldapUser == null) {

@@ -5,16 +5,16 @@ package org.keycloak.federation.ldap.idm.query;
  */
 public class Sort {
 
-    private final QueryParameter parameter;
+    private final String paramName;
     private final boolean asc;
 
-    public Sort(QueryParameter parameter, boolean asc) {
-        this.parameter = parameter;
+    public Sort(String paramName, boolean asc) {
+        this.paramName = paramName;
         this.asc = asc;
     }
 
-    public QueryParameter getParameter() {
-        return this.parameter;
+    public String getParameter() {
+        return this.paramName;
     }
 
     public boolean isAscending() {

@@ -1,33 +1,36 @@
 package org.keycloak.federation.ldap.idm.query.internal;
 
-import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.QueryParameter;
+import java.util.Date;
+
+import org.keycloak.federation.ldap.idm.store.ldap.LDAPUtil;
 
 /**
  * @author Pedro Igor
  */
-public class BetweenCondition implements Condition {
+class BetweenCondition extends NamedParameterCondition {
 
     private final Comparable x;
     private final Comparable y;
-    private final QueryParameter parameter;
 
-    public BetweenCondition(QueryParameter parameter, Comparable x, Comparable y) {
-        this.parameter = parameter;
+    public BetweenCondition(String name, Comparable x, Comparable y) {
+        super(name);
         this.x = x;
         this.y = y;
     }
 
     @Override
-    public QueryParameter getParameter() {
-        return this.parameter;
-    }
+    public void applyCondition(StringBuilder filter) {
+        Comparable x = this.x;
+        Comparable y = this.y;
 
-    public Comparable getX() {
-        return this.x;
-    }
+        if (Date.class.isInstance(x)) {
+            x = LDAPUtil.formatDate((Date) x);
+        }
 
-    public Comparable getY() {
-        return this.y;
+        if (Date.class.isInstance(y)) {
+            y = LDAPUtil.formatDate((Date) y);
+        }
+
+        filter.append("(").append(x).append("<=").append(getParameterName()).append("<=").append(y).append(")");
     }
 }

@@ -4,7 +4,9 @@ import java.util.Set;
 
 import org.keycloak.federation.ldap.idm.model.LDAPDn;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
+import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.models.ModelException;
@@ -50,6 +52,12 @@ public class LDAPUtils {
         ldapQuery.setSearchScope(config.getSearchScope());
         ldapQuery.setSearchDn(config.getUsersDn());
         ldapQuery.addObjectClasses(config.getUserObjectClasses());
+
+        String customFilter = config.getCustomUserSearchFilter();
+        if (customFilter != null) {
+            Condition customFilterCondition = new LDAPQueryConditionsBuilder().addCustomLDAPFilter(customFilter);
+            ldapQuery.addWhereCondition(customFilterCondition);
+        }
 
         Set<UserFederationMapperModel> mapperModels = realm.getUserFederationMappersByFederationProvider(ldapProvider.getModel().getId());
         ldapQuery.addMappers(mapperModels);

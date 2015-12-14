@@ -54,7 +54,7 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
         
         ProviderConfigProperty ldapFilter = createConfigProperty(RoleLDAPFederationMapper.ROLES_LDAP_FILTER,
                 "LDAP Filter",
-                "LDAP Filter adds additional custom filter to the whole query.",
+                "LDAP Filter adds additional custom filter to the whole query. Make sure that it starts with '(' and ends with ')'",
                 ProviderConfigProperty.STRING_TYPE, null);
         configProperties.add(ldapFilter);
 
@@ -152,6 +152,11 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
             if (clientId == null || clientId.trim().isEmpty()) {
                 throw new MapperConfigValidationException("Client ID needs to be provided in config when Realm Roles Mapping is not used");
             }
+        }
+
+        String customLdapFilter = mapperModel.getConfig().get(RoleLDAPFederationMapper.ROLES_LDAP_FILTER);
+        if ((customLdapFilter != null && customLdapFilter.trim().length() > 0) && (!customLdapFilter.startsWith("(") || !customLdapFilter.endsWith(")"))) {
+            throw new MapperConfigValidationException("Custom Roles LDAP filter must starts with '(' and ends with ')'");
         }
     }
 

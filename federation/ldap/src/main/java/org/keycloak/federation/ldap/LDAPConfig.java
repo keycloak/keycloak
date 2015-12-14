@@ -14,7 +14,6 @@ import org.keycloak.models.UserFederationProvider;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  *
- * TODO: init properties at constructor instead of always compute them
  */
 public class LDAPConfig {
 
@@ -145,6 +144,18 @@ public class LDAPConfig {
 
         }
         return rdn;
+    }
+
+
+    public String getCustomUserSearchFilter() {
+        String customFilter = config.get(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
+        if (customFilter != null) {
+            customFilter = customFilter.trim();
+            if (customFilter.length() > 0) {
+                return customFilter;
+            }
+        }
+        return null;
     }
 
     public UserFederationProvider.EditMode getEditMode() {

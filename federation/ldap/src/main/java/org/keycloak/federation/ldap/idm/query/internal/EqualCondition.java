@@ -1,24 +1,20 @@
 package org.keycloak.federation.ldap.idm.query.internal;
 
-import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.QueryParameter;
+import java.util.Date;
+
+import org.keycloak.federation.ldap.idm.store.ldap.LDAPUtil;
+import org.keycloak.models.LDAPConstants;
 
 /**
  * @author Pedro Igor
  */
-public class EqualCondition implements Condition {
+public class EqualCondition extends NamedParameterCondition {
 
-    private final QueryParameter parameter;
     private final Object value;
 
-    public EqualCondition(QueryParameter parameter, Object value) {
-        this.parameter = parameter;
+    public EqualCondition(String name, Object value) {
+        super(name);
         this.value = value;
-    }
-
-    @Override
-    public QueryParameter getParameter() {
-        return this.parameter;
     }
 
     public Object getValue() {
@@ -26,9 +22,19 @@ public class EqualCondition implements Condition {
     }
 
     @Override
+    public void applyCondition(StringBuilder filter) {
+        Object parameterValue = value;
+        if (Date.class.isInstance(value)) {
+            parameterValue = LDAPUtil.formatDate((Date) parameterValue);
+        }
+
+        filter.append("(").append(getParameterName()).append(LDAPConstants.EQUAL).append(parameterValue).append(")");
+    }
+
+    @Override
     public String toString() {
         return "EqualCondition{" +
-                "parameter=" + parameter.getName() +
+                "paramName=" + getParameterName() +
                 ", value=" + value +
                 '}';
     }

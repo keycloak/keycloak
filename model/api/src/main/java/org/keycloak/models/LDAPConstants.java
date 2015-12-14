@@ -46,6 +46,9 @@ public class LDAPConstants {
     // Applicable just for active directory
     public static final String USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE = "userAccountControlsAfterPasswordUpdate";
 
+    // Custom user search filter
+    public static final String CUSTOM_USER_SEARCH_FILTER = "customUserSearchFilter";
+
     // Custom attributes on UserModel, which is mapped to LDAP
     public static final String LDAP_ID = "LDAP_ID";
     public static final String LDAP_ENTRY_DN = "LDAP_ENTRY_DN";
