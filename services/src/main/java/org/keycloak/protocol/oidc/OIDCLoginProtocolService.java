@@ -1,5 +1,16 @@
 package org.keycloak.protocol.oidc;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
@@ -12,23 +23,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
+import org.keycloak.protocol.oidc.endpoints.RegisterEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
 import org.keycloak.protocol.oidc.endpoints.ValidateTokenEndpoint;
 import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.RealmsResource;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -118,6 +119,16 @@ public class OIDCLoginProtocolService {
         AuthorizationEndpoint endpoint = new AuthorizationEndpoint(authManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.register();
+    }
+
+    /**
+     * Register endpoint
+     */
+    @Path("register")
+    public Object register() {
+        RegisterEndpoint endpoint = new RegisterEndpoint(realm, event);
+        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
+        return endpoint;
     }
 
     /**
