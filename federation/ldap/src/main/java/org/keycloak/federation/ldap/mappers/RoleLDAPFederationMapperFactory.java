@@ -42,15 +42,25 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
                 ProviderConfigProperty.STRING_TYPE, LDAPConstants.CN);
         configProperties.add(roleNameLDAPAttribute);
 
+        ProviderConfigProperty roleObjectClasses = createConfigProperty(RoleLDAPFederationMapper.ROLE_OBJECT_CLASSES, "Role Object Classes",
+                "Object class (or classes) of the role object. It's divided by comma if more classes needed. In typical LDAP deployment it could be 'groupOfNames' . In Active Directory it's usually 'group' ",
+                ProviderConfigProperty.STRING_TYPE, null);
+        configProperties.add(roleObjectClasses);
+
         ProviderConfigProperty membershipLDAPAttribute = createConfigProperty(RoleLDAPFederationMapper.MEMBERSHIP_LDAP_ATTRIBUTE, "Membership LDAP Attribute",
                 "Name of LDAP attribute on role, which is used for membership mappings. Usually it will be 'member' ",
                 ProviderConfigProperty.STRING_TYPE, LDAPConstants.MEMBER);
         configProperties.add(membershipLDAPAttribute);
 
-        ProviderConfigProperty roleObjectClasses = createConfigProperty(RoleLDAPFederationMapper.ROLE_OBJECT_CLASSES, "Role Object Classes",
-                "Object class (or classes) of the role object. It's divided by comma if more classes needed. In typical LDAP deployment it could be 'groupOfNames' . In Active Directory it's usually 'group' ",
-                ProviderConfigProperty.STRING_TYPE, null);
-        configProperties.add(roleObjectClasses);
+        List<String> membershipTypes = new LinkedList<>();
+        for (RoleLDAPFederationMapper.MembershipType membershipType : RoleLDAPFederationMapper.MembershipType.values()) {
+            membershipTypes.add(membershipType.toString());
+        }
+        ProviderConfigProperty membershipType = createConfigProperty(RoleLDAPFederationMapper.MEMBERSHIP_ATTRIBUTE_TYPE, "Membership Attribute Type",
+                "DN means that LDAP role has it's members declared in form of their full DN. For example ( 'member: uid=john,ou=users,dc=example,dc=com' . " +
+                        "UID means that LDAP role has it's members declared in form of pure user uids. For example ( 'memberuid: john' ))",
+                ProviderConfigProperty.LIST_TYPE, membershipTypes);
+        configProperties.add(membershipType);
         
         ProviderConfigProperty ldapFilter = createConfigProperty(RoleLDAPFederationMapper.ROLES_LDAP_FILTER,
                 "LDAP Filter",
@@ -58,7 +68,7 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
                 ProviderConfigProperty.STRING_TYPE, null);
         configProperties.add(ldapFilter);
 
-        List<String> modes = new LinkedList<String>();
+        List<String> modes = new LinkedList<>();
         for (RoleLDAPFederationMapper.Mode mode : RoleLDAPFederationMapper.Mode.values()) {
             modes.add(mode.toString());
         }

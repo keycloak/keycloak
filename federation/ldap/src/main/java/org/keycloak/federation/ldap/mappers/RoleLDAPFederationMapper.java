@@ -39,11 +39,14 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
     // Name of LDAP attribute, which is used in role objects for name and RDN of role. Usually it will be "cn"
     public static final String ROLE_NAME_LDAP_ATTRIBUTE = "role.name.ldap.attribute";
 
+    // Object classes of the role object.
+    public static final String ROLE_OBJECT_CLASSES = "role.object.classes";
+
     // Name of LDAP attribute on role, which is used for membership mappings. Usually it will be "member"
     public static final String MEMBERSHIP_LDAP_ATTRIBUTE = "membership.ldap.attribute";
 
-    // Object classes of the role object.
-    public static final String ROLE_OBJECT_CLASSES = "role.object.classes";
+    // See docs for MembershipType enum
+    public static final String MEMBERSHIP_ATTRIBUTE_TYPE = "membership.attribute.type";
 
     // Boolean option. If true, we will map LDAP roles to realm roles. If false, we will map to client roles (client specified by option CLIENT_ID)
     public static final String USE_REALM_ROLES_MAPPING = "use.realm.roles.mapping";
@@ -179,6 +182,15 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         return membershipAttrName!=null ? membershipAttrName : LDAPConstants.MEMBER;
     }
 
+    protected MembershipType getMembershipTypeLdapAttribute(UserFederationMapperModel mapperModel) {
+        String membershipType = mapperModel.getConfig().get(MEMBERSHIP_ATTRIBUTE_TYPE);
+        return membershipType!=null ? Enum.valueOf(MembershipType.class, membershipType) : MembershipType.DN;
+    }
+
+    private String getMembershipFromUser(LDAPObject ldapUser, MembershipType membershipType) {
+        return membershipType == MembershipType.DN ? ldapUser.getDn().toString() : ldapUser.getAttributeAsString(ldapUser.getRdnAttributeName());
+    }
+
     protected Collection<String> getRoleObjectClasses(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider) {
         String objectClasses = mapperModel.getConfig().get(ROLE_OBJECT_CLASSES);
         if (objectClasses == null) {
@@ -228,17 +240,23 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
             ldapRole = createLDAPRole(mapperModel, roleName, ldapProvider);
         }
 
+        MembershipType membershipType = getMembershipTypeLdapAttribute(mapperModel);
+
         Set<String> memberships = getExistingMemberships(mapperModel, ldapRole);
 
         // Remove membership placeholder if present
-        for (String membership : memberships) {
-            if (LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE.equals(membership)) {
-                memberships.remove(membership);
-                break;
+        if (membershipType == MembershipType.DN) {
+            for (String membership : memberships) {
+                if (LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE.equals(membership)) {
+                    memberships.remove(membership);
+                    break;
+                }
             }
         }
 
-        memberships.add(ldapUser.getDn().toString());
+        String membership = getMembershipFromUser(ldapUser, membershipType);
+
+        memberships.add(membership);
         ldapRole.setAttribute(getMembershipLdapAttribute(mapperModel), memberships);
 
         ldapProvider.getLdapIdentityStore().update(ldapRole);
@@ -246,10 +264,14 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     public void deleteRoleMappingInLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, LDAPObject ldapRole) {
         Set<String> memberships = getExistingMemberships(mapperModel, ldapRole);
-        memberships.remove(ldapUser.getDn().toString());
+
+        MembershipType membershipType = getMembershipTypeLdapAttribute(mapperModel);
+        String userMembership = getMembershipFromUser(ldapUser, membershipType);
+
+        memberships.remove(userMembership);
 
         // Some membership placeholder needs to be always here as "member" is mandatory attribute on some LDAP servers. But not on active directory! (Placeholder, which not matches any real object is not allowed here)
-        if (memberships.size() == 0 && !ldapProvider.getLdapIdentityStore().getConfig().isActiveDirectory()) {
+        if (memberships.size() == 0 && membershipType==MembershipType.DN && !ldapProvider.getLdapIdentityStore().getConfig().isActiveDirectory()) {
             memberships.add(LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
         }
 
@@ -276,7 +298,10 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
     protected List<LDAPObject> getLDAPRoleMappings(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser) {
         LDAPQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
         String membershipAttr = getMembershipLdapAttribute(mapperModel);
-        Condition membershipCondition = new LDAPQueryConditionsBuilder().equal(membershipAttr, ldapUser.getDn().toString());
+
+        String userMembership = getMembershipFromUser(ldapUser, getMembershipTypeLdapAttribute(mapperModel));
+
+        Condition membershipCondition = new LDAPQueryConditionsBuilder().equal(membershipAttr, userMembership);
         ldapQuery.addWhereCondition(membershipCondition);
         return ldapQuery.getResultList();
     }
@@ -437,7 +462,8 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
                 LDAPQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
                 LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
                 Condition roleNameCondition = conditionsBuilder.equal(getRoleNameLdapAttribute(mapperModel), role.getName());
-                Condition membershipCondition = conditionsBuilder.equal(getMembershipLdapAttribute(mapperModel), ldapUser.getDn().toString());
+                String membershipUserAttr = getMembershipFromUser(ldapUser, getMembershipTypeLdapAttribute(mapperModel));
+                Condition membershipCondition = conditionsBuilder.equal(getMembershipLdapAttribute(mapperModel), membershipUserAttr);
                 ldapQuery.addWhereCondition(roleNameCondition).addWhereCondition(membershipCondition);
                 LDAPObject ldapRole = ldapQuery.getFirstResult();
 
@@ -462,6 +488,7 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         }
     }
 
+
     public enum Mode {
         /**
          * All role mappings are retrieved from LDAP and saved into LDAP
@@ -483,5 +510,19 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
          * Deleting role mappings, which is mapped to LDAP, will throw an error.
          */
         READ_ONLY
+    }
+
+
+    public enum MembershipType {
+
+        /**
+         * Used if LDAP role has it's members declared in form of their full DN. For example ( "member: uid=john,ou=users,dc=example,dc=com" )
+         */
+        DN,
+
+        /**
+         * Used if LDAP role has it's members declared in form of pure user uids. For example ( "memberUid: john" )
+         */
+        UID
     }
 }
