@@ -1,9 +1,5 @@
 package org.keycloak.testsuite.adapter;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.Archive;
@@ -11,9 +7,14 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 import org.keycloak.testsuite.arquillian.ContainersTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -45,6 +46,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
                 modifyClientRedirectUris(tr, appServerContextRootPage.toString(), "");
                 modifyClientUrls(tr, appServerContextRootPage.toString(), "");
                 modifyClientWebOrigins(tr, "8080", System.getProperty("auth.server.http.port", null));
+                modifySamlMasterURLs(tr, "/", "http://localhost:" + System.getProperty("auth.server.http.port", null) + "/");
             } else {
                 modifyClientRedirectUris(tr, "^(/.*/\\*)", appServerContextRootPage.toString() + "$1");
                 modifyClientUrls(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
@@ -62,14 +64,16 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
     }
 
     protected void modifyClientRedirectUris(RealmRepresentation realm, String regex, String replacement) {
-        for (ClientRepresentation client : realm.getClients()) {
-            List<String> redirectUris = client.getRedirectUris();
-            if (redirectUris != null) {
-                List<String> newRedirectUris = new ArrayList<>();
-                for (String uri : redirectUris) {
-                    newRedirectUris.add(uri.replaceAll(regex, replacement));
+        if (realm.getClients() != null) {
+            for (ClientRepresentation client : realm.getClients()) {
+                List<String> redirectUris = client.getRedirectUris();
+                if (redirectUris != null) {
+                    List<String> newRedirectUris = new ArrayList<>();
+                    for (String uri : redirectUris) {
+                        newRedirectUris.add(uri.replaceAll(regex, replacement));
+                    }
+                    client.setRedirectUris(newRedirectUris);
                 }
-                client.setRedirectUris(newRedirectUris);
             }
         }
     }
@@ -96,6 +100,20 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
                     newWebOrigins.add(uri.replaceAll(regex, replacement));
                 }
                 client.setWebOrigins(newWebOrigins);
+            }
+        }
+    }
+
+    protected void modifySamlMasterURLs(RealmRepresentation realm, String regex, String replacement) {
+        for (ClientRepresentation client : realm.getClients()) {
+            if (client.getProtocol() != null && client.getProtocol().equals("saml")) {
+                log.info("Modifying master URL of SAML client: " + client.getClientId());
+                String masterUrl = client.getAdminUrl();
+                if (masterUrl == null) {
+                    masterUrl = client.getBaseUrl();
+                }
+                masterUrl = masterUrl.replaceFirst(regex, replacement);
+                client.setAdminUrl(masterUrl);
             }
         }
     }

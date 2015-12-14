@@ -17,20 +17,24 @@
  */
 package org.keycloak.testsuite;
 
-import java.text.MessageFormat;
-import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
-import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import static org.keycloak.testsuite.admin.ApiUtil.*;
-import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+import org.keycloak.testsuite.auth.page.login.SAMLLogin;
 import org.openqa.selenium.Cookie;
+
+import java.text.MessageFormat;
+import java.util.List;
+
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import static org.keycloak.testsuite.admin.ApiUtil.assignClientRoles;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  *
@@ -43,7 +47,12 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     @Page
     protected OIDCLogin testRealmLoginPage;
 
+    @Page
+    protected SAMLLogin testRealmSAMLLoginPage;
+
     protected UserRepresentation testUser;
+
+    protected UserRepresentation bburkeUser;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -59,6 +68,9 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
         testUser = createUserRepresentation("test", "test@email.test", "test", "user", true);
         setPasswordFor(testUser, PASSWORD);
+
+        bburkeUser = createUserRepresentation("bburke", "bburke@redhat.com", "Bill", "Burke", true);
+        setPasswordFor(bburkeUser, PASSWORD);
 
         deleteAllCookiesForTestRealm();
     }

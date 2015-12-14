@@ -1,0 +1,25 @@
+<keycloak-saml-adapter>
+    <SP entityID="http://localhost:8081/employee2/"
+        sslPolicy="EXTERNAL"
+        nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+        logoutPage="/logout.jsp"
+        forceAuthentication="false">
+        <PrincipalNameMapping policy="FROM_NAME_ID"/>
+        <RoleIdentifiers>
+            <Attribute name="memberOf"/>
+            <Attribute name="Role"/>
+        </RoleIdentifiers>
+        <IDP entityID="idp">
+            <SingleSignOnService requestBinding="POST"
+                                 bindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"
+                    />
+
+            <SingleLogoutService
+                    requestBinding="POST"
+                    responseBinding="POST"
+                    postBindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"
+                    redirectBindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"
+                    />
+        </IDP>
+     </SP>
+</keycloak-saml-adapter>

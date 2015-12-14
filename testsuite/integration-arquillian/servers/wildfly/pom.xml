@@ -170,6 +170,11 @@
                     <artifactId>keycloak-wildfly-adapter-dist</artifactId>
                     <type>zip</type>
                 </dependency>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
+                    <type>zip</type>
+                </dependency>
             </dependencies>
             <build>
                 <plugins>
@@ -188,6 +193,13 @@
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>keycloak-wildfly-adapter-dist</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>zip</type>
+                                            <outputDirectory>${keycloak.server.home}</outputDirectory>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
                                             <version>${project.version}</version>
                                             <type>zip</type>
                                             <outputDirectory>${keycloak.server.home}</outputDirectory>

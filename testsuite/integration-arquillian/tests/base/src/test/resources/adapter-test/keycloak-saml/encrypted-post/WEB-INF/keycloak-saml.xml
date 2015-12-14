@@ -1,0 +1,45 @@
+<keycloak-saml-adapter>
+    <SP entityID="http://localhost:8081/sales-post-enc/"
+        sslPolicy="EXTERNAL"
+        nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+        logoutPage="/logout.jsp"
+        forceAuthentication="false">
+        <Keys>
+            <Key signing="true" encryption="true">
+                <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+                    <PrivateKey alias="http://localhost:8080/sales-post-enc/" password="test123"/>
+                    <Certificate alias="http://localhost:8080/sales-post-enc/"/>
+                </KeyStore>
+            </Key>
+        </Keys>
+        <PrincipalNameMapping policy="FROM_NAME_ID"/>
+        <RoleIdentifiers>
+            <Attribute name="Role"/>
+        </RoleIdentifiers>
+        <IDP entityID="idp">
+            <SingleSignOnService signRequest="true"
+                                 validateResponseSignature="true"
+                                 requestBinding="POST"
+                                 bindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"
+                    />
+
+            <SingleLogoutService
+                    validateRequestSignature="true"
+                    validateResponseSignature="true"
+                    signRequest="true"
+                    signResponse="true"
+                    requestBinding="POST"
+                    responseBinding="POST"
+                    postBindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"
+                    redirectBindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"
+                    />
+            <Keys>
+                <Key signing="true" >
+                    <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+                        <Certificate alias="demo"/>
+                    </KeyStore>
+                </Key>
+            </Keys>
+        </IDP>
+     </SP>
+</keycloak-saml-adapter>

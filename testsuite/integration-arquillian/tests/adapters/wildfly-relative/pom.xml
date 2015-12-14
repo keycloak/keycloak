@@ -30,6 +30,11 @@
             <artifactId>keycloak-wildfly-adapter-dist</artifactId>
             <type>zip</type>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
     </dependencies>
     
     <profiles>
@@ -48,7 +53,7 @@
                         <executions>
                             <execution>
                                 <id>unpack-adapter</id>
-                                <phase>generate-resources</phase>
+                                <phase>process-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
                                 </goals>
@@ -61,7 +66,39 @@
                                             <type>zip</type>
                                             <outputDirectory>${adapter.libs.wildfly}</outputDirectory>
                                         </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>zip</type>
+                                            <outputDirectory>${adapter.libs.wildfly}</outputDirectory>
+                                        </artifactItem>
                                     </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>configure-adapter-subsystem</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${auth.server.container}/standalone/configuration</dir>
+                                            <includes>
+                                                <include>standalone.xml</include>
+                                            </includes>
+                                            <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
+                                            <outputDir>${auth.server.container}/standalone/configuration</outputDir>
+                                        </transformationSet>
+                                    </transformationSets>
                                 </configuration>
                             </execution>
                         </executions>
