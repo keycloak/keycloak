@@ -1,4 +1,4 @@
-package org.keycloak.protocol;
+package org.keycloak.services.forgotpassword;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;

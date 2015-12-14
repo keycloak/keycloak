@@ -1,4 +1,4 @@
-package org.keycloak.protocol;
+package org.keycloak.services.forgotpassword;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
