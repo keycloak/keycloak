@@ -1,28 +1,31 @@
 package org.keycloak.federation.ldap.idm.query.internal;
 
-import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.QueryParameter;
+import org.keycloak.models.LDAPConstants;
 
 /**
  * @author Pedro Igor
  */
-public class InCondition implements Condition {
+class InCondition extends NamedParameterCondition {
 
-    private final QueryParameter parameter;
-    private final Object[] value;
+    private final Object[] valuesToCompare;
 
-    public InCondition(QueryParameter parameter, Object[] value) {
-        this.parameter = parameter;
-        this.value = value;
+    public InCondition(String name, Object[] valuesToCompare) {
+        super(name);
+        this.valuesToCompare = valuesToCompare;
     }
 
     @Override
-    public QueryParameter getParameter() {
-        return this.parameter;
-    }
+    public void applyCondition(StringBuilder filter) {
 
-    public Object[] getValue() {
-        return this.value;
+        filter.append("(&(");
+
+        for (int i = 0; i< valuesToCompare.length; i++) {
+            Object value = valuesToCompare[i];
+
+            filter.append("(").append(getParameterName()).append(LDAPConstants.EQUAL).append(value).append(")");
+        }
+
+        filter.append("))");
     }
 }
 

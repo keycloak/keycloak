@@ -660,6 +660,45 @@ public class FederationProvidersIntegrationTest {
     }
 
     @Test
+    public void testSearchWithCustomLDAPFilter() {
+        // Add custom filter for searching users
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            ldapModel.getConfig().put(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(|(mail=user5@email.org)(mail=user6@email.org))");
+            appRealm.updateUserFederationProvider(ldapModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            RealmModel appRealm = session.realms().getRealmByName("test");
+
+            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username5", "John5", "Doel5", "user5@email.org", null, "125");
+            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username6", "John6", "Doel6", "user6@email.org", null, "126");
+            FederationTestUtils.addLDAPUser(ldapProvider, appRealm, "username7", "John7", "Doel7", "user7@email.org", null, "127");
+
+            // search by email
+            session.users().searchForUser("user5@email.org", appRealm);
+            FederationTestUtils.assertUserImported(session.userStorage(), appRealm, "username5", "John5", "Doel5", "user5@email.org", "125");
+
+            session.users().searchForUser("user6@email.org", appRealm);
+            FederationTestUtils.assertUserImported(session.userStorage(), appRealm, "username6", "John6", "Doel6", "user6@email.org", "126");
+
+            session.users().searchForUser("user7@email.org", appRealm);
+            Assert.assertNull(session.userStorage().getUserByUsername("username7", appRealm));
+
+            // Remove custom filter
+            ldapModel.getConfig().remove(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
+            appRealm.updateUserFederationProvider(ldapModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
+
+    @Test
     public void testUnsynced() {
         KeycloakSession session = keycloakRule.startSession();
         try {

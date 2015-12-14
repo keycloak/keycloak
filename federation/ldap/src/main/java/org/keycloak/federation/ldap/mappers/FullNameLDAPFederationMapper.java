@@ -6,7 +6,6 @@ import java.util.Set;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.EqualCondition;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.models.LDAPConstants;
@@ -105,18 +104,18 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
         EqualCondition lastNameCondition = null;
         Set<Condition> conditionsCopy = new HashSet<Condition>(query.getConditions());
         for (Condition condition : conditionsCopy) {
-            QueryParameter param = condition.getParameter();
-            if (param != null) {
-                if (param.getName().equals(UserModel.FIRST_NAME)) {
+            String paramName = condition.getParameterName();
+            if (paramName != null) {
+                if (paramName.equals(UserModel.FIRST_NAME)) {
                     firstNameCondition = (EqualCondition) condition;
                     query.getConditions().remove(condition);
-                } else if (param.getName().equals(UserModel.LAST_NAME)) {
+                } else if (paramName.equals(UserModel.LAST_NAME)) {
                     lastNameCondition = (EqualCondition) condition;
                     query.getConditions().remove(condition);
-                } else if (param.getName().equals(LDAPConstants.GIVENNAME)) {
+                } else if (paramName.equals(LDAPConstants.GIVENNAME)) {
                     // Some previous mapper already converted it to LDAP name
                     firstNameCondition = (EqualCondition) condition;
-                } else if (param.getName().equals(LDAPConstants.SN)) {
+                } else if (paramName.equals(LDAPConstants.SN)) {
                     // Some previous mapper already converted it to LDAP name
                     lastNameCondition = (EqualCondition) condition;
                 }
@@ -134,8 +133,8 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
         } else {
             return;
         }
-        EqualCondition fullNameCondition = new EqualCondition(new QueryParameter(ldapFullNameAttrName), fullName);
-        query.getConditions().add(fullNameCondition);
+        EqualCondition fullNameCondition = new EqualCondition(ldapFullNameAttrName, fullName);
+        query.addWhereCondition(fullNameCondition);
     }
 
     protected String getLdapFullNameAttrName(UserFederationMapperModel mapperModel) {

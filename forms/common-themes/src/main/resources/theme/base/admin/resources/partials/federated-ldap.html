@@ -149,6 +149,13 @@
                     <a class="btn btn-primary" data-ng-click="testAuthentication()">Test authentication</a>
                 </div>
             </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="customUserSearchFilter">Custom User LDAP Filter</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="customUserSearchFilter" type="text" ng-model="instance.config.customUserSearchFilter" placeholder="LDAP Filter">
+                </div>
+                <kc-tooltip>Additional LDAP Filter for filtering searched users. Leave this empty if you don't need additional filter. Make sure that it starts with '(' and ends with ')'</kc-tooltip>
+            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="searchScope">Search scope</label>
                 <div class="col-md-6">

@@ -5,12 +5,12 @@ import org.keycloak.federation.ldap.idm.query.Condition;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class OrCondition implements Condition {
+class CustomLDAPFilter implements Condition {
 
-    private final Condition[] innerConditions;
+    private final String customFilter;
 
-    public OrCondition(Condition... innerConditions) {
-        this.innerConditions = innerConditions;
+    public CustomLDAPFilter(String customFilter) {
+        this.customFilter = customFilter;
     }
 
     @Override
@@ -24,12 +24,6 @@ class OrCondition implements Condition {
 
     @Override
     public void applyCondition(StringBuilder filter) {
-        filter.append("(|");
-
-        for (Condition innerCondition : innerConditions) {
-            innerCondition.applyCondition(filter);
-        }
-
-        filter.append(")");
+        filter.append(customFilter);
     }
 }

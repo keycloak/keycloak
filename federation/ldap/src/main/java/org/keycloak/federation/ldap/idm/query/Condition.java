@@ -8,11 +8,9 @@ package org.keycloak.federation.ldap.idm.query;
  */
 public interface Condition {
 
-    /**
-     * <p>The {@link QueryParameter} restricted by this condition.</p>
-     *
-     * @return
-     */
-    QueryParameter getParameter();
+    String getParameterName();
+    void setParameterName(String parameterName);
+
+    void applyCondition(StringBuilder filter);
 
 }

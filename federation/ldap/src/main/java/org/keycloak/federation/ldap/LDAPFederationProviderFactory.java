@@ -8,7 +8,6 @@ import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticat
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
@@ -21,7 +20,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationEventAwareProviderFactory;
@@ -211,12 +209,12 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
 
         // Sync newly created and updated users
         LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
-        Condition createCondition = conditionsBuilder.greaterThanOrEqualTo(new QueryParameter(LDAPConstants.CREATE_TIMESTAMP), lastSync);
-        Condition modifyCondition = conditionsBuilder.greaterThanOrEqualTo(new QueryParameter(LDAPConstants.MODIFY_TIMESTAMP), lastSync);
+        Condition createCondition = conditionsBuilder.greaterThanOrEqualTo(LDAPConstants.CREATE_TIMESTAMP, lastSync);
+        Condition modifyCondition = conditionsBuilder.greaterThanOrEqualTo(LDAPConstants.MODIFY_TIMESTAMP, lastSync);
         Condition orCondition = conditionsBuilder.orCondition(createCondition, modifyCondition);
 
         LDAPQuery userQuery = createQuery(sessionFactory, realmId, model);
-        userQuery.where(orCondition);
+        userQuery.addWhereCondition(orCondition);
         UserFederationSyncResult result = syncImpl(sessionFactory, userQuery, realmId, model);
 
         logger.infof("Sync changed users finished: %s", result.getStatus());

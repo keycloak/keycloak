@@ -1,34 +1,37 @@
 package org.keycloak.federation.ldap.idm.query.internal;
 
+import java.util.Date;
+
 import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.QueryParameter;
+import org.keycloak.federation.ldap.idm.store.ldap.LDAPUtil;
 
 /**
  * @author Pedro Igor
  */
-public class GreaterThanCondition implements Condition {
+class GreaterThanCondition extends NamedParameterCondition {
 
     private final boolean orEqual;
 
-    private final QueryParameter parameter;
     private final Comparable value;
 
-    public GreaterThanCondition(QueryParameter parameter, Comparable value, boolean orEqual) {
-        this.parameter = parameter;
+    public GreaterThanCondition(String name, Comparable value, boolean orEqual) {
+        super(name);
         this.value = value;
         this.orEqual = orEqual;
     }
 
     @Override
-    public QueryParameter getParameter() {
-        return this.parameter;
-    }
+    public void applyCondition(StringBuilder filter) {
+        Comparable parameterValue = value;
 
-    public Comparable getValue() {
-        return this.value;
-    }
+        if (Date.class.isInstance(parameterValue)) {
+            parameterValue = LDAPUtil.formatDate((Date) parameterValue);
+        }
 
-    public boolean isOrEqual() {
-        return this.orEqual;
+        if (orEqual) {
+            filter.append("(").append(getParameterName()).append(">=").append(parameterValue).append(")");
+        } else {
+            filter.append("(").append(getParameterName()).append(">").append(parameterValue).append(")");
+        }
     }
 }

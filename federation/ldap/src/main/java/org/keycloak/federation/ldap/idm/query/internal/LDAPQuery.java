@@ -47,14 +47,12 @@ public class LDAPQuery {
     private final List<UserFederationMapperModel> mappers = new ArrayList<UserFederationMapperModel>();
 
     private int searchScope = SearchControls.SUBTREE_SCOPE;
-    
-    private String ldapFilter = null;
 
     public LDAPQuery(LDAPFederationProvider ldapProvider) {
         this.ldapFedProvider = ldapProvider;
     }
 
-    public LDAPQuery where(Condition... condition) {
+    public LDAPQuery addWhereCondition(Condition... condition) {
         this.conditions.addAll(Arrays.asList(condition));
         return this;
     }
@@ -189,14 +187,6 @@ public class LDAPQuery {
 
     public Set<Condition> getConditions() {
         return this.conditions;
-    }
-
-    public String getLdapFilter() {
-        return ldapFilter;
-    }
-
-    public void setLdapFilter(String ldapFilter) {
-        this.ldapFilter = ldapFilter;
     }
 
 }

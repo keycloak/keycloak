@@ -1,7 +1,6 @@
 package org.keycloak.federation.ldap.idm.query.internal;
 
 import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.Sort;
 import org.keycloak.models.ModelException;
 
@@ -10,38 +9,30 @@ import org.keycloak.models.ModelException;
  */
 public class LDAPQueryConditionsBuilder {
 
-    public Condition like(QueryParameter parameter, String pattern) {
-        return new LikeCondition(parameter, pattern);
-    }
-
-    public Condition equal(QueryParameter parameter, Object value) {
+    public Condition equal(String parameter, Object value) {
         return new EqualCondition(parameter, value);
     }
 
-    public Condition greaterThan(QueryParameter parameter, Object x) {
+    public Condition greaterThan(String paramName, Object x) {
         throwExceptionIfNotComparable(x);
-        return new GreaterThanCondition(parameter, (Comparable) x, false);
+        return new GreaterThanCondition(paramName, (Comparable) x, false);
     }
 
-    public Condition greaterThanOrEqualTo(QueryParameter parameter, Object x) {
+    public Condition greaterThanOrEqualTo(String paramName, Object x) {
         throwExceptionIfNotComparable(x);
-        return new GreaterThanCondition(parameter, (Comparable) x, true);
+        return new GreaterThanCondition(paramName, (Comparable) x, true);
     }
 
-    public Condition lessThan(QueryParameter parameter, Object x) {
-        throwExceptionIfNotComparable(x);
-        return new LessThanCondition(parameter, (Comparable) x, false);
+    public Condition lessThan(String paramName, Comparable x) {
+        return new LessThanCondition(paramName, x, false);
     }
 
-    public Condition lessThanOrEqualTo(QueryParameter parameter, Object x) {
-        throwExceptionIfNotComparable(x);
-        return new LessThanCondition(parameter, (Comparable) x, true);
+    public Condition lessThanOrEqualTo(String paramName, Comparable x) {
+        return new LessThanCondition(paramName, x, true);
     }
 
-    public Condition between(QueryParameter parameter, Object x, Object y) {
-        throwExceptionIfNotComparable(x);
-        throwExceptionIfNotComparable(y);
-        return new BetweenCondition(parameter, (Comparable) x, (Comparable) y);
+    public Condition between(String paramName, Comparable x, Comparable y) {
+        return new BetweenCondition(paramName, x, y);
     }
 
     public Condition orCondition(Condition... conditions) {
@@ -51,16 +42,24 @@ public class LDAPQueryConditionsBuilder {
         return new OrCondition(conditions);
     }
 
-    public Condition in(QueryParameter parameter, Object... x) {
-        return new InCondition(parameter, x);
+    public Condition addCustomLDAPFilter(String filter) {
+        filter = filter.trim();
+        if (!filter.startsWith("(") || !filter.endsWith(")")) {
+            throw new ModelException("Custom filter doesn't start with ( or doesn't end with ). ");
+        }
+        return new CustomLDAPFilter(filter);
     }
 
-    public Sort asc(QueryParameter parameter) {
-        return new Sort(parameter, true);
+    public Condition in(String paramName, Object... x) {
+        return new InCondition(paramName, x);
     }
 
-    public Sort desc(QueryParameter parameter) {
-        return new Sort(parameter, false);
+    public Sort asc(String paramName) {
+        return new Sort(paramName, true);
+    }
+
+    public Sort desc(String paramName) {
+        return new Sort(paramName, false);
     }
 
     private void throwExceptionIfNotComparable(Object x) {

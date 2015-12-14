@@ -14,7 +14,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.QueryParameter;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -322,9 +321,9 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
 
         // Change conditions and use ldapAttribute instead of userModel
         for (Condition condition : query.getConditions()) {
-            QueryParameter param = condition.getParameter();
-            if (param != null && param.getName().equalsIgnoreCase(userModelAttrName)) {
-                param.setName(ldapAttrName);
+            String paramName = condition.getParameterName();
+            if (paramName != null && paramName.equalsIgnoreCase(userModelAttrName)) {
+                condition.setParameterName(ldapAttrName);
             }
         }
     }
