@@ -56,6 +56,9 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     // See docs for Mode enum
     public static final String MODE = "mode";
+
+    // See docs for UserRolesRetriever enum
+    public static final String USER_ROLES_RETRIEVE_STRATEGY = "user.roles.retrieve.strategy";
     
     // Customized LDAP filter which is added to the whole LDAP query
     public static final String ROLES_LDAP_FILTER = "roles.ldap.filter";
@@ -184,10 +187,10 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     protected MembershipType getMembershipTypeLdapAttribute(UserFederationMapperModel mapperModel) {
         String membershipType = mapperModel.getConfig().get(MEMBERSHIP_ATTRIBUTE_TYPE);
-        return membershipType!=null ? Enum.valueOf(MembershipType.class, membershipType) : MembershipType.DN;
+        return (membershipType!=null && !membershipType.isEmpty()) ? Enum.valueOf(MembershipType.class, membershipType) : MembershipType.DN;
     }
 
-    private String getMembershipFromUser(LDAPObject ldapUser, MembershipType membershipType) {
+    protected String getMembershipFromUser(LDAPObject ldapUser, MembershipType membershipType) {
         return membershipType == MembershipType.DN ? ldapUser.getDn().toString() : ldapUser.getAttributeAsString(ldapUser.getRdnAttributeName());
     }
 
@@ -216,6 +219,11 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
         }
 
         return Enum.valueOf(Mode.class, modeString.toUpperCase());
+    }
+
+    private UserRolesRetrieveStrategy getUserRolesRetrieveStrategy(UserFederationMapperModel mapperModel) {
+        String strategyString = mapperModel.getConfig().get(USER_ROLES_RETRIEVE_STRATEGY);
+        return (strategyString!=null && !strategyString.isEmpty()) ? Enum.valueOf(UserRolesRetrieveStrategy.class, strategyString) : UserRolesRetrieveStrategy.LOAD_ROLES_BY_MEMBER_ATTRIBUTE;
     }
 
     public LDAPObject createLDAPRole(UserFederationMapperModel mapperModel, String roleName, LDAPFederationProvider ldapProvider) {
@@ -296,14 +304,8 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
     }
 
     protected List<LDAPObject> getLDAPRoleMappings(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser) {
-        LDAPQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
-        String membershipAttr = getMembershipLdapAttribute(mapperModel);
-
-        String userMembership = getMembershipFromUser(ldapUser, getMembershipTypeLdapAttribute(mapperModel));
-
-        Condition membershipCondition = new LDAPQueryConditionsBuilder().equal(membershipAttr, userMembership);
-        ldapQuery.addWhereCondition(membershipCondition);
-        return ldapQuery.getResultList();
+        UserRolesRetrieveStrategy strategy = getUserRolesRetrieveStrategy(mapperModel);
+        return strategy.getLDAPRoleMappings(this, mapperModel, ldapProvider, ldapUser);
     }
 
     @Override
@@ -320,6 +322,8 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     @Override
     public void beforeLDAPQuery(UserFederationMapperModel mapperModel, LDAPQuery query) {
+        UserRolesRetrieveStrategy strategy = getUserRolesRetrieveStrategy(mapperModel);
+        strategy.beforeUserLDAPQuery(mapperModel, query);
     }
 
 

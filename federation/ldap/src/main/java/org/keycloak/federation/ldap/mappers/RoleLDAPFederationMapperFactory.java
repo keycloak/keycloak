@@ -52,21 +52,24 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
                 ProviderConfigProperty.STRING_TYPE, LDAPConstants.MEMBER);
         configProperties.add(membershipLDAPAttribute);
 
+
         List<String> membershipTypes = new LinkedList<>();
         for (RoleLDAPFederationMapper.MembershipType membershipType : RoleLDAPFederationMapper.MembershipType.values()) {
             membershipTypes.add(membershipType.toString());
         }
         ProviderConfigProperty membershipType = createConfigProperty(RoleLDAPFederationMapper.MEMBERSHIP_ATTRIBUTE_TYPE, "Membership Attribute Type",
                 "DN means that LDAP role has it's members declared in form of their full DN. For example ( 'member: uid=john,ou=users,dc=example,dc=com' . " +
-                        "UID means that LDAP role has it's members declared in form of pure user uids. For example ( 'memberuid: john' ))",
+                        "UID means that LDAP role has it's members declared in form of pure user uids. For example ( 'memberUid: john' ))",
                 ProviderConfigProperty.LIST_TYPE, membershipTypes);
         configProperties.add(membershipType);
-        
+
+
         ProviderConfigProperty ldapFilter = createConfigProperty(RoleLDAPFederationMapper.ROLES_LDAP_FILTER,
                 "LDAP Filter",
                 "LDAP Filter adds additional custom filter to the whole query. Make sure that it starts with '(' and ends with ')'",
                 ProviderConfigProperty.STRING_TYPE, null);
         configProperties.add(ldapFilter);
+
 
         List<String> modes = new LinkedList<>();
         for (RoleLDAPFederationMapper.Mode mode : RoleLDAPFederationMapper.Mode.values()) {
@@ -78,6 +81,20 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
                         "they are saved to local keycloak DB.",
                 ProviderConfigProperty.LIST_TYPE, modes);
         configProperties.add(mode);
+
+
+        List<String> roleRetrievers = new LinkedList<>();
+        for (UserRolesRetrieveStrategy retriever : UserRolesRetrieveStrategy.values()) {
+            roleRetrievers.add(retriever.toString());
+        }
+        ProviderConfigProperty retriever = createConfigProperty(RoleLDAPFederationMapper.USER_ROLES_RETRIEVE_STRATEGY, "User Roles Retrieve Strategy",
+                "Specify how to retrieve roles of user. LOAD_ROLES_BY_MEMBER_ATTRIBUTE means that roles of user will be retrieved by sending LDAP query to retrieve all roles where 'member' is our user. " +
+                        "GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE means that roles of user will be retrieved from 'memberOf' attribute of our user. " +
+                        "LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY is applicable just in Active Directory and it means that roles of user will be retrieved recursively with usage of LDAP_MATCHING_RULE_IN_CHAIN extension."
+                ,
+                ProviderConfigProperty.LIST_TYPE, roleRetrievers);
+        configProperties.add(retriever);
+
 
         ProviderConfigProperty useRealmRolesMappings = createConfigProperty(RoleLDAPFederationMapper.USE_REALM_ROLES_MAPPING, "Use Realm Roles Mapping",
                 "If true, then LDAP role mappings will be mapped to realm role mappings in Keycloak. Otherwise it will be mapped to client role mappings", ProviderConfigProperty.BOOLEAN_TYPE, "true");
