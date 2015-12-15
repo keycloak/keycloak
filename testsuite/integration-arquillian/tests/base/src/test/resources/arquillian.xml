@@ -92,7 +92,7 @@
         <configuration>
             <property name="enabled">${migration.kc12}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${keycloak.migration.homee}</property>
+            <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
@@ -114,7 +114,7 @@
         <configuration>
             <property name="enabled">${auth.server.wildfly}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${auth.server.wildfly.home}</property>
+            <property name="jbossHome">${keycloak.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
@@ -125,7 +125,19 @@
         <configuration>
             <property name="enabled">${auth.server.eap6}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${auth.server.eap6.home}</property>
+            <property name="jbossHome">${keycloak.home}</property>
+            <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
+            <property name="managementAddress">localhost</property>
+            <property name="managementPort">${auth.server.management.port.jmx}</property>
+            <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+        </configuration>
+    </container>
+    
+    <container qualifier="auth-server-eap7" mode="suite" >
+        <configuration>
+            <property name="enabled">${auth.server.eap7}</property>
+            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+            <property name="jbossHome">${keycloak.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
             <property name="managementAddress">localhost</property>
             <property name="managementPort">${auth.server.management.port.jmx}</property>

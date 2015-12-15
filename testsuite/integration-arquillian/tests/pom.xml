@@ -38,6 +38,7 @@
         <arquillian-graphene.version>2.1.0.Alpha2</arquillian-graphene.version>
         <arquillian-wildfly-container.version>8.2.0.Final</arquillian-wildfly-container.version>
         <version.shrinkwrap.resolvers>2.1.1</version.shrinkwrap.resolvers>
+        <skip.unpack.server>true</skip.unpack.server>
         <skip.unpack.previous>true</skip.unpack.previous>
     </properties>
 
@@ -116,6 +117,26 @@
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>${migrated.server.artifactId}</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>zip</type>
+                                    </artifactItem>
+                                </artifactItems>
+                                <outputDirectory>${containers.home}</outputDirectory>
+                                <overWriteIfNewer>true</overWriteIfNewer>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>unpack</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                            <configuration>
+                                <skip>${skip.unpack.server}</skip>
+                                <artifactItems>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
                                         <artifactId>${server.artifactId}</artifactId>
                                         <version>${project.version}</version>
                                         <type>zip</type>
@@ -172,7 +193,7 @@
                     <version>2.1.0.Alpha3</version><!-- TODO upgrade <arquillian-graphene.version> and use ${arquillian-graphene.version} -->
                 </dependency>
                 
-<!--                <dependency>
+                <!--                <dependency>
                     <groupId>org.arquillian.extension</groupId>
                     <artifactId>arquillian-recorder-reporter-impl</artifactId>
                     <version>1.1.0.Final</version>
@@ -362,8 +383,9 @@
         <profile>
             <id>auth-server-wildfly</id>
             <properties>
+                <skip.unpack.server>false</skip.unpack.server>
+                <server.artifactId>integration-arquillian-server-wildfly</server.artifactId>
                 <auth.server.container>auth-server-wildfly</auth.server.container>
-                <auth.server.wildfly.home>${containers.home}/keycloak-${project.version}</auth.server.wildfly.home>
                 <startup.timeout.sec>300</startup.timeout.sec>
                 <adapter.test.props/>
             </properties>
@@ -371,36 +393,11 @@
                 <dependency>
                     <groupId>org.wildfly</groupId>
                     <artifactId>wildfly-arquillian-container-managed</artifactId>
-                </dependency>                 
+                </dependency>
             </dependencies>
             <build>
                 <pluginManagement>
                     <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-dependency-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>unpack</id>
-                                    <phase>generate-test-resources</phase>
-                                    <goals>
-                                        <goal>unpack</goal>
-                                    </goals>
-                                    <configuration>
-                                        <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-wildfly</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                            </artifactItem>
-                                        </artifactItems>
-                                        <outputDirectory>${containers.home}</outputDirectory>
-                                        <overWriteIfNewer>true</overWriteIfNewer>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-surefire-plugin</artifactId>
@@ -408,7 +405,7 @@
                                 <systemPropertyVariables>
                                     <auth.server.wildfly>true</auth.server.wildfly>
                                     <auth.server.undertow>false</auth.server.undertow>
-                                    <auth.server.wildfly.home>${auth.server.wildfly.home}</auth.server.wildfly.home>
+                                    <keycloak.home>${containers.home}/keycloak-${project.version}</keycloak.home>
                                     <adapter.test.props>${adapter.test.props}</adapter.test.props>
                                 </systemPropertyVariables>
                             </configuration>
@@ -421,8 +418,9 @@
         <profile>
             <id>auth-server-eap6</id>
             <properties>
+                <skip.unpack.server>false</skip.unpack.server>
+                <server.artifactId>integration-arquillian-server-eap6</server.artifactId>
                 <auth.server.container>auth-server-eap6</auth.server.container>
-                <auth.server.eap6.home>${containers.home}/keycloak-${project.version}</auth.server.eap6.home>
                 <startup.timeout.sec>300</startup.timeout.sec>
                 <adapter.test.props/>
             </properties>
@@ -438,37 +436,54 @@
                     <plugins>
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-dependency-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>unpack</id>
-                                    <phase>generate-test-resources</phase>
-                                    <goals>
-                                        <goal>unpack</goal>
-                                    </goals>
-                                    <configuration>
-                                        <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-eap6</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                            </artifactItem>
-                                        </artifactItems>
-                                        <outputDirectory>${containers.home}</outputDirectory>
-                                        <overWriteIfNewer>true</overWriteIfNewer>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
                                     <auth.server.eap6>true</auth.server.eap6>
                                     <auth.server.undertow>false</auth.server.undertow>
-                                    <auth.server.eap6.home>${auth.server.eap6.home}</auth.server.eap6.home>
+                                    <keycloak.home>${containers.home}/keycloak-${project.version}</keycloak.home>
+                                    <adapter.test.props>${adapter.test.props}</adapter.test.props>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        
+        <profile>
+            <id>auth-server-eap7</id>
+            <properties>
+                <skip.unpack.server>false</skip.unpack.server>
+                <server.artifactId>integration-arquillian-server-eap7</server.artifactId>
+                <auth.server.container>auth-server-eap7</auth.server.container>
+                <startup.timeout.sec>300</startup.timeout.sec>
+                <adapter.test.props/>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.jboss.as</groupId>
+                    <artifactId>jboss-as-arquillian-container-managed</artifactId>
+                    <version>7.2.0.Final</version>
+                </dependency>
+            </dependencies>
+<!--            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                </dependency>
+            </dependencies>-->
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <auth.server.eap7>true</auth.server.eap7>
+                                    <auth.server.undertow>false</auth.server.undertow>
+                                    <keycloak.home>${containers.home}/rh-sso-${version.rh.soo}</keycloak.home>
                                     <adapter.test.props>${adapter.test.props}</adapter.test.props>
                                 </systemPropertyVariables>
                             </configuration>
@@ -485,7 +500,7 @@
             <properties>
                 <skip.unpack.previous>false</skip.unpack.previous>
                 <server.version>1.6.1.Final</server.version>
-                <server.artifactId>integration-arquillian-server-wildfly-kc16</server.artifactId>
+                <migrated.server.artifactId>integration-arquillian-server-wildfly-kc16</migrated.server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
@@ -513,7 +528,7 @@
             <properties>
                 <skip.unpack.previous>false</skip.unpack.previous>
                 <server.version>1.5.1.Final</server.version>
-                <server.artifactId>integration-arquillian-server-wildfly-kc15</server.artifactId>
+                <migrated.server.artifactId>integration-arquillian-server-wildfly-kc15</migrated.server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
@@ -541,7 +556,7 @@
             <properties>
                 <skip.unpack.previous>false</skip.unpack.previous>
                 <server.version>1.4.0.Final</server.version>
-                <server.artifactId>integration-arquillian-server-wildfly-kc14</server.artifactId>
+                <migrated.server.artifactId>integration-arquillian-server-wildfly-kc14</migrated.server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
@@ -567,7 +582,7 @@
             <properties>
                 <skip.unpack.previous>false</skip.unpack.previous>
                 <server.version>1.3.1.Final</server.version>
-                <server.artifactId>integration-arquillian-server-wildfly-kc13</server.artifactId>
+                <migrated.server.artifactId>integration-arquillian-server-wildfly-kc13</migrated.server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
@@ -593,7 +608,7 @@
             <properties>
                 <skip.unpack.previous>false</skip.unpack.previous>
                 <server.version>1.2.0.Final</server.version>
-                <server.artifactId>integration-arquillian-server-wildfly-kc12</server.artifactId>
+                <migrated.server.artifactId>integration-arquillian-server-wildfly-kc12</migrated.server.artifactId>
             </properties>
             <build>
                 <pluginManagement>

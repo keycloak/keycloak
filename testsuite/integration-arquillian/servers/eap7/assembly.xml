@@ -1,0 +1,29 @@
+<assembly>
+    
+    <id>auth-server-eap7</id>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>${keycloak.server.home}</directory>
+            <outputDirectory>rh-sso-${version.rh.soo}</outputDirectory>
+            <excludes>
+                <exclude>**/*.sh</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${keycloak.server.home}</directory>
+            <outputDirectory>rh-sso-${version.rh.soo}</outputDirectory>
+            <includes>
+                <include>**/*.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+    </fileSets>
+
+</assembly>

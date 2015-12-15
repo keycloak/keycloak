@@ -30,6 +30,12 @@
                 <module>eap6</module>
             </modules>
         </profile>
+        <profile>
+            <id>auth-server-eap7</id>
+            <modules>
+                <module>eap7</module>
+            </modules>
+        </profile>
     </profiles>    
 
 </project>
