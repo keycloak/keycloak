@@ -11,9 +11,9 @@ import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthen
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.*;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
@@ -34,11 +34,11 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ClientModel app = new ClientManager(manager).createClient(appRealm, "resource-owner");
+            ClientModel app = KeycloakModelUtils.createClient(appRealm, "resource-owner");
             app.setDirectAccessGrantsEnabled(true);
             app.setSecret("secret");
 
-            ClientModel app2 = new ClientManager(manager).createClient(appRealm, "resource-owner-public");
+            ClientModel app2 = KeycloakModelUtils.createClient(appRealm, "resource-owner-public");
             app2.setDirectAccessGrantsEnabled(true);
             app2.setPublicClient(true);
 

@@ -762,6 +762,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 client : function(ClientLoader) {
                     return ClientLoader();
                 },
+                templates : function(ClientTemplateListLoader) {
+                    return ClientTemplateListLoader();
+                },
                 serverInfo : function(ServerInfoLoader) {
                     return ServerInfoLoader();
                 }

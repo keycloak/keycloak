@@ -12,6 +12,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.managers.ClientManager;
@@ -34,11 +35,11 @@ public class ServiceAccountTest {
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ClientModel app = new ClientManager(manager).createClient(appRealm, "service-account-cl");
+            ClientModel app = KeycloakModelUtils.createClient(appRealm, "service-account-cl");
             app.setSecret("secret1");
             new ClientManager(manager).enableServiceAccount(app);
 
-            ClientModel disabledApp = new ClientManager(manager).createClient(appRealm, "service-account-disabled");
+            ClientModel disabledApp = KeycloakModelUtils.createClient(appRealm, "service-account-disabled");
             disabledApp.setSecret("secret1");
 
             UserModel serviceAccountUser = session.users().getUserByUsername(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "service-account-cl", appRealm);
