@@ -1419,13 +1419,21 @@ module.controller('AddBuiltinProtocolMapperCtrl', function($scope, realm, client
 
 });
 
-module.controller('ClientProtocolMapperListCtrl', function($scope, realm, client, serverInfo,
+module.controller('ClientProtocolMapperListCtrl', function($scope, realm, client, templates, serverInfo,
                                                            ClientProtocolMappersByProtocol, ClientProtocolMapper,
                                                            $route, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.client = client;
     if (client.protocol == null) {
         client.protocol = 'openid-connect';
+    }
+    if (client.clientTemplate) {
+        for (var i = 0; i < templates.length; i++) {
+            if (client.clientTemplate == templates[i].name) {
+                $scope.template = templates[i];
+                break;
+            }
+        }
     }
 
     var protocolMappers = serverInfo.protocolMapperTypes[client.protocol];

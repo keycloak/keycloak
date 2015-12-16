@@ -11,6 +11,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.managers.ClientManager;
 
 import javax.ws.rs.core.Response;
 
@@ -33,7 +34,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         auth.requireCreate();
 
         try {
-            ClientModel clientModel = RepresentationToModel.createClient(session, session.getContext().getRealm(), client, true);
+            ClientModel clientModel = ClientManager.createClient(session, session.getContext().getRealm(), client, true);
             if (client.getClientId() == null) {
                 clientModel.setClientId(clientModel.getId());
             }

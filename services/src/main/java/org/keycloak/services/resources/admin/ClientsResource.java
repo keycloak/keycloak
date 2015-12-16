@@ -13,6 +13,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.managers.ClientManager;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -95,7 +96,7 @@ public class ClientsResource {
         auth.requireManage();
 
         try {
-            ClientModel clientModel = RepresentationToModel.createClient(session, realm, rep, true);
+            ClientModel clientModel = ClientManager.createClient(session, realm, rep, true);
             
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientModel.getId()).representation(rep).success();
             

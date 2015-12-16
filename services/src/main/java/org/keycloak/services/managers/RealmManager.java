@@ -50,7 +50,7 @@ import org.keycloak.timer.TimerProvider;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import static java.lang.Boolean.TRUE;
+
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 
@@ -136,7 +136,7 @@ public class RealmManager implements RealmImporter {
 
     protected void setupAdminConsole(RealmModel realm) {
         ClientModel adminConsole = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-        if (adminConsole == null) adminConsole = new ClientManager(this).createClient(realm, Constants.ADMIN_CONSOLE_CLIENT_ID);
+        if (adminConsole == null) adminConsole = KeycloakModelUtils.createClient(realm, Constants.ADMIN_CONSOLE_CLIENT_ID);
         adminConsole.setName("${client_" + Constants.ADMIN_CONSOLE_CLIENT_ID + "}");
         String baseUrl = contextPath + "/admin/" + realm.getName() + "/console";
         adminConsole.setBaseUrl(baseUrl + "/index.html");
@@ -162,7 +162,7 @@ public class RealmManager implements RealmImporter {
     public void setupAdminCli(RealmModel realm) {
         ClientModel adminCli = realm.getClientByClientId(Constants.ADMIN_CLI_CLIENT_ID);
         if (adminCli == null) {
-            adminCli = new ClientManager(this).createClient(realm, Constants.ADMIN_CLI_CLIENT_ID);
+            adminCli = KeycloakModelUtils.createClient(realm, Constants.ADMIN_CLI_CLIENT_ID);
             adminCli.setName("${client_" + Constants.ADMIN_CLI_CLIENT_ID + "}");
             adminCli.setEnabled(true);
             adminCli.setPublicClient(true);
@@ -309,7 +309,7 @@ public class RealmManager implements RealmImporter {
         String realmAdminClientId = getRealmAdminClientId(realm);
         ClientModel realmAdminClient = realm.getClientByClientId(realmAdminClientId);
         if (realmAdminClient == null) {
-            realmAdminClient = clientManager.createClient(realm, realmAdminClientId);
+            realmAdminClient = KeycloakModelUtils.createClient(realm, realmAdminClientId);
             realmAdminClient.setName("${client_" + realmAdminClientId + "}");
         }
         RoleModel adminRole = realmAdminClient.addRole(AdminRoles.REALM_ADMIN);
@@ -330,7 +330,7 @@ public class RealmManager implements RealmImporter {
     private void setupAccountManagement(RealmModel realm) {
         ClientModel client = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         if (client == null) {
-            client = new ClientManager(this).createClient(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            client = KeycloakModelUtils.createClient(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
             client.setName("${client_" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "}");
             client.setEnabled(true);
             client.setFullScopeAllowed(false);
@@ -355,7 +355,7 @@ public class RealmManager implements RealmImporter {
     public void setupBrokerService(RealmModel realm) {
         ClientModel client = realm.getClientNameMap().get(Constants.BROKER_SERVICE_CLIENT_ID);
         if (client == null) {
-            client = new ClientManager(this).createClient(realm, Constants.BROKER_SERVICE_CLIENT_ID);
+            client = KeycloakModelUtils.createClient(realm, Constants.BROKER_SERVICE_CLIENT_ID);
             client.setEnabled(true);
             client.setName("${client_" + Constants.BROKER_SERVICE_CLIENT_ID + "}");
             client.setFullScopeAllowed(false);
