@@ -14,12 +14,15 @@ import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
@@ -63,15 +66,8 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
     // Customized LDAP filter which is added to the whole LDAP query
     public static final String ROLES_LDAP_FILTER = "roles.ldap.filter";
 
-
-    // List of IDs of UserFederationMapperModels where syncRolesFromLDAP was already called in this KeycloakSession. This is to improve performance
-    // TODO: Rather address this with caching at LDAPIdentityStore level?
-    private Set<String> rolesSyncedModels = new TreeSet<>();
-
     @Override
     public void onImportUserFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
-        syncRolesFromLDAP(mapperModel, ldapProvider, realm);
-
         Mode mode = getMode(mapperModel);
 
         // For now, import LDAP role mappings just during create
@@ -95,33 +91,90 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     @Override
     public void onRegisterUserToLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
-        syncRolesFromLDAP(mapperModel, ldapProvider, realm);
     }
 
-    // Sync roles from LDAP tree and create them in local Keycloak DB (if they don't exist here yet)
-    protected void syncRolesFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, RealmModel realm) {
-        if (!rolesSyncedModels.contains(mapperModel.getId())) {
-            logger.debugf("Syncing roles from LDAP into Keycloak DB. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getDisplayName());
 
-            LDAPQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
+    // Sync roles from LDAP to Keycloak DB
+    @Override
+    public UserFederationSyncResult syncDataFromFederationProviderToKeycloak(UserFederationMapperModel mapperModel, UserFederationProvider federationProvider, KeycloakSession session, RealmModel realm) {
+        LDAPFederationProvider ldapProvider = (LDAPFederationProvider) federationProvider;
+        UserFederationSyncResult syncResult = new UserFederationSyncResult() {
 
-            // Send query
-            List<LDAPObject> ldapRoles = ldapQuery.getResultList();
-
-            RoleContainerModel roleContainer = getTargetRoleContainer(mapperModel, realm);
-            String rolesRdnAttr = getRoleNameLdapAttribute(mapperModel);
-            for (LDAPObject ldapRole : ldapRoles) {
-                String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
-
-                if (roleContainer.getRole(roleName) == null) {
-                    logger.debugf("Syncing role [%s] from LDAP to keycloak DB", roleName);
-                    roleContainer.addRole(roleName);
-                }
+            @Override
+            public String getStatus() {
+                return String.format("%d imported roles, %d roles already exists in Keycloak", getAdded(), getUpdated());
             }
 
-            rolesSyncedModels.add(mapperModel.getId());
+        };
+
+        logger.debugf("Syncing roles from LDAP into Keycloak DB. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getDisplayName());
+
+        // Send LDAP query
+        LDAPQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
+        List<LDAPObject> ldapRoles = ldapQuery.getResultList();
+
+        RoleContainerModel roleContainer = getTargetRoleContainer(mapperModel, realm);
+        String rolesRdnAttr = getRoleNameLdapAttribute(mapperModel);
+        for (LDAPObject ldapRole : ldapRoles) {
+            String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
+
+            if (roleContainer.getRole(roleName) == null) {
+                logger.debugf("Syncing role [%s] from LDAP to keycloak DB", roleName);
+                roleContainer.addRole(roleName);
+                syncResult.increaseAdded();
+            } else {
+                syncResult.increaseUpdated();
+            }
         }
+
+        return syncResult;
     }
+
+
+    // Sync roles from Keycloak back to LDAP
+    @Override
+    public UserFederationSyncResult syncDataFromKeycloakToFederationProvider(UserFederationMapperModel mapperModel, UserFederationProvider federationProvider, KeycloakSession session, RealmModel realm) {
+        LDAPFederationProvider ldapProvider = (LDAPFederationProvider) federationProvider;
+        UserFederationSyncResult syncResult = new UserFederationSyncResult() {
+
+            @Override
+            public String getStatus() {
+                return String.format("%d roles imported to LDAP, %d roles already existed in LDAP", getAdded(), getUpdated());
+            }
+
+        };
+
+        logger.debugf("Syncing roles from Keycloak into LDAP. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getDisplayName());
+
+        // Send LDAP query to see which roles exists there
+        LDAPQuery ldapQuery = createRoleQuery(mapperModel, ldapProvider);
+        List<LDAPObject> ldapRoles = ldapQuery.getResultList();
+
+        Set<String> ldapRoleNames = new HashSet<>();
+        String rolesRdnAttr = getRoleNameLdapAttribute(mapperModel);
+        for (LDAPObject ldapRole : ldapRoles) {
+            String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
+            ldapRoleNames.add(roleName);
+        }
+
+
+        RoleContainerModel roleContainer = getTargetRoleContainer(mapperModel, realm);
+        Set<RoleModel> keycloakRoles = roleContainer.getRoles();
+
+        for (RoleModel keycloakRole : keycloakRoles) {
+            String roleName = keycloakRole.getName();
+            if (ldapRoleNames.contains(roleName)) {
+                syncResult.increaseUpdated();
+            } else {
+                logger.debugf("Syncing role [%s] from Keycloak to LDAP", roleName);
+                createLDAPRole(mapperModel, roleName, ldapProvider);
+                syncResult.increaseAdded();
+            }
+        }
+
+        return syncResult;
+    }
+
 
     public LDAPQuery createRoleQuery(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider) {
         LDAPQuery ldapQuery = new LDAPQuery(ldapProvider);

@@ -32,8 +32,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -138,11 +141,13 @@ public class UserFederationProviderResource {
         auth.requireManage();
 
         UsersSyncManager syncManager = new UsersSyncManager();
-        UserFederationSyncResult syncResult = null;
+        UserFederationSyncResult syncResult;
         if ("triggerFullSync".equals(action)) {
             syncResult = syncManager.syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), this.federationProviderModel);
         } else if ("triggerChangedUsersSync".equals(action)) {
             syncResult = syncManager.syncChangedUsers(session.getKeycloakSessionFactory(), realm.getId(), this.federationProviderModel);
+        } else {
+            throw new NotFoundException("Unknown action: " + action);
         }
 
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
@@ -172,6 +177,7 @@ public class UserFederationProviderResource {
                 rep.setCategory(mapperFactory.getDisplayCategory());
                 rep.setName(mapperFactory.getDisplayType());
                 rep.setHelpText(mapperFactory.getHelpText());
+                rep.setSyncConfig(mapperFactory.getSyncConfig());
                 List<ProviderConfigProperty> configProperties = mapperFactory.getConfigProperties();
                 for (ProviderConfigProperty prop : configProperties) {
                     ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
@@ -305,6 +311,41 @@ public class UserFederationProviderResource {
         realm.removeUserFederationMapper(model);
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
 
+    }
+
+    /**
+     * Trigger sync of mapper data related to federationMapper (roles, groups, ...)
+     *
+     * @return
+     */
+    @POST
+    @Path("mappers/{id}/sync")
+    @NoCache
+    public UserFederationSyncResult syncMapperData(@PathParam("id") String mapperId, @QueryParam("direction") String direction) {
+        auth.requireManage();
+
+        UserFederationMapperModel mapperModel = realm.getUserFederationMapperById(mapperId);
+        if (mapperModel == null) throw new NotFoundException("Mapper model not found");
+        UserFederationMapper mapper = session.getProvider(UserFederationMapper.class, mapperModel.getFederationMapperType());
+
+        UserFederationProviderModel providerModel = KeycloakModelUtils.findUserFederationProviderById(mapperModel.getFederationProviderId(), realm);
+        if (providerModel == null) throw new NotFoundException("Provider model not found");
+        UserFederationProviderFactory providerFactory = (UserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, providerModel.getProviderName());
+        UserFederationProvider federationProvider = providerFactory.getInstance(session, providerModel);
+
+        logger.infof("Syncing data for mapper '%s' of type '%s'. Direction: %s", mapperModel.getName(), mapperModel.getFederationMapperType(), direction);
+
+        UserFederationSyncResult syncResult;
+        if ("fedToKeycloak".equals(direction)) {
+            syncResult = mapper.syncDataFromFederationProviderToKeycloak(mapperModel, federationProvider, session, realm);
+        } else if ("keycloakToFed".equals(direction)) {
+            syncResult = mapper.syncDataFromKeycloakToFederationProvider(mapperModel, federationProvider, session, realm);
+        } else {
+            throw new NotFoundException("Unknown direction: " + direction);
+        }
+
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+        return syncResult;
     }
 
     private void validateModel(UserFederationMapperModel model) {

@@ -5,21 +5,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.jboss.logging.Logger;
-import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.mappers.MapperConfigValidationException;
 import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderFactory;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderEvent;
-import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.representations.idm.UserFederationMapperSyncConfigRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -58,15 +50,15 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
             membershipTypes.add(membershipType.toString());
         }
         ProviderConfigProperty membershipType = createConfigProperty(RoleLDAPFederationMapper.MEMBERSHIP_ATTRIBUTE_TYPE, "Membership Attribute Type",
-                "DN means that LDAP role has it's members declared in form of their full DN. For example ( 'member: uid=john,ou=users,dc=example,dc=com' . " +
-                        "UID means that LDAP role has it's members declared in form of pure user uids. For example ( 'memberUid: john' ))",
+                "DN means that LDAP role has it's members declared in form of their full DN. For example 'member: uid=john,ou=users,dc=example,dc=com' . " +
+                        "UID means that LDAP role has it's members declared in form of pure user uids. For example 'memberUid: john' .",
                 ProviderConfigProperty.LIST_TYPE, membershipTypes);
         configProperties.add(membershipType);
 
 
         ProviderConfigProperty ldapFilter = createConfigProperty(RoleLDAPFederationMapper.ROLES_LDAP_FILTER,
                 "LDAP Filter",
-                "LDAP Filter adds additional custom filter to the whole query. Make sure that it starts with '(' and ends with ')'",
+                "LDAP Filter adds additional custom filter to the whole query. Leave this empty if no additional filtering is needed. Otherwise make sure that filter starts with '(' and ends with ')'",
                 ProviderConfigProperty.STRING_TYPE, null);
         configProperties.add(ldapFilter);
 
@@ -90,7 +82,7 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
         ProviderConfigProperty retriever = createConfigProperty(RoleLDAPFederationMapper.USER_ROLES_RETRIEVE_STRATEGY, "User Roles Retrieve Strategy",
                 "Specify how to retrieve roles of user. LOAD_ROLES_BY_MEMBER_ATTRIBUTE means that roles of user will be retrieved by sending LDAP query to retrieve all roles where 'member' is our user. " +
                         "GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE means that roles of user will be retrieved from 'memberOf' attribute of our user. " +
-                        "LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY is applicable just in Active Directory and it means that roles of user will be retrieved recursively with usage of LDAP_MATCHING_RULE_IN_CHAIN extension."
+                        "LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY is applicable just in Active Directory and it means that roles of user will be retrieved recursively with usage of LDAP_MATCHING_RULE_IN_CHAIN Ldap extension."
                 ,
                 ProviderConfigProperty.LIST_TYPE, roleRetrievers);
         configProperties.add(retriever);
@@ -131,40 +123,9 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
         return PROVIDER_ID;
     }
 
-    // Sync roles from LDAP to Keycloak DB during creation or update of mapperModel
     @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        factory.register(new ProviderEventListener() {
-
-            @Override
-            public void onEvent(ProviderEvent event) {
-                if (event instanceof RealmModel.UserFederationMapperEvent) {
-                    RealmModel.UserFederationMapperEvent mapperEvent = (RealmModel.UserFederationMapperEvent)event;
-                    UserFederationMapperModel mapperModel = mapperEvent.getFederationMapper();
-                    RealmModel realm = mapperEvent.getRealm();
-                    KeycloakSession session = mapperEvent.getSession();
-
-                    if (mapperModel.getFederationMapperType().equals(PROVIDER_ID)) {
-                        try {
-                            String federationProviderId = mapperModel.getFederationProviderId();
-                            UserFederationProviderModel providerModel = KeycloakModelUtils.findUserFederationProviderById(federationProviderId, realm);
-                            if (providerModel == null) {
-                                throw new IllegalStateException("Can't find federation provider with ID [" + federationProviderId + "] in realm " + realm.getName());
-                            }
-
-                            UserFederationProviderFactory ldapFactory = (UserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, providerModel.getProviderName());
-                            LDAPFederationProvider ldapProvider = (LDAPFederationProvider) ldapFactory.getInstance(session, providerModel);
-
-                            // Sync roles
-                            new RoleLDAPFederationMapper().syncRolesFromLDAP(mapperModel, ldapProvider, realm);
-                        } catch (Exception e) {
-                            logger.warn("Exception during initial sync of roles from LDAP.", e);
-                        }
-                    }
-                }
-            }
-
-        });
+    public UserFederationMapperSyncConfigRepresentation getSyncConfig() {
+        return new UserFederationMapperSyncConfigRepresentation(true, "sync-ldap-roles-to-keycloak", true, "sync-keycloak-roles-to-ldap");
     }
 
     @Override
