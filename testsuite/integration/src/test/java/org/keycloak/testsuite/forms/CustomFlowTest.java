@@ -34,9 +34,9 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
@@ -125,7 +125,7 @@ public class CustomFlowTest {
             appRealm.addAuthenticatorExecution(execution);
 
             // Set passthrough clientAuthenticator for our clients
-            ClientModel dummyClient = new ClientManager().createClient(appRealm, "dummy-client");
+            ClientModel dummyClient = KeycloakModelUtils.createClient(appRealm, "dummy-client");
             dummyClient.setClientAuthenticatorType(PassThroughClientAuthenticator.PROVIDER_ID);
             dummyClient.setDirectAccessGrantsEnabled(true);
 

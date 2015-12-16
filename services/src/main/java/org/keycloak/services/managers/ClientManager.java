@@ -7,16 +7,19 @@ import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.adapters.config.BaseRealmConfig;
 import org.keycloak.common.util.Time;
+import org.keycloak.representations.idm.ClientRepresentation;
 
 import java.net.URI;
 import java.util.Collections;
@@ -42,9 +45,18 @@ public class ClientManager {
     public ClientManager() {
     }
 
-    public ClientModel createClient(RealmModel realm, String name) {
-        return KeycloakModelUtils.createClient(realm, name);
+    public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation rep, boolean addDefaultRoles) {
+        ClientModel client = RepresentationToModel.createClient(session, realm, rep, addDefaultRoles);
+
+        // remove default mappers
+        if (rep.getProtocolMappers() == null && rep.getClientTemplate() != null) {
+            Set<ProtocolMapperModel> mappers = client.getProtocolMappers();
+            for (ProtocolMapperModel mapper : mappers) client.removeProtocolMapper(mapper);
+        }
+        return client;
+
     }
+
 
     public boolean removeClient(RealmModel realm, ClientModel client) {
         if (realm.removeClient(client.getId())) {

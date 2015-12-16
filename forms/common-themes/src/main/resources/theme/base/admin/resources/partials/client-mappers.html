@@ -24,6 +24,7 @@
                     <div class="pull-right" data-ng-show="access.manageClients">
                         <a class="btn btn-default" href="#/create/client/{{realm.realm}}/{{client.id}}/mappers">{{:: 'create' | translate}}</a>
                         <a class="btn btn-default" href="#/realms/{{realm.realm}}/clients/{{client.id}}/add-mappers">{{:: 'add-builtin' | translate}}</a>
+                        <a ng-show="template" class="btn btn-default" href="#/realms/{{realm.realm}}/client-templates/{{template.id}}/mappers">Inherited Template Mappers</a>
                     </div>
                 </div>
             </th>

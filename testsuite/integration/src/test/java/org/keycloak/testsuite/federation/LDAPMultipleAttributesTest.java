@@ -2,7 +2,6 @@ package org.keycloak.testsuite.federation;
 
 import java.net.URL;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,12 +27,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
-import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.adapter.AdapterTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
@@ -79,7 +77,7 @@ public class LDAPMultipleAttributesTest {
             ldapFedProvider.getLdapIdentityStore().updatePassword(bruce, "password");
 
             // Create ldap-portal client
-            ClientModel ldapClient = new ClientManager(manager).createClient(appRealm, "ldap-portal");
+            ClientModel ldapClient = KeycloakModelUtils.createClient(appRealm, "ldap-portal");
             ldapClient.addRedirectUri("/ldap-portal");
             ldapClient.addRedirectUri("/ldap-portal/*");
             ldapClient.setManagementUrl("/ldap-portal");

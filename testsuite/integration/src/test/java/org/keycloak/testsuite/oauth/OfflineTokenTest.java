@@ -31,6 +31,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -66,7 +67,7 @@ public class OfflineTokenTest {
             appRealm.setAccessTokenLifespan(10);
             appRealm.setSsoSessionIdleTimeout(30);
 
-            ClientModel app = new ClientManager(manager).createClient(appRealm, "offline-client");
+            ClientModel app = KeycloakModelUtils.createClient(appRealm, "offline-client");
             app.setDirectAccessGrantsEnabled(true);
             app.setSecret("secret1");
             String testAppRedirectUri = appRealm.getClientByClientId("test-app").getRedirectUris().iterator().next();

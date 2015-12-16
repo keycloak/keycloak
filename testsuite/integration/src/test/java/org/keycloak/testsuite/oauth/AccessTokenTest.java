@@ -49,6 +49,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
@@ -61,7 +62,6 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
@@ -881,7 +881,7 @@ public class AccessTokenTest {
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                ClientModel client = new ClientManager(manager).createClient(appRealm, "sample-public-client");
+                ClientModel client = KeycloakModelUtils.createClient(appRealm, "sample-public-client");
                 client.addRedirectUri("http://localhost:8081/app/auth");
                 client.setEnabled(true);
                 client.setPublicClient(true);

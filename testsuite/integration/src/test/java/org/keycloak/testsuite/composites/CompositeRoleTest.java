@@ -35,7 +35,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.ApplicationServlet;
 import org.keycloak.testsuite.OAuthClient;
@@ -85,7 +84,7 @@ public class CompositeRoleTest {
             realmRole1User.updateCredential(UserCredentialModel.password("password"));
             realmRole1User.grantRole(realmRole1);
 
-            final ClientModel realmComposite1Application = new ClientManager(manager).createClient(realm, "REALM_COMPOSITE_1_APPLICATION");
+            final ClientModel realmComposite1Application = KeycloakModelUtils.createClient(realm, "REALM_COMPOSITE_1_APPLICATION");
             realmComposite1Application.setFullScopeAllowed(false);
             realmComposite1Application.setEnabled(true);
             realmComposite1Application.addScopeMapping(realmComposite1);
@@ -94,7 +93,7 @@ public class CompositeRoleTest {
             realmComposite1Application.setManagementUrl("http://localhost:8081/app/logout");
             realmComposite1Application.setSecret("password");
 
-            final ClientModel realmRole1Application = new ClientManager(manager).createClient(realm, "REALM_ROLE_1_APPLICATION");
+            final ClientModel realmRole1Application = KeycloakModelUtils.createClient(realm, "REALM_ROLE_1_APPLICATION");
             realmRole1Application.setFullScopeAllowed(false);
             realmRole1Application.setEnabled(true);
             realmRole1Application.addScopeMapping(realmRole1);
@@ -104,7 +103,7 @@ public class CompositeRoleTest {
             realmRole1Application.setSecret("password");
 
 
-            final ClientModel appRoleApplication = new ClientManager(manager).createClient(realm, "APP_ROLE_APPLICATION");
+            final ClientModel appRoleApplication = KeycloakModelUtils.createClient(realm, "APP_ROLE_APPLICATION");
             appRoleApplication.setFullScopeAllowed(false);
             appRoleApplication.setEnabled(true);
             appRoleApplication.addRedirectUri("http://localhost:8081/app/*");
@@ -127,7 +126,7 @@ public class CompositeRoleTest {
             realmAppRoleUser.updateCredential(UserCredentialModel.password("password"));
             realmAppRoleUser.grantRole(appRole2);
 
-            final ClientModel appCompositeApplication = new ClientManager(manager).createClient(realm, "APP_COMPOSITE_APPLICATION");
+            final ClientModel appCompositeApplication = KeycloakModelUtils.createClient(realm, "APP_COMPOSITE_APPLICATION");
             appCompositeApplication.setFullScopeAllowed(false);
             appCompositeApplication.setEnabled(true);
             appCompositeApplication.addRedirectUri("http://localhost:8081/app/*");

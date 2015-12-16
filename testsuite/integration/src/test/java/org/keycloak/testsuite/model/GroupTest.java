@@ -1,41 +1,27 @@
 package org.keycloak.testsuite.model;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
-import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
-import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
-import org.keycloak.protocol.saml.mappers.HardcodedAttributeMapper;
-import org.keycloak.protocol.saml.mappers.HardcodedRole;
-import org.keycloak.protocol.saml.mappers.RoleListMapper;
-import org.keycloak.protocol.saml.mappers.RoleNameMapper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
@@ -61,7 +47,7 @@ public class GroupTest {
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ClientModel app = new ClientManager(manager).createClient(appRealm, "resource-owner");
+            ClientModel app = KeycloakModelUtils.createClient(appRealm, "resource-owner");
             app.setDirectAccessGrantsEnabled(true);
             app.setSecret("secret");
 
