@@ -16,6 +16,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.dom.saml.v2.SAML2Object;
@@ -34,7 +35,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.AuthorizationEndpointBase;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.SignatureAlgorithm;
@@ -221,7 +224,7 @@ public class SamlService extends AuthorizationEndpointBase {
             }
 
             ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
-            clientSession.setAuthMethod(SamlProtocol.LOGIN_PROTOCOL);
+            clientSession.setAuthMethod(getLoginProtocol());
             clientSession.setRedirectUri(redirect);
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
             clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
@@ -246,7 +249,7 @@ public class SamlService extends AuthorizationEndpointBase {
             return newBrowserAuthentication(clientSession, requestAbstractType.isIsPassive());
         }
 
-        private String getBindingType(AuthnRequestType requestAbstractType) {
+        protected String getBindingType(AuthnRequestType requestAbstractType) {
             URI requestedProtocolBinding = requestAbstractType.getProtocolBinding();
 
             if (requestedProtocolBinding != null) {
@@ -370,7 +373,7 @@ public class SamlService extends AuthorizationEndpointBase {
         }
     }
 
-    protected class PostBindingProtocol extends BindingProtocol {
+    public class PostBindingProtocol extends BindingProtocol {
 
         @Override
         protected void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {
@@ -443,7 +446,12 @@ public class SamlService extends AuthorizationEndpointBase {
     }
 
     protected Response newBrowserAuthentication(ClientSessionModel clientSession, boolean isPassive) {
-        return handleBrowserAuthenticationRequest(clientSession, new SamlProtocol().setEventBuilder(event).setHttpHeaders(headers).setRealm(realm).setSession(session).setUriInfo(uriInfo), isPassive);
+        LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
+        protocol.setRealm(realm)
+                .setHttpHeaders(request.getHttpHeaders())
+                .setUriInfo(uriInfo)
+                .setEventBuilder(event);
+        return handleBrowserAuthenticationRequest(clientSession, protocol, isPassive);
     }
 
     /**
@@ -461,6 +469,16 @@ public class SamlService extends AuthorizationEndpointBase {
     public Response postBinding(@FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest, @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse, @FormParam(GeneralConstants.RELAY_STATE) String relayState) {
         logger.debug("SAML POST");
         return new PostBindingProtocol().execute(samlRequest, samlResponse, relayState);
+    }
+
+    @POST
+    @Consumes("application/soap+xml")
+    public Response soapBinding(InputStream inputStream) {
+        SamlEcpProfileService bindingService = new SamlEcpProfileService(realm, event, authManager);
+
+        ResteasyProviderFactory.getInstance().injectProperties(bindingService);
+
+        return bindingService.authenticate(inputStream);
     }
 
     @GET
@@ -519,7 +537,7 @@ public class SamlService extends AuthorizationEndpointBase {
         }
 
         ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
-        clientSession.setAuthMethod(SamlProtocol.LOGIN_PROTOCOL);
+        clientSession.setAuthMethod(getLoginProtocol());
         clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
         clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
         clientSession.setNote(SamlProtocol.SAML_BINDING, SamlProtocol.SAML_POST_BINDING);
@@ -535,6 +553,10 @@ public class SamlService extends AuthorizationEndpointBase {
 
         return newBrowserAuthentication(clientSession, false);
 
+    }
+
+    protected String getLoginProtocol() {
+        return SamlProtocol.LOGIN_PROTOCOL;
     }
 
 }

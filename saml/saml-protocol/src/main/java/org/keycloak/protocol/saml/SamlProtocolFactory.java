@@ -42,7 +42,7 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
 
     @Override
     public String getId() {
-        return "saml";
+        return SamlProtocol.LOGIN_PROTOCOL;
     }
 
     @Override
@@ -90,8 +90,9 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
 
     @Override
     protected void addDefaults(ClientModel client) {
-        for (ProtocolMapperModel model : defaultBuiltins) client.addProtocolMapper(model);
-
+        for (ProtocolMapperModel model : defaultBuiltins) {
+            model.setProtocol(getId());
+            client.addProtocolMapper(model);
+        }
     }
-
 }

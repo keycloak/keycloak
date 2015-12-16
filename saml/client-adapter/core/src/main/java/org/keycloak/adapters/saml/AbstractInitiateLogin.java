@@ -7,21 +7,24 @@ import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.saml.SAML2NameIDPolicyBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.w3c.dom.Document;
 
+import java.io.IOException;
 import java.security.KeyPair;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class InitiateLogin implements AuthChallenge {
-    protected static Logger log = Logger.getLogger(InitiateLogin.class);
+public abstract class AbstractInitiateLogin implements AuthChallenge {
+    protected static Logger log = Logger.getLogger(AbstractInitiateLogin.class);
 
     protected SamlDeployment deployment;
     protected SamlSessionStore sessionStore;
 
-    public InitiateLogin(SamlDeployment deployment, SamlSessionStore sessionStore) {
+    public AbstractInitiateLogin(SamlDeployment deployment, SamlSessionStore sessionStore) {
         this.deployment = deployment;
         this.sessionStore = sessionStore;
     }
@@ -35,18 +38,14 @@ public class InitiateLogin implements AuthChallenge {
     public boolean challenge(HttpFacade httpFacade) {
         try {
             String issuerURL = deployment.getEntityID();
-            String actionUrl = deployment.getIDP().getSingleSignOnService().getRequestBindingUrl();
-            String destinationUrl = actionUrl;
             String nameIDPolicyFormat = deployment.getNameIDPolicyFormat();
 
             if (nameIDPolicyFormat == null) {
                 nameIDPolicyFormat =  JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get();
             }
 
-
-
             SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
-                    .destination(destinationUrl)
+                    .destination(deployment.getIDP().getSingleSignOnService().getRequestBindingUrl())
                     .issuer(issuerURL)
                     .forceAuthn(deployment.isForceAuthentication()).isPassive(deployment.isIsPassive())
                     .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
@@ -79,14 +78,14 @@ public class InitiateLogin implements AuthChallenge {
             }
             sessionStore.saveRequest();
 
-            Document document = authnRequestBuilder.toDocument();
-            SamlDeployment.Binding samlBinding = deployment.getIDP().getSingleSignOnService().getRequestBinding();
-            SamlUtil.sendSaml(true, httpFacade, actionUrl, binding, document, samlBinding);
+            sendAuthnRequest(httpFacade, authnRequestBuilder, binding);
             sessionStore.setCurrentAction(SamlSessionStore.CurrentAction.LOGGING_IN);
         } catch (Exception e) {
             throw new RuntimeException("Could not create authentication request.", e);
         }
         return true;
     }
+
+    protected abstract void sendAuthnRequest(HttpFacade httpFacade, SAML2AuthnRequestBuilder authnRequestBuilder, BaseSAML2BindingBuilder binding) throws ProcessingException, ConfigurationException, IOException;
 
 }
