@@ -1,6 +1,5 @@
 package org.keycloak.models.jpa;
 
-import org.keycloak.Config;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -19,7 +18,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationMapperEventImpl;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
@@ -1541,8 +1539,6 @@ public class RealmAdapter implements RealmModel {
         this.realm.getUserFederationMappers().add(entity);
         UserFederationMapperModel mapperModel = entityToModel(entity);
 
-        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapperModel, this, session));
-
         return mapperModel;
     }
 
@@ -1597,8 +1593,6 @@ public class RealmAdapter implements RealmModel {
             entity.getConfig().putAll(mapper.getConfig());
         }
         em.flush();
-
-        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapper, this, session));
     }
 
     @Override

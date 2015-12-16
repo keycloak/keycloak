@@ -986,7 +986,7 @@ module.controller('UserFederationMapperListCtrl', function($scope, $location, No
 
 });
 
-module.controller('UserFederationMapperCtrl', function($scope, realm,  provider, mapperTypes, mapper, clients, UserFederationMapper, Notifications, Dialog, $location) {
+module.controller('UserFederationMapperCtrl', function($scope, realm,  provider, mapperTypes, mapper, clients, UserFederationMapper, UserFederationMapperSync, Notifications, Dialog, $location) {
     console.log('UserFederationMapperCtrl');
     $scope.realm = realm;
     $scope.provider = provider;
@@ -1034,6 +1034,22 @@ module.controller('UserFederationMapperCtrl', function($scope, realm,  provider,
             });
         });
     };
+
+    $scope.triggerFedToKeycloakSync = function() {
+        triggerMapperSync("fedToKeycloak")
+    }
+
+    $scope.triggerKeycloakToFedSync = function() {
+        triggerMapperSync("keycloakToFed");
+    }
+
+    function triggerMapperSync(direction) {
+        UserFederationMapperSync.save({ direction: direction, realm: realm.realm, provider: provider.id, mapperId : $scope.mapper.id }, {}, function(syncResult) {
+            Notifications.success("Data synced successfully. " + syncResult.status);
+        }, function() {
+            Notifications.error("Error during sync of data");
+        });
+    }
 
 });
 

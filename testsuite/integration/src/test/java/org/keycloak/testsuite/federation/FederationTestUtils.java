@@ -141,6 +141,16 @@ class FederationTestUtils {
         }
     }
 
+    public static void syncRolesFromLDAP(RealmModel realm, LDAPFederationProvider ldapProvider, UserFederationProviderModel providerModel) {
+        RoleLDAPFederationMapper roleMapper = new RoleLDAPFederationMapper();
+
+        UserFederationMapperModel mapperModel = realm.getUserFederationMapperByName(providerModel.getId(), "realmRolesMapper");
+        roleMapper.syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, ldapProvider.getSession(), realm);
+
+        mapperModel = realm.getUserFederationMapperByName(providerModel.getId(), "financeRolesMapper");
+        roleMapper.syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, ldapProvider.getSession(), realm);
+    }
+
     public static void removeAllLDAPUsers(LDAPFederationProvider ldapProvider, RealmModel realm) {
         LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
         LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);

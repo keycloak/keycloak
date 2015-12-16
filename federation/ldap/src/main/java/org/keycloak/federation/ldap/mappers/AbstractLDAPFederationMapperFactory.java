@@ -10,6 +10,7 @@ import org.keycloak.mappers.UserFederationMapperFactory;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.idm.UserFederationMapperSyncConfigRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -33,6 +34,11 @@ public abstract class AbstractLDAPFederationMapperFactory implements UserFederat
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    public UserFederationMapperSyncConfigRepresentation getSyncConfig() {
+        return new UserFederationMapperSyncConfigRepresentation(false, null, false, null);
     }
 
     @Override

@@ -22,7 +22,6 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationMapperEventImpl;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
@@ -1930,8 +1929,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateMongoEntity();
         UserFederationMapperModel mapperModel = entityToModel(entity);
 
-        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapperModel, this, session));
-
         return mapperModel;
     }
 
@@ -1986,8 +1983,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             entity.getConfig().putAll(mapper.getConfig());
         }
         updateMongoEntity();
-
-        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapper, this, session));
     }
 
     @Override

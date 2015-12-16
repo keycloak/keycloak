@@ -88,6 +88,9 @@ public class LDAPRoleMappingsTest {
             FederationTestUtils.createLDAPRole(manager.getSession(), appRealm, ldapModel, "realmRolesMapper", "realmRole1");
             FederationTestUtils.createLDAPRole(manager.getSession(), appRealm, ldapModel, "realmRolesMapper", "realmRole2");
             FederationTestUtils.createLDAPRole(manager.getSession(), appRealm, ldapModel, "financeRolesMapper", "financeRole1");
+
+            // Sync LDAP roles to Keycloak DB
+            FederationTestUtils.syncRolesFromLDAP(appRealm, ldapFedProvider, ldapModel);
         }
     });
 
