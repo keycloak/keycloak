@@ -86,148 +86,6 @@
             </build>
         </profile>
         
-<!--        <profile>
-            <id>adapter-libs-provided</id>
-            <activation>    
-                <property>
-                    <name>!adapter.libs.bundled</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-wildfly-adapter-dist</artifactId>
-                    <type>zip</type>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
-                    <type>zip</type>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>unpack-adapter</id>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>org.keycloak</groupId>
-                                            <artifactId>keycloak-wildfly-adapter-dist</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>zip</type>
-                                            <outputDirectory>${keycloak.server.home}</outputDirectory>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.keycloak</groupId>
-                                            <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>zip</type>
-                                            <outputDirectory>${keycloak.server.home}</outputDirectory>
-                                        </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>configure-adapter-subsystem</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <transformationSet>
-                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                            </includes>
-                                            <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
-                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>ssl</id>
-            <activation>
-                <property>
-                    <name>auth.server.ssl.required</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>configure-adapter-subsystem-security</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <transformationSet>
-                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                            </includes>
-                                            <stylesheet>src/main/xslt/security.xsl</stylesheet>
-                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <version>2.7</version>
-                        <executions>
-                            <execution>
-                                <id>copy-keystore</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                     <outputDirectory>${keycloak.server.home}/standalone/configuration</outputDirectory>
-                                     <resources>
-                                         <resource>
-                                              <directory>src/main/keystore</directory>
-                                              <includes>
-                                                  <include>keycloak.jks</include>
-                                                  <include>keycloak.truststore</include>
-                                              </includes>
-                                         </resource>
-                                     </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
         <profile>
             <id>jpa</id>
             <properties>
@@ -300,7 +158,7 @@
                         <artifactId>xml-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>configure-wildfly-datasource</id>
+                                <id>configure-datasource</id>
                                 <phase>process-resources</phase>
                                 <goals>
                                     <goal>transform</goal>
@@ -366,6 +224,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>    -->    
+        </profile>
     </profiles>
 </project>
