@@ -5,7 +5,9 @@ import org.jboss.logging.Logger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -166,8 +168,40 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
-        return session.userStorage().getGroupMembers(realm, group, firstResult, maxResults);
+    public List<UserModel> getGroupMembers(RealmModel realm, final GroupModel group, int firstResult, int maxResults) {
+        // Not very effective. For the page X, it is loading also all previous pages 0..X-1 . Improve if needed...
+        int maxTotal = firstResult + maxResults;
+        List<UserModel> localMembers = query(new PaginatedQuery() {
+
+            @Override
+            public List<UserModel> query(RealmModel realm, int first, int max) {
+                return session.userStorage().getGroupMembers(realm, group, first, max);
+            }
+
+        }, realm, 0, maxTotal);
+
+        Set<UserModel> result = new LinkedHashSet<>(localMembers);
+
+        for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
+            if (result.size() >= maxTotal) {
+                break;
+            }
+
+            int max = maxTotal - result.size();
+
+            UserFederationProvider fed = getFederationProvider(federation);
+            List<UserModel> current = fed.getGroupMembers(realm, group, 0, max);
+            if (current != null) {
+                result.addAll(current);
+            }
+        }
+
+        if (result.size() <= firstResult) {
+            return Collections.emptyList();
+        }
+
+        int max = Math.min(maxTotal, result.size());
+        return new ArrayList<>(result).subList(firstResult, max);
     }
 
     @Override

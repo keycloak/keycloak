@@ -26,6 +26,20 @@ public class LDAPDn {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof LDAPDn)) {
+            return false;
+        }
+
+        return toString().equals(obj.toString());
+    }
+
+    @Override
+    public int hashCode() {
+        return toString().hashCode();
+    }
+
+    @Override
     public String toString() {
         return toString(entries);
     }

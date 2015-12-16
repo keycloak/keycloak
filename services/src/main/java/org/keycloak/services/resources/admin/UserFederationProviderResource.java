@@ -188,6 +188,8 @@ public class UserFederationProviderResource {
                     propRep.setHelpText(prop.getHelpText());
                     rep.getProperties().add(propRep);
                 }
+                rep.setDefaultConfig(mapperFactory.getDefaultConfig(this.federationProviderModel));
+
                 types.put(rep.getId(), rep);
             }
         }

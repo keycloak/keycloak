@@ -117,7 +117,6 @@ public class LDAPMultipleAttributesTest {
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
-            LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
 
             FederationTestUtils.assertUserImported(session.users(), appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", "88441");
 
@@ -155,7 +154,7 @@ public class LDAPMultipleAttributesTest {
     }
 
     private void assertPostalCodes(List<String> postalCodes, String... expectedPostalCodes) {
-        if (expectedPostalCodes == null && postalCodes.isEmpty()) {
+        if (expectedPostalCodes == null || postalCodes.isEmpty()) {
             return;
         }
 

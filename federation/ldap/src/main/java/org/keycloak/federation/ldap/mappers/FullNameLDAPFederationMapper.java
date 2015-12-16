@@ -24,9 +24,13 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
     public static final String LDAP_FULL_NAME_ATTRIBUTE = "ldap.full.name.attribute";
     public static final String READ_ONLY = "read.only";
 
+    public FullNameLDAPFederationMapper(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, RealmModel realm) {
+        super(mapperModel, ldapProvider, realm);
+    }
+
     @Override
-    public void onImportUserFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
-        String ldapFullNameAttrName = getLdapFullNameAttrName(mapperModel);
+    public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, boolean isCreate) {
+        String ldapFullNameAttrName = getLdapFullNameAttrName();
         String fullName = ldapUser.getAttributeAsString(ldapFullNameAttrName);
         if (fullName == null) {
             return;
@@ -45,19 +49,19 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
     }
 
     @Override
-    public void onRegisterUserToLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
-        String ldapFullNameAttrName = getLdapFullNameAttrName(mapperModel);
+    public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser) {
+        String ldapFullNameAttrName = getLdapFullNameAttrName();
         String fullName = getFullName(localUser.getFirstName(), localUser.getLastName());
         ldapUser.setSingleAttribute(ldapFullNameAttrName, fullName);
 
-        if (isReadOnly(mapperModel)) {
+        if (isReadOnly()) {
             ldapUser.addReadOnlyAttributeName(ldapFullNameAttrName);
         }
     }
 
     @Override
-    public UserModel proxy(final UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
-        if (ldapProvider.getEditMode() == UserFederationProvider.EditMode.WRITABLE && !isReadOnly(mapperModel)) {
+    public UserModel proxy(LDAPObject ldapUser, UserModel delegate) {
+        if (ldapProvider.getEditMode() == UserFederationProvider.EditMode.WRITABLE && !isReadOnly()) {
 
 
             TxAwareLDAPUserModelDelegate txDelegate = new TxAwareLDAPUserModelDelegate(delegate, ldapProvider, ldapUser) {
@@ -82,7 +86,7 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
                     ensureTransactionStarted();
 
-                    String ldapFullNameAttrName = getLdapFullNameAttrName(mapperModel);
+                    String ldapFullNameAttrName = getLdapFullNameAttrName();
                     ldapUser.setSingleAttribute(ldapFullNameAttrName, fullName);
                 }
 
@@ -95,8 +99,8 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
     }
 
     @Override
-    public void beforeLDAPQuery(UserFederationMapperModel mapperModel, LDAPQuery query) {
-        String ldapFullNameAttrName = getLdapFullNameAttrName(mapperModel);
+    public void beforeLDAPQuery(LDAPQuery query) {
+        String ldapFullNameAttrName = getLdapFullNameAttrName();
         query.addReturningLdapAttribute(ldapFullNameAttrName);
 
         // Change conditions and compute condition for fullName from the conditions for firstName and lastName. Right now just "equal" condition is supported
@@ -137,7 +141,7 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
         query.addWhereCondition(fullNameCondition);
     }
 
-    protected String getLdapFullNameAttrName(UserFederationMapperModel mapperModel) {
+    protected String getLdapFullNameAttrName() {
         String ldapFullNameAttrName = mapperModel.getConfig().get(LDAP_FULL_NAME_ATTRIBUTE);
         return ldapFullNameAttrName == null ? LDAPConstants.CN : ldapFullNameAttrName;
     }
@@ -154,7 +158,7 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
         }
     }
 
-    private boolean isReadOnly(UserFederationMapperModel mapperModel) {
+    private boolean isReadOnly() {
         return parseBooleanParameter(mapperModel, READ_ONLY);
     }
 }

@@ -1,5 +1,8 @@
 package org.keycloak.federation.ldap;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.federation.ldap.idm.model.LDAPDn;
@@ -9,6 +12,8 @@ import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.membership.MembershipType;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
@@ -96,5 +101,110 @@ public class LDAPUtils {
                     "If your LDAP server really doesn't support the notion of UUID, you can use any other attribute, which is supposed to be unique among LDAP users in tree. For example 'uid' or 'entryDN' . " +
                     "Mapped UUID LDAP attribute: " + config.getUuidLDAPAttributeName() + ", user DN: " + ldapUser.getDn());
         }
+    }
+
+
+    // roles & groups
+
+    public static LDAPObject createLDAPGroup(LDAPFederationProvider ldapProvider, String groupName, String groupNameAttribute, Collection<String> objectClasses,
+                                             String parentDn, Map<String, Set<String>> additionalAttributes) {
+        LDAPObject ldapObject = new LDAPObject();
+
+        ldapObject.setRdnAttributeName(groupNameAttribute);
+        ldapObject.setObjectClasses(objectClasses);
+        ldapObject.setSingleAttribute(groupNameAttribute, groupName);
+
+        LDAPDn roleDn = LDAPDn.fromString(parentDn);
+        roleDn.addFirst(groupNameAttribute, groupName);
+        ldapObject.setDn(roleDn);
+
+        for (Map.Entry<String, Set<String>> attrEntry : additionalAttributes.entrySet()) {
+            ldapObject.setAttribute(attrEntry.getKey(), attrEntry.getValue());
+        }
+
+        ldapProvider.getLdapIdentityStore().add(ldapObject);
+        return ldapObject;
+    }
+
+    /**
+     * Add ldapChild as member of ldapParent and save ldapParent to LDAP.
+     *
+     * @param ldapProvider
+     * @param membershipType how is 'member' attribute saved (full DN or just uid)
+     * @param memberAttrName usually 'member'
+     * @param ldapParent role or group
+     * @param ldapChild usually user (or child group or child role)
+     * @param sendLDAPUpdateRequest if true, the method will send LDAP update request too. Otherwise it will skip it
+     */
+    public static void addMember(LDAPFederationProvider ldapProvider, MembershipType membershipType, String memberAttrName, LDAPObject ldapParent, LDAPObject ldapChild, boolean sendLDAPUpdateRequest) {
+
+        Set<String> memberships = getExistingMemberships(memberAttrName, ldapParent);
+
+        // Remove membership placeholder if present
+        if (membershipType == MembershipType.DN) {
+            for (String membership : memberships) {
+                if (LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE.equals(membership)) {
+                    memberships.remove(membership);
+                    break;
+                }
+            }
+        }
+
+        String membership = getMemberValueOfChildObject(ldapChild, membershipType);
+
+        memberships.add(membership);
+        ldapParent.setAttribute(memberAttrName, memberships);
+
+        if (sendLDAPUpdateRequest) {
+            ldapProvider.getLdapIdentityStore().update(ldapParent);
+        }
+    }
+
+    /**
+     * Remove ldapChild as member of ldapParent and save ldapParent to LDAP.
+     *
+     * @param ldapProvider
+     * @param membershipType how is 'member' attribute saved (full DN or just uid)
+     * @param memberAttrName usually 'member'
+     * @param ldapParent role or group
+     * @param ldapChild usually user (or child group or child role)
+     * @param sendLDAPUpdateRequest if true, the method will send LDAP update request too. Otherwise it will skip it
+     */
+    public static void deleteMember(LDAPFederationProvider ldapProvider, MembershipType membershipType, String memberAttrName, LDAPObject ldapParent, LDAPObject ldapChild, boolean sendLDAPUpdateRequest) {
+        Set<String> memberships = getExistingMemberships(memberAttrName, ldapParent);
+
+        String userMembership = getMemberValueOfChildObject(ldapChild, membershipType);
+
+        memberships.remove(userMembership);
+
+        // Some membership placeholder needs to be always here as "member" is mandatory attribute on some LDAP servers. But not on active directory! (Placeholder, which not matches any real object is not allowed here)
+        if (memberships.size() == 0 && membershipType== MembershipType.DN && !ldapProvider.getLdapIdentityStore().getConfig().isActiveDirectory()) {
+            memberships.add(LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
+        }
+
+        ldapParent.setAttribute(memberAttrName, memberships);
+        ldapProvider.getLdapIdentityStore().update(ldapParent);
+    }
+
+    /**
+     * Return all existing memberships (values of attribute 'member' ) from the given ldapRole or ldapGroup
+     *
+     * @param memberAttrName usually 'member'
+     * @param ldapRole
+     * @return
+     */
+    public static Set<String> getExistingMemberships(String memberAttrName, LDAPObject ldapRole) {
+        Set<String> memberships = ldapRole.getAttributeAsSet(memberAttrName);
+        if (memberships == null) {
+            memberships = new HashSet<>();
+        }
+        return memberships;
+    }
+
+    /**
+     * Get value to be used as attribute 'member' in some parent ldapObject
+     */
+    public static String getMemberValueOfChildObject(LDAPObject ldapUser, MembershipType membershipType) {
+        return membershipType == MembershipType.DN ? ldapUser.getDn().toString() : ldapUser.getAttributeAsString(ldapUser.getRdnAttributeName());
     }
 }

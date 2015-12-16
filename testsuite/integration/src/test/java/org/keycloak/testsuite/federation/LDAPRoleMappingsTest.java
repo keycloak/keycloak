@@ -14,10 +14,8 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
-import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
-import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
-import org.keycloak.federation.ldap.mappers.RoleLDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.membership.LDAPGroupMapperMode;
+import org.keycloak.federation.ldap.mappers.membership.role.RoleLDAPFederationMapper;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -70,7 +68,7 @@ public class LDAPRoleMappingsTest {
             ClientModel finance = appRealm.addClient("finance");
 
             // Delete all LDAP roles
-            FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, RoleLDAPFederationMapper.Mode.LDAP_ONLY);
+            FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, LDAPGroupMapperMode.LDAP_ONLY);
             FederationTestUtils.removeAllLDAPRoles(manager.getSession(), appRealm, ldapModel, "realmRolesMapper");
             FederationTestUtils.removeAllLDAPRoles(manager.getSession(), appRealm, ldapModel, "financeRolesMapper");
 
@@ -120,7 +118,7 @@ public class LDAPRoleMappingsTest {
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
 
-            FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, RoleLDAPFederationMapper.Mode.LDAP_ONLY);
+            FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, LDAPGroupMapperMode.LDAP_ONLY);
 
             UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
             UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
@@ -212,7 +210,7 @@ public class LDAPRoleMappingsTest {
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
 
-            FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, RoleLDAPFederationMapper.Mode.READ_ONLY);
+            FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, LDAPGroupMapperMode.READ_ONLY);
 
             UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
 
@@ -224,12 +222,13 @@ public class LDAPRoleMappingsTest {
             }
 
             // Add some role mappings directly into LDAP
-            RoleLDAPFederationMapper roleMapper = new RoleLDAPFederationMapper();
             UserFederationMapperModel roleMapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "realmRolesMapper");
             LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            RoleLDAPFederationMapper roleMapper = FederationTestUtils.getRoleMapper(roleMapperModel, ldapProvider, appRealm);
+
             LDAPObject maryLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "marykeycloak");
-            roleMapper.addRoleMappingInLDAP(roleMapperModel, "realmRole1", ldapProvider, maryLdap);
-            roleMapper.addRoleMappingInLDAP(roleMapperModel, "realmRole2", ldapProvider, maryLdap);
+            roleMapper.addRoleMappingInLDAP("realmRole1", maryLdap);
+            roleMapper.addRoleMappingInLDAP("realmRole2", maryLdap);
 
             // Add some role to model
             mary.grantRole(realmRole3);
@@ -255,8 +254,8 @@ public class LDAPRoleMappingsTest {
             }
 
             // Delete role mappings directly in LDAP
-            deleteRoleMappingsInLDAP(roleMapperModel, roleMapper, ldapProvider, maryLdap, "realmRole1");
-            deleteRoleMappingsInLDAP(roleMapperModel, roleMapper, ldapProvider, maryLdap, "realmRole2");
+            deleteRoleMappingsInLDAP(roleMapper, maryLdap, "realmRole1");
+            deleteRoleMappingsInLDAP(roleMapper, maryLdap, "realmRole2");
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -282,15 +281,16 @@ public class LDAPRoleMappingsTest {
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
 
-            FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, RoleLDAPFederationMapper.Mode.IMPORT);
+            FederationTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, LDAPGroupMapperMode.IMPORT);
 
             // Add some role mappings directly in LDAP
-            RoleLDAPFederationMapper roleMapper = new RoleLDAPFederationMapper();
             UserFederationMapperModel roleMapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "realmRolesMapper");
             LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            RoleLDAPFederationMapper roleMapper = FederationTestUtils.getRoleMapper(roleMapperModel, ldapProvider, appRealm);
+
             LDAPObject robLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "robkeycloak");
-            roleMapper.addRoleMappingInLDAP(roleMapperModel, "realmRole1", ldapProvider, robLdap);
-            roleMapper.addRoleMappingInLDAP(roleMapperModel, "realmRole2", ldapProvider, robLdap);
+            roleMapper.addRoleMappingInLDAP("realmRole1", robLdap);
+            roleMapper.addRoleMappingInLDAP("realmRole2", robLdap);
 
             // Get user and check that he has requested roles from LDAP
             UserModel rob = session.users().getUserByUsername("robkeycloak", appRealm);
@@ -311,8 +311,8 @@ public class LDAPRoleMappingsTest {
             Assert.assertTrue(robRoles.contains(realmRole3));
 
             // Delete some role mappings in LDAP and check that it doesn't have any effect and user still has role
-            deleteRoleMappingsInLDAP(roleMapperModel, roleMapper, ldapProvider, robLdap, "realmRole1");
-            deleteRoleMappingsInLDAP(roleMapperModel, roleMapper, ldapProvider, robLdap, "realmRole2");
+            deleteRoleMappingsInLDAP(roleMapper, robLdap, "realmRole1");
+            deleteRoleMappingsInLDAP(roleMapper, robLdap, "realmRole2");
             robRoles = rob.getRealmRoleMappings();
             Assert.assertTrue(robRoles.contains(realmRole1));
             Assert.assertTrue(robRoles.contains(realmRole2));
@@ -330,12 +330,8 @@ public class LDAPRoleMappingsTest {
         }
     }
 
-    private void deleteRoleMappingsInLDAP(UserFederationMapperModel roleMapperModel, RoleLDAPFederationMapper roleMapper, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, String roleName) {
-        LDAPQuery ldapQuery = roleMapper.createRoleQuery(roleMapperModel, ldapProvider);
-        LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
-        Condition roleNameCondition = conditionsBuilder.equal(LDAPConstants.CN, roleName);
-        ldapQuery.addWhereCondition(roleNameCondition);
-        LDAPObject ldapRole1 = ldapQuery.getFirstResult();
-        roleMapper.deleteRoleMappingInLDAP(roleMapperModel, ldapProvider, ldapUser, ldapRole1);
+    private void deleteRoleMappingsInLDAP(RoleLDAPFederationMapper roleMapper, LDAPObject ldapUser, String roleName) {
+        LDAPObject ldapRole1 = roleMapper.loadLDAPRoleByName(roleName);
+        roleMapper.deleteRoleMappingInLDAP(ldapUser, ldapRole1);
     }
 }

@@ -93,7 +93,7 @@ public class SyncProvidersTest {
         try {
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
             UserFederationSyncResult syncResult = usersSyncManager.syncAllUsers(sessionFactory, "test", ldapModel);
-            assertSyncEquals(syncResult, 5, 0, 0, 0);
+            FederationTestUtils.assertSyncEquals(syncResult, 5, 0, 0, 0);
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -139,7 +139,7 @@ public class SyncProvidersTest {
             // Trigger partial sync
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
             UserFederationSyncResult syncResult = usersSyncManager.syncChangedUsers(sessionFactory, "test", ldapModel);
-            assertSyncEquals(syncResult, 1, 1, 0, 0);
+            FederationTestUtils.assertSyncEquals(syncResult, 1, 1, 0, 0);
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -274,7 +274,7 @@ public class SyncProvidersTest {
             FederationTestUtils.assertUserImported(session.users(), testRealm, "user1", "User1FN", "User1LN", "user1@email.org", "121");
             FederationTestUtils.assertUserImported(session.users(), testRealm, "user2", "User2FN", "User2LN", "user2@email.org", "122");
             UserModel user1 = session.users().getUserByUsername("user1", testRealm);
-            Assert.assertEquals("user1",  user1.getFirstAttribute(LDAPConstants.LDAP_ID));
+            Assert.assertEquals("user1", user1.getFirstAttribute(LDAPConstants.LDAP_ID));
 
             // Revert config changes
             UserFederationProviderModel providerModel = KeycloakModelUtils.findUserFederationProviderByDisplayName(ldapModel.getDisplayName(), testRealm);
@@ -384,12 +384,5 @@ public class SyncProvidersTest {
         } catch (InterruptedException ie) {
             throw new RuntimeException(ie);
         }
-    }
-
-    private void assertSyncEquals(UserFederationSyncResult syncResult, int expectedAdded, int expectedUpdated, int expectedRemoved, int expectedFailed) {
-        Assert.assertEquals(expectedAdded, syncResult.getAdded());
-        Assert.assertEquals(expectedUpdated, syncResult.getUpdated());
-        Assert.assertEquals(expectedRemoved, syncResult.getRemoved());
-        Assert.assertEquals(expectedFailed, syncResult.getFailed());
     }
 }
