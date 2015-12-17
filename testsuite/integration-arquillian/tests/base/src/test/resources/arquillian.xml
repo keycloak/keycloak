@@ -7,6 +7,7 @@
 	
     <extension qualifier="webdriver">
         <property name="browser">${browser}</property>
+        <property name="firefox_binary">${firefox_binary}</property>
     </extension>
     
     <extension qualifier="graphene">
