@@ -74,6 +74,7 @@
             <properties>
                 <exclude.console>**/console/**/*Test.java</exclude.console>           
                 <exclude.account>**/account/**/*Test.java</exclude.account>
+                <exclude.account>**/client/**/*Test.java</exclude.account>
             </properties>
         </profile>
     </profiles>
