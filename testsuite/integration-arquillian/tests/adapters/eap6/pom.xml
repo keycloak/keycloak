@@ -13,10 +13,11 @@
     
     <properties>
         <app.server.eap6.home>${containers.home}</app.server.eap6.home>
+        <adapter.libs.eap6>${containers.home}/keycloak-eap6-adapter-dist</adapter.libs.eap6>
     </properties>
 
     <dependencies>
-<!--        <dependency>
+        <!--        <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-arquillian-container-managed</artifactId>
         </dependency>-->
@@ -25,6 +26,17 @@
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-arquillian-container-managed</artifactId>
             <version>7.2.0.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-dist</artifactId>
+            <version>${jboss.version}</version>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-eap6-adapter-dist</artifactId>
+            <type>zip</type>
         </dependency>
     </dependencies>
 
@@ -48,6 +60,37 @@
                         <adapter.libs.eap6>${adapter.libs.eap6}</adapter.libs.eap6>
                     </systemPropertyVariables>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-eap6-with-adapter</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.jboss.as</groupId>
+                                    <artifactId>jboss-as-dist</artifactId>
+                                    <version>${jboss.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${containers.home}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-eap6-adapter-dist</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${adapter.libs.eap6}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -84,7 +127,7 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
+        <!--        <profile>
             <id>community</id>
             <properties>
                 <adapter.libs.eap6>${containers.home}/keycloak-eap6-adapter-dist</adapter.libs.eap6>
@@ -137,7 +180,7 @@
                     <type>zip</type>
                 </dependency>
             </dependencies>
-        </profile>
+        </profile>-->
         <profile>
             <id>adapter-libs-provided</id>
             <activation>    
