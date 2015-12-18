@@ -172,11 +172,16 @@
         </profile>
         <profile>
             <id>adapter-libs-provided</id>
-            <activation>    
+<!--            this profile has to be activated directly, the profile cannot be activated 
+            for prod tests, but we also need to activate adapter-libs-provided from 
+            integration-arquillian-tests-adapters, once new release of xml-maven-plugin
+            will be available we can resolve this by skipping this particular tranformation
+            for prod build-->
+<!--            <activation>    
                 <property>
                     <name>!adapter.libs.bundled</name>
                 </property>
-            </activation>
+            </activation>-->
             <properties>
                 <adapter.libs.eap6>${app.server.eap6.home}</adapter.libs.eap6>
             </properties>
