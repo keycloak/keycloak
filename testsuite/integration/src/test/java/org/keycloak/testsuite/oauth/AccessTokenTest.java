@@ -848,6 +848,9 @@ public class AccessTokenTest {
         }
         clientRep.setClientTemplate("template");
         clientRep.setFullScopeAllowed(false);
+        clientRep.setUseTemplateMappers(true);
+        clientRep.setUseTemplateScope(true);
+        clientRep.setUseTemplateConfig(true);
         realm.clients().get(clientRep.getId()).update(clientRep);
 
         {
