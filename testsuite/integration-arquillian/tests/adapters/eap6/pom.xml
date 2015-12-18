@@ -127,60 +127,49 @@
                 </plugins>
             </build>
         </profile>
-        <!--        <profile>
-            <id>community</id>
-            <properties>
-                <adapter.libs.eap6>${containers.home}/keycloak-eap6-adapter-dist</adapter.libs.eap6>
-            </properties>
+        <profile>
+            <id>adapter-jdk</id>
+            <activation>
+                <property>
+                    <name>adapter.jdk</name>
+                </property>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>unpack-as7-and-adapter</id>
-                                <phase>generate-resources</phase>
+                                <id>add-java-home-to-arquillian-xml</id>
+                                <phase>process-resources</phase>
                                 <goals>
-                                    <goal>unpack</goal>
+                                    <goal>transform</goal>
                                 </goals>
                                 <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>org.jboss.as</groupId>
-                                            <artifactId>jboss-as-dist</artifactId>
-                                            <version>${jboss.version}</version>
-                                            <type>zip</type>
-                                            <outputDirectory>${containers.home}</outputDirectory>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.keycloak</groupId>
-                                            <artifactId>keycloak-eap6-adapter-dist</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>zip</type>
-                                            <outputDirectory>${adapter.libs.eap6}</outputDirectory>
-                                        </artifactItem>
-                                    </artifactItems>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${project.build.directory}/dependency</dir>
+                                            <includes>
+                                                <include>arquillian.xml</include>
+                                            </includes>
+                                            <stylesheet>src/main/xslt/arquillian_jdk.xsl</stylesheet>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>javaHome</name>
+                                                    <value>${adapter.jdk}</value>
+                                                </parameter>
+                                            </parameters>
+                                            <outputDir>${project.build.directory}/dependency</outputDir>
+                                        </transformationSet>
+                                    </transformationSets>
                                 </configuration>
                             </execution>
                         </executions>
                     </plugin>
                 </plugins>
             </build>
-            <dependencies>
-                <dependency>
-                    <groupId>org.jboss.as</groupId>
-                    <artifactId>jboss-as-dist</artifactId>
-                    <version>${jboss.version}</version>
-                    <type>zip</type>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-eap6-adapter-dist</artifactId>
-                    <type>zip</type>
-                </dependency>
-            </dependencies>
-        </profile>-->
+        </profile>
         <profile>
             <id>adapter-libs-provided</id>
             <activation>    
