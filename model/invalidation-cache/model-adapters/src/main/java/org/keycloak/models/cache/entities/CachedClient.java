@@ -56,6 +56,9 @@ public class CachedClient implements Serializable {
     private int nodeReRegistrationTimeout;
     private Map<String, Integer> registeredNodes;
     private String clientTemplate;
+    private boolean useTemplateScope;
+    private boolean useTemplateConfig;
+    private boolean useTemplateMappers;
 
     public CachedClient(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientModel model) {
         id = model.getId();
@@ -102,6 +105,9 @@ public class CachedClient implements Serializable {
         if (model.getClientTemplate() != null) {
             clientTemplate = model.getClientTemplate().getId();
         }
+        useTemplateConfig = model.useTemplateConfig();
+        useTemplateMappers = model.useTemplateMappers();
+        useTemplateScope = model.useTemplateScope();
     }
     public String getId() {
         return id;
@@ -237,5 +243,17 @@ public class CachedClient implements Serializable {
 
     public String getClientTemplate() {
         return clientTemplate;
+    }
+
+    public boolean isUseTemplateScope() {
+        return useTemplateScope;
+    }
+
+    public boolean isUseTemplateConfig() {
+        return useTemplateConfig;
+    }
+
+    public boolean isUseTemplateMappers() {
+        return useTemplateMappers;
     }
 }

@@ -7,6 +7,20 @@
 
     <kc-tabs-client></kc-tabs-client>
 
+    <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!access.manageClients">
+        <fieldset class="border-top">
+            <div class="form-group" ng-show="client.clientTemplate">
+                <label class="col-md-2 control-label" for="useTemplateScope">Inherit Template Mappers</label>
+                <kc-tooltip>Inherit mappers from client template</kc-tooltip>
+                <div class="col-md-1">
+                    <input ng-model="client.useTemplateMappers" ng-click="changeFlag()" name="useTemplateScope" id="useTemplateScope" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <div class="col-md-2">
+                    <a href="#/realms/{{realm.realm}}/client-templates/{{template.id}}/mappers">view template mappers</a>
+                </div>
+            </div>
+        </fieldset>
+    </form>
     <table class="table table-striped table-bordered">
         <thead>
         <tr>
@@ -24,7 +38,6 @@
                     <div class="pull-right" data-ng-show="access.manageClients">
                         <a class="btn btn-default" href="#/create/client/{{realm.realm}}/{{client.id}}/mappers">{{:: 'create' | translate}}</a>
                         <a class="btn btn-default" href="#/realms/{{realm.realm}}/clients/{{client.id}}/add-mappers">{{:: 'add-builtin' | translate}}</a>
-                        <a ng-show="template" class="btn btn-default" href="#/realms/{{realm.realm}}/client-templates/{{template.id}}/mappers">Inherited Template Mappers</a>
                     </div>
                 </div>
             </th>

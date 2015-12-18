@@ -7,6 +7,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.ScopeContainerModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
@@ -29,15 +31,15 @@ import java.util.Set;
 public class ScopeMappedClientResource {
     protected RealmModel realm;
     private RealmAuth auth;
-    protected ClientModel client;
+    protected ScopeContainerModel scopeContainer;
     protected KeycloakSession session;
     protected ClientModel scopedClient;
     protected AdminEventBuilder adminEvent;
     
-    public ScopeMappedClientResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, ClientModel scopedClient, AdminEventBuilder adminEvent) {
+    public ScopeMappedClientResource(RealmModel realm, RealmAuth auth, ScopeContainerModel scopeContainer, KeycloakSession session, ClientModel scopedClient, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
-        this.client = client;
+        this.scopeContainer = scopeContainer;
         this.session = session;
         this.scopedClient = scopedClient;
         this.adminEvent = adminEvent;
@@ -56,7 +58,7 @@ public class ScopeMappedClientResource {
     public List<RoleRepresentation> getClientScopeMappings() {
         auth.requireView();
 
-        Set<RoleModel> mappings = scopedClient.getClientScopeMappings(client);
+        Set<RoleModel> mappings = KeycloakModelUtils.getClientScopeMappings(scopedClient, scopeContainer); //scopedClient.getClientScopeMappings(client);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : mappings) {
             mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
@@ -79,7 +81,7 @@ public class ScopeMappedClientResource {
         auth.requireView();
 
         Set<RoleModel> roles = scopedClient.getRoles();
-        return ScopeMappedResource.getAvailable(client, roles);
+        return ScopeMappedResource.getAvailable(scopeContainer, roles);
     }
 
     /**
@@ -97,7 +99,7 @@ public class ScopeMappedClientResource {
         auth.requireView();
 
         Set<RoleModel> roles = scopedClient.getRoles();
-        return ScopeMappedResource.getComposite(client, roles);
+        return ScopeMappedResource.getComposite(scopeContainer, roles);
     }
 
     /**
@@ -115,7 +117,7 @@ public class ScopeMappedClientResource {
             if (roleModel == null) {
                 throw new NotFoundException("Role not found");
             }
-            client.addScopeMapping(roleModel);
+            scopeContainer.addScopeMapping(roleModel);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), roleModel.getId()).representation(roles).success();
         }
     }
@@ -131,9 +133,9 @@ public class ScopeMappedClientResource {
         auth.requireManage();
 
         if (roles == null) {
-            Set<RoleModel> roleModels = scopedClient.getClientScopeMappings(client);
+            Set<RoleModel> roleModels = KeycloakModelUtils.getClientScopeMappings(scopedClient, scopeContainer);//scopedClient.getClientScopeMappings(client);
             for (RoleModel roleModel : roleModels) {
-                client.deleteScopeMapping(roleModel);
+                scopeContainer.deleteScopeMapping(roleModel);
             }
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roles).success();
         } else {
@@ -142,7 +144,7 @@ public class ScopeMappedClientResource {
                 if (roleModel == null) {
                     throw new NotFoundException("Role not found");
                 }
-                client.deleteScopeMapping(roleModel);
+                scopeContainer.deleteScopeMapping(roleModel);
                 adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri(), roleModel.getId()).representation(roles).success();
             }
         }

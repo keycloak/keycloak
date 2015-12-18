@@ -110,6 +110,9 @@ public class JpaRealmProvider implements RealmProvider {
         for (ClientEntity a : new LinkedList<>(realm.getClients())) {
             adapter.removeClient(a.getId());
         }
+        for (ClientTemplateEntity a : new LinkedList<>(realm.getClientTemplates())) {
+            adapter.removeClientTemplate(a.getId());
+        }
 
         em.remove(realm);
 

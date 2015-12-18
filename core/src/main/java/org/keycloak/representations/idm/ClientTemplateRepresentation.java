@@ -16,6 +16,7 @@ public class ClientTemplateRepresentation {
     protected String name;
     protected String description;
     protected String protocol;
+    protected Boolean fullScopeAllowed;
     protected List<ProtocolMapperRepresentation> protocolMappers;
 
     public String getId() {
@@ -57,5 +58,13 @@ public class ClientTemplateRepresentation {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public Boolean isFullScopeAllowed() {
+        return fullScopeAllowed;
+    }
+
+    public void setFullScopeAllowed(Boolean fullScopeAllowed) {
+        this.fullScopeAllowed = fullScopeAllowed;
     }
 }

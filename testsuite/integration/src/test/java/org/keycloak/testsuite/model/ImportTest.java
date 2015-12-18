@@ -25,6 +25,7 @@ import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
@@ -191,7 +192,7 @@ public class ImportTest extends AbstractModelTest {
         Set<RoleModel> realmScopes = oauthClient.getRealmScopeMappings();
         Assert.assertTrue(realmScopes.contains(realm.getRole("admin")));
 
-        Set<RoleModel> appScopes = application.getClientScopeMappings(oauthClient);
+        Set<RoleModel> appScopes = KeycloakModelUtils.getClientScopeMappings(application, oauthClient);//application.getClientScopeMappings(oauthClient);
         Assert.assertTrue(appScopes.contains(application.getRole("app-user")));
 
 

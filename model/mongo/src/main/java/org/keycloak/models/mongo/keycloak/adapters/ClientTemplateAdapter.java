@@ -209,7 +209,70 @@ public class ClientTemplateAdapter extends AbstractMongoAdapter<MongoClientTempl
         return mapping;
     }
 
+    @Override
+    public boolean isFullScopeAllowed() {
+        return getMongoEntity().isFullScopeAllowed();
+    }
 
+    @Override
+    public void setFullScopeAllowed(boolean value) {
+        getMongoEntity().setFullScopeAllowed(value);
+        updateMongoEntity();
+
+    }
+    @Override
+    public Set<RoleModel> getScopeMappings() {
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        List<MongoRoleEntity> roles = MongoModelUtils.getAllScopesOfTemplate(this, invocationContext);
+
+        for (MongoRoleEntity role : roles) {
+            if (realm.getId().equals(role.getRealmId())) {
+                result.add(new RoleAdapter(session, realm, role, realm, invocationContext));
+            } else {
+                // Likely applicationRole, but we don't have this application yet
+                result.add(new RoleAdapter(session, realm, role, invocationContext));
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public Set<RoleModel> getRealmScopeMappings() {
+        Set<RoleModel> allScopes = getScopeMappings();
+
+        // Filter to retrieve just realm roles TODO: Maybe improve to avoid filter programmatically... Maybe have separate fields for realmRoles and appRoles on user?
+        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
+        for (RoleModel role : allScopes) {
+            MongoRoleEntity roleEntity = ((RoleAdapter) role).getRole();
+
+            if (realm.getId().equals(roleEntity.getRealmId())) {
+                realmRoles.add(role);
+            }
+        }
+        return realmRoles;
+    }
+
+    @Override
+    public void addScopeMapping(RoleModel role) {
+        getMongoStore().pushItemToList(this.getMongoEntity(), "scopeIds", role.getId(), true, invocationContext);
+    }
+
+    @Override
+    public void deleteScopeMapping(RoleModel role) {
+        getMongoStore().pullItemFromList(this.getMongoEntity(), "scopeIds", role.getId(), invocationContext);
+    }
+
+    @Override
+    public boolean hasScope(RoleModel role) {
+        if (isFullScopeAllowed()) return true;
+        Set<RoleModel> roles = getScopeMappings();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
 
     @Override
     public boolean equals(Object o) {

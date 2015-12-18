@@ -419,6 +419,7 @@ public class ModelToRepresentation {
             }
             rep.setProtocolMappers(mappings);
         }
+        rep.setFullScopeAllowed(clientModel.isFullScopeAllowed());
 
         return rep;
     }
@@ -476,6 +477,9 @@ public class ModelToRepresentation {
             }
             rep.setProtocolMappers(mappings);
         }
+        rep.setUseTemplateMappers(clientModel.useTemplateMappers());
+        rep.setUseTemplateConfig(clientModel.useTemplateConfig());
+        rep.setUseTemplateScope(clientModel.useTemplateScope());
 
         return rep;
     }

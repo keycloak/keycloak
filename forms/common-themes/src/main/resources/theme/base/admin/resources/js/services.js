@@ -852,6 +852,52 @@ module.factory('ClientTemplateProtocolMappersByProtocol', function($resource) {
     });
 });
 
+module.factory('ClientTemplateRealmScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/realm', {
+        realm : '@realm',
+        template : '@template'
+    });
+});
+
+module.factory('ClientTemplateAvailableRealmScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/realm/available', {
+        realm : '@realm',
+        template : '@template'
+    });
+});
+
+module.factory('ClientTemplateCompositeRealmScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/realm/composite', {
+        realm : '@realm',
+        template : '@template'
+    });
+});
+
+module.factory('ClientTemplateClientScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/clients/:targetClient', {
+        realm : '@realm',
+        template : '@template',
+        targetClient : '@targetClient'
+    });
+});
+
+module.factory('ClientTemplateAvailableClientScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/clients/:targetClient/available', {
+        realm : '@realm',
+        template : '@template',
+        targetClient : '@targetClient'
+    });
+});
+
+module.factory('ClientTemplateCompositeClientScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/clients/:targetClient/composite', {
+        realm : '@realm',
+        template : '@template',
+        targetClient : '@targetClient'
+    });
+});
+
+
 module.factory('ClientSessionStats', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/clients/:client/session-stats', {
         realm : '@realm',

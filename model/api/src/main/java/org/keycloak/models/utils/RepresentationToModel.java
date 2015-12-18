@@ -802,11 +802,6 @@ public class RepresentationToModel {
         if (resourceRep.isPublicClient() != null) client.setPublicClient(resourceRep.isPublicClient());
         if (resourceRep.isFrontchannelLogout() != null) client.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
         if (resourceRep.getProtocol() != null) client.setProtocol(resourceRep.getProtocol());
-        if (resourceRep.isFullScopeAllowed() != null) {
-            client.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
-        } else {
-            client.setFullScopeAllowed(!client.isConsentRequired());
-        }
         if (resourceRep.getNodeReRegistrationTimeout() != null) {
             client.setNodeReRegistrationTimeout(resourceRep.getNodeReRegistrationTimeout());
         } else {
@@ -893,6 +888,26 @@ public class RepresentationToModel {
             }
         }
 
+        if (resourceRep.isFullScopeAllowed() != null) {
+            client.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
+        } else {
+            if (client.getClientTemplate() != null) {
+                client.setFullScopeAllowed(!client.isConsentRequired() && client.getClientTemplate().isFullScopeAllowed());
+
+            } else {
+                client.setFullScopeAllowed(!client.isConsentRequired());
+            }
+        }
+        if (resourceRep.isUseTemplateConfig() != null) client.setUseTemplateConfig(resourceRep.isUseTemplateConfig());
+        else client.setUseTemplateConfig(resourceRep.getClientTemplate() != null);
+
+        if (resourceRep.isUseTemplateScope() != null) client.setUseTemplateScope(resourceRep.isUseTemplateScope());
+        else client.setUseTemplateScope(resourceRep.getClientTemplate() != null);
+
+        if (resourceRep.isUseTemplateMappers() != null) client.setUseTemplateMappers(resourceRep.isUseTemplateMappers());
+        else client.setUseTemplateMappers(resourceRep.getClientTemplate() != null);
+
+
         return client;
     }
 
@@ -949,14 +964,23 @@ public class RepresentationToModel {
             }
         }
 
+        if (rep.isUseTemplateConfig() != null) resource.setUseTemplateConfig(rep.isUseTemplateConfig());
+        if (rep.isUseTemplateScope() != null) resource.setUseTemplateScope(rep.isUseTemplateScope());
+        if (rep.isUseTemplateMappers() != null) resource.setUseTemplateMappers(rep.isUseTemplateMappers());
+
+
         if (rep.getClientTemplate() != null) {
             if (rep.getClientTemplate().equals(ClientTemplateRepresentation.NONE)) {
                 resource.setClientTemplate(null);
             } else {
                 RealmModel realm = resource.getRealm();
                 for (ClientTemplateModel template : realm.getClientTemplates()) {
+
                     if (template.getName().equals(rep.getClientTemplate())) {
                         resource.setClientTemplate(template);
+                        if (rep.isUseTemplateConfig() == null) resource.setUseTemplateConfig(true);
+                        if (rep.isUseTemplateScope() == null) resource.setUseTemplateScope(true);
+                        if (rep.isUseTemplateMappers() == null) resource.setUseTemplateMappers(true);
                         break;
                     }
                 }
@@ -984,7 +1008,7 @@ public class RepresentationToModel {
         if (resourceRep.getName() != null) client.setName(resourceRep.getName());
         if(resourceRep.getDescription() != null) client.setDescription(resourceRep.getDescription());
         if (resourceRep.getProtocol() != null) client.setProtocol(resourceRep.getProtocol());
-
+        if (resourceRep.isFullScopeAllowed() != null) client.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
         if (resourceRep.getProtocolMappers() != null) {
             // first, remove all default/built in mappers
             Set<ProtocolMapperModel> mappers = client.getProtocolMappers();
@@ -1001,6 +1025,9 @@ public class RepresentationToModel {
     public static void updateClientTemplate(ClientTemplateRepresentation rep, ClientTemplateModel resource) {
         if (rep.getName() != null) resource.setName(rep.getName());
         if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
+        if (rep.isFullScopeAllowed() != null) {
+            resource.setFullScopeAllowed(rep.isFullScopeAllowed());
+        }
 
 
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());

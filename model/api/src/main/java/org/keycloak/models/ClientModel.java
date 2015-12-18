@@ -8,7 +8,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ClientModel extends RoleContainerModel,  ProtocolMapperContainerModel {
+public interface ClientModel extends RoleContainerModel,  ProtocolMapperContainerModel, ScopeContainerModel {
 
     // COMMON ATTRIBUTES
 
@@ -74,7 +74,6 @@ public interface ClientModel extends RoleContainerModel,  ProtocolMapperContaine
 
     void updateDefaultRoles(String[] defaultRoles);
 
-    Set<RoleModel> getClientScopeMappings(ClientModel client);
 
     boolean isBearerOnly();
     void setBearerOnly(boolean only);
@@ -92,9 +91,6 @@ public interface ClientModel extends RoleContainerModel,  ProtocolMapperContaine
 
     String getRegistrationToken();
     void setRegistrationToken(String registrationToken);
-
-    boolean isFullScopeAllowed();
-    void setFullScopeAllowed(boolean value);
 
     String getProtocol();
     void setProtocol(String protocol);
@@ -126,16 +122,16 @@ public interface ClientModel extends RoleContainerModel,  ProtocolMapperContaine
     boolean isServiceAccountsEnabled();
     void setServiceAccountsEnabled(boolean serviceAccountsEnabled);
 
-    Set<RoleModel> getScopeMappings();
-    void addScopeMapping(RoleModel role);
-    void deleteScopeMapping(RoleModel role);
-    Set<RoleModel> getRealmScopeMappings();
-    boolean hasScope(RoleModel role);
-
     RealmModel getRealm();
 
     ClientTemplateModel getClientTemplate();
     void setClientTemplate(ClientTemplateModel template);
+    boolean useTemplateScope();
+    void setUseTemplateScope(boolean flag);
+    boolean useTemplateMappers();
+    void setUseTemplateMappers(boolean flag);
+    boolean useTemplateConfig();
+    void setUseTemplateConfig(boolean flag);
 
     /**
      * Time in seconds since epoc

@@ -658,6 +658,7 @@ public class AuthenticationProcessor {
     }
 
     public Response authenticateClient() throws AuthenticationFlowException {
+        logger.debug("AUTHENTICATE CLIENT");
         AuthenticationFlow authenticationFlow = createFlowExecution(this.flowId, null);
         try {
             Response challenge = authenticationFlow.processFlow();
@@ -693,6 +694,7 @@ public class AuthenticationProcessor {
     }
 
     public static void resetFlow(ClientSessionModel clientSession) {
+        logger.debug("RESET FLOW");
         clientSession.setTimestamp(Time.currentTime());
         clientSession.setAuthenticatedUser(null);
         clientSession.clearExecutionStatus();
@@ -715,6 +717,7 @@ public class AuthenticationProcessor {
 
 
     public Response authenticationAction(String execution) {
+        logger.debug("authenticationAction");
         checkClientSession();
         String current = clientSession.getNote(CURRENT_AUTHENTICATION_EXECUTION);
         if (!execution.equals(current)) {
@@ -762,7 +765,8 @@ public class AuthenticationProcessor {
     }
 
     public Response authenticateOnly() throws AuthenticationFlowException {
-        checkClientSession();
+        logger.debug("AUTHENTICATE ONLY");
+       checkClientSession();
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.AUTH_METHOD, clientSession.getAuthMethod());

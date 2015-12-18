@@ -14,6 +14,8 @@ public class ClientTemplateEntity extends AbstractIdentifiableEntity {
     private String description;
     private String realmId;
     private String protocol;
+    private boolean fullScopeAllowed;
+    private List<String> scopeIds = new ArrayList<String>();
     private List<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
 
     public String getName() {
@@ -54,6 +56,22 @@ public class ClientTemplateEntity extends AbstractIdentifiableEntity {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public boolean isFullScopeAllowed() {
+        return fullScopeAllowed;
+    }
+
+    public void setFullScopeAllowed(boolean fullScopeAllowed) {
+        this.fullScopeAllowed = fullScopeAllowed;
+    }
+
+    public List<String> getScopeIds() {
+        return scopeIds;
+    }
+
+    public void setScopeIds(List<String> scopeIds) {
+        this.scopeIds = scopeIds;
     }
 }
 

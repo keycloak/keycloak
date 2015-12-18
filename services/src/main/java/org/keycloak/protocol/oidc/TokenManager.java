@@ -267,7 +267,7 @@ public class TokenManager {
 
         Set<String> requestedProtocolMappers = new HashSet<String>();
         ClientTemplateModel clientTemplate = client.getClientTemplate();
-        if (clientTemplate != null) {
+        if (clientTemplate != null && client.useTemplateMappers()) {
             for (ProtocolMapperModel protocolMapper : clientTemplate.getProtocolMappers()) {
                 if (protocolMapper.getProtocol().equals(clientSession.getAuthMethod())) {
                     requestedProtocolMappers.add(protocolMapper.getId());
@@ -322,14 +322,22 @@ public class TokenManager {
         }
 
 
+        ClientTemplateModel template = client.getClientTemplate();
 
-        if (client.isFullScopeAllowed()) {
+        boolean useTemplateScope = template != null && client.useTemplateScope();
+
+        if ( (useTemplateScope && template.isFullScopeAllowed()) || (client.isFullScopeAllowed())) {
+            logger.debug("Using full scope for client");
             requestedRoles = roleMappings;
         } else {
-
-            Set<RoleModel> scopeMappings = client.getScopeMappings();
+            Set<RoleModel> scopeMappings = new HashSet<>();
+            if (useTemplateScope) {
+                logger.debug("Adding template scope mappings");
+                scopeMappings.addAll(template.getScopeMappings());
+            }
             scopeMappings.addAll(client.getRoles());
-
+            Set<RoleModel> clientScopeMappings = client.getScopeMappings();
+            scopeMappings.addAll(clientScopeMappings);
             for (RoleModel role : roleMappings) {
                 for (RoleModel desiredRole : scopeMappings) {
                     Set<RoleModel> visited = new HashSet<RoleModel>();
@@ -337,7 +345,6 @@ public class TokenManager {
                 }
             }
         }
-
         if (applyScopeParam) {
             Collection<String> scopeParamRoles;
             if (scopeParam != null) {
