@@ -1088,6 +1088,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 client : function(ClientLoader) {
                     return ClientLoader();
                 },
+                templates : function(ClientTemplateListLoader) {
+                    return ClientTemplateListLoader();
+                },
                 clients : function(ClientListLoader) {
                     return ClientListLoader();
                 }
@@ -1201,6 +1204,21 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ClientTemplateDetailCtrl'
+        })
+        .when('/realms/:realm/client-templates/:template/scope-mappings', {
+            templateUrl : resourceUrl + '/partials/client-template-scope-mappings.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                template : function(ClientTemplateLoader) {
+                    return ClientTemplateLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
+                }
+            },
+            controller : 'ClientTemplateScopeMappingCtrl'
         })
         .when('/realms/:realm/clients', {
             templateUrl : resourceUrl + '/partials/client-list.html',

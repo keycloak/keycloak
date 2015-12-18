@@ -28,6 +28,8 @@ public class CachedClientTemplate implements Serializable {
     private String description;
     private String realm;
     private String protocol;
+    private boolean fullScopeAllowed;
+    private Set<String> scope = new HashSet<String>();
     private Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
 
     public CachedClientTemplate(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientTemplateModel model) {
@@ -36,8 +38,12 @@ public class CachedClientTemplate implements Serializable {
         description = model.getDescription();
         this.realm = realm.getId();
         protocol = model.getProtocol();
+        fullScopeAllowed = model.isFullScopeAllowed();
         for (ProtocolMapperModel mapper : model.getProtocolMappers()) {
             this.protocolMappers.add(mapper);
+        }
+        for (RoleModel role : model.getScopeMappings())  {
+            scope.add(role.getId());
         }
     }
     public String getId() {
@@ -62,5 +68,13 @@ public class CachedClientTemplate implements Serializable {
 
     public String getProtocol() {
         return protocol;
+    }
+
+    public boolean isFullScopeAllowed() {
+        return fullScopeAllowed;
+    }
+
+    public Set<String> getScope() {
+        return scope;
     }
 }

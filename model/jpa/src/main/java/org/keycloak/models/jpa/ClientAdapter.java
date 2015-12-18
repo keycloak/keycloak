@@ -206,7 +206,7 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public Set<RoleModel> getRealmScopeMappings() {
+         public Set<RoleModel> getRealmScopeMappings() {
         Set<RoleModel> roleMappings = getScopeMappings();
 
         Set<RoleModel> appRoles = new HashSet<>();
@@ -238,7 +238,8 @@ public class ClientAdapter implements ClientModel {
 
     @Override
     public void addScopeMapping(RoleModel role) {
-        if (hasScope(role)) return;
+        Set<RoleModel> roles = getScopeMappings();
+        if (roles.contains(role)) return;
         ScopeMappingEntity entity = new ScopeMappingEntity();
         entity.setClient(getEntity());
         RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
@@ -316,6 +317,39 @@ public class ClientAdapter implements ClientModel {
             ClientTemplateEntity templateEntity = em.getReference(ClientTemplateEntity.class, template.getId());
             entity.setClientTemplate(templateEntity);
         }
+
+    }
+
+    @Override
+    public boolean useTemplateScope() {
+        return entity.isUseTemplateScope();
+    }
+
+    @Override
+    public void setUseTemplateScope(boolean flag) {
+        entity.setUseTemplateScope(flag);
+
+    }
+
+    @Override
+    public boolean useTemplateMappers() {
+        return entity.isUseTemplateMappers();
+    }
+
+    @Override
+    public void setUseTemplateMappers(boolean flag) {
+        entity.setUseTemplateMappers(flag);
+
+    }
+
+    @Override
+    public boolean useTemplateConfig() {
+        return entity.isUseTemplateConfig();
+    }
+
+    @Override
+    public void setUseTemplateConfig(boolean flag) {
+        entity.setUseTemplateConfig(flag);
 
     }
 
@@ -604,6 +638,7 @@ public class ClientAdapter implements ClientModel {
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", role).executeUpdate();
         em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", role).executeUpdate();
+        em.createNamedQuery("deleteTemplateScopeMappingByRole").setParameter("role", role).executeUpdate();
         role.setClient(null);
         em.flush();
         em.remove(role);
@@ -640,28 +675,6 @@ public class ClientAdapter implements ClientModel {
         }
         return false;
     }
-
-    @Override
-    public Set<RoleModel> getClientScopeMappings(ClientModel client) {
-        Set<RoleModel> roleMappings = client.getScopeMappings();
-
-        Set<RoleModel> appRoles = new HashSet<RoleModel>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-            } else {
-                ClientModel app = (ClientModel)container;
-                if (app.getId().equals(getId())) {
-                    appRoles.add(role);
-                }
-            }
-        }
-
-        return appRoles;
-    }
-
-
-
 
     @Override
     public List<String> getDefaultRoles() {

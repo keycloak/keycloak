@@ -133,6 +133,70 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
     }
 
     @Override
+    public boolean isFullScopeAllowed() {
+        if (updated != null) return updated.isFullScopeAllowed();
+        return cached.isFullScopeAllowed();
+    }
+
+    @Override
+    public void setFullScopeAllowed(boolean value) {
+        getDelegateForUpdate();
+        updated.setFullScopeAllowed(value);
+
+    }
+
+    public Set<RoleModel> getScopeMappings() {
+        if (updated != null) return updated.getScopeMappings();
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (String id : cached.getScope()) {
+            roles.add(cacheSession.getRoleById(id, getRealm()));
+
+        }
+        return roles;
+    }
+
+    public void addScopeMapping(RoleModel role) {
+        getDelegateForUpdate();
+        updated.addScopeMapping(role);
+    }
+
+    public void deleteScopeMapping(RoleModel role) {
+        getDelegateForUpdate();
+        updated.deleteScopeMapping(role);
+    }
+
+    public Set<RoleModel> getRealmScopeMappings() {
+        Set<RoleModel> roleMappings = getScopeMappings();
+
+        Set<RoleModel> appRoles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof RealmModel) {
+                if (((RealmModel) container).getId().equals(cachedRealm.getId())) {
+                    appRoles.add(role);
+                }
+            }
+        }
+
+        return appRoles;
+    }
+
+    @Override
+    public boolean hasScope(RoleModel role) {
+        if (updated != null) return updated.hasScope(role);
+        if (cached.isFullScopeAllowed() || cached.getScope().contains(role.getId())) return true;
+
+        Set<RoleModel> roles = getScopeMappings();
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+       return false;
+    }
+
+
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof ClientModel)) return false;

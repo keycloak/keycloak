@@ -10,6 +10,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.entities.ProtocolMapperEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
@@ -621,19 +622,6 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
-    public Set<RoleModel> getClientScopeMappings(ClientModel client) {
-        Set<RoleModel> result = new HashSet<RoleModel>();
-        List<MongoRoleEntity> roles = MongoModelUtils.getAllScopesOfClient(client, invocationContext);
-
-        for (MongoRoleEntity role : roles) {
-            if (getId().equals(role.getClientId())) {
-                result.add(new RoleAdapter(session, getRealm(), role, this, invocationContext));
-            }
-        }
-        return result;
-    }
-
-    @Override
     public List<String> getDefaultRoles() {
         return getMongoEntity().getDefaultRoles();
     }
@@ -726,4 +714,41 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
         updateMongoEntity();
 
     }
+
+    @Override
+    public boolean useTemplateScope() {
+        return getMongoEntity().isUseTemplateScope();
+    }
+
+    @Override
+    public void setUseTemplateScope(boolean flag) {
+        getMongoEntity().setUseTemplateScope(flag);
+        updateMongoEntity();
+
+    }
+
+    @Override
+    public boolean useTemplateMappers() {
+        return getMongoEntity().isUseTemplateMappers();
+    }
+
+    @Override
+    public void setUseTemplateMappers(boolean flag) {
+        getMongoEntity().setUseTemplateMappers(flag);
+        updateMongoEntity();
+
+    }
+
+    @Override
+    public boolean useTemplateConfig() {
+        return getMongoEntity().isUseTemplateConfig();
+    }
+
+    @Override
+    public void setUseTemplateConfig(boolean flag) {
+        getMongoEntity().setUseTemplateConfig(flag);
+        updateMongoEntity();
+
+    }
+
 }

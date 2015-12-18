@@ -69,6 +69,47 @@ public class ClientAdapter implements ClientModel {
 
     }
 
+    @Override
+    public boolean useTemplateScope() {
+        if (updated != null) return updated.useTemplateScope();
+        return cached.isUseTemplateScope();
+    }
+
+    @Override
+    public void setUseTemplateScope(boolean value) {
+        getDelegateForUpdate();
+        updated.setUseTemplateScope(value);
+
+    }
+
+    @Override
+    public boolean useTemplateConfig() {
+        if (updated != null) return updated.useTemplateConfig();
+        return cached.isUseTemplateConfig();
+    }
+
+    @Override
+    public void setUseTemplateConfig(boolean value) {
+        getDelegateForUpdate();
+        updated.setUseTemplateConfig(value);
+
+    }
+
+    @Override
+    public boolean useTemplateMappers() {
+        if (updated != null) return updated.useTemplateMappers();
+        return cached.isUseTemplateMappers();
+    }
+
+    @Override
+    public void setUseTemplateMappers(boolean value) {
+        getDelegateForUpdate();
+        updated.setUseTemplateMappers(value);
+
+    }
+
+
+
     public void addWebOrigin(String webOrigin) {
         getDelegateForUpdate();
         updated.addWebOrigin(webOrigin);
@@ -410,25 +451,6 @@ public class ClientAdapter implements ClientModel {
     public void updateDefaultRoles(String[] defaultRoles) {
         getDelegateForUpdate();
         updated.updateDefaultRoles(defaultRoles);
-    }
-
-    @Override
-    public Set<RoleModel> getClientScopeMappings(ClientModel client) {
-        Set<RoleModel> roleMappings = client.getScopeMappings();
-
-        Set<RoleModel> appRoles = new HashSet<RoleModel>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-            } else {
-                ClientModel app = (ClientModel)container;
-                if (app.getId().equals(getId())) {
-                    appRoles.add(role);
-                }
-            }
-        }
-
-        return appRoles;
     }
 
     @Override

@@ -7,6 +7,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.ScopeContainerModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
@@ -36,14 +38,14 @@ import java.util.Set;
 public class ScopeMappedResource {
     protected RealmModel realm;
     private RealmAuth auth;
-    protected ClientModel client;
+    protected ScopeContainerModel scopeContainer;
     protected KeycloakSession session;
     protected AdminEventBuilder adminEvent;
 
-    public ScopeMappedResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, AdminEventBuilder adminEvent) {
+    public ScopeMappedResource(RealmModel realm, RealmAuth auth, ScopeContainerModel scopeContainer, KeycloakSession session, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
-        this.client = client;
+        this.scopeContainer = scopeContainer;
         this.session = session;
         this.adminEvent = adminEvent;
     }
@@ -60,7 +62,7 @@ public class ScopeMappedResource {
         auth.requireView();
 
         MappingsRepresentation all = new MappingsRepresentation();
-        Set<RoleModel> realmMappings = client.getRealmScopeMappings();
+        Set<RoleModel> realmMappings = scopeContainer.getRealmScopeMappings();
         if (realmMappings.size() > 0) {
             List<RoleRepresentation> realmRep = new ArrayList<RoleRepresentation>();
             for (RoleModel roleModel : realmMappings) {
@@ -73,7 +75,7 @@ public class ScopeMappedResource {
         if (clients.size() > 0) {
             Map<String, ClientMappingsRepresentation> clientMappings = new HashMap<String, ClientMappingsRepresentation>();
             for (ClientModel client : clients) {
-                Set<RoleModel> roleMappings = client.getClientScopeMappings(this.client);
+                Set<RoleModel> roleMappings = KeycloakModelUtils.getClientScopeMappings(client, this.scopeContainer); //client.getClientScopeMappings(this.client);
                 if (roleMappings.size() > 0) {
                     ClientMappingsRepresentation mappings = new ClientMappingsRepresentation();
                     mappings.setId(client.getId());
@@ -103,7 +105,7 @@ public class ScopeMappedResource {
     public List<RoleRepresentation> getRealmScopeMappings() {
         auth.requireView();
 
-        Set<RoleModel> realmMappings = client.getRealmScopeMappings();
+        Set<RoleModel> realmMappings = scopeContainer.getRealmScopeMappings();
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : realmMappings) {
             realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
@@ -124,10 +126,10 @@ public class ScopeMappedResource {
         auth.requireView();
 
         Set<RoleModel> roles = realm.getRoles();
-        return getAvailable(client, roles);
+        return getAvailable(scopeContainer, roles);
     }
 
-    public static List<RoleRepresentation> getAvailable(ClientModel client, Set<RoleModel> roles) {
+    public static List<RoleRepresentation> getAvailable(ScopeContainerModel client, Set<RoleModel> roles) {
         List<RoleRepresentation> available = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
             if (client.hasScope(roleModel)) continue;
@@ -153,10 +155,10 @@ public class ScopeMappedResource {
         auth.requireView();
 
         Set<RoleModel> roles = realm.getRoles();
-        return getComposite(client, roles);
+        return getComposite(scopeContainer, roles);
     }
 
-    public static List<RoleRepresentation> getComposite(ClientModel client, Set<RoleModel> roles) {
+    public static List<RoleRepresentation> getComposite(ScopeContainerModel client, Set<RoleModel> roles) {
         List<RoleRepresentation> composite = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
             if (client.hasScope(roleModel)) composite.add(ModelToRepresentation.toRepresentation(roleModel));
@@ -180,7 +182,7 @@ public class ScopeMappedResource {
             if (roleModel == null) {
                 throw new NotFoundException("Role not found");
             }
-            client.addScopeMapping(roleModel);
+            scopeContainer.addScopeMapping(roleModel);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), role.getId()).representation(roles).success();
         }
     }
@@ -197,9 +199,9 @@ public class ScopeMappedResource {
         auth.requireManage();
 
         if (roles == null) {
-            Set<RoleModel> roleModels = client.getRealmScopeMappings();
+            Set<RoleModel> roleModels = scopeContainer.getRealmScopeMappings();
             for (RoleModel roleModel : roleModels) {
-                client.deleteScopeMapping(roleModel);
+                scopeContainer.deleteScopeMapping(roleModel);
             }
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roles).success();
        } else {
@@ -208,7 +210,7 @@ public class ScopeMappedResource {
                 if (roleModel == null) {
                     throw new NotFoundException("Client not found");
                 }
-                client.deleteScopeMapping(roleModel);
+                scopeContainer.deleteScopeMapping(roleModel);
                 adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri(), roleModel.getId()).representation(roles).success();
             }
         }
@@ -221,6 +223,6 @@ public class ScopeMappedResource {
         if (clientModel == null) {
             throw new NotFoundException("Client not found");
         }
-        return new ScopeMappedClientResource(realm, auth, this.client, session, clientModel, adminEvent);
+        return new ScopeMappedClientResource(realm, auth, this.scopeContainer, session, clientModel, adminEvent);
     }
 }

@@ -45,6 +45,8 @@ public class ClientTemplateEntity {
     @Column(name="PROTOCOL")
     private String protocol;
 
+    @Column(name="FULL_SCOPE_ALLOWED")
+    private boolean fullScopeAllowed;
 
     public RealmEntity getRealm() {
         return realm;
@@ -92,5 +94,13 @@ public class ClientTemplateEntity {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public boolean isFullScopeAllowed() {
+        return fullScopeAllowed;
+    }
+
+    public void setFullScopeAllowed(boolean fullScopeAllowed) {
+        this.fullScopeAllowed = fullScopeAllowed;
     }
 }

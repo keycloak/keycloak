@@ -15,7 +15,9 @@ import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
@@ -38,6 +40,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -521,4 +524,20 @@ public final class KeycloakModelUtils {
         }
         return found;
     }
+
+    public static Set<RoleModel> getClientScopeMappings(ClientModel client, ScopeContainerModel container) {
+        Set<RoleModel> mappings = container.getScopeMappings();
+        Set<RoleModel> result = new HashSet<>();
+        for (RoleModel role : mappings) {
+            RoleContainerModel roleContainer = role.getContainer();
+            if (roleContainer instanceof ClientModel) {
+                if (client.getId().equals(((ClientModel)roleContainer).getId())) {
+                    result.add(role);
+                }
+
+            }
+        }
+        return result;
+    }
+
 }
