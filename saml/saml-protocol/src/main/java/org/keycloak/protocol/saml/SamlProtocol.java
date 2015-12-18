@@ -84,6 +84,7 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_BINDING = "saml_binding";
     public static final String SAML_IDP_INITIATED_LOGIN = "saml_idp_initiated_login";
     public static final String SAML_POST_BINDING = "post";
+    public static final String SAML_SOAP_BINDING = "soap";
     public static final String SAML_REDIRECT_BINDING = "get";
     public static final String SAML_SERVER_SIGNATURE = "saml.server.signature";
     public static final String SAML_ASSERTION_SIGNATURE = "saml.assertion.signature";
@@ -165,11 +166,7 @@ public class SamlProtocol implements LoginProtocol {
                 try {
                     JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(clientSession.getNote(GeneralConstants.RELAY_STATE));
                     Document document = builder.buildDocument();
-                    if (isPostBinding(clientSession)) {
-                        return binding.postBinding(document).response(clientSession.getRedirectUri());
-                    } else {
-                        return binding.redirectBinding(document).response(clientSession.getRedirectUri());
-                    }
+                    return buildErrorResponse(clientSession, binding, document);
                 } catch (Exception e) {
                     return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
                 }
@@ -177,6 +174,14 @@ public class SamlProtocol implements LoginProtocol {
         } finally {
             RestartLoginCookie.expireRestartCookie(realm, session.getContext().getConnection(), uriInfo);
             session.sessions().removeClientSession(realm, clientSession);
+        }
+    }
+
+    protected Response buildErrorResponse(ClientSessionModel clientSession, JaxrsSAML2BindingBuilder binding, Document document) throws ConfigurationException, ProcessingException, IOException {
+        if (isPostBinding(clientSession)) {
+            return binding.postBinding(document).response(clientSession.getRedirectUri());
+        } else {
+            return binding.redirectBinding(document).response(clientSession.getRedirectUri());
         }
     }
 
@@ -390,14 +395,18 @@ public class SamlProtocol implements LoginProtocol {
             bindingBuilder.encrypt(publicKey);
         }
         try {
-            if (isPostBinding(clientSession)) {
-                return bindingBuilder.postBinding(samlDocument).response(redirectUri);
-            } else {
-                return bindingBuilder.redirectBinding(samlDocument).response(redirectUri);
-            }
+            return buildAuthenticatedResponse(clientSession, redirectUri, samlDocument, bindingBuilder);
         } catch (Exception e) {
             logger.error("failed", e);
             return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
+        }
+    }
+
+    protected Response buildAuthenticatedResponse(ClientSessionModel clientSession, String redirectUri, Document samlDocument, JaxrsSAML2BindingBuilder bindingBuilder) throws ConfigurationException, ProcessingException, IOException {
+        if (isPostBinding(clientSession)) {
+            return bindingBuilder.postBinding(samlDocument).response(redirectUri);
+        } else {
+            return bindingBuilder.redirectBinding(samlDocument).response(redirectUri);
         }
     }
 
@@ -544,17 +553,21 @@ public class SamlProtocol implements LoginProtocol {
         }
 
         try {
-            if (isLogoutPostBindingForInitiator(userSession)) {
-                return binding.postBinding(builder.buildDocument()).response(logoutBindingUri);
-            } else {
-                return binding.redirectBinding(builder.buildDocument()).response(logoutBindingUri);
-            }
+            return buildLogoutResponse(userSession, logoutBindingUri, builder, binding);
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
         } catch (ProcessingException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    protected Response buildLogoutResponse(UserSessionModel userSession, String logoutBindingUri, SAML2LogoutResponseBuilder builder, JaxrsSAML2BindingBuilder binding) throws ConfigurationException, ProcessingException, IOException {
+        if (isLogoutPostBindingForInitiator(userSession)) {
+            return binding.postBinding(builder.buildDocument()).response(logoutBindingUri);
+        } else {
+            return binding.redirectBinding(builder.buildDocument()).response(logoutBindingUri);
         }
     }
 

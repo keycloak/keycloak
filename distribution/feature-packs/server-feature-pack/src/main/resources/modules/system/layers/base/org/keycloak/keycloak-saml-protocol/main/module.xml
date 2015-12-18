@@ -26,6 +26,7 @@
         <module name="org.keycloak.keycloak-connections-http-client" services="import"/>
 
         <module name="javax.api"/>
+        <module name="javax.xml.soap.api"/>
     </dependencies>
 
 </module>

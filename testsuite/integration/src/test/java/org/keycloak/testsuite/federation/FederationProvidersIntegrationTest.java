@@ -684,10 +684,11 @@ public class FederationProvidersIntegrationTest {
             session.users().searchForUser("user5@email.org", appRealm);
             FederationTestUtils.assertUserImported(session.userStorage(), appRealm, "username5", "John5", "Doel5", "user5@email.org", "125");
 
-            session.users().searchForUser("user6@email.org", appRealm);
+            session.users().searchForUser("John6 Doel6", appRealm);
             FederationTestUtils.assertUserImported(session.userStorage(), appRealm, "username6", "John6", "Doel6", "user6@email.org", "126");
 
             session.users().searchForUser("user7@email.org", appRealm);
+            session.users().searchForUser("John7 Doel7", appRealm);
             Assert.assertNull(session.userStorage().getUserByUsername("username7", appRealm));
 
             // Remove custom filter

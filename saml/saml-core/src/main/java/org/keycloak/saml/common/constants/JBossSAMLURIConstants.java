@@ -73,12 +73,15 @@ public enum JBossSAMLURIConstants {
             "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"),
 
     PROTOCOL_NSURI("urn:oasis:names:tc:SAML:2.0:protocol"),
+    ECP_PROFILE("urn:oasis:names:tc:SAML:2.0:profiles:SSO:ecp"),
+    PAOS_BINDING("urn:liberty:paos:2003-08"),
 
     SIGNATURE_DSA_SHA1("http://www.w3.org/2000/09/xmldsig#dsa-sha1"), SIGNATURE_RSA_SHA1(
             "http://www.w3.org/2000/09/xmldsig#rsa-sha1"),
 
-    SAML_HTTP_POST_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"), SAML_HTTP_REDIRECT_BINDING(
-            "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"),
+    SAML_HTTP_POST_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"),
+    SAML_HTTP_SOAP_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:SOAP"),
+    SAML_HTTP_REDIRECT_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"),
 
     SAML_11_NS("urn:oasis:names:tc:SAML:1.0:assertion"),
 

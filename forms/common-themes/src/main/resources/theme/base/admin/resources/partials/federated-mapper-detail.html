@@ -53,6 +53,8 @@
             <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
                 <button kc-save  data-ng-disabled="!changed">Save</button>
                 <button kc-reset data-ng-disabled="!changed">Cancel</button>
+                <button class="btn btn-primary" data-ng-click="triggerFedToKeycloakSync()" data-ng-hide="!mapperType.syncConfig.fedToKeycloakSyncSupported" data-ng-disabled="changed">{{:: mapperType.syncConfig.fedToKeycloakSyncMessage | translate}}</button>
+                <button class="btn btn-primary" data-ng-click="triggerKeycloakToFedSync()" data-ng-hide="!mapperType.syncConfig.keycloakToFedSyncSupported" data-ng-disabled="changed">{{:: mapperType.syncConfig.keycloakToFedSyncMessage | translate}}</button>
             </div>
         </div>
     </form>

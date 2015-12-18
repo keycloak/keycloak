@@ -380,6 +380,10 @@ module.factory('UserFederationMapper', function($resource) {
     });
 });
 
+module.factory('UserFederationMapperSync', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/user-federation/instances/:provider/mappers/:mapperId/sync');
+});
+
 
 module.factory('UserSessionStats', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:user/session-stats', {

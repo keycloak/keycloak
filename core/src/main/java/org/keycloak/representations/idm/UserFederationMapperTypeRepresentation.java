@@ -12,6 +12,8 @@ public class UserFederationMapperTypeRepresentation {
     protected String category;
     protected String helpText;
 
+    protected UserFederationMapperSyncConfigRepresentation syncConfig;
+
     protected List<ConfigPropertyRepresentation> properties  = new LinkedList<>();
 
     public String getId() {
@@ -44,6 +46,14 @@ public class UserFederationMapperTypeRepresentation {
 
     public void setHelpText(String helpText) {
         this.helpText = helpText;
+    }
+
+    public UserFederationMapperSyncConfigRepresentation getSyncConfig() {
+        return syncConfig;
+    }
+
+    public void setSyncConfig(UserFederationMapperSyncConfigRepresentation syncConfig) {
+        this.syncConfig = syncConfig;
     }
 
     public List<ConfigPropertyRepresentation> getProperties() {
