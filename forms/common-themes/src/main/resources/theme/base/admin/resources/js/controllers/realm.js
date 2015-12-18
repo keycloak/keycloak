@@ -2081,6 +2081,8 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
     $scope.ifResourceExists='FAIL';
     $scope.isMultiRealm = false;
     $scope.results = {};
+    $scope.currentPage = 0;
+    var pageSize = 15;
     
     var oldCopy = angular.copy($scope.fileContent);
 
@@ -2115,8 +2117,50 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
 
     $scope.hasResults = function() {
         return (Object.keys($scope.results).length > 0) &&
-                ($scope.results.results !== 'undefined') &&
+                ($scope.results.results !== undefined) &&
                 ($scope.results.results.length > 0);
+    }
+    
+    $scope.resultsPage = function() {
+        if (!$scope.hasResults()) return {};
+        return $scope.results.results.slice(startIndex(), endIndex());
+    }
+    
+    function startIndex() {
+        return pageSize * $scope.currentPage;
+    }
+    
+    function endIndex() {
+        var length = $scope.results.results.length;
+        var endIndex = startIndex() + pageSize;
+        if (endIndex > length) endIndex = length;
+        return endIndex;
+    }
+    
+    $scope.setFirstPage = function() {
+        $scope.currentPage = 0;
+    }
+    
+    $scope.setNextPage = function() {
+        $scope.currentPage++;
+    }
+    
+    $scope.setPreviousPage = function() {
+        $scope.currentPage--;
+    }
+    
+    $scope.hasNext = function() {
+        if (!$scope.hasResults()) return false;
+        var length = $scope.results.results.length;
+        //console.log('length=' + length);
+        var endIndex = startIndex() + pageSize;
+        //console.log('endIndex=' + endIndex);
+        return length > endIndex;
+    }
+    
+    $scope.hasPrevious = function() {
+        if (!$scope.hasResults()) return false;
+        return $scope.currentPage > 0;
     }
     
     $scope.viewImportDetails = function() {

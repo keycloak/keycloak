@@ -95,8 +95,19 @@
                         <th>Id</th>
                     </tr>
                 </thead>
+                <tfoot>
+                    <tr>
+                        <td>
+                            <div class="table-nav">
+                                <button data-ng-click="setFirstPage()" class="first" ng-disabled="">First page</button>
+                                <button data-ng-click="setPreviousPage()" class="prev" ng-disabled="!hasPrevious()">Previous page</button>
+                                <button data-ng-click="setNextPage()" class="next" ng-disabled="!hasNext()">Next page</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tfoot>
                 <tbody>
-                    <tr ng-repeat="result in results.results" >
+                    <tr ng-repeat="result in resultsPage()" >
                         <td>{{result.action}}</td>
                         <td>{{result.resourceType}}</td>
                         <td>{{result.resourceName}}</td>
