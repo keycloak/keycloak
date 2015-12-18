@@ -1,1 +1,2 @@
 org.keycloak.protocol.saml.SamlProtocolFactory
+org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileProtocolFactory

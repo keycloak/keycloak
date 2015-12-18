@@ -65,7 +65,8 @@ public enum JBossSAMLConstants {
             "XACMLAuthzDecisionQuery"), XACML_AUTHZ_DECISION_QUERY_TYPE("XACMLAuthzDecisionQueryType"), XACML_AUTHZ_DECISION_STATEMENT_TYPE(
             "XACMLAuthzDecisionStatementType"), HTTP_POST_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"), ONE_TIME_USE ("OneTimeUse"),
             UNSOLICITED_RESPONSE_TARGET("TARGET"), UNSOLICITED_RESPONSE_SAML_VERSION("SAML_VERSION"), UNSOLICITED_RESPONSE_SAML_BINDING("SAML_BINDING"),
-            ROLE_DESCRIPTOR("RoleDescriptor");
+            ROLE_DESCRIPTOR("RoleDescriptor"),
+            REQUEST_AUTHENTICATED("RequestAuthenticated");
 
     private String name;
 
