@@ -38,6 +38,8 @@ public class CachedRealm implements Serializable {
 
     private String id;
     private String name;
+    private String displayName;
+    private String displayNameHtml;
     private boolean enabled;
     private SslRequired sslRequired;
     private boolean registrationAllowed;
@@ -125,6 +127,8 @@ public class CachedRealm implements Serializable {
     public CachedRealm(RealmCache cache, RealmProvider delegate, RealmModel model) {
         id = model.getId();
         name = model.getName();
+        displayName = model.getDisplayName();
+        displayNameHtml = model.getDisplayNameHtml();
         enabled = model.isEnabled();
         sslRequired = model.getSslRequired();
         registrationAllowed = model.isRegistrationAllowed();
@@ -263,6 +267,14 @@ public class CachedRealm implements Serializable {
 
     public String getName() {
         return name;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public String getDisplayNameHtml() {
+        return displayNameHtml;
     }
 
     public List<String> getDefaultRoles() {
