@@ -61,7 +61,11 @@ angular.element(document).ready(function () {
             module.factory('Auth', function() {
                 return auth;
             });
-            angular.bootstrap(document, ["keycloak"]);
+            var injector = angular.bootstrap(document, ["keycloak"]);
+
+            injector.get('$translate')('consoleTitle').then(function(consoleTitle) {
+                document.title=consoleTitle;
+            });
         }, function() {
             window.location.reload();
         });
