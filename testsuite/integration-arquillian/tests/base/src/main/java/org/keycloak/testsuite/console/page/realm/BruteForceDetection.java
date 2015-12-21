@@ -73,7 +73,7 @@ public class BruteForceDetection extends SecurityDefenses {
         }
 
         public void setWaitIncrementSelect(TimeSelectValues value) {
-            waitIncrementSelect.selectByVisibleText(value.getName());
+            waitIncrementSelect.selectByValue(value.getName());
         }
 
         public void setQuickLoginCheckInput(String value) {
@@ -85,7 +85,7 @@ public class BruteForceDetection extends SecurityDefenses {
         }
 
         public void setMinQuickLoginWaitSelect(TimeSelectValues value) {
-            minQuickLoginWaitSelect.selectByVisibleText(value.getName());
+            minQuickLoginWaitSelect.selectByValue(value.getName());
         }
 
         public void setMaxWaitInput(String value) {
@@ -93,7 +93,7 @@ public class BruteForceDetection extends SecurityDefenses {
         }
 
         public void setMaxWaitSelect(TimeSelectValues value) {
-            maxWaitSelect.selectByVisibleText(value.getName());
+            maxWaitSelect.selectByValue(value.getName());
         }
 
         public void setFailureResetTimeInput(String value) {
@@ -101,7 +101,7 @@ public class BruteForceDetection extends SecurityDefenses {
         }
 
         public void setFailureResetTimeSelect(TimeSelectValues value) {
-            failureResetTimeSelect.selectByVisibleText(value.getName());
+            failureResetTimeSelect.selectByValue(value.getName());
         }
     }
 
