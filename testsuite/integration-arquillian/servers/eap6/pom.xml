@@ -34,6 +34,11 @@
             <artifactId>keycloak-eap6-adapter-dist</artifactId>
             <type>zip</type>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
     </dependencies>
             
     <build>

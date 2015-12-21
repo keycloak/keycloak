@@ -1,9 +1,10 @@
 package org.keycloak.testsuite.adapter.page;
 
-import java.net.URL;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
+
+import java.net.URL;
 
 /**
  *
@@ -19,7 +20,9 @@ public class DatabaseServiceExample extends AbstractPageWithInjectedUrl {
 
     @Override
     public URL getInjectedUrl() {
-        return url;
+        //EAP6 URL fix
+        URL fixedUrl = createInjectedURL("database");
+        return fixedUrl != null ? fixedUrl : url;
     }
 
 }

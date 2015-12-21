@@ -16,6 +16,16 @@
         <url-pattern>/*</url-pattern>
     </servlet-mapping>
 
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Permit all</web-resource-name>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>*</role-name>
+        </auth-constraint>
+    </security-constraint>
+
     <login-config>
         <auth-method>KEYCLOAK</auth-method>
         <realm-name>demo</realm-name>
