@@ -2,6 +2,7 @@ package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Version;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -39,6 +40,8 @@ public class ApplianceBootstrap {
             manager.setContextPath(contextPath);
             RealmModel realm = manager.createRealm(adminRealmName, adminRealmName);
             realm.setName(adminRealmName);
+            realm.setDisplayName(Version.NAME);
+            realm.setDisplayNameHtml(Version.NAME_HTML);
             realm.setEnabled(true);
             realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
             realm.setSsoSessionIdleTimeout(1800);

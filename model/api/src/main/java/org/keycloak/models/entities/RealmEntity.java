@@ -11,6 +11,8 @@ import java.util.Map;
 public class RealmEntity extends AbstractIdentifiableEntity {
 
     private String name;
+    private String displayName;
+    private String displayNameHtml;
     private boolean enabled;
     private String sslRequired;
     private boolean registrationAllowed;
@@ -103,6 +105,22 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayNameHtml() {
+        return displayNameHtml;
+    }
+
+    public void setDisplayNameHtml(String displayNameHtml) {
+        this.displayNameHtml = displayNameHtml;
     }
 
     public boolean isEnabled() {
