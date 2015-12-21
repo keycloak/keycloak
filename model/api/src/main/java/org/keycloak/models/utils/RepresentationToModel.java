@@ -85,6 +85,8 @@ public class RepresentationToModel {
         convertDeprecatedApplications(session, rep);
 
         newRealm.setName(rep.getRealm());
+        if (rep.getDisplayName() != null) newRealm.setDisplayName(rep.getDisplayName());
+        if (rep.getDisplayNameHtml() != null) newRealm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
         if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.getMaxFailureWaitSeconds() != null) newRealm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
@@ -595,6 +597,8 @@ public class RepresentationToModel {
         if (rep.getRealm() != null) {
             realm.setName(rep.getRealm());
         }
+        if (rep.getDisplayName() != null) realm.setDisplayName(rep.getDisplayName());
+        if (rep.getDisplayNameHtml() != null) realm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
         if (rep.isBruteForceProtected() != null) realm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
