@@ -1132,7 +1132,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'UserRoleMappingCtrl'
         })
         .when('/create/client/:realm', {
-            templateUrl : resourceUrl + '/partials/client-detail.html',
+            templateUrl : resourceUrl + '/partials/create-client.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -1150,7 +1150,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return ServerInfoLoader();
                 }
             },
-            controller : 'ClientDetailCtrl'
+            controller : 'CreateClientCtrl'
         })
         .when('/realms/:realm/clients/:client', {
             templateUrl : resourceUrl + '/partials/client-detail.html',

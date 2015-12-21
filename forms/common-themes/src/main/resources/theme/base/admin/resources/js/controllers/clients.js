@@ -736,7 +736,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         "bearer-only"
     ];
 
-    $scope.protocols = Object.keys(serverInfo.providers['login-protocol'].providers).sort();
+    $scope.protocols = ['openid-connect',
+                        'saml'];//Object.keys(serverInfo.providers['login-protocol'].providers).sort();
 
     $scope.templates = [ {name:'NONE'}];
     for (var i = 0; i < templates.length; i++) {
@@ -765,7 +766,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     ];
 
     $scope.realm = realm;
-    $scope.create = !client.clientId;
     $scope.samlAuthnStatement = false;
     $scope.samlMultiValuedRoles = false;
     $scope.samlServerSignature = false;
@@ -870,20 +870,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     if (!$scope.create) {
         $scope.client = angular.copy(client);
         updateProperties();
-    } else {
-        $scope.client = {
-            enabled: true,
-            standardFlowEnabled: true,
-            attributes: {}
-        };
-        $scope.client.attributes['saml_signature_canonicalization_method'] = $scope.canonicalization[0].value;
-        $scope.client.redirectUris = [];
-        $scope.accessType = $scope.accessTypes[0];
-        $scope.protocol = $scope.protocols[0];
-        $scope.signatureAlgorithm = $scope.signatureAlgorithms[1];
-        $scope.nameIdFormat = $scope.nameIdFormats[0];
-        $scope.samlAuthnStatement = true;
-        $scope.samlForceNameIdFormat = false;
     }
 
 
@@ -1055,29 +1041,121 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         if ($scope.client.protocol != 'saml' && !$scope.client.bearerOnly && ($scope.client.standardFlowEnabled || $scope.client.implicitFlowEnabled) && (!$scope.client.redirectUris || $scope.client.redirectUris.length == 0)) {
             Notifications.error("You must specify at least one redirect uri");
         } else {
-            if ($scope.create) {
-                Client.save({
-                    realm: realm.realm,
-                    client: ''
-                }, $scope.client, function (data, headers) {
-                    $scope.changed = false;
-                    var l = headers().location;
-                    var id = l.substring(l.lastIndexOf("/") + 1);
-                    $location.url("/realms/" + realm.realm + "/clients/" + id);
-                    Notifications.success("The client has been created.");
-                });
-            } else {
-                Client.update({
-                    realm : realm.realm,
-                    client : client.id
-                }, $scope.client, function() {
-                    $scope.changed = false;
-                    client = angular.copy($scope.client);
-                    $location.url("/realms/" + realm.realm + "/clients/" + client.id);
-                    Notifications.success("Your changes have been saved to the client.");
-                });
-            }
+            Client.update({
+                realm : realm.realm,
+                client : client.id
+            }, $scope.client, function() {
+                $scope.changed = false;
+                client = angular.copy($scope.client);
+                $location.url("/realms/" + realm.realm + "/clients/" + client.id);
+                Notifications.success("Your changes have been saved to the client.");
+            });
         }
+    };
+
+    $scope.reset = function() {
+        $route.reload();
+    };
+
+    $scope.cancel = function() {
+        $location.url("/realms/" + realm.realm + "/clients");
+    };
+});
+
+module.controller('CreateClientCtrl', function($scope, realm, client, templates, $route, serverInfo, Client, ClientDescriptionConverter, $location, $modal, Dialog, Notifications) {
+    $scope.protocols = ['openid-connect',
+        'saml'];//Object.keys(serverInfo.providers['login-protocol'].providers).sort();
+
+    $scope.templates = [ {name:'NONE'}];
+    for (var i = 0; i < templates.length; i++) {
+        var template = templates[i];
+        $scope.templates.push(template);
+    }
+
+    $scope.realm = realm;
+
+    $scope.client = {
+        enabled: true,
+        attributes: {}
+    };
+    $scope.client.redirectUris = [];
+    $scope.protocol = $scope.protocols[0];
+
+
+    $scope.importFile = function(fileContent){
+        console.debug(fileContent);
+        ClientDescriptionConverter.save({
+            realm: realm.realm
+        }, fileContent, function (data) {
+            $scope.client = data;
+            $scope.importing = true;
+        });
+    };
+
+    $scope.viewImportDetails = function() {
+        $modal.open({
+            templateUrl: resourceUrl + '/partials/modal/view-object.html',
+            controller: 'ObjectModalCtrl',
+            resolve: {
+                object: function () {
+                    return $scope.client;
+                }
+            }
+        })
+    };
+
+    $scope.switchChange = function() {
+        $scope.changed = true;
+    }
+
+    $scope.changeProtocol = function() {
+        if ($scope.protocol == "openid-connect") {
+            $scope.client.protocol = "openid-connect";
+        } else if ($scope.protocol == "saml") {
+            $scope.client.protocol = "saml";
+        }
+    };
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
+    function isChanged() {
+        if (!angular.equals($scope.client, client)) {
+            return true;
+        }
+        return false;
+    }
+
+    $scope.$watch('client', function() {
+        $scope.changed = isChanged();
+    }, true);
+
+
+    $scope.save = function() {
+
+        $scope.client.protocol = $scope.protocol;
+
+        if ($scope.client.protocol == 'openid-connect' && !$scope.client.rootUrl) {
+            Notifications.error("You must specify the root URL of application");
+        }
+
+        if ($scope.client.protocol == 'saml' && !$scope.client.adminUrl) {
+            Notifications.error("You must specify the SAML Endpoint URL");
+        }
+
+        Client.save({
+            realm: realm.realm,
+            client: ''
+        }, $scope.client, function (data, headers) {
+            $scope.changed = false;
+            var l = headers().location;
+            var id = l.substring(l.lastIndexOf("/") + 1);
+            $location.url("/realms/" + realm.realm + "/clients/" + id);
+            Notifications.success("The client has been created.");
+        });
     };
 
     $scope.reset = function() {

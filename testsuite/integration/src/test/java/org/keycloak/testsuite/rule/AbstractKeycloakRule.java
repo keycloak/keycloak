@@ -271,6 +271,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
                 }
 
             }, 10, 500);
+            Thread.sleep(100);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
         }
