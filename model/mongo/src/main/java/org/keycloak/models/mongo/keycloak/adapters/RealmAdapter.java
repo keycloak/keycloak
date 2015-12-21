@@ -98,6 +98,28 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public String getDisplayName() {
+        return realm.getDisplayName();
+    }
+
+    @Override
+    public void setDisplayName(String displayName) {
+        realm.setDisplayName(displayName);
+        updateRealm();
+    }
+
+    @Override
+    public String getDisplayNameHtml() {
+        return realm.getDisplayNameHtml();
+    }
+
+    @Override
+    public void setDisplayNameHtml(String displayNameHtml) {
+        realm.setDisplayNameHtml(displayNameHtml);
+        updateRealm();
+    }
+
+    @Override
     public boolean isEnabled() {
         return realm.isEnabled();
     }

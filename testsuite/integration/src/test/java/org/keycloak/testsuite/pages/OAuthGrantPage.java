@@ -45,7 +45,7 @@ public class OAuthGrantPage extends AbstractPage {
 
     @Override
     public boolean isCurrent() {
-        return driver.getTitle().equals("OAuth Grant");
+        return driver.getTitle().equals("Grant Access");
     }
 
     @Override

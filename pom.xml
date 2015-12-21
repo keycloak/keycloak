@@ -19,6 +19,7 @@
 
     <properties>
         <product.name>Keycloak</product.name>
+        <product.name-html>\u003Cstrong\u003EKeycloak\u003C\u002Fstrong\u003E</product.name-html>
         <product.version>${project.version}</product.version>
         <product.build-time>${timestamp}</product.build-time>
 

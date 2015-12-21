@@ -60,6 +60,30 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public String getDisplayName() {
+        if (updated != null) return updated.getDisplayName();
+        return cached.getDisplayName();
+    }
+
+    @Override
+    public void setDisplayName(String displayName) {
+        getDelegateForUpdate();
+        updated.setDisplayName(displayName);
+    }
+
+    @Override
+    public String getDisplayNameHtml() {
+        if (updated != null) return updated.getDisplayNameHtml();
+        return cached.getDisplayNameHtml();
+    }
+
+    @Override
+    public void setDisplayNameHtml(String displayNameHtml) {
+        getDelegateForUpdate();
+        updated.setDisplayNameHtml(displayNameHtml);
+    }
+
+    @Override
     public boolean isEnabled() {
         if (updated != null) return updated.isEnabled();
         return cached.isEnabled();

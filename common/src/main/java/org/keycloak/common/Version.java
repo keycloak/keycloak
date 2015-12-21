@@ -12,6 +12,8 @@ import java.util.Properties;
  */
 public class Version {
     public static final String UNKNOWN = "UNKNOWN";
+    public static String NAME;
+    public static String NAME_HTML;
     public static String VERSION;
     public static String RESOURCES_VERSION;
     public static String BUILD_TIME;
@@ -21,6 +23,8 @@ public class Version {
         InputStream is = Version.class.getResourceAsStream("/keycloak-version.properties");
         try {
             props.load(is);
+            Version.NAME = props.getProperty("name");
+            Version.NAME_HTML = props.getProperty("name-html");
             Version.VERSION = props.getProperty("version");
             Version.BUILD_TIME = props.getProperty("build-time");
             Version.RESOURCES_VERSION = Version.VERSION.toLowerCase();
