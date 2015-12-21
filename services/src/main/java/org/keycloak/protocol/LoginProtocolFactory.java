@@ -1,9 +1,11 @@
 package org.keycloak.protocol;
 
 import org.keycloak.events.EventBuilder;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import java.util.List;
@@ -27,4 +29,12 @@ public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
     List<ProtocolMapperModel> getDefaultBuiltinMappers();
 
     Object createProtocolEndpoint(RealmModel realm, EventBuilder event, AuthenticationManager authManager);
+
+    /**
+     * Setup default values for new clients.
+     *
+     * @param rep
+     * @param newClient
+     */
+    void setupClientDefaults(ClientRepresentation rep, ClientModel newClient);
 }

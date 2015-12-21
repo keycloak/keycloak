@@ -16,7 +16,9 @@
  */
 package org.keycloak.protocol.oidc;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -29,12 +31,16 @@ import org.keycloak.protocol.oidc.mappers.FullNameMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 
 /**
@@ -42,6 +48,7 @@ import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
  * @version $Revision: 1 $
  */
 public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
+    private static Logger logger = Logger.getLogger(OIDCLoginProtocolFactory.class);
 
     public static final String USERNAME = "username";
     public static final String EMAIL = "email";
@@ -158,5 +165,45 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     @Override
     public String getId() {
         return "openid-connect";
+    }
+
+    @Override
+    public void setupClientDefaults(ClientRepresentation rep, ClientModel newClient) {
+        if (rep.getRootUrl() != null && (rep.getRedirectUris() == null || rep.getRedirectUris().isEmpty())) {
+            String root = rep.getRootUrl();
+            if (root.endsWith("/")) root = root + "*";
+            else root = root + "/*";
+            newClient.addRedirectUri(root);
+
+            Set<String> origins = new HashSet<String>();
+            String origin = UriUtils.getOrigin(root);
+            logger.debugv("adding default client origin: {0}" , origin);
+            origins.add(origin);
+            newClient.setWebOrigins(origins);
+        }
+        if (rep.isBearerOnly() == null
+                && rep.isPublicClient() == null) {
+            newClient.setPublicClient(true);
+        }
+        if (rep.isBearerOnly() == null) newClient.setBearerOnly(false);
+        if (rep.getAdminUrl() == null && rep.getRootUrl() != null) {
+            newClient.setManagementUrl(rep.getRootUrl());
+        }
+
+
+        // Backwards compatibility only
+        if (rep.isDirectGrantsOnly() != null) {
+            logger.warn("Using deprecated 'directGrantsOnly' configuration in JSON representation. It will be removed in future versions");
+            newClient.setStandardFlowEnabled(!rep.isDirectGrantsOnly());
+            newClient.setDirectAccessGrantsEnabled(rep.isDirectGrantsOnly());
+        } else {
+            if (rep.isStandardFlowEnabled() == null) newClient.setStandardFlowEnabled(true);
+            if (rep.isDirectAccessGrantsEnabled() == null) newClient.setDirectAccessGrantsEnabled(true);
+
+        }
+
+        if (rep.isImplicitFlowEnabled() == null) newClient.setImplicitFlowEnabled(false);
+        if (rep.isPublicClient() == null) newClient.setPublicClient(true);
+        if (rep.isFrontchannelLogout() == null) newClient.setFrontchannelLogout(false);
     }
 }

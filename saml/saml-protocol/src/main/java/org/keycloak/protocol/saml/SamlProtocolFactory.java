@@ -6,15 +6,20 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
+import org.keycloak.representations.idm.CertificateRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 
+import javax.xml.crypto.dsig.CanonicalizationMethod;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -93,6 +98,49 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         for (ProtocolMapperModel model : defaultBuiltins) {
             model.setProtocol(getId());
             client.addProtocolMapper(model);
+        }
+    }
+
+    @Override
+    public void setupClientDefaults(ClientRepresentation clientRep, ClientModel newClient) {
+        SamlClientRepresentation rep = new SamlClientRepresentation(clientRep);
+        SamlClient client = new SamlClient(newClient);
+        if (clientRep.isStandardFlowEnabled() == null) newClient.setStandardFlowEnabled(true);
+        if (rep.getCanonicalizationMethod() == null) {
+            client.setCanonicalizationMethod(CanonicalizationMethod.EXCLUSIVE);
+        }
+        if (rep.getSignatureAlgorithm() == null) {
+            client.setSignatureAlgorithm(SignatureAlgorithm.RSA_SHA256);
+        }
+
+        if (rep.getNameIDFormat() == null) {
+            client.setNameIDFormat("username");
+        }
+
+        if (rep.getIncludeAuthnStatement() == null) {
+            client.setIncludeAuthnStatement(true);
+        }
+
+        if (rep.getForceNameIDFormat() == null) {
+            client.setForceNameIDFormat(false);
+        }
+
+        if (rep.getSamlServerSignature() == null) {
+            client.setRequiresRealmSignature(true);
+        }
+        if (rep.getForcePostBinding() == null) {
+            client.setForcePostBinding(true);
+        }
+
+        if (rep.getClientSignature() == null) {
+            client.setRequiresClientSignature(true);
+            CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(newClient.getClientId());
+            client.setClientSigningCertificate(info.getCertificate());
+            client.setClientSigningPrivateKey(info.getPrivateKey());
+        }
+
+        if (clientRep.isFrontchannelLogout() == null) {
+            newClient.setFrontchannelLogout(true);
         }
     }
 }
