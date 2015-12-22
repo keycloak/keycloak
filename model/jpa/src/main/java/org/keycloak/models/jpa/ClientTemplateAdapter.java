@@ -288,6 +288,111 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
     }
 
     @Override
+    public boolean isPublicClient() {
+        return entity.isPublicClient();
+    }
+
+    @Override
+    public void setPublicClient(boolean flag) {
+        entity.setPublicClient(flag);
+    }
+
+    @Override
+    public boolean isFrontchannelLogout() {
+        return entity.isFrontchannelLogout();
+    }
+
+    @Override
+    public void setFrontchannelLogout(boolean flag) {
+        entity.setFrontchannelLogout(flag);
+    }
+
+    @Override
+    public void setAttribute(String name, String value) {
+        entity.getAttributes().put(name, value);
+
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        entity.getAttributes().remove(name);
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        return entity.getAttributes().get(name);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        Map<String, String> copy = new HashMap<>();
+        copy.putAll(entity.getAttributes());
+        return copy;
+    }
+
+    @Override
+    public boolean isBearerOnly() {
+        return entity.isBearerOnly();
+    }
+
+    @Override
+    public void setBearerOnly(boolean only) {
+        entity.setBearerOnly(only);
+    }
+
+    @Override
+    public boolean isConsentRequired() {
+        return entity.isConsentRequired();
+    }
+
+    @Override
+    public void setConsentRequired(boolean consentRequired) {
+        entity.setConsentRequired(consentRequired);
+    }
+
+    @Override
+    public boolean isStandardFlowEnabled() {
+        return entity.isStandardFlowEnabled();
+    }
+
+    @Override
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        entity.setStandardFlowEnabled(standardFlowEnabled);
+    }
+
+    @Override
+    public boolean isImplicitFlowEnabled() {
+        return entity.isImplicitFlowEnabled();
+    }
+
+    @Override
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        entity.setImplicitFlowEnabled(implicitFlowEnabled);
+    }
+
+    @Override
+    public boolean isDirectAccessGrantsEnabled() {
+        return entity.isDirectAccessGrantsEnabled();
+    }
+
+    @Override
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        entity.setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
+    }
+
+    @Override
+    public boolean isServiceAccountsEnabled() {
+        return entity.isServiceAccountsEnabled();
+    }
+
+    @Override
+    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
+        entity.setServiceAccountsEnabled(serviceAccountsEnabled);
+    }
+
+
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof ClientTemplateModel)) return false;

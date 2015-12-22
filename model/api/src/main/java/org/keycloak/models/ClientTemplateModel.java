@@ -23,5 +23,35 @@ public interface ClientTemplateModel extends ProtocolMapperContainerModel, Scope
     String getProtocol();
     void setProtocol(String protocol);
 
+    void setAttribute(String name, String value);
+    void removeAttribute(String name);
+    String getAttribute(String name);
+    Map<String, String> getAttributes();
+
+    boolean isFrontchannelLogout();
+    void setFrontchannelLogout(boolean flag);
+
+    boolean isBearerOnly();
+    void setBearerOnly(boolean only);
+
+    boolean isPublicClient();
+    void setPublicClient(boolean flag);
+
+    boolean isConsentRequired();
+    void setConsentRequired(boolean consentRequired);
+
+    boolean isStandardFlowEnabled();
+    void setStandardFlowEnabled(boolean standardFlowEnabled);
+
+    boolean isImplicitFlowEnabled();
+    void setImplicitFlowEnabled(boolean implicitFlowEnabled);
+
+    boolean isDirectAccessGrantsEnabled();
+    void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled);
+
+    boolean isServiceAccountsEnabled();
+    void setServiceAccountsEnabled(boolean serviceAccountsEnabled);
+
+
 
 }

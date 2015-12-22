@@ -193,6 +193,7 @@ public class SamlService extends AuthorizationEndpointBase {
         protected abstract SAMLDocumentHolder extractResponseDocument(String response);
 
         protected Response loginRequest(String relayState, AuthnRequestType requestAbstractType, ClientModel client) {
+            SamlClient samlClient = new SamlClient(client);
             // validate destination
             if (requestAbstractType.getDestination() != null && !uriInfo.getAbsolutePath().equals(requestAbstractType.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
@@ -200,7 +201,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 return ErrorPage.error(session, Messages.INVALID_REQUEST);
             }
             String bindingType = getBindingType(requestAbstractType);
-            if ("true".equals(client.getAttribute(SamlProtocol.SAML_FORCE_POST_BINDING)))
+            if (samlClient.forcePostBinding())
                 bindingType = SamlProtocol.SAML_POST_BINDING;
             String redirect = null;
             URI redirectUri = requestAbstractType.getAssertionConsumerServiceURL();
@@ -234,7 +235,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
             // Handle NameIDPolicy from SP
             NameIDPolicyType nameIdPolicy = requestAbstractType.getNameIDPolicy();
-            if (nameIdPolicy != null && !SamlProtocol.forceNameIdFormat(client)) {
+            if (nameIdPolicy != null && !samlClient.forceNameIDFormat()) {
                 String nameIdFormat = nameIdPolicy.getFormat().toString();
                 // TODO: Handle AllowCreate too, relevant for persistent NameID.
                 if (isSupportedNameIdFormat(nameIdFormat)) {
@@ -274,6 +275,7 @@ public class SamlService extends AuthorizationEndpointBase {
         protected abstract String getBindingType();
 
         protected Response logoutRequest(LogoutRequestType logoutRequest, ClientModel client, String relayState) {
+            SamlClient samlClient = new SamlClient(client);
             // validate destination
             if (logoutRequest.getDestination() != null && !uriInfo.getAbsolutePath().equals(logoutRequest.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
@@ -285,20 +287,20 @@ public class SamlService extends AuthorizationEndpointBase {
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, false);
             if (authResult != null) {
                 String logoutBinding = getBindingType();
-                if ("true".equals(client.getAttribute(SamlProtocol.SAML_FORCE_POST_BINDING)))
+                if ("true".equals(samlClient.forcePostBinding()))
                     logoutBinding = SamlProtocol.SAML_POST_BINDING;
                 String bindingUri = SamlProtocol.getLogoutServiceUrl(uriInfo, client, logoutBinding);
                 UserSessionModel userSession = authResult.getSession();
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING_URI, bindingUri);
-                if (SamlProtocol.requiresRealmSignature(client)) {
-                    userSession.setNote(SamlProtocol.SAML_LOGOUT_SIGNATURE_ALGORITHM, SamlProtocol.getSignatureAlgorithm(client).toString());
+                if (samlClient.requiresRealmSignature()) {
+                    userSession.setNote(SamlProtocol.SAML_LOGOUT_SIGNATURE_ALGORITHM, samlClient.getSignatureAlgorithm().toString());
 
                 }
                 if (relayState != null)
                     userSession.setNote(SamlProtocol.SAML_LOGOUT_RELAY_STATE, relayState);
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_REQUEST_ID, logoutRequest.getID());
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING, logoutBinding);
-                userSession.setNote(SamlProtocol.SAML_LOGOUT_CANONICALIZATION, client.getAttribute(SamlProtocol.SAML_CANONICALIZATION_METHOD_ATTRIBUTE));
+                userSession.setNote(SamlProtocol.SAML_LOGOUT_CANONICALIZATION, samlClient.getCanonicalizationMethod());
                 userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, SamlProtocol.LOGIN_PROTOCOL);
                 // remove client from logout requests
                 for (ClientSessionModel clientSession : userSession.getClientSessions()) {
@@ -348,8 +350,8 @@ public class SamlService extends AuthorizationEndpointBase {
             builder.destination(logoutBindingUri);
             builder.issuer(RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(logoutRelayState);
-            if (SamlProtocol.requiresRealmSignature(client)) {
-                SignatureAlgorithm algorithm = SamlProtocol.getSignatureAlgorithm(client);
+            if (samlClient.requiresRealmSignature()) {
+                SignatureAlgorithm algorithm = samlClient.getSignatureAlgorithm();
                 binding.signatureAlgorithm(algorithm).signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate()).signDocument();
 
             }

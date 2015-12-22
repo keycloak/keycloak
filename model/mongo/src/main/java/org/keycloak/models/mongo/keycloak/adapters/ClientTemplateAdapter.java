@@ -275,6 +275,121 @@ public class ClientTemplateAdapter extends AbstractMongoAdapter<MongoClientTempl
     }
 
     @Override
+    public boolean isPublicClient() {
+        return getMongoEntity().isPublicClient();
+    }
+
+    @Override
+    public void setPublicClient(boolean flag) {
+        getMongoEntity().setPublicClient(flag);
+        updateMongoEntity();
+    }
+
+
+    @Override
+    public boolean isFrontchannelLogout() {
+        return getMongoEntity().isFrontchannelLogout();
+    }
+
+    @Override
+    public void setFrontchannelLogout(boolean flag) {
+        getMongoEntity().setFrontchannelLogout(flag);
+        updateMongoEntity();
+    }
+
+    @Override
+    public void setAttribute(String name, String value) {
+        getMongoEntity().getAttributes().put(name, value);
+        updateMongoEntity();
+
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        getMongoEntity().getAttributes().remove(name);
+        updateMongoEntity();
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        return getMongoEntity().getAttributes().get(name);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        Map<String, String> copy = new HashMap<String, String>();
+        copy.putAll(getMongoEntity().getAttributes());
+        return copy;
+    }
+
+    @Override
+    public boolean isBearerOnly() {
+        return getMongoEntity().isBearerOnly();
+    }
+
+    @Override
+    public void setBearerOnly(boolean only) {
+        getMongoEntity().setBearerOnly(only);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isConsentRequired() {
+        return getMongoEntity().isConsentRequired();
+    }
+
+    @Override
+    public void setConsentRequired(boolean consentRequired) {
+        getMongoEntity().setConsentRequired(consentRequired);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isStandardFlowEnabled() {
+        return getMongoEntity().isStandardFlowEnabled();
+    }
+
+    @Override
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        getMongoEntity().setStandardFlowEnabled(standardFlowEnabled);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isImplicitFlowEnabled() {
+        return getMongoEntity().isImplicitFlowEnabled();
+    }
+
+    @Override
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        getMongoEntity().setImplicitFlowEnabled(implicitFlowEnabled);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isDirectAccessGrantsEnabled() {
+        return getMongoEntity().isDirectAccessGrantsEnabled();
+    }
+
+    @Override
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        getMongoEntity().setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isServiceAccountsEnabled() {
+        return getMongoEntity().isServiceAccountsEnabled();
+    }
+
+    @Override
+    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
+        getMongoEntity().setServiceAccountsEnabled(serviceAccountsEnabled);
+        updateMongoEntity();
+    }
+
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof ClientTemplateModel)) return false;
