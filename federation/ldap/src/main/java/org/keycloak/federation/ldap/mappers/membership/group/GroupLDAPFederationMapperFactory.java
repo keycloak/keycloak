@@ -11,6 +11,7 @@ import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.mappers.AbstractLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.AbstractLDAPFederationMapperFactory;
+import org.keycloak.federation.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
 import org.keycloak.federation.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.federation.ldap.mappers.membership.MembershipType;
 import org.keycloak.federation.ldap.mappers.membership.UserRolesRetrieveStrategy;
@@ -170,6 +171,13 @@ public class GroupLDAPFederationMapperFactory extends AbstractLDAPFederationMapp
     public void validateConfig(UserFederationMapperModel mapperModel) throws MapperConfigValidationException {
         checkMandatoryConfigAttribute(GroupMapperConfig.GROUPS_DN, "LDAP Groups DN", mapperModel);
         checkMandatoryConfigAttribute(GroupMapperConfig.MODE, "Mode", mapperModel);
+
+        String mt = mapperModel.getConfig().get(CommonLDAPGroupMapperConfig.MEMBERSHIP_ATTRIBUTE_TYPE);
+        MembershipType membershipType = mt==null ? MembershipType.DN : Enum.valueOf(MembershipType.class, mt);
+        boolean preserveGroupInheritance = Boolean.parseBoolean(mapperModel.getConfig().get(GroupMapperConfig.PRESERVE_GROUP_INHERITANCE));
+        if (preserveGroupInheritance && membershipType != MembershipType.DN) {
+            throw new MapperConfigValidationException("Not possible to preserve group inheritance and use UID membership type together");
+        }
     }
 
     @Override

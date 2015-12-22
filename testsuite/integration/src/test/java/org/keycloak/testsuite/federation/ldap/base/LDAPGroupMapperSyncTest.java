@@ -59,6 +59,9 @@ public class LDAPGroupMapperSyncTest {
             // Add group mapper
             FederationTestUtils.addOrUpdateGroupMapper(appRealm, ldapModel, LDAPGroupMapperMode.LDAP_ONLY, descriptionAttrName);
 
+            // Remove all LDAP groups
+            FederationTestUtils.removeAllLDAPGroups(session, appRealm, ldapModel, "groupsMapper");
+
             // Add some groups for testing
             LDAPObject group1 = FederationTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "group1", descriptionAttrName, "group1 - description");
             LDAPObject group11 = FederationTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "group11");
