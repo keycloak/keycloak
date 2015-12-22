@@ -26,6 +26,28 @@
     <title>Welcome to Keycloak</title>
     <link rel="shortcut icon" href="welcome-content/favicon.ico" type="image/x-icon">
     <link rel="StyleSheet" href="welcome-content/keycloak.css" type="text/css">
+    <style>
+        label {
+            display: inline-block;
+            width: 200px;
+            text-align: right;
+            margin-right: 10px;
+        }
+
+        button {
+            margin-left: 215px;
+        }
+
+        form {
+            background-color: #eee;
+            border: 1px solid #666;
+            padding-bottom: 1em;
+        }
+
+        .error {
+            color: #a30000;
+        }
+    </style>
 </head>
 
 <body>
@@ -36,7 +58,43 @@
         </div>
         <h1>Welcome to Keycloak</h1>
 
-        <h3>Your Keycloak is running.</h3>
+        <#if bootstrap>
+            <#if localUser>
+                <#if successMessage?has_content>
+                    <p>${successMessage}</p>
+                <#else>
+                    <#if errorMessage?has_content>
+                        <p class="error">${errorMessage}</p>
+                    <#else>
+                        <p>Please create an initial admin user to get started.</p>
+                    </#if>
+
+                    <form method="post">
+                        <p>
+                            <label for="username">Username</label>
+                            <input id="username" name="username" />
+                        </p>
+
+                        <p>
+                            <label for="password">Password</label>
+                            <input id="password" name="password" type="password" />
+                        </p>
+
+                        <p>
+                            <label for="passwordConfirmation">Password confirmation</label>
+                            <input id="passwordConfirmation" name="passwordConfirmation" type="password" />
+                        </p>
+
+                        <button type="submit">Create</button>
+                    </form>
+                </#if>
+            <#else>
+                <p>
+                    You need local access to create the initial admin user. Open <a href="http://localhost:8080/auth">http://localhost:8080/auth</a>
+                    or use the add-user script.
+                </p>
+            </#if>
+        </#if>
 
         <p><a href="http://www.keycloak.org/docs">Documentation</a> | <a href="admin/">Administration Console</a> </p>
 

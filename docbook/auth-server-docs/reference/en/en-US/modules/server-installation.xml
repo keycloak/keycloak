@@ -130,15 +130,14 @@ cd &lt;WILDFLY_HOME&gt;/bin
         <section>
             <title>Admin User</title>
             <para>
-                To access the admin console you need an account to login. Currently, there's a default account added
-                with the username <literal>admin</literal> and password <literal>admin</literal>. You will be required
-                to change the password on first login. We are planning on removing the built-in account soon and will
-                instead have an initial step to create the user.
+                To access the admin console to configure Keycloak you need an account to login. There is no built in user,
+                instead you have to first create an admin account. This can done either by opening <ulink url="http://localhost:8080/auth">http://localhost:8080/auth</ulink>
+                (creating a user through the browser can only be done through localhost) or you can use the add-user script from
+                the command-line.
             </para>
             <para>
-                You can also create a user with the <literal>add-user</literal> script found in <literal>bin</literal>.
-                This script will create a temporary file with the details of the user, which are imported at startup.
-                To add a user with this script run:
+                The <literal>add-user</literal> script creates a temporary file with the details of the user,
+                which are imported at startup. To add a user with this script run:
 <programlisting><![CDATA[
 bin/add-user.[sh|bat] -r master -u <username> -p <password>
 ]]></programlisting>

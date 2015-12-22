@@ -19,7 +19,12 @@ public class CacheControlUtil {
             cacheControl.setNoCache(true);
         }
         return cacheControl;
+    }
 
+    public static CacheControl noCache() {
+        CacheControl cacheControl = new CacheControl();
+        cacheControl.setNoCache(true);
+        return cacheControl;
     }
 
 }
