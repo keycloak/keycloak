@@ -353,7 +353,7 @@ public class UserFederationProviderResource {
     private void validateModel(UserFederationMapperModel model) {
         try {
             UserFederationMapperFactory mapperFactory = (UserFederationMapperFactory) session.getKeycloakSessionFactory().getProviderFactory(UserFederationMapper.class, model.getFederationMapperType());
-            mapperFactory.validateConfig(model);
+            mapperFactory.validateConfig(realm, model);
         } catch (MapperConfigValidationException ex) {
             throw new ErrorResponseException("Validation error", ex.getMessage(), Response.Status.BAD_REQUEST);
         }

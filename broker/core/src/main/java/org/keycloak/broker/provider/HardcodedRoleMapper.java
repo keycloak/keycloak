@@ -1,14 +1,11 @@
 package org.keycloak.broker.provider;
 
-import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
-import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
@@ -20,7 +17,7 @@ import java.util.List;
  */
 public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
     public static final String ROLE = "role";
-    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     static {
         ProviderConfigProperty property;
@@ -30,34 +27,6 @@ public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
         property.setHelpText("Role to grant to user.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
         configProperties.add(property);
-    }
-
-
-
-    public static String[] parseRole(String role) {
-        int scopeIndex = role.lastIndexOf('.');
-        if (scopeIndex > -1) {
-            String appName = role.substring(0, scopeIndex);
-            role = role.substring(scopeIndex + 1);
-            String[] rtn = {appName, role};
-            return rtn;
-        } else {
-            String[] rtn = {null, role};
-            return rtn;
-
-        }
-    }
-
-    public static RoleModel getRoleFromString(RealmModel realm, String roleName) {
-        String[] parsedRole = parseRole(roleName);
-        RoleModel role = null;
-        if (parsedRole[0] == null) {
-            role = realm.getRole(parsedRole[1]);
-        } else {
-            ClientModel client = realm.getClientByClientId(parsedRole[0]);
-            role = client.getRole(parsedRole[1]);
-        }
-        return role;
     }
 
     @Override
@@ -93,7 +62,7 @@ public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String roleName = mapperModel.getConfig().get(ROLE);
-        RoleModel role = getRoleFromString(realm, roleName);
+        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
         if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
         user.grantRole(role);
     }

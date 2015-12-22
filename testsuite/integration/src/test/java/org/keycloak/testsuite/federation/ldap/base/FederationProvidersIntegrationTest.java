@@ -15,11 +15,15 @@ import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
+import org.keycloak.federation.ldap.mappers.HardcodedLDAPRoleMapper;
+import org.keycloak.federation.ldap.mappers.HardcodedLDAPRoleMapperFactory;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationMapperModel;
@@ -519,6 +523,50 @@ public class FederationProvidersIntegrationTest {
 
             firstNameMapper.setId(null);
             appRealm.addUserFederationMapper(firstNameMapper);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
+
+    @Test
+    public void testHardcodedRoleMapper() {
+        KeycloakSession session = keycloakRule.startSession();
+        UserFederationMapperModel firstNameMapper = null;
+
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+            RoleModel hardcodedRole = appRealm.addRole("hardcoded-role");
+
+            // assert that user "johnkeycloak" doesn't have hardcoded role
+            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+            Assert.assertFalse(john.hasRole(hardcodedRole));
+
+            UserFederationMapperModel hardcodedMapperModel = KeycloakModelUtils.createUserFederationMapperModel("hardcoded role", ldapModel.getId(), HardcodedLDAPRoleMapperFactory.PROVIDER_ID,
+                    HardcodedLDAPRoleMapper.ROLE, "hardcoded-role");
+            appRealm.addUserFederationMapper(hardcodedMapperModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+            RoleModel hardcodedRole = appRealm.getRole("hardcoded-role");
+
+            // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
+            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+            Assert.assertTrue(john.hasRole(hardcodedRole));
+
+            // Can't remove user from hardcoded role
+            try {
+                john.deleteRoleMapping(hardcodedRole);
+                Assert.fail("Didn't expected to remove role mapping");
+            } catch (ModelException expected) {
+            }
+
+            // Revert mappers
+            UserFederationMapperModel hardcodedMapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "hardcoded role");
+            appRealm.removeUserFederationMapper(hardcodedMapperModel);
         } finally {
             keycloakRule.stopSession(session, true);
         }

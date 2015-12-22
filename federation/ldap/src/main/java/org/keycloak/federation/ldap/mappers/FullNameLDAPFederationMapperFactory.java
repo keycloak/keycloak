@@ -75,7 +75,7 @@ public class FullNameLDAPFederationMapperFactory extends AbstractLDAPFederationM
     }
 
     @Override
-    public void validateConfig(UserFederationMapperModel mapperModel) throws MapperConfigValidationException {
+    public void validateConfig(RealmModel realm, UserFederationMapperModel mapperModel) throws MapperConfigValidationException {
         checkMandatoryConfigAttribute(FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, "LDAP Full Name Attribute", mapperModel);
     }
 

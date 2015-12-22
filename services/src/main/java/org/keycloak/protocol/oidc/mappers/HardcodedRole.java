@@ -4,6 +4,7 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -67,7 +68,7 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionModel clientSession) {
         String role = mappingModel.getConfig().get(ROLE_CONFIG);
-        String[] scopedRole = ProtocolMapperUtils.parseRole(role);
+        String[] scopedRole = KeycloakModelUtils.parseRole(role);
         String appName = scopedRole[0];
         String roleName = scopedRole[1];
         if (appName != null) {
