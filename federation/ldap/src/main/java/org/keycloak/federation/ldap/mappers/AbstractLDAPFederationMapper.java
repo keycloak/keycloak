@@ -75,4 +75,12 @@ public abstract class AbstractLDAPFederationMapper {
         String paramm = mapperModel.getConfig().get(paramName);
         return Boolean.parseBoolean(paramm);
     }
+
+    public LDAPFederationProvider getLdapProvider() {
+        return ldapProvider;
+    }
+
+    public RealmModel getRealm() {
+        return realm;
+    }
 }

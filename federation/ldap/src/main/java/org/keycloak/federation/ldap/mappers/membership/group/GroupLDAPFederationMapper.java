@@ -1,6 +1,5 @@
 package org.keycloak.federation.ldap.mappers.membership.group;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,8 +26,6 @@ import org.keycloak.federation.ldap.mappers.membership.UserRolesRetrieveStrategy
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
@@ -115,22 +112,8 @@ public class GroupLDAPFederationMapper extends AbstractLDAPFederationMapper impl
     }
 
     protected Set<LDAPDn> getLDAPSubgroups(LDAPObject ldapGroup) {
-        return getLDAPMembersWithParent(ldapGroup, LDAPDn.fromString(config.getGroupsDn()));
-    }
-
-    // Get just those members of specified group, which are descendants of "requiredParentDn"
-    protected Set<LDAPDn> getLDAPMembersWithParent(LDAPObject ldapGroup, LDAPDn requiredParentDn) {
-        Set<String> allMemberships = LDAPUtils.getExistingMemberships(config.getMembershipLdapAttribute(), ldapGroup);
-
-        // Filter and keep just groups
-        Set<LDAPDn> result = new HashSet<>();
-        for (String membership : allMemberships) {
-            LDAPDn childDn = LDAPDn.fromString(membership);
-            if (childDn.isDescendantOf(requiredParentDn)) {
-                result.add(childDn);
-            }
-        }
-        return result;
+        MembershipType membershipType = config.getMembershipTypeLdapAttribute();
+        return membershipType.getLDAPSubgroups(this, ldapGroup);
     }
 
 
@@ -461,23 +444,8 @@ public class GroupLDAPFederationMapper extends AbstractLDAPFederationMapper impl
             return Collections.emptyList();
         }
 
-        LDAPDn usersDn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getUsersDn());
-        Set<LDAPDn> userDns = getLDAPMembersWithParent(ldapGroup, usersDn);
-
-        if (userDns == null) {
-            return Collections.emptyList();
-        }
-
-        if (userDns.size() <= firstResult) {
-            return Collections.emptyList();
-        }
-
-        List<LDAPDn> dns = new ArrayList<>(userDns);
-        int max = Math.min(dns.size(), firstResult + maxResults);
-        dns = dns.subList(firstResult, max);
-
-        // We have dns of users, who are members of our group. Load them now
-        return ldapProvider.loadUsersByLDAPDns(dns, realm);
+        MembershipType membershipType = config.getMembershipTypeLdapAttribute();
+        return membershipType.getGroupMembers(this, ldapGroup, firstResult, maxResults);
     }
 
     public void addGroupMappingInLDAP(String groupName, LDAPObject ldapUser) {

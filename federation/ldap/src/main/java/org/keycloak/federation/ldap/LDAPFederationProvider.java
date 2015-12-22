@@ -206,25 +206,9 @@ public class LDAPFederationProvider implements UserFederationProvider {
         return Collections.emptyList();
     }
 
-    public List<UserModel> loadUsersByLDAPDns(Collection<LDAPDn> userDns, RealmModel realm) {
-        // We have dns of users, who are members of our group. Load them now
-        LDAPQuery query = LDAPUtils.createQueryForUserSearch(this, realm);
-        LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
-        Condition[] orSubconditions = new Condition[userDns.size()];
-        int index = 0;
-        for (LDAPDn userDn : userDns) {
-            Condition condition = conditionsBuilder.equal(userDn.getFirstRdnAttrName(), userDn.getFirstRdnAttrValue());
-            orSubconditions[index] = condition;
-            index++;
-        }
-        Condition orCondition = conditionsBuilder.orCondition(orSubconditions);
-        query.addWhereCondition(orCondition);
-        List<LDAPObject> ldapUsers = query.getResultList();
-
-        // We have ldapUsers, Need to load users from KC DB or import them here
-        List<UserModel> result = new LinkedList<>();
-        for (LDAPObject ldapUser : ldapUsers) {
-            String username = LDAPUtils.getUsername(ldapUser, getLdapIdentityStore().getConfig());
+    public List<UserModel> loadUsersByUsernames(List<String> usernames, RealmModel realm) {
+        List<UserModel> result = new ArrayList<>();
+        for (String username : usernames) {
             UserModel kcUser = session.users().getUserByUsername(username, realm);
             if (!model.getId().equals(kcUser.getFederationLink())) {
                 logger.warnf("Incorrect federation provider of user %s" + kcUser.getUsername());
