@@ -264,10 +264,7 @@ public class AdminConsole {
         if (!uriInfo.getRequestUri().getPath().endsWith("/")) {
             return Response.status(302).location(uriInfo.getRequestUriBuilder().path("/").build()).build();
         } else {
-            String adminTheme = realm.getAdminTheme();
-            if (adminTheme == null) {
-                adminTheme = "keycloak";
-            }
+            Theme theme = getTheme();
 
             Map<String, Object> map = new HashMap<>();
 
@@ -277,11 +274,8 @@ public class AdminConsole {
             authUrl = authUrl.substring(0, authUrl.length() - 1);
 
             map.put("authUrl", authUrl);
-            map.put("resourceUrl", Urls.themeRoot(baseUri) + "/admin/" + adminTheme);
+            map.put("resourceUrl", Urls.themeRoot(baseUri) + "/admin/" + theme.getName());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
-
-            Theme theme = getTheme();
-
             map.put("properties", theme.getProperties());
 
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();

@@ -33,10 +33,10 @@ import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.filters.ClientConnectionFilter;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
+import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.util.JsonSerialization;
@@ -273,19 +273,17 @@ public class KeycloakServer {
     }
 
     protected void setupDevConfig() {
-        KeycloakSession session = sessionFactory.create();
-        session.getTransaction().begin();
-
-        try {
-            RealmManager manager = new RealmManager(session);
-
-            RealmModel adminRealm = manager.getKeycloakAdminstrationRealm();
-            UserModel admin = session.users().getUserByUsername("admin", adminRealm);
-            admin.removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-
-            session.getTransaction().commit();
-        } finally {
-            session.close();
+        if (System.getProperty("keycloak.createAdminUser", "true").equals("true")) {
+            KeycloakSession session = sessionFactory.create();
+            try {
+                session.getTransaction().begin();
+                if (new ApplianceBootstrap(session).isNoMasterUser()) {
+                    new ApplianceBootstrap(session).createMasterRealmUser(session, "admin", "admin");
+                }
+                session.getTransaction().commit();
+            } finally {
+                session.close();
+            }
         }
     }
 
@@ -311,7 +309,6 @@ public class KeycloakServer {
             di.setDefaultEncoding("UTF-8");
 
             di.setDefaultServletConfig(new DefaultServletConfig(true));
-            di.addWelcomePage("theme/keycloak/welcome/resources/index.html");
 
             FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
             di.addFilter(filter);
