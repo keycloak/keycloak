@@ -1,6 +1,9 @@
 package org.keycloak.mappers;
 
+import java.util.Map;
+
 import org.keycloak.models.UserFederationMapperModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.UserFederationMapperSyncConfigRepresentation;
@@ -35,5 +38,12 @@ public interface UserFederationMapperFactory extends ProviderFactory<UserFederat
      * @throws MapperConfigValidationException if configuration provided in mapperModel is not valid
      */
     void validateConfig(UserFederationMapperModel mapperModel) throws MapperConfigValidationException;
+
+    /**
+     * Used to detect what are default values for ProviderConfigProperties specified during mapper creation
+     *
+     * @return
+     */
+    Map<String, String> getDefaultConfig(UserFederationProviderModel providerModel);
 
 }

@@ -59,6 +59,11 @@ public class DummyUserFederationProvider implements UserFederationProvider {
     }
 
     @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        return Collections.emptyList();
+    }
+
+    @Override
     public void preRemove(RealmModel realm) {
 
     }

@@ -3,6 +3,7 @@ package org.keycloak.federation.ldap;
 import org.jboss.logging.Logger;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
+import org.keycloak.federation.ldap.idm.model.LDAPDn;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
@@ -10,6 +11,8 @@ import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilde
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapperFactory;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -29,6 +32,8 @@ import org.keycloak.common.constants.KerberosConstants;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -183,6 +188,51 @@ public class LDAPFederationProvider implements UserFederationProvider {
         }
 
         return searchResults;
+    }
+
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(model.getId());
+        for (UserFederationMapperModel mapperModel : federationMappers) {
+            LDAPFederationMapper ldapMapper = getMapper(mapperModel);
+            List<UserModel> users = ldapMapper.getGroupMembers(mapperModel, this, realm, group, firstResult, maxResults);
+
+            // Sufficient for now
+            if (users.size() > 0) {
+                return users;
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
+    public List<UserModel> loadUsersByLDAPDns(Collection<LDAPDn> userDns, RealmModel realm) {
+        // We have dns of users, who are members of our group. Load them now
+        LDAPQuery query = LDAPUtils.createQueryForUserSearch(this, realm);
+        LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+        Condition[] orSubconditions = new Condition[userDns.size()];
+        int index = 0;
+        for (LDAPDn userDn : userDns) {
+            Condition condition = conditionsBuilder.equal(userDn.getFirstRdnAttrName(), userDn.getFirstRdnAttrValue());
+            orSubconditions[index] = condition;
+            index++;
+        }
+        Condition orCondition = conditionsBuilder.orCondition(orSubconditions);
+        query.addWhereCondition(orCondition);
+        List<LDAPObject> ldapUsers = query.getResultList();
+
+        // We have ldapUsers, Need to load users from KC DB or import them here
+        List<UserModel> result = new LinkedList<>();
+        for (LDAPObject ldapUser : ldapUsers) {
+            String username = LDAPUtils.getUsername(ldapUser, getLdapIdentityStore().getConfig());
+            UserModel kcUser = session.users().getUserByUsername(username, realm);
+            if (!model.getId().equals(kcUser.getFederationLink())) {
+                logger.warnf("Incorrect federation provider of user %s" + kcUser.getUsername());
+            } else {
+                result.add(kcUser);
+            }
+        }
+        return result;
     }
 
     protected List<LDAPObject> searchLDAP(RealmModel realm, Map<String, String> attributes, int maxResults) {
