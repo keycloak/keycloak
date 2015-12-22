@@ -810,10 +810,10 @@ public class AuthenticationProcessor {
         AuthenticationManager.evaluateRequiredActionTriggers(session, userSession, clientSession, connection, request, uriInfo, event, realm, clientSession.getAuthenticatedUser());
     }
 
-    public Response finishAuthentication() {
+    public Response finishAuthentication(LoginProtocol protocol) {
         event.success();
         RealmModel realm = clientSession.getRealm();
-        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, connection, event);
+        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, connection, event, protocol);
 
     }
 
