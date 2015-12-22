@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.federation;
+package org.keycloak.testsuite.federation.ldap;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,7 +40,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class FederationTestUtils {
+public class FederationTestUtils {
 
     public static UserModel addLocalUser(KeycloakSession session, RealmModel realm, String username, String email, String password) {
         UserModel user = session.userStorage().addUser(realm, username);

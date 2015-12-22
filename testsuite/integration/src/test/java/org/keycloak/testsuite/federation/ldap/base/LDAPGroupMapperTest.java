@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.federation;
+package org.keycloak.testsuite.federation.ldap.base;
 
 import java.util.List;
 import java.util.Map;
@@ -20,22 +20,18 @@ import org.keycloak.federation.ldap.mappers.membership.MembershipType;
 import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.membership.group.GroupMapperConfig;
-import org.keycloak.federation.ldap.mappers.membership.role.RoleLDAPFederationMapper;
-import org.keycloak.models.AccountRoles;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.federation.ldap.FederationTestUtils;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
 

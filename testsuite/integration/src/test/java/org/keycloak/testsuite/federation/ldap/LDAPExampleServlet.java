@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.federation;
+package org.keycloak.testsuite.federation.ldap;
 
 import java.io.IOException;
 import java.io.PrintWriter;

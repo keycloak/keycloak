@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.federation;
+package org.keycloak.testsuite.federation.ldap.base;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -23,6 +23,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UsersSyncManager;
+import org.keycloak.testsuite.federation.ldap.FederationTestUtils;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
 import org.keycloak.testsuite.DummyUserFederationProviderFactory;

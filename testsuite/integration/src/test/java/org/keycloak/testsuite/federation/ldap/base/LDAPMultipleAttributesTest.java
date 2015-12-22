@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.federation;
+package org.keycloak.testsuite.federation.ldap.base;
 
 import java.net.URL;
 import java.util.Arrays;
@@ -32,6 +32,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.federation.ldap.FederationTestUtils;
+import org.keycloak.testsuite.federation.ldap.LDAPExampleServlet;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
@@ -154,7 +156,7 @@ public class LDAPMultipleAttributesTest {
     }
 
     private void assertPostalCodes(List<String> postalCodes, String... expectedPostalCodes) {
-        if (expectedPostalCodes == null || postalCodes.isEmpty()) {
+        if (expectedPostalCodes == null && postalCodes.isEmpty()) {
             return;
         }
 

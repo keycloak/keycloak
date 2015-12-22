@@ -237,17 +237,17 @@ public class GroupLDAPFederationMapper extends AbstractLDAPFederationMapper impl
         }
 
         if (kcGroup != null) {
-            logger.infof("Updated Keycloak group '%s' from LDAP", kcGroup.getName());
+            logger.debugf("Updated Keycloak group '%s' from LDAP", kcGroup.getName());
             updateAttributesOfKCGroup(kcGroup, ldapGroups.get(kcGroup.getName()));
             syncResult.increaseUpdated();
         } else {
             kcGroup = realm.createGroup(groupTreeEntry.getGroupName());
             if (kcParent == null) {
                 realm.moveGroup(kcGroup, null);
-                logger.infof("Imported top-level group '%s' from LDAP", kcGroup.getName());
+                logger.debugf("Imported top-level group '%s' from LDAP", kcGroup.getName());
             } else {
                 realm.moveGroup(kcGroup, kcParent);
-                logger.infof("Imported group '%s' from LDAP as child of group '%s'", kcGroup.getName(), kcParent.getName());
+                logger.debugf("Imported group '%s' from LDAP as child of group '%s'", kcGroup.getName(), kcParent.getName());
             }
 
             updateAttributesOfKCGroup(kcGroup, ldapGroups.get(kcGroup.getName()));
@@ -266,7 +266,7 @@ public class GroupLDAPFederationMapper extends AbstractLDAPFederationMapper impl
         List<GroupModel> allGroups = realm.getGroups();
         for (GroupModel kcGroup : allGroups) {
             if (!visitedGroupIds.contains(kcGroup.getId())) {
-                logger.infof("Removing Keycloak group '%s', which doesn't exist in LDAP", kcGroup.getName());
+                logger.debugf("Removing Keycloak group '%s', which doesn't exist in LDAP", kcGroup.getName());
                 realm.removeGroup(kcGroup);
                 syncResult.increaseRemoved();
             }
@@ -533,7 +533,7 @@ public class GroupLDAPFederationMapper extends AbstractLDAPFederationMapper impl
 
                 GroupModel kcGroup = findKcGroupOrSyncFromLDAP(ldapGroup, user);
                 if (kcGroup != null) {
-                    logger.infof("User [%s] joins group [%s] during import from LDAP", user.getUsername(), kcGroup.getName());
+                    logger.debugf("User '%s' joins group '%s' during import from LDAP", user.getUsername(), kcGroup.getName());
                     user.joinGroup(kcGroup);
                 }
             }
