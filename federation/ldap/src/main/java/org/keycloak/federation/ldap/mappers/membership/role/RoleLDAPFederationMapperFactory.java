@@ -161,7 +161,7 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
     }
 
     @Override
-    public void validateConfig(UserFederationMapperModel mapperModel) throws MapperConfigValidationException {
+    public void validateConfig(RealmModel realm, UserFederationMapperModel mapperModel) throws MapperConfigValidationException {
         checkMandatoryConfigAttribute(RoleMapperConfig.ROLES_DN, "LDAP Roles DN", mapperModel);
         checkMandatoryConfigAttribute(RoleMapperConfig.MODE, "Mode", mapperModel);
 
