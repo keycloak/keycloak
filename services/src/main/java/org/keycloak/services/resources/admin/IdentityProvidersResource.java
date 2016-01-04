@@ -170,7 +170,7 @@ public class IdentityProvidersResource {
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, identityProvider.getInternalId())
                     .representation(representation).success();
             
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getProviderId()).build()).build();
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
         }
