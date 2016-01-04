@@ -264,8 +264,6 @@ public class RealmAdminResource {
 
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException("Realm doesn't exist");
-        } else {
-            clearAdminEvents();
         }
     }
 

@@ -11,6 +11,7 @@
                 <local-cache name="realms"/>
                 <local-cache name="users"/>
                 <local-cache name="sessions"/>
+                <local-cache name="offlineSessions"/>
                 <local-cache name="loginFailures"/>
             </cache-container>
             <cache-container name="server" default-cache="default" module="org.wildfly.clustering.server">
@@ -59,6 +60,7 @@
                 <invalidation-cache name="realms" mode="SYNC"/>
                 <invalidation-cache name="users" mode="SYNC"/>
                 <distributed-cache name="sessions" mode="SYNC" owners="1"/>
+                <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
             </cache-container>
             <cache-container name="server" aliases="singleton cluster" default-cache="default" module="org.wildfly.clustering.server">

@@ -3,6 +3,9 @@ package org.keycloak.testsuite.admin;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ServerInfoResource;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -88,6 +91,14 @@ public class RealmTest extends AbstractClientTest {
         realm.remove();
 
         assertNames(keycloak.realms().findAll(), "master", "test");
+    }
+
+    @Test
+    public void loginAfterRemoveRealm() {
+        realm.remove();
+
+        ServerInfoResource serverInfoResource = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID).serverInfo();
+        serverInfoResource.getInfo();
     }
 
     @Test
