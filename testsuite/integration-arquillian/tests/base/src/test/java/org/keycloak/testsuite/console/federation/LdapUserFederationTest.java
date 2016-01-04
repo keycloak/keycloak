@@ -82,7 +82,6 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
     }
 
     @Test
-    @Ignore
     public void invalidSettingsTest() {
         createLdapUserProvider.navigateTo();
         createLdapUserProvider.form().selectVendor(ACTIVE_DIRECTORY);
