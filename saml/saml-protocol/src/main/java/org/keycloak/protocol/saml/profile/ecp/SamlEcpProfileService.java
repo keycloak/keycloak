@@ -9,6 +9,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.profile.ecp.util.Soap;
@@ -99,7 +100,7 @@ public class SamlEcpProfileService extends SamlService {
             private void createRequestAuthenticatedHeader(ClientSessionModel clientSession, Soap.SoapMessageBuilder messageBuilder) {
                 ClientModel client = clientSession.getClient();
 
-                if ("true".equals(client.getAttribute(SamlProtocol.SAML_CLIENT_SIGNATURE_ATTRIBUTE))) {
+                if ("true".equals(client.getAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE))) {
                     SOAPHeaderElement ecpRequestAuthenticated = messageBuilder.addHeader(JBossSAMLConstants.REQUEST_AUTHENTICATED.get(), NS_PREFIX_PROFILE_ECP);
 
                     ecpRequestAuthenticated.setMustUnderstand(true);

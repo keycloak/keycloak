@@ -412,7 +412,8 @@ public class SamlService extends AuthorizationEndpointBase {
 
         @Override
         protected void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {
-            if (!"true".equals(client.getAttribute("saml.client.signature"))) {
+            SamlClient samlClient = new SamlClient(client);
+            if (!samlClient.requiresClientSignature()) {
                 return;
             }
             PublicKey publicKey = SamlProtocolUtils.getSignatureValidationKey(client);

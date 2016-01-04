@@ -1,5 +1,6 @@
 package org.keycloak.protocol.saml;
 
+import org.keycloak.models.ClientConfigResolver;
 import org.keycloak.models.ClientModel;
 import org.keycloak.saml.SignatureAlgorithm;
 
@@ -7,24 +8,14 @@ import org.keycloak.saml.SignatureAlgorithm;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SamlClient {
-    protected ClientModel client;
+public class SamlClient extends ClientConfigResolver {
 
     public SamlClient(ClientModel client) {
-        this.client = client;
+        super(client);
     }
-
-    public String getId() {
-        return client.getId();
-    }
-
-    public String getClientId() {
-        return client.getClientId();
-    }
-//
 
     public String getCanonicalizationMethod() {
-        return client.getAttribute(SamlConfigAttributes.SAML_CANONICALIZATION_METHOD_ATTRIBUTE);
+        return resolveAttribute(SamlConfigAttributes.SAML_CANONICALIZATION_METHOD_ATTRIBUTE);
     }
 
     public void setCanonicalizationMethod(String value) {
@@ -32,7 +23,7 @@ public class SamlClient {
     }
 
     public SignatureAlgorithm getSignatureAlgorithm() {
-        String alg = client.getAttribute(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM);
+        String alg = resolveAttribute(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM);
         if (alg != null) {
             SignatureAlgorithm algorithm = SignatureAlgorithm.valueOf(alg);
             if (algorithm != null)
@@ -46,14 +37,14 @@ public class SamlClient {
     }
 
     public String getNameIDFormat() {
-        return client.getAttributes().get(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE);
+        return resolveAttribute(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE);
     }
     public void setNameIDFormat(String format) {
         client.setAttribute(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, format);
     }
 
     public boolean includeAuthnStatement() {
-        return "true".equals(client.getAttribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT));
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT));
     }
 
     public void setIncludeAuthnStatement(boolean val) {
@@ -61,7 +52,7 @@ public class SamlClient {
     }
 
     public boolean forceNameIDFormat() {
-        return "true".equals(client.getAttribute(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE));
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE));
 
     }
     public void setForceNameIDFormat(boolean val) {
@@ -69,7 +60,7 @@ public class SamlClient {
     }
 
     public boolean requiresRealmSignature() {
-        return "true".equals(client.getAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE));
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE));
     }
 
     public void setRequiresRealmSignature(boolean val) {
@@ -78,7 +69,7 @@ public class SamlClient {
     }
 
     public boolean forcePostBinding() {
-        return "true".equals(client.getAttribute(SamlConfigAttributes.SAML_FORCE_POST_BINDING));
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_FORCE_POST_BINDING));
     }
 
     public void setForcePostBinding(boolean val) {
@@ -86,7 +77,7 @@ public class SamlClient {
 
     }
     public boolean requiresAssertionSignature() {
-        return "true".equals(client.getAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE));
+       return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE));
     }
 
     public void setRequiresAssertionSignature(boolean val) {
@@ -94,7 +85,7 @@ public class SamlClient {
 
     }
     public boolean requiresEncryption() {
-        return "true".equals(client.getAttribute(SamlConfigAttributes.SAML_ENCRYPT));
+       return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ENCRYPT));
     }
 
 
@@ -104,7 +95,7 @@ public class SamlClient {
     }
 
     public boolean requiresClientSignature() {
-        return "true".equals(client.getAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE));
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE));
     }
 
     public void setRequiresClientSignature(boolean val) {
@@ -129,4 +120,5 @@ public class SamlClient {
         client.setAttribute(SamlConfigAttributes.SAML_SIGNING_PRIVATE_KEY, val);
 
     }
+
 }
