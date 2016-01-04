@@ -37,6 +37,8 @@ public interface RealmCache {
 
     void invalidateRole(CachedRole role);
 
+    void evictCachedRoleById(String id);
+
     void addCachedRole(CachedRole role);
 
     void invalidateCachedRoleById(String id);
