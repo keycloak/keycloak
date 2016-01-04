@@ -66,19 +66,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     } else {
                         initEmbedded();
                     }
-
-                    // Backwards compatibility
-                    if (cacheManager.getCacheConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME) == null) {
-                        logger.debugf("No configuration provided for '%s' cache. Using '%s' configuration as template",
-                                InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, InfinispanConnectionProvider.SESSION_CACHE_NAME);
-
-                        Configuration sessionCacheConfig = cacheManager.getCacheConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME);
-                        if (sessionCacheConfig != null) {
-                            ConfigurationBuilder confBuilder = new ConfigurationBuilder().read(sessionCacheConfig);
-                            Configuration offlineSessionConfig = confBuilder.build();
-                            cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, offlineSessionConfig);
-                        }
-                    }
                 }
             }
         }
@@ -139,6 +126,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         Configuration sessionCacheConfiguration = sessionConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, sessionCacheConfiguration);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, sessionCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfiguration);
     }
 
