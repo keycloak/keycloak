@@ -49,8 +49,8 @@
         <dom4j.version>1.6.1</dom4j.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <slf4j.version>1.7.7</slf4j.version>
-        <wildfly.version>10.0.0.CR4</wildfly.version>
-        <wildfly.core.version>2.0.1.Final</wildfly.core.version>
+        <wildfly.version>10.0.0.CR5</wildfly.version>
+        <wildfly.core.version>2.0.5.Final</wildfly.core.version>
         <wildfly.build-tools.version>1.1.0.Final</wildfly.build-tools.version>
 
         <!-- this is EAP 6.4 alpha, publicly available -->
@@ -66,7 +66,7 @@
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <sun.xsom.version>20140925</sun.xsom.version>
         <javax.mail.version>1.4.5</javax.mail.version>
-        <infinispan.version>6.0.2.Final</infinispan.version>
+        <infinispan.version>8.1.0.Final</infinispan.version>
         <liquibase.version>3.4.1</liquibase.version>
         <jetty9.version>9.1.0.v20131115</jetty9.version>
         <osgi.version>4.2.0</osgi.version>

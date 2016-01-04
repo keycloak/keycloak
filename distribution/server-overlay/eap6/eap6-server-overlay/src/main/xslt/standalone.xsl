@@ -51,6 +51,7 @@
                 <local-cache name="realms"/>
                 <local-cache name="users"/>
                 <local-cache name="sessions"/>
+                <local-cache name="offlineSessions"/>
                 <local-cache name="loginFailures"/>
             </cache-container>
             <xsl:apply-templates select="node()|@*"/>
