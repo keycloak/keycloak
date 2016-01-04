@@ -14,6 +14,7 @@
     <properties>
         <app.server.eap6.home>${containers.home}</app.server.eap6.home>
         <adapter.libs.eap6>${containers.home}/keycloak-eap6-adapter-dist</adapter.libs.eap6>
+        <skip.configure.adapter.subsystem>false</skip.configure.adapter.subsystem>
     </properties>
 
     <dependencies>
@@ -98,6 +99,15 @@
     <profiles>
         <profile>
             <id>prod</id>
+            <activation>
+                <property>
+                    <name>prod</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <skip.configure.adapter.subsystem>true</skip.configure.adapter.subsystem>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -172,16 +182,11 @@
         </profile>
         <profile>
             <id>adapter-libs-provided</id>
-<!--            this profile has to be activated directly, the profile cannot be activated 
-            for prod tests, but we also need to activate adapter-libs-provided from 
-            integration-arquillian-tests-adapters, once new release of xml-maven-plugin
-            will be available we can resolve this by skipping this particular tranformation
-            for prod build-->
-<!--            <activation>    
+            <activation>    
                 <property>
                     <name>!adapter.libs.bundled</name>
                 </property>
-            </activation>-->
+            </activation>
             <properties>
                 <adapter.libs.eap6>${app.server.eap6.home}</adapter.libs.eap6>
             </properties>
@@ -198,6 +203,7 @@
                                     <goal>transform</goal>
                                 </goals>
                                 <configuration>
+                                    <skip>${skip.configure.adapter.subsystem}</skip>
                                     <transformationSets>
                                         <transformationSet>
                                             <dir>${app.server.eap6.home}/standalone/configuration</dir>
