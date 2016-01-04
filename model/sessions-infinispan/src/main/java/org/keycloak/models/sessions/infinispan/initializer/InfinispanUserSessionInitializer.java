@@ -151,13 +151,13 @@ public class InfinispanUserSessionInitializer {
         int processors = Runtime.getRuntime().availableProcessors();
 
         ExecutorService localExecutor = Executors.newCachedThreadPool();
-        DistributedExecutorService distributedExecutorService = new DefaultExecutorService(cache, localExecutor);
+        Transport transport = cache.getCacheManager().getTransport();
+        ExecutorService executorService = transport != null ? new DefaultExecutorService(cache, localExecutor) : localExecutor;
 
         int errors = 0;
 
         try {
             while (!state.isFinished()) {
-                Transport transport = cache.getCacheManager().getTransport();
                 int nodesCount = transport==null ? 1 : transport.getMembers().size();
                 int distributedWorkersCount = processors * nodesCount;
 
@@ -174,7 +174,7 @@ public class InfinispanUserSessionInitializer {
                     SessionInitializerWorker worker = new SessionInitializerWorker();
                     worker.setWorkerEnvironment(segment, sessionsPerSegment, sessionLoader);
 
-                    Future<WorkerResult> future = distributedExecutorService.submit(worker);
+                    Future<WorkerResult> future = executorService.submit(worker);
                     futures.add(future);
                 }
 
@@ -210,7 +210,9 @@ public class InfinispanUserSessionInitializer {
                 }
             }
         } finally {
-            distributedExecutorService.shutdown();
+            if (transport != null) {
+                executorService.shutdown();
+            }
             localExecutor.shutdown();
         }
     }
