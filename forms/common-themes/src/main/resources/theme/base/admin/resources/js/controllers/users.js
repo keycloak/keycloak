@@ -644,6 +644,16 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
                 instance.config.updateProfileFirstLogin = true;
                 instance.config.allowKerberosAuthentication = true;
             }
+
+            if (providerFactory.properties) {
+
+                for (var i = 0; i < providerFactory.properties.length; i++) {
+                    var configProperty = providerFactory.properties[i];
+                    var configValue = configProperty.type == "boolean" ? (configProperty.defaultValue === true ? 'true' : 'false') : configProperty.defaultValue;
+                    instance.config[configProperty.name] = configValue;
+                }
+            }
+
         } else {
             $scope.fullSyncEnabled = (instance.fullSyncPeriod && instance.fullSyncPeriod > 0);
             $scope.changedSyncEnabled = (instance.changedSyncPeriod && instance.changedSyncPeriod > 0);
