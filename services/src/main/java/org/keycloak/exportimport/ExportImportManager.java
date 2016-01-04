@@ -2,10 +2,9 @@ package org.keycloak.exportimport;
 
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.services.managers.ApplianceBootstrap;
+
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -14,76 +13,82 @@ public class ExportImportManager {
 
     private static final Logger logger = Logger.getLogger(ExportImportManager.class);
 
-    public void checkExportImport(KeycloakSessionFactory sessionFactory, String contextPath) {
+    private KeycloakSession session;
+
+    private final String realmName;
+
+    private ExportProvider exportProvider;
+    private ImportProvider importProvider;
+
+    public ExportImportManager(KeycloakSession session) {
+        this.session = session;
+
+        realmName = ExportImportConfig.getRealmName();
+
+        String providerId = ExportImportConfig.getProvider();
         String exportImportAction = ExportImportConfig.getAction();
-        String realmName = ExportImportConfig.getRealmName();
 
-        boolean export = false;
-        boolean importt = false;
         if (ExportImportConfig.ACTION_EXPORT.equals(exportImportAction)) {
-            export = true;
+            exportProvider = session.getProvider(ExportProvider.class, providerId);
+            if (exportProvider == null) {
+                throw new RuntimeException("Export provider not found");
+            }
         } else if (ExportImportConfig.ACTION_IMPORT.equals(exportImportAction)) {
-            importt = true;
-        }
-
-        if (export || importt) {
-            String exportImportProviderId = ExportImportConfig.getProvider();
-            logger.debug("Will use provider: " + exportImportProviderId);
-            KeycloakSession session = sessionFactory.create();
-
-            try {
-                if (export) {
-                    ExportProvider exportProvider = session.getProvider(ExportProvider.class, exportImportProviderId);
-
-                    if (exportProvider == null) {
-                        logger.errorf("Invalid Export Provider %s", exportImportProviderId);
-                    } else {
-                        if (realmName == null) {
-                            logger.info("Full model export requested");
-                            exportProvider.exportModel(sessionFactory);
-                        } else {
-                            logger.infof("Export of realm '%s' requested", realmName);
-                            exportProvider.exportRealm(sessionFactory, realmName);
-                        }
-                        logger.info("Export finished successfully");
-                    }
-                } else {
-                    ImportProvider importProvider = session.getProvider(ImportProvider.class, exportImportProviderId);
-                    
-                    if (importProvider == null) {
-                    	logger.errorf("Invalid Import Provider %s", exportImportProviderId);
-                    } else {
-                    
-	                    Strategy strategy = ExportImportConfig.getStrategy();
-	                    if (realmName == null) {
-	                        logger.infof("Full model import requested. Strategy: %s", strategy.toString());
-	                        
-	                        // Check if master realm was exported. If it's not, then it needs to be created before other realms are imported
-	                        if (!importProvider.isMasterRealmExported()) {
-	                            ApplianceBootstrap.setupDefaultRealm(sessionFactory, contextPath);
-                                ApplianceBootstrap.setupDefaultUser(sessionFactory);
-	                        }
-	
-	                        importProvider.importModel(sessionFactory, strategy);
-	                    } else {
-	                        logger.infof("Import of realm '%s' requested. Strategy: %s", realmName, strategy.toString());
-	
-	                        if (!realmName.equals(Config.getAdminRealm())) {
-	                            // Check if master realm exists. If it's not, then it needs to be created before other realm is imported
-                                ApplianceBootstrap.setupDefaultRealm(sessionFactory, contextPath);
-                                ApplianceBootstrap.setupDefaultUser(sessionFactory);
-	                        }
-	
-	                        importProvider.importRealm(sessionFactory, realmName, strategy);
-	                    }
-	                    logger.info("Import finished successfully");
-                    }
-                }
-            } catch (Throwable ioe) {
-                logger.error("Error during export/import", ioe);
-            } finally {
-                session.close();
+            importProvider = session.getProvider(ImportProvider.class, providerId);
+            if (importProvider == null) {
+                throw new RuntimeException("Import provider not found");
             }
         }
     }
+
+    public boolean isRunImport() {
+        return importProvider != null;
+    }
+
+    public boolean isImportMasterIncluded() {
+        if (!isRunImport()) {
+            throw new IllegalStateException("Import not enabled");
+        }
+        try {
+            return importProvider.isMasterRealmExported();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean isRunExport() {
+        return exportProvider != null;
+    }
+
+    public void runImport() {
+        try {
+            Strategy strategy = ExportImportConfig.getStrategy();
+            if (realmName == null) {
+                logger.infof("Full model import requested. Strategy: %s", strategy.toString());
+                importProvider.importModel(session.getKeycloakSessionFactory(), strategy);
+            } else {
+                logger.infof("Import of realm '%s' requested. Strategy: %s", realmName, strategy.toString());
+                importProvider.importRealm(session.getKeycloakSessionFactory(), realmName, strategy);
+            }
+            logger.info("Import finished successfully");
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to run import", e);
+        }
+    }
+
+    public void runExport() {
+        try {
+            if (realmName == null) {
+                logger.info("Full model export requested");
+                exportProvider.exportModel(session.getKeycloakSessionFactory());
+            } else {
+                logger.infof("Export of realm '%s' requested", realmName);
+                exportProvider.exportRealm(session.getKeycloakSessionFactory(), realmName);
+            }
+            logger.info("Export finished successfully");
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to run export");
+        }
+    }
+
 }
