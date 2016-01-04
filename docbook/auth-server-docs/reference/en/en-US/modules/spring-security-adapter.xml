@@ -1,7 +1,7 @@
 <section id="spring-security-adapter">
     <title>Spring Security Adapter</title>
     <para>
-        To to secure an application with Spring Security and Keyloak, add this adapter as a dependency to your project.
+        To secure an application with Spring Security and Keycloak, add this adapter as a dependency to your project.
         You then have to provide some extra beans in your Spring Security configuration file and add the Keycloak security
         filter to your pipeline.
     </para>
@@ -175,6 +175,14 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter
             Spring Security, when using role-based authentication, requires that role names start with <code>ROLE_</code>.
             For example, an administrator role must be declared in Keycloak as <code>ROLE_ADMIN</code> or similar, not simply
             <code>ADMIN</code>.
+        </para>
+        <para>
+            The class <code>org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider</code>
+            supports an optional <code>org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper</code>
+            which can be used to map roles coming from Keycloak to roles recognized by Spring Security. Use, for example,
+            <code>org.springframework.security.core.authority.mapping.SimpleAuthorityMapper</code> to insert the
+            <code>ROLE_</code> prefix and convert the role name to upper case. The class is part of Spring Security
+            Core module.
         </para>
     </section>
     <section>
