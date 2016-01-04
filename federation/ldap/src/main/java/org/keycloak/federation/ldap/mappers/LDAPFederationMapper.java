@@ -1,5 +1,7 @@
 package org.keycloak.federation.ldap.mappers;
 
+import javax.naming.AuthenticationException;
+
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
@@ -59,4 +61,17 @@ public interface LDAPFederationMapper extends UserFederationMapper {
      * @param query
      */
     void beforeLDAPQuery(UserFederationMapperModel mapperModel, LDAPQuery query);
+
+    /**
+     * Called when LDAP authentication of specified user fails. If any mapper returns true from this method, AuthenticationException won't be rethrown!
+     *
+     * @param mapperModel
+     * @param ldapProvider
+     * @param realm
+     * @param user
+     * @param ldapUser
+     * @param ldapException
+     * @return true if mapper processed the AuthenticationException and did some actions based on that. In that case, AuthenticationException won't be rethrown!
+     */
+    boolean onAuthenticationFailure(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel user, AuthenticationException ldapException, RealmModel realm);
 }

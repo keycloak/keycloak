@@ -41,6 +41,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.naming.AuthenticationException;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -366,7 +368,22 @@ public class LDAPFederationProvider implements UserFederationProvider {
         } else {
             // Use Naming LDAP API
             LDAPObject ldapUser = loadAndValidateUser(realm, user);
-            return ldapIdentityStore.validatePassword(ldapUser, password);
+
+            try {
+                ldapIdentityStore.validatePassword(ldapUser, password);
+                return true;
+            } catch (AuthenticationException ae) {
+
+                // Check if any mapper provides callback for handle LDAP AuthenticationException
+                Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(getModel().getId());
+                boolean processed = false;
+                for (UserFederationMapperModel mapperModel : federationMappers) {
+                    LDAPFederationMapper ldapMapper = getMapper(mapperModel);
+                    processed = processed || ldapMapper.onAuthenticationFailure(mapperModel, this, ldapUser, user, ae, realm);
+                }
+
+                return processed;
+            }
         }
     }
 

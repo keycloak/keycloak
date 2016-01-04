@@ -16,6 +16,7 @@ import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapperFactory;
+import org.keycloak.federation.ldap.mappers.msad.MSADUserAccountControlMapperFactory;
 import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -188,6 +189,12 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
                 UserAttributeLDAPFederationMapper.ALWAYS_READ_VALUE_FROM_LDAP, alwaysReadValueFromLDAP,
                 UserAttributeLDAPFederationMapper.IS_MANDATORY_IN_LDAP, "false");
         realm.addUserFederationMapper(mapperModel);
+
+        // MSAD specific mapper for account state propagation
+        if (activeDirectory) {
+            mapperModel = KeycloakModelUtils.createUserFederationMapperModel("MSAD account controls", newProviderModel.getId(), MSADUserAccountControlMapperFactory.PROVIDER_ID);
+            realm.addUserFederationMapper(mapperModel);
+        }
     }
 
 

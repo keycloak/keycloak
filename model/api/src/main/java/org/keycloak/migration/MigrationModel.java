@@ -1,7 +1,5 @@
 package org.keycloak.migration;
 
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -11,7 +9,7 @@ public interface MigrationModel {
     /**
      * Must have the form of major.minor.micro as the version is parsed and numbers are compared
      */
-    public static final String LATEST_VERSION = "1.7.0";
+    String LATEST_VERSION = "1.8.0";
 
     String getStoredVersion();
     void setStoredVersion(String version);

@@ -113,12 +113,6 @@ public class LDAPConfig {
         return uuidAttrName;
     }
 
-    // TODO: Remove and use mapper instead?
-    public boolean isUserAccountControlsAfterPasswordUpdate() {
-        String userAccountCtrls = config.get(LDAPConstants.USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE);
-        return userAccountCtrls==null ? false : Boolean.parseBoolean(userAccountCtrls);
-    }
-
     public boolean isPagination() {
         String pagination = config.get(LDAPConstants.PAGINATION);
         return pagination==null ? false : Boolean.parseBoolean(pagination);

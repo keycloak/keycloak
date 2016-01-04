@@ -2,6 +2,8 @@ package org.keycloak.federation.ldap.idm.store;
 
 import java.util.List;
 
+import javax.naming.AuthenticationException;
+
 import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
@@ -65,8 +67,9 @@ public interface IdentityStore {
      *
      * @param user Keycloak user
      * @param password Ldap password
+     * @throws AuthenticationException if authentication is not successful
      */
-    boolean validatePassword(LDAPObject user, String password);
+    void validatePassword(LDAPObject user, String password) throws AuthenticationException;
 
     /**
      * Updates the specified credential value.

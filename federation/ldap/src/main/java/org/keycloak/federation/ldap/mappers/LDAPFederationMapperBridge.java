@@ -2,6 +2,8 @@ package org.keycloak.federation.ldap.mappers;
 
 import java.util.List;
 
+import javax.naming.AuthenticationException;
+
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
@@ -55,13 +57,18 @@ public class LDAPFederationMapperBridge implements LDAPFederationMapper {
     @Override
     public void beforeLDAPQuery(UserFederationMapperModel mapperModel, LDAPQuery query) {
         // Improve if needed
-        getDelegate(mapperModel, null, null).beforeLDAPQuery(query);
+        getDelegate(mapperModel, query.getLdapProvider(), null).beforeLDAPQuery(query);
     }
 
 
     @Override
     public List<UserModel> getGroupMembers(UserFederationMapperModel mapperModel, UserFederationProvider ldapProvider, RealmModel realm, GroupModel group, int firstResult, int maxResults) {
         return getDelegate(mapperModel, ldapProvider, realm).getGroupMembers(group, firstResult, maxResults);
+    }
+
+    @Override
+    public boolean onAuthenticationFailure(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel user, AuthenticationException ldapException, RealmModel realm) {
+        return getDelegate(mapperModel, ldapProvider, realm).onAuthenticationFailure(ldapUser, user, ldapException);
     }
 
     private AbstractLDAPFederationMapper getDelegate(UserFederationMapperModel mapperModel, UserFederationProvider federationProvider, RealmModel realm) {
