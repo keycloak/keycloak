@@ -332,6 +332,48 @@ public class RefreshTokenTest {
     }
 
     @Test
+    public void refreshTokenClientDisabled() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        Event loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String refreshTokenString = response.getRefreshToken();
+        RefreshToken refreshToken = oauth.verifyRefreshToken(refreshTokenString);
+
+        events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+        try {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.getClientByClientId(oauth.getClientId()).setEnabled(false);
+                }
+            });
+
+            response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+
+            assertEquals(400, response.getStatusCode());
+            assertEquals("invalid_client", response.getError());
+
+            events.expectRefresh(refreshToken.getId(), sessionId).user((String) null).session((String) null).clearDetails().error(Errors.CLIENT_DISABLED).assertEvent();
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.getClientByClientId(oauth.getClientId()).setEnabled(true);
+                }
+            });
+
+        }
+    }
+
+    @Test
     public void refreshTokenUserSessionExpired() {
         oauth.doLogin("test-user@localhost", "password");
 
