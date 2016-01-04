@@ -103,7 +103,7 @@ public class DummyUserFederationProviderFactory implements UserFederationProvide
         ProviderConfigProperty prop2 = new ProviderConfigProperty();
         prop2.setName("prop2");
         prop2.setLabel("Prop2");
-        prop2.setDefaultValue(true);
+        prop2.setDefaultValue("true");
         prop2.setHelpText("Prop2 HelpText");
         prop2.setType(ProviderConfigProperty.BOOLEAN_TYPE);
 
