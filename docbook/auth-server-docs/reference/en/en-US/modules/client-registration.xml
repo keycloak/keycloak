@@ -193,8 +193,8 @@ String initialAccessToken = "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJmMjJmNzQyYy04ZjNlLT
 ClientRepresentation client = new ClientRepresentation();
 client.setClientId(CLIENT_ID);
 
-ClientRegistration reg = ClientRegistration.create().url("http://keycloak/auth/realms/myrealm").build();
-reg.auth(initialAccessToken);
+ClientRegistration reg = ClientRegistration.create().url("http://keycloak/auth/realms/myrealm/clients").build();
+reg.auth(Auth.token(initialAccessToken));
 
 client = reg.create(client);
 
