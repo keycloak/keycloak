@@ -16,6 +16,7 @@ import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapperFactory;
+import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -192,6 +193,8 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
 
     @Override
     public UserFederationSyncResult syncAllUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model) {
+        syncMappers(sessionFactory, realmId, model);
+
         logger.infof("Sync all users from LDAP to local store: realm: %s, federation provider: %s", realmId, model.getDisplayName());
 
         LDAPQuery userQuery = createQuery(sessionFactory, realmId, model);
@@ -205,6 +208,8 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
 
     @Override
     public UserFederationSyncResult syncChangedUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model, Date lastSync) {
+        syncMappers(sessionFactory, realmId, model);
+
         logger.infof("Sync changed users from LDAP to local store: realm: %s, federation provider: %s, last sync time: " + lastSync, realmId, model.getDisplayName());
 
         // Sync newly created and updated users
@@ -219,6 +224,26 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
 
         logger.infof("Sync changed users finished: %s", result.getStatus());
         return result;
+    }
+
+    protected void syncMappers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model) {
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+
+            @Override
+            public void run(KeycloakSession session) {
+                LDAPFederationProvider ldapProvider = getInstance(session, model);
+                RealmModel realm = session.realms().getRealm(realmId);
+                Set<UserFederationMapperModel> mappers = realm.getUserFederationMappersByFederationProvider(model.getId());
+                for (UserFederationMapperModel mapperModel : mappers) {
+                    UserFederationMapper ldapMapper = session.getProvider(UserFederationMapper.class, mapperModel.getFederationMapperType());
+                    UserFederationSyncResult syncResult = ldapMapper.syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, session, realm);
+                    if (syncResult.getAdded() > 0 || syncResult.getUpdated() > 0 || syncResult.getRemoved() > 0 || syncResult.getFailed() > 0) {
+                        logger.infof("Sync of federation mapper '%s' finished. Status: %s", mapperModel.getName(), syncResult.toString());
+                    }
+                }
+            }
+
+        });
     }
 
     protected UserFederationSyncResult syncImpl(KeycloakSessionFactory sessionFactory, LDAPQuery userQuery, final String realmId, final UserFederationProviderModel fedModel) {

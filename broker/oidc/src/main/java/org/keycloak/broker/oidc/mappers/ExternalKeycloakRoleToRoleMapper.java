@@ -11,6 +11,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 
@@ -85,7 +86,7 @@ public class ExternalKeycloakRoleToRoleMapper extends AbstractClaimMapper {
         JsonWebToken token = (JsonWebToken)context.getContextData().get(KeycloakOIDCIdentityProvider.VALIDATED_ACCESS_TOKEN);
         //if (token == null) return;
         String roleName = mapperModel.getConfig().get(HardcodedRoleMapper.ROLE);
-        String[] parseRole = HardcodedRoleMapper.parseRole(mapperModel.getConfig().get(EXTERNAL_ROLE));
+        String[] parseRole = KeycloakModelUtils.parseRole(mapperModel.getConfig().get(EXTERNAL_ROLE));
         String externalRoleName = parseRole[1];
         String claimName = null;
         if (parseRole[0] == null) {
@@ -95,7 +96,7 @@ public class ExternalKeycloakRoleToRoleMapper extends AbstractClaimMapper {
         }
         Object claim = getClaimValue(token, claimName);
         if (valueEquals(externalRoleName, claim)) {
-            RoleModel role = HardcodedRoleMapper.getRoleFromString(realm, roleName);
+            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
             if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
             return role;
         }

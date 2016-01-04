@@ -16,6 +16,7 @@ public class LDAPDnTest {
 
         dn.addFirst("uid", "Johny,Depp");
         Assert.assertEquals("uid=Johny\\,Depp,ou=People,dc=keycloak,dc=org", dn.toString());
+        Assert.assertEquals(LDAPDn.fromString("uid=Johny\\,Depp,ou=People,dc=keycloak,dc=org"), dn);
 
         Assert.assertEquals("ou=People,dc=keycloak,dc=org", dn.getParentDn());
 

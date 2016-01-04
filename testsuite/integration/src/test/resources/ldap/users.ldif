@@ -18,3 +18,8 @@ dn: ou=FinanceRoles,dc=keycloak,dc=org
 objectclass: top
 objectclass: organizationalUnit
 ou: FinanceRoles
+
+dn: ou=Groups,dc=keycloak,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: Groups

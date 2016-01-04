@@ -1,10 +1,14 @@
 package org.keycloak.mappers;
 
+import java.util.List;
+
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationSyncResult;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
 /**
@@ -36,4 +40,9 @@ public interface UserFederationMapper extends Provider {
      * @param realm
      */
     UserFederationSyncResult syncDataFromKeycloakToFederationProvider(UserFederationMapperModel mapperModel, UserFederationProvider federationProvider, KeycloakSession session, RealmModel realm);
+
+    /**
+     * Return empty list if doesn't support storing of groups
+     */
+    List<UserModel> getGroupMembers(UserFederationMapperModel mapperModel, UserFederationProvider federationProvider, RealmModel realm, GroupModel group, int firstResult, int maxResults);
 }

@@ -105,6 +105,18 @@ public interface UserFederationProvider extends Provider {
     List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults);
 
     /**
+     * Return group members from federation storage. Useful if info about group memberships is stored in the federation storage.
+     * Return empty list if your federation provider doesn't support storing user-group memberships
+     *
+     * @param realm
+     * @param group
+     * @param firstResult
+     * @param maxResults
+     * @return
+     */
+    List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults);
+
+    /**
      * called whenever a Realm is removed
      *
      * @param realm
