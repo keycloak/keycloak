@@ -115,7 +115,10 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter
         <security:authentication-provider ref="keycloakAuthenticationProvider" />
     </security:authentication-manager>
 
-    <bean id="adapterDeploymentContextBean" class="org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean" />
+    <bean id="adapterDeploymentContext" class="org.keycloak.adapters.springsecurity.AdapterDeploymentContextFactoryBean">
+        <constructor-arg value="/WEB-INF/keycloak.json" />
+    </bean>
+
     <bean id="keycloakAuthenticationEntryPoint" class="org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationEntryPoint" />
     <bean id="keycloakAuthenticationProvider" class="org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider" />
     <bean id="keycloakPreAuthActionsFilter" class="org.keycloak.adapters.springsecurity.filter.KeycloakPreAuthActionsFilter" />
@@ -124,7 +127,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter
     </bean>
 
     <bean id="keycloakLogoutHandler" class="org.keycloak.adapters.springsecurity.authentication.KeycloakLogoutHandler">
-            <constructor-arg ref="adapterDeploymentContextBean" />
+        <constructor-arg ref="adapterDeploymentContext" />
     </bean>
 
     <bean id="logoutFilter" class="org.springframework.security.web.authentication.logout.LogoutFilter">
@@ -156,6 +159,15 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter
                 </programlisting>
             </para>
         </section>
+    </section>
+    <section>
+        <title>Multi Tenancy</title>
+        <para>
+            The Keycloak Spring Security adapter also supports multi tenancy. Instead of injecting
+            <literal>AdapterDeploymentContextFactoryBean</literal> with the path to <literal>keycloak.json</literal> you
+            can inject an implementation of the <literal>KeycloakConfigResolver</literal> interface. More details on how
+            to implement the <literal>KeycloakConfigResolver</literal> can be found in <xref linkend="multi_tenancy" />.
+        </para>
     </section>
     <section>
         <title>Naming Security Roles</title>
