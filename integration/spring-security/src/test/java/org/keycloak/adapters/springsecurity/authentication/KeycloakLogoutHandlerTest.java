@@ -2,10 +2,11 @@ package org.keycloak.adapters.springsecurity.authentication;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
-import org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.account.KeycloakRole;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.mockito.Mock;
@@ -35,7 +36,7 @@ public class KeycloakLogoutHandlerTest {
     private MockHttpServletResponse response;
 
     @Mock
-    private AdapterDeploymentContextBean adapterDeploymentContextBean;
+    private AdapterDeploymentContext adapterDeploymentContext;
 
     @Mock
     private OidcKeycloakAccount keycloakAccount;
@@ -52,11 +53,11 @@ public class KeycloakLogoutHandlerTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         keycloakAuthenticationToken = mock(KeycloakAuthenticationToken.class);
-        keycloakLogoutHandler = new KeycloakLogoutHandler(adapterDeploymentContextBean);
+        keycloakLogoutHandler = new KeycloakLogoutHandler(adapterDeploymentContext);
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
 
-        when(adapterDeploymentContextBean.getDeployment()).thenReturn(keycloakDeployment);
+        when(adapterDeploymentContext.resolveDeployment(any(HttpFacade.class))).thenReturn(keycloakDeployment);
         when(keycloakAuthenticationToken.getAccount()).thenReturn(keycloakAccount);
         when(keycloakAccount.getKeycloakSecurityContext()).thenReturn(session);
     }
