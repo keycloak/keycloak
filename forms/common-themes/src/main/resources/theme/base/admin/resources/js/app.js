@@ -2372,6 +2372,34 @@ module.filter('capitalize', function() {
     };
 });
 
+/*
+ * Guarantees a deterministic property iteration order.
+ * See: http://www.2ality.com/2015/10/property-traversal-order-es6.html
+ */
+module.filter('toOrderedMapSortedByKey', function(){
+   return function(input){
+
+       if(!input){
+           return input;
+       }
+
+       var keys = Object.keys(input);
+
+       if(keys.length <= 1){
+           return input;
+       }
+
+       keys.sort();
+
+       var result = {};
+       for (var i = 0; i < keys.length; i++) {
+           result[keys[i]] = input[keys[i]];
+       }
+
+       return result;
+   };
+});
+
 module.directive('kcSidebarResize', function ($window) {
     return function (scope, element) {
         function resize() {
