@@ -514,6 +514,12 @@
 
         <!-- Ldap profiles -->
         <profile>
+            <activation>
+                <property>
+                    <name>ldap.vendor</name>
+                    <value>msad</value>
+                </property>
+            </activation>
             <id>msad</id>
             <build>
                 <plugins>
