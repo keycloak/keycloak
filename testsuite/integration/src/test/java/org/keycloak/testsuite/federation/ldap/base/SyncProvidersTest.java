@@ -65,7 +65,7 @@ public class SyncProvidersTest {
 
             for (int i=1 ; i<=5 ; i++) {
                 LDAPObject ldapUser = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org", null, "12" + i);
-                ldapFedProvider.getLdapIdentityStore().updatePassword(ldapUser, "Password1");
+                FederationTestUtils.updateLDAPPassword(ldapFedProvider, ldapUser, "Password1");
             }
 
             // Add dummy provider

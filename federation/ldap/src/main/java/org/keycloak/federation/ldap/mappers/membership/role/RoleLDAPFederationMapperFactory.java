@@ -72,7 +72,7 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
 
         ProviderConfigProperty ldapFilter = createConfigProperty(RoleMapperConfig.ROLES_LDAP_FILTER,
                 "LDAP Filter",
-                "LDAP Filter adds additional custom filter to the whole query. Leave this empty if no additional filtering is needed. Otherwise make sure that filter starts with '(' and ends with ')'",
+                "LDAP Filter adds additional custom filter to the whole query for retrieve LDAP roles. Leave this empty if no additional filtering is needed and you want to retrieve all roles from LDAP. Otherwise make sure that filter starts with '(' and ends with ')'",
                 ProviderConfigProperty.STRING_TYPE, null);
         configProperties.add(ldapFilter);
 

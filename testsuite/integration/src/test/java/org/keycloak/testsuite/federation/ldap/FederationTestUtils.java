@@ -93,6 +93,16 @@ public class FederationTestUtils {
         return LDAPUtils.addUserToLDAP(ldapProvider, realm, helperUser);
     }
 
+    public static void updateLDAPPassword(LDAPFederationProvider ldapProvider, LDAPObject ldapUser, String password) {
+        ldapProvider.getLdapIdentityStore().updatePassword(ldapUser, password);
+
+        // Enable MSAD user through userAccountControls
+        if (ldapProvider.getLdapIdentityStore().getConfig().isActiveDirectory()) {
+            ldapUser.setSingleAttribute(LDAPConstants.USER_ACCOUNT_CONTROL, "512");
+            ldapProvider.getLdapIdentityStore().update(ldapUser);
+        }
+    }
+
     public static LDAPFederationProvider getLdapProvider(KeycloakSession keycloakSession, UserFederationProviderModel ldapFedModel) {
         LDAPFederationProviderFactory ldapProviderFactory = (LDAPFederationProviderFactory) keycloakSession.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, ldapFedModel.getProviderName());
         return ldapProviderFactory.getInstance(keycloakSession, ldapFedModel);
