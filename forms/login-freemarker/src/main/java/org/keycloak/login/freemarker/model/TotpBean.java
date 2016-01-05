@@ -39,11 +39,9 @@ public class TotpBean {
     private final String totpSecretEncoded;
     private final boolean enabled;
     private final String contextUrl;
-    private final String realmName;
     private final String keyUri;
 
     public TotpBean(RealmModel realm, UserModel user, URI baseUri) {
-        this.realmName = realm.getName();
         this.enabled = user.isOtpEnabled();
         this.contextUrl = baseUri.getPath();
         

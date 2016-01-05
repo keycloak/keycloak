@@ -97,8 +97,11 @@ public class OTPPolicy implements Serializable {
 
     public String getKeyURI(RealmModel realm, UserModel user, String secret) {
 
+      String displayName = realm.getDisplayName();
       String uri = null;
-        uri = "otpauth://" + type + "/" + realm.getName() + ":" + user.getUsername() + "?secret=" +
+
+        if (displayName == null || displayName.isEmpty()) { displayName = realm.getName(); }
+        uri = "otpauth://" + type + "/" + displayName + ":" + user.getUsername() + "?secret=" +
             Base32.encode(secret.getBytes()) + "&digits=" + digits + "&algorithm=" + algToKeyUriAlg.get(algorithm);
       try {
         uri += "&issuer=" + URLEncoder.encode(realm.getName(), "UTF-8");
