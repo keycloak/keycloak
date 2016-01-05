@@ -90,7 +90,7 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
             access.getRoles().remove(roleName);
         } else {
             AccessToken.Access access = token.getRealmAccess();
-            if (access == null) return token;
+            if (access == null || !access.getRoles().contains(roleName)) return token;
             access.getRoles().remove(roleName);
         }
 

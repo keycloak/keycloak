@@ -48,6 +48,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -107,6 +109,14 @@ public class AccessTokenTest {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
+            {   // for KEYCLOAK-2221
+                UserModel user = manager.getSession().users().addUser(appRealm, KeycloakModelUtils.generateId(), "no-permissions", false, false);
+                user.updateCredential(UserCredentialModel.password("password"));
+                user.setEnabled(true);
+                RoleModel role = appRealm.getRole("user");
+                user.grantRole(role);
+            }
+
             keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
         }
 
@@ -670,6 +680,53 @@ public class AccessTokenTest {
 
     }
 
+    @Test
+    public void testKeycloak2221() throws Exception {
+        Client client = ClientBuilder.newClient();
+        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
+        WebTarget grantTarget = client.target(grantUri);
+        {
+            KeycloakSession session = keycloakRule.startSession();
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientModel app = realm.getClientByClientId("test-app");
+            app.addProtocolMapper(RoleNameMapper.create("rename-role", "user", "realm-user"));
+            app.addProtocolMapper(RoleNameMapper.create("rename-role2", "admin", "the-admin"));
+            session.getTransaction().commit();
+            session.close();
+        }
+
+        {
+            Response response = executeGrantRequest(grantTarget, "no-permissions", "password");
+            Assert.assertEquals(200, response.getStatus());
+            org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
+            AccessToken accessToken = getAccessToken(tokenResponse);
+            Assert.assertEquals(accessToken.getRealmAccess().getRoles().size(), 1);
+            Assert.assertTrue(accessToken.getRealmAccess().getRoles().contains("realm-user"));
+
+
+            response.close();
+        }
+
+        // undo mappers
+        {
+            KeycloakSession session = keycloakRule.startSession();
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientModel app = realm.getClientByClientId("test-app");
+            for (ProtocolMapperModel model : app.getProtocolMappers()) {
+                if (model.getName().startsWith("rename-role")) {
+                    app.removeProtocolMapper(model);
+                }
+            }
+            session.getTransaction().commit();
+            session.close();
+        }
+
+        events.clear();
+
+
+    }
+
 
     @Test
     public void testTokenMapping() throws Exception {
@@ -1094,11 +1151,17 @@ public class AccessTokenTest {
     }
 
     protected Response executeGrantAccessTokenRequest(WebTarget grantTarget) {
+        String username = "test-user@localhost";
+        String password = "password";
+        return executeGrantRequest(grantTarget, username, password);
+    }
+
+    protected Response executeGrantRequest(WebTarget grantTarget, String username, String password) {
         String header = BasicAuthHelper.createHeader("test-app", "password");
         Form form = new Form();
         form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .param("username", "test-user@localhost")
-                .param("password", "password");
+                .param("username", username)
+                .param("password", password);
         return grantTarget.request()
                 .header(HttpHeaders.AUTHORIZATION, header)
                 .post(Entity.form(form));
