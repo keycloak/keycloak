@@ -92,19 +92,7 @@ public class RealmRolesPartialImport extends AbstractPartialImport<RoleRepresent
         RoleHelper helper = new RoleHelper(realm);
         helper.deleteRole(role);
     }
-/*
-    private void checkForComposite(RoleRepresentation roleRep) {
-        if (roleRep.isComposite()) {
-            throw new IllegalArgumentException("Composite role '" + getName(roleRep) + "' can not be partially imported");
-        }
-    }
 
-    private void checkForOverwriteComposite(RoleModel role) {
-        if (role.isComposite()) {
-            throw new IllegalArgumentException("Composite role '" + role.getName() + "' can not be overwritten.");
-        }
-    }
-*/
     @Override
     public void create(RealmModel realm, KeycloakSession session, RoleRepresentation roleRep) {
         //checkForComposite(roleRep);

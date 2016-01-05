@@ -52,29 +52,17 @@ public class PartialImportManager {
     private final PartialImportRepresentation rep;
     private final KeycloakSession session;
     private final RealmModel realm;
-    //private final UriInfo uriInfo;
     private final AdminEventBuilder adminEvent;
-
-    //private final Set<UserRepresentation> usersToOverwrite = new HashSet<>();
-    //private final Set<ClientRepresentation> clientsToOverwrite = new HashSet<>();
-    //private final Set<IdentityProviderRepresentation> idpsToOverwrite = new HashSet<>();
-
-    //private int added = 0;
-    //private int skipped = 0;
-    //private int overwritten = 0;
 
     public PartialImportManager(PartialImportRepresentation rep, KeycloakSession session,
                                 RealmModel realm, AdminEventBuilder adminEvent) {
         this.rep = rep;
         this.session = session;
         this.realm = realm;
-        //this.uriInfo = uriInfo;
         this.adminEvent = adminEvent;
 
         // Do not change the order of these!!!
         partialImports.add(new ClientsPartialImport());
-       // partialImports.add(new RealmRolesPartialImport());
-       // partialImports.add(new ClientRolesPartialImport());
         partialImports.add(new RolesPartialImport());
         partialImports.add(new UsersPartialImport());
         partialImports.add(new IdentityProvidersPartialImport());
