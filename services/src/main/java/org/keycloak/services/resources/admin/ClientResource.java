@@ -383,9 +383,9 @@ public class ClientResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Integer> getApplicationSessionCount() {
+    public Map<String, Long> getApplicationSessionCount() {
         auth.requireView();
-        Map<String, Integer> map = new HashMap<String, Integer>();
+        Map<String, Long> map = new HashMap<>();
         map.put("count", session.sessions().getActiveUserSessions(client.getRealm(), client));
         return map;
     }
@@ -430,9 +430,9 @@ public class ClientResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Integer> getOfflineSessionCount() {
+    public Map<String, Long> getOfflineSessionCount() {
         auth.requireView();
-        Map<String, Integer> map = new HashMap<String, Integer>();
+        Map<String, Long> map = new HashMap<>();
         map.put("count", session.sessions().getOfflineSessionsCount(client.getRealm(), client));
         return map;
     }

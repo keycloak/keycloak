@@ -1,0 +1,110 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<host name="master" xmlns="urn:jboss:domain:4.0">
+    <extensions>
+        <?EXTENSIONS?>
+    </extensions>
+
+    <management>
+        <security-realms>
+            <security-realm name="ManagementRealm">
+                <authentication>
+                    <local default-user="$local" skip-group-loading="true"/>
+                    <properties path="mgmt-users.properties" relative-to="jboss.domain.config.dir"/>
+                </authentication>
+                <authorization map-groups-to-roles="false">
+                    <properties path="mgmt-groups.properties" relative-to="jboss.domain.config.dir"/>
+                </authorization>
+            </security-realm>
+            <security-realm name="ApplicationRealm">
+                <authentication>
+                    <local default-user="$local" allowed-users="*" skip-group-loading="true"/>
+                    <properties path="application-users.properties" relative-to="jboss.domain.config.dir"/>
+                </authentication>
+                <authorization>
+                    <properties path="application-roles.properties" relative-to="jboss.domain.config.dir"/>
+                </authorization>
+            </security-realm>
+        </security-realms>
+        <audit-log>
+            <formatters>
+                <json-formatter name="json-formatter"/>
+            </formatters>
+            <handlers>
+                <file-handler name="host-file" formatter="json-formatter" relative-to="jboss.domain.data.dir" path="audit-log.log"/>
+                <file-handler name="server-file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
+            </handlers>
+            <logger log-boot="true" log-read-only="false" enabled="false">
+                <handlers>
+                    <handler name="host-file"/>
+                </handlers>
+            </logger>
+            <server-logger log-boot="true" log-read-only="false" enabled="false">
+                <handlers>
+                    <handler name="server-file"/>
+                </handlers>
+            </server-logger>
+        </audit-log>
+        <management-interfaces>
+            <native-interface security-realm="ManagementRealm">
+                <socket interface="management" port="${jboss.management.native.port:9999}"/>
+            </native-interface>
+            <http-interface security-realm="ManagementRealm" http-upgrade-enabled="true">
+                <socket interface="management" port="${jboss.management.http.port:9990}"/>
+            </http-interface>
+        </management-interfaces>
+    </management>
+
+    <domain-controller>
+        <local/>
+        <!-- Alternative remote domain controller configuration with a host and port -->
+        <!-- <remote protocol="remote" host="${jboss.domain.master.address}" port="${jboss.domain.master.port:9999}" security-realm="ManagementRealm"/> -->
+    </domain-controller>
+
+    <interfaces>
+        <interface name="management">
+            <inet-address value="${jboss.bind.address.management:127.0.0.1}"/>
+        </interface>
+        <interface name="public">
+            <inet-address value="${jboss.bind.address:127.0.0.1}"/>
+        </interface>
+
+        <?INTERFACES?>
+
+    </interfaces>
+
+    <jvms>
+        <jvm name="default">
+            <heap size="64m" max-size="256m"/>
+            <jvm-options>
+                <option value="-server"/>
+            </jvm-options>
+        </jvm>
+    </jvms>
+
+    <servers>
+        <server name="server-one" group="main-server-group">
+            <!-- Remote JPDA debugging for a specific server
+            <jvm name="default">
+              <jvm-options>
+                <option value="-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n"/>
+              </jvm-options>
+           </jvm>
+           -->
+        </server>
+        <server name="server-two" group="main-server-group" auto-start="true">
+            <!-- server-two avoids port conflicts by incrementing the ports in
+                 the default socket-group declared in the server-group -->
+            <socket-bindings port-offset="150"/>
+        </server>
+        <server name="server-three" group="other-server-group" auto-start="false">
+            <!-- server-three avoids port conflicts by incrementing the ports in
+                 the default socket-group declared in the server-group -->
+            <socket-bindings port-offset="250"/>
+        </server>
+    </servers>
+
+    <profile>
+        <?SUBSYSTEMS socket-binding-group="standard-sockets"?>
+    </profile>
+</host>
