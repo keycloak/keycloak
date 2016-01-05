@@ -70,13 +70,13 @@ public class LDAPMultipleAttributesTest {
             FederationTestUtils.removeAllLDAPUsers(ldapFedProvider, appRealm);
 
             LDAPObject james = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", null, "88441");
-            ldapFedProvider.getLdapIdentityStore().updatePassword(james, "password");
+            FederationTestUtils.updateLDAPPassword(ldapFedProvider, james, "Password1");
 
             // User for testing duplicating surname and postalCode
             LDAPObject bruce = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "bwilson", "Bruce", "Wilson", "bwilson@keycloak.org", "Elm 5", "88441", "77332");
             bruce.setAttribute("sn", new LinkedHashSet<>(Arrays.asList("Wilson", "Schneider")));
             ldapFedProvider.getLdapIdentityStore().update(bruce);
-            ldapFedProvider.getLdapIdentityStore().updatePassword(bruce, "password");
+            FederationTestUtils.updateLDAPPassword(ldapFedProvider, bruce, "Password1");
 
             // Create ldap-portal client
             ClientModel ldapClient = KeycloakModelUtils.createClient(appRealm, "ldap-portal");
@@ -174,7 +174,7 @@ public class LDAPMultipleAttributesTest {
         // Login as bwilson
         driver.navigate().to(APP_SERVER_BASE_URL + "/ldap-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-        loginPage.login("bwilson", "password");
+        loginPage.login("bwilson", "Password1");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(APP_SERVER_BASE_URL + "/ldap-portal"));
         String pageSource = driver.getPageSource();
         System.out.println(pageSource);
@@ -190,7 +190,7 @@ public class LDAPMultipleAttributesTest {
         // Login as jbrown
         driver.navigate().to(APP_SERVER_BASE_URL + "/ldap-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
-        loginPage.login("jbrown", "password");
+        loginPage.login("jbrown", "Password1");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(APP_SERVER_BASE_URL + "/ldap-portal"));
         pageSource = driver.getPageSource();
         System.out.println(pageSource);

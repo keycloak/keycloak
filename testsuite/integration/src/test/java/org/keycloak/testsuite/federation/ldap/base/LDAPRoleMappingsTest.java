@@ -75,13 +75,13 @@ public class LDAPRoleMappingsTest {
 
             // Add some users for testing
             LDAPObject john = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
-            ldapFedProvider.getLdapIdentityStore().updatePassword(john, "Password1");
+            FederationTestUtils.updateLDAPPassword(ldapFedProvider, john, "Password1");
 
             LDAPObject mary = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "marykeycloak", "Mary", "Kelly", "mary@email.org", null, "5678");
-            ldapFedProvider.getLdapIdentityStore().updatePassword(mary, "Password1");
+            FederationTestUtils.updateLDAPPassword(ldapFedProvider, mary, "Password1");
 
             LDAPObject rob = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "robkeycloak", "Rob", "Brown", "rob@email.org", null, "8910");
-            ldapFedProvider.getLdapIdentityStore().updatePassword(rob, "Password1");
+            FederationTestUtils.updateLDAPPassword(ldapFedProvider, rob, "Password1");
 
             // Add some roles for testing
             FederationTestUtils.createLDAPRole(manager.getSession(), appRealm, ldapModel, "realmRolesMapper", "realmRole1");
