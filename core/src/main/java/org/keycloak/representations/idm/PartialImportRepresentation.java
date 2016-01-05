@@ -48,6 +48,14 @@ public class PartialImportRepresentation {
         return (identityProviders != null) && !identityProviders.isEmpty();
     }
 
+    public boolean hasRealmRoles() {
+        return (roles.getRealm() != null) && (!roles.getRealm().isEmpty());
+    }
+
+    public boolean hasClientRoles() {
+        return (roles.getClient() != null) && (!roles.getClient().isEmpty());
+    }
+
     public String getIfResourceExists() {
         return ifResourceExists;
     }

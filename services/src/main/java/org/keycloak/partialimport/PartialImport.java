@@ -25,7 +25,11 @@ import org.keycloak.representations.idm.PartialImportRepresentation;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
  */
-public interface PartialImport {
+public interface PartialImport<T> {
+
+    public void prepare(PartialImportRepresentation rep,
+                         RealmModel realm,
+                         KeycloakSession session) throws ErrorResponseException;
 
     /**
      * @param rep
@@ -34,5 +38,7 @@ public interface PartialImport {
      * @return
      * @throws ErrorResponseException if an error was detected trying to doImport a resource.
      */
-    public PartialImportResults doImport(PartialImportRepresentation rep, RealmModel realm, KeycloakSession session) throws ErrorResponseException;
+    public PartialImportResults doImport(PartialImportRepresentation rep,
+                                         RealmModel realm,
+                                         KeycloakSession session) throws ErrorResponseException;
 }

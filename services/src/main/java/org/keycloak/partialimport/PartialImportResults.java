@@ -19,9 +19,6 @@ package org.keycloak.partialimport;
 
 import java.util.HashSet;
 import java.util.Set;
-import javax.ws.rs.core.UriInfo;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.services.resources.admin.AdminEventBuilder;
 
 /**
  *
@@ -32,7 +29,7 @@ public class PartialImportResults {
     private final Set<PartialImportResult> importResults = new HashSet<>();
 
     public void addResult(PartialImportResult result) {
-        System.out.println("PartialImportResults: add " + result.getResourceName() + " action=" + result.getAction());
+        //System.out.println("PartialImportResults: add " + result.getResourceName() + " action=" + result.getAction());
         importResults.add(result);
     }
 
@@ -52,7 +49,7 @@ public class PartialImportResults {
     public int getOverwritten() {
         int overwritten = 0;
         for (PartialImportResult result : importResults) {
-            System.out.println("action=" + result.getAction());
+            //System.out.println("action=" + result.getAction());
             if (result.getAction() == Action.OVERWRITTEN) overwritten++;
         }
 

@@ -18,9 +18,12 @@
 package org.keycloak.partialimport;
 
 import java.util.List;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
@@ -64,11 +67,17 @@ public class IdentityProvidersPartialImport extends AbstractPartialImport<Identi
 
     @Override
     public void overwrite(RealmModel realm, KeycloakSession session, IdentityProviderRepresentation idpRep) {
-        IdentityProviderResource.updateIdpFromRep(idpRep, realm, session);
+        remove(realm, idpRep);
+        create(realm, session, idpRep);
+    }
+
+    protected void remove(RealmModel realm, IdentityProviderRepresentation idpRep) {
+        realm.removeIdentityProviderByAlias(getName(idpRep));
     }
 
     @Override
     public void create(RealmModel realm, KeycloakSession session, IdentityProviderRepresentation idpRep) {
+        idpRep.setInternalId(KeycloakModelUtils.generateId());
         IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, idpRep);
         realm.addIdentityProvider(identityProvider);
     }

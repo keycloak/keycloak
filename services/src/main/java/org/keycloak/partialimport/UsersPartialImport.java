@@ -17,22 +17,28 @@
 
 package org.keycloak.partialimport;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resources.admin.UsersResource;
+import org.keycloak.services.managers.UserManager;
 
 /**
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
  */
 public class UsersPartialImport extends AbstractPartialImport<UserRepresentation> {
+
+    // Sometimes session.users().getUserByUsername() doesn't work right after create,
+    // so we cache the created id here.
+    private final Map<String, String> createdIds = new HashMap<>();
 
     @Override
     public List<UserRepresentation> getRepList(PartialImportRepresentation partialImportRep) {
@@ -41,11 +47,15 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
 
     @Override
     public String getName(UserRepresentation user) {
-        return user.getUsername();
+        if (user.getUsername() != null) return user.getUsername();
+
+        return user.getEmail();
     }
 
     @Override
     public String getModelId(RealmModel realm, KeycloakSession session, UserRepresentation user) {
+        if (createdIds.containsKey(getName(user))) return createdIds.get(getName(user));
+
         String userName = user.getUsername();
         if (userName != null) {
             return session.users().getUserByUsername(userName, realm).getId();
@@ -85,15 +95,27 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
 
     @Override
     public void overwrite(RealmModel realm, KeycloakSession session, UserRepresentation user) {
+        remove(realm, session, user);
+        create(realm, session, user);
+    }
+
+    protected void remove(RealmModel realm, KeycloakSession session, UserRepresentation user) {
         UserModel userModel = session.users().getUserByUsername(user.getUsername(), realm);
-        UsersResource.updateUserFromRep(userModel, user, null, realm, session);
+        if (userModel == null) {
+            userModel = session.users().getUserByEmail(user.getEmail(), realm);
+        }
+
+        boolean success = new UserManager(session).removeUser(realm, userModel);
+        if (!success) throw new RuntimeException("Unable to overwrite user " + getName(user));
     }
 
     @Override
     public void create(RealmModel realm, KeycloakSession session, UserRepresentation user) {
         Map<String, ClientModel> apps = realm.getClientNameMap();
-        user.setId(null);
-        RepresentationToModel.createUser(session, realm, user, apps);
+        user.setId(KeycloakModelUtils.generateId());
+        UserModel userModel = RepresentationToModel.createUser(session, realm, user, apps);
+        if (userModel == null) throw new RuntimeException("Unable to create user " + getName(user));
+        createdIds.put(getName(user), userModel.getId());
     }
 
 }

@@ -17,6 +17,7 @@
 package org.keycloak.partialimport;
 
 import java.util.List;
+import java.util.Set;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -29,6 +30,14 @@ import org.keycloak.services.resources.admin.RoleResource;
  * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
  */
 public class RealmRolesPartialImport extends AbstractPartialImport<RoleRepresentation> {
+
+    public Set<RoleRepresentation> getToOverwrite() {
+        return this.toOverwrite;
+    }
+
+    public Set<RoleRepresentation> getToSkip() {
+        return this.toSkip;
+    }
 
     @Override
     public List<RoleRepresentation> getRepList(PartialImportRepresentation partialImportRep) {
@@ -73,13 +82,17 @@ public class RealmRolesPartialImport extends AbstractPartialImport<RoleRepresent
 
     @Override
     public void overwrite(RealmModel realm, KeycloakSession session, RoleRepresentation roleRep) {
-        checkForComposite(roleRep);
-        RoleModel role = realm.getRole(getName(roleRep));
-        checkForOverwriteComposite(role);
-        RoleHelper helper = new RoleHelper(realm);
-        helper.updateRole(roleRep, role);
+        //checkForComposite(roleRep);
+        deleteRole(realm, roleRep);
+        create(realm, session, roleRep);
     }
 
+    public void deleteRole(RealmModel realm, RoleRepresentation roleRep) {
+        RoleModel role = realm.getRole(getName(roleRep));
+        RoleHelper helper = new RoleHelper(realm);
+        helper.deleteRole(role);
+    }
+/*
     private void checkForComposite(RoleRepresentation roleRep) {
         if (roleRep.isComposite()) {
             throw new IllegalArgumentException("Composite role '" + getName(roleRep) + "' can not be partially imported");
@@ -91,12 +104,12 @@ public class RealmRolesPartialImport extends AbstractPartialImport<RoleRepresent
             throw new IllegalArgumentException("Composite role '" + role.getName() + "' can not be overwritten.");
         }
     }
-
+*/
     @Override
     public void create(RealmModel realm, KeycloakSession session, RoleRepresentation roleRep) {
-        checkForComposite(roleRep);
+        //checkForComposite(roleRep);
         realm.addRole(getName(roleRep));
-        overwrite(realm, session, roleRep);
+        //overwrite(realm, session, roleRep);
     }
 
     public static class RoleHelper extends RoleResource {
@@ -105,8 +118,8 @@ public class RealmRolesPartialImport extends AbstractPartialImport<RoleRepresent
         }
 
         @Override
-        protected void updateRole(RoleRepresentation rep, RoleModel role) {
-            super.updateRole(rep, role);
+        protected void deleteRole(RoleModel role) {
+            super.deleteRole(role);
         }
     }
 }

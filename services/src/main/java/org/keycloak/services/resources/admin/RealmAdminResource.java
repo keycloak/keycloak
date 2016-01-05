@@ -714,16 +714,15 @@ public class RealmAdminResource {
     /**
      * Partial import from a JSON file to an existing realm.
      *
-     * @param uriInfo
      * @param rep
      * @return
      */
     @Path("partialImport")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response partialImport(final @Context UriInfo uriInfo, PartialImportRepresentation rep) {
+    public Response partialImport(PartialImportRepresentation rep) {
         auth.requireManage();
-        PartialImportManager partialImport = new PartialImportManager(rep, session, realm, uriInfo, adminEvent);
+        PartialImportManager partialImport = new PartialImportManager(rep, session, realm, adminEvent);
         return partialImport.saveResources();
     }
 }

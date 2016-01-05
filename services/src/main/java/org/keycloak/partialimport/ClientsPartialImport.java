@@ -21,10 +21,13 @@ import java.util.List;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
-import org.keycloak.services.resources.admin.ClientResource;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.services.managers.ClientManager;
+import org.keycloak.services.managers.RealmManager;
 
 /**
  *
@@ -64,16 +67,27 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
 
     @Override
     public void overwrite(RealmModel realm, KeycloakSession session, ClientRepresentation clientRep) {
+        remove(realm, session, clientRep);
+        create(realm, session, clientRep);
+    }
+
+    protected void remove(RealmModel realm, KeycloakSession session, ClientRepresentation clientRep) {
         ClientModel clientModel = realm.getClientByClientId(getName(clientRep));
-        ClientResource.updateClientFromRep(clientRep, clientModel, session);
+        new ClientManager(new RealmManager(session)).removeClient(realm, clientModel);
     }
 
     @Override
     public void create(RealmModel realm, KeycloakSession session, ClientRepresentation clientRep) {
-        clientRep.setId(null);
+        clientRep.setId(KeycloakModelUtils.generateId());
+
+        List<ProtocolMapperRepresentation> mappers = clientRep.getProtocolMappers();
+        if (mappers != null) {
+            for (ProtocolMapperRepresentation mapper : mappers) {
+                mapper.setId(KeycloakModelUtils.generateId());
+            }
+        }
+
         RepresentationToModel.createClient(session, realm, clientRep, true);
     }
-
-
 
 }
