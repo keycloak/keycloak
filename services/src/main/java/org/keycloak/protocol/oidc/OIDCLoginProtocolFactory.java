@@ -21,6 +21,7 @@ import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -32,6 +33,7 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import java.util.ArrayList;
@@ -205,5 +207,10 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         if (rep.isImplicitFlowEnabled() == null) newClient.setImplicitFlowEnabled(false);
         if (rep.isPublicClient() == null) newClient.setPublicClient(true);
         if (rep.isFrontchannelLogout() == null) newClient.setFrontchannelLogout(false);
+    }
+
+    @Override
+    public void setupTemplateDefaults(ClientTemplateRepresentation clientRep, ClientTemplateModel newClient) {
+
     }
 }

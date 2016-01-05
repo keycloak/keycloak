@@ -70,28 +70,17 @@ public class SamlProtocol implements LoginProtocol {
 
     public static final String ATTRIBUTE_TRUE_VALUE = "true";
     public static final String ATTRIBUTE_FALSE_VALUE = "false";
-    public static final String SAML_SIGNING_CERTIFICATE_ATTRIBUTE = "saml.signing." + ClientAttributeCertificateResource.X509CERTIFICATE;
     public static final String SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE = "saml.encryption." + ClientAttributeCertificateResource.X509CERTIFICATE;
-    public static final String SAML_CLIENT_SIGNATURE_ATTRIBUTE = "saml.client.signature";
     public static final String SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE = "saml_assertion_consumer_url_post";
     public static final String SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE = "saml_assertion_consumer_url_redirect";
     public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE = "saml_single_logout_service_url_post";
     public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE = "saml_single_logout_service_url_redirect";
-    public static final String SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE = "saml_force_name_id_format";
-    public static final String SAML_NAME_ID_FORMAT_ATTRIBUTE = "saml_name_id_format";
-    public static final String SAML_CANONICALIZATION_METHOD_ATTRIBUTE = "saml_signature_canonicalization_method";
     public static final String LOGIN_PROTOCOL = "saml";
     public static final String SAML_BINDING = "saml_binding";
     public static final String SAML_IDP_INITIATED_LOGIN = "saml_idp_initiated_login";
     public static final String SAML_POST_BINDING = "post";
     public static final String SAML_SOAP_BINDING = "soap";
     public static final String SAML_REDIRECT_BINDING = "get";
-    public static final String SAML_SERVER_SIGNATURE = "saml.server.signature";
-    public static final String SAML_ASSERTION_SIGNATURE = "saml.assertion.signature";
-    public static final String SAML_AUTHNSTATEMENT = "saml.authnstatement";
-    public static final String SAML_SIGNATURE_ALGORITHM = "saml.signature.algorithm";
-    public static final String SAML_ENCRYPT = "saml.encrypt";
-    public static final String SAML_FORCE_POST_BINDING = "saml.force.post.binding";
     public static final String SAML_REQUEST_ID = "SAML_REQUEST_ID";
     public static final String SAML_LOGOUT_BINDING = "saml.logout.binding";
     public static final String SAML_LOGOUT_REQUEST_ID = "SAML_LOGOUT_REQUEST_ID";
@@ -218,7 +207,8 @@ public class SamlProtocol implements LoginProtocol {
 
     protected boolean isPostBinding(ClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
-        return SamlProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SamlProtocol.SAML_BINDING)) || forcePostBinding(client);
+        SamlClient samlClient = new SamlClient(client);
+        return SamlProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SamlProtocol.SAML_BINDING)) || samlClient.forcePostBinding();
     }
 
     public static boolean isLogoutPostBindingForInitiator(UserSessionModel session) {
@@ -228,6 +218,7 @@ public class SamlProtocol implements LoginProtocol {
 
     protected boolean isLogoutPostBindingForClient(ClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
+        SamlClient samlClient = new SamlClient(client);
         String logoutPostUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE);
         String logoutRedirectUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE);
 
@@ -238,7 +229,7 @@ public class SamlProtocol implements LoginProtocol {
             return false;
         }
 
-        if (forcePostBinding(client)) {
+        if (samlClient.forcePostBinding()) {
             return true; // configured to force a post binding and post binding logout url is not null
         }
 
@@ -255,15 +246,11 @@ public class SamlProtocol implements LoginProtocol {
 
     }
 
-    public static boolean forcePostBinding(ClientModel client) {
-        return "true".equals(client.getAttribute(SamlProtocol.SAML_FORCE_POST_BINDING));
-    }
-
-    protected String getNameIdFormat(ClientSessionModel clientSession) {
+    protected String getNameIdFormat(SamlClient samlClient, ClientSessionModel clientSession) {
         String nameIdFormat = clientSession.getNote(GeneralConstants.NAMEID_FORMAT);
-        ClientModel client = clientSession.getClient();
-        boolean forceFormat = forceNameIdFormat(client);
-        String configuredNameIdFormat = client.getAttribute(SAML_NAME_ID_FORMAT_ATTRIBUTE);
+
+        boolean forceFormat = samlClient.forceNameIDFormat();
+        String configuredNameIdFormat = samlClient.getNameIDFormat();
         if ((nameIdFormat == null || forceFormat) && configuredNameIdFormat != null) {
             if (configuredNameIdFormat.equals("email")) {
                 nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get();
@@ -282,11 +269,7 @@ public class SamlProtocol implements LoginProtocol {
         return nameIdFormat;
     }
 
-    public static boolean forceNameIdFormat(ClientModel client) {
-        return "true".equals(client.getAttribute(SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE));
-    }
-
-    protected String getNameId(String nameIdFormat, ClientSessionModel clientSession, UserSessionModel userSession) {
+     protected String getNameId(String nameIdFormat, ClientSessionModel clientSession, UserSessionModel userSession) {
         if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())) {
             return userSession.getUser().getEmail();
         } else if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get())) {
@@ -315,11 +298,12 @@ public class SamlProtocol implements LoginProtocol {
     public Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode) {
         ClientSessionModel clientSession = accessCode.getClientSession();
         ClientModel client = clientSession.getClient();
+        SamlClient samlClient = new SamlClient(client);
         String requestID = clientSession.getNote(SAML_REQUEST_ID);
         String relayState = clientSession.getNote(GeneralConstants.RELAY_STATE);
         String redirectUri = clientSession.getRedirectUri();
         String responseIssuer = getResponseIssuer(realm);
-        String nameIdFormat = getNameIdFormat(clientSession);
+        String nameIdFormat = getNameIdFormat(samlClient, clientSession);
         String nameId = getNameId(nameIdFormat, clientSession, userSession);
 
         // save NAME_ID and format in clientSession as they may be persistent or transient or email and not username
@@ -330,7 +314,7 @@ public class SamlProtocol implements LoginProtocol {
         SAML2LoginResponseBuilder builder = new SAML2LoginResponseBuilder();
         builder.requestID(requestID).destination(redirectUri).issuer(responseIssuer).assertionExpiration(realm.getAccessCodeLifespan()).subjectExpiration(realm.getAccessTokenLifespan()).sessionIndex(clientSession.getId())
                 .requestIssuer(clientSession.getClient().getClientId()).nameIdentifier(nameIdFormat, nameId).authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());
-        if (!includeAuthnStatement(client)) {
+        if (!samlClient.includeAuthnStatement()) {
             builder.disableAuthnStatement(true);
         }
 
@@ -370,21 +354,21 @@ public class SamlProtocol implements LoginProtocol {
         JaxrsSAML2BindingBuilder bindingBuilder = new JaxrsSAML2BindingBuilder();
         bindingBuilder.relayState(relayState);
 
-        if (requiresRealmSignature(client)) {
-            String canonicalization = client.getAttribute(SAML_CANONICALIZATION_METHOD_ATTRIBUTE);
+        if (samlClient.requiresRealmSignature()) {
+            String canonicalization = samlClient.getCanonicalizationMethod();
             if (canonicalization != null) {
                 bindingBuilder.canonicalizationMethod(canonicalization);
             }
-            bindingBuilder.signatureAlgorithm(getSignatureAlgorithm(client)).signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate()).signDocument();
+            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate()).signDocument();
         }
-        if (requiresAssertionSignature(client)) {
-            String canonicalization = client.getAttribute(SAML_CANONICALIZATION_METHOD_ATTRIBUTE);
+        if (samlClient.requiresAssertionSignature()) {
+            String canonicalization = samlClient.getCanonicalizationMethod();
             if (canonicalization != null) {
                 bindingBuilder.canonicalizationMethod(canonicalization);
             }
-            bindingBuilder.signatureAlgorithm(getSignatureAlgorithm(client)).signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate()).signAssertions();
+            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate()).signAssertions();
         }
-        if (requiresEncryption(client)) {
+        if (samlClient.requiresEncryption()) {
             PublicKey publicKey = null;
             try {
                 publicKey = SamlProtocolUtils.getEncryptionValidationKey(client);
@@ -408,32 +392,6 @@ public class SamlProtocol implements LoginProtocol {
         } else {
             return bindingBuilder.redirectBinding(samlDocument).response(redirectUri);
         }
-    }
-
-    public static boolean requiresRealmSignature(ClientModel client) {
-        return "true".equals(client.getAttribute(SAML_SERVER_SIGNATURE));
-    }
-
-    public static boolean requiresAssertionSignature(ClientModel client) {
-        return "true".equals(client.getAttribute(SAML_ASSERTION_SIGNATURE));
-    }
-
-    public static boolean includeAuthnStatement(ClientModel client) {
-        return "true".equals(client.getAttribute(SAML_AUTHNSTATEMENT));
-    }
-
-    public static SignatureAlgorithm getSignatureAlgorithm(ClientModel client) {
-        String alg = client.getAttribute(SAML_SIGNATURE_ALGORITHM);
-        if (alg != null) {
-            SignatureAlgorithm algorithm = SignatureAlgorithm.valueOf(alg);
-            if (algorithm != null)
-                return algorithm;
-        }
-        return SignatureAlgorithm.RSA_SHA256;
-    }
-
-    private boolean requiresEncryption(ClientModel client) {
-        return "true".equals(client.getAttribute(SAML_ENCRYPT));
     }
 
     public static class ProtocolMapperProcessor<T> {
@@ -499,19 +457,20 @@ public class SamlProtocol implements LoginProtocol {
     @Override
     public Response frontchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
+        SamlClient samlClient = new SamlClient(client);
         if (!(client instanceof ClientModel))
             return null;
         try {
             if (isLogoutPostBindingForClient(clientSession)) {
                 String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
                 SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
-                JaxrsSAML2BindingBuilder binding = createBindingBuilder(client);
+                JaxrsSAML2BindingBuilder binding = createBindingBuilder(samlClient);
                 return binding.postBinding(logoutBuilder.buildDocument()).request(bindingUri);
             } else {
                 logger.debug("frontchannel redirect binding");
                 String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_REDIRECT_BINDING);
                 SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
-                JaxrsSAML2BindingBuilder binding = createBindingBuilder(client);
+                JaxrsSAML2BindingBuilder binding = createBindingBuilder(samlClient);
                 return binding.redirectBinding(logoutBuilder.buildDocument()).request(bindingUri);
             }
         } catch (ConfigurationException e) {
@@ -574,6 +533,7 @@ public class SamlProtocol implements LoginProtocol {
     @Override
     public void backchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
+        SamlClient samlClient = new SamlClient(client);
         String logoutUrl = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
         if (logoutUrl == null) {
             logger.warnv("Can't do backchannel logout. No SingleLogoutService POST Binding registered for client: {1}", client.getClientId());
@@ -583,7 +543,7 @@ public class SamlProtocol implements LoginProtocol {
 
         String logoutRequestString = null;
         try {
-            JaxrsSAML2BindingBuilder binding = createBindingBuilder(client);
+            JaxrsSAML2BindingBuilder binding = createBindingBuilder(samlClient);
             logoutRequestString = binding.postBinding(logoutBuilder.buildDocument()).encoded();
         } catch (Exception e) {
             logger.warn("failed to send saml logout", e);
@@ -636,10 +596,10 @@ public class SamlProtocol implements LoginProtocol {
         return logoutBuilder;
     }
 
-    private JaxrsSAML2BindingBuilder createBindingBuilder(ClientModel client) {
+    private JaxrsSAML2BindingBuilder createBindingBuilder(SamlClient samlClient) {
         JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder();
-        if (requiresRealmSignature(client)) {
-            binding.signatureAlgorithm(getSignatureAlgorithm(client)).signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate()).signDocument();
+        if (samlClient.requiresRealmSignature()) {
+            binding.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate()).signDocument();
         }
         return binding;
     }

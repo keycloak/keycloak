@@ -48,6 +48,35 @@ public class ClientTemplateEntity {
     @Column(name="FULL_SCOPE_ALLOWED")
     private boolean fullScopeAllowed;
 
+    @Column(name="CONSENT_REQUIRED")
+    private boolean consentRequired;
+
+    @Column(name="STANDARD_FLOW_ENABLED")
+    private boolean standardFlowEnabled;
+
+    @Column(name="IMPLICIT_FLOW_ENABLED")
+    private boolean implicitFlowEnabled;
+
+    @Column(name="DIRECT_ACCESS_GRANTS_ENABLED")
+    private boolean directAccessGrantsEnabled;
+
+    @Column(name="SERVICE_ACCOUNTS_ENABLED")
+    private boolean serviceAccountsEnabled;
+
+    @Column(name="FRONTCHANNEL_LOGOUT")
+    private boolean frontchannelLogout;
+    @Column(name="PUBLIC_CLIENT")
+    private boolean publicClient;
+    @Column(name="BEARER_ONLY")
+    private boolean bearerOnly;
+
+
+    @ElementCollection
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE", length = 2048)
+    @CollectionTable(name="CLIENT_TEMPLATE_ATTRIBUTES", joinColumns={ @JoinColumn(name="TEMPLATE_ID") })
+    protected Map<String, String> attributes = new HashMap<String, String>();
+
     public RealmEntity getRealm() {
         return realm;
     }
@@ -102,5 +131,77 @@ public class ClientTemplateEntity {
 
     public void setFullScopeAllowed(boolean fullScopeAllowed) {
         this.fullScopeAllowed = fullScopeAllowed;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
+
+    public boolean isConsentRequired() {
+        return consentRequired;
+    }
+
+    public void setConsentRequired(boolean consentRequired) {
+        this.consentRequired = consentRequired;
+    }
+
+    public boolean isStandardFlowEnabled() {
+        return standardFlowEnabled;
+    }
+
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        this.standardFlowEnabled = standardFlowEnabled;
+    }
+
+    public boolean isImplicitFlowEnabled() {
+        return implicitFlowEnabled;
+    }
+
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        this.implicitFlowEnabled = implicitFlowEnabled;
+    }
+
+    public boolean isDirectAccessGrantsEnabled() {
+        return directAccessGrantsEnabled;
+    }
+
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        this.directAccessGrantsEnabled = directAccessGrantsEnabled;
+    }
+
+    public boolean isServiceAccountsEnabled() {
+        return serviceAccountsEnabled;
+    }
+
+    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
+        this.serviceAccountsEnabled = serviceAccountsEnabled;
+    }
+
+    public boolean isFrontchannelLogout() {
+        return frontchannelLogout;
+    }
+
+    public void setFrontchannelLogout(boolean frontchannelLogout) {
+        this.frontchannelLogout = frontchannelLogout;
+    }
+
+    public boolean isPublicClient() {
+        return publicClient;
+    }
+
+    public void setPublicClient(boolean publicClient) {
+        this.publicClient = publicClient;
+    }
+
+    public boolean isBearerOnly() {
+        return bearerOnly;
+    }
+
+    public void setBearerOnly(boolean bearerOnly) {
+        this.bearerOnly = bearerOnly;
     }
 }
