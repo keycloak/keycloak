@@ -45,9 +45,7 @@
     },
 
     "connectionsHttpClient": {
-        "default": {
-            "disable-trust-manager": true
-        }
+        "default": {}
     },
 
     "connectionsJpa": {

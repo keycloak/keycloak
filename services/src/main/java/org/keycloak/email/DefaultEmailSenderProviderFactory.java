@@ -11,7 +11,7 @@ public class DefaultEmailSenderProviderFactory implements EmailSenderProviderFac
 
     @Override
     public EmailSenderProvider create(KeycloakSession session) {
-        return new DefaultEmailSenderProvider();
+        return new DefaultEmailSenderProvider(session);
     }
 
     @Override

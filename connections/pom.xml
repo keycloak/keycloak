@@ -19,6 +19,7 @@
         <module>mongo</module>
         <module>mongo-update</module>
         <module>http-client</module>
+        <module>truststore</module>
     </modules>
 
     <build>

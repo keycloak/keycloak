@@ -2,18 +2,16 @@
 
 
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-broker-core">
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-connections-truststore">
     <resources>
         <!-- Insert resources here -->
     </resources>
     <dependencies>
-        <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-model-api"/>
-        <module name="org.keycloak.keycloak-events-api"/>
-        <module name="javax.ws.rs.api"/>
         <module name="org.jboss.logging"/>
         <module name="javax.api"/>
+        <module name="org.apache.httpcomponents"/>
     </dependencies>
 
 </module>

@@ -13,6 +13,7 @@
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-connections-truststore"/>
         <module name="org.jboss.logging"/>
         <module name="javax.api"/>
         <module name="org.apache.httpcomponents"/>
