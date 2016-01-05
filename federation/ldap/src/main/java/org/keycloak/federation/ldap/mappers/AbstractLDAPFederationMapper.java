@@ -3,6 +3,8 @@ package org.keycloak.federation.ldap.mappers;
 import java.util.Collections;
 import java.util.List;
 
+import javax.naming.AuthenticationException;
+
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
@@ -68,6 +70,10 @@ public abstract class AbstractLDAPFederationMapper {
 
     public List<UserModel> getGroupMembers(GroupModel group, int firstResult, int maxResults) {
         return Collections.emptyList();
+    }
+
+    public boolean onAuthenticationFailure(LDAPObject ldapUser, UserModel user, AuthenticationException ldapException) {
+        return false;
     }
 
 

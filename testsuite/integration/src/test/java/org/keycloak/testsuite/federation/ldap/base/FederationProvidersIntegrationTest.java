@@ -749,7 +749,7 @@ public class FederationProvidersIntegrationTest {
     }
 
     @Test
-    public void testUnsynced() {
+    public void testUnsynced() throws Exception {
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");

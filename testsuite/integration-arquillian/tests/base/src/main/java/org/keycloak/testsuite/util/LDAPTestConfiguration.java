@@ -39,7 +39,6 @@ public class LDAPTestConfiguration {
         PROP_MAPPINGS.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, "idm.test.ldap.username.ldap.attribute");
         PROP_MAPPINGS.put(LDAPConstants.RDN_LDAP_ATTRIBUTE, "idm.test.ldap.rdn.ldap.attribute");
         PROP_MAPPINGS.put(LDAPConstants.USER_OBJECT_CLASSES, "idm.test.ldap.user.object.classes");
-        PROP_MAPPINGS.put(LDAPConstants.USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE, "idm.test.ldap.user.account.controls.after.password.update");
         PROP_MAPPINGS.put(LDAPConstants.EDIT_MODE, "idm.test.ldap.edit.mode");
 
         PROP_MAPPINGS.put(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "idm.test.kerberos.allow.kerberos.authentication");
@@ -62,7 +61,6 @@ public class LDAPTestConfiguration {
         DEFAULT_VALUES.put(LDAPConstants.BATCH_SIZE_FOR_SYNC, String.valueOf(LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC));
         DEFAULT_VALUES.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, null);
         DEFAULT_VALUES.put(LDAPConstants.USER_OBJECT_CLASSES, null);
-        DEFAULT_VALUES.put(LDAPConstants.USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE, "false");
         DEFAULT_VALUES.put(LDAPConstants.EDIT_MODE, UserFederationProvider.EditMode.READ_ONLY.toString());
 
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "false");

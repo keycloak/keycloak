@@ -3,3 +3,4 @@ org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory
 org.keycloak.federation.ldap.mappers.HardcodedLDAPRoleMapperFactory
 org.keycloak.federation.ldap.mappers.membership.role.RoleLDAPFederationMapperFactory
 org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapperFactory
+org.keycloak.federation.ldap.mappers.msad.MSADUserAccountControlMapperFactory
