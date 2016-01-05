@@ -370,32 +370,6 @@
         </profile>
 
         <profile>
-            <id>file</id>
-
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <excludes>
-                                <exclude>**/broker/***</exclude>
-                                <exclude>**/CacheTest.java</exclude>
-                            </excludes>
-                            <systemPropertyVariables>
-                                <keycloak.realm.provider>file</keycloak.realm.provider>
-                                <keycloak.user.provider>file</keycloak.user.provider>
-                                <keycloak.realm.cache.provider>none</keycloak.realm.cache.provider>
-                                <keycloak.user.cache.provider>none</keycloak.user.cache.provider>
-                                <jboss.server.data.dir>${project.build.directory}</jboss.server.data.dir>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        
-        <profile>
             <id>mongo</id>
 
             <properties>
