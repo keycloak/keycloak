@@ -369,9 +369,9 @@ public class RealmAdminResource {
         auth.requireView();
         List<Map<String, String>> data = new LinkedList<Map<String, String>>();
         for (ClientModel client : realm.getClients()) {
-            int size = session.sessions().getActiveUserSessions(client.getRealm(), client);
+            long size = session.sessions().getActiveUserSessions(client.getRealm(), client);
             if (size == 0) continue;
-            Map<String, String> map = new HashMap<String, String>();
+            Map<String, String> map = new HashMap<>();
             map.put("id", client.getId());
             map.put("clientId", client.getClientId());
             map.put("active", size + "");
