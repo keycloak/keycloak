@@ -41,11 +41,9 @@ public class TotpBean {
     private final String totpSecretEncoded;
     private final boolean enabled;
     private final String contextUrl;
-    private final String realmName;
     private final String keyUri;
 
     public TotpBean(KeycloakSession session, RealmModel realm, UserModel user, URI baseUri) {
-        this.realmName = realm.getName();
         this.enabled = session.users().configuredForCredentialType(realm.getOTPPolicy().getType(), realm, user);
         this.contextUrl = baseUri.getPath();
 
