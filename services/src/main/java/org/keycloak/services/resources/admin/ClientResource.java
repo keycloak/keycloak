@@ -157,11 +157,14 @@ public class ClientResource {
     /**
      * Get keycloak.json file
      *
+     * this method is deprecated, see getInstallationProvider
+     *
      * Returns a keycloak.json file to be used to configure the adapter of the specified client.
      *
      * @return
      * @throws IOException
      */
+    @Deprecated
     @GET
     @NoCache
     @Path("installation/json")
@@ -179,11 +182,14 @@ public class ClientResource {
     /**
      * Get adapter configuration XML for JBoss / Wildfly Keycloak subsystem
      *
+     * this method is deprecated, see getInstallationProvider
+     *
      * Returns XML that can be included in the JBoss / Wildfly Keycloak subsystem to configure the adapter of that client.
      *
      * @return
      * @throws IOException
      */
+    @Deprecated
     @GET
     @NoCache
     @Path("installation/jboss")
