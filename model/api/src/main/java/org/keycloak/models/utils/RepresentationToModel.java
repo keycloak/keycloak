@@ -1,5 +1,6 @@
 package org.keycloak.models.utils;
 
+import org.keycloak.Config;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.Constants;
 import org.keycloak.common.util.Base64;
@@ -593,9 +594,16 @@ public class RepresentationToModel {
         }
     }
 
+    public static void renameRealm(RealmModel realm, String name) {
+        if (name.equals(realm.getName())) return;
+        ClientModel masterApp = realm.getMasterAdminClient();
+        masterApp.setClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(name));
+        realm.setName(name);
+    }
+
     public static void updateRealm(RealmRepresentation rep, RealmModel realm) {
         if (rep.getRealm() != null) {
-            realm.setName(rep.getRealm());
+            renameRealm(realm, rep.getRealm());
         }
         if (rep.getDisplayName() != null) realm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) realm.setDisplayNameHtml(rep.getDisplayNameHtml());

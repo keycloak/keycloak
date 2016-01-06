@@ -101,6 +101,33 @@ public class RealmTest extends AbstractClientTest {
         serverInfoResource.getInfo();
     }
 
+    /**
+     * KEYCLOAK-1990 1991
+     * @throws Exception
+     */
+    @Test
+    public void renameRealmTest() throws Exception {
+        Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
+        RealmRepresentation realm1 = new RealmRepresentation();
+        realm1.setRealm("test-immutable");
+        keycloak.realms().create(realm1);
+        realm1 = keycloak.realms().realm("test-immutable").toRepresentation();
+        realm1.setRealm("test-immutable-old");
+        keycloak.realms().realm("test-immutable").update(realm1);
+        realm1 = keycloak.realms().realm("test-immutable-old").toRepresentation();
+
+        RealmRepresentation realm2 = new RealmRepresentation();
+        realm2.setRealm("test-immutable");
+        keycloak.realms().create(realm2);
+        realm2 = keycloak.realms().realm("test-immutable").toRepresentation();
+
+        keycloak.realms().realm("test-immutable-old").remove();
+
+
+
+
+    }
+
     @Test
     public void updateRealm() {
         // first change
