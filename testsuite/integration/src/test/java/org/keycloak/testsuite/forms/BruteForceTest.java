@@ -286,9 +286,6 @@ public class BruteForceTest {
 
     }
 
-
-
-
     @Test
     public void testBrowserInvalidPassword() throws Exception {
         loginSuccess();

@@ -310,7 +310,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");
-        session.sessions().removeExpiredUserSessions(realm);
+        session.sessions().removeExpired(realm);
         session.getTransaction().commit();
         session.close();
 

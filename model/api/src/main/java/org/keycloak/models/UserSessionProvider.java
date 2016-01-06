@@ -23,14 +23,12 @@ public interface UserSessionProvider extends Provider {
     List<UserSessionModel> getUserSessionByBrokerUserId(RealmModel realm, String brokerUserId);
     UserSessionModel getUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId);
 
-    List<UserSessionModel> getUserSessionsByNote(RealmModel realm, String noteName, String noteValue);
-
-    int getActiveUserSessions(RealmModel realm, ClientModel client);
+    long getActiveUserSessions(RealmModel realm, ClientModel client);
     void removeUserSession(RealmModel realm, UserSessionModel session);
     void removeUserSessions(RealmModel realm, UserModel user);
 
     // Implementation should propagate removal of expired userSessions to userSessionPersister too
-    void removeExpiredUserSessions(RealmModel realm);
+    void removeExpired(RealmModel realm);
     void removeUserSessions(RealmModel realm);
     void removeClientSession(RealmModel realm, ClientSessionModel clientSession);
 
@@ -56,7 +54,7 @@ public interface UserSessionProvider extends Provider {
     // Don't remove userSession even if it's last userSession
     void removeOfflineClientSession(RealmModel realm, String clientSessionId);
 
-    int getOfflineSessionsCount(RealmModel realm, ClientModel client);
+    long getOfflineSessionsCount(RealmModel realm, ClientModel client);
     List<UserSessionModel> getOfflineUserSessions(RealmModel realm, ClientModel client, int first, int max);
 
     // Triggered by persister during pre-load

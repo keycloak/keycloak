@@ -1,4 +1,26 @@
-<build xmlns="urn:wildfly:feature-pack-build:1.0">
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2014, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<build xmlns="urn:wildfly:feature-pack-build:1.1">
     <dependencies>
         <artifact name="org.wildfly:wildfly-feature-pack" />
     </dependencies>
@@ -8,20 +30,31 @@
             <property name="jgroups.supplement" value="" />
         </standalone>
         <domain template="configuration/domain/template.xml" subsystems="configuration/domain/subsystems.xml" output-file="domain/configuration/domain.xml" />
+        <host template="configuration/host/host.xml" subsystems="configuration/host/subsystems.xml" output-file="domain/configuration/host.xml" />
+        <host template="configuration/host/host-master.xml" subsystems="configuration/host/subsystems.xml" output-file="domain/configuration/host-master.xml" />
+        <host template="configuration/host/host-slave.xml" subsystems="configuration/host/subsystems.xml" output-file="domain/configuration/host-slave.xml" />
     </config>
 
     <mkdirs>
+        <dir name="domain/data/content"/>
+        <dir name="standalone/lib/ext"/>
+        <dir name="domain/tmp/auth"/>
+        <dir name="standalone/tmp/auth"/>
+        <dir name=".installation"/>
     </mkdirs>
     <file-permissions>
         <permission value="755">
             <filter pattern="*.sh" include="true"/>
+            <filter pattern="*" include="false"/>
         </permission>
         <permission value="700">
             <filter pattern="*/tmp/auth" include="true"/>
+            <filter pattern="*" include="false"/>
         </permission>
         <permission value="600">
             <filter pattern="*-users.properties" include="true" />
             <filter pattern="*/.installation" include="true"/>
+            <filter pattern="*" include="false"/>
         </permission>
     </file-permissions>
     <line-endings>

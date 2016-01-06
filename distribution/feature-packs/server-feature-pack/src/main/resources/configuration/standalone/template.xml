@@ -29,15 +29,15 @@
         </security-realms>
         <audit-log>
             <formatters>
-                <json-formatter name="json-formatter"/>
-            </formatters>
+               <json-formatter name="json-formatter"/>
+            </formatters>        
             <handlers>
-                <file-handler name="file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
+               <file-handler name="file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
             </handlers>
             <logger log-boot="true" log-read-only="false" enabled="false">
-                <handlers>
-                    <handler name="file"/>
-                </handlers>
+               <handlers>
+                  <handler name="file"/>
+               </handlers>
             </logger>
         </audit-log>
         <management-interfaces>
@@ -69,8 +69,9 @@
         <interface name="public">
             <inet-address value="${jboss.bind.address:127.0.0.1}"/>
         </interface>
-        <!-- TODO - only show this if the jacorb subsystem is added  -->
+
         <?INTERFACES?>
+
     </interfaces>
 
     <socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">

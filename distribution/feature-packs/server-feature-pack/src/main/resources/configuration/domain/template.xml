@@ -24,18 +24,12 @@
     </management>
 
     <profiles>
-        <profile name="default">
-            <?SUBSYSTEMS socket-binding-group="standard-sockets"?>
-        </profile>
-        <profile name="ha">
-            <?SUBSYSTEMS socket-binding-group="ha-sockets"?>
-        </profile>
-        <profile name="full">
-            <?SUBSYSTEMS socket-binding-group="full-sockets"?>
-        </profile>
-        <profile name="full-ha">
-            <?SUBSYSTEMS socket-binding-group="full-ha-sockets"?>
-        </profile>
+       <profile name="default">
+           <?SUBSYSTEMS socket-binding-group="standard-sockets"?>
+       </profile>
+       <profile name="ha">
+           <?SUBSYSTEMS socket-binding-group="ha-sockets"?>
+       </profile>
     </profiles>
 
     <!--
@@ -60,28 +54,20 @@
             <!-- Needed for server groups using the 'ha' profile  -->
             <?SOCKET-BINDINGS?>
         </socket-binding-group>
-        <socket-binding-group name="full-sockets" default-interface="public">
-            <!-- Needed for server groups using the 'full' profile  -->
-            <?SOCKET-BINDINGS?>
-        </socket-binding-group>
-        <socket-binding-group name="full-ha-sockets" default-interface="public">
-            <!-- Needed for server groups using the 'full-ha' profile  -->
-            <?SOCKET-BINDINGS?>
-        </socket-binding-group>
     </socket-binding-groups>
 
     <server-groups>
-        <server-group name="main-server-group" profile="full">
+        <server-group name="main-server-group" profile="default">
             <jvm name="default">
                 <heap size="64m" max-size="512m"/>
             </jvm>
-            <socket-binding-group ref="full-sockets"/>
+            <socket-binding-group ref="standard-sockets"/>
         </server-group>
-        <server-group name="other-server-group" profile="full-ha">
+        <server-group name="other-server-group" profile="ha">
             <jvm name="default">
                 <heap size="64m" max-size="512m"/>
             </jvm>
-            <socket-binding-group ref="full-ha-sockets"/>
+            <socket-binding-group ref="ha-sockets"/>
         </server-group>
     </server-groups>
 

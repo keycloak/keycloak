@@ -1,10 +1,18 @@
 language: java
 
+env:
+  global:
+    - MAVEN_SKIP_RC=true
+    - MAVEN_OPTS="-Xms512m -Xmx2048m"
+
 jdk:
   - oraclejdk8
 
+before_script:
+  - export MAVEN_SKIP_RC=true
+
 install: 
-  - travis_wait mvn install -Pdistribution -DskipTests=true -B -V -q
+  - mvn install -Pdistribution -DskipTests=true -B -V -q
 
 script:
   - mvn test -B
