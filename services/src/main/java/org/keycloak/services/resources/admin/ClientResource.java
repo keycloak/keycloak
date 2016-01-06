@@ -17,6 +17,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -141,6 +142,15 @@ public class ClientResource {
     @Path("certificates/{attr}")
     public ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix) {
         return new ClientAttributeCertificateResource(realm, auth, client, session, attributePrefix, adminEvent);
+    }
+
+    @GET
+    @NoCache
+    @Path("installation/providers/{providerId}")
+    public Response getInstallationProvider(@PathParam("providerId") String providerId) {
+        ClientInstallationProvider provider = session.getProvider(ClientInstallationProvider.class, providerId);
+        if (provider == null) throw new NotFoundException("Unknown Provider");
+        return provider.generateInstallation(session, realm, client, keycloak.getBaseUri(uriInfo));
     }
 
 

@@ -685,7 +685,7 @@ module.controller('ClientListCtrl', function($scope, realm, clients, Client, ser
     };
 });
 
-module.controller('ClientInstallationCtrl', function($scope, realm, client, ClientInstallation,ClientInstallationJBoss, $http, $routeParams) {
+module.controller('ClientInstallationCtrl', function($scope, realm, client, serverInfo, ClientInstallation,$http, $routeParams) {
     $scope.realm = realm;
     $scope.client = client;
     $scope.installation = null;
@@ -693,11 +693,25 @@ module.controller('ClientInstallationCtrl', function($scope, realm, client, Clie
     $scope.configFormat = null;
     $scope.filename = null;
 
-    $scope.configFormats = [
-        "Keycloak JSON",
-        "Wildfly/EAP Subsystem XML"
-    ];
+    var protocol = client.protocol;
+    if (!protocol) protocol = 'openid-connect';
+    $scope.configFormats = serverInfo.clientInstallations[protocol];
+    console.log('configFormats.length: ' + $scope.configFormats.length);
 
+    $scope.changeFormat = function() {
+        var url = ClientInstallation.url({ realm: $routeParams.realm, client: $routeParams.client, provider: $scope.configFormat.id });
+        $http.get(url).success(function(data) {
+            var installation = data;
+            if ($scope.configFormat.mediaType == 'application/json') {
+                installation = angular.fromJson(data);
+                installation = angular.toJson(installation, true);
+            }
+            $scope.installation = installation;
+        })
+    };
+
+
+    /*
     $scope.changeFormat = function() {
         if ($scope.configFormat == "Keycloak JSON") {
             $scope.filename = 'keycloak.json';
@@ -720,9 +734,10 @@ module.controller('ClientInstallationCtrl', function($scope, realm, client, Clie
 
         console.debug($scope.filename);
     };
+    */
 
     $scope.download = function() {
-        saveAs(new Blob([$scope.installation], { type: $scope.type }), $scope.filename);
+        saveAs(new Blob([$scope.installation], { type: $scope.configFormat.mediaType }), $scope.configFormat.filename);
     }
 });
 

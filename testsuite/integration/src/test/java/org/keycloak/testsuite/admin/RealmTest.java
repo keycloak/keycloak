@@ -122,6 +122,7 @@ public class RealmTest extends AbstractClientTest {
         realm2 = keycloak.realms().realm("test-immutable").toRepresentation();
 
         keycloak.realms().realm("test-immutable-old").remove();
+        keycloak.realms().realm("test-immutable").remove();
 
 
 
