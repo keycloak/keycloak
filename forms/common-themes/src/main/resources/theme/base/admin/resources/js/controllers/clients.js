@@ -1615,7 +1615,7 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
     };
 
     $scope.remove = function() {
-        Dialog.confirmDelete($scope.mapper.name, 'mapper', function() {
+        Dialog.confirmDelete($scope.model.mapper.name, 'mapper', function() {
             ClientProtocolMapper.remove({ realm: realm.realm, client: client.id, id : $scope.model.mapper.id }, function() {
                 Notifications.success("The mapper has been deleted.");
                 $location.url("/realms/" + realm.realm + '/clients/' + client.id + "/mappers");

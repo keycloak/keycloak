@@ -642,11 +642,6 @@ public class RealmRepresentation {
         identityProviders.add(identityProviderRepresentation);
     }
 
-    @Deprecated
-    public boolean isIdentityFederationEnabled() {
-        return identityProviders != null && !identityProviders.isEmpty();
-    }
-
     public List<ProtocolMapperRepresentation> getProtocolMappers() {
         return protocolMappers;
     }
