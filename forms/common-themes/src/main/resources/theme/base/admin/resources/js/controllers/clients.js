@@ -709,33 +709,6 @@ module.controller('ClientInstallationCtrl', function($scope, realm, client, serv
             $scope.installation = installation;
         })
     };
-
-
-    /*
-    $scope.changeFormat = function() {
-        if ($scope.configFormat == "Keycloak JSON") {
-            $scope.filename = 'keycloak.json';
-
-            var url = ClientInstallation.url({ realm: $routeParams.realm, client: $routeParams.client });
-            $http.get(url).success(function(data) {
-                var tmp = angular.fromJson(data);
-                $scope.installation = angular.toJson(tmp, true);
-                $scope.type = 'application/json';
-            })
-        } else if ($scope.configFormat == "Wildfly/EAP Subsystem XML") {
-            $scope.filename = 'keycloak.xml';
-
-            var url = ClientInstallationJBoss.url({ realm: $routeParams.realm, client: $routeParams.client });
-            $http.get(url).success(function(data) {
-                $scope.installation = data;
-                $scope.type = 'text/xml';
-            })
-        }
-
-        console.debug($scope.filename);
-    };
-    */
-
     $scope.download = function() {
         saveAs(new Blob([$scope.installation], { type: $scope.configFormat.mediaType }), $scope.configFormat.filename);
     }
@@ -1080,7 +1053,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
 module.controller('CreateClientCtrl', function($scope, realm, client, templates, $route, serverInfo, Client, ClientDescriptionConverter, $location, $modal, Dialog, Notifications) {
     $scope.protocols = ['openid-connect',
         'saml'];//Object.keys(serverInfo.providers['login-protocol'].providers).sort();
-
+    $scope.create = true;
     $scope.templates = [ {name:'NONE'}];
     for (var i = 0; i < templates.length; i++) {
         var template = templates[i];

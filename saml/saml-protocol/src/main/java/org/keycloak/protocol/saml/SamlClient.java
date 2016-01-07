@@ -121,4 +121,21 @@ public class SamlClient extends ClientConfigResolver {
 
     }
 
+    public String getClientEncryptingCertificate() {
+        return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE);
+    }
+
+    public void setClientEncryptingCertificate(String val) {
+        client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE, val);
+
+    }
+    public String getClientEncryptingPrivateKey() {
+        return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE);
+    }
+
+    public void setClientEncryptingPrivateKey(String val) {
+        client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE, val);
+
+    }
+
 }
