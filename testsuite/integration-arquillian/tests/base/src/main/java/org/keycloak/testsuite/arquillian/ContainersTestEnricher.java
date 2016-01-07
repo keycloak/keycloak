@@ -1,10 +1,14 @@
 package org.keycloak.testsuite.arquillian;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.LinkedList;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.FileUtils;
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
@@ -19,6 +23,7 @@ import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.annotation.SuiteScoped;
 import org.jboss.arquillian.container.spi.event.container.AfterStart;
+import org.jboss.arquillian.container.spi.event.container.BeforeStart;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
@@ -83,7 +88,7 @@ public class ContainersTestEnricher {
         }
         init = true;
     }
-
+    
     /*
      * non-javadoc
      *
@@ -103,43 +108,92 @@ public class ContainersTestEnricher {
      * After start container. Server logs are checked (in case jboss based container).
      * In case of migration scenario: previous container is stopped.
      */
-    public void afterStart(@Observes AfterStart event) throws IOException {
-        if (System.getProperty("check.server.log", "true").equals("true")) {
-            checkServerLog();
+    public void afterStart(@Observes AfterStart event) throws IOException, InterruptedException {
+        Container container = containers.pollFirst();
+        String jbossHomePath = null;
+
+        if (isJBossBased(container)) {
+            jbossHomePath = container.getContainerConfiguration().getContainerProperties().get("jbossHome");
+            log.debug("jbossHome: " + jbossHomePath + "\n");
+
+            if (System.getProperty("check.server.log", "true").equals("true")) {
+                checkServerLog(jbossHomePath);
+            }
         }
 
         if (migrationTests && !alreadyStopped) {
             log.info("\n\n### Stopping keycloak " + System.getProperty("version", "- previous") + " ###\n");
             stopSuiteContainers.fire(new StopSuiteContainers());
             log.info("\n\n### Starting keycloak current version ###\n");
+            alreadyStopped = true;
         }
-        alreadyStopped = true;
+
+        if (isJBossBased(container) && container.getName().startsWith("app-server")) {
+            log.info("Installing adapter to app server via cli script");
+            String jbossCliPath = jbossHomePath + "/bin/jboss-cli.sh";
+            String scriptPathArg = "--file=" + jbossHomePath + "/bin/adapter-install.cli";
+            String managementPort = container.getContainerConfiguration().getContainerProperties().get("managementPort");
+            String controllerArg = "--controller=localhost:" + managementPort;
+
+            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", scriptPathArg, controllerArg});
+            log.debug("Restarting container");
+            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", "--command=:reload", controllerArg});
+        }
+    }
+
+    private void execCommand(String... command) throws IOException, InterruptedException {
+        Process process = Runtime.getRuntime().exec(command);
+
+        printOutput(process.getInputStream());
+
+        if (process.waitFor(10, TimeUnit.SECONDS)) {
+            if (process.exitValue() != 0) {
+                log.error("Std Error:");
+                printOutput(process.getErrorStream());
+                throw new RuntimeException("Adapter installation failed.");
+            }
+        } else {
+            process.destroy();
+            throw new RuntimeException("Timeout after 10 seconds.");
+        }
+    }
+
+    private void printOutput(InputStream is) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder builder = new StringBuilder();
+        while (reader.ready()) {
+            builder.append(reader.readLine());
+        }
+        log.info(builder);
+    }
+
+    private boolean isJBossBased(Container container) {
+        if (container == null) {
+            return false;
+        }
+        return container.getName().matches("a.*-server-wildfly")
+                || container.getName().matches("a.*-server-eap.")
+                || container.getName().equals("app-server-as7");
     }
 
     /*
      * non-javadoc
      *
-     * check server logs (in case jboss based container) whether there are no ERRORs or SEVEREs
+     * check server logs whether there are no ERRORs or SEVEREs
      */
-    private void checkServerLog() throws IOException {
-        Container container = containers.removeFirst();
-        if (container.getName().equals("auth-server-wildfly")
-                || container.getName().matches("auth-server-eap.")) {
-            String jbossHomePath = container.getContainerConfiguration().getContainerProperties().get("jbossHome");
-            log.debug("jbossHome: " + jbossHomePath + "\n");
+    private void checkServerLog(String jbossHomePath) throws IOException {
+        File serverLog = new File(jbossHomePath + "/standalone/log/server.log");
+        String serverLogContent = FileUtils.readFileToString(serverLog);
 
-            String serverLogContent = FileUtils.readFileToString(new File(jbossHomePath + "/standalone/log/server.log"));
+        boolean containsError
+                = serverLogContent.contains("ERROR")
+                || serverLogContent.contains("SEVERE")
+                || serverLogContent.contains("Exception ");
+        //There is expected string "Exception" in server log: Adding provider 
+        //singleton org.keycloak.services.resources.ModelExceptionMapper
 
-            boolean containsError
-                    = serverLogContent.contains("ERROR")
-                    || serverLogContent.contains("SEVERE")
-                    || serverLogContent.contains("Exception ");
-            //There is expected string "Exception" in server log: Adding provider 
-            //singleton org.keycloak.services.resources.ModelExceptionMapper
-
-            if (containsError) {
-                throw new RuntimeException(container.getName() + ": Server log contains ERROR.");
-            }
+        if (containsError) {
+            throw new RuntimeException(serverLog.getPath() + " contains ERROR.");
         }
     }
 
@@ -154,9 +208,7 @@ public class ContainersTestEnricher {
         appServerQualifier = getAppServerQualifier(testClass);
 
         if (!controller.isStarted(appServerQualifier)) {
-            log.info("\nSTARTING APP SERVER: " + appServerQualifier + "\n");
             controller.start(appServerQualifier);
-            log.info("");
         }
 
         initializeTestContext(testClass);

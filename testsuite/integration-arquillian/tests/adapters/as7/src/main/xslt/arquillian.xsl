@@ -20,6 +20,8 @@
                     <property name="managementAddress">localhost</property>
                     <property name="managementProtocol">remote</property>
                     <property name="managementPort">${app.server.management.port.jmx}</property>
+                    <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+                    <property name="javaHome">${adapter.as7.jdk7.path}</property>
                 </configuration>
             </container>
 

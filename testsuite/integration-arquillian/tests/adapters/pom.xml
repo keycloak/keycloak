@@ -189,7 +189,6 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-dependency-plugin</artifactId>
-                            <version>2.10</version>
                             <executions>
                                 <execution>
                                     <id>example-wars</id>
@@ -382,6 +381,13 @@
             <properties>
                 <!-- Exclude all adapters tests. -->
                 <exclude.adapters>**/adapter/**/*Test.java</exclude.adapters>
+            </properties>
+        </profile>
+        <profile>
+            <id>no-relative</id>
+            <properties>
+                <!-- Exclude relative adapters tests. -->
+                <exclude.adapters>**/adapter/**/WildflyRelative*Test.java</exclude.adapters>
             </properties>
         </profile>
         

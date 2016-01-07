@@ -273,7 +273,6 @@
                     </plugin>
                     <plugin>
                         <artifactId>maven-resources-plugin</artifactId>
-                        <version>2.7</version>
                         <executions>
                             <execution>
                                 <id>copy-keystore</id>
@@ -309,7 +308,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
-                        <version>1.4</version>
                         <executions>
                             <execution>
                                 <id>enforce-properties</id>

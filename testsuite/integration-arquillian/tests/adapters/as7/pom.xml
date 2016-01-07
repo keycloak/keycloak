@@ -15,9 +15,20 @@
         <as7.version>7.1.1.Final</as7.version>
         <app.server.as7.home>${containers.home}/jboss-as-${as7.version}</app.server.as7.home>
         <adapter.libs.as7>${containers.home}/keycloak-as7-adapter-dist</adapter.libs.as7>
+        <startup.timeout.sec>150</startup.timeout.sec>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-arquillian-container-managed</artifactId>
+        </dependency>
+        <!--for as7-->
+        <dependency>
+            <groupId>org.jboss.as</groupId>
+            <artifactId>jboss-as-arquillian-container-managed</artifactId>
+            <version>${as7.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-dist</artifactId>
@@ -25,12 +36,8 @@
             <type>zip</type>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-arquillian-container-managed</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-eap6-adapter-dist</artifactId>
+            <artifactId>keycloak-as7-adapter-dist</artifactId>
             <type>zip</type>
         </dependency>
     </dependencies>
@@ -79,14 +86,35 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.18.1</version>
                 <configuration>
                     <systemPropertyVariables>
                         <app.server.as7>true</app.server.as7>
                         <app.server.as7.home>${app.server.as7.home}</app.server.as7.home>
                         <adapter.libs.as7>${adapter.libs.as7}</adapter.libs.as7>
+                        <startup.timeout.sec>${startup.timeout.sec}</startup.timeout.sec>
+                        <adapter.as7.jdk7.path>${adapter.as7.jdk7.path}</adapter.as7.jdk7.path>
                     </systemPropertyVariables>
                 </configuration>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-properties</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireProperty>
+                                    <property>adapter.as7.jdk7.path</property>
+                                </requireProperty>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -102,35 +130,6 @@
             <properties>
                 <adapter.libs.as7>${app.server.as7.home}</adapter.libs.as7>
             </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>configure-adapter-subsystem</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <transformationSet>
-                                            <dir>${app.server.as7.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                            </includes>
-                                            <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
-                                            <outputDir>${app.server.as7.home}/standalone/configuration</outputDir>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>        
 </project>

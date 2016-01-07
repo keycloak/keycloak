@@ -79,14 +79,16 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
     }
 
     protected void modifyClientUrls(RealmRepresentation realm, String regex, String replacement) {
-        for (ClientRepresentation client : realm.getClients()) {
-            String baseUrl = client.getBaseUrl();
-            if (baseUrl != null) {
-                client.setBaseUrl(baseUrl.replaceAll(regex, replacement));
-            }
-            String adminUrl = client.getAdminUrl();
-            if (adminUrl != null) {
-                client.setAdminUrl(adminUrl.replaceAll(regex, replacement));
+        if (realm.getClients() != null) {
+            for (ClientRepresentation client : realm.getClients()) {
+                String baseUrl = client.getBaseUrl();
+                if (baseUrl != null) {
+                    client.setBaseUrl(baseUrl.replaceAll(regex, replacement));
+                }
+                String adminUrl = client.getAdminUrl();
+                if (adminUrl != null) {
+                    client.setAdminUrl(adminUrl.replaceAll(regex, replacement));
+                }
             }
         }
     }
