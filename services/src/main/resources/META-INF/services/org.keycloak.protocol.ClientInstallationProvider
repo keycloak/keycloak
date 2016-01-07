@@ -1,0 +1,2 @@
+org.keycloak.protocol.oidc.installation.KeycloakOIDCClientInstallation
+org.keycloak.protocol.oidc.installation.KeycloakOIDCJbossSubsystemClientInstallation

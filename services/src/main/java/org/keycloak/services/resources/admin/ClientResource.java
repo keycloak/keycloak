@@ -17,6 +17,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -143,15 +144,27 @@ public class ClientResource {
         return new ClientAttributeCertificateResource(realm, auth, client, session, attributePrefix, adminEvent);
     }
 
+    @GET
+    @NoCache
+    @Path("installation/providers/{providerId}")
+    public Response getInstallationProvider(@PathParam("providerId") String providerId) {
+        ClientInstallationProvider provider = session.getProvider(ClientInstallationProvider.class, providerId);
+        if (provider == null) throw new NotFoundException("Unknown Provider");
+        return provider.generateInstallation(session, realm, client, keycloak.getBaseUri(uriInfo));
+    }
+
 
     /**
      * Get keycloak.json file
+     *
+     * this method is deprecated, see getInstallationProvider
      *
      * Returns a keycloak.json file to be used to configure the adapter of the specified client.
      *
      * @return
      * @throws IOException
      */
+    @Deprecated
     @GET
     @NoCache
     @Path("installation/json")
@@ -169,11 +182,14 @@ public class ClientResource {
     /**
      * Get adapter configuration XML for JBoss / Wildfly Keycloak subsystem
      *
+     * this method is deprecated, see getInstallationProvider
+     *
      * Returns XML that can be included in the JBoss / Wildfly Keycloak subsystem to configure the adapter of that client.
      *
      * @return
      * @throws IOException
      */
+    @Deprecated
     @GET
     @NoCache
     @Path("installation/jboss")

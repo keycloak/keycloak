@@ -116,7 +116,7 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
                 attributes.put(SamlConfigAttributes.SAML_SIGNING_CERTIFICATE_ATTRIBUTE, certPem);
             } else if (keyDescriptor.getUse() == KeyTypes.ENCRYPTION) {
                 attributes.put(SamlConfigAttributes.SAML_ENCRYPT, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
-                attributes.put(SamlProtocol.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE, certPem);
+                attributes.put(SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE, certPem);
             }
         }
 

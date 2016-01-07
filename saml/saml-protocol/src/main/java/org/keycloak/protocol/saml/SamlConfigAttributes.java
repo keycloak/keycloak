@@ -19,4 +19,6 @@ public interface SamlConfigAttributes {
     String SAML_ENCRYPT = "saml.encrypt";
     String SAML_CLIENT_SIGNATURE_ATTRIBUTE = "saml.client.signature";
     String SAML_SIGNING_CERTIFICATE_ATTRIBUTE = "saml.signing." + ClientAttributeCertificateResource.X509CERTIFICATE;
+    String SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE = "saml.encryption." + ClientAttributeCertificateResource.X509CERTIFICATE;
+    String SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE = "saml.encryption." + ClientAttributeCertificateResource.PRIVATE_KEY;
 }

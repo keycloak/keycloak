@@ -9,3 +9,4 @@ org.keycloak.authentication.RequiredActionSpi
 org.keycloak.authentication.FormAuthenticatorSpi
 org.keycloak.authentication.FormActionSpi
 org.keycloak.services.clientregistration.ClientRegistrationSpi
+org.keycloak.protocol.ClientInstallationSpi
