@@ -4,7 +4,8 @@
     <section>
         <title>Installation</title>
         <para>
-            Keycloak Server has three downloadable distributions.
+            Keycloak Server has three downloadable distributions. To run the Keycloak server you need to have Java 8 already
+            installed.
         </para>
         <para>
             <itemizedlist>
