@@ -153,7 +153,6 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.7</version>
                     <executions>
                         <execution>
                             <id>copy-admin-user-json-file</id>
@@ -416,6 +415,7 @@
                 <auth.server.container>auth-server-wildfly</auth.server.container>
                 <startup.timeout.sec>300</startup.timeout.sec>
                 <adapter.test.props/>
+                <keycloak.home>${containers.home}/keycloak-${project.version}</keycloak.home>
             </properties>
             <dependencies>
                 <dependency>
@@ -433,14 +433,13 @@
                                 <systemPropertyVariables>
                                     <auth.server.wildfly>true</auth.server.wildfly>
                                     <auth.server.undertow>false</auth.server.undertow>
-                                    <keycloak.home>${containers.home}/keycloak-${project.version}</keycloak.home>
+                                    <keycloak.home>${keycloak.home}</keycloak.home>
                                     <adapter.test.props>${adapter.test.props}</adapter.test.props>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
                         <plugin>
                             <artifactId>maven-resources-plugin</artifactId>
-                            <version>2.7</version>
                             <executions>
                                 <execution>
                                     <id>copy-admin-user-json-file</id>
@@ -449,7 +448,7 @@
                                         <goal>copy-resources</goal>
                                     </goals>
                                     <configuration>
-                                        <outputDirectory>${auth.server.wildfly.home}/standalone/configuration</outputDirectory>
+                                        <outputDirectory>${keycloak.home}/standalone/configuration</outputDirectory>
                                         <resources>
                                             <resource>
                                                 <directory>src/test/resources</directory>
@@ -512,6 +511,7 @@
                 <auth.server.container>auth-server-eap7</auth.server.container>
                 <startup.timeout.sec>300</startup.timeout.sec>
                 <adapter.test.props/>
+                <keycloak.home>${containers.home}/keycloak-${version.eap6.server.dist}</keycloak.home>
             </properties>
             <dependencies>
                 <dependency>
@@ -555,14 +555,13 @@
                                 <systemPropertyVariables>
                                     <auth.server.eap7>true</auth.server.eap7>
                                     <auth.server.undertow>false</auth.server.undertow>
-                                    <keycloak.home>${containers.home}/keycloak-${version.eap6.server.dist}</keycloak.home>
+                                    <keycloak.home>${keycloak.home}</keycloak.home>
                                     <adapter.test.props>${adapter.test.props}</adapter.test.props>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
                         <plugin>
                             <artifactId>maven-resources-plugin</artifactId>
-                            <version>2.7</version>
                             <executions>
                                 <execution>
                                     <id>copy-admin-user-json-file</id>
@@ -571,7 +570,7 @@
                                         <goal>copy-resources</goal>
                                     </goals>
                                     <configuration>
-                                        <outputDirectory>${auth.server.eap6.home}/standalone/configuration</outputDirectory>
+                                        <outputDirectory>${keycloak.home}/standalone/configuration</outputDirectory>
                                         <resources>
                                             <resource>
                                                 <directory>src/test/resources</directory>
