@@ -16,6 +16,17 @@ public class ClientTemplateRepresentation {
     protected String name;
     protected String description;
     protected String protocol;
+    protected Boolean fullScopeAllowed;
+    protected Boolean bearerOnly;
+    protected Boolean consentRequired;
+    protected Boolean standardFlowEnabled;
+    protected Boolean implicitFlowEnabled;
+    protected Boolean directAccessGrantsEnabled;
+    protected Boolean serviceAccountsEnabled;
+    protected Boolean publicClient;
+    protected Boolean frontchannelLogout;
+    protected Map<String, String> attributes;
+
     protected List<ProtocolMapperRepresentation> protocolMappers;
 
     public String getId() {
@@ -57,5 +68,85 @@ public class ClientTemplateRepresentation {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public Boolean isFullScopeAllowed() {
+        return fullScopeAllowed;
+    }
+
+    public void setFullScopeAllowed(Boolean fullScopeAllowed) {
+        this.fullScopeAllowed = fullScopeAllowed;
+    }
+
+    public Boolean isBearerOnly() {
+        return bearerOnly;
+    }
+
+    public void setBearerOnly(Boolean bearerOnly) {
+        this.bearerOnly = bearerOnly;
+    }
+
+    public Boolean isConsentRequired() {
+        return consentRequired;
+    }
+
+    public void setConsentRequired(Boolean consentRequired) {
+        this.consentRequired = consentRequired;
+    }
+
+    public Boolean isStandardFlowEnabled() {
+        return standardFlowEnabled;
+    }
+
+    public void setStandardFlowEnabled(Boolean standardFlowEnabled) {
+        this.standardFlowEnabled = standardFlowEnabled;
+    }
+
+    public Boolean isImplicitFlowEnabled() {
+        return implicitFlowEnabled;
+    }
+
+    public void setImplicitFlowEnabled(Boolean implicitFlowEnabled) {
+        this.implicitFlowEnabled = implicitFlowEnabled;
+    }
+
+    public Boolean isDirectAccessGrantsEnabled() {
+        return directAccessGrantsEnabled;
+    }
+
+    public void setDirectAccessGrantsEnabled(Boolean directAccessGrantsEnabled) {
+        this.directAccessGrantsEnabled = directAccessGrantsEnabled;
+    }
+
+    public Boolean isServiceAccountsEnabled() {
+        return serviceAccountsEnabled;
+    }
+
+    public void setServiceAccountsEnabled(Boolean serviceAccountsEnabled) {
+        this.serviceAccountsEnabled = serviceAccountsEnabled;
+    }
+
+    public Boolean isPublicClient() {
+        return publicClient;
+    }
+
+    public void setPublicClient(Boolean publicClient) {
+        this.publicClient = publicClient;
+    }
+
+    public Boolean isFrontchannelLogout() {
+        return frontchannelLogout;
+    }
+
+    public void setFrontchannelLogout(Boolean frontchannelLogout) {
+        this.frontchannelLogout = frontchannelLogout;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
     }
 }

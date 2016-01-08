@@ -130,15 +130,14 @@ cd &lt;WILDFLY_HOME&gt;/bin
         <section>
             <title>Admin User</title>
             <para>
-                To access the admin console you need an account to login. Currently, there's a default account added
-                with the username <literal>admin</literal> and password <literal>admin</literal>. You will be required
-                to change the password on first login. We are planning on removing the built-in account soon and will
-                instead have an initial step to create the user.
+                To access the admin console to configure Keycloak you need an account to login. There is no built in user,
+                instead you have to first create an admin account. This can done either by opening <ulink url="http://localhost:8080/auth">http://localhost:8080/auth</ulink>
+                (creating a user through the browser can only be done through localhost) or you can use the add-user script from
+                the command-line.
             </para>
             <para>
-                You can also create a user with the <literal>add-user</literal> script found in <literal>bin</literal>.
-                This script will create a temporary file with the details of the user, which are imported at startup.
-                To add a user with this script run:
+                The <literal>add-user</literal> script creates a temporary file with the details of the user,
+                which are imported at startup. To add a user with this script run:
 <programlisting><![CDATA[
 bin/add-user.[sh|bat] -r master -u <username> -p <password>
 ]]></programlisting>
@@ -370,86 +369,6 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
                     definition of replica sets out of the box: <literal>mongodb://host1:27017,host2:27017,host3:27017/</literal>.
                 </para>
             </section>
-        </section>
-        
-        <section>
-            <title>JSON File based model</title>
-            <para>
-                Keycloak provides a JSON file based model implementation, which means that your identity data will be saved
-                in a flat JSON text file instead of traditional RDBMS.  The performance of this implementaion is likely to
-                be slower because it reads and writes the entire file with each call to the Keycloak REST API.  But it is 
-                very useful in development to see exactly what is being saved.  <emphasis>It is not recommended for 
-                production.</emphasis>
-            </para>
-            <para>
-                Note that this only applies to realm and user data.  There is currently no file implementation for
-                event persistence.  So you will need to use JPA or Mongo for that.
-            </para>
-            <para>    
-                To configure Keycloak to use file persistence open <literal>standalone/configuration/keycloak-server.json</literal>
-                in your favourite editor.  Change the realm and user providers and disable caching.  Change:
-
-<programlisting><![CDATA[
-"realm": {
-    "provider": "jpa"
-},
-
-"user": {
-    "provider": "jpa"
-},
-    
-"userSessions": {
-    "provider" : "mem"
-},
-    
-"realmCache": {
-    "provider": "mem"
-},
-
-"userCache": {
-    "provider": "mem",
-    "mem": {
-        "maxSize": 20000
-    }
-},
-]]></programlisting>
-
-                to:
-
-                <programlisting><![CDATA[
-"realm": {
-    "provider": "file"
-},
-
-"user": {
-    "provider": "file"
-},
-                    
-"userSessions": {
-    "provider" : "mem"
-},
-                    
-"realmCache": {
-    "provider": "none"
-},
-
-"userCache": {
-    "provider": "none",
-},
-]]></programlisting>
-
-You can also change the location of the data file by adding a connectionsFile snippet:<programlisting><![CDATA[
-"connectionsFile": {
-   "default" : {
-        "directory": "/mydirectory",
-        "fileName": "myfilename.json"
-    }
-}
-]]></programlisting>
-
-All configuration options are optional. Default value for directory is <literal>${jboss.server.data.dir}</literal>. Default file name
-                is <literal>keycloak-model.json</literal>.
-            </para>
         </section>
 
         <section>

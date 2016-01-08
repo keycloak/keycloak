@@ -3,6 +3,7 @@ package org.keycloak.provider;
 import org.jboss.logging.Logger;
 
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -52,10 +53,17 @@ public class ProviderManager {
         List<ProviderFactory> factories = cache.get(spi.getName());
         if (factories == null) {
             factories = new LinkedList<ProviderFactory>();
+            IdentityHashMap factoryClasses = new IdentityHashMap();
             for (ProviderLoader loader : loaders) {
                 List<ProviderFactory> f = loader.load(spi);
                 if (f != null) {
-                    factories.addAll(f);
+                    for (ProviderFactory pf: f) {
+                        // make sure there are no duplicates
+                        if (!factoryClasses.containsKey(pf.getClass())) {
+                            factories.add(pf);
+                            factoryClasses.put(pf.getClass(), pf);
+                        }
+                    }
                 }
             }
         }

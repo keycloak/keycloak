@@ -87,7 +87,7 @@ public abstract class AuthorizationEndpointBase {
             }
         }
 
-        AuthenticationFlowModel flow = realm.getBrowserFlow();
+        AuthenticationFlowModel flow = getAuthenticationFlow();
         String flowId = flow.getId();
         AuthenticationProcessor processor = createProcessor(clientSession, flowId, LoginActionsService.AUTHENTICATE_PATH);
 
@@ -115,7 +115,7 @@ public abstract class AuthorizationEndpointBase {
                 else
                     return protocol.sendError(clientSession, Error.PASSIVE_INTERACTION_REQUIRED);
             } else {
-                return processor.finishAuthentication();
+                return processor.finishAuthentication(protocol);
             }
         } else {
             try {
@@ -125,6 +125,10 @@ public abstract class AuthorizationEndpointBase {
                 return processor.handleBrowserException(e);
             }
         }
+    }
+
+    protected AuthenticationFlowModel getAuthenticationFlow() {
+        return realm.getBrowserFlow();
     }
 
     protected Response buildRedirectToIdentityProvider(String providerId, String accessCode) {

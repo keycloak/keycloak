@@ -27,6 +27,9 @@ public interface ClientTemplateResource {
     @Path("protocol-mappers")
     public ProtocolMappersResource getProtocolMappers();
 
+    @Path("/scope-mappings")
+    public RoleMappingResource getScopeMappings();
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public ClientTemplateRepresentation toRepresentation();
@@ -37,4 +40,6 @@ public interface ClientTemplateResource {
 
     @DELETE
     public void remove();
+
+
 }

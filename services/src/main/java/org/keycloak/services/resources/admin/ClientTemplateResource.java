@@ -67,7 +67,7 @@ public class ClientTemplateResource {
     protected RealmModel realm;
     private RealmAuth auth;
     private AdminEventBuilder adminEvent;
-    protected ClientTemplateModel client;
+    protected ClientTemplateModel template;
     protected KeycloakSession session;
 
     @Context
@@ -80,10 +80,10 @@ public class ClientTemplateResource {
         return keycloak;
     }
 
-    public ClientTemplateResource(RealmModel realm, RealmAuth auth, ClientTemplateModel clientModel, KeycloakSession session, AdminEventBuilder adminEvent) {
+    public ClientTemplateResource(RealmModel realm, RealmAuth auth, ClientTemplateModel template, KeycloakSession session, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
-        this.client = clientModel;
+        this.template = template;
         this.session = session;
         this.adminEvent = adminEvent;
 
@@ -92,9 +92,19 @@ public class ClientTemplateResource {
 
     @Path("protocol-mappers")
     public ProtocolMappersResource getProtocolMappers() {
-        ProtocolMappersResource mappers = new ProtocolMappersResource(client, auth, adminEvent);
+        ProtocolMappersResource mappers = new ProtocolMappersResource(template, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(mappers);
         return mappers;
+    }
+
+    /**
+     * Base path for managing the scope mappings for the client
+     *
+     * @return
+     */
+    @Path("scope-mappings")
+    public ScopeMappedResource getScopeMappedResource() {
+        return new ScopeMappedResource(realm, auth, template, session, adminEvent);
     }
 
     /**
@@ -108,7 +118,7 @@ public class ClientTemplateResource {
         auth.requireManage();
 
         try {
-            RepresentationToModel.updateClientTemplate(rep, client);
+            RepresentationToModel.updateClientTemplate(rep, template);
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
@@ -127,7 +137,7 @@ public class ClientTemplateResource {
     @Produces(MediaType.APPLICATION_JSON)
     public ClientTemplateRepresentation getClient() {
         auth.requireView();
-        return ModelToRepresentation.toRepresentation(client);
+        return ModelToRepresentation.toRepresentation(template);
     }
 
     /**
@@ -138,7 +148,7 @@ public class ClientTemplateResource {
     @NoCache
     public void deleteClientTemplate() {
         auth.requireManage();
-        realm.removeClientTemplate(client.getId());
+        realm.removeClientTemplate(template.getId());
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 

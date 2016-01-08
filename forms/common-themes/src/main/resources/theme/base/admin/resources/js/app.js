@@ -61,7 +61,11 @@ angular.element(document).ready(function () {
             module.factory('Auth', function() {
                 return auth;
             });
-            angular.bootstrap(document, ["keycloak"]);
+            var injector = angular.bootstrap(document, ["keycloak"]);
+
+            injector.get('$translate')('consoleTitle').then(function(consoleTitle) {
+                document.title=consoleTitle;
+            });
         }, function() {
             window.location.reload();
         });
@@ -1088,6 +1092,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 client : function(ClientLoader) {
                     return ClientLoader();
                 },
+                templates : function(ClientTemplateListLoader) {
+                    return ClientTemplateListLoader();
+                },
                 clients : function(ClientListLoader) {
                     return ClientListLoader();
                 }
@@ -1102,6 +1109,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 client : function(ClientLoader) {
                     return ClientLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
                 }
             },
             controller : 'ClientInstallationCtrl'
@@ -1125,7 +1135,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'UserRoleMappingCtrl'
         })
         .when('/create/client/:realm', {
-            templateUrl : resourceUrl + '/partials/client-detail.html',
+            templateUrl : resourceUrl + '/partials/create-client.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -1143,7 +1153,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return ServerInfoLoader();
                 }
             },
-            controller : 'ClientDetailCtrl'
+            controller : 'CreateClientCtrl'
         })
         .when('/realms/:realm/clients/:client', {
             templateUrl : resourceUrl + '/partials/client-detail.html',
@@ -1201,6 +1211,21 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ClientTemplateDetailCtrl'
+        })
+        .when('/realms/:realm/client-templates/:template/scope-mappings', {
+            templateUrl : resourceUrl + '/partials/client-template-scope-mappings.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                template : function(ClientTemplateLoader) {
+                    return ClientTemplateLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
+                }
+            },
+            controller : 'ClientTemplateScopeMappingCtrl'
         })
         .when('/realms/:realm/clients', {
             templateUrl : resourceUrl + '/partials/client-list.html',
@@ -2348,6 +2373,34 @@ module.filter('capitalize', function() {
         };
         return splittedWords.join(" ");
     };
+});
+
+/*
+ * Guarantees a deterministic property iteration order.
+ * See: http://www.2ality.com/2015/10/property-traversal-order-es6.html
+ */
+module.filter('toOrderedMapSortedByKey', function(){
+   return function(input){
+
+       if(!input){
+           return input;
+       }
+
+       var keys = Object.keys(input);
+
+       if(keys.length <= 1){
+           return input;
+       }
+
+       keys.sort();
+
+       var result = {};
+       for (var i = 0; i < keys.length; i++) {
+           result[keys[i]] = input[keys[i]];
+       }
+
+       return result;
+   };
 });
 
 module.directive('kcSidebarResize', function ($window) {

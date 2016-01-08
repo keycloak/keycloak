@@ -6,6 +6,7 @@ package org.keycloak.models;
 public class LDAPConstants {
 
     public static final String LDAP_PROVIDER = "ldap";
+    public static final String MSAD_USER_ACCOUNT_CONTROL_MAPPER = "msad-user-account-control-mapper";
 
     public static final String VENDOR = "vendor";
     public static final String VENDOR_RHDS = "rhds";
@@ -43,18 +44,12 @@ public class LDAPConstants {
     // Config option to specify if registrations will be synced or not
     public static final String SYNC_REGISTRATIONS = "syncRegistrations";
 
-    // Applicable just for active directory
-    public static final String USER_ACCOUNT_CONTROLS_AFTER_PASSWORD_UPDATE = "userAccountControlsAfterPasswordUpdate";
-
     // Custom user search filter
     public static final String CUSTOM_USER_SEARCH_FILTER = "customUserSearchFilter";
 
     // Custom attributes on UserModel, which is mapped to LDAP
     public static final String LDAP_ID = "LDAP_ID";
     public static final String LDAP_ENTRY_DN = "LDAP_ENTRY_DN";
-
-    // String used in config to divide more possible values (for example more userDns), which are saved in DB as single string
-    public static final String CONFIG_DIVIDER = ":::";
 
     // Those are forked from Picketlink
     public static final String GIVENNAME = "givenName";
@@ -73,6 +68,8 @@ public class LDAPConstants {
     public static final String GROUP_OF_NAMES = "groupOfNames";
     public static final String GROUP_OF_ENTRIES = "groupOfEntries";
     public static final String GROUP_OF_UNIQUE_NAMES = "groupOfUniqueNames";
+    public static final String USER_ACCOUNT_CONTROL = "userAccountControl";
+    public static final String PWD_LAST_SET = "pwdLastSet";
 
     public static final String COMMA = ",";
     public static final String EQUAL = "=";
@@ -86,6 +83,8 @@ public class LDAPConstants {
     public static final String OBJECT_GUID = "objectGUID";
     public static final String CREATE_TIMESTAMP = "createTimestamp";
     public static final String MODIFY_TIMESTAMP = "modifyTimestamp";
+
+    public static final String LDAP_MATCHING_RULE_IN_CHAIN = ":1.2.840.113556.1.4.1941:";
 
     public static String getUuidAttributeName(String vendor) {
         if (vendor != null) {

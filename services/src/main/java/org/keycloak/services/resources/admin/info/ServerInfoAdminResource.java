@@ -21,6 +21,7 @@ import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
@@ -61,6 +62,7 @@ public class ServerInfoAdminResource {
         setProviders(info);
         setProtocolMapperTypes(info);
         setBuiltinProtocolMappers(info);
+        setClientInstallations(info);
         info.setEnums(ENUMS);
         return info;
     }
@@ -141,6 +143,27 @@ public class ServerInfoAdminResource {
             data.put("id", factory.getId());
 
             providers.add(data);
+        }
+    }
+
+    private void setClientInstallations(ServerInfoRepresentation info) {
+        info.setClientInstallations(new HashMap<String, List<ClientInstallationRepresentation>>());
+        for (ProviderFactory p : session.getKeycloakSessionFactory().getProviderFactories(ClientInstallationProvider.class)) {
+            ClientInstallationProvider provider = (ClientInstallationProvider)p;
+            List<ClientInstallationRepresentation> types = info.getClientInstallations().get(provider.getProtocol());
+            if (types == null) {
+                types = new LinkedList<>();
+                info.getClientInstallations().put(provider.getProtocol(), types);
+            }
+            ClientInstallationRepresentation rep = new ClientInstallationRepresentation();
+            rep.setId(p.getId());
+            rep.setHelpText(provider.getHelpText());
+            rep.setDisplayType( provider.getDisplayType());
+            rep.setProtocol( provider.getProtocol());
+            rep.setDownloadOnly( provider.isDownloadOnly());
+            rep.setFilename(provider.getFilename());
+            rep.setMediaType(provider.getMediaType());
+            types.add(rep);
         }
     }
 

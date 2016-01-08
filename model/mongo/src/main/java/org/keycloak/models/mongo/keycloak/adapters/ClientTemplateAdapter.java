@@ -209,6 +209,184 @@ public class ClientTemplateAdapter extends AbstractMongoAdapter<MongoClientTempl
         return mapping;
     }
 
+    @Override
+    public boolean isFullScopeAllowed() {
+        return getMongoEntity().isFullScopeAllowed();
+    }
+
+    @Override
+    public void setFullScopeAllowed(boolean value) {
+        getMongoEntity().setFullScopeAllowed(value);
+        updateMongoEntity();
+
+    }
+    @Override
+    public Set<RoleModel> getScopeMappings() {
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        List<MongoRoleEntity> roles = MongoModelUtils.getAllScopesOfTemplate(this, invocationContext);
+
+        for (MongoRoleEntity role : roles) {
+            if (realm.getId().equals(role.getRealmId())) {
+                result.add(new RoleAdapter(session, realm, role, realm, invocationContext));
+            } else {
+                // Likely applicationRole, but we don't have this application yet
+                result.add(new RoleAdapter(session, realm, role, invocationContext));
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public Set<RoleModel> getRealmScopeMappings() {
+        Set<RoleModel> allScopes = getScopeMappings();
+
+        // Filter to retrieve just realm roles TODO: Maybe improve to avoid filter programmatically... Maybe have separate fields for realmRoles and appRoles on user?
+        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
+        for (RoleModel role : allScopes) {
+            MongoRoleEntity roleEntity = ((RoleAdapter) role).getRole();
+
+            if (realm.getId().equals(roleEntity.getRealmId())) {
+                realmRoles.add(role);
+            }
+        }
+        return realmRoles;
+    }
+
+    @Override
+    public void addScopeMapping(RoleModel role) {
+        getMongoStore().pushItemToList(this.getMongoEntity(), "scopeIds", role.getId(), true, invocationContext);
+    }
+
+    @Override
+    public void deleteScopeMapping(RoleModel role) {
+        getMongoStore().pullItemFromList(this.getMongoEntity(), "scopeIds", role.getId(), invocationContext);
+    }
+
+    @Override
+    public boolean hasScope(RoleModel role) {
+        if (isFullScopeAllowed()) return true;
+        Set<RoleModel> roles = getScopeMappings();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isPublicClient() {
+        return getMongoEntity().isPublicClient();
+    }
+
+    @Override
+    public void setPublicClient(boolean flag) {
+        getMongoEntity().setPublicClient(flag);
+        updateMongoEntity();
+    }
+
+
+    @Override
+    public boolean isFrontchannelLogout() {
+        return getMongoEntity().isFrontchannelLogout();
+    }
+
+    @Override
+    public void setFrontchannelLogout(boolean flag) {
+        getMongoEntity().setFrontchannelLogout(flag);
+        updateMongoEntity();
+    }
+
+    @Override
+    public void setAttribute(String name, String value) {
+        getMongoEntity().getAttributes().put(name, value);
+        updateMongoEntity();
+
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        getMongoEntity().getAttributes().remove(name);
+        updateMongoEntity();
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        return getMongoEntity().getAttributes().get(name);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        Map<String, String> copy = new HashMap<String, String>();
+        copy.putAll(getMongoEntity().getAttributes());
+        return copy;
+    }
+
+    @Override
+    public boolean isBearerOnly() {
+        return getMongoEntity().isBearerOnly();
+    }
+
+    @Override
+    public void setBearerOnly(boolean only) {
+        getMongoEntity().setBearerOnly(only);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isConsentRequired() {
+        return getMongoEntity().isConsentRequired();
+    }
+
+    @Override
+    public void setConsentRequired(boolean consentRequired) {
+        getMongoEntity().setConsentRequired(consentRequired);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isStandardFlowEnabled() {
+        return getMongoEntity().isStandardFlowEnabled();
+    }
+
+    @Override
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        getMongoEntity().setStandardFlowEnabled(standardFlowEnabled);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isImplicitFlowEnabled() {
+        return getMongoEntity().isImplicitFlowEnabled();
+    }
+
+    @Override
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        getMongoEntity().setImplicitFlowEnabled(implicitFlowEnabled);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isDirectAccessGrantsEnabled() {
+        return getMongoEntity().isDirectAccessGrantsEnabled();
+    }
+
+    @Override
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        getMongoEntity().setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
+        updateMongoEntity();
+    }
+
+    @Override
+    public boolean isServiceAccountsEnabled() {
+        return getMongoEntity().isServiceAccountsEnabled();
+    }
+
+    @Override
+    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
+        getMongoEntity().setServiceAccountsEnabled(serviceAccountsEnabled);
+        updateMongoEntity();
+    }
 
 
     @Override

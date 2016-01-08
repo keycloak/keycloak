@@ -3,6 +3,7 @@ package org.keycloak.federation.ldap;
 import org.jboss.logging.Logger;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
+import org.keycloak.federation.ldap.idm.model.LDAPDn;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
@@ -10,6 +11,8 @@ import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilde
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapperFactory;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -29,12 +32,16 @@ import org.keycloak.common.constants.KerberosConstants;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.naming.AuthenticationException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -185,6 +192,35 @@ public class LDAPFederationProvider implements UserFederationProvider {
         return searchResults;
     }
 
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(model.getId());
+        for (UserFederationMapperModel mapperModel : federationMappers) {
+            LDAPFederationMapper ldapMapper = getMapper(mapperModel);
+            List<UserModel> users = ldapMapper.getGroupMembers(mapperModel, this, realm, group, firstResult, maxResults);
+
+            // Sufficient for now
+            if (users.size() > 0) {
+                return users;
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
+    public List<UserModel> loadUsersByUsernames(List<String> usernames, RealmModel realm) {
+        List<UserModel> result = new ArrayList<>();
+        for (String username : usernames) {
+            UserModel kcUser = session.users().getUserByUsername(username, realm);
+            if (!model.getId().equals(kcUser.getFederationLink())) {
+                logger.warnf("Incorrect federation provider of user %s" + kcUser.getUsername());
+            } else {
+                result.add(kcUser);
+            }
+        }
+        return result;
+    }
+
     protected List<LDAPObject> searchLDAP(RealmModel realm, Map<String, String> attributes, int maxResults) {
 
         List<LDAPObject> results = new ArrayList<LDAPObject>();
@@ -332,7 +368,22 @@ public class LDAPFederationProvider implements UserFederationProvider {
         } else {
             // Use Naming LDAP API
             LDAPObject ldapUser = loadAndValidateUser(realm, user);
-            return ldapIdentityStore.validatePassword(ldapUser, password);
+
+            try {
+                ldapIdentityStore.validatePassword(ldapUser, password);
+                return true;
+            } catch (AuthenticationException ae) {
+
+                // Check if any mapper provides callback for handle LDAP AuthenticationException
+                Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(getModel().getId());
+                boolean processed = false;
+                for (UserFederationMapperModel mapperModel : federationMappers) {
+                    LDAPFederationMapper ldapMapper = getMapper(mapperModel);
+                    processed = processed || ldapMapper.onAuthenticationFailure(mapperModel, this, ldapUser, user, ae, realm);
+                }
+
+                return processed;
+            }
         }
     }
 

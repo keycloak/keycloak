@@ -22,7 +22,6 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationMapperEventImpl;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
@@ -95,6 +94,28 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public void setName(String name) {
         realm.setName(name);
+        updateRealm();
+    }
+
+    @Override
+    public String getDisplayName() {
+        return realm.getDisplayName();
+    }
+
+    @Override
+    public void setDisplayName(String displayName) {
+        realm.setDisplayName(displayName);
+        updateRealm();
+    }
+
+    @Override
+    public String getDisplayNameHtml() {
+        return realm.getDisplayNameHtml();
+    }
+
+    @Override
+    public void setDisplayNameHtml(String displayNameHtml) {
+        realm.setDisplayNameHtml(displayNameHtml);
         updateRealm();
     }
 
@@ -1930,8 +1951,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateMongoEntity();
         UserFederationMapperModel mapperModel = entityToModel(entity);
 
-        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapperModel, this, session));
-
         return mapperModel;
     }
 
@@ -1986,8 +2005,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             entity.getConfig().putAll(mapper.getConfig());
         }
         updateMongoEntity();
-
-        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapper, this, session));
     }
 
     @Override

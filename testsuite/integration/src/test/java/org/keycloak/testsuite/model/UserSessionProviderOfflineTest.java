@@ -347,7 +347,7 @@ public class UserSessionProviderOfflineTest {
 
         resetSession();
 
-        session.sessions().removeExpiredUserSessions(realm);
+        session.sessions().removeExpired(realm);
 
         resetSession();
 
@@ -372,7 +372,7 @@ public class UserSessionProviderOfflineTest {
         // Expire everything and assert nothing found
         Time.setOffset(3000000);
         try {
-            session.sessions().removeExpiredUserSessions(realm);
+            session.sessions().removeExpired(realm);
 
             resetSession();
 

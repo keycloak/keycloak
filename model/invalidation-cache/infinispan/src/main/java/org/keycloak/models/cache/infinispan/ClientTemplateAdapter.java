@@ -133,6 +133,191 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
     }
 
     @Override
+    public boolean isFullScopeAllowed() {
+        if (updated != null) return updated.isFullScopeAllowed();
+        return cached.isFullScopeAllowed();
+    }
+
+    @Override
+    public void setFullScopeAllowed(boolean value) {
+        getDelegateForUpdate();
+        updated.setFullScopeAllowed(value);
+
+    }
+
+    public Set<RoleModel> getScopeMappings() {
+        if (updated != null) return updated.getScopeMappings();
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (String id : cached.getScope()) {
+            roles.add(cacheSession.getRoleById(id, getRealm()));
+
+        }
+        return roles;
+    }
+
+    public void addScopeMapping(RoleModel role) {
+        getDelegateForUpdate();
+        updated.addScopeMapping(role);
+    }
+
+    public void deleteScopeMapping(RoleModel role) {
+        getDelegateForUpdate();
+        updated.deleteScopeMapping(role);
+    }
+
+    public Set<RoleModel> getRealmScopeMappings() {
+        Set<RoleModel> roleMappings = getScopeMappings();
+
+        Set<RoleModel> appRoles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof RealmModel) {
+                if (((RealmModel) container).getId().equals(cachedRealm.getId())) {
+                    appRoles.add(role);
+                }
+            }
+        }
+
+        return appRoles;
+    }
+
+    @Override
+    public boolean hasScope(RoleModel role) {
+        if (updated != null) return updated.hasScope(role);
+        if (cached.isFullScopeAllowed() || cached.getScope().contains(role.getId())) return true;
+
+        Set<RoleModel> roles = getScopeMappings();
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+       return false;
+    }
+
+    public boolean isPublicClient() {
+        if (updated != null) return updated.isPublicClient();
+        return cached.isPublicClient();
+    }
+
+    public void setPublicClient(boolean flag) {
+        getDelegateForUpdate();
+        updated.setPublicClient(flag);
+    }
+
+    public boolean isFrontchannelLogout() {
+        if (updated != null) return updated.isPublicClient();
+        return cached.isFrontchannelLogout();
+    }
+
+    public void setFrontchannelLogout(boolean flag) {
+        getDelegateForUpdate();
+        updated.setFrontchannelLogout(flag);
+    }
+
+    @Override
+    public void setAttribute(String name, String value) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, value);
+
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        getDelegateForUpdate();
+        updated.removeAttribute(name);
+
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        if (updated != null) return updated.getAttribute(name);
+        return cached.getAttributes().get(name);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        if (updated != null) return updated.getAttributes();
+        Map<String, String> copy = new HashMap<String, String>();
+        copy.putAll(cached.getAttributes());
+        return copy;
+    }
+
+    @Override
+    public boolean isBearerOnly() {
+        if (updated != null) return updated.isBearerOnly();
+        return cached.isBearerOnly();
+    }
+
+    @Override
+    public void setBearerOnly(boolean only) {
+        getDelegateForUpdate();
+        updated.setBearerOnly(only);
+    }
+
+    @Override
+    public boolean isConsentRequired() {
+        if (updated != null) return updated.isConsentRequired();
+        return cached.isConsentRequired();
+    }
+
+    @Override
+    public void setConsentRequired(boolean consentRequired) {
+        getDelegateForUpdate();
+        updated.setConsentRequired(consentRequired);
+    }
+
+    @Override
+    public boolean isStandardFlowEnabled() {
+        if (updated != null) return updated.isStandardFlowEnabled();
+        return cached.isStandardFlowEnabled();
+    }
+
+    @Override
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        getDelegateForUpdate();
+        updated.setStandardFlowEnabled(standardFlowEnabled);
+    }
+
+    @Override
+    public boolean isImplicitFlowEnabled() {
+        if (updated != null) return updated.isImplicitFlowEnabled();
+        return cached.isImplicitFlowEnabled();
+    }
+
+    @Override
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        getDelegateForUpdate();
+        updated.setImplicitFlowEnabled(implicitFlowEnabled);
+    }
+
+    @Override
+    public boolean isDirectAccessGrantsEnabled() {
+        if (updated != null) return updated.isDirectAccessGrantsEnabled();
+        return cached.isDirectAccessGrantsEnabled();
+    }
+
+    @Override
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        getDelegateForUpdate();
+        updated.setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
+    }
+
+    @Override
+    public boolean isServiceAccountsEnabled() {
+        if (updated != null) return updated.isServiceAccountsEnabled();
+        return cached.isServiceAccountsEnabled();
+    }
+
+    @Override
+    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
+        getDelegateForUpdate();
+        updated.setServiceAccountsEnabled(serviceAccountsEnabled);
+    }
+
+
+
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof ClientModel)) return false;

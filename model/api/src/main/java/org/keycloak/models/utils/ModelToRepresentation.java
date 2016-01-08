@@ -164,6 +164,8 @@ public class ModelToRepresentation {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setId(realm.getId());
         rep.setRealm(realm.getName());
+        rep.setDisplayName(realm.getDisplayName());
+        rep.setDisplayNameHtml(realm.getDisplayNameHtml());
         rep.setEnabled(realm.isEnabled());
         rep.setNotBefore(realm.getNotBefore());
         rep.setSslRequired(realm.getSslRequired().name().toLowerCase());
@@ -419,6 +421,7 @@ public class ModelToRepresentation {
             }
             rep.setProtocolMappers(mappings);
         }
+        rep.setFullScopeAllowed(clientModel.isFullScopeAllowed());
 
         return rep;
     }
@@ -476,6 +479,9 @@ public class ModelToRepresentation {
             }
             rep.setProtocolMappers(mappings);
         }
+        rep.setUseTemplateMappers(clientModel.useTemplateMappers());
+        rep.setUseTemplateConfig(clientModel.useTemplateConfig());
+        rep.setUseTemplateScope(clientModel.useTemplateScope());
 
         return rep;
     }

@@ -57,6 +57,10 @@ public class RealmsResource {
         return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getProtocol");
     }
 
+    public static UriBuilder protocolUrl(UriBuilder builder) {
+        return builder.path(RealmsResource.class).path(RealmsResource.class, "getProtocol");
+    }
+
     public static UriBuilder clientRegistrationUrl(UriInfo uriInfo) {
         return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getClientsService");
     }

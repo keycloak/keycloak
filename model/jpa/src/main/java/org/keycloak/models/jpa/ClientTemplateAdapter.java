@@ -14,6 +14,7 @@ import org.keycloak.models.jpa.entities.ClientTemplateEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.ScopeMappingEntity;
+import org.keycloak.models.jpa.entities.TemplateScopeMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -203,6 +204,193 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
         return mapping;
     }
 
+    @Override
+    public boolean isFullScopeAllowed() {
+        return entity.isFullScopeAllowed();
+    }
+
+    @Override
+    public void setFullScopeAllowed(boolean value) {
+        entity.setFullScopeAllowed(value);
+    }
+
+    @Override
+    public Set<RoleModel> getRealmScopeMappings() {
+        Set<RoleModel> roleMappings = getScopeMappings();
+
+        Set<RoleModel> appRoles = new HashSet<>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof RealmModel) {
+                if (((RealmModel) container).getId().equals(realm.getId())) {
+                    appRoles.add(role);
+                }
+            }
+        }
+
+        return appRoles;
+    }
+
+    @Override
+    public Set<RoleModel> getScopeMappings() {
+        TypedQuery<String> query = em.createNamedQuery("clientTemplateScopeMappingIds", String.class);
+        query.setParameter("template", getEntity());
+        List<String> ids = query.getResultList();
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (String roleId : ids) {
+            RoleModel role = realm.getRoleById(roleId);
+            if (role == null) continue;
+            roles.add(role);
+        }
+        return roles;
+    }
+
+    @Override
+    public void addScopeMapping(RoleModel role) {
+        if (hasScope(role)) return;
+        TemplateScopeMappingEntity entity = new TemplateScopeMappingEntity();
+        entity.setTemplate(getEntity());
+        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
+        entity.setRole(roleEntity);
+        em.persist(entity);
+        em.flush();
+        em.detach(entity);
+    }
+
+    @Override
+    public void deleteScopeMapping(RoleModel role) {
+        TypedQuery<TemplateScopeMappingEntity> query = getRealmScopeMappingQuery(role);
+        List<TemplateScopeMappingEntity> results = query.getResultList();
+        if (results.size() == 0) return;
+        for (TemplateScopeMappingEntity entity : results) {
+            em.remove(entity);
+        }
+    }
+
+    protected TypedQuery<TemplateScopeMappingEntity> getRealmScopeMappingQuery(RoleModel role) {
+        TypedQuery<TemplateScopeMappingEntity> query = em.createNamedQuery("templateHasScope", TemplateScopeMappingEntity.class);
+        query.setParameter("template", getEntity());
+        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
+        query.setParameter("role", roleEntity);
+        return query;
+    }
+
+    @Override
+    public boolean hasScope(RoleModel role) {
+        if (isFullScopeAllowed()) return true;
+        Set<RoleModel> roles = getScopeMappings();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isPublicClient() {
+        return entity.isPublicClient();
+    }
+
+    @Override
+    public void setPublicClient(boolean flag) {
+        entity.setPublicClient(flag);
+    }
+
+    @Override
+    public boolean isFrontchannelLogout() {
+        return entity.isFrontchannelLogout();
+    }
+
+    @Override
+    public void setFrontchannelLogout(boolean flag) {
+        entity.setFrontchannelLogout(flag);
+    }
+
+    @Override
+    public void setAttribute(String name, String value) {
+        entity.getAttributes().put(name, value);
+
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        entity.getAttributes().remove(name);
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        return entity.getAttributes().get(name);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        Map<String, String> copy = new HashMap<>();
+        copy.putAll(entity.getAttributes());
+        return copy;
+    }
+
+    @Override
+    public boolean isBearerOnly() {
+        return entity.isBearerOnly();
+    }
+
+    @Override
+    public void setBearerOnly(boolean only) {
+        entity.setBearerOnly(only);
+    }
+
+    @Override
+    public boolean isConsentRequired() {
+        return entity.isConsentRequired();
+    }
+
+    @Override
+    public void setConsentRequired(boolean consentRequired) {
+        entity.setConsentRequired(consentRequired);
+    }
+
+    @Override
+    public boolean isStandardFlowEnabled() {
+        return entity.isStandardFlowEnabled();
+    }
+
+    @Override
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        entity.setStandardFlowEnabled(standardFlowEnabled);
+    }
+
+    @Override
+    public boolean isImplicitFlowEnabled() {
+        return entity.isImplicitFlowEnabled();
+    }
+
+    @Override
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        entity.setImplicitFlowEnabled(implicitFlowEnabled);
+    }
+
+    @Override
+    public boolean isDirectAccessGrantsEnabled() {
+        return entity.isDirectAccessGrantsEnabled();
+    }
+
+    @Override
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        entity.setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
+    }
+
+    @Override
+    public boolean isServiceAccountsEnabled() {
+        return entity.isServiceAccountsEnabled();
+    }
+
+    @Override
+    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
+        entity.setServiceAccountsEnabled(serviceAccountsEnabled);
+    }
+
+
 
     @Override
     public boolean equals(Object o) {
@@ -217,6 +405,8 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
     public int hashCode() {
         return getId().hashCode();
     }
+
+
 
 
 }

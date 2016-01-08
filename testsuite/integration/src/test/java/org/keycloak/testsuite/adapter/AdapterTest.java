@@ -100,6 +100,8 @@ public class AdapterTest {
 
     @Test
     public void testLoginSSOAndLogout() throws Exception {
+        testStrategy.testLoginSSOMax();
+
         testStrategy.testLoginSSOAndLogout();
     }
 

@@ -1,6 +1,5 @@
 package org.keycloak.models.jpa;
 
-import org.keycloak.Config;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -19,25 +18,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationMapperEventImpl;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.jpa.entities.AuthenticationExecutionEntity;
-import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
-import org.keycloak.models.jpa.entities.AuthenticatorConfigEntity;
-import org.keycloak.models.jpa.entities.ClientEntity;
-import org.keycloak.models.jpa.entities.ClientTemplateEntity;
-import org.keycloak.models.jpa.entities.GroupEntity;
-import org.keycloak.models.jpa.entities.IdentityProviderEntity;
-import org.keycloak.models.jpa.entities.IdentityProviderMapperEntity;
-import org.keycloak.models.jpa.entities.RealmAttributeEntity;
-import org.keycloak.models.jpa.entities.RealmEntity;
-import org.keycloak.models.jpa.entities.RequiredActionProviderEntity;
-import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
-import org.keycloak.models.jpa.entities.RoleEntity;
-import org.keycloak.models.jpa.entities.UserFederationMapperEntity;
-import org.keycloak.models.jpa.entities.UserFederationProviderEntity;
+import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -98,6 +82,26 @@ public class RealmAdapter implements RealmModel {
     public void setName(String name) {
         realm.setName(name);
         em.flush();
+    }
+
+    @Override
+    public String getDisplayName() {
+        return getAttribute(RealmAttributes.DISPLAY_NAME);
+    }
+
+    @Override
+    public void setDisplayName(String displayName) {
+        setAttribute(RealmAttributes.DISPLAY_NAME, displayName);
+    }
+
+    @Override
+    public String getDisplayNameHtml() {
+        return getAttribute(RealmAttributes.DISPLAY_NAME_HTML);
+    }
+
+    @Override
+    public void setDisplayNameHtml(String displayNameHtml) {
+        setAttribute(RealmAttributes.DISPLAY_NAME_HTML, displayNameHtml);
     }
 
     @Override
@@ -1051,6 +1055,7 @@ public class RealmAdapter implements RealmModel {
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
         em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
+        em.createNamedQuery("deleteTemplateScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
         em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
 
         em.remove(roleEntity);
@@ -1541,8 +1546,6 @@ public class RealmAdapter implements RealmModel {
         this.realm.getUserFederationMappers().add(entity);
         UserFederationMapperModel mapperModel = entityToModel(entity);
 
-        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapperModel, this, session));
-
         return mapperModel;
     }
 
@@ -1597,8 +1600,6 @@ public class RealmAdapter implements RealmModel {
             entity.getConfig().putAll(mapper.getConfig());
         }
         em.flush();
-
-        session.getKeycloakSessionFactory().publish(new UserFederationMapperEventImpl(mapper, this, session));
     }
 
     @Override
@@ -2146,8 +2147,11 @@ public class RealmAdapter implements RealmModel {
         if (client == null) {
             return false;
         }
+        em.createNamedQuery("deleteTemplateScopeMappingByClient").setParameter("template", clientEntity).executeUpdate();
+        em.flush();
         em.remove(clientEntity);
         em.flush();
+
 
         return true;
     }

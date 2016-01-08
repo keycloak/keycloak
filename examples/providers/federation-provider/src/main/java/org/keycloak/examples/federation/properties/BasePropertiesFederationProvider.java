@@ -97,6 +97,11 @@ public abstract class BasePropertiesFederationProvider implements UserFederation
     }
 
     @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        return Collections.emptyList();
+    }
+
+    @Override
     public void preRemove(RealmModel realm) {
        // complete  We don't care about the realm being removed
     }

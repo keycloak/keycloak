@@ -61,6 +61,15 @@ public class ClientEntity {
     @JoinColumn(name = "CLIENT_TEMPLATE_ID")
     protected ClientTemplateEntity clientTemplate;
 
+    @Column(name="USE_TEMPLATE_CONFIG")
+    private boolean useTemplateConfig;
+
+    @Column(name="USE_TEMPLATE_SCOPE")
+    private boolean useTemplateScope;
+
+    @Column(name="USE_TEMPLATE_MAPPERS")
+    private boolean useTemplateMappers;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "REALM_ID")
     protected RealmEntity realm;
@@ -403,5 +412,29 @@ public class ClientEntity {
 
     public void setClientTemplate(ClientTemplateEntity clientTemplate) {
         this.clientTemplate = clientTemplate;
+    }
+
+    public boolean isUseTemplateConfig() {
+        return useTemplateConfig;
+    }
+
+    public void setUseTemplateConfig(boolean useTemplateConfig) {
+        this.useTemplateConfig = useTemplateConfig;
+    }
+
+    public boolean isUseTemplateScope() {
+        return useTemplateScope;
+    }
+
+    public void setUseTemplateScope(boolean useTemplateScope) {
+        this.useTemplateScope = useTemplateScope;
+    }
+
+    public boolean isUseTemplateMappers() {
+        return useTemplateMappers;
+    }
+
+    public void setUseTemplateMappers(boolean useTemplateMappers) {
+        this.useTemplateMappers = useTemplateMappers;
     }
 }

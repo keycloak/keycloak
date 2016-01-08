@@ -284,15 +284,6 @@ module.factory('ClientClaimsLoader', function(Loader, ClientClaims, $route, $q) 
     });
 });
 
-module.factory('ClientInstallationLoader', function(Loader, ClientInstallation, $route, $q) {
-    return Loader.get(ClientInstallation, function() {
-        return {
-            realm : $route.current.params.realm,
-            client : $route.current.params.client
-        }
-    });
-});
-
 module.factory('ClientRoleListLoader', function(Loader, ClientRole, $route, $q) {
     return Loader.query(ClientRole, function() {
         return {

@@ -1,6 +1,7 @@
 package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.EventBuilder;
@@ -190,6 +191,7 @@ public class OIDCLoginProtocolService {
     @GET
     @Path("certs")
     @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
     public JSONWebKeySet certs() {
         JSONWebKeySet keySet = new JSONWebKeySet();
         keySet.setKeys(new JWK[]{JWKBuilder.create().rs256(realm.getPublicKey())});

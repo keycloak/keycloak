@@ -1,8 +1,10 @@
 package org.keycloak.adapters.springsecurity.authentication;
 
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
-import org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,11 +25,11 @@ public class KeycloakLogoutHandler implements LogoutHandler {
 
     private static final Logger log = LoggerFactory.getLogger(KeycloakLogoutHandler.class);
 
-    private AdapterDeploymentContextBean deploymentContextBean;
+    private AdapterDeploymentContext adapterDeploymentContext;
 
-    public KeycloakLogoutHandler(AdapterDeploymentContextBean deploymentContextBean) {
-        Assert.notNull(deploymentContextBean);
-        this.deploymentContextBean = deploymentContextBean;
+    public KeycloakLogoutHandler(AdapterDeploymentContext adapterDeploymentContext) {
+        Assert.notNull(adapterDeploymentContext);
+        this.adapterDeploymentContext = adapterDeploymentContext;
     }
 
     @Override
@@ -45,7 +47,8 @@ public class KeycloakLogoutHandler implements LogoutHandler {
     }
 
     protected void handleSingleSignOut(HttpServletRequest request, HttpServletResponse response, KeycloakAuthenticationToken authenticationToken) {
-        KeycloakDeployment deployment = deploymentContextBean.getDeployment();
+        HttpFacade facade = new SimpleHttpFacade(request, response);
+        KeycloakDeployment deployment = adapterDeploymentContext.resolveDeployment(facade);
         RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext) authenticationToken.getAccount().getKeycloakSecurityContext();
         session.logout(deployment);
     }

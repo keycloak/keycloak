@@ -80,6 +80,10 @@ public class LoginSettings extends RealmSettings {
         public void setEmailAsUsername(boolean emailAsUsername) {
             emailAsUsernameOnOffSwitch.setOn(emailAsUsername);
         }
+
+        public boolean isEmailAsUsername() {
+            return emailAsUsernameOnOffSwitch.isOn();
+        }
         
         public boolean isEditUsernameAllowed() {
             return editUsernameAllowed.isOn();

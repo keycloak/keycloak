@@ -161,6 +161,12 @@ public class InfinispanRealmCache implements RealmCache {
     }
 
     @Override
+    public void evictCachedRoleById(String id) {
+        logger.tracev("Evicting role {0}", id);
+        cache.evict(id);
+    }
+
+    @Override
     public void addCachedRole(CachedRole role) {
         if (!enabled) return;
         logger.tracev("Adding role {0}", role.getId());

@@ -33,7 +33,7 @@
 
         <li ng-class="{active: path[4] == 'clustering'}" data-ng-show="!client.publicClient"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/clustering">{{:: 'clustering' | translate}}</a></li>
 
-        <li ng-class="{active: path[4] == 'installation'}" data-ng-show="client.protocol != 'saml'">
+        <li ng-class="{active: path[4] == 'installation'}">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/installation">{{:: 'installation' | translate}}</a>
             <kc-tooltip>{{:: 'installation.tooltip' | translate}}</kc-tooltip>
         </li>

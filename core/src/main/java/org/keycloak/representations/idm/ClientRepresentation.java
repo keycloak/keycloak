@@ -41,6 +41,10 @@ public class ClientRepresentation {
     protected Map<String, Integer> registeredNodes;
     protected List<ProtocolMapperRepresentation> protocolMappers;
     protected String clientTemplate;
+    private Boolean useTemplateConfig;
+    private Boolean useTemplateScope;
+    private Boolean useTemplateMappers;
+
 
     public String getId() {
         return id;
@@ -298,4 +302,29 @@ public class ClientRepresentation {
     public void setClientTemplate(String clientTemplate) {
         this.clientTemplate = clientTemplate;
     }
+
+    public Boolean isUseTemplateConfig() {
+        return useTemplateConfig;
+    }
+
+    public void setUseTemplateConfig(Boolean useTemplateConfig) {
+        this.useTemplateConfig = useTemplateConfig;
+    }
+
+    public Boolean isUseTemplateScope() {
+        return useTemplateScope;
+    }
+
+    public void setUseTemplateScope(Boolean useTemplateScope) {
+        this.useTemplateScope = useTemplateScope;
+    }
+
+    public Boolean isUseTemplateMappers() {
+        return useTemplateMappers;
+    }
+
+    public void setUseTemplateMappers(Boolean useTemplateMappers) {
+        this.useTemplateMappers = useTemplateMappers;
+    }
+
 }

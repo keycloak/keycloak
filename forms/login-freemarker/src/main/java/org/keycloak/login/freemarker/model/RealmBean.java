@@ -42,6 +42,24 @@ public class RealmBean {
         return realm.getName();
     }
 
+    public String getDisplayName() {
+        String displayName = realm.getDisplayName();
+        if (displayName != null && displayName.length() > 0) {
+            return displayName;
+        } else {
+            return getName();
+        }
+    }
+
+    public String getDisplayNameHtml() {
+        String displayNameHtml = realm.getDisplayNameHtml();
+        if (displayNameHtml != null && displayNameHtml.length() > 0) {
+            return displayNameHtml;
+        } else {
+            return getDisplayName();
+        }
+    }
+
     public boolean isIdentityFederationEnabled() {
         return realm.isIdentityFederationEnabled();
     }

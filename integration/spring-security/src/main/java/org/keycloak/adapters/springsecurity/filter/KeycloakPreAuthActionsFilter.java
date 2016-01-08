@@ -5,7 +5,6 @@ import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.spi.UserSessionManagement;
-import org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean;
 import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,9 +46,7 @@ public class KeycloakPreAuthActionsFilter extends GenericFilterBean implements A
 
     @Override
     protected void initFilterBean() throws ServletException {
-        AdapterDeploymentContextBean contextBean = applicationContext.getBean(AdapterDeploymentContextBean.class);
-        deploymentContext = contextBean.getDeploymentContext();
-        management.tryRegister(contextBean.getDeployment());
+        deploymentContext = applicationContext.getBean(AdapterDeploymentContext.class);
     }
 
     @Override

@@ -17,9 +17,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CacheRealmProviderFactory;
-import org.keycloak.models.cache.RealmCache;
+import org.keycloak.models.cache.entities.CachedClient;
 import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.models.cache.entities.CachedUser;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -143,11 +142,23 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
 
                 realmLookup.remove(realm.getName());
 
+                for (String r : realm.getRealmRoles().values()) {
+                    realmCache.evictCachedRoleById(r);
+                }
+
                 for (String c : realm.getClients().values()) {
                     realmCache.evictCachedApplicationById(c);
                 }
 
                 log.tracev("Realm removed realm={0}", realm.getName());
+            } else if (object instanceof CachedClient) {
+                CachedClient client = (CachedClient) object;
+
+                for (String r : client.getRoles().values()) {
+                    realmCache.evictCachedRoleById(r);
+                }
+
+                log.tracev("Client removed client={0}", client.getId());
             }
         }
     }

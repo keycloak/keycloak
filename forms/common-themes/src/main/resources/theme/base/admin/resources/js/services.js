@@ -380,6 +380,10 @@ module.factory('UserFederationMapper', function($resource) {
     });
 });
 
+module.factory('UserFederationMapperSync', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/user-federation/instances/:provider/mappers/:mapperId/sync');
+});
+
 
 module.factory('UserSessionStats', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:user/session-stats', {
@@ -848,6 +852,52 @@ module.factory('ClientTemplateProtocolMappersByProtocol', function($resource) {
     });
 });
 
+module.factory('ClientTemplateRealmScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/realm', {
+        realm : '@realm',
+        template : '@template'
+    });
+});
+
+module.factory('ClientTemplateAvailableRealmScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/realm/available', {
+        realm : '@realm',
+        template : '@template'
+    });
+});
+
+module.factory('ClientTemplateCompositeRealmScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/realm/composite', {
+        realm : '@realm',
+        template : '@template'
+    });
+});
+
+module.factory('ClientTemplateClientScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/clients/:targetClient', {
+        realm : '@realm',
+        template : '@template',
+        targetClient : '@targetClient'
+    });
+});
+
+module.factory('ClientTemplateAvailableClientScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/clients/:targetClient/available', {
+        realm : '@realm',
+        template : '@template',
+        targetClient : '@targetClient'
+    });
+});
+
+module.factory('ClientTemplateCompositeClientScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-templates/:template/scope-mappings/clients/:targetClient/composite', {
+        realm : '@realm',
+        template : '@template',
+        targetClient : '@targetClient'
+    });
+});
+
+
 module.factory('ClientSessionStats', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/clients/:client/session-stats', {
         realm : '@realm',
@@ -994,16 +1044,28 @@ module.factory('ClientDescriptionConverter', function($resource) {
     });
 });
 
+/*
+module.factory('ClientInstallation', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/installation/providers/:provider', {
+        realm : '@realm',
+        client : '@client',
+        provider : '@provider'
+    });
+});
+*/
+
+
 
 module.factory('ClientInstallation', function($resource) {
-    var url = authUrl + '/admin/realms/:realm/clients/:client/installation/json';
+    var url = authUrl + '/admin/realms/:realm/clients/:client/installation/providers/:provider';
     return {
         url : function(parameters)
         {
-            return url.replace(':realm', parameters.realm).replace(':client', parameters.client);
+            return url.replace(':realm', parameters.realm).replace(':client', parameters.client).replace(':provider', parameters.provider);
         }
     }
 });
+
 module.factory('ClientInstallationJBoss', function($resource) {
     var url = authUrl + '/admin/realms/:realm/clients/:client/installation/jboss';
     return {

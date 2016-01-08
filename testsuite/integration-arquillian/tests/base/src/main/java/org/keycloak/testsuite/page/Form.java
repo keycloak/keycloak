@@ -21,9 +21,9 @@ public class Form {
 
     public static final String ACTIVE_DIV_XPATH = ".//div[not(contains(@class,'ng-hide'))]";
 
-    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Save']")
+    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[@kc-save or @data-kc-save]")
     private WebElement save;
-    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Cancel']")
+    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[@kc-reset or @data-kc-reset]")
     private WebElement cancel;
 
     public void save() {

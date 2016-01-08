@@ -43,40 +43,40 @@ public class CreateClientMappersForm extends Form {
     @FindBy(id = "mapperTypeCreate")
     private Select mapperTypeSelect;
 
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Property']//following-sibling::node()//input[@type='text']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Property']//following-sibling::node()//input[@type='text']")
     private WebElement propertyInput;
 
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='User Attribute']//following-sibling::node()//input[@type='text']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='User Attribute']//following-sibling::node()//input[@type='text']")
     private WebElement userAttributeInput;
 
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='User Session Note']//following-sibling::node()//input[@type='text']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='User Session Note']//following-sibling::node()//input[@type='text']")
     private WebElement userSessionNoteInput;
 
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Multivalued']//following-sibling::node()//div[@class='onoffswitch']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Multivalued']//following-sibling::node()//div[@class='onoffswitch']")
     private OnOffSwitch multivaluedInput;
 
     @FindBy(xpath = ".//button[text() = 'Select Role']/../..//input")
     private WebElement roleInput;
 
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='New Role Name']//following-sibling::node()//input[@type='text']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='New Role Name']//following-sibling::node()//input[@type='text']")
     private WebElement newRoleInput;
 
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Token Claim Name']//following-sibling::node()//input[@type='text']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Token Claim Name']//following-sibling::node()//input[@type='text']")
     private WebElement tokenClaimNameInput;
 
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Claim value']//following-sibling::node()//input[@type='text']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Claim value']//following-sibling::node()//input[@type='text']")
     private WebElement tokenClaimValueInput;
 
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Claim JSON Type']//following-sibling::node()//select")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Claim JSON Type']//following-sibling::node()//select")
     private Select claimJSONTypeInput;
 
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Add to ID token']//following-sibling::node()//div[@class='onoffswitch']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Add to ID token']//following-sibling::node()//div[@class='onoffswitch']")
     private OnOffSwitch addToIDTokenInput;
 
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Add to access token']//following-sibling::node()//div[@class='onoffswitch']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Add to access token']//following-sibling::node()//div[@class='onoffswitch']")
     private OnOffSwitch addToAccessTokenInput;
     
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Full group path']//following-sibling::node()//div[@class='onoffswitch']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Full group path']//following-sibling::node()//div[@class='onoffswitch']")
     private OnOffSwitch fullGroupPath;
 
     @FindBy(xpath = ".//button[text() = 'Select Role']")
@@ -260,25 +260,25 @@ public class CreateClientMappersForm extends Form {
     }
     
     //SAML
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Role attribute name']//following-sibling::node()//input[@type='text']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Role attribute name']//following-sibling::node()//input[@type='text']")
     private WebElement roleAttributeNameInput;
     
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Friendly Name']//following-sibling::node()//input[@type='text']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Friendly Name']//following-sibling::node()//input[@type='text']")
     private WebElement friendlyNameInput;
     
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='SAML Attribute NameFormat']//following-sibling::node()//select")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='SAML Attribute NameFormat']//following-sibling::node()//select")
     private Select samlAttributeNameFormatSelect;
     
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Single Role Attribute']//following-sibling::node()//div[@class='onoffswitch']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Single Role Attribute']//following-sibling::node()//div[@class='onoffswitch']")
     private OnOffSwitch singleRoleAttributeSwitch;
     
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Attribute value']//following-sibling::node()//input[@type='text']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Attribute value']//following-sibling::node()//input[@type='text']")
     private WebElement attributeValueInput;
     
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Group attribute name']//following-sibling::node()//input[@type='text']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Group attribute name']//following-sibling::node()//input[@type='text']")
     private WebElement groupAttributeNameInput;
     
-    @FindBy(xpath = ".//div[@properties='mapperType.properties']//label[text()='Single Group Attribute']//following-sibling::node()//div[@class='onoffswitch']")
+    @FindBy(xpath = ".//div[@properties='model.mapperType.properties']//label[text()='Single Group Attribute']//following-sibling::node()//div[@class='onoffswitch']")
     private OnOffSwitch singleGroupAttributeSwitch;
     
     public void setRoleAttributeName(String value) {

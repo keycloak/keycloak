@@ -37,6 +37,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             "org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoGroupEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoClientEntity",
+            "org.keycloak.models.mongo.keycloak.entities.MongoClientTemplateEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoMigrationModelEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoOnlineUserSessionEntity",

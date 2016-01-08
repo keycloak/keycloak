@@ -14,7 +14,7 @@
                 <div class="col-md-6">
                     <div class="input-group">
                         <div>
-                            <select class="form-control" id="configFormats" name="configFormats" ng-change="changeFormat()" ng-model="configFormat" ng-options="a for a in configFormats">
+                            <select class="form-control" id="configFormats" name="configFormats" ng-change="changeFormat()" ng-model="configFormat" ng-options="a.displayType for a in configFormats">
                                 <option value="" selected> {{:: 'select-a-format' | translate}} </option>
                             </select>
                         </div>

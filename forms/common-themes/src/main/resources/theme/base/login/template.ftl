@@ -29,7 +29,7 @@
 </head>
 
 <body class="${properties.kcBodyClass!}">
-    <div id="kc-logo"><div id="kc-logo-wrapper"></div></div>
+    <div id="kc-logo"><a href="${properties.kcLogoLink!'#'}"><div id="kc-logo-wrapper"></div></a></div>
 
     <div id="kc-container" class="${properties.kcContainerClass!}">
         <div id="kc-container-wrapper" class="${properties.kcContainerWrapperClass!}">

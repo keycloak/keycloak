@@ -1,5 +1,6 @@
 package org.keycloak.authentication;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionModel;
@@ -17,6 +18,7 @@ import java.util.List;
 * @version $Revision: 1 $
 */
 public class DefaultAuthenticationFlow implements AuthenticationFlow {
+    protected static Logger logger = Logger.getLogger(DefaultAuthenticationFlow.class);
     Response alternativeChallenge = null;
     AuthenticationExecutionModel challengedAlternativeExecution = null;
     boolean alternativeSuccessful = false;
@@ -44,10 +46,12 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
     @Override
     public Response processAction(String actionExecution) {
+        logger.debugv("processAction: {0}", actionExecution);
         while (executionIterator.hasNext()) {
             AuthenticationExecutionModel model = executionIterator.next();
+            logger.debugv("check: {0} requirement: {1}", model.getAuthenticator(), model.getRequirement().toString());
             if (isProcessed(model)) {
-                AuthenticationProcessor.logger.debug("execution is processed");
+                logger.debug("execution is processed");
                 if (!alternativeSuccessful && model.isAlternative() && processor.isSuccessful(model))
                     alternativeSuccessful = true;
                 continue;
@@ -62,6 +66,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 }
                 Authenticator authenticator = factory.create(processor.getSession());
                 AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, authenticator, executions);
+                logger.debugv("action: {0}", model.getAuthenticator());
                 authenticator.action(result);
                 Response response = processResult(result);
                 if (response == null) {
@@ -80,19 +85,24 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
     @Override
     public Response processFlow() {
+        logger.debug("processFlow");
         while (executionIterator.hasNext()) {
             AuthenticationExecutionModel model = executionIterator.next();
+            logger.debugv("check execution: {0} requirement: {1}", model.getAuthenticator(), model.getRequirement().toString());
+
             if (isProcessed(model)) {
-                AuthenticationProcessor.logger.debug("execution is processed");
+                logger.debug("execution is processed");
                 if (!alternativeSuccessful && model.isAlternative() && processor.isSuccessful(model))
                     alternativeSuccessful = true;
                 continue;
             }
             if (model.isAlternative() && alternativeSuccessful) {
+                logger.debug("Skip alternative execution");
                 processor.getClientSession().setExecutionStatus(model.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
                 continue;
             }
             if (model.isAuthenticatorFlow()) {
+                logger.debug("execution is flow");
                 AuthenticationFlow authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
                 Response flowChallenge = authenticationFlow.processFlow();
                 if (flowChallenge == null) {
@@ -122,7 +132,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 throw new RuntimeException("Unable to find factory for AuthenticatorFactory: " + model.getAuthenticator() + " did you forget to declare it in a META-INF/services file?");
             }
             Authenticator authenticator = factory.create(processor.getSession());
-            AuthenticationProcessor.logger.debugv("authenticator: {0}", factory.getId());
+            logger.debugv("authenticator: {0}", factory.getId());
             UserModel authUser = processor.getClientSession().getAuthenticatedUser();
 
             if (authenticator.requiresUser() && authUser == null) {
@@ -138,7 +148,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 if (!configuredFor) {
                     if (model.isRequired()) {
                         if (factory.isUserSetupAllowed()) {
-                            AuthenticationProcessor.logger.debugv("authenticator SETUP_REQUIRED: {0}", factory.getId());
+                            logger.debugv("authenticator SETUP_REQUIRED: {0}", factory.getId());
                             processor.getClientSession().setExecutionStatus(model.getId(), ClientSessionModel.ExecutionStatus.SETUP_REQUIRED);
                             authenticator.setRequiredActions(processor.getSession(), processor.getRealm(), processor.getClientSession().getAuthenticatedUser());
                             continue;
@@ -152,6 +162,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 }
             }
             AuthenticationProcessor.Result context = processor.createAuthenticatorContext(model, authenticator, executions);
+            logger.debug("invoke authenticator.authenticate");
             authenticator.authenticate(context);
             Response response = processResult(context);
             if (response != null) return response;
@@ -165,12 +176,12 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         FlowStatus status = result.getStatus();
         switch (status) {
             case SUCCESS:
-                AuthenticationProcessor.logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
+                logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
                 processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
                 if (execution.isAlternative()) alternativeSuccessful = true;
                 return null;
             case FAILED:
-                AuthenticationProcessor.logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
+                logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
                 processor.logFailure();
                 processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.FAILED);
                 if (result.getChallenge() != null) {
@@ -178,14 +189,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 }
                 throw new AuthenticationFlowException(result.getError());
             case FORK:
-                AuthenticationProcessor.logger.debugv("reset browser login from authenticator: {0}", execution.getAuthenticator());
+                logger.debugv("reset browser login from authenticator: {0}", execution.getAuthenticator());
                 processor.getClientSession().setNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, execution.getId());
                 throw new ForkFlowException(result.getSuccessMessage(), result.getErrorMessage());
             case FORCE_CHALLENGE:
                 processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
                 return sendChallenge(result, execution);
             case CHALLENGE:
-                AuthenticationProcessor.logger.debugv("authenticator CHALLENGE: {0}", execution.getAuthenticator());
+                logger.debugv("authenticator CHALLENGE: {0}", execution.getAuthenticator());
                 if (execution.isRequired()) {
                     processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
                     return sendChallenge(result, execution);
@@ -203,12 +214,12 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 }
                 return null;
             case FAILURE_CHALLENGE:
-                AuthenticationProcessor.logger.debugv("authenticator FAILURE_CHALLENGE: {0}", execution.getAuthenticator());
+                logger.debugv("authenticator FAILURE_CHALLENGE: {0}", execution.getAuthenticator());
                 processor.logFailure();
                 processor.getClientSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
                 return sendChallenge(result, execution);
             case ATTEMPTED:
-                AuthenticationProcessor.logger.debugv("authenticator ATTEMPTED: {0}", execution.getAuthenticator());
+                logger.debugv("authenticator ATTEMPTED: {0}", execution.getAuthenticator());
                 if (execution.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) {
                     throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CREDENTIALS);
                 }
@@ -218,8 +229,8 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 AuthenticationProcessor.resetFlow(processor.getClientSession());
                 return processor.authenticate();
             default:
-                AuthenticationProcessor.logger.debugv("authenticator INTERNAL_ERROR: {0}", execution.getAuthenticator());
-                AuthenticationProcessor.logger.error("Unknown result status");
+                logger.debugv("authenticator INTERNAL_ERROR: {0}", execution.getAuthenticator());
+                logger.error("Unknown result status");
                 throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
         }
     }

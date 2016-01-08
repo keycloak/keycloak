@@ -26,6 +26,20 @@ public class LDAPDn {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof LDAPDn)) {
+            return false;
+        }
+
+        return toString().equals(obj.toString());
+    }
+
+    @Override
+    public int hashCode() {
+        return toString().hashCode();
+    }
+
+    @Override
     public String toString() {
         return toString(entries);
     }
@@ -63,6 +77,14 @@ public class LDAPDn {
     }
 
     /**
+     * @return string attribute value like "joe" from the DN like "uid=joe,dc=something,dc=org"
+     */
+    public String getFirstRdnAttrValue() {
+        Entry firstEntry = entries.getFirst();
+        return firstEntry.attrValue;
+    }
+
+    /**
      *
      * @return string like "dc=something,dc=org" from the DN like "uid=joe,dc=something,dc=org"
      */
@@ -70,6 +92,21 @@ public class LDAPDn {
         LinkedList<Entry> parentDnEntries = new LinkedList<>(entries);
         parentDnEntries.remove();
         return toString(parentDnEntries);
+    }
+
+    public boolean isDescendantOf(LDAPDn expectedParentDn) {
+        int parentEntriesCount = expectedParentDn.entries.size();
+
+        Deque<Entry> myEntries = new LinkedList<>(this.entries);
+        boolean someRemoved = false;
+        while (myEntries.size() > parentEntriesCount) {
+            myEntries.removeFirst();
+            someRemoved = true;
+        }
+
+        String myEntriesParentStr = toString(myEntries).toLowerCase();
+        String expectedParentDnStr = expectedParentDn.toString().toLowerCase();
+        return someRemoved && myEntriesParentStr.equals(expectedParentDnStr);
     }
 
     public void addFirst(String rdnName, String rdnValue) {

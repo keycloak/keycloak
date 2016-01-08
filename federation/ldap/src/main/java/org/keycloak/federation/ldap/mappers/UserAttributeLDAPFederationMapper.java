@@ -64,9 +64,12 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
     public static final String ALWAYS_READ_VALUE_FROM_LDAP = "always.read.value.from.ldap";
     public static final String IS_MANDATORY_IN_LDAP = "is.mandatory.in.ldap";
 
+    public UserAttributeLDAPFederationMapper(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, RealmModel realm) {
+        super(mapperModel, ldapProvider, realm);
+    }
 
     @Override
-    public void onImportUserFromLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
+    public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, boolean isCreate) {
         String userModelAttrName = mapperModel.getConfig().get(USER_MODEL_ATTRIBUTE);
         String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
 
@@ -93,7 +96,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
     }
 
     @Override
-    public void onRegisterUserToLDAP(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
+    public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser) {
         String userModelAttrName = mapperModel.getConfig().get(USER_MODEL_ATTRIBUTE);
         String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
         boolean isMandatoryInLdap = parseBooleanParameter(mapperModel, IS_MANDATORY_IN_LDAP);
@@ -130,7 +133,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
             }
         }
 
-        if (isReadOnly(mapperModel)) {
+        if (isReadOnly()) {
             ldapUser.addReadOnlyAttributeName(ldapAttrName);
         }
     }
@@ -151,14 +154,14 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
     }
 
     @Override
-    public UserModel proxy(UserFederationMapperModel mapperModel, final LDAPFederationProvider ldapProvider, final LDAPObject ldapUser, UserModel delegate, final RealmModel realm) {
+    public UserModel proxy(final LDAPObject ldapUser, UserModel delegate) {
         final String userModelAttrName = mapperModel.getConfig().get(USER_MODEL_ATTRIBUTE);
         final String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
         boolean isAlwaysReadValueFromLDAP = parseBooleanParameter(mapperModel, ALWAYS_READ_VALUE_FROM_LDAP);
         final boolean isMandatoryInLdap = parseBooleanParameter(mapperModel, IS_MANDATORY_IN_LDAP);
 
         // For writable mode, we want to propagate writing of attribute to LDAP as well
-        if (ldapProvider.getEditMode() == UserFederationProvider.EditMode.WRITABLE && !isReadOnly(mapperModel)) {
+        if (ldapProvider.getEditMode() == UserFederationProvider.EditMode.WRITABLE && !isReadOnly()) {
 
             delegate = new TxAwareLDAPUserModelDelegate(delegate, ldapProvider, ldapUser) {
 
@@ -309,13 +312,13 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
     }
 
     @Override
-    public void beforeLDAPQuery(UserFederationMapperModel mapperModel, LDAPQuery query) {
+    public void beforeLDAPQuery(LDAPQuery query) {
         String userModelAttrName = mapperModel.getConfig().get(USER_MODEL_ATTRIBUTE);
         String ldapAttrName = mapperModel.getConfig().get(LDAP_ATTRIBUTE);
 
         // Add mapped attribute to returning ldap attributes
         query.addReturningLdapAttribute(ldapAttrName);
-        if (isReadOnly(mapperModel)) {
+        if (isReadOnly()) {
             query.addReturningReadOnlyLdapAttribute(ldapAttrName);
         }
 
@@ -328,7 +331,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
         }
     }
 
-    private boolean isReadOnly(UserFederationMapperModel mapperModel) {
+    private boolean isReadOnly() {
         return parseBooleanParameter(mapperModel, READ_ONLY);
     }
 

@@ -74,11 +74,12 @@
 #kc-logo-wrapper {
     background-image: url("../img/keycloak-logo.png");
     background-repeat: no-repeat;
-    background-position: top right;
 
+    position: absolute;
+    top: 50px;
+    right: 50px;
     height: 37px;
-
-    margin: 50px;
+    width: 154px;
 }
 
 #kc-header {
@@ -281,8 +282,8 @@ ol#kc-totp-settings li:first-of-type {
 
 @media (max-width: 767px) {
     #kc-logo-wrapper {
-        margin-top: 30px;
-        margin-right: 15px;
+        top: 15px;
+        right: 15px;
     }
 
     #kc-header {

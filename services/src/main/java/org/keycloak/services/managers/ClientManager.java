@@ -15,6 +15,8 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.adapters.config.BaseRealmConfig;
@@ -45,10 +47,25 @@ public class ClientManager {
     public ClientManager() {
     }
 
+    /**
+     * Should not be called from an import.  This really expects that the client is created from the admin console.
+     *
+     * @param session
+     * @param realm
+     * @param rep
+     * @param addDefaultRoles
+     * @return
+     */
     public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation rep, boolean addDefaultRoles) {
         ClientModel client = RepresentationToModel.createClient(session, realm, rep, addDefaultRoles);
 
-        // remove default mappers
+        if (rep.getProtocol() != null) {
+            LoginProtocolFactory providerFactory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, rep.getProtocol());
+            providerFactory.setupClientDefaults(rep, client);
+        }
+
+
+        // remove default mappers if there is a template
         if (rep.getProtocolMappers() == null && rep.getClientTemplate() != null) {
             Set<ProtocolMapperModel> mappers = client.getProtocolMappers();
             for (ProtocolMapperModel mapper : mappers) client.removeProtocolMapper(mapper);

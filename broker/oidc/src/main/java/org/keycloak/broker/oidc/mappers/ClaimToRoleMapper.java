@@ -10,6 +10,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
@@ -80,7 +81,7 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String roleName = mapperModel.getConfig().get(HardcodedRoleMapper.ROLE);
         if (hasClaimValue(mapperModel, context)) {
-            RoleModel role = HardcodedRoleMapper.getRoleFromString(realm, roleName);
+            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
             if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
             user.grantRole(role);
         }
@@ -90,7 +91,7 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String roleName = mapperModel.getConfig().get(HardcodedRoleMapper.ROLE);
         if (!hasClaimValue(mapperModel, context)) {
-            RoleModel role = HardcodedRoleMapper.getRoleFromString(realm, roleName);
+            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
             if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
             user.deleteRoleMapping(role);
         }

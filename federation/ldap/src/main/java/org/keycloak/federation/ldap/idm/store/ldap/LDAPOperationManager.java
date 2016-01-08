@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import javax.naming.AuthenticationException;
 import javax.naming.Binding;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -320,15 +321,15 @@ public class LDAPOperationManager {
      *
      * @param dn
      * @param password
+     * @throws AuthenticationException if authentication is not successful
      *
-     * @return
      */
-    public boolean authenticate(String dn, String password) {
+    public void authenticate(String dn, String password) throws AuthenticationException {
         InitialContext authCtx = null;
 
         try {
             if (password == null || password.isEmpty()) {
-                throw new Exception("Empty password used");
+                throw new AuthenticationException("Empty password used");
             }
 
             Hashtable<String, Object> env = new Hashtable<String, Object>(this.connectionProperties);
@@ -342,13 +343,15 @@ public class LDAPOperationManager {
 
             authCtx = new InitialLdapContext(env, null);
 
-            return true;
-        } catch (Exception e) {
+        } catch (AuthenticationException ae) {
             if (logger.isDebugEnabled()) {
-                logger.debugf(e, "Authentication failed for DN [%s]", dn);
+                logger.debugf(ae, "Authentication failed for DN [%s]", dn);
             }
 
-            return false;
+            throw ae;
+        } catch (Exception e) {
+            logger.errorf(e, "Unexpected exception when validating password of DN [%s]", dn);
+            throw new AuthenticationException("Unexpected exception when validating password of user");
         } finally {
             if (authCtx != null) {
                 try {

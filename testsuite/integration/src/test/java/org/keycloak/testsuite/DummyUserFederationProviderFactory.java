@@ -8,17 +8,17 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class DummyUserFederationProviderFactory implements UserFederationProviderFactory {
+public class DummyUserFederationProviderFactory implements UserFederationProviderFactory, ConfiguredProvider {
 
     private static final Logger logger = Logger.getLogger(DummyUserFederationProviderFactory.class);
     public static final String PROVIDER_NAME = "dummy";
@@ -83,5 +83,30 @@ public class DummyUserFederationProviderFactory implements UserFederationProvide
 
     public int getChangedSyncCounter() {
         return changedSyncCounter.get();
+    }
+
+    @Override
+    public String getHelpText() {
+        return "Dummy User Federation Provider Help Text";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+
+        ProviderConfigProperty prop1 = new ProviderConfigProperty();
+        prop1.setName("prop1");
+        prop1.setLabel("Prop1");
+        prop1.setDefaultValue("prop1Default");
+        prop1.setHelpText("Prop1 HelpText");
+        prop1.setType(ProviderConfigProperty.STRING_TYPE);
+
+        ProviderConfigProperty prop2 = new ProviderConfigProperty();
+        prop2.setName("prop2");
+        prop2.setLabel("Prop2");
+        prop2.setDefaultValue("true");
+        prop2.setHelpText("Prop2 HelpText");
+        prop2.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+
+        return Arrays.asList(prop1, prop2);
     }
 }

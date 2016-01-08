@@ -49,6 +49,9 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     private List<ClientIdentityProviderMappingEntity> identityProviders = new ArrayList<ClientIdentityProviderMappingEntity>();
     private List<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
     private String clientTemplate;
+    private boolean useTemplateConfig;
+    private boolean useTemplateScope;
+    private boolean useTemplateMappers;
 
     public String getClientId() {
         return clientId;
@@ -308,6 +311,30 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setClientTemplate(String clientTemplate) {
         this.clientTemplate = clientTemplate;
+    }
+
+    public boolean isUseTemplateConfig() {
+        return useTemplateConfig;
+    }
+
+    public void setUseTemplateConfig(boolean useTemplateConfig) {
+        this.useTemplateConfig = useTemplateConfig;
+    }
+
+    public boolean isUseTemplateScope() {
+        return useTemplateScope;
+    }
+
+    public void setUseTemplateScope(boolean useTemplateScope) {
+        this.useTemplateScope = useTemplateScope;
+    }
+
+    public boolean isUseTemplateMappers() {
+        return useTemplateMappers;
+    }
+
+    public void setUseTemplateMappers(boolean useTemplateMappers) {
+        this.useTemplateMappers = useTemplateMappers;
     }
 }
 

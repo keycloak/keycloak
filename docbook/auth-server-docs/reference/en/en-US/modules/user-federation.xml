@@ -202,6 +202,54 @@
                         </para>
                     </listitem>
                 </varlistentry>
+                <varlistentry>
+                    <term>Hardcoded Role Mapper</term>
+                    <listitem>
+                        <para>
+                            This mapper will grant specified Keycloak role to each Keycloak user linked with LDAP.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>Group Mapper</term>
+                    <listitem>
+                        <para>
+                            This allows to configure group mappings from LDAP into Keycloak group mappings. Group mapper can be used to map LDAP groups from particular branch of LDAP tree
+                            into groups in Keycloak. And it will also propagate user-group mappings from LDAP into user-group mappings in Keycloak.
+                        </para>
+                        <para>
+                            You can choose to preserve group inheritance from LDAP as well, but this may fail as Keycloak inheritance is more restrictive than LDAP
+                            (For example in Keycloak each group can have just one parent and there is no recursion allowed. In LDAP the recursion is possible and every group can be member of more
+                            other groups too).
+                        </para>
+                        <para>
+                            As of now, the mapper doesn't provide mapping of LDAP roles-groups to Keycloak roles-groups
+                            (For example when LDAP group <literal>cn=role1,ou=roles,dc=example,dc=com</literal> is member of LDAP group
+                            <literal>cn=group1,ou=groups,dc=example,dc=com</literal> , we don't support the mapping of Keycloak role <literal>role1</literal> imported from LDAP to corresponding Keycloak group <literal>group1</literal> imported from LDAP).
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>MSAD User Account Mapper</term>
+                    <listitem>
+                        <para>
+                            Mapper specific to Microsoft Active Directory (MSAD). It's able to tightly integrate the MSAD user account state into Keycloak account state (account enabled, password is expired etc).
+                            It's using <literal>userAccountControl</literal> and <literal>pwdLastSet</literal> LDAP attributes for that (both are specific to MSAD and are not LDAP standard).
+                            For example if pwdLastSet is 0, the Keycloak user is required to update password (there will be UPDATE_PASSWORD required action added to him in Keycloak). Or if userAccountControl
+                            is 514 (disabled account) the Keycloak user is disabled as well etc.
+                        </para>
+                        <para>
+                            For writable LDAP, the mapping is bi-directional and the state from Keycloak is propagated to LDAP (For example enable user
+                            in Keycloak admin console will update the value of userAccountControl in MSAD and effectively enable him in MSAD as well).
+                        </para>
+                        <para>
+                            For writable LDAPs, mapper also provides mapping of error codes during MSAD user authentication to the
+                            appropriate action in Keycloak. For example if MSAD user authentication fails due to the fact, that MSAD password is expired,
+                            the mapper will allow user to authenticate into Keycloak, but it will add UPDATE_PASSWORD required action to the user, so user
+                            must update his password.
+                        </para>
+                    </listitem>
+                </varlistentry>
             </variablelist>
         </para>
         <para>By default, there is set of User Attribute mappers to map basic UserModel attributes username, first name, lastname and email to corresponding LDAP attributes. You are free to extend this and provide

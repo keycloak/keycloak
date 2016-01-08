@@ -31,7 +31,6 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
  *
  * @author Petr Mensik
  */
-@Ignore
 public class TokensTest extends AbstractRealmTest {
 
     @Page

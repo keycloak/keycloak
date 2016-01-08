@@ -524,7 +524,7 @@ public class LoginTest {
             keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                   manager.getSession().sessions().removeExpiredUserSessions(appRealm);
+                   manager.getSession().sessions().removeExpired(appRealm);
                 }
             });
 

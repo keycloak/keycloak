@@ -29,17 +29,19 @@ public interface RealmModel extends RoleContainerModel {
         RealmModel getRealm();
     }
 
-    interface UserFederationMapperEvent extends ProviderEvent {
-        UserFederationMapperModel getFederationMapper();
-        RealmModel getRealm();
-        KeycloakSession getSession();
-    }
-
     String getId();
 
     String getName();
 
     void setName(String name);
+
+    String getDisplayName();
+
+    void setDisplayName(String displayName);
+
+    String getDisplayNameHtml();
+
+    void setDisplayNameHtml(String displayNameHtml);
 
     boolean isEnabled();
 
