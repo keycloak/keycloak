@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -30,8 +30,9 @@ import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 
 /**
+ * PartialImport handler for Clients.
  *
- * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class ClientsPartialImport extends AbstractPartialImport<ClientRepresentation> {
 
@@ -66,12 +67,7 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
     }
 
     @Override
-    public void overwrite(RealmModel realm, KeycloakSession session, ClientRepresentation clientRep) {
-        remove(realm, session, clientRep);
-        create(realm, session, clientRep);
-    }
-
-    protected void remove(RealmModel realm, KeycloakSession session, ClientRepresentation clientRep) {
+    public void remove(RealmModel realm, KeycloakSession session, ClientRepresentation clientRep) {
         ClientModel clientModel = realm.getClientByClientId(getName(clientRep));
         new ClientManager(new RealmManager(session)).removeClient(realm, clientModel);
     }

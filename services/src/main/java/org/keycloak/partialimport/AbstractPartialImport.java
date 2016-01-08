@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -21,16 +21,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.ws.rs.core.Response;
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.services.ErrorResponse;
 
 /**
+ * Base PartialImport for most resource types.
  *
- * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public abstract class AbstractPartialImport<T> implements PartialImport<T> {
+    protected static Logger logger = Logger.getLogger(AbstractPartialImport.class);
 
     protected final Set<T> toOverwrite = new HashSet<>();
     protected final Set<T> toSkip = new HashSet<>();
@@ -41,7 +44,7 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
     public abstract boolean exists(RealmModel realm, KeycloakSession session, T resourceRep);
     public abstract String existsMessage(T resourceRep);
     public abstract ResourceType getResourceType();
-    public abstract void overwrite(RealmModel realm, KeycloakSession session, T resourceRep);
+    public abstract void remove(RealmModel realm, KeycloakSession session, T resourceRep);
     public abstract void create(RealmModel realm, KeycloakSession session, T resourceRep);
 
     @Override
@@ -67,16 +70,23 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
         return new ErrorResponseException(error);
     }
 
-    public PartialImportResult overwritten(String modelId, T resourceRep){
+    protected PartialImportResult overwritten(String modelId, T resourceRep){
         return PartialImportResult.overwritten(getResourceType(), getName(resourceRep), modelId, resourceRep);
     }
 
-    public PartialImportResult skipped(String modelId, T resourceRep) {
+    protected PartialImportResult skipped(String modelId, T resourceRep) {
         return PartialImportResult.skipped(getResourceType(), getName(resourceRep), modelId, resourceRep);
     }
 
-    public PartialImportResult added(String modelId, T resourceRep) {
+    protected PartialImportResult added(String modelId, T resourceRep) {
         return PartialImportResult.added(getResourceType(), getName(resourceRep), modelId, resourceRep);
+    }
+
+    @Override
+    public void removeOverwrites(RealmModel realm, KeycloakSession session) {
+        for (T resourceRep : toOverwrite) {
+            remove(realm, session, resourceRep);
+        }
     }
 
     @Override
@@ -85,11 +95,11 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
         List<T> repList = getRepList(partialImportRep);
         if ((repList == null) || repList.isEmpty()) return results;
 
-        for (T resourceRep: toOverwrite) {
-            //System.out.println("overwriting " + getResourceType() + " " + getName(resourceRep));
+        for (T resourceRep : toOverwrite) {
             try {
-                overwrite(realm, session, resourceRep);
+                create(realm, session, resourceRep);
             } catch (Exception e) {
+                logger.error("Error overwriting " + getName(resourceRep), e);
                 throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
             }
 
@@ -98,7 +108,6 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
         }
 
         for (T resourceRep : toSkip) {
-            //System.out.println("skipping " + getResourceType() + " " + getName(resourceRep));
             String modelId = getModelId(realm, session, resourceRep);
             results.addResult(skipped(modelId, resourceRep));
         }
@@ -108,12 +117,11 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
             if (toSkip.contains(resourceRep)) continue;
 
             try {
-                //System.out.println("adding " + getResourceType() + " " + getName(resourceRep));
                 create(realm, session, resourceRep);
                 String modelId = getModelId(realm, session, resourceRep);
                 results.addResult(added(modelId, resourceRep));
             } catch (Exception e) {
-                //e.printStackTrace();
+                logger.error("Error creating " + getName(resourceRep), e);
                 throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
             }
         }

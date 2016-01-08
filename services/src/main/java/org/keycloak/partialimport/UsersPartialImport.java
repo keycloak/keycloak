@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -31,8 +31,9 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.UserManager;
 
 /**
+ * PartialImport handler for users.
  *
- * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class UsersPartialImport extends AbstractPartialImport<UserRepresentation> {
 
@@ -94,12 +95,7 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
     }
 
     @Override
-    public void overwrite(RealmModel realm, KeycloakSession session, UserRepresentation user) {
-        remove(realm, session, user);
-        create(realm, session, user);
-    }
-
-    protected void remove(RealmModel realm, KeycloakSession session, UserRepresentation user) {
+    public void remove(RealmModel realm, KeycloakSession session, UserRepresentation user) {
         UserModel userModel = session.users().getUserByUsername(user.getUsername(), realm);
         if (userModel == null) {
             userModel = session.users().getUserByEmail(user.getEmail(), realm);

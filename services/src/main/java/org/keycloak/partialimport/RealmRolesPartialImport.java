@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -26,8 +26,9 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.admin.RoleResource;
 
 /**
+ * PartialImport handler for Realm Roles.
  *
- * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class RealmRolesPartialImport extends AbstractPartialImport<RoleRepresentation> {
 
@@ -81,13 +82,7 @@ public class RealmRolesPartialImport extends AbstractPartialImport<RoleRepresent
     }
 
     @Override
-    public void overwrite(RealmModel realm, KeycloakSession session, RoleRepresentation roleRep) {
-        //checkForComposite(roleRep);
-        deleteRole(realm, roleRep);
-        create(realm, session, roleRep);
-    }
-
-    public void deleteRole(RealmModel realm, RoleRepresentation roleRep) {
+    public void remove(RealmModel realm, KeycloakSession session, RoleRepresentation roleRep) {
         RoleModel role = realm.getRole(getName(roleRep));
         RoleHelper helper = new RoleHelper(realm);
         helper.deleteRole(role);
@@ -95,9 +90,7 @@ public class RealmRolesPartialImport extends AbstractPartialImport<RoleRepresent
 
     @Override
     public void create(RealmModel realm, KeycloakSession session, RoleRepresentation roleRep) {
-        //checkForComposite(roleRep);
         realm.addRole(getName(roleRep));
-        //overwrite(realm, session, roleRep);
     }
 
     public static class RoleHelper extends RoleResource {

@@ -2229,6 +2229,17 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
         }
     }, true);
     
+    $scope.successMessage = function() {
+        var message = $scope.results.added + ' records added. ';
+        if ($scope.ifResourceExists === 'SKIP') {
+            message += $scope.results.skipped + ' records skipped.'
+        }
+        if ($scope.ifResourceExists === 'OVERWRITE') {
+            message += $scope.results.overwritten + ' records overwritten.';
+        }
+        return message;
+    }
+    
     $scope.save = function() {
         var json = angular.copy($scope.fileContent);
         json.ifResourceExists = $scope.ifResourceExists;
@@ -2243,14 +2254,7 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
         
         var importFile = $resource(authUrl + '/admin/realms/' + realm.realm + '/partialImport');
         $scope.results = importFile.save(json, function() {
-            var message = $scope.results.added + ' records added. ';
-            if ($scope.ifResourceExists === 'SKIP') {
-                message += $scope.results.skipped + ' records skipped.'
-            }
-            if ($scope.ifResourceExists === 'OVERWRITE') {
-                message += $scope.results.overwritten + ' records overwritten.';
-            }
-            Notifications.success(message);
+            Notifications.success($scope.successMessage());
         }, function(error) {
             if (error.data.errorMessage) {
                 Notifications.error(error.data.errorMessage);

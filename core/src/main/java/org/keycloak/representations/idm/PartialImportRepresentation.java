@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -21,9 +21,9 @@ import java.util.List;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /**
- * Used for partial import of users, clients, and identity providers.
+ * Used for partial import of users, clients, roles, and identity providers.
  *
- * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class PartialImportRepresentation {
@@ -49,11 +49,11 @@ public class PartialImportRepresentation {
     }
 
     public boolean hasRealmRoles() {
-        return (roles.getRealm() != null) && (!roles.getRealm().isEmpty());
+        return (roles != null) && (roles.getRealm() != null) && (!roles.getRealm().isEmpty());
     }
 
     public boolean hasClientRoles() {
-        return (roles.getClient() != null) && (!roles.getClient().isEmpty());
+        return (roles != null) && (roles.getClient() != null) && (!roles.getClient().isEmpty());
     }
 
     public String getIfResourceExists() {

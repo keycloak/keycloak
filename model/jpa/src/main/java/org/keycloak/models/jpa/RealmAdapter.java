@@ -1059,6 +1059,7 @@ public class RealmAdapter implements RealmModel {
         em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
 
         em.remove(roleEntity);
+        em.flush();
 
         return true;
     }
@@ -1217,7 +1218,7 @@ public class RealmAdapter implements RealmModel {
         realm.setEventsListeners(listeners);
         em.flush();
     }
-    
+
     @Override
     public Set<String> getEnabledEventTypes() {
         return realm.getEnabledEventTypes();
@@ -1228,7 +1229,7 @@ public class RealmAdapter implements RealmModel {
         realm.setEnabledEventTypes(enabledEventTypes);
         em.flush();
     }
-    
+
     @Override
     public boolean isAdminEventsEnabled() {
         return realm.isAdminEventsEnabled();
@@ -1250,7 +1251,7 @@ public class RealmAdapter implements RealmModel {
         realm.setAdminEventsDetailsEnabled(enabled);
         em.flush();
     }
-    
+
     @Override
     public ClientModel getMasterAdminClient() {
         ClientEntity masterAdminClient = realm.getMasterAdminClient();

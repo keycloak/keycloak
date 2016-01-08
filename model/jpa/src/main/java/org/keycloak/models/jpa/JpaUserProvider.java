@@ -76,9 +76,12 @@ public class JpaUserProvider implements UserProvider {
                 userModel.joinGroup(g);
             }
         }
-        for (RequiredActionProviderModel r : realm.getRequiredActionProviders()) {
-            if (r.isEnabled() && r.isDefaultAction()) {
-                userModel.addRequiredAction(r.getAlias());
+
+        if (addDefaultRequiredActions){
+            for (RequiredActionProviderModel r : realm.getRequiredActionProviders()) {
+                if (r.isEnabled() && r.isDefaultAction()) {
+                    userModel.addRequiredAction(r.getAlias());
+                }
             }
         }
 

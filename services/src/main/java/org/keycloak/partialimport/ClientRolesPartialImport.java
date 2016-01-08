@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -32,10 +32,11 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponse;
 
 /**
+ * Partial Import handler for Client Roles.
  *
- * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class ClientRolesPartialImport implements PartialImport<RoleRepresentation> {
+public class ClientRolesPartialImport {
     private final Map<String, Set<RoleRepresentation>> toOverwrite = new HashMap<>();
     private final Map<String, Set<RoleRepresentation>> toSkip = new HashMap<>();
 
@@ -94,44 +95,16 @@ public class ClientRolesPartialImport implements PartialImport<RoleRepresentatio
         return ResourceType.CLIENT_ROLE;
     }
 
-    public void overwrite(RealmModel realm, KeycloakSession session, String clientId, RoleRepresentation roleRep) {
-        ClientModel client = realm.getClientByClientId(clientId);
-        checkForComposite(roleRep);
-        RoleModel role = client.getRole(getName(roleRep));
-        checkForOverwriteComposite(role);
-        RealmRolesPartialImport.RoleHelper helper = new RealmRolesPartialImport.RoleHelper(realm);
-//        helper.updateRole(roleRep, role);
-    }
-
     public void deleteRole(RealmModel realm, String clientId, RoleRepresentation roleRep) {
         ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            // client might have been removed as part of this partial import
+            return;
+        }
         RoleModel role = client.getRole(getName(roleRep));
         client.removeRole(role);
     }
 
-    private void checkForComposite(RoleRepresentation roleRep) {
-        if (roleRep.isComposite()) {
-            throw new IllegalArgumentException("Composite role '" + getName(roleRep) + "' can not be partially imported");
-        }
-    }
-
-    private void checkForOverwriteComposite(RoleModel role) {
-        if (role.isComposite()) {
-            throw new IllegalArgumentException("Composite role '" + role.getName() + "' can not be overwritten.");
-        }
-    }
-
-    public void create(RealmModel realm, KeycloakSession session, String clientId, RoleRepresentation roleRep) {
-        ClientModel client = realm.getClientByClientId(clientId);
-        if (client == null) {
-            throw new IllegalStateException("Client '" + clientId + "' does not exist for client role " + getName(roleRep));
-        }
-        checkForComposite(roleRep);
-        client.addRole(getName(roleRep));
-        overwrite(realm, session, clientId, roleRep);
-    }
-
-    @Override
     public void prepare(PartialImportRepresentation partialImportRep, RealmModel realm, KeycloakSession session) throws ErrorResponseException {
         Map<String, List<RoleRepresentation>> repList = getRepList(partialImportRep);
         if (repList == null || repList.isEmpty()) return;
@@ -181,54 +154,6 @@ public class ClientRolesPartialImport implements PartialImport<RoleRepresentatio
 
     public PartialImportResult added(String clientId, String modelId, RoleRepresentation roleRep) {
         return PartialImportResult.added(getResourceType(), getCombinedName(clientId, roleRep), modelId, roleRep);
-    }
-
-    @Override
-    public PartialImportResults doImport(PartialImportRepresentation partialImportRep, RealmModel realm, KeycloakSession session) throws ErrorResponseException {
-        PartialImportResults results = new PartialImportResults();
-        Map<String, List<RoleRepresentation>> repList = getRepList(partialImportRep);
-        if ((repList == null) || repList.isEmpty()) return results;
-
-        for (String clientId : toOverwrite.keySet()) {
-            for (RoleRepresentation roleRep : toOverwrite.get(clientId)) {
-                System.out.println("overwriting " + getResourceType() + " " + getCombinedName(clientId, roleRep));
-                try {
-                    overwrite(realm, session, clientId, roleRep);
-                } catch (Exception e) {
-                    throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
-                }
-
-                String modelId = getModelId(realm, clientId);
-                results.addResult(overwritten(clientId, modelId, roleRep));
-            }
-        }
-
-        for (String clientId : toSkip.keySet()) {
-            for (RoleRepresentation roleRep : toSkip.get(clientId)) {
-                System.out.println("skipping " + getResourceType() + " " + getCombinedName(clientId, roleRep));
-                String modelId = getModelId(realm, clientId);
-                results.addResult(skipped(clientId, modelId, roleRep));
-            }
-        }
-
-        for (String clientId : repList.keySet()) {
-            for (RoleRepresentation roleRep : repList.get(clientId)) {
-                if (toOverwrite.get(clientId).contains(roleRep)) continue;
-                if (toSkip.get(clientId).contains(roleRep)) continue;
-
-                try {
-                    System.out.println("adding " + getResourceType() + " " + getCombinedName(clientId, roleRep));
-                    create(realm, session, clientId, roleRep);
-                    String modelId = getModelId(realm, clientId);
-                    results.addResult(added(clientId, modelId, roleRep));
-                } catch (Exception e) {
-                    //e.printStackTrace();
-                    throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
-                }
-            }
-        }
-
-        return results;
     }
 
     public String getModelId(RealmModel realm, String clientId) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -19,6 +19,8 @@ package org.keycloak.partialimport;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.ws.rs.core.Response;
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -26,6 +28,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
+import org.keycloak.services.ErrorResponse;
 
 /**
  * This class handles both realm roles and client roles.  It delegates to
@@ -38,9 +41,10 @@ import org.keycloak.representations.idm.RolesRepresentation;
  * importRoles() doesn't know about them.  The logic for overwrite needs to delete
  * the overwritten roles before importRoles() is called.
  *
- * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class RolesPartialImport implements PartialImport<RolesRepresentation> {
+    protected static Logger logger = Logger.getLogger(RolesPartialImport.class);
 
     private Set<RoleRepresentation> realmRolesToOverwrite;
     private Set<RoleRepresentation> realmRolesToSkip;
@@ -74,23 +78,36 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
     }
 
     @Override
+    public void removeOverwrites(RealmModel realm, KeycloakSession session) {
+        deleteClientRoleOverwrites(realm);
+        deleteRealmRoleOverwrites(realm, session);
+    }
+
+    @Override
     public PartialImportResults doImport(PartialImportRepresentation rep, RealmModel realm, KeycloakSession session) throws ErrorResponseException {
         PartialImportResults results = new PartialImportResults();
         if (!rep.hasRealmRoles() && !rep.hasClientRoles()) return results;
 
-        // finalize preparation and add results for skips and overwrites
+        // finalize preparation and add results for skips
         removeRealmRoleSkips(results, rep, realm, session);
         removeClientRoleSkips(results, rep, realm);
-        deleteRealmRoleOverwrites(results, realm, session);
-        deleteClientRoleOverwrites(results, realm);
         if (rep.hasRealmRoles()) setUniqueIds(rep.getRoles().getRealm());
         if (rep.hasClientRoles()) setUniqueIds(rep.getRoles().getClient());
 
-        RepresentationToModel.importRoles(rep.getRoles(), realm);
+        try {
+            RepresentationToModel.importRoles(rep.getRoles(), realm);
+        } catch (Exception e) {
+            logger.error("Error importing roles", e);
+            throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
+        }
 
         // add "add" results for new roles created
         realmRoleAdds(results, rep, realm, session);
         clientRoleAdds(results, rep, realm);
+
+        // add "overwritten" results for roles overwritten
+        addResultsForOverwrittenRealmRoles(results, realm, session);
+        addResultsForOverwrittenClientRoles(results, realm);
 
         return results;
     }
@@ -136,22 +153,38 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
         }
     }
 
-    private void deleteRealmRoleOverwrites(PartialImportResults results, RealmModel realm, KeycloakSession session) {
+    private void deleteRealmRoleOverwrites(RealmModel realm, KeycloakSession session) {
         if (isEmpty(realmRolesToOverwrite)) return;
 
         for (RoleRepresentation roleRep : realmRolesToOverwrite) {
-            realmRolesPI.deleteRole(realm, roleRep);
+            realmRolesPI.remove(realm, session, roleRep);
+        }
+    }
+
+    private void addResultsForOverwrittenRealmRoles(PartialImportResults results, RealmModel realm, KeycloakSession session) {
+        if (isEmpty(realmRolesToOverwrite)) return;
+
+        for (RoleRepresentation roleRep : realmRolesToOverwrite) {
             String modelId = realmRolesPI.getModelId(realm, session, roleRep);
             results.addResult(realmRolesPI.overwritten(modelId, roleRep));
         }
     }
 
-    private void deleteClientRoleOverwrites(PartialImportResults results, RealmModel realm) {
+    private void deleteClientRoleOverwrites(RealmModel realm) {
         if (isEmpty(clientRolesToOverwrite)) return;
 
         for (String clientId : clientRolesToOverwrite.keySet()) {
             for (RoleRepresentation roleRep : clientRolesToOverwrite.get(clientId)) {
                 clientRolesPI.deleteRole(realm, clientId, roleRep);
+            }
+        }
+    }
+
+    private void addResultsForOverwrittenClientRoles(PartialImportResults results, RealmModel realm) {
+        if (isEmpty(clientRolesToOverwrite)) return;
+
+        for (String clientId : clientRolesToOverwrite.keySet()) {
+            for (RoleRepresentation roleRep : clientRolesToOverwrite.get(clientId)) {
                 String modelId = clientRolesPI.getModelId(realm, clientId);
                 results.addResult(clientRolesPI.overwritten(clientId, modelId, roleRep));
             }
@@ -176,7 +209,6 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
             if (realmRolesToOverwrite.contains(roleRep)) continue;
             if (realmRolesToSkip.contains(roleRep)) continue;
 
-            //System.out.println("adding " + realmRolesPI.getResourceType() + " " + realmRolesPI.getName(roleRep));
             String modelId = realmRolesPI.getModelId(realm, session, roleRep);
             results.addResult(realmRolesPI.added(modelId, roleRep));
         }
@@ -193,7 +225,6 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
                 if (clientRolesToOverwrite.get(clientId).contains(roleRep)) continue;
                 if (clientRolesToSkip.get(clientId).contains(roleRep)) continue;
 
-                //System.out.println("adding " + clientRolesPI.getResourceType() + " " + clientRolesPI.getCombinedName(clientId, roleRep));
                 String modelId = clientRolesPI.getModelId(realm, clientId);
                 results.addResult(clientRolesPI.added(clientId, modelId, roleRep));
             }

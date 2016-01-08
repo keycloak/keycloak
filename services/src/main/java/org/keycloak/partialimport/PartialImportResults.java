@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -21,15 +21,16 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
+ * Aggregates all the PartialImportResult objects.
+ * These results are used in the admin UI and for creating admin events.
  *
- * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class PartialImportResults {
 
     private final Set<PartialImportResult> importResults = new HashSet<>();
 
     public void addResult(PartialImportResult result) {
-        //System.out.println("PartialImportResults: add " + result.getResourceName() + " action=" + result.getAction());
         importResults.add(result);
     }
 
@@ -49,7 +50,6 @@ public class PartialImportResults {
     public int getOverwritten() {
         int overwritten = 0;
         for (PartialImportResult result : importResults) {
-            //System.out.println("action=" + result.getAction());
             if (result.getAction() == Action.OVERWRITTEN) overwritten++;
         }
 

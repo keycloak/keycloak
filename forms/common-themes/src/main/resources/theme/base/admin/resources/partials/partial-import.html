@@ -86,6 +86,7 @@
         </div>
 
         <div class="form-group" data-ng-show="hasResults()">
+            {{successMessage()}}
             <table class="table table-striped table-bordered">
                 <thead>
                     <tr>
@@ -95,26 +96,23 @@
                         <th>Id</th>
                     </tr>
                 </thead>
-                <tfoot>
-                    <tr>
-                        <td>
-                            <div class="table-nav">
-                                <button data-ng-click="setFirstPage()" class="first" ng-disabled="">First page</button>
-                                <button data-ng-click="setPreviousPage()" class="prev" ng-disabled="!hasPrevious()">Previous page</button>
-                                <button data-ng-click="setNextPage()" class="next" ng-disabled="!hasNext()">Next page</button>
-                            </div>
-                        </td>
-                    </tr>
-                </tfoot>
                 <tbody>
                     <tr ng-repeat="result in resultsPage()" >
-                        <td>{{result.action}}</td>
+                        <td ng-show="result.action == 'OVERWRITTEN'"><span class="label label-danger">{{result.action}}</span></td>
+                        <td ng-show="result.action == 'SKIPPED'"><span class="label label-warning">{{result.action}}</span></td>
+                        <td ng-show="result.action == 'ADDED'"><span class="label label-success">{{result.action}}</span></td>
                         <td>{{result.resourceType}}</td>
                         <td>{{result.resourceName}}</td>
                         <td>{{result.id}}</td>
                     </tr>
                 </tbody>
             </table>
+            
+            <div class="table-nav">
+                <button data-ng-click="setFirstPage()" class="first" ng-disabled="">First page</button>
+                <button data-ng-click="setPreviousPage()" class="prev" ng-disabled="!hasPrevious()">Previous page</button>
+                <button data-ng-click="setNextPage()" class="next" ng-disabled="!hasNext()">Next page</button>
+            </div>
         </div>
     </form>
 </div>

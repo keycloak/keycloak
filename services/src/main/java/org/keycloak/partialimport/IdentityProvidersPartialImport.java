@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -27,8 +27,9 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 
 /**
+ * PartialImport handler for Identitiy Providers.
  *
- * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class IdentityProvidersPartialImport extends AbstractPartialImport<IdentityProviderRepresentation> {
 
@@ -63,12 +64,7 @@ public class IdentityProvidersPartialImport extends AbstractPartialImport<Identi
     }
 
     @Override
-    public void overwrite(RealmModel realm, KeycloakSession session, IdentityProviderRepresentation idpRep) {
-        remove(realm, idpRep);
-        create(realm, session, idpRep);
-    }
-
-    protected void remove(RealmModel realm, IdentityProviderRepresentation idpRep) {
+    public void remove(RealmModel realm, KeycloakSession session, IdentityProviderRepresentation idpRep) {
         realm.removeIdentityProviderByAlias(getName(idpRep));
     }
 

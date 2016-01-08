@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -21,11 +21,12 @@ import javax.ws.rs.core.Response;
 
 
 /**
+ * An exception that can hold a Response object.
  *
- * @author Stan Silvert ssilvert@redhat.com (C) 2015 Red Hat Inc.
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class ErrorResponseException extends Exception {
-    private Response response;
+    private final Response response;
 
     public ErrorResponseException(Response response) {
         this.response = response;

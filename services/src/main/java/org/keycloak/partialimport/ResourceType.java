@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -18,12 +18,18 @@
 package org.keycloak.partialimport;
 
 /**
+ * Enum for each resource type that can be partially imported.
  *
- * @author ssilvert
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public enum ResourceType {
     USER, CLIENT, IDP, REALM_ROLE, CLIENT_ROLE;
 
+    /**
+     * Used to create the admin path in events.
+     *
+     * @return The resource portion of the path.
+     */
     public String getPath() {
         switch(this) {
             case USER: return "users";
