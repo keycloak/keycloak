@@ -65,8 +65,15 @@ public class OAuthRedirectUriTest {
             ClientModel installedApp3 = KeycloakModelUtils.createClient(appRealm, "test-wildcard");
             installedApp3.setEnabled(true);
             installedApp3.addRedirectUri("http://example.com/foo/*");
+            installedApp3.addRedirectUri("http://with-dash.example.com/foo/*");
             installedApp3.addRedirectUri("http://localhost:8081/foo/*");
             installedApp3.setSecret("password");
+
+            ClientModel installedApp4 = KeycloakModelUtils.createClient(appRealm, "test-dash");
+            installedApp4.setEnabled(true);
+            installedApp4.addRedirectUri("http://with-dash.example.com");
+            installedApp4.addRedirectUri("http://with-dash.example.com/foo");
+            installedApp4.setSecret("password");
         }
     });
 
@@ -214,6 +221,27 @@ public class OAuthRedirectUriTest {
         checkRedirectUri("http://localhost:8081/foo/bar", true, true);
         checkRedirectUri("http://example.com/foobar", false);
         checkRedirectUri("http://localhost:8081/foobar", false, true);
+    }
+
+    @Test
+    public void testDash() throws IOException {
+        oauth.clientId("test-dash");
+
+        checkRedirectUri("http://with-dash.example.com/foo", true);
+    }
+
+    @Test
+    public void testDifferentCaseInHostname() throws IOException {
+        oauth.clientId("test-dash");
+
+        checkRedirectUri("http://with-dash.example.com", true);
+        checkRedirectUri("http://wiTh-dAsh.example.com", true);
+        checkRedirectUri("http://with-dash.example.com/foo", true);
+        checkRedirectUri("http://wiTh-dAsh.example.com/foo", true);
+        checkRedirectUri("http://with-dash.eXampLe.com/foo", true);
+        checkRedirectUri("http://wiTh-dAsh.eXampLe.com/foo", true);
+        checkRedirectUri("http://wiTh-dAsh.eXampLe.com/Foo", false);
+        checkRedirectUri("http://wiTh-dAsh.eXampLe.com/foO", false);
     }
 
     @Test
