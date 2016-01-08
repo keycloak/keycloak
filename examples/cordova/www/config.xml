@@ -12,4 +12,9 @@
     <gap:plugin name="cordova-plugin-whitelist" version="1.0.0" source="npm" />
 
     <access origin="*"/>
+
+    <allow-navigation href="*" />
+
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
 </widget>
