@@ -11,7 +11,7 @@ public abstract class SAMLServletWithLogout extends AbstractPageWithInjectedUrl 
 
     public void logout() {
         driver.navigate().to(getUriBuilder().queryParam("GLO", "true").build().toASCIIString());
-        getUriBuilder().replaceQueryParam("GLO", null);
+        getUriBuilder().replaceQueryParam("GLO", new Object());
         pause(300);
     }
 }

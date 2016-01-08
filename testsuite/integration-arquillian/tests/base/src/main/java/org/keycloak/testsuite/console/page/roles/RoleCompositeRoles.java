@@ -53,7 +53,7 @@ public class RoleCompositeRoles extends Form {
         Map<String, List<String>> clientRoles = new HashMap<>();
         for (String client : getSelectValues(clientSelect)) {
             clientSelect.selectByVisibleText(client);
-            clientRoles.put(client, new ArrayList(getSelectValues(assignedClientRolesSelect)));
+            clientRoles.put(client, new ArrayList<>(getSelectValues(assignedClientRolesSelect)));
         }
         composites.setClient(clientRoles);
         return composites;
