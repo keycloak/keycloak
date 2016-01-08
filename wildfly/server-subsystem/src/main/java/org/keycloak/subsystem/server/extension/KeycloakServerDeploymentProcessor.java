@@ -60,6 +60,7 @@ public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcesso
             st.addDependency(cacheContainerService.append("realms"));
             st.addDependency(cacheContainerService.append("users"));
             st.addDependency(cacheContainerService.append("sessions"));
+            st.addDependency(cacheContainerService.append("offlineSessions"));
             st.addDependency(cacheContainerService.append("loginFailures"));
         }
     }

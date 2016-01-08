@@ -263,7 +263,7 @@ public class OfflineTokenTest {
 
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                manager.getSession().sessions().removeExpiredUserSessions(appRealm);
+                manager.getSession().sessions().removeExpired(appRealm);
             }
 
         });

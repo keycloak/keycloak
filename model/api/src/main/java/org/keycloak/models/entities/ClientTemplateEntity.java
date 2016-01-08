@@ -15,8 +15,17 @@ public class ClientTemplateEntity extends AbstractIdentifiableEntity {
     private String realmId;
     private String protocol;
     private boolean fullScopeAllowed;
-    private List<String> scopeIds = new ArrayList<String>();
-    private List<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
+    private boolean bearerOnly;
+    private boolean consentRequired;
+    private boolean standardFlowEnabled;
+    private boolean implicitFlowEnabled;
+    private boolean directAccessGrantsEnabled;
+    private boolean serviceAccountsEnabled;
+    private boolean publicClient;
+    private boolean frontchannelLogout;
+    private List<String> scopeIds = new ArrayList<>();
+    private List<ProtocolMapperEntity> protocolMappers = new ArrayList<>();
+    private Map<String, String> attributes = new HashMap<>();
 
     public String getName() {
         return name;
@@ -72,6 +81,78 @@ public class ClientTemplateEntity extends AbstractIdentifiableEntity {
 
     public void setScopeIds(List<String> scopeIds) {
         this.scopeIds = scopeIds;
+    }
+
+    public boolean isBearerOnly() {
+        return bearerOnly;
+    }
+
+    public void setBearerOnly(boolean bearerOnly) {
+        this.bearerOnly = bearerOnly;
+    }
+
+    public boolean isConsentRequired() {
+        return consentRequired;
+    }
+
+    public void setConsentRequired(boolean consentRequired) {
+        this.consentRequired = consentRequired;
+    }
+
+    public boolean isStandardFlowEnabled() {
+        return standardFlowEnabled;
+    }
+
+    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
+        this.standardFlowEnabled = standardFlowEnabled;
+    }
+
+    public boolean isImplicitFlowEnabled() {
+        return implicitFlowEnabled;
+    }
+
+    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
+        this.implicitFlowEnabled = implicitFlowEnabled;
+    }
+
+    public boolean isDirectAccessGrantsEnabled() {
+        return directAccessGrantsEnabled;
+    }
+
+    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
+        this.directAccessGrantsEnabled = directAccessGrantsEnabled;
+    }
+
+    public boolean isServiceAccountsEnabled() {
+        return serviceAccountsEnabled;
+    }
+
+    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
+        this.serviceAccountsEnabled = serviceAccountsEnabled;
+    }
+
+    public boolean isPublicClient() {
+        return publicClient;
+    }
+
+    public void setPublicClient(boolean publicClient) {
+        this.publicClient = publicClient;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
+
+    public boolean isFrontchannelLogout() {
+        return frontchannelLogout;
+    }
+
+    public void setFrontchannelLogout(boolean frontchannelLogout) {
+        this.frontchannelLogout = frontchannelLogout;
     }
 }
 

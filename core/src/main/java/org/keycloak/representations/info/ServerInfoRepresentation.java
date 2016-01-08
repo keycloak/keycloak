@@ -24,6 +24,7 @@ public class ServerInfoRepresentation {
 
     private Map<String, List<ProtocolMapperTypeRepresentation>> protocolMapperTypes;
     private Map<String, List<ProtocolMapperRepresentation>> builtinProtocolMappers;
+    private Map<String, List<ClientInstallationRepresentation>> clientInstallations;
 
     private Map<String, List<String>> enums;
 
@@ -104,5 +105,13 @@ public class ServerInfoRepresentation {
 
     public void setEnums(Map<String, List<String>> enums) {
         this.enums = enums;
+    }
+
+    public Map<String, List<ClientInstallationRepresentation>> getClientInstallations() {
+        return clientInstallations;
+    }
+
+    public void setClientInstallations(Map<String, List<ClientInstallationRepresentation>> clientInstallations) {
+        this.clientInstallations = clientInstallations;
     }
 }

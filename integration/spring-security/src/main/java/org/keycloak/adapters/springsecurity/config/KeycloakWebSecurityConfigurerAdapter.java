@@ -1,6 +1,8 @@
 package org.keycloak.adapters.springsecurity.config;
 
-import org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean;
+import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.KeycloakConfigResolver;
+import org.keycloak.adapters.springsecurity.AdapterDeploymentContextFactoryBean;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationEntryPoint;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakLogoutHandler;
@@ -8,6 +10,7 @@ import org.keycloak.adapters.springsecurity.filter.KeycloakAuthenticationProcess
 import org.keycloak.adapters.springsecurity.filter.KeycloakCsrfRequestMatcher;
 import org.keycloak.adapters.springsecurity.filter.KeycloakPreAuthActionsFilter;
 import org.keycloak.adapters.springsecurity.management.HttpSessionManager;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.Resource;
@@ -35,10 +38,20 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
 
     @Value("${keycloak.configurationFile:WEB-INF/keycloak.json}")
     private Resource keycloakConfigFileResource;
+    @Autowired(required = false)
+    private KeycloakConfigResolver keycloakConfigResolver;
 
     @Bean
-    protected AdapterDeploymentContextBean adapterDeploymentContextBean() {
-        return new AdapterDeploymentContextBean(keycloakConfigFileResource);
+    protected AdapterDeploymentContext adapterDeploymentContext() throws Exception {
+        AdapterDeploymentContextFactoryBean factoryBean;
+        if (keycloakConfigResolver != null) {
+             factoryBean = new AdapterDeploymentContextFactoryBean(keycloakConfigResolver);
+        }
+        else {
+            factoryBean = new AdapterDeploymentContextFactoryBean(keycloakConfigFileResource);
+        }
+        factoryBean.afterPropertiesSet();
+        return factoryBean.getObject();
     }
 
     protected AuthenticationEntryPoint authenticationEntryPoint() {
@@ -70,8 +83,8 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
         return new HttpSessionManager();
     }
 
-    protected KeycloakLogoutHandler keycloakLogoutHandler() {
-        return new KeycloakLogoutHandler(adapterDeploymentContextBean());
+    protected KeycloakLogoutHandler keycloakLogoutHandler() throws Exception {
+        return new KeycloakLogoutHandler(adapterDeploymentContext());
     }
 
     protected abstract SessionAuthenticationStrategy sessionAuthenticationStrategy();

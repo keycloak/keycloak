@@ -4,9 +4,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
-import org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
 import org.keycloak.adapters.springsecurity.account.KeycloakRole;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
@@ -45,7 +46,7 @@ public class KeycloakAuthenticationProcessingFilterTest {
     private AuthenticationManager authenticationManager;
 
     @Mock
-    private AdapterDeploymentContextBean adapterDeploymentContextBean;
+    private AdapterDeploymentContext adapterDeploymentContext;
 
     @Mock
     private FilterChain chain;
@@ -85,8 +86,8 @@ public class KeycloakAuthenticationProcessingFilterTest {
         filter.setAuthenticationSuccessHandler(successHandler);
         filter.setAuthenticationFailureHandler(failureHandler);
 
-        when(applicationContext.getBean(eq(AdapterDeploymentContextBean.class))).thenReturn(adapterDeploymentContextBean);
-        when(adapterDeploymentContextBean.getDeployment()).thenReturn(keycloakDeployment);
+        when(applicationContext.getBean(eq(AdapterDeploymentContext.class))).thenReturn(adapterDeploymentContext);
+        when(adapterDeploymentContext.resolveDeployment(any(HttpFacade.class))).thenReturn(keycloakDeployment);
         when(keycloakAccount.getPrincipal()).thenReturn(
                 new KeycloakPrincipal<KeycloakSecurityContext>(UUID.randomUUID().toString(), keycloakSecurityContext));
 

@@ -4,11 +4,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.Config;
+import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.mappers.MapperConfigValidationException;
+import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.mappers.UserFederationMapperFactory;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
+import org.keycloak.models.UserFederationProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.UserFederationMapperSyncConfigRepresentation;
 
@@ -23,9 +28,21 @@ public abstract class AbstractLDAPFederationMapperFactory implements UserFederat
     // Used to map roles from LDAP to UserModel users
     public static final String ROLE_MAPPER_CATEGORY = "Role Mapper";
 
+
+    // Used to map group from LDAP to UserModel users
+    public static final String GROUP_MAPPER_CATEGORY = "Group Mapper";
+
     @Override
     public void init(Config.Scope config) {
     }
+
+    @Override
+    public UserFederationMapper create(KeycloakSession session) {
+        return new LDAPFederationMapperBridge(this);
+    }
+
+    // Used just by LDAPFederationMapperBridge.
+    protected abstract AbstractLDAPFederationMapper createMapper(UserFederationMapperModel mapperModel, LDAPFederationProvider federationProvider, RealmModel realm);
 
     @Override
     public String getFederationProviderType() {

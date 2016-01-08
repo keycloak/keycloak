@@ -115,7 +115,7 @@ public abstract class AuthorizationEndpointBase {
                 else
                     return protocol.sendError(clientSession, Error.PASSIVE_INTERACTION_REQUIRED);
             } else {
-                return processor.finishAuthentication();
+                return processor.finishAuthentication(protocol);
             }
         } else {
             try {

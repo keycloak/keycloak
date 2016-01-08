@@ -66,6 +66,10 @@ public class LDAPObject {
         readOnlyAttributeNames.add(readOnlyAttribute.toLowerCase());
     }
 
+    public void removeReadOnlyAttributeName(String readOnlyAttribute) {
+        readOnlyAttributeNames.remove(readOnlyAttribute.toLowerCase());
+    }
+
     public String getRdnAttributeName() {
         return rdnAttributeName;
     }

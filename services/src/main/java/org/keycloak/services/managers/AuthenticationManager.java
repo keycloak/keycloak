@@ -382,6 +382,19 @@ public class AuthenticationManager {
                                                 ClientSessionModel clientSession,
                                                 HttpRequest request, UriInfo uriInfo, ClientConnection clientConnection,
                                                 EventBuilder event) {
+        LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
+        protocol.setRealm(realm)
+                .setHttpHeaders(request.getHttpHeaders())
+                .setUriInfo(uriInfo)
+                .setEventBuilder(event);
+        return redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection, event, protocol);
+
+    }
+
+    public static Response redirectAfterSuccessfulFlow(KeycloakSession session, RealmModel realm, UserSessionModel userSession,
+                                                       ClientSessionModel clientSession,
+                                                       HttpRequest request, UriInfo uriInfo, ClientConnection clientConnection,
+                                                       EventBuilder event, LoginProtocol protocol) {
         Cookie sessionCookie = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_SESSION_COOKIE);
         if (sessionCookie != null) {
 
@@ -405,12 +418,6 @@ public class AuthenticationManager {
         createLoginCookie(realm, userSession.getUser(), userSession, uriInfo, clientConnection);
         if (userSession.getState() != UserSessionModel.State.LOGGED_IN) userSession.setState(UserSessionModel.State.LOGGED_IN);
         if (userSession.isRememberMe()) createRememberMeCookie(realm, userSession.getUser().getUsername(), uriInfo, clientConnection);
-        LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
-        protocol.setRealm(realm)
-                .setHttpHeaders(request.getHttpHeaders())
-                .setUriInfo(uriInfo)
-                .setEventBuilder(event);
-        RestartLoginCookie.expireRestartCookie(realm, clientConnection, uriInfo);
         return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));
 
     }

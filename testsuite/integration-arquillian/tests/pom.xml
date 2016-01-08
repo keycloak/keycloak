@@ -91,6 +91,7 @@
                             <auth.server.management.port.jmx>${auth.server.management.port.jmx}</auth.server.management.port.jmx>
                             <auth.server.ssl.required>${auth.server.ssl.required}</auth.server.ssl.required>
                             <startup.timeout.sec>${startup.timeout.sec}</startup.timeout.sec>
+                            <jboss.server.config.dir>${project.build.directory}/undertow-configuration</jboss.server.config.dir>
                         </systemPropertyVariables>
                         <properties>
                             <property>
@@ -123,6 +124,31 @@
                                 </artifactItems>
                                 <outputDirectory>${containers.home}</outputDirectory>
                                 <overWriteIfNewer>true</overWriteIfNewer>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>2.7</version>
+                    <executions>
+                        <execution>
+                            <id>copy-admin-user-json-file</id>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/undertow-configuration</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>src/test/resources</directory>
+                                        <includes>
+                                            <include>keycloak-add-user.json</include>
+                                        </includes>
+                                        <filtering>true</filtering>
+                                    </resource>
+                                </resources>
                             </configuration>
                         </execution>
                     </executions>
@@ -413,6 +439,31 @@
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
+                        <plugin>
+                            <artifactId>maven-resources-plugin</artifactId>
+                            <version>2.7</version>
+                            <executions>
+                                <execution>
+                                    <id>copy-admin-user-json-file</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>copy-resources</goal>
+                                    </goals>
+                                    <configuration>
+                                        <outputDirectory>${auth.server.wildfly.home}/standalone/configuration</outputDirectory>
+                                        <resources>
+                                            <resource>
+                                                <directory>src/test/resources</directory>
+                                                <includes>
+                                                    <include>keycloak-add-user.json</include>
+                                                </includes>
+                                                <filtering>true</filtering>
+                                            </resource>
+                                        </resources>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
                     </plugins>
                 </pluginManagement>
             </build>
@@ -472,6 +523,31 @@
                                     <adapter.test.props>${adapter.test.props}</adapter.test.props>
                                 </systemPropertyVariables>
                             </configuration>
+                        </plugin>
+                        <plugin>
+                            <artifactId>maven-resources-plugin</artifactId>
+                            <version>2.7</version>
+                            <executions>
+                                <execution>
+                                    <id>copy-admin-user-json-file</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>copy-resources</goal>
+                                    </goals>
+                                    <configuration>
+                                        <outputDirectory>${auth.server.eap6.home}/standalone/configuration</outputDirectory>
+                                        <resources>
+                                            <resource>
+                                                <directory>src/test/resources</directory>
+                                                <includes>
+                                                    <include>keycloak-add-user.json</include>
+                                                </includes>
+                                                <filtering>true</filtering>
+                                            </resource>
+                                        </resources>
+                                    </configuration>
+                                </execution>
+                            </executions>
                         </plugin>
                     </plugins>
                 </pluginManagement>

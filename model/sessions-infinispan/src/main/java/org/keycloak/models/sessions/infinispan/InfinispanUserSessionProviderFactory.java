@@ -47,7 +47,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             Cache<String, SessionEntity> cache = connections.getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
             Cache<String, SessionEntity> offlineSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME);
             Cache<LoginFailureKey, LoginFailureEntity> loginFailures = connections.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME);
-            return new InfinispanUserSessionProvider(session, cache, offlineSessionsCache, loginFailures);
+
+            return isStreamMode() ? new InfinispanUserSessionProvider(session, cache, offlineSessionsCache, loginFailures) : new CompatInfinispanUserSessionProvider(session, cache, offlineSessionsCache, loginFailures);
         } else {
             return compatProviderFactory.create(session);
         }
@@ -145,6 +146,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             }
         }
         return false;
+    }
+
+    private boolean isStreamMode() {
+        return Version.getVersionShort() >= Version.getVersionShort("8.1.0.Final");
     }
 
 }

@@ -34,7 +34,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         auth.requireCreate();
 
         try {
-            ClientModel clientModel = ClientManager.createClient(session, session.getContext().getRealm(), client, true);
+            ClientModel clientModel = RepresentationToModel.createClient(session, session.getContext().getRealm(), client, true);
             if (client.getClientId() == null) {
                 clientModel.setClientId(clientModel.getId());
             }

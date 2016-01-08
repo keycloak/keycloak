@@ -3,6 +3,9 @@ package org.keycloak.testsuite.admin;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ServerInfoResource;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -88,6 +91,42 @@ public class RealmTest extends AbstractClientTest {
         realm.remove();
 
         assertNames(keycloak.realms().findAll(), "master", "test");
+    }
+
+    @Test
+    public void loginAfterRemoveRealm() {
+        realm.remove();
+
+        ServerInfoResource serverInfoResource = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID).serverInfo();
+        serverInfoResource.getInfo();
+    }
+
+    /**
+     * KEYCLOAK-1990 1991
+     * @throws Exception
+     */
+    @Test
+    public void renameRealmTest() throws Exception {
+        Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
+        RealmRepresentation realm1 = new RealmRepresentation();
+        realm1.setRealm("test-immutable");
+        keycloak.realms().create(realm1);
+        realm1 = keycloak.realms().realm("test-immutable").toRepresentation();
+        realm1.setRealm("test-immutable-old");
+        keycloak.realms().realm("test-immutable").update(realm1);
+        realm1 = keycloak.realms().realm("test-immutable-old").toRepresentation();
+
+        RealmRepresentation realm2 = new RealmRepresentation();
+        realm2.setRealm("test-immutable");
+        keycloak.realms().create(realm2);
+        realm2 = keycloak.realms().realm("test-immutable").toRepresentation();
+
+        keycloak.realms().realm("test-immutable-old").remove();
+        keycloak.realms().realm("test-immutable").remove();
+
+
+
+
     }
 
     @Test

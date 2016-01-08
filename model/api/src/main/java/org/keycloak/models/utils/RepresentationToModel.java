@@ -1,5 +1,6 @@
 package org.keycloak.models.utils;
 
+import org.keycloak.Config;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.Constants;
 import org.keycloak.common.util.Base64;
@@ -85,6 +86,8 @@ public class RepresentationToModel {
         convertDeprecatedApplications(session, rep);
 
         newRealm.setName(rep.getRealm());
+        if (rep.getDisplayName() != null) newRealm.setDisplayName(rep.getDisplayName());
+        if (rep.getDisplayNameHtml() != null) newRealm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
         if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.getMaxFailureWaitSeconds() != null) newRealm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
@@ -591,10 +594,19 @@ public class RepresentationToModel {
         }
     }
 
+    public static void renameRealm(RealmModel realm, String name) {
+        if (name.equals(realm.getName())) return;
+        ClientModel masterApp = realm.getMasterAdminClient();
+        masterApp.setClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(name));
+        realm.setName(name);
+    }
+
     public static void updateRealm(RealmRepresentation rep, RealmModel realm) {
         if (rep.getRealm() != null) {
-            realm.setName(rep.getRealm());
+            renameRealm(realm, rep.getRealm());
         }
+        if (rep.getDisplayName() != null) realm.setDisplayName(rep.getDisplayName());
+        if (rep.getDisplayNameHtml() != null) realm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
         if (rep.isBruteForceProtected() != null) realm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
@@ -899,7 +911,7 @@ public class RepresentationToModel {
             }
         }
         if (resourceRep.isUseTemplateConfig() != null) client.setUseTemplateConfig(resourceRep.isUseTemplateConfig());
-        else client.setUseTemplateConfig(resourceRep.getClientTemplate() != null);
+        else client.setUseTemplateConfig(false); // default to false for now
 
         if (resourceRep.isUseTemplateScope() != null) client.setUseTemplateScope(resourceRep.isUseTemplateScope());
         else client.setUseTemplateScope(resourceRep.getClientTemplate() != null);
@@ -1018,6 +1030,23 @@ public class RepresentationToModel {
                 client.addProtocolMapper(toModel(mapper));
             }
         }
+        if (resourceRep.isBearerOnly() != null) client.setBearerOnly(resourceRep.isBearerOnly());
+        if (resourceRep.isConsentRequired() != null) client.setConsentRequired(resourceRep.isConsentRequired());
+
+        if (resourceRep.isStandardFlowEnabled() != null) client.setStandardFlowEnabled(resourceRep.isStandardFlowEnabled());
+        if (resourceRep.isImplicitFlowEnabled() != null) client.setImplicitFlowEnabled(resourceRep.isImplicitFlowEnabled());
+        if (resourceRep.isDirectAccessGrantsEnabled() != null) client.setDirectAccessGrantsEnabled(resourceRep.isDirectAccessGrantsEnabled());
+        if (resourceRep.isServiceAccountsEnabled() != null) client.setServiceAccountsEnabled(resourceRep.isServiceAccountsEnabled());
+
+        if (resourceRep.isPublicClient() != null) client.setPublicClient(resourceRep.isPublicClient());
+        if (resourceRep.isFrontchannelLogout() != null) client.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
+
+        if (resourceRep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : resourceRep.getAttributes().entrySet()) {
+                client.setAttribute(entry.getKey(), entry.getValue());
+            }
+        }
+
 
         return client;
     }
@@ -1031,6 +1060,23 @@ public class RepresentationToModel {
 
 
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
+
+        if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
+        if (rep.isConsentRequired() != null) resource.setConsentRequired(rep.isConsentRequired());
+        if (rep.isStandardFlowEnabled() != null) resource.setStandardFlowEnabled(rep.isStandardFlowEnabled());
+        if (rep.isImplicitFlowEnabled() != null) resource.setImplicitFlowEnabled(rep.isImplicitFlowEnabled());
+        if (rep.isDirectAccessGrantsEnabled() != null) resource.setDirectAccessGrantsEnabled(rep.isDirectAccessGrantsEnabled());
+        if (rep.isServiceAccountsEnabled() != null) resource.setServiceAccountsEnabled(rep.isServiceAccountsEnabled());
+        if (rep.isPublicClient() != null) resource.setPublicClient(rep.isPublicClient());
+        if (rep.isFullScopeAllowed() != null) resource.setFullScopeAllowed(rep.isFullScopeAllowed());
+        if (rep.isFrontchannelLogout() != null) resource.setFrontchannelLogout(rep.isFrontchannelLogout());
+
+        if (rep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
+                resource.setAttribute(entry.getKey(), entry.getValue());
+            }
+        }
+
     }
 
     public static long getClaimsMask(ClaimRepresentation rep) {

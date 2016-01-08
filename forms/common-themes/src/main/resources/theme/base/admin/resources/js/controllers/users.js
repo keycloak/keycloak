@@ -644,6 +644,15 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
                 instance.config.updateProfileFirstLogin = true;
                 instance.config.allowKerberosAuthentication = true;
             }
+
+            if (providerFactory.properties) {
+
+                for (var i = 0; i < providerFactory.properties.length; i++) {
+                    var configProperty = providerFactory.properties[i];
+                    instance.config[configProperty.name] = configProperty.defaultValue;
+                }
+            }
+
         } else {
             $scope.fullSyncEnabled = (instance.fullSyncPeriod && instance.fullSyncPeriod > 0);
             $scope.changedSyncEnabled = (instance.changedSyncPeriod && instance.changedSyncPeriod > 0);
@@ -1046,8 +1055,8 @@ module.controller('UserFederationMapperCtrl', function($scope, realm,  provider,
     function triggerMapperSync(direction) {
         UserFederationMapperSync.save({ direction: direction, realm: realm.realm, provider: provider.id, mapperId : $scope.mapper.id }, {}, function(syncResult) {
             Notifications.success("Data synced successfully. " + syncResult.status);
-        }, function() {
-            Notifications.error("Error during sync of data");
+        }, function(error) {
+            Notifications.error(error.data.errorMessage);
         });
     }
 
@@ -1066,13 +1075,7 @@ module.controller('UserFederationMapperCreateCtrl', function($scope, realm, prov
 
     $scope.$watch('mapperType', function() {
         if ($scope.mapperType != null) {
-            $scope.mapper.config = {};
-            for ( var i = 0; i < $scope.mapperType.properties.length; i++) {
-                var property = $scope.mapperType.properties[i];
-                if (property.type === 'String' || property.type === 'boolean') {
-                    $scope.mapper.config[ property.name ] = property.defaultValue;
-                }
-            }
+            $scope.mapper.config = $scope.mapperType.defaultConfig;
         }
     }, true);
 

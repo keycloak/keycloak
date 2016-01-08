@@ -4,10 +4,8 @@ import org.keycloak.Config;
 import org.keycloak.dom.saml.v2.metadata.*;
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
@@ -80,12 +78,12 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
 
         app.setFullScopeAllowed(true);
         app.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
-        attributes.put(SamlProtocol.SAML_SERVER_SIGNATURE, SamlProtocol.ATTRIBUTE_TRUE_VALUE); // default to true
-        attributes.put(SamlProtocol.SAML_SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.toString());
-        attributes.put(SamlProtocol.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
+        attributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, SamlProtocol.ATTRIBUTE_TRUE_VALUE); // default to true
+        attributes.put(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.toString());
+        attributes.put(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
         SPSSODescriptorType spDescriptorType = CoreConfigUtil.getSPDescriptor(entity);
         if (spDescriptorType.isWantAssertionsSigned()) {
-            attributes.put(SamlProtocol.SAML_ASSERTION_SIGNATURE, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
+            attributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
         }
         String logoutPost = getLogoutLocation(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
         if (logoutPost != null) attributes.put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, logoutPost);
@@ -114,11 +112,11 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
             }
             String certPem = KeycloakModelUtils.getPemFromCertificate(cert);
             if (keyDescriptor.getUse() == KeyTypes.SIGNING) {
-                attributes.put(SamlProtocol.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
-                attributes.put(SamlProtocol.SAML_SIGNING_CERTIFICATE_ATTRIBUTE, certPem);
+                attributes.put(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
+                attributes.put(SamlConfigAttributes.SAML_SIGNING_CERTIFICATE_ATTRIBUTE, certPem);
             } else if (keyDescriptor.getUse() == KeyTypes.ENCRYPTION) {
-                attributes.put(SamlProtocol.SAML_ENCRYPT, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
-                attributes.put(SamlProtocol.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE, certPem);
+                attributes.put(SamlConfigAttributes.SAML_ENCRYPT, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
+                attributes.put(SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE, certPem);
             }
         }
 

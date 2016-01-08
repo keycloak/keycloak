@@ -9,6 +9,8 @@ import java.util.*;
 public class RealmRepresentation {
     protected String id;
     protected String realm;
+    protected String displayName;
+    protected String displayNameHtml;
     protected Integer notBefore;
     protected Boolean revokeRefreshToken;
     protected Integer accessTokenLifespan;
@@ -127,6 +129,22 @@ public class RealmRepresentation {
 
     public void setRealm(String realm) {
         this.realm = realm;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayNameHtml() {
+        return displayNameHtml;
+    }
+
+    public void setDisplayNameHtml(String displayNameHtml) {
+        this.displayNameHtml = displayNameHtml;
     }
 
     public List<UserRepresentation> getUsers() {
@@ -622,11 +640,6 @@ public class RealmRepresentation {
     public void addIdentityProvider(IdentityProviderRepresentation identityProviderRepresentation) {
         if (identityProviders == null) identityProviders = new LinkedList<>();
         identityProviders.add(identityProviderRepresentation);
-    }
-
-    @Deprecated
-    public boolean isIdentityFederationEnabled() {
-        return identityProviders != null && !identityProviders.isEmpty();
     }
 
     public List<ProtocolMapperRepresentation> getProtocolMappers() {

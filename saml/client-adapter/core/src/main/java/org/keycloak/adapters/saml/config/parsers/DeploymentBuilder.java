@@ -98,12 +98,26 @@ public class DeploymentBuilder {
 
                 }
                 if (key.isEncryption()) {
-                    KeyStore keyStore = loadKeystore(resourceLoader, key);
-                    try {
-                        PrivateKey privateKey = (PrivateKey) keyStore.getKey(key.getKeystore().getPrivateKeyAlias(), key.getKeystore().getPrivateKeyPassword().toCharArray());
-                        deployment.setDecryptionKey(privateKey);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
+                    if (key.getKeystore() != null) {
+
+                        KeyStore keyStore = loadKeystore(resourceLoader, key);
+                        try {
+                            PrivateKey privateKey = (PrivateKey) keyStore.getKey(key.getKeystore().getPrivateKeyAlias(), key.getKeystore().getPrivateKeyPassword().toCharArray());
+                            deployment.setDecryptionKey(privateKey);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        if (key.getPrivateKeyPem() == null) {
+                            throw new RuntimeException("SP signing key must have a PrivateKey defined");
+                        }
+                        try {
+                            PrivateKey privateKey = PemUtils.decodePrivateKey(key.getPrivateKeyPem().trim());
+                            deployment.setDecryptionKey(privateKey);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+
                     }
                 }
             }

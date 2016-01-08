@@ -189,4 +189,8 @@ public class LDAPQuery {
         return this.conditions;
     }
 
+    public LDAPFederationProvider getLdapProvider() {
+        return ldapFedProvider;
+    }
+
 }

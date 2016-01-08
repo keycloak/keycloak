@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.junit.rules.ExternalResource;
-import org.keycloak.testsuite.federation.LDAPTestConfiguration;
+import org.keycloak.testsuite.federation.ldap.LDAPTestConfiguration;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
 /**

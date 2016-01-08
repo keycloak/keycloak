@@ -177,17 +177,6 @@ public class MemUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public List<UserSessionModel> getUserSessionsByNote(RealmModel realm, String noteName, String noteValue) {
-        List<UserSessionModel> userSessions = new LinkedList<UserSessionModel>();
-        for (UserSessionEntity s : this.userSessions.values()) {
-            if (s.getRealm().equals(realm.getId()) && noteValue.equals(s.getNotes().get(noteName))) {
-                userSessions.add(new UserSessionAdapter(session, this, realm, s));
-            }
-        }
-        return userSessions;
-    }
-
-    @Override
     public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
         return getUserSessions(realm, client, false);
     }
@@ -230,7 +219,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public int getActiveUserSessions(RealmModel realm, ClientModel client) {
+    public long getActiveUserSessions(RealmModel realm, ClientModel client) {
         return getUserSessions(realm, client, false).size();
     }
 
@@ -287,7 +276,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public void removeExpiredUserSessions(RealmModel realm) {
+    public void removeExpired(RealmModel realm) {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
         Iterator<UserSessionEntity> itr = userSessions.values().iterator();
@@ -565,7 +554,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public int getOfflineSessionsCount(RealmModel realm, ClientModel client) {
+    public long getOfflineSessionsCount(RealmModel realm, ClientModel client) {
         return getUserSessions(realm, client, true).size();
     }
 

@@ -11,6 +11,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.naming.AuthenticationException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
@@ -173,18 +174,14 @@ public class LDAPIdentityStore implements IdentityStore {
     // *************** CREDENTIALS AND USER SPECIFIC STUFF
 
     @Override
-    public boolean validatePassword(LDAPObject user, String password) {
+    public void validatePassword(LDAPObject user, String password) throws AuthenticationException {
         String userDN = user.getDn().toString();
 
         if (logger.isTraceEnabled()) {
             logger.tracef("Using DN [%s] for authentication of user", userDN);
         }
 
-        if (operationManager.authenticate(userDN, password)) {
-            return true;
-        }
-
-        return false;
+        operationManager.authenticate(userDN, password);
     }
 
     @Override
@@ -224,15 +221,6 @@ public class LDAPIdentityStore implements IdentityStore {
 
             List<ModificationItem> modItems = new ArrayList<ModificationItem>();
             modItems.add(new ModificationItem(DirContext.REPLACE_ATTRIBUTE, unicodePwd));
-
-            // Used in ActiveDirectory to put account into "enabled" state (aka userAccountControl=512, see http://support.microsoft.com/kb/305144/en ) after password update. If value is -1, it's ignored
-            // TODO: Remove and use mapper instead
-            if (getConfig().isUserAccountControlsAfterPasswordUpdate()) {
-                BasicAttribute userAccountControl = new BasicAttribute("userAccountControl", "512");
-                modItems.add(new ModificationItem(DirContext.REPLACE_ATTRIBUTE, userAccountControl));
-
-                logger.debugf("Attribute userAccountControls will be switched to 512 after password update of user [%s]", userDN);
-            }
 
             operationManager.modifyAttributes(userDN, modItems.toArray(new ModificationItem[] {}));
         } catch (Exception e) {

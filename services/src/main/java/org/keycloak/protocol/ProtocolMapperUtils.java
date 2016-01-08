@@ -47,20 +47,6 @@ public class ProtocolMapperUtils {
         return null;
     }
 
-    public static String[] parseRole(String role) {
-        int scopeIndex = role.lastIndexOf('.');
-        if (scopeIndex > -1) {
-            String appName = role.substring(0, scopeIndex);
-            role = role.substring(scopeIndex + 1);
-            String[] rtn = {appName, role};
-            return rtn;
-        } else {
-            String[] rtn = {null, role};
-            return rtn;
-
-        }
-    }
-
     /**
      * Find the builtin locale mapper.
      *

@@ -183,14 +183,6 @@
                 </div>
                 <kc-tooltip>Does the LDAP server support pagination.</kc-tooltip>
             </div>
-            <div class="form-group clearfix" data-ng-show="instance.config.vendor === 'ad' ">
-                <label class="col-md-2 control-label" for="userAccountControlsAfterPasswordUpdate">Enable Account After Password Update</label>
-                <div class="col-md-6">
-                    <input ng-model="instance.config.userAccountControlsAfterPasswordUpdate" name="userAccountControlsAfterPasswordUpdate" id="userAccountControlsAfterPasswordUpdate" onoffswitch />
-                </div>
-                <kc-tooltip>Useful just for Active Directory. If enabled, then Keycloak will always set
-                Active Directory userAccountControl attribute to 512 after password update. This would mean that particular user will be enabled in Active Directory</kc-tooltip>
-            </div>
         </fieldset>
 
         <fieldset>

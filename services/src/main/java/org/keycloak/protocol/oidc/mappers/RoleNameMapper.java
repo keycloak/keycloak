@@ -5,6 +5,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -78,8 +79,8 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
         String role = mappingModel.getConfig().get(ROLE_CONFIG);
         String newName = mappingModel.getConfig().get(NEW_ROLE_NAME);
 
-        String[] scopedRole = ProtocolMapperUtils.parseRole(role);
-        String[] newScopedRole = ProtocolMapperUtils.parseRole(newName);
+        String[] scopedRole = KeycloakModelUtils.parseRole(role);
+        String[] newScopedRole = KeycloakModelUtils.parseRole(newName);
         String appName = scopedRole[0];
         String roleName = scopedRole[1];
         if (appName != null) {
@@ -89,7 +90,7 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
             access.getRoles().remove(roleName);
         } else {
             AccessToken.Access access = token.getRealmAccess();
-            if (access == null) return token;
+            if (access == null || !access.getRoles().contains(roleName)) return token;
             access.getRoles().remove(roleName);
         }
 

@@ -13,7 +13,10 @@ import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
@@ -32,6 +35,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -119,10 +123,22 @@ public class UserFederationProvidersResource {
             if (!factory.getId().equals(id)) {
                 continue;
             }
+
+            if (factory instanceof ConfiguredProvider) {
+
+                UserFederationProviderFactoryDescription rep = new UserFederationProviderFactoryDescription();
+                rep.setId(factory.getId());
+
+                ConfiguredProvider cp = (ConfiguredProvider) factory;
+                rep.setHelpText(cp.getHelpText());
+                rep.setProperties(toConfigPropertyRepresentationList(cp.getConfigProperties()));
+
+                return rep;
+            }
+
             UserFederationProviderFactoryRepresentation rep = new UserFederationProviderFactoryRepresentation();
             rep.setId(factory.getId());
-            rep.setOptions(((UserFederationProviderFactory)factory).getConfigurationOptions());
-
+            rep.setOptions(((UserFederationProviderFactory) factory).getConfigurationOptions());
 
             return rep;
         }
@@ -191,4 +207,60 @@ public class UserFederationProvidersResource {
         return instanceResource;
     }
 
+
+    private ConfigPropertyRepresentation toConfigPropertyRepresentation(ProviderConfigProperty prop) {
+
+        ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
+        propRep.setName(prop.getName());
+        propRep.setLabel(prop.getLabel());
+        propRep.setType(prop.getType());
+        propRep.setDefaultValue(prop.getDefaultValue());
+        propRep.setHelpText(prop.getHelpText());
+
+        return propRep;
+    }
+
+    private List<ConfigPropertyRepresentation> toConfigPropertyRepresentationList(List<ProviderConfigProperty> props) {
+
+        List<ConfigPropertyRepresentation> reps = new ArrayList<>(props.size());
+        for(ProviderConfigProperty prop : props){
+            reps.add(toConfigPropertyRepresentation(prop));
+        }
+
+        return reps;
+    }
+
+
+    public static class UserFederationProviderFactoryDescription extends UserFederationProviderFactoryRepresentation {
+
+        protected String name;
+
+        protected String helpText;
+
+        protected List<ConfigPropertyRepresentation> properties;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getHelpText() {
+            return helpText;
+        }
+
+        public void setHelpText(String helpText) {
+            this.helpText = helpText;
+        }
+
+        public List<ConfigPropertyRepresentation> getProperties() {
+            return properties;
+        }
+
+        public void setProperties(List<ConfigPropertyRepresentation> properties) {
+            this.properties = properties;
+        }
+    }
 }

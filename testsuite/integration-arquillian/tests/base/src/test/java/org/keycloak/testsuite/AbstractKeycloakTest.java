@@ -20,6 +20,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.auth.page.WelcomePage;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.testsuite.auth.page.AuthServer;
@@ -76,6 +77,9 @@ public abstract class AbstractKeycloakTest {
     @Page
     protected UpdatePassword updatePasswordPage;
 
+    @Page
+    protected WelcomePage welcomePage;
+
     protected UserRepresentation adminUser;
 
     @Before
@@ -103,11 +107,10 @@ public abstract class AbstractKeycloakTest {
     }
 
     private void updateMasterAdminPassword() {
-        accountPage.navigateTo();
-        loginPage.form().login(ADMIN, ADMIN);
-        updatePasswordPage.updatePasswords(ADMIN, ADMIN);
-        assertCurrentUrlStartsWith(accountPage);
-        deleteAllCookiesForMasterRealm();
+        welcomePage.navigateTo();
+        if (!welcomePage.isPasswordSet()) {
+            welcomePage.setPassword("admin", "admin");
+        }
     }
 
     public void deleteAllCookiesForMasterRealm() {

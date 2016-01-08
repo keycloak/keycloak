@@ -25,7 +25,8 @@ public class SamlProtocolUtils {
 
 
     public static void verifyDocumentSignature(ClientModel client, Document document) throws VerificationException {
-        if (!"true".equals(client.getAttribute(SamlProtocol.SAML_CLIENT_SIGNATURE_ATTRIBUTE))) {
+        SamlClient samlClient = new SamlClient(client);
+        if (!samlClient.requiresClientSignature()) {
             return;
         }
         PublicKey publicKey = getSignatureValidationKey(client);
@@ -44,15 +45,19 @@ public class SamlProtocolUtils {
     }
 
     public static PublicKey getSignatureValidationKey(ClientModel client) throws VerificationException {
-        return getPublicKey(client, SamlProtocol.SAML_SIGNING_CERTIFICATE_ATTRIBUTE);
+        return getPublicKey(new SamlClient(client).getClientSigningCertificate());
     }
 
     public static PublicKey getEncryptionValidationKey(ClientModel client) throws VerificationException {
-        return getPublicKey(client, SamlProtocol.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE);
+        return getPublicKey(client, SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE);
     }
 
     public static PublicKey getPublicKey(ClientModel client, String attribute) throws VerificationException {
         String certPem = client.getAttribute(attribute);
+        return getPublicKey(certPem);
+    }
+
+    private static PublicKey getPublicKey(String certPem) throws VerificationException {
         if (certPem == null) throw new VerificationException("Client does not have a public key.");
         Certificate cert = null;
         try {

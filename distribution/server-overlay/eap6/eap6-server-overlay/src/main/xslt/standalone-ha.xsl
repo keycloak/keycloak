@@ -43,6 +43,7 @@
                 <invalidation-cache name="realms" mode="SYNC"/>
                 <invalidation-cache name="users" mode="SYNC"/>
                 <distributed-cache name="sessions" mode="SYNC" owners="1"/>
+                <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
             </cache-container>
             <xsl:apply-templates select="node()|@*"/>

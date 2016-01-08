@@ -1044,16 +1044,28 @@ module.factory('ClientDescriptionConverter', function($resource) {
     });
 });
 
+/*
+module.factory('ClientInstallation', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/installation/providers/:provider', {
+        realm : '@realm',
+        client : '@client',
+        provider : '@provider'
+    });
+});
+*/
+
+
 
 module.factory('ClientInstallation', function($resource) {
-    var url = authUrl + '/admin/realms/:realm/clients/:client/installation/json';
+    var url = authUrl + '/admin/realms/:realm/clients/:client/installation/providers/:provider';
     return {
         url : function(parameters)
         {
-            return url.replace(':realm', parameters.realm).replace(':client', parameters.client);
+            return url.replace(':realm', parameters.realm).replace(':client', parameters.client).replace(':provider', parameters.provider);
         }
     }
 });
+
 module.factory('ClientInstallationJBoss', function($resource) {
     var url = authUrl + '/admin/realms/:realm/clients/:client/installation/jboss';
     return {

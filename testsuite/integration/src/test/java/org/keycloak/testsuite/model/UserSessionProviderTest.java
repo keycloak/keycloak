@@ -17,11 +17,7 @@ import org.keycloak.services.managers.UserManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.common.util.Time;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -276,7 +272,7 @@ public class UserSessionProviderTest {
 
             resetSession();
 
-            session.sessions().removeExpiredUserSessions(realm);
+            session.sessions().removeExpired(realm);
             resetSession();
 
             for (String e : expired) {
@@ -309,13 +305,13 @@ public class UserSessionProviderTest {
             resetSession();
 
             Time.setOffset(25);
-            session.sessions().removeExpiredUserSessions(realm);
+            session.sessions().removeExpired(realm);
             resetSession();
 
             assertNotNull(session.sessions().getClientSession(clientSessionId));
 
             Time.setOffset(35);
-            session.sessions().removeExpiredUserSessions(realm);
+            session.sessions().removeExpired(realm);
             resetSession();
 
             assertNull(session.sessions().getClientSession(clientSessionId));
@@ -328,13 +324,13 @@ public class UserSessionProviderTest {
             resetSession();
 
             Time.setOffset(35);
-            session.sessions().removeExpiredUserSessions(realm);
+            session.sessions().removeExpired(realm);
             resetSession();
 
             assertNotNull(session.sessions().getClientSession(clientSessionId));
 
             Time.setOffset(45);
-            session.sessions().removeExpiredUserSessions(realm);
+            session.sessions().removeExpired(realm);
             resetSession();
 
             assertNull(session.sessions().getClientSession(clientSessionId));
@@ -347,13 +343,13 @@ public class UserSessionProviderTest {
             resetSession();
 
             Time.setOffset(45);
-            session.sessions().removeExpiredUserSessions(realm);
+            session.sessions().removeExpired(realm);
             resetSession();
 
             assertNotNull(session.sessions().getClientSession(clientSessionId));
 
             Time.setOffset(55);
-            session.sessions().removeExpiredUserSessions(realm);
+            session.sessions().removeExpired(realm);
             resetSession();
 
             assertNull(session.sessions().getClientSession(clientSessionId));
@@ -463,6 +459,18 @@ public class UserSessionProviderTest {
 
         failure1 = session.sessions().getUserLoginFailure(realm, "user1");
         assertEquals(0, failure1.getNumFailures());
+
+        session.sessions().removeUserLoginFailure(realm, "user1");
+
+        resetSession();
+
+        assertNull(session.sessions().getUserLoginFailure(realm, "user1"));
+
+        session.sessions().removeAllUserLoginFailures(realm);
+
+        resetSession();
+
+        assertNull(session.sessions().getUserLoginFailure(realm, "user2"));
     }
 
     @Test

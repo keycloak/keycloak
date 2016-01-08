@@ -2,30 +2,15 @@
 
     <ol class="breadcrumb">
         <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
-        <li data-ng-show="create">{{:: 'add-client' | translate}}</li>
-        <li data-ng-hide="create">{{client.clientId}}</li>
+        <li>{{client.clientId}}</li>
     </ol>
 
     <kc-tabs-client></kc-tabs-client>
 
     <form class="form-horizontal" name="clientForm" novalidate kc-read-only="!access.manageClients">
         <fieldset class="border-top">
-            <div class="form-group" data-ng-show="create">
-                <label for="name" class="col-sm-2 control-label">{{:: 'import' | translate}}</label>
-
-                <div class="col-md-6" data-ng-hide="importing">
-                    <label for="import-file" class="btn btn-default">{{:: 'select-file' | translate}} <i class="pficon pficon-import"></i></label>
-                    <input id="import-file" type="file" class="hidden" kc-on-read-file="importFile($fileContent)">
-                </div>
-
-                <div class="col-md-6" data-ng-show="importing">
-                    <button class="btn btn-default" data-ng-click="viewImportDetails()">{{:: 'view-details' | translate}}</button>
-                    <button class="btn btn-default" data-ng-click="reset()">{{:: 'clear-import' | translate}}</button>
-                </div>
-            </div>
-
             <div class="form-group">
-                <label class="col-md-2 control-label" for="clientId">{{:: 'client-id' | translate}} <span class="required" data-ng-show="create">*</span></label>
+                <label class="col-md-2 control-label" for="clientId">{{:: 'client-id' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" id="clientId" name="clientId" data-ng-model="client.clientId" autofocus required>
                 </div>
@@ -250,14 +235,14 @@
                 <kc-tooltip>{{:: 'valid-redirect-uris.tooltip' | translate}}</kc-tooltip>
             </div>
 
-            <div class="form-group" data-ng-show="!client.bearerOnly && !create">
+            <div class="form-group" data-ng-show="!client.bearerOnly">
                 <label class="col-md-2 control-label" for="baseUrl">{{:: 'base-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" name="baseUrl" id="baseUrl" data-ng-model="client.baseUrl">
                 </div>
                 <kc-tooltip>{{:: 'base-url.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group" data-ng-hide="create || protocol == 'saml'">
+            <div class="form-group" data-ng-hide="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="adminUrl">{{:: 'admin-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" name="adminUrl" id="adminUrl"
@@ -287,7 +272,7 @@
                 </div>
                 <kc-tooltip>{{:: 'idp-sso-relay-state.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group" data-ng-show="!client.bearerOnly && !create && protocol == 'openid-connect' && (client.standardFlowEnabled || client.implicitFlowEnabled)">
+            <div class="form-group" data-ng-show="!client.bearerOnly && protocol == 'openid-connect' && (client.standardFlowEnabled || client.implicitFlowEnabled)">
                 <label class="col-md-2 control-label" for="newWebOrigin">{{:: 'web-origins' | translate}}</label>
 
                 <div class="col-sm-6">
@@ -342,11 +327,7 @@
         </fieldset>
 
         <div class="form-group">
-            <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageClients">
-                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
-                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
-            </div>
-            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageClients">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageClients">
                 <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                 <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>

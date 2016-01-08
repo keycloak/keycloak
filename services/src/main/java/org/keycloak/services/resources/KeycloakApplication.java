@@ -74,23 +74,50 @@ public class KeycloakApplication extends Application {
         classes.add(QRCodeResource.class);
         classes.add(ThemeResource.class);
         classes.add(JsResource.class);
-        classes.add(WelcomeResource.class);
 
         singletons.add(new ObjectMapperResolver(Boolean.parseBoolean(System.getProperty("keycloak.jsonPrettyPrint", "false"))));
-
-        boolean defaultRealmCreated = ApplianceBootstrap.setupDefaultRealm(sessionFactory, context.getContextPath());
 
         migrateModel();
         sessionFactory.publish(new PostMigrationEvent());
 
-        new ExportImportManager().checkExportImport(this.sessionFactory, context.getContextPath());
-        importRealms(context);
+        boolean bootstrapAdminUser = false;
 
-        importAddUser();
+        KeycloakSession session = sessionFactory.create();
+        try {
+            session.getTransaction().begin();
 
-        if (defaultRealmCreated) {
-            ApplianceBootstrap.setupDefaultUser(sessionFactory);
+            ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
+            ExportImportManager exportImportManager = new ExportImportManager(session);
+
+            boolean createMasterRealm = applianceBootstrap.isNewInstall();
+            if (exportImportManager.isRunImport() && exportImportManager.isImportMasterIncluded()) {
+                createMasterRealm = false;
+            }
+
+            if (createMasterRealm) {
+                applianceBootstrap.createMasterRealm(contextPath);
+            }
+
+            if (exportImportManager.isRunImport()) {
+                exportImportManager.runImport();
+            } else {
+                importRealms();
+            }
+
+            importAddUser();
+
+            if (exportImportManager.isRunExport()) {
+                exportImportManager.runExport();
+            }
+
+            bootstrapAdminUser = applianceBootstrap.isNoMasterUser();
+
+            session.getTransaction().commit();
+        } finally {
+            session.close();
         }
+
+        singletons.add(new WelcomeResource(bootstrapAdminUser));
 
         setupScheduledTasks(sessionFactory);
     }
@@ -185,34 +212,13 @@ public class KeycloakApplication extends Application {
         return singletons;
     }
 
-    public void importRealms(ServletContext context) {
-        importRealmFile();
-        importRealmResources(context);
-    }
-
-    public void importRealmResources(ServletContext context) {
-        String resources = context.getInitParameter("keycloak.import.realm.resources");
-        if (resources != null) {
-            StringTokenizer tokenizer = new StringTokenizer(resources, ",");
-            while (tokenizer.hasMoreTokens()) {
-                String resource = tokenizer.nextToken().trim();
-                InputStream is = context.getResourceAsStream(resource);
-                if (is == null) {
-                    log.warn("Could not find realm resource to import: " + resource);
-                }
-                RealmRepresentation rep = loadJson(is, RealmRepresentation.class);
-                importRealm(rep, "resource " + resource);
-            }
-        }
-    }
-
-    public void importRealmFile() {
+    public void importRealms() {
         String files = System.getProperty("keycloak.import");
         if (files != null) {
             StringTokenizer tokenizer = new StringTokenizer(files, ",");
             while (tokenizer.hasMoreTokens()) {
                 String file = tokenizer.nextToken().trim();
-                RealmRepresentation rep = null;
+                RealmRepresentation rep;
                 try {
                     rep = loadJson(new FileInputStream(file), RealmRepresentation.class);
                 } catch (FileNotFoundException e) {

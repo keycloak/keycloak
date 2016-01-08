@@ -5,7 +5,7 @@ import java.net.URL;
 import java.util.Properties;
 
 import org.jboss.logging.Logger;
-import org.keycloak.testsuite.federation.LDAPTestConfiguration;
+import org.keycloak.testsuite.federation.ldap.LDAPTestConfiguration;
 import org.keycloak.util.ldap.KerberosEmbeddedServer;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
 

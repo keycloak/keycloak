@@ -1,11 +1,12 @@
 package org.keycloak.adapters.springsecurity.filter;
 
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RequestAuthenticator;
-import org.keycloak.adapters.springsecurity.AdapterDeploymentContextBean;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationEntryPoint;
 import org.keycloak.adapters.springsecurity.authentication.SpringSecurityRequestAuthenticator;
@@ -56,7 +57,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
     private static final Logger log = LoggerFactory.getLogger(KeycloakAuthenticationProcessingFilter.class);
 
     private ApplicationContext applicationContext;
-    private AdapterDeploymentContextBean adapterDeploymentContextBean;
+    private AdapterDeploymentContext adapterDeploymentContext;
     private AdapterTokenStoreFactory adapterTokenStoreFactory = new SpringSecurityAdapterTokenStoreFactory();
     private AuthenticationManager authenticationManager;
 
@@ -100,7 +101,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
     @Override
     public void afterPropertiesSet() {
-        adapterDeploymentContextBean = applicationContext.getBean(AdapterDeploymentContextBean.class);
+        adapterDeploymentContext = applicationContext.getBean(AdapterDeploymentContext.class);
         super.afterPropertiesSet();
     }
 
@@ -110,8 +111,8 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
         log.debug("Attempting Keycloak authentication");
 
-        KeycloakDeployment deployment = adapterDeploymentContextBean.getDeployment();
-        SimpleHttpFacade facade = new SimpleHttpFacade(request, response);
+        HttpFacade facade = new SimpleHttpFacade(request, response);
+        KeycloakDeployment deployment = adapterDeploymentContext.resolveDeployment(facade);
         AdapterTokenStore tokenStore = adapterTokenStoreFactory.createAdapterTokenStore(deployment, request);
         RequestAuthenticator authenticator
                 = new SpringSecurityRequestAuthenticator(facade, request, deployment, tokenStore, -1);

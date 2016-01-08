@@ -29,8 +29,17 @@ public class CachedClientTemplate implements Serializable {
     private String realm;
     private String protocol;
     private boolean fullScopeAllowed;
+    private boolean publicClient;
+    private boolean frontchannelLogout;
+    private boolean bearerOnly;
+    private boolean consentRequired;
+    private boolean standardFlowEnabled;
+    private boolean implicitFlowEnabled;
+    private boolean directAccessGrantsEnabled;
+    private boolean serviceAccountsEnabled;
     private Set<String> scope = new HashSet<String>();
     private Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
+    private Map<String, String> attributes = new HashMap<String, String>();
 
     public CachedClientTemplate(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientTemplateModel model) {
         id = model.getId();
@@ -45,6 +54,15 @@ public class CachedClientTemplate implements Serializable {
         for (RoleModel role : model.getScopeMappings())  {
             scope.add(role.getId());
         }
+        attributes.putAll(model.getAttributes());
+        frontchannelLogout = model.isFrontchannelLogout();
+        publicClient = model.isPublicClient();
+        bearerOnly = model.isBearerOnly();
+        consentRequired = model.isConsentRequired();
+        standardFlowEnabled = model.isStandardFlowEnabled();
+        implicitFlowEnabled = model.isImplicitFlowEnabled();
+        directAccessGrantsEnabled = model.isDirectAccessGrantsEnabled();
+        serviceAccountsEnabled = model.isServiceAccountsEnabled();
     }
     public String getId() {
         return id;
@@ -76,5 +94,41 @@ public class CachedClientTemplate implements Serializable {
 
     public Set<String> getScope() {
         return scope;
+    }
+
+    public boolean isPublicClient() {
+        return publicClient;
+    }
+
+    public boolean isFrontchannelLogout() {
+        return frontchannelLogout;
+    }
+
+    public boolean isBearerOnly() {
+        return bearerOnly;
+    }
+
+    public boolean isConsentRequired() {
+        return consentRequired;
+    }
+
+    public boolean isStandardFlowEnabled() {
+        return standardFlowEnabled;
+    }
+
+    public boolean isImplicitFlowEnabled() {
+        return implicitFlowEnabled;
+    }
+
+    public boolean isDirectAccessGrantsEnabled() {
+        return directAccessGrantsEnabled;
+    }
+
+    public boolean isServiceAccountsEnabled() {
+        return serviceAccountsEnabled;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
     }
 }
