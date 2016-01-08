@@ -75,6 +75,7 @@ public class ClientTemplatesResource {
                 client.setId(clientModel.getId());
                 client.setName(clientModel.getName());
                 client.setDescription(clientModel.getDescription());
+                client.setProtocol(clientModel.getProtocol());
                 rep.add(client);
             }
         }

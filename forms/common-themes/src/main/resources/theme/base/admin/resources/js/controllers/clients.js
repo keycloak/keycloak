@@ -1055,8 +1055,10 @@ module.controller('CreateClientCtrl', function($scope, realm, client, templates,
         'saml'];//Object.keys(serverInfo.providers['login-protocol'].providers).sort();
     $scope.create = true;
     $scope.templates = [ {name:'NONE'}];
+    var templateNameMap = new Object();
     for (var i = 0; i < templates.length; i++) {
         var template = templates[i];
+        templateNameMap[template.name] = template;
         $scope.templates.push(template);
     }
 
@@ -1096,6 +1098,18 @@ module.controller('CreateClientCtrl', function($scope, realm, client, templates,
         $scope.changed = true;
     }
 
+    $scope.changeTemplate = function() {
+        if ($scope.client.clientTemplate == 'NONE') {
+            $scope.protocol = 'openid-connect';
+            $scope.client.protocol = 'openid-connect';
+            $scope.client.clientTemplate = null;
+
+        } else {
+            var template = templateNameMap[$scope.client.clientTemplate];
+            $scope.protocol = template.protocol;
+            $scope.client.protocol = template.protocol;
+        }
+    }
     $scope.changeProtocol = function() {
         if ($scope.protocol == "openid-connect") {
             $scope.client.protocol = "openid-connect";
