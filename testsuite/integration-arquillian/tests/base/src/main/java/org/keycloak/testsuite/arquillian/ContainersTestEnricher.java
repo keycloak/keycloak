@@ -84,7 +84,7 @@ public class ContainersTestEnricher {
 
     private void init() {
         if (!init) {
-            containers = new LinkedList(containerRegistry.get().getContainers());
+            containers = new LinkedList<>(containerRegistry.get().getContainers());
         }
         init = true;
     }
