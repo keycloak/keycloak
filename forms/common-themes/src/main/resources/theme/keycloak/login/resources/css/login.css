@@ -75,9 +75,6 @@
     background-image: url("../img/keycloak-logo.png");
     background-repeat: no-repeat;
 
-    position: absolute;
-    top: 50px;
-    right: 50px;
     height: 37px;
     width: 154px;
 }
@@ -94,12 +91,6 @@
     text-transform: uppercase;
     line-height: 1.2em;
     margin-bottom: 15px;
-}
-
-#kc-container-wrapper {
-    bottom: 13%;
-    position: absolute;
-    width: 100%;
 }
 
 #kc-content {
@@ -280,16 +271,33 @@ ol#kc-totp-settings li:first-of-type {
     background-image: linear-gradient(rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 100%) !important;
 }
 
-@media (max-width: 767px) {
+@media (min-width: 768px) {
+    #kc-container-wrapper {
+        bottom: 13%;
+        position: absolute;
+        width: 100%;
+    }
+
     #kc-logo-wrapper {
-        top: 15px;
-        right: 15px;
+        position: absolute;
+        top: 50px;
+        right: 50px;
+    }
+}
+
+@media (max-width: 767px) {
+
+    #kc-logo-wrapper {
+        background-position: center;
+        width: 100%;
+        margin: 20px 0;
     }
 
     #kc-header {
         padding-left: 15px;
         padding-right: 15px;
         float: none;
+        text-align: center;
     }
 
     #kc-feedback {
@@ -323,7 +331,5 @@ ol#kc-totp-settings li:first-of-type {
 
 @media (max-height: 500px) {
     #kc-container-wrapper {
-        position: inherit;
-        float: none;
     }
 }
