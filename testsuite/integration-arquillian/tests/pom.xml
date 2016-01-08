@@ -469,7 +469,7 @@
                     <version>7.2.0.Final</version>
                 </dependency>
             </dependencies>
-<!--            <dependencies>
+            <!--            <dependencies>
                 <dependency>
                     <groupId>org.wildfly</groupId>
                     <artifactId>wildfly-arquillian-container-managed</artifactId>
@@ -480,12 +480,31 @@
                     <plugins>
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-enforcer-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>enforce-properties</id>
+                                    <goals>
+                                        <goal>enforce</goal>
+                                    </goals>
+                                    <configuration>
+                                        <rules>
+                                            <requireProperty>
+                                                <property>version.eap6.server.dist</property>
+                                            </requireProperty>
+                                        </rules>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
                                     <auth.server.eap7>true</auth.server.eap7>
                                     <auth.server.undertow>false</auth.server.undertow>
-                                    <keycloak.home>${containers.home}/rh-sso-${version.rh.soo}</keycloak.home>
+                                    <keycloak.home>${containers.home}/keycloak-${version.eap6.server.dist}</keycloak.home>
                                     <adapter.test.props>${adapter.test.props}</adapter.test.props>
                                 </systemPropertyVariables>
                             </configuration>

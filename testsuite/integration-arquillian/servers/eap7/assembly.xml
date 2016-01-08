@@ -11,14 +11,14 @@
     <fileSets>
         <fileSet>
             <directory>${keycloak.server.home}</directory>
-            <outputDirectory>rh-sso-${version.rh.soo}</outputDirectory>
+            <outputDirectory>keycloak-${version.eap6.server.dist}</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>${keycloak.server.home}</directory>
-            <outputDirectory>rh-sso-${version.rh.soo}</outputDirectory>
+            <outputDirectory>keycloak-${version.eap6.server.dist}</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
             </includes>

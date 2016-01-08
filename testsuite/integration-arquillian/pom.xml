@@ -14,10 +14,6 @@
     <packaging>pom</packaging>
     <name>Keycloak Integration TestSuite with Arquillian</name>
     
-    <properties>
-        <version.rh.soo>7.0.0.DR2</version.rh.soo>
-    </properties>
-    
     <modules>
         <module>servers</module>
         <module>tests</module>

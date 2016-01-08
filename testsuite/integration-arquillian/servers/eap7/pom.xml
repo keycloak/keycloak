@@ -51,13 +51,32 @@
             <dependencies>
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>rh-sso</artifactId>
-                    <version>${version.rh.soo}</version>
+                    <artifactId>keycloak-eap6-server-dist</artifactId>
+                    <version>${version.eap6.server.dist}</version>
                     <type>zip</type>
                 </dependency>
             </dependencies>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-properties</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>version.eap6.server.dist</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
@@ -72,8 +91,8 @@
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
-                                            <artifactId>rh-sso</artifactId>
-                                            <version>${version.rh.soo}</version>
+                                            <artifactId>keycloak-eap6-server-dist</artifactId>
+                                            <version>${version.eap6.server.dist}</version>
                                             <type>zip</type>
                                             <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
                                         </artifactItem>
@@ -96,7 +115,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
-                        <version>1.4</version>
                         <executions>
                             <execution>
                                 <id>enforce-properties</id>

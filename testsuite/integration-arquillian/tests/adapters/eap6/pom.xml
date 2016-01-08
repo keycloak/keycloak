@@ -14,14 +14,15 @@
     <properties>
         <app.server.eap6.home>${containers.home}/jboss-eap-6.4</app.server.eap6.home>
         <adapter.libs.eap6>${containers.home}/keycloak-eap6-adapter-dist</adapter.libs.eap6>
+        <version.adapter.dist>${project.version}</version.adapter.dist>
     </properties>
 
     <dependencies>
         <!-- This dependency is for starting auth server based on wildfly (eap7)-->
-        <dependency>
+<!--        <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-arquillian-container-managed</artifactId>
-        </dependency>
+        </dependency>-->
         <!-- This is for EAP6-->
         <dependency>
             <groupId>org.jboss.as</groupId>
@@ -83,7 +84,7 @@
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-eap6-adapter-dist</artifactId>
-                                    <version>${project.version}</version>
+                                    <version>${version.adapter.dist}</version>
                                     <type>zip</type>
                                     <outputDirectory>${adapter.libs.eap6}</outputDirectory>
                                 </artifactItem>
@@ -186,7 +187,6 @@
                     </plugin>
                     <plugin>
                         <artifactId>maven-resources-plugin</artifactId>
-                        <version>2.7</version>
                         <executions>
                             <execution>
                                 <id>copy-keystore</id>
