@@ -110,8 +110,15 @@ public class TermsAndConditionsTest {
         List<String> termsAndConditions = attributes.get(TermsAndConditions.USER_ATTRIBUTE);
         assertTrue("timestamp for terms acceptance was not stored in user attributes as "
                 + TermsAndConditions.USER_ATTRIBUTE, termsAndConditions.size() == 1);
+        String timestamp = termsAndConditions.get(0);
         assertNotNull("expected non-null timestamp for terms acceptance in user attribute "
-                + TermsAndConditions.USER_ATTRIBUTE, termsAndConditions.get(0));
+                + TermsAndConditions.USER_ATTRIBUTE, timestamp);
+        try {
+            Integer.parseInt(timestamp);
+        }
+        catch (NumberFormatException e) {
+            fail("timestamp for terms acceptance is not a valid integer: '" + timestamp + "'");
+        }
     }
 
     @Test

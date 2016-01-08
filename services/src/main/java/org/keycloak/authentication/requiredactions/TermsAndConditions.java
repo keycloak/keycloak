@@ -8,6 +8,7 @@ import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -62,8 +63,7 @@ public class TermsAndConditions implements RequiredActionProvider, RequiredActio
             return;
         }
 
-        SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-        context.getUser().setAttribute(USER_ATTRIBUTE, Arrays.asList(dateTimeFormat.format(new Date())));
+        context.getUser().setAttribute(USER_ATTRIBUTE, Arrays.asList(Integer.toString(Time.currentTime())));
 
         context.success();
     }
