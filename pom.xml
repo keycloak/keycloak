@@ -35,7 +35,7 @@
         <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
         <undertow.version>1.1.1.Final</undertow.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
-        <mongo.driver.version>2.11.3</mongo.driver.version>
+        <mongo.driver.version>3.2.0</mongo.driver.version>
         <jboss.logging.version>3.1.4.GA</jboss.logging.version>
         <syslog4j.version>0.9.30</syslog4j.version>
         <jboss-logging-tools.version>1.2.0.Beta1</jboss-logging-tools.version>

@@ -44,7 +44,7 @@ public abstract class Update {
             o.append(f, 1);
         }
 
-        col.ensureIndex(o, new BasicDBObject("unique", unique).append("sparse", sparse));
+        col.createIndex(o, new BasicDBObject("unique", unique).append("sparse", sparse));
         log.debugv("Created index {0}, fields={1}, unique={2}, sparse={3}", name, Arrays.toString(fields), unique, sparse);
     }
 
