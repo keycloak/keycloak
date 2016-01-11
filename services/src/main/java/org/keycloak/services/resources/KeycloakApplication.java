@@ -192,10 +192,15 @@ public class KeycloakApplication extends Application {
     public static void setupScheduledTasks(final KeycloakSessionFactory sessionFactory) {
         long interval = Config.scope("scheduled").getLong("interval", 60L) * 1000;
 
-        TimerProvider timer = sessionFactory.create().getProvider(TimerProvider.class);
-        timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredEvents()), interval, "ClearExpiredEvents");
-        timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval, "ClearExpiredUserSessions");
-        new UsersSyncManager().bootstrapPeriodic(sessionFactory, timer);
+        KeycloakSession session = sessionFactory.create();
+        try {
+            TimerProvider timer = session.getProvider(TimerProvider.class);
+            timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredEvents()), interval, "ClearExpiredEvents");
+            timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval, "ClearExpiredUserSessions");
+            new UsersSyncManager().bootstrapPeriodic(sessionFactory, timer);
+        } finally {
+            session.close();
+        }
     }
 
     public KeycloakSessionFactory getSessionFactory() {
