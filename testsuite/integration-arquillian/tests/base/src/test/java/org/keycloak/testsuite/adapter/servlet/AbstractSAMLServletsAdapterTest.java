@@ -16,8 +16,8 @@ import org.w3c.dom.Document;
 import javax.ws.rs.core.Response;
 import java.util.List;
 
-import static com.mongodb.util.MyAsserts.assertFalse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
 import static org.keycloak.testsuite.util.IOUtil.*;
