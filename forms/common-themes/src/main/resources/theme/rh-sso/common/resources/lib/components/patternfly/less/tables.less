@@ -1,0 +1,70 @@
+//
+// Tables
+// --------------------------------------------------
+
+.table {
+  > thead,
+  > tbody,
+  > tfoot {
+    > tr {
+      > th,
+      > td {
+        padding: @table-cell-padding-top @table-cell-padding @table-cell-padding-bottom;
+        > a:hover {
+          text-decoration: none;
+        }
+      }
+      > th {
+        font-family: 'Open Sans';
+        font-style: normal;
+        font-weight: 600;
+      }
+    }
+  }
+  > thead {
+    background-clip: padding-box;
+    background-color: #f9f9f9;
+    #gradient > .vertical(@start-color: #fafafa; @end-color: #ededed; @start-percent: 0%; @end-percent: 100%);
+  }
+}
+
+.table-bordered {
+  border: 1px solid @table-border-color;
+  > thead,
+  > tbody,
+  > tfoot {
+    > tr {
+      > th,
+      > td {
+        border: 1px solid @table-border-color;
+      }
+    }
+  }
+  > thead > tr {
+    > th,
+    > td {
+      border-bottom-width: 1px;
+    }
+  }
+}
+
+.table-striped {
+  > tbody > tr{
+    &:nth-of-type(even) {
+      background-color: @table-bg-accent;
+    }
+    &:nth-of-type(odd) {
+      background-color: transparent;
+    }
+  }
+}
+
+.table-hover {
+  > tbody > tr:hover {
+    > td,
+    > th {
+      background-color: @table-bg-hover;
+      border-bottom-color: @table-border-hover;
+    }
+  }
+}

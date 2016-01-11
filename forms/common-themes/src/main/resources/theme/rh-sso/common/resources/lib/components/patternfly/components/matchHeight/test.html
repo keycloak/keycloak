@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <!-- IE testing -->
+        <!-- <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE8">-->
+        <!-- <meta http-equiv="X-UA-Compatible" content="IE=9">-->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="robots" content="noindex">
+        <title>jquery.matchHeight Tests</title>
+        <link rel="stylesheet" href="./test.css">
+        <script type="text/javascript" src="./lib/jquery-1.11.0.min.js"></script>
+        <script type="text/javascript" src="./jquery.matchHeight.js"></script>
+        <script type="text/javascript" src="./test.js"></script>
+        <script type="text/javascript">
+            (function() {
+
+                /* matchHeight example */
+
+                $(function() {
+                    // apply your matchHeight on DOM ready (they will be automatically re-applied on load or resize)
+
+                    // get test settings
+                    var byRow = $('body').hasClass('test-rows');
+
+                    // apply matchHeight to each item container's items
+                    $('.items-container').each(function() {
+                        $(this).children('.item').matchHeight({
+                            byRow: byRow
+                        });
+                    });
+
+                    // test target
+                    $('.target-items').each(function() {
+                        $(this).children('.item-0, .item-2, .item-3').matchHeight({
+                            target: $(this).find('.item-1')
+                        });
+                    });
+
+                    // example of removing matchHeight
+                    $('.btn-remove').click(function() {
+                        $('.item').matchHeight({ 
+                            remove: true 
+                        });
+                    });
+
+                    // button to show hidden elements
+                    $('.btn-hidden').click(function() {
+                        $('body').removeClass('test-hidden');
+                    });
+
+                    // example of update callbacks (uncomment to test)
+                    $.fn.matchHeight._beforeUpdate = function(event, groups) {
+                        //var eventType = event ? event.type + ' event, ' : '';
+                        //console.log("beforeUpdate, " + eventType + groups.length + " groups");
+                    }
+
+                    $.fn.matchHeight._afterUpdate = function(event, groups) {
+                        //var eventType = event ? event.type + ' event, ' : '';
+                        //console.log("afterUpdate, " + eventType + groups.length + " groups");
+                    }
+                });
+
+            })();
+        </script>
+    </head>
+    <body class="test-match-height test-rows test-responsive test-border-box test-margin test-padding test-hidden">
+        <div class="container">
+            <h1>jquery.matchHeight Tests</h1>
+
+            <div class="nav"><a href="http://brm.io/jquery-match-height/">Project page</a> <span class="nav-sep">&middot;</span> <a href="https://github.com/liabru/jquery-match-height">GitHub</a></div>
+
+            <ul>
+                <li>A more robust equal heights plugin that correctly handles mixed padding, margin, border, box-sizing, rows, groups</li>
+                <li>Handles images and responsive layouts by automatically updating when needed</li>
+                <li>To test, apply different combinations of options below to try different edge case scenarios</li>
+                <li>Resize the browser to test the responsive updating</li>
+            </ul>
+
+            <div class="controls">
+                <div class="checkbox">
+                    <label>
+                        <input class="option" type="checkbox" value="test-padding" checked>
+                        padding
+                    </label>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input class="option" type="checkbox" value="test-margin" checked>
+                        margin
+                    </label>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input class="option" type="checkbox" value="test-border" checked>
+                        border
+                    </label>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input class="option" type="checkbox" value="test-border-box" checked>
+                        border-box
+                    </label>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input class="option" type="checkbox" value="test-rows" checked>
+                        by row
+                    </label>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input class="btn-remove" type="submit" value="remove matchHeight">
+                    </label>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input class="btn-hidden" type="submit" value="show hidden">
+                    </label>
+                </div>
+            </div>
+
+            <div class="items-container">
+                <div class="item item-0">
+                    <h2>Lorem ipsum</h2>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam.</p>
+                    <p>Aenean semper felis ipsum, vulputate consequat dui elementum vel.</p>
+                </div>
+                <div class="item item-1">
+                    <h3>Lorem ipsum dolor</h3>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis. Phasellus hendrerit erat sed porta imperdiet. Vivamus viverra ipsum tortor, et congue mauris porttitor ut.</p>
+                </div>
+                <div class="item item-2">
+                    <h4>Lorem ipsum dolor sit amet.</h4>
+                    <p>Aenean semper felis ipsum, vulputate consequat dui elementum vel. Nullam odio eros, sagittis vitae lectus id, pretium viverra lectus. Etiam auctor dolor non dui ultricies pulvinar.</p>
+                </div>
+
+                <div class="item item-3">
+                    <h3>Lorem ipsum dolor</h3>
+                    <p>Aenean semper.</p>
+                </div>
+                <div class="item item-4">
+                    <h3>Lorem ipsum dolor</h3>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis.</p>
+                </div>
+                <div class="item item-5">
+                    <h3>Lorem ipsum dolor</h3>
+                    <p>Aenean semper felis ipsum, vulputate consequat dui elementum vel.</p>
+                </div>
+                <div class="item item-6">
+                    <h3>Lorem ipsum dolor</h3>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. </p>
+                </div>
+                <div class="item item-7">
+                    <h3>Lorem ipsum dolor</h3>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam.</p>
+                </div>
+
+                <div class="item item-8">
+                    <img src="http://placehold.it/800x150/fafafa/666" alt="a test image">
+                </div>
+                <div class="item item-9">
+                    <img src="http://placehold.it/800x180/fafafa/666" alt="a test image">
+                </div>
+                <div class="item item-10">
+                    <img src="http://placehold.it/800x200/fafafa/666" alt="a test image">
+                </div>
+                <div class="item item-11">
+                    <img src="http://placehold.it/800x220/fafafa/666" alt="a test image">
+                </div>
+            </div>
+
+            <div class="items-container big-items">
+                <div class="item item-0">
+                    <h3>Lorem ipsum dolor</h3>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam.</p>
+                    <p>Aenean semper felis ipsum, vulputate consequat dui elementum vel.</p>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis. Phasellus hendrerit erat sed porta imperdiet. Vivamus viverra ipsum tortor, et congue mauris porttitor ut.</p>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis.</p>
+                </div>
+                <div class="item item-1">
+                    <div class="items-container">
+                        <div class="item item-2">
+                            <p>Aenean</p>
+                        </div>
+                        <div class="item item-3">
+                            <p>Lorem</p>
+                        </div>
+                        <div class="item item-4">
+                            <p>Phasellus</p>
+                        </div>
+                        <div class="item item-5">
+                            <p>Aenean semper felis ipsum, vulputate consequat dui elementum vel.</p>
+                        </div>
+                        <div class="item item-6">
+                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. </p>
+                        </div>
+                        <div class="item item-7">
+                            <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-test-items">
+                <div class="item item-0" data-match-height="items-a">
+                    <h3>data-match-height="items-a"</h3>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis. Phasellus hendrerit erat sed porta imperdiet. Vivamus viverra ipsum tortor, et congue mauris porttitor ut.</p>
+                </div>
+                <div class="item item-1" data-match-height="items-a">
+                    <h3>data-match-height="items-a"</h3>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis.</p>
+                </div>
+                <div class="item item-2" data-mh="items-b">
+                    <h3>data-mh="items-b"</h3>
+                    <p>In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis.</p>
+                </div>
+                <div class="item item-3" data-mh="items-b">
+                    <h3>data-mh="items-b"</h3>
+                    <p>Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis.</p>
+                </div>
+            </div>
+
+            <div class="target-items">
+                <div class="item item-0">
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam.</p>
+                    <p>Aenean semper felis ipsum, vulputate consequat dui elementum vel.</p>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis. Phasellus hendrerit erat sed porta imperdiet. Vivamus viverra ipsum tortor, et congue mauris porttitor ut.</p>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis.</p>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis. Phasellus hendrerit erat sed porta imperdiet. Vivamus viverra ipsum tortor, et congue mauris porttitor ut.</p>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis.</p>
+                </div>
+                <div class="item item-1">
+                    <h3>Target</h3>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis.</p>
+                </div>
+                <div class="item item-2">
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis. Phasellus hendrerit erat sed porta imperdiet. Vivamus viverra ipsum tortor, et congue mauris porttitor ut.</p>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis. Phasellus hendrerit erat sed porta imperdiet. Vivamus viverra ipsum tortor, et congue mauris porttitor ut.</p>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis.</p>
+                </div>
+                <div class="item item-3">
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam.</p>
+                    <p>Aenean semper felis ipsum, vulputate consequat dui elementum vel.</p>
+                    <p>Phasellus ut nibh fermentum, vulputate urna vel, semper diam. Nunc sollicitudin felis ut pellentesque fermentum. In erat mi, pulvinar sit amet tincidunt vitae, gravida id felis.</p>
+                </div>
+            </div>
+
+            <div class="items-container fixed-items">
+                <div class="item item-0">
+                    <p>Fixed height</p>
+                </div>
+                <div class="item item-1">
+                    <p>Fixed height</p>
+                </div>
+                <div class="item item-2">
+                    <p>Fixed height</p>
+                </div>
+                <div class="item item-3">
+                    <p>Fixed height</p>
+                </div>
+            </div>
+
+            <div class="items-container inline-block-items">
+                <div class="item item-0">
+                    <p>display: inline-block</p>
+                </div>
+                <div class="item item-1">
+                    <p>display: inline-block</p>
+                </div>
+                <div class="item item-2">
+                    <p>display: inline-block</p>
+                </div>
+                <div class="item item-3">
+                    <p>display: inline-block</p>
+                </div>
+                <div class="item item-4">
+                    <p>display: inline-block</p>
+                </div>
+                <div class="item item-5">
+                    <p>display: inline-block</p>
+                </div>
+                <div class="item item-6">
+                    <p>display: inline-block</p>
+                </div>
+                <div class="item item-7">
+                    <p>display: inline-block</p>
+                </div>
+            </div>
+
+            <div class="items-container hidden-items">
+                <div class="item item-0">
+                    <p>display: none</p>
+                </div>
+                <div class="item item-1">
+                    <p>visibility: hidden</p>
+                </div>
+                <div class="item item-2">
+                    <div class="items-container">
+                        <div class="item item-0">
+                            <p>parent display: none</p>
+                        </div>
+                        <div class="item item-0">
+                            <p>parent display: none</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="item item-3">
+                    <div class="items-container">
+                        <div class="item item-1">
+                            <p>parent visibility: hidden</p>
+                        </div>
+                        <div class="item item-1">
+                            <p>parent visibility: hidden</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

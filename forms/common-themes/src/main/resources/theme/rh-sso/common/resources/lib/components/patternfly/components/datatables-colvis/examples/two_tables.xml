@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dt-example table-type="html-office-edin|html-office-london" table-id="" order="9">
+
+<css lib="datatables colvis" />
+<js lib="jquery datatables colvis">
+<![CDATA[
+$(document).ready(function() {
+	$('table.display').DataTable( {
+		dom: 'C<"clear">lfrtip',
+		displayLength: 5
+	} );
+} );
+]]>
+</js>
+
+<title lib="ColVis">Two tables with individual controls</title>
+
+<info><![CDATA[
+
+It can be useful to have DataTables initialise more than one table with a single call can for them to each have individual ColVis controllers. All this requires is a suitable jQuery selector to be used, and DataTables and ColVis will take care of the rest - as shown in this example.
+
+]]></info>
+
+</dt-example>

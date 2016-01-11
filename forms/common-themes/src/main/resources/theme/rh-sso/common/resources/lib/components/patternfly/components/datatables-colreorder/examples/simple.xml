@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dt-example table-type="html" order="1">
+
+<css lib="datatables colreorder" />
+<js lib="jquery datatables colreorder">
+<![CDATA[
+$(document).ready(function() {
+	$('#example').DataTable( {
+		dom: 'Rlfrtip'
+	} );
+} );
+]]>
+</js>
+
+<title lib="ColReorder">Basic initialisation</title>
+
+<info><![CDATA[
+
+This example shows the basic use case of the ColReorder plug-in. With ColReorder enabled for a table, the user has the ability to click and drag any table header cell, and drop it where they wish the column to be inserted. The insert point is shown visually, and the column reordering is done as soon as the mouse button is released.
+
+ColReorder is added to a DataTable through the `R` character that it adds to DataTables feature plug-ins. This means that you simply add the character `R` to the `dt-init dom` parameter for your table to add ColReorder - as shown in the example below.
+
+]]></info>
+
+</dt-example>
