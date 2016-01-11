@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
@@ -11,12 +12,10 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.ErrorRepresentation;
-import org.keycloak.representations.idm.FederatedIdentityRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest;
 import org.keycloak.testsuite.forms.ResetPasswordTest;
 import org.keycloak.testsuite.pages.*;
@@ -32,6 +31,7 @@ import javax.mail.internet.MimeMultipart;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,18 +63,8 @@ public class UserTest extends AbstractClientTest {
     @WebResource
     protected InfoPage infoPage;
 
-    @Before
-    public void before() {
-        super.before();
-
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                RealmModel testRealm = manager.getRealm(REALM_NAME);
-                greenMail.configureRealm(testRealm);
-            }
-        });
-    }
+    @WebResource
+    protected LoginPage loginPage;
 
     public String createUser() {
         return createUser("user1", "user1@localhost");
@@ -84,6 +74,7 @@ public class UserTest extends AbstractClientTest {
         UserRepresentation user = new UserRepresentation();
         user.setUsername(username);
         user.setEmail(email);
+        user.setEnabled(true);
 
         Response response = realm.users().create(user);
         String createdId = ApiUtil.getCreatedId(response);
@@ -598,6 +589,28 @@ public class UserTest extends AbstractClientTest {
         } catch (ClientErrorException e) {
             assertEquals(409, e.getResponse().getStatus());
         }
+    }
+
+    @Test
+    public void resetUserPassword() {
+        String userId = createUser("user1", "user1@localhost");
+
+        CredentialRepresentation cred = new CredentialRepresentation();
+        cred.setType(CredentialRepresentation.PASSWORD);
+        cred.setValue("password");
+        cred.setTemporary(false);
+
+        realm.users().get(userId).resetPassword(cred);
+
+        String accountUrl = RealmsResource.accountUrl(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT)).build(REALM_NAME).toString();
+
+        driver.navigate().to(accountUrl);
+
+        assertEquals("Log in to admin-client-test", driver.getTitle());
+
+        loginPage.login("user1", "password");
+
+        assertEquals("Keycloak Account Management", driver.getTitle());
     }
 
     private void switchEditUsernameAllowedOn() {
