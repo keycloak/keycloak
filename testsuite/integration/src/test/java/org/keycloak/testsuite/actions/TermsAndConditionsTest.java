@@ -32,6 +32,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
@@ -43,6 +44,11 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -96,6 +102,23 @@ public class TermsAndConditionsTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().session(sessionId).assertEvent();
+
+        // assert user attribute is properly set
+        UserRepresentation user = keycloakRule.getUser("test", "test-user@localhost");
+        Map<String,List<String>> attributes = user.getAttributesAsListValues();
+        assertNotNull("timestamp for terms acceptance was not stored in user attributes", attributes);
+        List<String> termsAndConditions = attributes.get(TermsAndConditions.USER_ATTRIBUTE);
+        assertTrue("timestamp for terms acceptance was not stored in user attributes as "
+                + TermsAndConditions.USER_ATTRIBUTE, termsAndConditions.size() == 1);
+        String timestamp = termsAndConditions.get(0);
+        assertNotNull("expected non-null timestamp for terms acceptance in user attribute "
+                + TermsAndConditions.USER_ATTRIBUTE, timestamp);
+        try {
+            Integer.parseInt(timestamp);
+        }
+        catch (NumberFormatException e) {
+            fail("timestamp for terms acceptance is not a valid integer: '" + timestamp + "'");
+        }
     }
 
     @Test
@@ -113,6 +136,14 @@ public class TermsAndConditionsTest {
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
 
+
+        // assert user attribute is properly removed
+        UserRepresentation user = keycloakRule.getUser("test", "test-user@localhost");
+        Map<String,List<String>> attributes = user.getAttributesAsListValues();
+        if (attributes != null) {
+            assertNull("expected null for terms acceptance user attribute " + TermsAndConditions.USER_ATTRIBUTE,
+                    attributes.get(TermsAndConditions.USER_ATTRIBUTE));
+        }
     }
 
 

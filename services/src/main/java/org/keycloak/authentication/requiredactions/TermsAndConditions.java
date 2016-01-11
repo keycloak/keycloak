@@ -1,9 +1,14 @@
 package org.keycloak.authentication.requiredactions;
 
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -14,8 +19,8 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class TermsAndConditions implements RequiredActionProvider, RequiredActionFactory {
-
     public static final String PROVIDER_ID = "terms_and_conditions";
+    public static final String USER_ATTRIBUTE = PROVIDER_ID;
 
     @Override
     public RequiredActionProvider create(KeycloakSession session) {
@@ -46,18 +51,21 @@ public class TermsAndConditions implements RequiredActionProvider, RequiredActio
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        Response challenge =  context.form().createForm("terms.ftl");
+        Response challenge = context.form().createForm("terms.ftl");
         context.challenge(challenge);
     }
 
     @Override
     public void processAction(RequiredActionContext context) {
         if (context.getHttpRequest().getDecodedFormParameters().containsKey("cancel")) {
+            context.getUser().removeAttribute(USER_ATTRIBUTE);
             context.failure();
             return;
         }
-        context.success();
 
+        context.getUser().setAttribute(USER_ATTRIBUTE, Arrays.asList(Integer.toString(Time.currentTime())));
+
+        context.success();
     }
 
     @Override
