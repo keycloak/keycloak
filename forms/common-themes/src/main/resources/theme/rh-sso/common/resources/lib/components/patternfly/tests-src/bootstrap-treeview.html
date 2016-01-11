@@ -1,0 +1,197 @@
+---
+alert-message: ', <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>, and <a href="https://github.com/jonmiles/bootstrap-treeview">https://github.com/jonmiles/bootstrap-treeview</a>.'
+categories: [Widgets]
+layout: page
+title: Bootstrap Tree View
+resource: true
+url-js-extra: '!URL_COMPONENTS!bootstrap-treeview/dist/bootstrap-treeview.min.js'
+---
+      <div class="row">
+        <div class="col-sm-4">
+          <h2>Default</h2>
+          <div id="treeview1"></div>
+        </div><!--/col-->
+        <div class="col-sm-4">
+          <h2>Collapsed</h2>
+          <div id="treeview2"></div>
+        </div><!--/col-->
+        <div class="col-sm-4">
+          <h2>Expanded</h2>
+          <div id="treeview3"></div>
+        </div><!--/col-->
+      </div><!--/row-->
+      <div class="row">
+        <div class="col-sm-4">
+          <h2>Link enabled</h2>
+          <div id="treeview4"></div>
+        </div><!--/col-->
+        <div class="col-sm-4">
+          <h2>Events</h2>
+          <div id="treeview5"></div>
+        </div><!--/col-->
+        <div class="col-sm-4">
+          <h2>Output</h2>
+          <div id="event_output"></div>
+        </div><!--/col-->
+      </div><!--/row-->
+      <div class="row">
+        <div class="col-sm-4">
+          <h2>JSON Data</h2>
+          <div id="treeview6"></div>
+        </div><!--/col-->
+        <div class="col-sm-4">
+          <h2></h2>
+          <div id="treeview13"></div>
+        </div><!--/col-->
+        <div class="col-sm-4">
+          <h2></h2>
+          <div id="treeview14"></div>
+        </div><!--/col-->
+      </div><!--/row-->
+      <script>
+        $(function() {
+          var defaultData = [
+            {
+              text: 'Parent 1',
+              href: '#parent1',
+              tags: ['4'],
+              nodes: [
+                {
+                  text: 'Child 1',
+                  href: '#child1',
+                  icon: 'fa fa-file-o',
+                  tags: ['2'],
+                  nodes: [
+                    {
+                      text: 'Grandchild 1',
+                      href: '#grandchild1',
+                      icon: 'fa fa-file-o',
+                      tags: ['0']
+                    },
+                    {
+                      text: 'Grandchild 2',
+                      href: '#grandchild2',
+                      icon: 'fa fa-file-o',
+                      tags: ['0']
+                    }
+                  ]
+                },
+                {
+                  text: 'Child 2',
+                  href: '#child2',
+                  icon: 'fa fa-file-o',
+                  tags: ['0']
+                }
+              ]
+            },
+            {
+              text: 'Parent 2',
+              href: '#parent2',
+              tags: ['0']
+            },
+            {
+              text: 'Parent 3',
+              href: '#parent3',
+               tags: ['0']
+            },
+            {
+              text: 'Parent 4',
+              href: '#parent4',
+              tags: ['0']
+            },
+            {
+              text: 'Parent 5',
+              href: '#parent5'  ,
+              tags: ['0']
+            }
+          ];
+          var json = '[' +
+            '{' +
+              '"text": "Parent 1",' +
+              '"nodes": [' +
+                '{' +
+                  '"text": "Child 1",' +
+                  '"nodes": [' +
+                    '{' +
+                      '"text": "Grandchild 1"' +
+                    '},' +
+                    '{' +
+                      '"text": "Grandchild 2"' +
+                    '}' +
+                  ']' +
+                '},' +
+                '{' +
+                  '"text": "Child 2"' +
+                '}' +
+              ']' +
+            '},' +
+            '{' +
+              '"text": "Parent 2"' +
+            '},' +
+            '{' +
+              '"text": "Parent 3"' +
+            '},' +
+            '{' +
+              '"text": "Parent 4"' +
+            '},' +
+            '{' +
+              '"text": "Parent 5"' +
+            '}' +
+          ']';
+          $('#treeview1').treeview({
+            collapseIcon: "fa fa-angle-down",
+            data: defaultData,
+            expandIcon: "fa fa-angle-right",
+            nodeIcon: "fa fa-folder",
+            showBorder: false
+          });
+
+          $('#treeview2').treeview({
+            collapseIcon: "fa fa-angle-down",
+            data: defaultData,
+            expandIcon: "fa fa-angle-right",
+            levels: 1,
+            nodeIcon: "fa fa-folder",
+            showBorder: false
+          });
+
+          $('#treeview3').treeview({
+            collapseIcon: "fa fa-angle-down",
+            data: defaultData,
+            expandIcon: "fa fa-angle-right",
+            levels: 99,
+            nodeIcon: "fa fa-folder",
+            showBorder: false
+          });
+
+          $('#treeview4').treeview({
+            collapseIcon: "fa fa-angle-down",
+            data: defaultData,
+            enableLinks: true,
+            expandIcon: "fa fa-angle-right",
+            levels: 99,
+            nodeIcon: "fa fa-folder",
+            showBorder: false
+          });
+
+          $('#treeview5').treeview({
+            collapseIcon: "fa fa-angle-down",
+            data: defaultData,
+            expandIcon: "fa fa-angle-right",
+            levels: 99,
+            nodeIcon: "fa fa-folder",
+            showBorder: false,
+            onNodeSelected: function(event, node) {
+              $('#event_output').prepend('<p>You clicked ' + node.text + '</p>');
+            }
+          });
+          $('#treeview6').treeview({
+            collapseIcon: "fa fa-angle-down",
+            data: json,
+            expandIcon: "fa fa-angle-right",
+            levels: 99,
+            nodeIcon: "fa fa-folder",
+            showBorder: false
+          });
+        });
+      </script>

@@ -1,0 +1,15 @@
+---
+alert-message: ', <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>, and <a href="http://datatables.net" class="alert-link">http://datatables.net</a>.'
+categories: [Widgets]
+layout: page
+title: Data Tables
+resource: true
+url-js-extra: '!URL_COMPONENTS!datatables/media/js/jquery.dataTables.js'
+---
+{% include datatable.html %}
+      <script>
+        // Initialize Datatables
+        $(document).ready(function() {
+          $('.datatable').dataTable();
+        });
+      </script>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dt-example table-type="html" order="12">
+
+<css lib="jqueryui datatables-jqueryui colvis-jqueryui" />
+<js lib="jquery datatables datatables-jqueryui colvis">
+<![CDATA[
+$(document).ready(function() {
+	var table = $('#example').DataTable( {
+		jQueryUI: true
+	} );
+	var colvis = new $.fn.dataTable.ColVis( table );
+
+	$( colvis.button() ).insertBefore('div.dataTables_length');
+} );
+]]>
+</js>
+
+<title lib="ColVis">jQuery UI styling</title>
+
+<info><![CDATA[
+
+This example shows how the jQuery UI ThemeRoller option in DataTables can be used with ColVis.
+
+The important thing to note here is that it is easier to use `new $.fn.dataTable.ColVis()` to add ColVis to the table rather than `dt-init dom` as the jQuery UI integration uses a complex expression for `dt-init dom`.
+
+]]></info>
+
+</dt-example>
