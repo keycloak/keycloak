@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dt-example table-type="html-wide" table-class="display nowrap" order="10">
+
+<css lib="datatables colreorder fixedcolumns" />
+<js lib="jquery datatables colreorder fixedcolumns">
+<![CDATA[
+
+$(document).ready(function() {
+	window.table = $('#example').DataTable( {
+		dom: 'Rlfrtip',
+		scrollX: true,
+		scrollCollapse: true,
+		columnDefs: [
+			{ orderable: false, targets: 0 },
+			{ orderable: false, targets: -1 }
+		],
+		ordering: [[ 1, 'asc' ]],
+		colReorder: {
+			fixedColumnsLeft: 1,
+			fixedColumnsRight: 1
+		}
+	} );
+
+	window.fc = new $.fn.dataTable.FixedColumns( table, {
+		leftColumns: 1,
+		rightColumns: 1
+	} );
+} );
+
+]]>
+</js>
+
+<title lib="ColReorder">FixedColumns integration</title>
+
+<info><![CDATA[
+
+While ColReorder works with the built-in scrolling options in DataTables (`dt-init scrollY` and `dt-init scrollX`) and also the [FixedColumns extension](//datatables.net/extensions/fixedcolumns).
+
+ColReorder provides the `fixedColumnsLeft` and `fixedColumnsRight` options which allows you disallow reordering of the fixed columns (which is required).
+
+]]></info>
+
+</dt-example>

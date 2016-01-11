@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="script/common.css">
+        <script src="script/common.js"></script>
+        <script>
+            function setup(){
+                $('input').datepicker();
+            };
+        </script>
+    </head>
+    <body data-capture="input, .datepicker">
+        <div class="span4">
+            <input type="text" value="03/03/2013" data-date-week-start="2">
+        </div>
+        <div class="span4">
+            <input type="text" value="03/03/2013" data-date-week-start="4">
+        </div>
+        <div class="span4">
+            <input type="text" value="03/03/2013" data-date-week-start="6">
+        </div>
+    </body>
+</html>

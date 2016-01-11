@@ -1,0 +1,37 @@
+//
+// Bootstrap Tree View
+// --------------------------------------------------
+
+.treeview {
+  .list-group {
+    border-top: 0;
+  }
+  .list-group-item {
+    background: transparent;
+    border-bottom: 1px solid transparent !important;
+    border-top: 1px solid transparent !important;
+    margin-bottom: 0;
+    padding: 0 10px;
+    &:hover {
+      background: @dropdown-link-hover-bg !important;
+      border-color: @dropdown-link-hover-border-color !important;
+    }
+    &.node-selected {
+      background: @dropdown-link-active-bg !important;
+      border-color: @dropdown-link-active-border-color !important;
+      color: @dropdown-link-active-color !important;
+    }
+  }
+  span.icon {
+    display: inline-block;
+    font-size: @font-size-base + 1;
+    min-width: 10px;
+    text-align: center;
+    > [class*="fa-angle"] {
+      font-size: @font-size-base + 3;
+    }
+  }
+  span.indent {
+    margin-right: 5px;
+  }
+}
