@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="script/common.css">
+        <script src="script/common.js"></script>
+        <script>
+            function setup(){
+                $('input').datepicker({
+                    format: 'mm-dd-yyyy'
+                });
+            };
+        </script>
+    </head>
+    <body data-capture="input, .datepicker">
+        <input type="text" value="02-16-2012">
+    </body>
+</html>

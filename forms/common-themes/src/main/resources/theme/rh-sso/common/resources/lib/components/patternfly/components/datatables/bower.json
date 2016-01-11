@@ -1,0 +1,32 @@
+{
+	"name": "datatables",
+	"version": "1.10.7",
+	"main": [
+		"media/js/jquery.dataTables.js",
+		"media/css/jquery.dataTables.css",
+		"media/images/sort_asc.png",
+		"media/images/sort_asc_disabled.png",
+		"media/images/sort_both.png",
+		"media/images/sort_desc.png",
+		"media/images/sort_desc_disabled.png"
+	],
+	"dependencies": {
+		"jquery": ">=1.7.0"
+	},
+	"license": "MIT",
+	"keywords": [
+		"jquery",
+		"datatables",
+		"table",
+		"javascript",
+		"library"
+	],
+	"ignore": [
+		"/.*",
+		"examples",
+		"media/unit_testing",
+		"composer.json",
+		"dataTables.jquery.json",
+		"package.json"
+	]
+}
