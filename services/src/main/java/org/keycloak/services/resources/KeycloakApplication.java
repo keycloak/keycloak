@@ -83,11 +83,12 @@ public class KeycloakApplication extends Application {
         boolean bootstrapAdminUser = false;
 
         KeycloakSession session = sessionFactory.create();
+        ExportImportManager exportImportManager;
         try {
             session.getTransaction().begin();
 
             ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-            ExportImportManager exportImportManager = new ExportImportManager(session);
+            exportImportManager = new ExportImportManager(session);
 
             boolean createMasterRealm = applianceBootstrap.isNewInstall();
             if (exportImportManager.isRunImport() && exportImportManager.isImportMasterIncluded()) {
@@ -97,20 +98,27 @@ public class KeycloakApplication extends Application {
             if (createMasterRealm) {
                 applianceBootstrap.createMasterRealm(contextPath);
             }
+            session.getTransaction().commit();
+        } finally {
+            session.close();
+        }
 
-            if (exportImportManager.isRunImport()) {
-                exportImportManager.runImport();
-            } else {
-                importRealms();
-            }
+        if (exportImportManager.isRunImport()) {
+            exportImportManager.runImport();
+        } else {
+            importRealms();
+        }
 
-            importAddUser();
+        importAddUser();
 
-            if (exportImportManager.isRunExport()) {
-                exportImportManager.runExport();
-            }
+        if (exportImportManager.isRunExport()) {
+            exportImportManager.runExport();
+        }
 
-            bootstrapAdminUser = applianceBootstrap.isNoMasterUser();
+        session = sessionFactory.create();
+        try {
+            session.getTransaction().begin();
+            bootstrapAdminUser = new ApplianceBootstrap(session).isNoMasterUser();
 
             session.getTransaction().commit();
         } finally {
