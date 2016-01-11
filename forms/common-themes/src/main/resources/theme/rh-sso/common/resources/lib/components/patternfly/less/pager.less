@@ -1,0 +1,72 @@
+//
+// Pager
+// --------------------------------------------------
+
+.pager {
+  li {
+    > a,
+    > span {
+      .button-variant(@btn-default-color; @btn-default-bg; @btn-default-bg-img-start; @btn-default-bg-img-stop; @btn-default-border);
+      color: @gray-pf;
+      font-weight: 600;
+      line-height: 22px;
+      padding: 2px 14px;
+      > .i {
+        font-size: 18px;
+        vertical-align: top;
+        margin: 2px 0;
+      }
+    }
+    > a:hover
+    > a:focus {
+      color: @gray-pf;
+    }
+    a:active {
+      background-image: none;
+      .box-shadow(inset 0 3px 5px rgba(0,0,0,.125));
+      outline: 0;
+    }
+  }
+  .disabled {
+    > a,
+    > a:hover,
+    > a:focus,
+    > a:active,
+    > span {
+      background: @pagination-bg;
+      .box-shadow(none);
+      color: @pager-disabled-color;
+      cursor: default;
+    }
+  }
+  .next {
+     > a,
+     > span {
+       > .i {
+          margin-left: 5px;
+       }
+     }
+  }
+  .previous {
+     > a,
+     > span {
+       > .i {
+          margin-right: 5px;
+       }
+     }
+  }
+}
+
+.pager-sm {
+  li {
+    > a,
+    > span {
+      font-weight: 400;
+      line-height: 16px;
+      padding: 1px 10px;
+      > .i {
+        font-size: 12px;
+      }
+    }
+  }
+}
