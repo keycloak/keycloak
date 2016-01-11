@@ -1,8 +1,11 @@
 package org.keycloak.testsuite.federation.ldap.base;
 
+import java.util.List;
 import java.util.Map;
 
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -76,6 +79,20 @@ public class LDAPGroupMapperSyncTest {
     public static TestRule chain = RuleChain
             .outerRule(ldapRule)
             .around(keycloakRule);
+
+    @Before
+    public void before() {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmModel realm = session.realms().getRealmByName("test");
+            List<GroupModel> kcGroups = realm.getTopLevelGroups();
+            for (GroupModel kcGroup : kcGroups) {
+                realm.removeGroup(kcGroup);
+            }
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
 
     @Test
     public void test01_syncNoPreserveGroupInheritance() throws Exception {
@@ -213,7 +230,7 @@ public class LDAPGroupMapperSyncTest {
             // Sync groups again from LDAP. Assert LDAP non-existing groups deleted
             syncResult = new GroupLDAPFederationMapperFactory().create(session).syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, session, realm);
             Assert.assertEquals(3, syncResult.getUpdated());
-            Assert.assertTrue(syncResult.getRemoved() >= 2);
+            Assert.assertTrue(syncResult.getRemoved() == 2);
 
             // Sync and assert groups updated
             Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(realm, "/group1/group11"));
