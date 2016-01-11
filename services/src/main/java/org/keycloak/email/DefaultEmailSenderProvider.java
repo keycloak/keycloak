@@ -1,6 +1,9 @@
 package org.keycloak.email;
 
 import org.jboss.logging.Logger;
+import org.keycloak.connections.truststore.HostnameVerificationPolicy;
+import org.keycloak.connections.truststore.JSSETruststoreConfigurator;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
@@ -12,6 +15,8 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
@@ -22,6 +27,12 @@ import java.util.Properties;
 public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     private static final Logger log = Logger.getLogger(DefaultEmailSenderProvider.class);
+
+    private final KeycloakSession session;
+
+    public DefaultEmailSenderProvider(KeycloakSession session) {
+        this.session = session;
+    }
 
     @Override
     public void send(RealmModel realm, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
@@ -50,6 +61,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
             if (starttls) {
                 props.setProperty("mail.smtp.starttls.enable", "true");
+            }
+
+            if (ssl || starttls) {
+                setupTruststore(props);
             }
 
             props.setProperty("mail.smtp.timeout", "10000");
@@ -94,9 +109,18 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         }
     }
 
+    private void setupTruststore(Properties props) throws NoSuchAlgorithmException, KeyManagementException {
+
+        JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
+
+        props.put("mail.smtp.ssl.socketFactory", configurator.getSSLSocketFactory());
+        if (configurator.getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
+            props.setProperty("mail.smtp.ssl.trust", "*");
+        }
+    }
+
     @Override
     public void close() {
 
     }
-
 }

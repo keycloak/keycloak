@@ -63,6 +63,8 @@ public class RedirectUtils {
             logger.debug("No Redirect URIs supplied");
             redirectUri = null;
         } else {
+            redirectUri = lowerCaseHostname(redirectUri);
+
             String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
             Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, rootUrl, validRedirects);
 
@@ -93,6 +95,15 @@ public class RedirectUtils {
             return Urls.realmInstalledAppUrnCallback(uriInfo.getBaseUri(), realm.getName()).toString();
         } else {
             return redirectUri;
+        }
+    }
+
+    private static String lowerCaseHostname(String redirectUri) {
+        int n = redirectUri.indexOf('/', 7);
+        if (n == -1) {
+            return redirectUri.toLowerCase();
+        } else {
+            return redirectUri.substring(0, n).toLowerCase() + redirectUri.substring(n);
         }
     }
 

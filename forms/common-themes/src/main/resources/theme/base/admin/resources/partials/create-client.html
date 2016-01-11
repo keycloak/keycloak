@@ -37,7 +37,8 @@
                         <select class="form-control" id="protocol"
                                 ng-change="changeProtocol()"
                                 ng-model="protocol"
-                                ng-options="aProtocol for aProtocol in protocols">
+                                ng-options="aProtocol for aProtocol in protocols"
+                                ng-disabled="client.clientTemplate">
                         </select>
                     </div>
                 </div>
@@ -48,6 +49,7 @@
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="template"
+                                ng-change="changeTemplate()"
                                 ng-model="client.clientTemplate"
                                 ng-options="template.name as template.name for template in templates">
                         </select>

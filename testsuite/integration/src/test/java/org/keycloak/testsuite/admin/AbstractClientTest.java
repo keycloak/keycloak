@@ -16,10 +16,7 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.openqa.selenium.WebDriver;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.assertArrayEquals;
 
@@ -41,32 +38,37 @@ public abstract class AbstractClientTest {
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                RealmModel testRealm = manager.createRealm(REALM_NAME);
-                testRealm.setEnabled(true);
-                testRealm.setAccessCodeLifespanUserAction(600);
-                KeycloakModelUtils.generateRealmKeys(testRealm);
-
                 appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
             }
         });
 
         keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
+
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm(REALM_NAME);
+        rep.setEnabled(true);
+
+        Map<String, String> config = new HashMap<>();
+        config.put("from", "auto@keycloak.org");
+        config.put("host", "localhost");
+        config.put("port", "3025");
+
+        rep.setSmtpServer(config);
+
+        keycloak.realms().create(rep);
+
         realm = keycloak.realm(REALM_NAME);
     }
 
     @After
     public void after() {
-        keycloak.close();
-
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                RealmModel realm = manager.getRealmByName(REALM_NAME);
-                if (realm != null) {
-                    manager.removeRealm(realm);
-                }
+        for (RealmRepresentation r : keycloak.realms().findAll()) {
+            if (r.getRealm().equals(REALM_NAME)) {
+                keycloak.realm(REALM_NAME).remove();
             }
-        });
+        }
+
+        keycloak.close();
     }
 
     public static <T> void assertNames(List<T> actual, String... expected) {

@@ -16,6 +16,7 @@
         <module name="org.jboss.logging"/>
         <module name="javax.api"/>
         <module name="org.apache.httpcomponents"/>
+        <module name="org.keycloak.keycloak-connections-truststore"/>
     </dependencies>
 
 </module>

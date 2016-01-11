@@ -21,7 +21,7 @@ import org.keycloak.common.util.Time;
 import javax.ws.rs.core.UriInfo;
 
 public class AdminEventBuilder {
-    
+
     private static final Logger log = Logger.getLogger(AdminEventBuilder.class);
 
     private EventStoreProvider store;
@@ -59,17 +59,17 @@ public class AdminEventBuilder {
         authUser(auth.getUser());
         authIpAddress(clientConnection.getRemoteAddr());
     }
-    
+
     public AdminEventBuilder realm(RealmModel realm) {
         adminEvent.setRealmId(realm.getId());
         return this;
     }
-    
+
     public AdminEventBuilder realm(String realmId) {
         adminEvent.setRealmId(realmId);
         return this;
     }
-    
+
     public AdminEventBuilder operation(OperationType e) {
         adminEvent.setOperationType(e);
         return this;
@@ -123,6 +123,18 @@ public class AdminEventBuilder {
         return this;
     }
 
+    public AdminEventBuilder resourcePath(String... pathElements) {
+        StringBuilder sb = new StringBuilder();
+        for (String element : pathElements) {
+            sb.append("/");
+            sb.append(element);
+        }
+        if (pathElements.length > 0) sb.deleteCharAt(0); // remove leading '/'
+
+        adminEvent.setResourcePath(sb.toString());
+        return this;
+    }
+
     public AdminEventBuilder resourcePath(UriInfo uriInfo) {
         String path = getResourcePath(uriInfo);
         adminEvent.setResourcePath(path);
@@ -155,7 +167,7 @@ public class AdminEventBuilder {
         adminEvent.setError(error);
         send();
     }
-    
+
     public AdminEventBuilder representation(Object value) {
         if (value == null || value.equals("")) {
             return this;
@@ -167,7 +179,7 @@ public class AdminEventBuilder {
         }
         return this;
     }
-    
+
     public AdminEvent getEvent() {
         return adminEvent;
     }
@@ -190,7 +202,7 @@ public class AdminEventBuilder {
                 log.error("Failed to save event", t);
             }
         }
-        
+
         if (listeners != null) {
             for (EventListenerProvider l : listeners) {
                 try {

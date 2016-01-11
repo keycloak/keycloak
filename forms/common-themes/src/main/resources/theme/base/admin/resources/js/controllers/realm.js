@@ -2062,14 +2062,210 @@ module.controller('ClientInitialAccessCreateCtrl', function($scope, realm, Clien
     };
 });
 
+module.controller('RealmImportCtrl', function($scope, realm, $route, 
+                                              Notifications, $modal, $resource) {
+    $scope.rawContent = {};
+    $scope.fileContent = {
+        enabled: true
+    };
+    $scope.changed = false;
+    $scope.files = [];
+    $scope.realm = realm;
+    $scope.overwrite = false;
+    $scope.skip = false;
+    $scope.importUsers = false;
+    $scope.importClients = false;
+    $scope.importIdentityProviders = false;
+    $scope.importRealmRoles = false;
+    $scope.importClientRoles = false;
+    $scope.ifResourceExists='FAIL';
+    $scope.isMultiRealm = false;
+    $scope.results = {};
+    $scope.currentPage = 0;
+    var pageSize = 15;
+    
+    var oldCopy = angular.copy($scope.fileContent);
 
+    $scope.importFile = function($fileContent){
+        var parsed;
+        try {
+            parsed = JSON.parse($fileContent);
+        } catch (e) {
+            Notifications.error('Unable to parse JSON file.');
+            return;
+        }
+        
+        $scope.rawContent = angular.copy(parsed);
+        if (($scope.rawContent instanceof Array) && ($scope.rawContent.length > 0)) {
+            if ($scope.rawContent.length > 1) $scope.isMultiRealm = true;
+            $scope.fileContent = $scope.rawContent[0];
+        } else {
+            $scope.fileContent = $scope.rawContent;
+        }
+        
+        $scope.importing = true;
+        $scope.importUsers = $scope.hasArray('users');
+        $scope.importClients = $scope.hasArray('clients');
+        $scope.importIdentityProviders = $scope.hasArray('identityProviders');
+        $scope.importRealmRoles = $scope.hasRealmRoles();
+        $scope.importClientRoles = $scope.hasClientRoles();
+        $scope.results = {};
+        if (!$scope.hasResources()) {
+            $scope.nothingToImport();
+        }
+    };
 
+    $scope.hasResults = function() {
+        return (Object.keys($scope.results).length > 0) &&
+                ($scope.results.results !== undefined) &&
+                ($scope.results.results.length > 0);
+    }
+    
+    $scope.resultsPage = function() {
+        if (!$scope.hasResults()) return {};
+        return $scope.results.results.slice(startIndex(), endIndex());
+    }
+    
+    function startIndex() {
+        return pageSize * $scope.currentPage;
+    }
+    
+    function endIndex() {
+        var length = $scope.results.results.length;
+        var endIndex = startIndex() + pageSize;
+        if (endIndex > length) endIndex = length;
+        return endIndex;
+    }
+    
+    $scope.setFirstPage = function() {
+        $scope.currentPage = 0;
+    }
+    
+    $scope.setNextPage = function() {
+        $scope.currentPage++;
+    }
+    
+    $scope.setPreviousPage = function() {
+        $scope.currentPage--;
+    }
+    
+    $scope.hasNext = function() {
+        if (!$scope.hasResults()) return false;
+        var length = $scope.results.results.length;
+        //console.log('length=' + length);
+        var endIndex = startIndex() + pageSize;
+        //console.log('endIndex=' + endIndex);
+        return length > endIndex;
+    }
+    
+    $scope.hasPrevious = function() {
+        if (!$scope.hasResults()) return false;
+        return $scope.currentPage > 0;
+    }
+    
+    $scope.viewImportDetails = function() {
+        $modal.open({
+            templateUrl: resourceUrl + '/partials/modal/view-object.html',
+            controller: 'ObjectModalCtrl',
+            resolve: {
+                object: function () {
+                    return $scope.fileContent;
+                }
+            }
+        })
+    };
+    
+    $scope.hasArray = function(section) {
+        return ($scope.fileContent !== 'undefined') &&
+               ($scope.fileContent.hasOwnProperty(section)) &&
+               ($scope.fileContent[section] instanceof Array) &&
+               ($scope.fileContent[section].length > 0);
+    }
+    
+    $scope.hasRealmRoles = function() {
+        return $scope.hasRoles() &&
+               ($scope.fileContent.roles.hasOwnProperty('realm')) &&
+               ($scope.fileContent.roles.realm instanceof Array) &&
+               ($scope.fileContent.roles.realm.length > 0);
+    }
+    
+    $scope.hasRoles = function() {
+        return ($scope.fileContent !== 'undefined') &&
+               ($scope.fileContent.hasOwnProperty('roles')) &&
+               ($scope.fileContent.roles !== 'undefined');
+    }
+    
+    $scope.hasClientRoles = function() {
+        return $scope.hasRoles() &&
+               ($scope.fileContent.roles.hasOwnProperty('client')) &&
+               (Object.keys($scope.fileContent.roles.client).length > 0);
+    }
+    
+    $scope.itemCount = function(section) {
+        if (!$scope.importing) return 0;
+        if ($scope.hasRealmRoles() && (section === 'roles.realm')) return $scope.fileContent.roles.realm.length;
+        if ($scope.hasClientRoles() && (section === 'roles.client')) return Object.keys($scope.fileContent.roles.client).length;
+        
+        if (!$scope.fileContent.hasOwnProperty(section)) return 0;
+        
+        return $scope.fileContent[section].length;
+    }
+    
+    $scope.hasResources = function() {
+        return ($scope.importUsers && $scope.hasArray('users')) ||
+               ($scope.importClients && $scope.hasArray('clients')) ||
+               ($scope.importIdentityProviders && $scope.hasArray('identityProviders')) ||
+               ($scope.importRealmRoles && $scope.hasRealmRoles()) ||
+               ($scope.importClientRoles && $scope.hasClientRoles());
+    }
+    
+    $scope.nothingToImport = function() {
+        Notifications.error('No resouces specified to import.');
+    }
+    
+    $scope.$watch('fileContent', function() {
+        if (!angular.equals($scope.fileContent, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+    
+    $scope.successMessage = function() {
+        var message = $scope.results.added + ' records added. ';
+        if ($scope.ifResourceExists === 'SKIP') {
+            message += $scope.results.skipped + ' records skipped.'
+        }
+        if ($scope.ifResourceExists === 'OVERWRITE') {
+            message += $scope.results.overwritten + ' records overwritten.';
+        }
+        return message;
+    }
+    
+    $scope.save = function() {
+        var json = angular.copy($scope.fileContent);
+        json.ifResourceExists = $scope.ifResourceExists;
+        if (!$scope.importUsers) delete json.users;
+        if (!$scope.importIdentityProviders) delete json.identityProviders;
+        if (!$scope.importClients) delete json.clients;
+        
+        if (json.hasOwnProperty('roles')) {
+            if (!$scope.importRealmRoles) delete json.roles.realm;
+            if (!$scope.importClientRoles) delete json.roles.client;
+        }
+        
+        var importFile = $resource(authUrl + '/admin/realms/' + realm.realm + '/partialImport');
+        $scope.results = importFile.save(json, function() {
+            Notifications.success($scope.successMessage());
+        }, function(error) {
+            if (error.data.errorMessage) {
+                Notifications.error(error.data.errorMessage);
+            } else {
+                Notifications.error('Unexpected error during import');
+            }
+        });
+    };
+    
+    $scope.reset = function() {
+        $route.reload();
+    }
 
-
-
-
-
-
-
-
-
+});

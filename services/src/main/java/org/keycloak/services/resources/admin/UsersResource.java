@@ -150,7 +150,7 @@ public class UsersResource {
                 }
             }
 
-            updateUserFromRep(user, rep, attrsToRemove);
+            updateUserFromRep(user, rep, attrsToRemove, realm, session);
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
 
             if (session.getTransaction().isActive()) {
@@ -189,7 +189,7 @@ public class UsersResource {
         try {
             UserModel user = session.users().addUser(realm, rep.getUsername());
             Set<String> emptySet = Collections.emptySet();
-            updateUserFromRep(user, rep, emptySet);
+            updateUserFromRep(user, rep, emptySet, realm, session);
 
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, user.getId()).representation(rep).success();
 
@@ -206,7 +206,7 @@ public class UsersResource {
         }
     }
 
-    private void updateUserFromRep(UserModel user, UserRepresentation rep, Set<String> attrsToRemove) {
+    public static void updateUserFromRep(UserModel user, UserRepresentation rep, Set<String> attrsToRemove, RealmModel realm, KeycloakSession session) {
         if (realm.isEditUsernameAllowed()) {
             user.setUsername(rep.getUsername());
         }
