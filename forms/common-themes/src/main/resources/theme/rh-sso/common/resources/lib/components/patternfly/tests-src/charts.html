@@ -1,0 +1,348 @@
+---
+alert-message: ', <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>, and <a href="http://c3js.org/">http://c3js.org/</a>'
+categories: [Widgets]
+layout: page
+title: Charts
+resource: true
+url-js-extra: ['!URL_COMPONENTS!c3/c3.min.js', '!URL_COMPONENTS!d3/d3.min.js']
+---
+      <h2>Line Chart</h2>
+      <h3>Default C3 Colors <small> don't use these</small></h3>
+      <div id="chart"></div>
+      <h3>Patternfly Colors <small>use these</small></h3>
+      <div id="chart1"></div>
+      <h2>Sparkline</h2>
+      <div class="row">
+        <div class="col-md-4">
+          <div id="chart2"></div>
+          <div class="pull-right">91%</div>
+          <div class="pull-left">Less than one year remaining</div>
+        </div>
+      </div>
+      <h2>Spline Chart</h2>
+      <div id="chart3"></div>
+      <h2>Area Chart</h2>
+      <div id="chart4"></div>
+      <h2>Stacked Area Chart</h2>
+      <div id="chart5"></div>
+      <h2>Bar Chart</h2>
+      <div id="chart6"></div>
+      <h2>Stacked Bar Chart, Rotated</h2>
+      <div id="chart7"></div>
+      <h2>Donut Chart</h2>
+      <div id="chart8"></div>
+      <script>
+        var chart = c3.generate({
+          axis: {
+            x: {
+              tick: {
+                outer: false
+              }
+            },
+            y: {
+              tick: {
+                outer: false
+              }
+            }
+          },
+          bindto: '#chart',
+          data: {
+            columns: [
+              ['data1', 30, 200, 100, 400, 150, 250],
+              ['data2', 50, 220, 310, 240, 115, 25],
+              ['data3', 70, 100, 390, 295, 170, 220],
+              ['data4', 10, 340, 30, 290, 35, 20],
+              ['data5', 90, 150, 160, 165, 180, 5]
+            ]
+          },
+          grid: {
+            y: {
+              show: true
+            }
+          },
+          point: {
+            r: 4
+          }
+        });
+        var chart1 = c3.generate({
+          axis: {
+            x: {
+              tick: {
+                outer: false
+              }
+            },
+            y: {
+              tick: {
+                outer: false
+              }
+            }
+          },
+          bindto: '#chart1',
+          color: {
+            pattern: ['#0088ce', '#00659c', '#3f9c35', '#ec7a08', '#cc0000']
+          },
+          data: {
+            columns: [
+              ['data1', 30, 200, 100, 400, 150, 250],
+              ['data2', 50, 220, 310, 240, 115, 25],
+              ['data3', 70, 100, 390, 295, 170, 220],
+              ['data4', 10, 340, 30, 290, 35, 20],
+              ['data5', 90, 150, 160, 165, 180, 5]
+            ]
+          },
+          grid: {
+            y: {
+              show: true
+            }
+          },
+          point: {
+            r: 4
+          }
+        });
+        var chart2 = c3.generate({
+          axis: {
+            x: {
+              show: false
+            },
+            y: {
+              show: false
+            }
+          },
+          bindto: '#chart2',
+          color: {
+            pattern: ['#0088ce', '#00659c', '#3f9c35', '#ec7a08', '#cc0000']
+          },
+          data: {
+            columns: [
+              ['Less than one year remaining', 10, 14, 12, 20, 31, 27, 44, 36, 52, 55, 62, 68, 69, 88, 74, 88, 91],
+            ],
+            type: 'area'
+          },
+          legend: {
+            show: false
+          },
+          point: {
+            r: 1,
+            focus: {
+              expand: {
+                r: 4
+              }
+            }
+          },
+          size: {
+            height: 80
+          },
+          tooltip: {
+            // because a sparkline should only contain a single data column, the tooltip will only work for a single data column
+            contents: function (d, defaultTitleFormat, defaultValueFormat, color) {
+              for (i = 0; i < d.length; i++) {
+                return '<span class="c3-tooltip-sparkline">' + d[i].value + '%' + '</span>'
+              }
+            }
+          }
+        });
+        var chart3 = c3.generate({
+          axis: {
+            x: {
+              tick: {
+                outer: false
+              }
+            },
+            y: {
+              tick: {
+                outer: false
+              }
+            }
+          },
+          bindto: '#chart3',
+          color: {
+            pattern: ['#0088ce', '#00659c', '#3f9c35', '#ec7a08', '#cc0000']
+          },
+          data: {
+            columns: [
+              ['data1', 30, 200, 100, 400, 150, 250],
+              ['data2', 50, 220, 310, 240, 115, 25],
+              ['data3', 70, 100, 390, 295, 170, 220],
+              ['data4', 10, 340, 30, 290, 35, 20],
+              ['data5', 90, 150, 160, 165, 180, 5]
+            ],
+            type: 'spline'
+          },
+          grid: {
+            y: {
+              show: true
+            }
+          },
+          point: {
+            r: 4
+          }
+        });
+        var chart4 = c3.generate({
+          axis: {
+            x: {
+              tick: {
+                outer: false
+              }
+            },
+            y: {
+              tick: {
+                outer: false
+              }
+            }
+          },
+          bindto: '#chart4',
+          color: {
+            pattern: ['#0088ce', '#00659c', '#3f9c35', '#ec7a08', '#cc0000']
+          },
+          data: {
+            columns: [
+              ['data1', 300, 350, 300, 0, 0, 0],
+              ['data2', 130, 100, 140, 200, 150, 50]
+            ],
+            types: {
+              data1: 'area-spline',
+              data2: 'area-spline'
+            }
+          },
+          grid: {
+            y: {
+              show: true
+            }
+          },
+          point: {
+            r: 4
+          }
+        });
+        var chart5 = c3.generate({
+          axis: {
+            x: {
+              tick: {
+                outer: false
+              }
+            },
+            y: {
+              tick: {
+                outer: false
+              }
+            }
+          },
+          bindto: '#chart5',
+          color: {
+            pattern: ['#0088ce', '#00659c', '#3f9c35', '#ec7a08', '#cc0000']
+          },
+          data: {
+            columns: [
+              ['data1', 300, 350, 300, 0, 0, 0],
+              ['data2', 130, 100, 140, 200, 150, 50]
+            ],
+            types: {
+              data1: 'area-spline',
+              data2: 'area-spline'
+            },
+            groups: [['data1', 'data2']]
+          },
+          grid: {
+            y: {
+              show: true
+            }
+          },
+          point: {
+            r: 4
+          }
+        });
+        var chart6 = c3.generate({
+          axis: {
+            x: {
+              categories: ['Red', 'Orange', 'Green', 'Blue'],
+              tick: {
+                outer: false
+              },
+              type: 'category'
+            },
+            y: {
+              tick: {
+                outer: false
+              }
+            }
+          },
+          bar: {
+            width: {
+              ratio: 0.5 // this makes bar width 50% of length between ticks
+            }
+          },
+          bindto: '#chart6',
+          color: {
+            pattern: ['#0088ce', '#00659c', '#3f9c35', '#ec7a08', '#cc0000']
+          },
+          data: {
+            columns: [
+              ['data1', 5, 200, 200, 400],
+              ['data2', 130, 100, 20, 200]
+            ],
+            type: 'bar'
+          },
+          grid: {
+            y: {
+              show: true
+            }
+          }
+        });
+        var chart7 = c3.generate({
+          axis: {
+            rotated: true,
+            x: {
+              categories: ['Red', 'Orange', 'Green', 'Blue'],
+              tick: {
+                outer: false
+              },
+              type: 'category'
+            },
+            y: {
+              tick: {
+                outer: false
+              }
+            }
+          },
+          bindto: '#chart7',
+          color: {
+            pattern: ['#0088ce', '#00659c', '#3f9c35', '#ec7a08', '#cc0000']
+          },
+          data: {
+            columns: [
+              ['data1', 5, 200, 200, 400],
+              ['data2', 130, 100, 20, 200]
+            ],
+            groups: [
+              ['data1', 'data2']
+            ],
+            type: 'bar'
+          },
+          grid: {
+            y: {
+              show: true
+            }
+          }
+        });
+        var chart8 = c3.generate({
+          bindto: '#chart8',
+          data: {
+            colors: {
+              Cloud: 
+          '#00659c',     Virtual: '#0088ce',
+              Baremetal: '#969696'
+            },
+            columns: [
+              ['Cloud', 4,828],
+              ['Virtual', 13,258],
+              ['Baremetal', 11,1124]
+            ],
+            type : 'donut',
+            onclick: function (d, i) { console.log("onclick", d, i); },
+            onmouseover: function (d, i) { console.log("onmouseover", d, i); },
+            onmouseout: function (d, i) { console.log("onmouseout", d, i); }
+          },
+          donut: {
+            title: "29,210 Host Totals"
+          }
+        });
+      </script>

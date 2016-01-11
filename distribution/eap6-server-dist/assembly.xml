@@ -50,6 +50,7 @@
             <outputDirectory>${product.name}-${product.version}</outputDirectory>
             <excludes>
                 <exclude>standalone/configuration/standalone-keycloak.xml</exclude>
+                <exclude>standalone/configuration/themes/keycloak/**</exclude>
             </excludes>
         </fileSet>
         <fileSet>
