@@ -66,7 +66,7 @@ public class ApplianceBootstrap {
         return true;
     }
 
-    public void createMasterRealmUser(KeycloakSession session, String username, String password) {
+    public void createMasterRealmUser(String username, String password) {
         RealmModel realm = session.realms().getRealm(Config.getAdminRealm());
         if (session.users().getUsersCount(realm) > 0) {
             throw new IllegalStateException("Can't create initial user as users already exists");

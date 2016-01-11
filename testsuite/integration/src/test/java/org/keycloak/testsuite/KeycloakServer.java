@@ -278,7 +278,7 @@ public class KeycloakServer {
             try {
                 session.getTransaction().begin();
                 if (new ApplianceBootstrap(session).isNoMasterUser()) {
-                    new ApplianceBootstrap(session).createMasterRealmUser(session, "admin", "admin");
+                    new ApplianceBootstrap(session).createMasterRealmUser("admin", "admin");
                 }
                 session.getTransaction().commit();
             } finally {
