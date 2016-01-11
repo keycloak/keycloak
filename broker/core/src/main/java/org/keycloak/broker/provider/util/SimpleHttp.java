@@ -1,5 +1,8 @@
 package org.keycloak.broker.provider.util;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -23,6 +26,9 @@ public class SimpleHttp {
     private String method;
     private Map<String, String> headers;
     private Map<String, String> params;
+
+    private SSLSocketFactory sslFactory;
+    private HostnameVerifier hostnameVerifier;
 
     protected SimpleHttp(String url, String method) {
         this.url = url;
@@ -53,6 +59,15 @@ public class SimpleHttp {
         return this;
     }
 
+    public SimpleHttp sslFactory(SSLSocketFactory factory) {
+        sslFactory = factory;
+        return this;
+    }
+
+    public SimpleHttp hostnameVerifier(HostnameVerifier verifier) {
+        hostnameVerifier = verifier;
+        return this;
+    }
 
     public String asString() throws IOException {
         boolean get = method.equals("GET");
@@ -85,6 +100,7 @@ public class SimpleHttp {
         }
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        setupTruststoreIfApplicable(connection);
         OutputStream os = null;
         InputStream is = null;
 
@@ -171,6 +187,7 @@ public class SimpleHttp {
         }
 
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        setupTruststoreIfApplicable(connection);
         OutputStream os = null;
         InputStream is = null;
 
@@ -235,4 +252,13 @@ public class SimpleHttp {
         return writer.toString();
     }
 
+    private void setupTruststoreIfApplicable(HttpURLConnection connection) {
+        if (connection instanceof HttpsURLConnection && sslFactory != null) {
+            HttpsURLConnection con = (HttpsURLConnection) connection;
+            con.setSSLSocketFactory(sslFactory);
+            if (hostnameVerifier != null) {
+                con.setHostnameVerifier(hostnameVerifier);
+            }
+        }
+    }
 }

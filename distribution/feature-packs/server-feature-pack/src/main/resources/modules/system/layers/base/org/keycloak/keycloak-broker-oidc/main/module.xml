@@ -13,6 +13,7 @@
         <module name="org.keycloak.keycloak-events-api"/>
         <module name="org.keycloak.keycloak-broker-core"/>
         <module name="org.keycloak.keycloak-services"/>
+        <module name="org.keycloak.keycloak-connections-truststore"/>
         <module name="org.codehaus.jackson.jackson-core-asl"/>
         <module name="org.codehaus.jackson.jackson-mapper-asl"/>
         <module name="org.codehaus.jackson.jackson-xc"/>

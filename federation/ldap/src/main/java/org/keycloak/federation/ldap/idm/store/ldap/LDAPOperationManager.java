@@ -467,6 +467,9 @@ public class LDAPOperationManager {
 
         if (protocol != null) {
             env.put(Context.SECURITY_PROTOCOL, protocol);
+            if ("ssl".equals(protocol)) {
+                env.put("java.naming.ldap.factory.socket", "org.keycloak.connections.truststore.SSLSocketFactory");
+            }
         }
 
         String bindDN = this.config.getBindDN();

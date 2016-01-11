@@ -27,6 +27,7 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.connections.truststore.JSSETruststoreConfigurator;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -247,12 +248,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {
+            JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
             return SimpleHttp.doPost(getConfig().getTokenUrl())
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
                     .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
                     .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, uriInfo.getAbsolutePath().toString())
-                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
+                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE)
+                    .sslFactory(configurator.getSSLSocketFactory())
+                    .hostnameVerifier(configurator.getHostnameVerifier());
         }
     }
 }

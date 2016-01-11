@@ -18,6 +18,7 @@
         <module name="org.keycloak.keycloak-connections-jpa-liquibase" services="import"/>
         <module name="org.keycloak.keycloak-connections-mongo" services="import"/>
         <module name="org.keycloak.keycloak-connections-mongo-update" services="import"/>
+        <module name="org.keycloak.keycloak-connections-truststore" services="import"/>
         <module name="org.keycloak.keycloak-common" services="import"/>
         <module name="org.keycloak.keycloak-core" services="import"/>
         <module name="org.keycloak.keycloak-email-api" services="import"/>
