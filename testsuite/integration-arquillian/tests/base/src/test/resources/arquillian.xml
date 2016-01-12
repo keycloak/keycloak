@@ -19,6 +19,7 @@
     
     <extension qualifier="graphene-secondbrowser">
         <property name="browser">${browser}</property>
+        <property name="firefox_binary">${firefox_binary}</property>
     </extension>
     
     <engine>
