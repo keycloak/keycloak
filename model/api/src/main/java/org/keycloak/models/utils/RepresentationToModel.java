@@ -1,6 +1,7 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.Config;
+import org.keycloak.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.Constants;
 import org.keycloak.common.util.Base64;
@@ -1253,13 +1254,20 @@ public class RepresentationToModel {
             hashedCred.setValue(cred.getHashedSaltedValue());
             if (cred.getCounter() != null) hashedCred.setCounter(cred.getCounter());
             if (cred.getDigits() != null) hashedCred.setDigits(cred.getDigits());
-            if (cred.getAlgorithm() != null) hashedCred.setAlgorithm(cred.getAlgorithm());
+
+            if (cred.getAlgorithm() != null) {
+                hashedCred.setAlgorithm(cred.getAlgorithm());
+            } else {
+                if (UserCredentialModel.PASSWORD.equals(cred.getType()) || UserCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) {
+                    hashedCred.setAlgorithm(Pbkdf2PasswordHashProvider.ID);
+                } else if (UserCredentialModel.isOtp(cred.getType())) {
+                    hashedCred.setAlgorithm(HmacOTP.HMAC_SHA1);
+                }
+            }
+
             if (cred.getPeriod() != null) hashedCred.setPeriod(cred.getPeriod());
             if (cred.getDigits() == null && UserCredentialModel.isOtp(cred.getType())) {
                 hashedCred.setDigits(6);
-            }
-            if (cred.getAlgorithm() == null && UserCredentialModel.isOtp(cred.getType())) {
-                hashedCred.setAlgorithm(HmacOTP.HMAC_SHA1);
             }
             if (cred.getPeriod() == null && UserCredentialModel.TOTP.equals(cred.getType())) {
                 hashedCred.setPeriod(30);
