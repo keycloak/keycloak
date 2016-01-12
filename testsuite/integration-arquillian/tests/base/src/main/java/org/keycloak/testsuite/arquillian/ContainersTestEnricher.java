@@ -127,60 +127,7 @@ public class ContainersTestEnricher {
             alreadyStopped = true;
         }
         
-        if (!alreadyInstalled && !skipInstallAdapters && isJBossBased(container)) {
-            String jbossCliPath = jbossHomePath + "/bin/jboss-cli.sh";
-            String adapterScriptPathArg = "--file=" + jbossHomePath + "/bin/adapter-install.cli";
-            String samlAdapterScriptPathArg = "--file=" + jbossHomePath + "/bin/adapter-install-saml.cli";
-            String managementPort = container.getContainerConfiguration().getContainerProperties().get("managementPort");
-            String controllerArg = "--controller=localhost:" + managementPort;
-
-            log.info("Installing adapter to app server via cli script");
-            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", adapterScriptPathArg, controllerArg});
-            log.info("Installing saml adapter to app server via cli script");
-            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", samlAdapterScriptPathArg, controllerArg});
-            log.info("Restarting container");
-            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", "--command=:reload", controllerArg});
-            pause(5000);
-            log.info("Container restarted");
-            checkServerLog(jbossHomePath);
-            if (container.getName().startsWith("app-server")) {
-                alreadyInstalled = true;
-            }
-        }
-    }
-
-    private void execCommand(String... command) throws IOException, InterruptedException {
-        Process process = Runtime.getRuntime().exec(command);
-
-        if (process.waitFor(10, TimeUnit.SECONDS)) {
-            if (process.exitValue() != 0) {
-                throw new RuntimeException("Adapter installation failed. Process exitValue: " 
-                        + process.exitValue() + "; <error output>\n" + getOutput(process.getErrorStream()) 
-                        + "</error output>");
-            }
-            log.debug("process.isAlive(): " + process.isAlive());
-        } else {
-            process.destroyForcibly();
-            throw new RuntimeException("Timeout after 10 seconds.");
-        }
-    }
-
-    private String getOutput(InputStream is) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        StringBuilder builder = new StringBuilder();
-        while (reader.ready()) {
-            builder.append(reader.readLine());
-        }
-        return builder.toString();
-    }
-
-    private boolean isJBossBased(Container container) {
-        if (container == null) {
-            return false;
-        }
-        return container.getName().matches("a.*-server-wildfly")
-                || container.getName().matches("a.*-server-eap.")
-                || container.getName().equals("app-server-as7");
+        installAdapters(container);
     }
 
     /*
@@ -326,4 +273,60 @@ public class ContainersTestEnricher {
         return "http://localhost:" + Integer.parseInt(System.getProperty("app.server.http.port", "8280"));
     }
 
+    private void installAdapters(Container container) throws InterruptedException, IOException {
+        if (!alreadyInstalled && !skipInstallAdapters && isJBossBased(container)) {
+            String jbossCliPath = jbossHomePath + "/bin/jboss-cli.sh";
+            String adapterScriptPathArg = "--file=" + jbossHomePath + "/bin/adapter-install.cli";
+            String samlAdapterScriptPathArg = "--file=" + jbossHomePath + "/bin/adapter-install-saml.cli";
+            String managementPort = container.getContainerConfiguration().getContainerProperties().get("managementPort");
+            String controllerArg = "--controller=localhost:" + managementPort;
+
+            log.info("Installing adapter to app server via cli script");
+            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", adapterScriptPathArg, controllerArg});
+            log.info("Installing saml adapter to app server via cli script");
+            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", samlAdapterScriptPathArg, controllerArg});
+            log.info("Restarting container");
+            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", "--command=:reload", controllerArg});
+            pause(5000);
+            log.info("Container restarted");
+            checkServerLog(jbossHomePath);
+            if (container.getName().startsWith("app-server")) {
+                alreadyInstalled = true;
+            }
+        }
+    }
+
+    private void execCommand(String... command) throws IOException, InterruptedException {
+        Process process = Runtime.getRuntime().exec(command);
+
+        if (process.waitFor(10, TimeUnit.SECONDS)) {
+            if (process.exitValue() != 0) {
+                throw new RuntimeException("Adapter installation failed. Process exitValue: " 
+                        + process.exitValue() + "; <error output>\n" + getOutput(process.getErrorStream()) 
+                        + "</error output>");
+            }
+            log.debug("process.isAlive(): " + process.isAlive());
+        } else {
+            process.destroyForcibly();
+            throw new RuntimeException("Timeout after 10 seconds.");
+        }
+    }
+
+    private String getOutput(InputStream is) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder builder = new StringBuilder();
+        while (reader.ready()) {
+            builder.append(reader.readLine());
+        }
+        return builder.toString();
+    }
+
+    private boolean isJBossBased(Container container) {
+        if (container == null) {
+            return false;
+        }
+        return container.getName().matches("a.*-server-wildfly")
+                || container.getName().matches("a.*-server-eap.")
+                || container.getName().equals("app-server-as7");
+    }
 }
