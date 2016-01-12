@@ -7,7 +7,6 @@ import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
 import java.security.PublicKey;
 
 /**
@@ -20,20 +19,8 @@ public class RSATokenVerifier {
     }
 
     public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realmUrl, boolean checkActive, boolean checkTokenType) throws VerificationException {
-        JWSInput input = null;
-        try {
-            input = new JWSInput(tokenString);
-        } catch (JWSInputException e) {
-            throw new VerificationException("Couldn't parse token", e);
-        }
-        if (!isPublicKeyValid(input, realmKey)) throw new VerificationException("Invalid token signature.");
+        AccessToken token = toAccessToken(tokenString, realmKey);
 
-        AccessToken token;
-        try {
-            token = input.readJsonContent(AccessToken.class);
-        } catch (JWSInputException e) {
-            throw new VerificationException("Couldn't parse token signature", e);
-        }
         String user = token.getSubject();
         if (user == null) {
             throw new VerificationException("Token user was null.");
@@ -56,6 +43,24 @@ public class RSATokenVerifier {
             throw new VerificationException("Token is not active.");
         }
 
+        return token;
+    }
+
+    public static AccessToken toAccessToken(String tokenString, PublicKey realmKey) throws VerificationException {
+        JWSInput input;
+        try {
+            input = new JWSInput(tokenString);
+        } catch (JWSInputException e) {
+            throw new VerificationException("Couldn't parse token", e);
+        }
+        if (!isPublicKeyValid(input, realmKey)) throw new VerificationException("Invalid token signature.");
+
+        AccessToken token;
+        try {
+            token = input.readJsonContent(AccessToken.class);
+        } catch (JWSInputException e) {
+            throw new VerificationException("Couldn't parse token signature", e);
+        }
         return token;
     }
 

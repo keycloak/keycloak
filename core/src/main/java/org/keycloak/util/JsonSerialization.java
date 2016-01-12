@@ -1,8 +1,11 @@
 package org.keycloak.util;
 
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.codehaus.jackson.node.ObjectNode;
 import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
@@ -69,6 +72,33 @@ public class JsonSerialization {
         }
     }
 
+    /**
+     * Creates an {@link ObjectNode} based on the given {@code pojo}, copying all its properties to the resulting {@link ObjectNode}.
+     *
+     * @param pojo a pojo which properties will be populates into the resulting a {@link ObjectNode}
+     * @return a {@link ObjectNode} with all the properties from the given pojo
+     * @throws IOException if the resulting a {@link ObjectNode} can not be created
+     */
+    public static ObjectNode createObjectNode(Object pojo) throws IOException {
+        if (pojo == null) {
+            throw new IllegalArgumentException("Pojo can not be null.");
+        }
 
+        ObjectNode objectNode = createObjectNode();
+        JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(writeValueAsBytes(pojo));
+        JsonNode jsonNode = jsonParser.readValueAsTree();
+
+        if (!jsonNode.isObject()) {
+            throw new RuntimeException("JsonNode [" + jsonNode + "] is not a object.");
+        }
+
+        objectNode.putAll((ObjectNode) jsonNode);
+
+        return objectNode;
+    }
+
+    public static ObjectNode createObjectNode() {
+        return mapper.createObjectNode();
+    }
 
 }

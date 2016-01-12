@@ -22,6 +22,7 @@
 package org.keycloak.testsuite;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -152,6 +153,51 @@ public class OAuthClient {
 
             try {
                 return new AccessTokenResponse(client.execute(post));
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to retrieve access token", e);
+            }
+        } finally {
+            closeClient(client);
+        }
+    }
+
+    public String introspectAccessTokenWithClientCredential(String clientId, String clientSecret, String tokenToIntrospect) {
+        return introspectTokenWithClientCredential(clientId, clientSecret, "access_token", tokenToIntrospect);
+    }
+
+    public String introspectRefreshTokenWithClientCredential(String clientId, String clientSecret, String tokenToIntrospect) {
+        return introspectTokenWithClientCredential(clientId, clientSecret, "refresh_token", tokenToIntrospect);
+    }
+
+    public String introspectTokenWithClientCredential(String clientId, String clientSecret, String tokenType, String tokenToIntrospect) {
+        CloseableHttpClient client = new DefaultHttpClient();
+        try {
+            HttpPost post = new HttpPost(getTokenIntrospectionUrl());
+
+            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+            post.setHeader("Authorization", authorization);
+
+            List<NameValuePair> parameters = new LinkedList<>();
+
+            parameters.add(new BasicNameValuePair("token", tokenToIntrospect));
+            parameters.add(new BasicNameValuePair("token_type_hint", tokenType));
+
+            UrlEncodedFormEntity formEntity;
+
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+
+            post.setEntity(formEntity);
+
+            try {
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+                client.execute(post).getEntity().writeTo(out);
+
+                return new String(out.toByteArray());
             } catch (Exception e) {
                 throw new RuntimeException("Failed to retrieve access token", e);
             }
@@ -405,6 +451,11 @@ public class OAuthClient {
 
     public String getAccessTokenUrl() {
         UriBuilder b = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
+    }
+
+    public String getTokenIntrospectionUrl() {
+        UriBuilder b = OIDCLoginProtocolService.tokenIntrospectionUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 
