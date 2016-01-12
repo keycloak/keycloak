@@ -209,7 +209,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         demoRealmRep.setSsoSessionIdleTimeout(1);
         testRealmResource().update(demoRealmRep);
 
-//		Thread.sleep(20/00);
+//		Thread.sleep(2000);
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
@@ -323,8 +323,6 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     public void testBadUser() {
         Client client = ClientBuilder.newClient();
         URI uri = OIDCLoginProtocolService.tokenUrl(authServerPage.createUriBuilder()).build("demo");
-        System.out.println("URL:" + uri);
-        //pause(8555);
         WebTarget target = client.target(uri);
         String header = BasicAuthHelper.createHeader("customer-portal", "password");
         Form form = new Form();
@@ -334,7 +332,6 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         Response response = target.request()
                 .header(HttpHeaders.AUTHORIZATION, header)
                 .post(Entity.form(form));
-        //pause(55555555);
         assertEquals(401, response.getStatus());
         response.close();
         client.close();
@@ -364,7 +361,6 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     public void testAuthenticated() {
         // test login to customer-portal which does a bearer request to customer-db
         securePortal.navigateTo();
-        //pause(5555555);
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(securePortal);

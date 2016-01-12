@@ -87,8 +87,6 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         pause(1000);
 
-        //pause(5555555);
-
         jsConsoleExamplePage.logIn();
         testRealmLoginPage.form().login("user", "invalid-password");
         assertCurrentUrlDoesntStartWith(jsConsoleExamplePage);
