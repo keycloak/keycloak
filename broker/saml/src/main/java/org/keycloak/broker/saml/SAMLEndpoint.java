@@ -1,6 +1,7 @@
 package org.keycloak.broker.saml;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -45,6 +46,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -93,6 +95,13 @@ public class SAMLEndpoint {
         this.config = config;
         this.callback = callback;
         this.provider = provider;
+    }
+
+    @GET
+    @NoCache
+    @Path("descriptor")
+    public Response getSPDescriptor() {
+        return provider.export(uriInfo, realm, null);
     }
 
     @GET

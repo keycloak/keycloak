@@ -72,9 +72,7 @@
     },
 
     "connectionsHttpClient": {
-        "default": {
-            "disable-trust-manager": true
-        }
+        "default": {}
     },
 
 
@@ -98,6 +96,15 @@
             "db": "${keycloak.connectionsMongo.db:keycloak}",
             "databaseSchema": "${keycloak.connectionsMongo.databaseSchema:update}",
             "connectionsPerHost": "${keycloak.connectionsMongo.connectionsPerHost:100}"
+        }
+    },
+
+    "truststore": {
+        "file": {
+            "file": "${keycloak.truststore.file:src/main/keystore/keycloak.truststore}",
+            "password": "${keycloak.truststore.password:secret}",
+            "hostname-verification-policy": "${keycloak.truststore.policy:WILDCARD}",
+            "disabled": "${keycloak.truststore.disabled:true}"
         }
     }
 }

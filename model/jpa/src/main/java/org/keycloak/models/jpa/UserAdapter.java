@@ -433,25 +433,23 @@ public class UserAdapter implements UserModel {
 
     @Override
     public List<UserCredentialValueModel> getCredentialsDirectly() {
-        List<CredentialEntity> credentials = new ArrayList<CredentialEntity>(user.getCredentials());
-        List<UserCredentialValueModel> result = new ArrayList<UserCredentialValueModel>();
+        List<CredentialEntity> credentials = new ArrayList<>(user.getCredentials());
+        List<UserCredentialValueModel> result = new ArrayList<>();
 
-        if (credentials != null) {
-            for (CredentialEntity credEntity : credentials) {
-                UserCredentialValueModel credModel = new UserCredentialValueModel();
-                credModel.setType(credEntity.getType());
-                credModel.setDevice(credEntity.getDevice());
-                credModel.setValue(credEntity.getValue());
-                credModel.setCreatedDate(credEntity.getCreatedDate());
-                credModel.setSalt(credEntity.getSalt());
-                credModel.setHashIterations(credEntity.getHashIterations());
-                credModel.setCounter(credEntity.getCounter());
-                credModel.setAlgorithm(credEntity.getAlgorithm());
-                credModel.setDigits(credEntity.getDigits());
-                credModel.setPeriod(credEntity.getPeriod());
+        for (CredentialEntity credEntity : credentials) {
+            UserCredentialValueModel credModel = new UserCredentialValueModel();
+            credModel.setType(credEntity.getType());
+            credModel.setDevice(credEntity.getDevice());
+            credModel.setValue(credEntity.getValue());
+            credModel.setCreatedDate(credEntity.getCreatedDate());
+            credModel.setSalt(credEntity.getSalt());
+            credModel.setHashIterations(credEntity.getHashIterations());
+            credModel.setCounter(credEntity.getCounter());
+            credModel.setAlgorithm(credEntity.getAlgorithm());
+            credModel.setDigits(credEntity.getDigits());
+            credModel.setPeriod(credEntity.getPeriod());
 
-                result.add(credModel);
-            }
+            result.add(credModel);
         }
 
         return result;

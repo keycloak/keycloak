@@ -39,42 +39,34 @@ public class ApplianceBootstrap {
             throw new IllegalStateException("Can't create default realm as realms already exists");
         }
 
-        KeycloakSession session = this.session.getKeycloakSessionFactory().create();
-        try {
-            session.getTransaction().begin();
-            String adminRealmName = Config.getAdminRealm();
-            logger.info("Initializing " + adminRealmName + " realm");
+        String adminRealmName = Config.getAdminRealm();
+        logger.info("Initializing " + adminRealmName + " realm");
 
-            RealmManager manager = new RealmManager(session);
-            manager.setContextPath(contextPath);
-            RealmModel realm = manager.createRealm(adminRealmName, adminRealmName);
-            realm.setName(adminRealmName);
-            realm.setDisplayName(Version.NAME);
-            realm.setDisplayNameHtml(Version.NAME_HTML);
-            realm.setEnabled(true);
-            realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
-            realm.setSsoSessionIdleTimeout(1800);
-            realm.setAccessTokenLifespan(60);
-            realm.setAccessTokenLifespanForImplicitFlow(Constants.DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT);
-            realm.setSsoSessionMaxLifespan(36000);
-            realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
-            realm.setAccessCodeLifespan(60);
-            realm.setAccessCodeLifespanUserAction(300);
-            realm.setAccessCodeLifespanLogin(1800);
-            realm.setSslRequired(SslRequired.EXTERNAL);
-            realm.setRegistrationAllowed(false);
-            realm.setRegistrationEmailAsUsername(false);
-            KeycloakModelUtils.generateRealmKeys(realm);
-
-            session.getTransaction().commit();
-        } finally {
-            session.close();
-        }
+        RealmManager manager = new RealmManager(session);
+        manager.setContextPath(contextPath);
+        RealmModel realm = manager.createRealm(adminRealmName, adminRealmName);
+        realm.setName(adminRealmName);
+        realm.setDisplayName(Version.NAME);
+        realm.setDisplayNameHtml(Version.NAME_HTML);
+        realm.setEnabled(true);
+        realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
+        realm.setSsoSessionIdleTimeout(1800);
+        realm.setAccessTokenLifespan(60);
+        realm.setAccessTokenLifespanForImplicitFlow(Constants.DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT);
+        realm.setSsoSessionMaxLifespan(36000);
+        realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
+        realm.setAccessCodeLifespan(60);
+        realm.setAccessCodeLifespanUserAction(300);
+        realm.setAccessCodeLifespanLogin(1800);
+        realm.setSslRequired(SslRequired.EXTERNAL);
+        realm.setRegistrationAllowed(false);
+        realm.setRegistrationEmailAsUsername(false);
+        KeycloakModelUtils.generateRealmKeys(realm);
 
         return true;
     }
 
-    public void createMasterRealmUser(KeycloakSession session, String username, String password) {
+    public void createMasterRealmUser(String username, String password) {
         RealmModel realm = session.realms().getRealm(Config.getAdminRealm());
         if (session.users().getUsersCount(realm) > 0) {
             throw new IllegalStateException("Can't create initial user as users already exists");

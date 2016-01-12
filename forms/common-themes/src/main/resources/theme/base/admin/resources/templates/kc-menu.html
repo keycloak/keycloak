@@ -45,6 +45,7 @@
             <li data-ng-show="access.viewUsers" data-ng-class="(path[2] == 'users' || path[1] == 'user') && 'active'"><a href="#/realms/{{realm.realm}}/users"><span class="pficon pficon-user"></span> Users</a></li>
             <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'sessions') && 'active'"><a href="#/realms/{{realm.realm}}/sessions/realm"><i class="fa fa-clock-o"></i> Sessions</a></li>
             <li data-ng-show="access.viewEvents" data-ng-class="(path[2] == 'events' || path[2] == 'events-settings') && 'active'"><a href="#/realms/{{realm.realm}}/events"><i class="fa fa-calendar"></i> Events</a></li>
+            <li data-ng-show="access.manageRealm" ng-class="(path[2] =='partial-import') && 'active'"><a href="#/realms/{{realm.realm}}/partial-import"><span class="pficon pficon-import"></span> Import</a></li>
         </ul>
     </div>
 </div>

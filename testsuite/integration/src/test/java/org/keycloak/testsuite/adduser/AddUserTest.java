@@ -105,6 +105,9 @@ public class AddUserTest {
 
             assertRoles(accountRoles, "view-profile", "manage-account");
 
+            // User needs to delete himself as other tests rely on "admin" user
+            userResource.remove();
+
             keycloak.close();
 
             assertEquals(0, dir.listFiles().length);

@@ -145,7 +145,7 @@ public class HttpClientBuilder {
      * Disable cookie management.
      */
     public HttpClientBuilder disableCookies(boolean disable) {
-        this.disableTrustManager = disable;
+        this.disableCookies = disable;
         return this;
     }
 

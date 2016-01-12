@@ -81,11 +81,8 @@ public class InfinispanUserCache implements UserCache {
     @Override
     public void invalidateRealmUsers(String realmId) {
         logger.tracev("Invalidating users for realm {0}", realmId);
-        for (Map.Entry<String, CachedUser> u : cache.entrySet()) {
-            if (u.getValue().getRealm().equals(realmId)) {
-                cache.remove(u.getKey());
-            }
-        }
+
+        cache.clear();
     }
 
     @Override

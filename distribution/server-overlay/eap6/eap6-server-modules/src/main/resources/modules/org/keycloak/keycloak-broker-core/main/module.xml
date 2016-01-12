@@ -13,6 +13,7 @@
         <module name="org.keycloak.keycloak-events-api"/>
         <module name="javax.ws.rs.api"/>
         <module name="org.jboss.logging"/>
+        <module name="javax.api"/>
     </dependencies>
 
 </module>

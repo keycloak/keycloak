@@ -1052,7 +1052,7 @@
                             <literal>HTTP-POST Binding for AuthnReques</literal>
                         </entry>
                         <entry>
-                            Allows you to specify wheter SAML authentication requests must be sent using the HTTP-POST or HTTP-Redirect protocol bindings. If enabled, it will send requests using HTTP-POST binding.
+                            Allows you to specify whether SAML authentication requests must be sent using the HTTP-POST or HTTP-Redirect protocol bindings. If enabled, it will send requests using HTTP-POST binding.
                         </entry>
                     </row>
                 </tbody>
@@ -1066,6 +1066,16 @@
             Once you create a SAML provider, there is an <literal>EXPORT</literal> button that appears when viewing that provider.
             Clicking this button will export a SAML entity descriptor which you can use to
         </para>
+        <section>
+            <title>SP Descriptor</title>
+            <para>The SAML SP Descriptor XML file for the broker is available publically by going to this URL</para>
+            <programlisting>
+                http[s]://{host:port}/auth/realms/{realm-name}/broker/{broker-alias}/endpoint/descriptor
+            </programlisting>
+            <para>
+                This URL is useful if you need to import this information into an IDP that needs or is more user friendly to load from a remote URL.
+            </para>
+        </section>
     </section>
 
     <section>

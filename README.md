@@ -7,7 +7,7 @@ Keycloak is an SSO Service for web apps and REST services. For more information 
 Building
 --------
 
-Ensure you have JDK 7 (or newer), Maven 3.2.1 (or newer) and Git installed
+Ensure you have JDK 8 (or newer), Maven 3.2.1 (or newer) and Git installed
 
     java -version
     mvn -version

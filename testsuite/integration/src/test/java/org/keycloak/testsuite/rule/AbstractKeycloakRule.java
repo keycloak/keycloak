@@ -116,6 +116,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
         try {
             RealmManager manager = new RealmManager(session);
+            manager.setContextPath("/auth");
 
             RealmModel adminstrationRealm = manager.getRealm(Config.getAdminRealm());
             RealmModel appRealm = manager.getRealm(realmId);

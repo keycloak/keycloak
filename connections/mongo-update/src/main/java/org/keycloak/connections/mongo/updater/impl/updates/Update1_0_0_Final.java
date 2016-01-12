@@ -18,7 +18,7 @@ public class Update1_0_0_Final extends Update {
     @Override
     public void update(KeycloakSession session) throws ClassNotFoundException {
         DBCollection realmsCollection = db.getCollection("realms");
-        realmsCollection.ensureIndex(new BasicDBObject("name", 1), new BasicDBObject("unique", true));
+        realmsCollection.createIndex(new BasicDBObject("name", 1), new BasicDBObject("unique", true));
 
         DefaultMongoUpdaterProvider.log.debugv("Created collection {0}", "realms");
 

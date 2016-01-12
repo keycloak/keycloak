@@ -181,6 +181,10 @@
             <maven-resource group="org.keycloak" artifact="keycloak-connections-infinispan"/>
         </module-def>
 
+        <module-def name="org.keycloak.keycloak-connections-truststore">
+            <maven-resource group="org.keycloak" artifact="keycloak-connections-truststore"/>
+        </module-def>
+
         <module-def name="org.keycloak.keycloak-model-jpa">
             <maven-resource group="org.keycloak" artifact="keycloak-model-jpa"/>
         </module-def>

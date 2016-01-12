@@ -8,7 +8,10 @@ import org.keycloak.models.*;
 public class PasswordHashManager {
 
     public static UserCredentialValueModel encode(KeycloakSession session, RealmModel realm, String rawPassword) {
-        PasswordPolicy passwordPolicy = realm.getPasswordPolicy();
+        return encode(session, realm.getPasswordPolicy(), rawPassword);
+    }
+
+    public static UserCredentialValueModel encode(KeycloakSession session, PasswordPolicy passwordPolicy, String rawPassword) {
         String algorithm = passwordPolicy.getHashAlgorithm();
         int iterations = passwordPolicy.getHashIterations();
         if (iterations < 1) {
@@ -22,7 +25,11 @@ public class PasswordHashManager {
     }
 
     public static boolean verify(KeycloakSession session, RealmModel realm, String password, UserCredentialValueModel credential) {
-        String algorithm = credential.getAlgorithm() != null ? credential.getAlgorithm() : realm.getPasswordPolicy().getHashAlgorithm();
+        return verify(session, realm.getPasswordPolicy(), password, credential);
+    }
+
+    public static boolean verify(KeycloakSession session, PasswordPolicy passwordPolicy, String password, UserCredentialValueModel credential) {
+        String algorithm = credential.getAlgorithm() != null ? credential.getAlgorithm() : passwordPolicy.getHashAlgorithm();
         PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class, algorithm);
         return provider.verify(password, credential);
     }
