@@ -30,60 +30,52 @@ public class PasswordPolicy implements Serializable {
     private String policyString;
 
     public PasswordPolicy(String policyString) {
-        if (policyString == null || policyString.length() == 0) {
-            this.policyString = null;
-            policies = Collections.emptyList();
-        } else {
-            this.policyString = policyString;
-            policies = parse(policyString);
-        }
-    }
+        this.policyString = policyString;
+        this.policies = new LinkedList<>();
 
-    private static List<Policy> parse(String policyString) {
-        List<Policy> list = new LinkedList<Policy>();
-        String[] policies = policyString.split(" and ");
-        for (String policy : policies) {
-            policy = policy.trim();
+        if (policyString != null && !policyString.isEmpty()) {
+            for (String policy : policyString.split(" and ")) {
+                policy = policy.trim();
 
-            String name;
-            String arg = null;
+                String name;
+                String arg = null;
 
-            int i = policy.indexOf('(');
-            if (i == -1) {
-                name = policy.trim();
-            } else {
-                name = policy.substring(0, i).trim();
-                arg = policy.substring(i + 1, policy.length() - 1);
-            }
+                int i = policy.indexOf('(');
+                if (i == -1) {
+                    name = policy.trim();
+                } else {
+                    name = policy.substring(0, i).trim();
+                    arg = policy.substring(i + 1, policy.length() - 1);
+                }
 
-            if (name.equals(Length.NAME)) {
-                list.add(new Length(arg));
-            } else if (name.equals(Digits.NAME)) {
-                list.add(new Digits(arg));
-            } else if (name.equals(LowerCase.NAME)) {
-                list.add(new LowerCase(arg));
-            } else if (name.equals(UpperCase.NAME)) {
-                list.add(new UpperCase(arg));
-            } else if (name.equals(SpecialChars.NAME)) {
-                list.add(new SpecialChars(arg));
-            } else if (name.equals(NotUsername.NAME)) {
-                list.add(new NotUsername(arg));
-            } else if (name.equals(HashAlgorithm.NAME)) {
-                list.add(new HashAlgorithm(arg));
-            } else if (name.equals(HashIterations.NAME)) {
-                list.add(new HashIterations(arg));
-            } else if (name.equals(RegexPatterns.NAME)) {
-                Pattern.compile(arg);
-                list.add(new RegexPatterns(arg));
-            } else if (name.equals(PasswordHistory.NAME)) {
-                list.add(new PasswordHistory(arg));
-            } else if (name.equals(ForceExpiredPasswordChange.NAME)) {
-                list.add(new ForceExpiredPasswordChange(arg));
-            } else {
-                throw new IllegalArgumentException("Unsupported policy");
+                if (name.equals(Length.NAME)) {
+                    policies.add(new Length(arg));
+                } else if (name.equals(Digits.NAME)) {
+                    policies.add(new Digits(arg));
+                } else if (name.equals(LowerCase.NAME)) {
+                    policies.add(new LowerCase(arg));
+                } else if (name.equals(UpperCase.NAME)) {
+                    policies.add(new UpperCase(arg));
+                } else if (name.equals(SpecialChars.NAME)) {
+                    policies.add(new SpecialChars(arg));
+                } else if (name.equals(NotUsername.NAME)) {
+                    policies.add(new NotUsername(arg));
+                } else if (name.equals(HashAlgorithm.NAME)) {
+                    policies.add(new HashAlgorithm(arg));
+                } else if (name.equals(HashIterations.NAME)) {
+                    policies.add(new HashIterations(arg));
+                } else if (name.equals(RegexPatterns.NAME)) {
+                    Pattern.compile(arg);
+                    policies.add(new RegexPatterns(arg));
+                } else if (name.equals(PasswordHistory.NAME)) {
+                    policies.add(new PasswordHistory(arg, this));
+                } else if (name.equals(ForceExpiredPasswordChange.NAME)) {
+                    policies.add(new ForceExpiredPasswordChange(arg));
+                } else {
+                    throw new IllegalArgumentException("Unsupported policy");
+                }
             }
         }
-        return list;
     }
 
     public String getHashAlgorithm() {
@@ -396,10 +388,12 @@ public class PasswordPolicy implements Serializable {
 
     private static class PasswordHistory implements Policy {
         private static final String NAME = "passwordHistory";
+        private final PasswordPolicy passwordPolicy;
         private int passwordHistoryPolicyValue;
 
-        public PasswordHistory(String arg)
+        public PasswordHistory(String arg, PasswordPolicy passwordPolicy)
         {
+            this.passwordPolicy = passwordPolicy;
             passwordHistoryPolicyValue = intArg(NAME, 3, arg);
         }
         
@@ -410,13 +404,10 @@ public class PasswordPolicy implements Serializable {
 
         @Override
         public Error validate(KeycloakSession session, UserModel user, String password) {
-            
             if (passwordHistoryPolicyValue != -1) {
-            
                 UserCredentialValueModel cred = getCredentialValueModel(user, UserCredentialModel.PASSWORD);
                 if (cred != null) {
-                    PasswordHashProvider hashProvider = session.getProvider(PasswordHashProvider.class, cred.getAlgorithm());
-                    if(hashProvider.verify(password, cred)) {
+                    if(PasswordHashManager.verify(session, passwordPolicy, password, cred)) {
                         return new Error(INVALID_PASSWORD_HISTORY, passwordHistoryPolicyValue);
                     }
                 }
@@ -424,8 +415,7 @@ public class PasswordPolicy implements Serializable {
                 List<UserCredentialValueModel> passwordExpiredCredentials = getCredentialValueModels(user, passwordHistoryPolicyValue - 1,
                         UserCredentialModel.PASSWORD_HISTORY);
                 for (UserCredentialValueModel credential : passwordExpiredCredentials) {
-                    PasswordHashProvider hashProvider = session.getProvider(PasswordHashProvider.class, cred.getAlgorithm());
-                    if (hashProvider.verify(password, credential)) {
+                    if (PasswordHashManager.verify(session, passwordPolicy, password, credential)) {
                         return new Error(INVALID_PASSWORD_HISTORY, passwordHistoryPolicyValue);
                     }
                 }
