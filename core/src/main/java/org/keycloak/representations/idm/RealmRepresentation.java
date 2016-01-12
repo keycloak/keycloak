@@ -2,6 +2,8 @@ package org.keycloak.representations.idm;
 
 import java.util.*;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -88,8 +90,6 @@ public class RealmRepresentation {
     private List<IdentityProviderRepresentation> identityProviders;
     private List<IdentityProviderMapperRepresentation> identityProviderMappers;
     private List<ProtocolMapperRepresentation> protocolMappers;
-    @Deprecated
-    private Boolean identityFederationEnabled;
     protected Boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
@@ -826,4 +826,10 @@ public class RealmRepresentation {
     public void setClientTemplates(List<ClientTemplateRepresentation> clientTemplates) {
         this.clientTemplates = clientTemplates;
     }
+
+    @JsonIgnore
+    public boolean isIdentityFederationEnabled() {
+        return identityProviders != null && !identityProviders.isEmpty();
+    }
+
 }
