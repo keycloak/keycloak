@@ -20,8 +20,16 @@ public enum EventType {
 
     REFRESH_TOKEN(false),
     REFRESH_TOKEN_ERROR(false),
+
+    /**
+     * @deprecated see KEYCLOAK-2266
+     */
+    @Deprecated
     VALIDATE_ACCESS_TOKEN(false),
+    @Deprecated
     VALIDATE_ACCESS_TOKEN_ERROR(false),
+    INTROSPECT_TOKEN(false),
+    INTROSPECT_TOKEN_ERROR(false),
 
     FEDERATED_IDENTITY_LINK(true),
     FEDERATED_IDENTITY_LINK_ERROR(true),
