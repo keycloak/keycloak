@@ -40,6 +40,11 @@
             <artifactId>keycloak-as7-adapter-dist</artifactId>
             <type>zip</type>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-as7-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
     </dependencies>
 
     <build>
@@ -73,6 +78,13 @@
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-as7-adapter-dist</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${adapter.libs.as7}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-as7-adapter-dist</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${adapter.libs.as7}</outputDirectory>

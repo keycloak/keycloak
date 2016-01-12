@@ -74,6 +74,13 @@
             </properties>
         </profile>
         <profile>
+            <id>no-client</id>
+            <properties>
+                <!-- Exclude all account management tests. -->
+                <exclude.account>**/client/**/*Test.java</exclude.account>
+            </properties>
+        </profile>
+        <profile>
             <id>adapters-only</id>
             <properties>
                 <exclude.console>**/console/**/*Test.java</exclude.console>           

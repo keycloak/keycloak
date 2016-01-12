@@ -209,31 +209,6 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>configure-adapter-subsystem</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <transformationSet>
-                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                            </includes>
-                                            <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
-                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
                 </plugins>
             </build>
         </profile>

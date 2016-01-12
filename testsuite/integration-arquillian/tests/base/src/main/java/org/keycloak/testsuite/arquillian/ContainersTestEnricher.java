@@ -23,7 +23,6 @@ import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.annotation.SuiteScoped;
 import org.jboss.arquillian.container.spi.event.container.AfterStart;
-import org.jboss.arquillian.container.spi.event.container.BeforeStart;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
@@ -35,6 +34,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  *
@@ -78,7 +78,10 @@ public class ContainersTestEnricher {
     private ContainerController controller;
     private LinkedList<Container> containers;
 
+    private String jbossHomePath;
     private final boolean migrationTests = System.getProperty("migration", "false").equals("true");
+    private final boolean skipInstallAdapters = System.getProperty("skip.install.adapters", "false").equals("true");
+    private boolean alreadyInstalled = false;
     private boolean alreadyStopped = false;
     private boolean init = false;
 
@@ -110,16 +113,12 @@ public class ContainersTestEnricher {
      */
     public void afterStart(@Observes AfterStart event) throws IOException, InterruptedException {
         Container container = containers.pollFirst();
-        String jbossHomePath = null;
 
         if (isJBossBased(container)) {
             jbossHomePath = container.getContainerConfiguration().getContainerProperties().get("jbossHome");
             log.debug("jbossHome: " + jbossHomePath + "\n");
-
-            if (System.getProperty("check.server.log", "true").equals("true")) {
-                checkServerLog(jbossHomePath);
-            }
         }
+        checkServerLog(jbossHomePath);
 
         if (migrationTests && !alreadyStopped) {
             log.info("\n\n### Stopping keycloak " + System.getProperty("version", "- previous") + " ###\n");
@@ -127,44 +126,52 @@ public class ContainersTestEnricher {
             log.info("\n\n### Starting keycloak current version ###\n");
             alreadyStopped = true;
         }
-
-        if (isJBossBased(container) && container.getName().startsWith("app-server")) {
-            log.info("Installing adapter to app server via cli script");
+        
+        if (!alreadyInstalled && !skipInstallAdapters && isJBossBased(container)) {
             String jbossCliPath = jbossHomePath + "/bin/jboss-cli.sh";
-            String scriptPathArg = "--file=" + jbossHomePath + "/bin/adapter-install.cli";
+            String adapterScriptPathArg = "--file=" + jbossHomePath + "/bin/adapter-install.cli";
+            String samlAdapterScriptPathArg = "--file=" + jbossHomePath + "/bin/adapter-install-saml.cli";
             String managementPort = container.getContainerConfiguration().getContainerProperties().get("managementPort");
             String controllerArg = "--controller=localhost:" + managementPort;
 
-            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", scriptPathArg, controllerArg});
-            log.debug("Restarting container");
+            log.info("Installing adapter to app server via cli script");
+            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", adapterScriptPathArg, controllerArg});
+            log.info("Installing saml adapter to app server via cli script");
+            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", samlAdapterScriptPathArg, controllerArg});
+            log.info("Restarting container");
             execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", "--command=:reload", controllerArg});
+            pause(5000);
+            log.info("Container restarted");
+            checkServerLog(jbossHomePath);
+            if (container.getName().startsWith("app-server")) {
+                alreadyInstalled = true;
+            }
         }
     }
 
     private void execCommand(String... command) throws IOException, InterruptedException {
         Process process = Runtime.getRuntime().exec(command);
 
-        printOutput(process.getInputStream());
-
         if (process.waitFor(10, TimeUnit.SECONDS)) {
             if (process.exitValue() != 0) {
-                log.error("Std Error:");
-                printOutput(process.getErrorStream());
-                throw new RuntimeException("Adapter installation failed.");
+                throw new RuntimeException("Adapter installation failed. Process exitValue: " 
+                        + process.exitValue() + "; <error output>\n" + getOutput(process.getErrorStream()) 
+                        + "</error output>");
             }
+            log.debug("process.isAlive(): " + process.isAlive());
         } else {
-            process.destroy();
+            process.destroyForcibly();
             throw new RuntimeException("Timeout after 10 seconds.");
         }
     }
 
-    private void printOutput(InputStream is) throws IOException {
+    private String getOutput(InputStream is) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         StringBuilder builder = new StringBuilder();
         while (reader.ready()) {
             builder.append(reader.readLine());
         }
-        log.info(builder);
+        return builder.toString();
     }
 
     private boolean isJBossBased(Container container) {
@@ -182,19 +189,22 @@ public class ContainersTestEnricher {
      * check server logs whether there are no ERRORs or SEVEREs
      */
     private void checkServerLog(String jbossHomePath) throws IOException {
-        File serverLog = new File(jbossHomePath + "/standalone/log/server.log");
-        String serverLogContent = FileUtils.readFileToString(serverLog);
+        if (jbossHomePath != null && System.getProperty("check.server.log", "true").equals("true")) {
+            File serverLog = new File(jbossHomePath + "/standalone/log/server.log");
+            String serverLogContent = FileUtils.readFileToString(serverLog);
 
-        boolean containsError
-                = serverLogContent.contains("ERROR")
-                || serverLogContent.contains("SEVERE")
-                || serverLogContent.contains("Exception ");
-        //There is expected string "Exception" in server log: Adding provider 
-        //singleton org.keycloak.services.resources.ModelExceptionMapper
+            boolean containsError
+                    = serverLogContent.contains("ERROR")
+                    || serverLogContent.contains("SEVERE")
+                    || serverLogContent.contains("Exception ");
+            //There is expected string "Exception" in server log: Adding provider 
+            //singleton org.keycloak.services.resources.ModelExceptionMapper
 
-        if (containsError) {
-            throw new RuntimeException(serverLog.getPath() + " contains ERROR.");
-        }
+            if (containsError) {
+                throw new RuntimeException(serverLog.getPath() + " contains ERROR.");
+            }
+            log.info(serverLog.getPath() + " doesn't contain Error");
+        } 
     }
 
     public void beforeSuite(@Observes BeforeSuite event) {

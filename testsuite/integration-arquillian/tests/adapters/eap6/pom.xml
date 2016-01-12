@@ -40,6 +40,11 @@
             <artifactId>keycloak-eap6-adapter-dist</artifactId>
             <type>zip</type>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
     </dependencies>
 
     <build>
@@ -67,7 +72,7 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>unpack-eap6-with-adapter</id>
+                        <id>unpack-eap6-with-adapters</id>
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>unpack</goal>
@@ -84,6 +89,13 @@
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-eap6-adapter-dist</artifactId>
+                                    <version>${version.adapter.dist}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${adapter.libs.eap6}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
                                     <version>${version.adapter.dist}</version>
                                     <type>zip</type>
                                     <outputDirectory>${adapter.libs.eap6}</outputDirectory>

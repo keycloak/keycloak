@@ -23,6 +23,7 @@
         <exclude.adapters>-</exclude.adapters>
         
         <arquillian.xml.stylesheet>src/main/xslt/arquillian.xsl</arquillian.xml.stylesheet>
+        <skip.install.adapters>false</skip.install.adapters>
     </properties>
     
     <build>
@@ -46,6 +47,24 @@
                                         <version>${project.version}</version>
                                         <type>test-jar</type>
                                         <includes>**/arquillian.xml</includes>
+                                    </artifactItem>
+                                </artifactItems>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>unpack-add-user-json</id>
+                            <phase>generate-resources</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                            <configuration>
+                                <artifactItems>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>integration-arquillian-tests-base</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>test-jar</type>
+                                        <includes>**/keycloak-add-user.json</includes>
                                     </artifactItem>
                                 </artifactItems>
                             </configuration>
@@ -107,6 +126,31 @@
                             <exclude>${exclude.adapters}</exclude>
                         </excludes>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>copy-admin-user-json-file</id>
+                            <phase>process-test-resources</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${jboss.server.config.dir}</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>${project.build.directory}/dependency</directory>
+                                        <includes>
+                                            <include>keycloak-add-user.json</include>
+                                        </includes>
+                                        <filtering>true</filtering>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>        
