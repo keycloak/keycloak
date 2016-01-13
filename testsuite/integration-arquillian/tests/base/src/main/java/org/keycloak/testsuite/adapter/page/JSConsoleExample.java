@@ -1,11 +1,12 @@
 package org.keycloak.testsuite.adapter.page;
 
-import java.net.URL;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import java.net.URL;
 
 /**
  *
@@ -22,7 +23,9 @@ public class JSConsoleExample extends AbstractPageWithInjectedUrl {
 
     @Override
     public URL getInjectedUrl() {
-        return url;
+        //EAP6 URL fix
+        URL fixedUrl = createInjectedURL("js-console");
+        return fixedUrl != null ? fixedUrl : url;
     }
 
     @FindBy(xpath = "//button[text() = 'Login']")

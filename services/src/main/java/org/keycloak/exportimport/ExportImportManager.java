@@ -3,6 +3,7 @@ package org.keycloak.exportimport;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 import java.io.IOException;
 
@@ -13,7 +14,7 @@ public class ExportImportManager {
 
     private static final Logger logger = Logger.getLogger(ExportImportManager.class);
 
-    private KeycloakSession session;
+    private KeycloakSessionFactory sessionFactory;
 
     private final String realmName;
 
@@ -21,7 +22,7 @@ public class ExportImportManager {
     private ImportProvider importProvider;
 
     public ExportImportManager(KeycloakSession session) {
-        this.session = session;
+        this.sessionFactory = session.getKeycloakSessionFactory();
 
         realmName = ExportImportConfig.getRealmName();
 
@@ -65,10 +66,10 @@ public class ExportImportManager {
             Strategy strategy = ExportImportConfig.getStrategy();
             if (realmName == null) {
                 logger.infof("Full model import requested. Strategy: %s", strategy.toString());
-                importProvider.importModel(session.getKeycloakSessionFactory(), strategy);
+                importProvider.importModel(sessionFactory, strategy);
             } else {
                 logger.infof("Import of realm '%s' requested. Strategy: %s", realmName, strategy.toString());
-                importProvider.importRealm(session.getKeycloakSessionFactory(), realmName, strategy);
+                importProvider.importRealm(sessionFactory, realmName, strategy);
             }
             logger.info("Import finished successfully");
         } catch (IOException e) {
@@ -80,10 +81,10 @@ public class ExportImportManager {
         try {
             if (realmName == null) {
                 logger.info("Full model export requested");
-                exportProvider.exportModel(session.getKeycloakSessionFactory());
+                exportProvider.exportModel(sessionFactory);
             } else {
                 logger.infof("Export of realm '%s' requested", realmName);
-                exportProvider.exportRealm(session.getKeycloakSessionFactory(), realmName);
+                exportProvider.exportRealm(sessionFactory, realmName);
             }
             logger.info("Export finished successfully");
         } catch (IOException e) {

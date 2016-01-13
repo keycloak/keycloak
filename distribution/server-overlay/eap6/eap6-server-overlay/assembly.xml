@@ -57,6 +57,11 @@
             <outputDirectory>bin</outputDirectory>
             <destName>add-user-keycloak.sh</destName>
         </file>
+        <file>
+            <source>../../../feature-packs/server-feature-pack/src/main/resources/content/bin/add-user.bat</source>
+            <outputDirectory>bin</outputDirectory>
+            <destName>add-user-keycloak.bat</destName>
+        </file>
     </files>
 
 </assembly>

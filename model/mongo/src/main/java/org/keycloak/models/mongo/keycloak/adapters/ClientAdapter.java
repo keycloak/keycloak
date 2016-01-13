@@ -710,7 +710,12 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
 
     @Override
     public void setClientTemplate(ClientTemplateModel template) {
-        getMongoEntity().setClientTemplate(template.getId());
+        if (template == null) {
+            getMongoEntity().setClientTemplate(null);
+        } else {
+            getMongoEntity().setClientTemplate(template.getId());
+        }
+
         updateMongoEntity();
 
     }

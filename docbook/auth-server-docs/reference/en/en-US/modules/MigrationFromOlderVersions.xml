@@ -80,6 +80,35 @@
     <section>
         <title>Version specific migration</title>
         <section>
+            <title>Migrating to 1.8.0</title>
+            <simplesect>
+            <title>Admin account</title>
+            <para>
+                In previous releases we shipped with a default admin user with a default password, this has now been removed.
+                If you are doing a new installation of 1.8 you will have to create an admin user as a first step. This
+                can be done easily by following the steps in <link linkend="create-admin-user">Admin User</link>.
+            </para>
+            </simplesect>
+            <simplesect>
+                <title>OAuth2 Token Introspection</title>
+                <para>
+                    In order to add more compliance with OAuth2 specification, we added a new endpoint for token introspection.
+                    The new endpoint can reached at <literal>/realms/{realm}/protocols/openid-connect/token/introspect</literal> and it is solely
+                    based on <literal>RFC-7662.</literal>
+                </para>
+                <para>
+                    The <literal>/realms/{realm}/protocols/openid-connect/validate</literal> endpoint is now deprecated and we strongly recommend
+                    you to move to the new introspection endpoint as soon as possible. The reason for this change is that RFC-7662 provides a more
+                    standard and secure introspection endpoint.
+                </para>
+                <para>
+                    The new token introspection URL can now be obtained from OpenID Connect Provider's configuration at <literal>/realms/{realm}/.well-known/openid-configuration</literal>. There
+                    you will find a claim with name <literal>token_introspection_endpoint</literal> within the response. Only <literal>confidential clients</literal> are allowed to
+                    invoke the new endpoint, where these clients will be usually acting as a resource server and looking for token metadata in order to perform local authorization checks.
+                </para>
+            </simplesect>
+        </section>
+        <section>
             <title>Migrating to 1.7.0.CR1</title>
             <simplesect>
                 <title>Direct access grants disabled by default for clients</title>

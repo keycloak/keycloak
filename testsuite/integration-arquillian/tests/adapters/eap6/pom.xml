@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters</artifactId>
-        <version>1.8.0.CR1-SNAPSHOT</version>
+        <version>1.9.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -38,6 +38,11 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-eap6-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
             <type>zip</type>
         </dependency>
         <dependency>
@@ -97,6 +102,13 @@
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
                                     <version>${version.adapter.dist}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${adapter.libs.eap6}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
+                                    <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${adapter.libs.eap6}</outputDirectory>
                                 </artifactItem>

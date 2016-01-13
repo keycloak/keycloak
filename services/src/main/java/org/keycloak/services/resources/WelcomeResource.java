@@ -92,7 +92,7 @@ public class WelcomeResource {
             ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
             if (applianceBootstrap.isNoMasterUser()) {
                 bootstrap = false;
-                applianceBootstrap.createMasterRealmUser(session, username, password);
+                applianceBootstrap.createMasterRealmUser(username, password);
 
                 logger.infov("Created initial admin user with username {0}", username);
                 return createWelcomePage("User created", null);

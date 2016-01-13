@@ -382,6 +382,8 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
             credModel.setValue(credEntity.getValue());
             credModel.setSalt(credEntity.getSalt());
             credModel.setHashIterations(credEntity.getHashIterations());
+            credModel.setAlgorithm(credEntity.getAlgorithm());
+
             if (UserCredentialModel.isOtp(credEntity.getType())) {
                 credModel.setCounter(credEntity.getCounter());
                 if (credEntity.getAlgorithm() == null) {

@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.8.0.CR1-SNAPSHOT</version>
+        <version>1.9.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -359,6 +359,7 @@
                             <systemPropertyVariables>
                                 <keycloak.realm.provider>jpa</keycloak.realm.provider>
                                 <keycloak.user.provider>jpa</keycloak.user.provider>
+                                <keycloak.userSessionPersister.provider>jpa</keycloak.userSessionPersister.provider>
                                 <keycloak.eventsStore.provider>jpa</keycloak.eventsStore.provider>
 
                                 <keycloak.liquibase.logging.level>debug</keycloak.liquibase.logging.level>
@@ -397,6 +398,7 @@
                                     <systemPropertyVariables>
                                         <keycloak.realm.provider>mongo</keycloak.realm.provider>
                                         <keycloak.user.provider>mongo</keycloak.user.provider>
+                                        <keycloak.userSessionPersister.provider>mongo</keycloak.userSessionPersister.provider>
                                         <keycloak.eventsStore.provider>mongo</keycloak.eventsStore.provider>
                                         <keycloak.connectionsMongo.host>${keycloak.connectionsMongo.host}</keycloak.connectionsMongo.host>
                                         <keycloak.connectionsMongo.port>${keycloak.connectionsMongo.port}</keycloak.connectionsMongo.port>

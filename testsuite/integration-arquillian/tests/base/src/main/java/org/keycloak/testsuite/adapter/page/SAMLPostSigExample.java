@@ -23,7 +23,9 @@ public class SAMLPostSigExample extends AbstractPageWithInjectedUrl {
 
     @Override
     public URL getInjectedUrl() {
-        return url;
+        //EAP6 URL fix
+        URL fixedUrl = createInjectedURL("sales-post-sig");
+        return fixedUrl != null ? fixedUrl : url;
     }
 
     public void logout() {

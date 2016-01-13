@@ -1,13 +1,6 @@
 package org.keycloak.connections.mongo.impl;
 
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.MongoException;
-import com.mongodb.WriteResult;
+import com.mongodb.*;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoEntity;
@@ -133,7 +126,7 @@ public class MongoStoreImpl implements MongoStore {
     }
 
     public static ModelException convertException(MongoException e) {
-        if (e instanceof MongoException.DuplicateKey) {
+        if (e instanceof DuplicateKeyException) {
             return new ModelDuplicateException(e);
         } else {
             return new ModelException(e);

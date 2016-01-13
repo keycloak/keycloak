@@ -2,6 +2,7 @@ package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -35,6 +36,7 @@ import org.keycloak.services.Urls;
 
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
+import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -113,6 +115,15 @@ public class TokenEndpoint {
         }
 
         throw new RuntimeException("Unknown action " + action);
+    }
+
+    @Path("introspect")
+    public Object introspect() {
+        TokenIntrospectionEndpoint tokenIntrospectionEndpoint = new TokenIntrospectionEndpoint(this.realm, this.tokenManager, this.event);
+
+        ResteasyProviderFactory.getInstance().injectProperties(tokenIntrospectionEndpoint);
+
+        return tokenIntrospectionEndpoint;
     }
 
     @OPTIONS
