@@ -679,7 +679,7 @@ public class AuthenticationProcessor {
 
     }
 
-    public static Response createRequiredActionRedirect(RealmModel realm, ClientSessionModel clientSession, UriInfo uriInfo) {
+    public static Response redirectToRequiredActions(RealmModel realm, ClientSessionModel clientSession, UriInfo uriInfo) {
 
         // redirect to non-action url so browser refresh button works without reposting past data
         ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
@@ -829,7 +829,7 @@ public class AuthenticationProcessor {
 
     protected Response authenticationComplete() {
         attachSession();
-        return createRequiredActionRedirect(realm, clientSession, uriInfo);
+        return redirectToRequiredActions(realm, clientSession, uriInfo);
         //return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, connection, request, uriInfo, event);
 
     }
