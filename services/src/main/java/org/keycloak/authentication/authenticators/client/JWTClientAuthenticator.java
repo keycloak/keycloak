@@ -77,7 +77,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             JsonWebToken token = jws.readJsonContent(JsonWebToken.class);
 
             RealmModel realm = context.getRealm();
-            String clientId = token.getIssuer();
+            String clientId = token.getSubject();
             if (clientId == null) {
                 throw new RuntimeException("Can't identify client. Issuer missing on JWT token");
             }
