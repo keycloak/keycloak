@@ -1,8 +1,8 @@
 package org.keycloak.services.util;
 
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
@@ -18,9 +18,9 @@ public class ObjectMapperResolver implements ContextResolver<ObjectMapper> {
     protected ObjectMapper mapper = new ObjectMapper();
 
     public ObjectMapperResolver(boolean indent) {
-        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         if (indent) {
-            mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
+            mapper.enable(SerializationFeature.INDENT_OUTPUT);
         }
     }
 

@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.adduser;
 
-import org.codehaus.jackson.type.TypeReference;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -9,7 +9,6 @@ import org.junit.rules.TemporaryFolder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.util.Base64;
 import org.keycloak.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.*;

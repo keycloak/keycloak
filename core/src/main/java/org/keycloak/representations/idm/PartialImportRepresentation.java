@@ -18,7 +18,7 @@
 package org.keycloak.representations.idm;
 
 import java.util.List;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
  * Used for partial import of users, clients, roles, and identity providers.

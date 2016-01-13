@@ -1,19 +1,17 @@
 package org.keycloak.exportimport.util;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.Strategy;
-import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -22,8 +20,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-
-import org.keycloak.exportimport.ExportImportConfig;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -104,8 +100,8 @@ public class ImportUtils {
     public static Map<String, RealmRepresentation> getRealmsFromStream(ObjectMapper mapper, InputStream is) throws IOException {
         Map<String, RealmRepresentation> result = new HashMap<String, RealmRepresentation>();
 
-        JsonFactory factory = mapper.getJsonFactory();
-        JsonParser parser = factory.createJsonParser(is);
+        JsonFactory factory = mapper.getFactory();
+        JsonParser parser = factory.createParser(is);
         try {
             parser.nextToken();
 

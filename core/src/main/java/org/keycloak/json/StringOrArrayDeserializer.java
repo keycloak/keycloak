@@ -1,10 +1,9 @@
 package org.keycloak.json;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.DeserializationContext;
-import org.codehaus.jackson.map.JsonDeserializer;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,11 +18,11 @@ public class StringOrArrayDeserializer extends JsonDeserializer<Object> {
             ArrayList<String> a = new ArrayList<>(1);
             Iterator<JsonNode> itr = jsonNode.iterator();
             while (itr.hasNext()) {
-                a.add(itr.next().getTextValue());
+                a.add(itr.next().textValue());
             }
             return a.toArray(new String[a.size()]);
         } else {
-            return new String[] { jsonNode.getTextValue() };
+            return new String[] { jsonNode.textValue() };
         }
     }
 

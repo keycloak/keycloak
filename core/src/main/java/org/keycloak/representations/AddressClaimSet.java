@@ -1,6 +1,6 @@
 package org.keycloak.representations;
 
-import org.codehaus.jackson.annotate.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

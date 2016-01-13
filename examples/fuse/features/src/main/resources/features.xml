@@ -8,7 +8,7 @@
         <feature>camel-jetty</feature>
         <feature>cxf</feature>
         <feature>keycloak</feature>
-        <bundle dependency="true">mvn:org.codehaus.jackson/jackson-jaxrs/${jackson.version}</bundle>
+        <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-base/${jackson.version}</bundle>
         <bundle>mvn:org.keycloak.example.demo/product-portal-fuse-example/${project.version}</bundle>
         <bundle>mvn:org.keycloak.example.demo/customer-portal-fuse-example/${project.version}/war</bundle>
         <bundle>mvn:org.keycloak.example.demo/camel-endpoint-example/${project.version}</bundle>
