@@ -118,6 +118,10 @@
                             <name>wildfly.version</name>
                             <value>${wildfly.version}</value>
                         </injection>
+                        <injection>
+                            <name>eap.version</name>
+                            <value>${eap.version}</value>
+                        </injection>
                     </injections>
                     <options>
                         <xmlTransformerType>saxon</xmlTransformerType>

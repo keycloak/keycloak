@@ -34,8 +34,6 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
 
     protected final ConcurrentHashMap<String, String> realmLookup = new ConcurrentHashMap<>();
 
-    private boolean isNewInfinispan;
-
     @Override
     public CacheRealmProvider create(KeycloakSession session) {
         lazyInit(session);
@@ -46,22 +44,11 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
         if (realmCache == null) {
             synchronized (this) {
                 if (realmCache == null) {
-                    checkIspnVersion();
-
                     Cache<String, Object> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
                     cache.addListener(new CacheListener());
                     realmCache = new InfinispanRealmCache(cache, realmLookup);
                 }
             }
-        }
-    }
-
-    protected void checkIspnVersion() {
-        try {
-            CacheEntryCreatedEvent.class.getMethod("getValue");
-            isNewInfinispan = true;
-        } catch (NoSuchMethodException nsme) {
-            isNewInfinispan = false;
         }
     }
 
@@ -89,16 +76,7 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
         @CacheEntryCreated
         public void created(CacheEntryCreatedEvent<String, Object> event) {
             if (!event.isPre()) {
-                Object object;
-
-                // Try optimized version if available
-                if (isNewInfinispan) {
-                    object = event.getValue();
-                } else {
-                    String id = event.getKey();
-                    object = event.getCache().get(id);
-                }
-
+                Object object = event.getValue();
                 if (object != null) {
                     if (object instanceof CachedRealm) {
                         CachedRealm realm = (CachedRealm) object;

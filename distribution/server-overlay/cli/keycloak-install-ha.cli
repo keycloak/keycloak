@@ -1,0 +1,11 @@
+embed-server --server-config=standalone-ha.xml
+/subsystem=datasources/data-source=KeycloakDS/:add(connection-url="jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE",driver-name=h2,jndi-name=java:jboss/datasources/KeycloakDS,password=sa,user-name=sa,use-java-context=true)
+/subsystem=infinispan/cache-container=keycloak:add(jndi-name="infinispan/Keycloak")
+/subsystem=infinispan/cache-container=keycloak/transport=TRANSPORT:add(lock-timeout=60000)
+/subsystem=infinispan/cache-container=keycloak/invalidation-cache=realms:add(mode="SYNC")
+/subsystem=infinispan/cache-container=keycloak/invalidation-cache=users:add(mode="SYNC")
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=sessions:add(mode="SYNC",owners="1")
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineSessions:add(mode="SYNC",owners="1")
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=loginFailures:add(mode="SYNC",owners="1")
+/extension=org.keycloak.keycloak-server-subsystem/:add(module=org.keycloak.keycloak-server-subsystem)
+/subsystem=keycloak-server:add(web-context=auth)

@@ -38,37 +38,23 @@
 
 
         <section id="overlay_install">
-            <title>Install on existing WildFly &wildfly.version;</title>
+            <title>Install on existing WildFly &wildfly.version; or JBoss EAP &eap.version;</title>
             <para>
-                Keycloak can be installed into an existing WildFly &wildfly.version; server. To do this download
-                <literal>keycloak-overlay-&project.version;.zip</literal> or <literal>keycloak-overlay-&project.version;.tar.gz</literal>.
-                Once downloaded extract into the root directory of your WildFly installation. To start WildFly with Keycloak
-                run:
-                <programlisting>&lt;WILDFLY_HOME&gt;/bin/standalone.sh --server-config=standalone-keycloak.xml</programlisting>
-                or:
-                <programlisting>&lt;WILDFLY_HOME&gt;/bin/standalone.bat --server-config=standalone-keycloak.xml</programlisting>
+                Keycloak can be installed into an existing installations of WildFly &wildfly.version; or JBoss EAP &eap.version;.
+                To do this download <literal>keycloak-overlay-&project.version;.zip</literal> or <literal>keycloak-overlay-&project.version;.tar.gz</literal>.
+                Once downloaded extract into the root directory of your installation.
             </para>
             <para>
-                To add Keycloak to other sever configurations (standalone.xml, standalone-ha.xml, etc.) start the server with
-                the desired server-config. If you are running the server in standalone mode run:
+                To add Keycloak to existing standalone.xml server config run:
 <programlisting>
-cd &lt;WILDFLY_HOME&gt;/bin
-./jboss-cli.sh -c --file=keycloak-install.cli
+bin/jboss-cli.sh --file=keycloak-install.cli
 </programlisting>
-                Or if you are running in clustering (HA) mode (by having used -c standalone-ha.xml) then run:
+                To add Keycloak to existing standalone-ha.xml server config run:
 <programlisting>
-cd &lt;WILDFLY_HOME&gt;/bin
-./jboss-cli.sh -c --file=keycloak-install-ha.cli
+    bin/jboss-cli.sh --file=keycloak-install.cli
 </programlisting>
-                You may see exceptions in the server log, but after restarting the server they should be gone.
-                You can restart the server with:
-                <programlisting>&lt;WILDFLY_HOME&gt;/bin/jboss-cli.sh -c :reload</programlisting>
-            </para>
-        </section>
-        <section>
-            <title>Install on existing JBoss EAP 6.4.0.GA</title>
-            <para>
-                Same procedure as WildFly &wildfly.version;, but download <literal>keycloak-overlay-eap6-&project.version;.zip</literal> or <literal>keycloak-overlay-eap6-&project.version;.tar.gz</literal>.
+                If you want to add Keycloak to a different server config edit keycloak-install.cli or keycloak-install-ha.cli
+                and change the name of the server config.
             </para>
         </section>
         <section>

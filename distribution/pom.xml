@@ -11,7 +11,7 @@
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>distribution-pom</artifactId>
+    <artifactId>keycloak-distribution-parent</artifactId>
     <packaging>pom</packaging>
 
     <modules>

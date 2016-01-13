@@ -1,3 +1,0 @@
-<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
-    <web-context>auth</web-context>
-</subsystem>
