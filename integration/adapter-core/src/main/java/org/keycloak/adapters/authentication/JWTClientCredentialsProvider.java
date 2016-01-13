@@ -107,6 +107,7 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
         JsonWebToken reqToken = new JsonWebToken();
         reqToken.id(AdapterUtils.generateId());
         reqToken.issuer(clientId);
+        reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);
 
         int now = Time.currentTime();
