@@ -32,9 +32,6 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
 
     protected final RealmLookup emailLookup = new RealmLookup();
 
-    // Method CacheEntryCreatedEvent.getValue is available from ispn 6 (EAP6 and AS7 are on ispn 5)
-    private boolean isNewInfinispan;
-
     @Override
     public CacheUserProvider create(KeycloakSession session) {
         lazyInit(session);
@@ -45,21 +42,11 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
         if (userCache == null) {
             synchronized (this) {
                 if (userCache == null) {
-                    checkIspnVersion();
                     Cache<String, CachedUser> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_CACHE_NAME);
                     cache.addListener(new CacheListener());
                     userCache = new InfinispanUserCache(cache, usernameLookup, emailLookup);
                 }
             }
-        }
-    }
-
-    protected void checkIspnVersion() {
-        try {
-            CacheEntryCreatedEvent.class.getMethod("getValue");
-            isNewInfinispan = true;
-        } catch (NoSuchMethodException nsme) {
-            isNewInfinispan = false;
         }
     }
 
@@ -87,16 +74,7 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
         @CacheEntryCreated
         public void userCreated(CacheEntryCreatedEvent<String, CachedUser> event) {
             if (!event.isPre()) {
-                CachedUser user;
-
-                // Try optimized version if available
-                if (isNewInfinispan) {
-                    user = event.getValue();
-                } else {
-                    String userId = event.getKey();
-                    user = event.getCache().get(userId);
-                }
-
+                CachedUser user = event.getValue();
                 if (user != null) {
                     String realm = user.getRealm();
 

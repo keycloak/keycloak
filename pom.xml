@@ -53,6 +53,8 @@
         <wildfly.core.version>2.0.5.Final</wildfly.core.version>
         <wildfly.build-tools.version>1.1.0.Final</wildfly.build-tools.version>
 
+        <eap.version>7.0.0.Beta</eap.version>
+
         <!-- this is EAP 6.4 alpha, publicly available -->
         <jboss.version>7.5.0.Final-redhat-15</jboss.version>
 
@@ -834,11 +836,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-eap6-server-subsystem</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wf8-subsystem</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1119,12 +1116,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-server-modules-eap6</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-as7-modules</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
@@ -1168,12 +1159,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-server-overlay</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-server-overlay-eap6</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
