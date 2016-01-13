@@ -1,10 +1,11 @@
 package org.keycloak.testsuite.adapter.page;
 
-import java.net.URL;
-import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
+
+import javax.ws.rs.core.UriBuilder;
+import java.net.URL;
 
 /**
  *
@@ -20,7 +21,9 @@ public class BasicAuthExample extends AbstractPageWithInjectedUrl {
 
     @Override
     public URL getInjectedUrl() {
-        return url;
+        //EAP6 URL fix
+        URL fixedUrl = createInjectedURL("basicauth");
+        return fixedUrl != null ? fixedUrl : url;
     }
 
     @Override

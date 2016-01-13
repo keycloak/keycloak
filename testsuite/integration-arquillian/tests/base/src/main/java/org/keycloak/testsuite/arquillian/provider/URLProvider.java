@@ -1,19 +1,21 @@
 package org.keycloak.testsuite.arquillian.provider;
 
-import org.keycloak.testsuite.arquillian.TestContext;
-import java.lang.annotation.Annotation;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashSet;
-import java.util.Set;
+import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
+import org.keycloak.testsuite.arquillian.TestContext;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContext;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContext;
+
+import java.lang.annotation.Annotation;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Set;
 
 public class URLProvider extends URLResourceProvider {
 
@@ -49,6 +51,29 @@ public class URLProvider extends URLResourceProvider {
                 fixedUrls.add(url.toString());
                 log.debug("Fixed injected @ArquillianResource URL to: " + url);
             }
+        }
+
+        try {
+            if ("true".equals(System.getProperty("app.server.eap6"))) {
+                if (url == null) {
+                    url = new URL("http://localhost:8080/");
+                }
+                URL fixedUrl = url;
+                if (url.getPort() == 8080) {
+                    for (Annotation a : qualifiers) {
+                        if (OperateOnDeployment.class.isAssignableFrom(a.annotationType())) {
+                            url = new URL(fixedUrl.toExternalForm().replace("8080", System.getProperty("app.server.http.port", null)) + "/" + ((OperateOnDeployment) a).value());
+                        }
+                    }
+
+                }
+
+                if (url.getPort() == 8080) {
+                    url = null;
+                }
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
         }
 
         // inject context roots if annotation present

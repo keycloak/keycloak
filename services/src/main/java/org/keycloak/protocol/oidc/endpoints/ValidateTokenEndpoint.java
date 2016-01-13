@@ -25,8 +25,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * @deprecated use {@link TokenIntrospectionEndpoint} instead
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Deprecated
 public class ValidateTokenEndpoint {
 
     private static final Logger logger = Logger.getLogger(ValidateTokenEndpoint.class);

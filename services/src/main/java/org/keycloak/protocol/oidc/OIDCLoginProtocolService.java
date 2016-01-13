@@ -14,6 +14,7 @@ import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
+import org.keycloak.protocol.oidc.endpoints.TokenIntrospectionEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
 import org.keycloak.protocol.oidc.endpoints.ValidateTokenEndpoint;
 import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
@@ -86,6 +87,16 @@ public class OIDCLoginProtocolService {
         return uriBuilder.path(OIDCLoginProtocolService.class, "token");
     }
 
+    public static UriBuilder tokenIntrospectionUrl(UriBuilder baseUriBuilder) {
+        return tokenUrl(baseUriBuilder).path(TokenEndpoint.class, "introspect");
+    }
+
+    /**
+     * @deprecated use {@link OIDCLoginProtocolService#tokenIntrospectionUrl(UriBuilder)} instead
+     * @param baseUriBuilder
+     * @return
+     */
+    @Deprecated
     public static UriBuilder validateAccessTokenUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
         return uriBuilder.path(OIDCLoginProtocolService.class, "validateAccessToken");
@@ -180,8 +191,15 @@ public class OIDCLoginProtocolService {
         return endpoint.legacy(OAuth2Constants.AUTHORIZATION_CODE);
     }
 
+    /**
+     * @deprecated use {@link TokenIntrospectionEndpoint#introspect()} instead
+     * @param tokenString
+     * @return
+     */
     @Path("validate")
+    @Deprecated
     public Object validateAccessToken(@QueryParam("access_token") String tokenString) {
+        logger.warnv("Invoking deprecated endpoint {0}", uriInfo.getRequestUri());
         ValidateTokenEndpoint endpoint = new ValidateTokenEndpoint(tokenManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;

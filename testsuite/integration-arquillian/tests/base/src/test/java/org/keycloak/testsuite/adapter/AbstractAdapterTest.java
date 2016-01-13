@@ -50,6 +50,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             } else {
                 modifyClientRedirectUris(tr, "^(/.*/\\*)", appServerContextRootPage.toString() + "$1");
                 modifyClientUrls(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
+                modifySamlMasterURLs(tr, "8080", System.getProperty("auth.server.http.port", null));
             }
             if ("true".equals(System.getProperty("auth.server.ssl.required"))) {
                 tr.setSslRequired("all");

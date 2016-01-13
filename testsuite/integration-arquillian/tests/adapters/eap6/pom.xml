@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters</artifactId>
-        <version>1.8.0.CR1-SNAPSHOT</version>
+        <version>1.9.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -30,6 +30,11 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-eap6-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
             <type>zip</type>
         </dependency>
     </dependencies>
@@ -69,6 +74,13 @@
                                     <type>zip</type>
                                     <outputDirectory>${adapter.libs.eap6}</outputDirectory>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${adapter.libs.eap6}</outputDirectory>
+                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
@@ -86,6 +98,31 @@
                         <adapter.libs.eap6>${adapter.libs.eap6}</adapter.libs.eap6>
                     </systemPropertyVariables>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>configure-adapter-subsystem</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>transform</goal>
+                        </goals>
+                        <configuration>
+                            <transformationSets>
+                                <transformationSet>
+                                    <dir>${app.server.eap6.home}/standalone/configuration</dir>
+                                    <includes>
+                                        <include>standalone.xml</include>
+                                    </includes>
+                                    <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
+                                    <outputDir>${app.server.eap6.home}/standalone/configuration</outputDir>
+                                </transformationSet>
+                            </transformationSets>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

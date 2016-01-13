@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-docbook-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.8.0.CR1-SNAPSHOT</version>
+        <version>1.9.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -117,6 +117,10 @@
                         <injection>
                             <name>wildfly.version</name>
                             <value>${wildfly.version}</value>
+                        </injection>
+                        <injection>
+                            <name>eap.version</name>
+                            <value>${eap.version}</value>
                         </injection>
                     </injections>
                     <options>
