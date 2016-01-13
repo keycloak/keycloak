@@ -2,8 +2,11 @@
     <div data-ng-repeat="option in properties" class="form-group" data-ng-controller="ProviderConfigCtrl">
         <label class="col-md-2 control-label">{{:: option.label | translate}}</label>
 
-        <div class="col-sm-6" data-ng-hide="option.type == 'boolean' || option.type == 'List' || option.type == 'Role' || option.type == 'ClientList'">
+        <div class="col-sm-6" data-ng-hide="option.type == 'boolean' || option.type == 'List' || option.type == 'Role' || option.type == 'ClientList' || option.type == 'Password'">
             <input class="form-control" type="text" data-ng-model="config[ option.name ]" >
+        </div>
+        <div class="col-sm-6" data-ng-show="option.type == 'Password'">
+            <input class="form-control" type="password" data-ng-model="config[ option.name ]" >
         </div>
         <div class="col-sm-6" data-ng-show="option.type == 'boolean'">
             <input ng-model="config[ option.name ]" value="'true'" name="option.name" id="option.name" onoffswitchstring on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
