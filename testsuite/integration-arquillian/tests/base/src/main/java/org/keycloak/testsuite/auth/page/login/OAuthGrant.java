@@ -45,6 +45,6 @@ public class OAuthGrant extends LoginActions {
 
     @Override
     public boolean isCurrent() {
-        return driver.getTitle().equals("OAuth Grant");
+        return driver.getPageSource().contains("Do you grant these access privileges");
     }
 }

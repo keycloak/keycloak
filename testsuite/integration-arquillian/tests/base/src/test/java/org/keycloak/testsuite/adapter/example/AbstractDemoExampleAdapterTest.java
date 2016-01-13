@@ -17,8 +17,8 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
-import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
 import org.keycloak.testsuite.console.page.clients.Clients;
+import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
 import org.openqa.selenium.By;
@@ -203,9 +203,6 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
     @Test
     public void grantServerBasedApp() {
-        clientsPage.navigateTo();
-        loginPage.form().login(adminUser);
-
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "customer-portal");
         ClientRepresentation client = clientResource.toRepresentation();
         client.setConsentRequired(true);
@@ -237,6 +234,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         assertTrue(oAuthGrantPage.isCurrent());
 
         loginEventsPage.navigateTo();
+        loginPage.form().login(adminUser);
         loginEventsPage.table().filter();
         loginEventsPage.table().filterForm().addEventType("REVOKE_GRANT");
         loginEventsPage.table().update();

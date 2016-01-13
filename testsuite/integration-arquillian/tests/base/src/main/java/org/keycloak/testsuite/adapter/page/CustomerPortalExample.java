@@ -1,12 +1,14 @@
 package org.keycloak.testsuite.adapter.page;
 
-import java.net.URL;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebElement;
+
+import java.net.URL;
+
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  *
@@ -22,7 +24,9 @@ public class CustomerPortalExample extends AbstractPageWithInjectedUrl {
 
     @Override
     public URL getInjectedUrl() {
-        return url;
+        //EAP6 URL fix
+        URL fixedUrl = createInjectedURL("customer-portal");
+        return fixedUrl != null ? fixedUrl : url;
     }
 
     @FindByJQuery("h1:contains('Customer Portal')")

@@ -23,7 +23,9 @@ public class SAMLRedirectSigExample extends AbstractPageWithInjectedUrl {
 
     @Override
     public URL getInjectedUrl() {
-        return url;
+        //EAP6 URL fix
+        URL fixedUrl = createInjectedURL("employee-sig");
+        return fixedUrl != null ? fixedUrl : url;
     }
 
     public void logout() {
