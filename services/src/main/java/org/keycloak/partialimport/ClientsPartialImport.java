@@ -69,7 +69,7 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
     @Override
     public void remove(RealmModel realm, KeycloakSession session, ClientRepresentation clientRep) {
         ClientModel clientModel = realm.getClientByClientId(getName(clientRep));
-        new ClientManager(new RealmManager(session)).removeClient(realm, clientModel);
+        realm.removeClient(clientModel.getId());
     }
 
     @Override
