@@ -421,12 +421,6 @@
             </modules>
         </profile>
         <profile>
-            <id>app-server-eap6</id>
-            <modules>
-                <module>eap6</module>
-            </modules>
-        </profile>
-        <profile>
             <id>no-adapter-tests</id>
             <properties>
                 <!-- Exclude all adapters tests. -->
