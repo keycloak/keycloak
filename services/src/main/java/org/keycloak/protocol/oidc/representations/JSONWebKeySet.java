@@ -1,6 +1,6 @@
 package org.keycloak.protocol.oidc.representations;
 
-import org.codehaus.jackson.annotate.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.jose.jwk.JWK;
 
 /**

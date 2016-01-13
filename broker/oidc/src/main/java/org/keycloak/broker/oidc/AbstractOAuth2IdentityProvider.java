@@ -17,8 +17,8 @@
  */
 package org.keycloak.broker.oidc;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
@@ -115,7 +115,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             try {
             		JsonNode node = mapper.readTree(response);
             		if(node.has(tokenName)){
-            			String s = node.get(tokenName).getTextValue();
+            			String s = node.get(tokenName).textValue();
             			if(s == null || s.trim().isEmpty())
             				return null;
                   return s;
