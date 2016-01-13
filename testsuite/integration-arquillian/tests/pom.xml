@@ -472,42 +472,6 @@
         </profile>
         
         <profile>
-            <id>auth-server-eap6</id>
-            <properties>
-                <skip.unpack.server>false</skip.unpack.server>
-                <server.artifactId>integration-arquillian-server-eap6</server.artifactId>
-                <auth.server.container>auth-server-eap6</auth.server.container>
-                <startup.timeout.sec>300</startup.timeout.sec>
-                <adapter.test.props/>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.jboss.as</groupId>
-                    <artifactId>jboss-as-arquillian-container-managed</artifactId>
-                    <version>7.2.0.Final</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-surefire-plugin</artifactId>
-                            <configuration>
-                                <systemPropertyVariables>
-                                    <auth.server.eap6>true</auth.server.eap6>
-                                    <auth.server.undertow>false</auth.server.undertow>
-                                    <keycloak.home>${containers.home}/keycloak-${project.version}</keycloak.home>
-                                    <adapter.test.props>${adapter.test.props}</adapter.test.props>
-                                </systemPropertyVariables>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        
-        <profile>
             <id>auth-server-eap7</id>
             <properties>
                 <skip.unpack.server>false</skip.unpack.server>
@@ -515,22 +479,15 @@
                 <auth.server.container>auth-server-eap7</auth.server.container>
                 <startup.timeout.sec>300</startup.timeout.sec>
                 <adapter.test.props/>
-                <keycloak.home>${containers.home}/keycloak-${version.eap6.server.dist}</keycloak.home>
+                <keycloak.home>${containers.home}/keycloak-${version.server.dist}</keycloak.home>
                 <jboss.server.config.dir>${keycloak.home}/standalone/configuration</jboss.server.config.dir>
             </properties>
             <dependencies>
                 <dependency>
-                    <groupId>org.jboss.as</groupId>
-                    <artifactId>jboss-as-arquillian-container-managed</artifactId>
-                    <version>7.2.0.Final</version>
-                </dependency>
-            </dependencies>
-            <!--            <dependencies>
-                <dependency>
                     <groupId>org.wildfly</groupId>
                     <artifactId>wildfly-arquillian-container-managed</artifactId>
                 </dependency>
-            </dependencies>-->
+            </dependencies>
             <build>
                 <pluginManagement>
                     <plugins>
@@ -546,7 +503,7 @@
                                     <configuration>
                                         <rules>
                                             <requireProperty>
-                                                <property>version.eap6.server.dist</property>
+                                                <property>version.server.dist</property>
                                             </requireProperty>
                                         </rules>
                                     </configuration>

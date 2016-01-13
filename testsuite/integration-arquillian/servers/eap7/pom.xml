@@ -52,7 +52,7 @@
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-eap6-server-dist</artifactId>
-                    <version>${version.eap6.server.dist}</version>
+                    <version>${version.server.dist}</version>
                     <type>zip</type>
                 </dependency>
             </dependencies>
@@ -70,7 +70,7 @@
                                 <configuration>
                                     <rules>
                                         <requireProperty>
-                                            <property>version.eap6.server.dist</property>
+                                            <property>version.server.dist</property>
                                         </requireProperty>
                                     </rules>
                                 </configuration>
@@ -92,7 +92,7 @@
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>keycloak-eap6-server-dist</artifactId>
-                                            <version>${version.eap6.server.dist}</version>
+                                            <version>${version.server.dist}</version>
                                             <type>zip</type>
                                             <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
                                         </artifactItem>
