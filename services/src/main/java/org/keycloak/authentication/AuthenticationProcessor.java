@@ -637,23 +637,9 @@ public class AuthenticationProcessor {
     }
 
     public Response authenticate() throws AuthenticationFlowException {
-        checkClientSession();
         logger.debug("AUTHENTICATE");
-        event.client(clientSession.getClient().getClientId())
-                .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
-                .detail(Details.AUTH_METHOD, clientSession.getAuthMethod());
-        String authType = clientSession.getNote(Details.AUTH_TYPE);
-        if (authType != null) {
-            event.detail(Details.AUTH_TYPE, authType);
-        }
-        UserModel authUser = clientSession.getAuthenticatedUser();
-        validateUser(authUser);
-        AuthenticationFlow authenticationFlow = createFlowExecution(this.flowId, null);
-        Response challenge = authenticationFlow.processFlow();
+        Response challenge = authenticateOnly();
         if (challenge != null) return challenge;
-        if (clientSession.getAuthenticatedUser() == null) {
-            throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
-        }
         return authenticationComplete();
     }
 
@@ -666,17 +652,6 @@ public class AuthenticationProcessor {
         } catch (Exception e) {
             return handleClientAuthException(e);
         }
-    }
-
-    public Response createSuccessRedirect() {
-        // redirect to non-action url so browser refresh button works without reposting past data
-        String code = generateCode();
-
-        URI redirect = LoginActionsService.loginActionsBaseUrl(getUriInfo())
-                .path(flowPath)
-                .queryParam(OAuth2Constants.CODE, code).build(getRealm().getName());
-        return Response.status(302).location(redirect).build();
-
     }
 
     public static Response redirectToRequiredActions(RealmModel realm, ClientSessionModel clientSession, UriInfo uriInfo) {
@@ -722,8 +697,8 @@ public class AuthenticationProcessor {
         String current = clientSession.getNote(CURRENT_AUTHENTICATION_EXECUTION);
         if (!execution.equals(current)) {
             logger.debug("Current execution does not equal executed execution.  Might be a page refresh");
-            logFailure();
-            resetFlow(clientSession);
+            //logFailure();
+            //resetFlow(clientSession);
             return authenticate();
         }
         UserModel authUser = clientSession.getAuthenticatedUser();
@@ -766,7 +741,7 @@ public class AuthenticationProcessor {
 
     public Response authenticateOnly() throws AuthenticationFlowException {
         logger.debug("AUTHENTICATE ONLY");
-       checkClientSession();
+        checkClientSession();
         event.client(clientSession.getClient().getClientId())
                 .detail(Details.REDIRECT_URI, clientSession.getRedirectUri())
                 .detail(Details.AUTH_METHOD, clientSession.getAuthMethod());
@@ -778,12 +753,11 @@ public class AuthenticationProcessor {
         validateUser(authUser);
         AuthenticationFlow authenticationFlow = createFlowExecution(this.flowId, null);
         Response challenge = authenticationFlow.processFlow();
+        if (challenge != null) return challenge;
+        if (clientSession.getAuthenticatedUser() == null) {
+            throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
+        }
         return challenge;
-    }
-
-    public Response attachSessionExecutionRequiredActions() {
-        attachSession();
-        return AuthenticationManager.actionRequired(session, userSession, clientSession, connection, request, uriInfo, event);
     }
 
     public void attachSession() {
@@ -829,9 +803,16 @@ public class AuthenticationProcessor {
 
     protected Response authenticationComplete() {
         attachSession();
-        return redirectToRequiredActions(realm, clientSession, uriInfo);
-        //return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, connection, request, uriInfo, event);
+        if (isActionRequired()) {
+            return redirectToRequiredActions(realm, clientSession, uriInfo);
+        } else {
+            event.detail(Details.CODE_ID, clientSession.getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
+            return AuthenticationManager.finishedRequiredActions(session,  userSession, clientSession, connection, request, uriInfo, event);
+        }
+    }
 
+    public boolean isActionRequired() {
+        return AuthenticationManager.isActionRequired(session, userSession, clientSession, connection, request, uriInfo, event);
     }
 
     public AuthenticationProcessor.Result createAuthenticatorContext(AuthenticationExecutionModel model, Authenticator authenticator, List<AuthenticationExecutionModel> executions) {

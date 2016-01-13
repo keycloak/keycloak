@@ -220,9 +220,8 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
         }
         processor.getClientSession().setExecutionStatus(actionExecution, ClientSessionModel.ExecutionStatus.SUCCESS);
-
-        // redirect to no execution so browser refresh button works without reposting past data
-        return processor.createSuccessRedirect();
+        processor.getClientSession().removeNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+        return null;
     }
 
     public URI getActionUrl(String executionId, String code) {

@@ -825,9 +825,9 @@ public class LoginActionsService {
         }
 
         if (!action.equals(clientSession.getNote(AuthenticationManager.CURRENT_REQUIRED_ACTION))) {
-            logger.error("required action doesn't match current required action");
-            event.error(Errors.INVALID_CODE);
-            throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
+            logger.debug("required action doesn't match current required action");
+            clientSession.removeNote(AuthenticationManager.CURRENT_REQUIRED_ACTION);
+            redirectToRequiredActions(code);
         }
 
         RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, action);
@@ -850,15 +850,17 @@ public class LoginActionsService {
         };
         provider.processAction(context);
         if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
-            event.success();
+            event.clone().success();
             // do both
             clientSession.removeRequiredAction(factory.getId());
             clientSession.getUserSession().getUser().removeRequiredAction(factory.getId());
+            clientSession.removeNote(AuthenticationManager.CURRENT_REQUIRED_ACTION);
             // redirect to a generic code URI so that browser refresh will work
-            URI redirect = LoginActionsService.loginActionsBaseUrl(uriInfo)
-                    .path(LoginActionsService.REQUIRED_ACTION)
-                    .queryParam(OAuth2Constants.CODE, code).build(realm.getName());
-            return Response.status(302).location(redirect).build();
+            //return redirectToRequiredActions(code);
+            event.removeDetail(Details.CUSTOM_REQUIRED_ACTION);
+            initEvent(clientSession);
+            event.event(EventType.LOGIN);
+            return AuthenticationManager.nextActionAfterAuthentication(session, clientSession.getUserSession(), clientSession, clientConnection, request, uriInfo, event);
        }
         if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
             return context.getChallenge();
@@ -878,6 +880,13 @@ public class LoginActionsService {
         }
 
         throw new RuntimeException("Unreachable");
+    }
+
+    public Response redirectToRequiredActions(String code) {
+        URI redirect = LoginActionsService.loginActionsBaseUrl(uriInfo)
+                .path(LoginActionsService.REQUIRED_ACTION)
+                .queryParam(OAuth2Constants.CODE, code).build(realm.getName());
+        return Response.status(302).location(redirect).build();
     }
 
 }

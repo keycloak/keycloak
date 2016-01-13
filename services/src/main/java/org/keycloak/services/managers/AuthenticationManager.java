@@ -421,12 +421,16 @@ public class AuthenticationManager {
         return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));
 
     }
-
     public static Response nextActionAfterAuthentication(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession,
                                                   ClientConnection clientConnection,
                                                   HttpRequest request, UriInfo uriInfo, EventBuilder event) {
         Response requiredAction = actionRequired(session, userSession, clientSession, clientConnection, request, uriInfo, event);
         if (requiredAction != null) return requiredAction;
+        return finishedRequiredActions(session, userSession, clientSession, clientConnection, request, uriInfo, event);
+
+    }
+
+    public static Response finishedRequiredActions(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession, ClientConnection clientConnection, HttpRequest request, UriInfo uriInfo, EventBuilder event) {
         if (clientSession.getNote(END_AFTER_REQUIRED_ACTIONS) != null) {
             Response response = session.getProvider(LoginFormsProvider.class)
                     .setAttribute("skipLink", true)
@@ -439,8 +443,49 @@ public class AuthenticationManager {
         event.success();
         RealmModel realm = clientSession.getRealm();
         return redirectAfterSuccessfulFlow(session, realm , userSession, clientSession, request, uriInfo, clientConnection, event);
+    }
+
+    public static boolean isActionRequired(final KeycloakSession session, final UserSessionModel userSession, final ClientSessionModel clientSession,
+                                           final ClientConnection clientConnection,
+                                           final HttpRequest request, final UriInfo uriInfo, final EventBuilder event) {
+        final RealmModel realm = clientSession.getRealm();
+        final UserModel user = userSession.getUser();
+        final ClientModel client = clientSession.getClient();
+
+        evaluateRequiredActionTriggers(session, userSession, clientSession, clientConnection, request, uriInfo, event, realm, user);
+
+        if (!user.getRequiredActions().isEmpty() || !clientSession.getRequiredActions().isEmpty()) return true;
+
+        if (client.isConsentRequired()) {
+
+            UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
+
+            ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+            for (RoleModel r : accessCode.getRequestedRoles()) {
+
+                // Consent already granted by user
+                if (grantedConsent != null && grantedConsent.isRoleGranted(r)) {
+                    continue;
+                }
+                return true;
+             }
+
+            for (ProtocolMapperModel protocolMapper : accessCode.getRequestedProtocolMappers()) {
+                if (protocolMapper.isConsentRequired() && protocolMapper.getConsentText() != null) {
+                    if (grantedConsent == null || !grantedConsent.isProtocolMapperGranted(protocolMapper)) {
+                        return true;
+                    }
+                }
+            }
+            String consentDetail = (grantedConsent != null) ? Details.CONSENT_VALUE_PERSISTED_CONSENT : Details.CONSENT_VALUE_NO_CONSENT_REQUIRED;
+            event.detail(Details.CONSENT, consentDetail);
+        } else {
+            event.detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED);
+        }
+        return false;
 
     }
+
 
     public static Response actionRequired(final KeycloakSession session, final UserSessionModel userSession, final ClientSessionModel clientSession,
                                                          final ClientConnection clientConnection,
