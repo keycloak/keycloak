@@ -1,6 +1,6 @@
 package org.keycloak.protocol;
 
-import org.codehaus.jackson.annotate.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.jose.jws.JWSBuilder;

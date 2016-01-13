@@ -1,6 +1,6 @@
 package org.keycloak.proxy;
 
-import org.codehaus.jackson.annotate.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
 import java.util.*;

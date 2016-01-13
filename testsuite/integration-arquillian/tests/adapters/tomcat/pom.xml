@@ -74,8 +74,8 @@
                                     <artifactId>resteasy-client</artifactId>
                                 </artifactItem>
                                 <artifactItem>
-                                    <groupId>org.jboss.resteasy</groupId>
-                                    <artifactId>jaxrs-api</artifactId>
+                                    <groupId>org.jboss.spec.javax.ws.rs</groupId>
+                                    <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
                                 </artifactItem>                                        
                                 <artifactItem>
                                     <groupId>org.jboss.resteasy</groupId>

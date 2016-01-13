@@ -5,7 +5,7 @@
  */
 package org.keycloak.broker.oidc;
 
-import org.codehaus.jackson.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.broker.provider.BrokeredIdentityContext;

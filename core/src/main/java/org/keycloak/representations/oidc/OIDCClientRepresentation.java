@@ -1,6 +1,6 @@
 package org.keycloak.representations.oidc;
 
-import org.codehaus.jackson.annotate.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 
 import java.util.List;
 

@@ -6,9 +6,10 @@
         <bundle dependency="true">mvn:org.keycloak/keycloak-osgi-thirdparty/${project.version}</bundle>
         <bundle dependency="true">mvn:org.bouncycastle/bcprov-jdk15on/${bouncycastle.crypto.version}</bundle>
         <bundle dependency="true">mvn:org.bouncycastle/bcpkix-jdk15on/${bouncycastle.crypto.version}</bundle>
-        <bundle dependency="true">mvn:org.codehaus.jackson/jackson-core-asl/${jackson.version}</bundle>
-        <bundle dependency="true">mvn:org.codehaus.jackson/jackson-mapper-asl/${jackson.version}</bundle>
-        <bundle dependency="true">mvn:org.codehaus.jackson/jackson-xc/${jackson.version}</bundle>
+        <bundle dependency="true">mvn:com.fasterxml.jackson.core/jackson-core/${jackson.version}</bundle>
+        <bundle dependency="true">mvn:com.fasterxml.jackson.core/jackson-databind/${jackson.version}</bundle>
+        <bundle dependency="true">mvn:com.fasterxml.jackson.module/jackson-module-jaxb-annotations/${jackson.version}</bundle>
+        <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-json-provider/${jackson.version}</bundle>
         <bundle dependency="true">mvn:org.jboss.logging/jboss-logging/${jboss.logging.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-common/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-core/${project.version}</bundle>

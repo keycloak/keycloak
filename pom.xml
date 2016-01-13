@@ -27,11 +27,10 @@
         <apacheds.codec.version>1.0.0-M23</apacheds.codec.version>
         <org.apache.james.apache-mime4j.version>0.6</org.apache.james.apache-mime4j.version>
         <bouncycastle.crypto.version>1.50</bouncycastle.crypto.version>
-        <jackson.version>1.9.9</jackson.version>
+        <jackson.version>2.5.4</jackson.version>
         <apache.httpcomponents.version>4.3.6</apache.httpcomponents.version>
         <apache.httpcomponents.httpcore.version>4.3.3</apache.httpcomponents.httpcore.version>
-        <resteasy.version>2.3.7.Final</resteasy.version>
-        <resteasy.latest.version>3.0.9.Final</resteasy.latest.version>
+        <resteasy.version>3.0.14.Final</resteasy.version>
         <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
         <undertow.version>1.1.1.Final</undertow.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
@@ -40,6 +39,7 @@
         <syslog4j.version>0.9.30</syslog4j.version>
         <jboss-logging-tools.version>1.2.0.Beta1</jboss-logging-tools.version>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>1.0.4.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>
+        <jboss-jaxrs-api_2.0_spec>1.0.0.Final</jboss-jaxrs-api_2.0_spec>
         <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
         <hibernate.javax.persistence.artifactId>hibernate-jpa-2.1-api</hibernate.javax.persistence.artifactId>
         <hibernate.entitymanager.version>4.3.10.Final</hibernate.entitymanager.version>
@@ -203,9 +203,9 @@
                 <version>${javax.mail.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>jaxrs-api</artifactId>
-                <version>${resteasy.version}</version>
+                <groupId>org.jboss.spec.javax.ws.rs</groupId>
+                <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
+                <version>${jboss-jaxrs-api_2.0_spec}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
@@ -219,19 +219,23 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jackson-provider</artifactId>
+                <artifactId>resteasy-jackson2-provider</artifactId>
                 <version>${resteasy.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-client</artifactId>
-                <version>${resteasy.latest.version}</version>
+                <version>${resteasy.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-undertow</artifactId>
-                <version>${resteasy.latest.version}</version>
-                <scope>test</scope>
+                <version>${resteasy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>async-http-servlet-3.0</artifactId>
+                <version>${resteasy.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.xml.bind</groupId>
@@ -254,23 +258,33 @@
                 <version>${undertow.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-core-asl</artifactId>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-mapper-asl</artifactId>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-xc</artifactId>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-jaxrs</artifactId>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jaxb-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-json-provider</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-base</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
