@@ -34,12 +34,6 @@
                 or:
                 <programlisting>keycloak-&project.version;/bin/standalone.bat</programlisting>
             </para>
-            <para>
-                Once the server is started log into the admin console at
-                <ulink url="http://localhost:8080/auth/admin/index.html">http://localhost:8080/auth/admin/index.html</ulink>
-                (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
-                enter in a new password.
-            </para>
         </section>
 
 
@@ -53,12 +47,6 @@
                 <programlisting>&lt;WILDFLY_HOME&gt;/bin/standalone.sh --server-config=standalone-keycloak.xml</programlisting>
                 or:
                 <programlisting>&lt;WILDFLY_HOME&gt;/bin/standalone.bat --server-config=standalone-keycloak.xml</programlisting>
-            </para>
-            <para>
-                Once the server is started log into the admin console at
-                <ulink url="http://localhost:8080/auth/admin/index.html">http://localhost:8080/auth/admin/index.html</ulink>
-                (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
-                enter in a new password.
             </para>
             <para>
                 To add Keycloak to other sever configurations (standalone.xml, standalone-ha.xml, etc.) start the server with
@@ -99,12 +87,6 @@ cd &lt;WILDFLY_HOME&gt;/bin
                 or:
                 <programlisting>keycloak-&project.version;/bin/standalone.bat</programlisting>
             </para>
-            <para>
-                Once the server is started log into the admin console at
-                <ulink url="http://localhost:8080/auth/admin/index.html">http://localhost:8080/auth/admin/index.html</ulink>
-                (username: <emphasis>admin</emphasis> and password: <emphasis>admin</emphasis>). Keycloak will then prompt you to
-                enter in a new password.
-            </para>
         </section>
     </section>
 
@@ -114,9 +96,8 @@ cd &lt;WILDFLY_HOME&gt;/bin
             Although the Keycloak Server is designed to run out of the box, there's some things you'll need
             to configure before you go into production.  Specifically:
             <itemizedlist>
-
                 <listitem>
-                    Configuring Keycloak to use a production database.
+                    Configuring Keycloak to use a production database
                 </listitem>
 
                 <listitem>
@@ -129,7 +110,7 @@ cd &lt;WILDFLY_HOME&gt;/bin
             </itemizedlist>
         </para>
         <section>
-            <title>Admin User</title>
+            <title id="create-admin-user">Admin User</title>
             <para>
                 To access the admin console to configure Keycloak you need an account to login. There is no built in user,
                 instead you have to first create an admin account. This can done either by opening <ulink url="http://localhost:8080/auth">http://localhost:8080/auth</ulink>

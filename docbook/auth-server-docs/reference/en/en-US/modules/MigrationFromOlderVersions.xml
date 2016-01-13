@@ -82,6 +82,14 @@
         <section>
             <title>Migrating to 1.8.0</title>
             <simplesect>
+            <title>Admin account</title>
+            <para>
+                In previous releases we shipped with a default admin user with a default password, this has now been removed.
+                If you are doing a new installation of 1.8 you will have to create an admin user as a first step. This
+                can be done easily by following the steps in <link linkend="create-admin-user">Admin User</link>.
+            </para>
+            </simplesect>
+            <simplesect>
                 <title>OAuth2 Token Introspection</title>
                 <para>
                     In order to add more compliance with OAuth2 specification, we added a new endpoint for token introspection.
