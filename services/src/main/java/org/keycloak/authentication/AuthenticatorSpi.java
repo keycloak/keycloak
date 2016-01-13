@@ -12,7 +12,7 @@ public class AuthenticatorSpi implements Spi {
 
     @Override
     public boolean isInternal() {
-        return false;
+        return true;
     }
 
     @Override
