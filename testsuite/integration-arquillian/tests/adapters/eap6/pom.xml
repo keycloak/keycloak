@@ -18,17 +18,10 @@
     </properties>
 
     <dependencies>
-        <!-- This dependency is for starting auth server based on wildfly (eap7)-->
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-arquillian-container-managed</artifactId>
         </dependency>
-        <!-- This is for EAP6-->
-<!--        <dependency>
-            <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-arquillian-container-managed</artifactId>
-            <version>7.2.0.Final</version>
-        </dependency>-->
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-dist</artifactId>
@@ -38,11 +31,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-eap6-adapter-dist</artifactId>
-            <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
             <type>zip</type>
         </dependency>
         <dependency>
@@ -94,13 +82,6 @@
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-eap6-adapter-dist</artifactId>
-                                    <version>${version.adapter.dist}</version>
-                                    <type>zip</type>
-                                    <outputDirectory>${adapter.libs.eap6}</outputDirectory>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
                                     <version>${version.adapter.dist}</version>
                                     <type>zip</type>
                                     <outputDirectory>${adapter.libs.eap6}</outputDirectory>
