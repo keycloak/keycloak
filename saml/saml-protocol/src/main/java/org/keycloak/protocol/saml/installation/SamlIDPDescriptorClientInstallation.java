@@ -24,9 +24,9 @@ public class SamlIDPDescriptorClientInstallation implements ClientInstallationPr
         SamlClient samlClient = new SamlClient(client);
         String idpEntityId = RealmsResource.realmBaseUrl(UriBuilder.fromUri(serverBaseUri)).build(realm.getName()).toString();
         String idp = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                 "<EntityDescriptor entityID=\"" + idpEntityId + "\"" +
+                 "<EntityDescriptor entityID=\"" + idpEntityId + "\"\n" +
                 "                   xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\"\n" +
-                "                   xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                "                   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
                 "   <IDPSSODescriptor WantAuthnRequestsSigned=\"" + Boolean.toString(samlClient.requiresClientSignature()) + "\"\n" +
                 "      protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\">\n";
         if (samlClient.forceNameIDFormat() && samlClient.getNameIDFormat() != null) {
