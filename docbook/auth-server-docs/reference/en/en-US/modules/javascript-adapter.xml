@@ -234,6 +234,8 @@ new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp'
                         <listitem>onLoad - specifies an action to do on load, can be either 'login-required' or 'check-sso'</listitem>
                         <listitem>token - set an initial value for the token</listitem>
                         <listitem>refreshToken - set an initial value for the refresh token</listitem>
+                        <listitem>idToken - set an initial value for the id token (only together with token or refreshToken)</listitem>
+                        <listitem>timeSkew - set an initial value for skew between local time and Keycloak server in seconds (only together with token or refreshToken)</listitem>
                         <listitem>checkLoginIframe - set to enable/disable monitoring login state (default is true)</listitem>
                         <listitem>checkLoginIframeInterval - set the interval to check login state (default is 5 seconds)</listitem>
                         <listitem>responseMode - set the OpenID Connect response mode send to Keycloak server at login request. Valid values are <literal>query</literal> or <literal>fragment</literal> .
