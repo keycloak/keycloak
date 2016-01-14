@@ -46,7 +46,12 @@ public class RealmsResource {
     protected BruteForceProtector protector;
 
     public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
-        return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getRealmResource");
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        return realmBaseUrl(baseUriBuilder);
+    }
+
+    public static UriBuilder realmBaseUrl(UriBuilder baseUriBuilder) {
+        return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getRealmResource");
     }
 
     public static UriBuilder accountUrl(UriBuilder base) {
