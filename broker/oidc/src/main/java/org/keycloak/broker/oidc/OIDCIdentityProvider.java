@@ -17,7 +17,7 @@
  */
 package org.keycloak.broker.oidc;
 
-import org.codehaus.jackson.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.oidc.util.JsonSimpleHttp;

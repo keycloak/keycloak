@@ -48,7 +48,6 @@
             <module name="org.hibernate" services="import"/>
             <module name="org.bouncycastle"/>
 
-            <module name="org.jboss.resteasy.resteasy-jackson-provider" services="import"/>
             <module name="org.jboss.resteasy.resteasy-multipart-provider" services="import"/>
             <module name="org.jboss.resteasy.resteasy-jaxrs"/>
 
@@ -58,8 +57,6 @@
             <module name="org.keycloak.keycloak-server-subsystem.infinispan"/>
         </dependencies>
         <exclusions>
-            <module name="org.jboss.resteasy.resteasy-jackson2-provider"/>
-
             <!-- Exclude keycloak modules -->
             <module name="org.keycloak.keycloak-common" />
             <module name="org.keycloak.keycloak-core" />

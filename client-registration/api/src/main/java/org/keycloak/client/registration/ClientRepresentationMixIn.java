@@ -1,6 +1,6 @@
 package org.keycloak.client.registration;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

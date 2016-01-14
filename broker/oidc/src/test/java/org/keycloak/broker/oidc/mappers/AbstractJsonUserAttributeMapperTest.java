@@ -7,9 +7,9 @@ package org.keycloak.broker.oidc.mappers;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -24,15 +24,14 @@ public class AbstractJsonUserAttributeMapperTest {
 
 	private static JsonNode baseNode;
 
-	private JsonNode getJsonNode() throws JsonProcessingException, IOException {
+	private JsonNode getJsonNode() throws IOException {
 		if (baseNode == null)
 			baseNode = mapper.readTree("{ \"value1\" : \"v1 \",\"value_empty\" : \"\", \"value_b\" : true, \"value_i\" : 454, " + " \"value_array\":[\"a1\",\"a2\"], " +" \"nest1\": {\"value1\": \" fgh \",\"value_empty\" : \"\", \"nest2\":{\"value_b\" : false, \"value_i\" : 43}}, "+ " \"nesta\": { \"a\":[{\"av1\": \"vala1\"},{\"av1\": \"vala2\"}]}"+" }");
 		return baseNode;
 	}
 
 	@Test
-	public void getJsonValue_invalidPath() throws JsonProcessingException, IOException {
-
+	public void getJsonValue_invalidPath() throws IOException {
 		Assert.assertNull(AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "."));
 		Assert.assertNull(AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), ".."));
 		Assert.assertNull(AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "...value1"));
