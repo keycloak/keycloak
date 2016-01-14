@@ -55,13 +55,13 @@ public class ClientInstallationTest extends AbstractClientTest {
     
     @Test
     public void jsonTest() {
-        clientInstallationPage.form().setConfigFormat("Keycloak JSON");
+        clientInstallationPage.form().setConfigFormat("Keycloak OIDC JSON");
         assertTrue(clientInstallationPage.form().getTextareaContent().contains("\"realm\": \"test\""));
     }
     
     @Test
     public void wildflySubsystemTest() {
-        clientInstallationPage.form().setConfigFormat("Wildfly/EAP Subsystem XML");
+        clientInstallationPage.form().setConfigFormat("Keycloak OIDC JBoss Subsystem XML");
         assertTrue(clientInstallationPage.form().getTextareaContent().contains("<realm>test</realm>"));
     }
 }
