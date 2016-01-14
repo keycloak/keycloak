@@ -89,6 +89,12 @@ public abstract class AbstractKeycloakTest {
 
         driverSettings();
 
+        if (!suiteContext.isAdminPasswordUpdated()) {
+            log.debug("updating admin password");
+            updateMasterAdminPassword();
+            suiteContext.setAdminPasswordUpdated(true);
+        }
+
         importTestRealms();
     }
 
@@ -97,6 +103,13 @@ public abstract class AbstractKeycloakTest {
 //        removeTestRealms(); // keeping test realms after test to be able to inspect failures, instead deleting existing realms before import
 //        keycloak.close(); // keeping admin connection open
         Timer.printStats();
+    }
+
+    private void updateMasterAdminPassword() {
+        welcomePage.navigateTo();
+        if (!welcomePage.isPasswordSet()) {
+            welcomePage.setPassword("admin", "admin");
+        }
     }
 
     public void deleteAllCookiesForMasterRealm() {

@@ -21,8 +21,8 @@
  */
 package org.keycloak.testsuite.oauth;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.h2.value.ValueStringIgnoreCase;
 import org.junit.ClassRule;
 import org.junit.Rule;
