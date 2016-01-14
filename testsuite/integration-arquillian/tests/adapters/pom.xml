@@ -23,6 +23,7 @@
         <exclude.adapters>-</exclude.adapters>
         
         <arquillian.xml.stylesheet>src/main/xslt/arquillian.xsl</arquillian.xml.stylesheet>
+        <skip.install.adapters>false</skip.install.adapters>
     </properties>
     
     <build>
@@ -50,12 +51,29 @@
                                 </artifactItems>
                             </configuration>
                         </execution>
+                        <execution>
+                            <id>unpack-add-user-json</id>
+                            <phase>generate-resources</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                            <configuration>
+                                <artifactItems>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>integration-arquillian-tests-base</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>test-jar</type>
+                                        <includes>**/keycloak-add-user.json</includes>
+                                    </artifactItem>
+                                </artifactItems>
+                            </configuration>
+                        </execution>
                     </executions>
                 </plugin>            
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>xml-maven-plugin</artifactId>
-                    <version>1.0</version>
                     <executions>
                         <execution>
                             <id>add-app-server-to-arquillian-xml</id>
@@ -108,6 +126,31 @@
                             <exclude>${exclude.adapters}</exclude>
                         </excludes>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>copy-admin-user-json-file</id>
+                            <phase>process-test-resources</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${jboss.server.config.dir}</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>${project.build.directory}/dependency</directory>
+                                        <includes>
+                                            <include>keycloak-add-user.json</include>
+                                        </includes>
+                                        <filtering>true</filtering>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>        
@@ -190,7 +233,6 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-dependency-plugin</artifactId>
-                            <version>2.10</version>
                             <executions>
                                 <execution>
                                     <id>example-wars</id>
@@ -343,6 +385,12 @@
             </modules>
         </profile>
         <profile>
+            <id>app-server-eap6</id>
+            <modules>
+                <module>eap6</module>
+            </modules>
+        </profile>
+        <profile>
             <id>app-server-wildfly</id>
             <modules>
                 <module>wildfly</module>
@@ -373,16 +421,17 @@
             </modules>
         </profile>
         <profile>
-            <id>app-server-eap6</id>
-            <modules>
-                <module>eap6</module>
-            </modules>
-        </profile>
-        <profile>
             <id>no-adapter-tests</id>
             <properties>
                 <!-- Exclude all adapters tests. -->
                 <exclude.adapters>**/adapter/**/*Test.java</exclude.adapters>
+            </properties>
+        </profile>
+        <profile>
+            <id>no-relative</id>
+            <properties>
+                <!-- Exclude relative adapters tests. -->
+                <exclude.adapters>**/adapter/**/WildflyRelative*Test.java</exclude.adapters>
             </properties>
         </profile>
         

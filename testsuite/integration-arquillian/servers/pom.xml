@@ -24,10 +24,9 @@
             </modules>
         </profile>
         <profile>
-            <id>auth-server-eap6</id>
+            <id>auth-server-eap7</id>
             <modules>
-                <!--doesn't work yet, WIP-->
-                <module>eap6</module>
+                <module>eap7</module>
             </modules>
         </profile>
     </profiles>    

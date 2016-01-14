@@ -5,12 +5,11 @@
     "enabled" : true,
     "credentials" : [ {
       "type" : "password",
-      "hashedSaltedValue" : "6K5rvcPu3dXndZOhpzLAVbFtcdlUhbGCrUyV0NNzeS61IdhMpjH8Mf4y/Ag/vHZkw4Ayvtvb9/1iMNOzxR0M6g==",
-      "salt" : "/6M1jTMUB0uR8EOkksFn/A==",
+      "hashedSaltedValue" : "dqalJHLkWhUJZO/q6+z1fvXOohTcGCXcvoU8xCEyvTxGN4wmLx7DtyhKuefggh6Bkx1I2eBTEX4tiWggwyXMDw==",
+      "salt" : "3fBAt5GAGGxFrV9fznpZHQ==",
       "hashIterations" : 100000,
       "algorithm" : "pbkdf2"
     } ],
     "realmRoles" : [ "admin" ]
-  } ],
-  "identityFederationEnabled" : false
+  } ]
 } ]
