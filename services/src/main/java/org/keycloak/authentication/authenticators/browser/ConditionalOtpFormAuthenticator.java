@@ -72,7 +72,7 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
 
     public static final String FORCE_OTP_ROLE = "forceOtpRole";
 
-    public static final String NO_OTP_REQUIRED_FOR_HTTP_HEADER = "noOtpRequiredForHeaderPattern";
+    public static final String SKIP_OTP_FOR_HTTP_HEADER = "noOtpRequiredForHeaderPattern";
 
     public static final String FORCE_OTP_FOR_HTTP_HEADER = "forceOtpForHeaderPattern";
 
@@ -99,14 +99,14 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             return;
         }
 
-        if (tryConcludeBasedOn(voteForDefaultFallback(context, config), context)) {
+        if (tryConcludeBasedOn(voteForDefaultFallback(config), context)) {
             return;
         }
 
         showOtpForm(context);
     }
 
-    private OtpDecision voteForDefaultFallback(AuthenticationFlowContext context, Map<String, String> config) {
+    private OtpDecision voteForDefaultFallback(Map<String, String> config) {
 
         if (!config.containsKey(DEFAULT_OTP_OUTCOME)) {
             return ABSTAIN;
@@ -174,14 +174,14 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
 
     private OtpDecision voteForHttpHeaderMatchesPattern(AuthenticationFlowContext context, Map<String, String> config) {
 
-        if (!config.containsKey(FORCE_OTP_FOR_HTTP_HEADER) && !config.containsKey(NO_OTP_REQUIRED_FOR_HTTP_HEADER)) {
+        if (!config.containsKey(FORCE_OTP_FOR_HTTP_HEADER) && !config.containsKey(SKIP_OTP_FOR_HTTP_HEADER)) {
             return ABSTAIN;
         }
 
         MultivaluedMap<String, String> requestHeaders = context.getHttpRequest().getHttpHeaders().getRequestHeaders();
 
         //Inverted to allow white-lists, e.g. for specifying trusted remote hosts: X-Forwarded-Host: (1.2.3.4|1.2.3.5)
-        if (containsMatchingRequestHeader(requestHeaders, config.get(NO_OTP_REQUIRED_FOR_HTTP_HEADER))) {
+        if (containsMatchingRequestHeader(requestHeaders, config.get(SKIP_OTP_FOR_HTTP_HEADER))) {
             return SKIP_OTP;
         }
 
