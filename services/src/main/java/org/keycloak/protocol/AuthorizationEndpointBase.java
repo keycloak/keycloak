@@ -11,6 +11,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionModel;
@@ -90,33 +91,29 @@ public abstract class AuthorizationEndpointBase {
         AuthenticationFlowModel flow = getAuthenticationFlow();
         String flowId = flow.getId();
         AuthenticationProcessor processor = createProcessor(clientSession, flowId, LoginActionsService.AUTHENTICATE_PATH);
-
+        event.detail(Details.CODE_ID, clientSession.getId());
         if (isPassive) {
             // OIDC prompt == NONE or SAML 2 IsPassive flag
             // This means that client is just checking if the user is already completely logged in.
             // We cancel login if any authentication action or required action is required
-            Response challenge = null;
-            Response challenge2 = null;
             try {
-                challenge = processor.authenticateOnly();
-                if (challenge == null) {
-                    challenge2 = processor.attachSessionExecutionRequiredActions();
+                if (processor.authenticateOnly() == null) {
+                    processor.attachSession();
+                } else {
+                    Response response = protocol.sendError(clientSession, Error.PASSIVE_LOGIN_REQUIRED);
+                    session.sessions().removeClientSession(realm, clientSession);
+                    return response;
+                }
+                if (processor.isActionRequired()) {
+                    Response response = protocol.sendError(clientSession, Error.PASSIVE_INTERACTION_REQUIRED);
+                    session.sessions().removeClientSession(realm, clientSession);
+                    return response;
+
                 }
             } catch (Exception e) {
                 return processor.handleBrowserException(e);
             }
-
-            if (challenge != null || challenge2 != null) {
-                if (processor.isUserSessionCreated()) {
-                    session.sessions().removeUserSession(realm, processor.getUserSession());
-                }
-                if (challenge != null)
-                    return protocol.sendError(clientSession, Error.PASSIVE_LOGIN_REQUIRED);
-                else
-                    return protocol.sendError(clientSession, Error.PASSIVE_INTERACTION_REQUIRED);
-            } else {
-                return processor.finishAuthentication(protocol);
-            }
+            return processor.finishAuthentication(protocol);
         } else {
             try {
                 RestartLoginCookie.setRestartCookie(realm, clientConnection, uriInfo, clientSession);

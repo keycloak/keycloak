@@ -6,17 +6,16 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.UserModel;
 
-import static org.keycloak.authentication.FlowStatus.*;
-
 import javax.ws.rs.core.Response;
-
 import java.util.Iterator;
 import java.util.List;
 
+import static org.keycloak.authentication.FlowStatus.SUCCESS;
+
 /**
-* @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
-* @version $Revision: 1 $
-*/
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
+ */
 public class DefaultAuthenticationFlow implements AuthenticationFlow {
     protected static Logger logger = Logger.getLogger(DefaultAuthenticationFlow.class);
     Response alternativeChallenge = null;
@@ -70,14 +69,9 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 authenticator.action(result);
                 Response response = processResult(result);
                 if (response == null) {
-                    if (result.status == SUCCESS && processor.isBrowserFlow()) {
-                         // redirect to a non-action URL so browser refresh works without reposting.
-                         return processor.createSuccessRedirect();
-                    } else {
-                        return processFlow();
-                    }
-                }
-                else return response;
+                    processor.getClientSession().removeNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+                    return processFlow();
+                } else return response;
             }
         }
         throw new AuthenticationFlowException("action is not in current execution", AuthenticationFlowError.INTERNAL_ERROR);
