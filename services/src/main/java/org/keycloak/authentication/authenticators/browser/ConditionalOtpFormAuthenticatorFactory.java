@@ -98,6 +98,12 @@ public class ConditionalOtpFormAuthenticatorFactory implements AuthenticatorFact
                 "If attribute value is 'force' then OTP is always required. " +
                 "If value is 'skip' the OTP auth is skipped. Otherwise this check is ignored.");
 
+        ProviderConfigProperty skipOtpRole = new ProviderConfigProperty();
+        skipOtpRole.setType(ROLE_TYPE);
+        skipOtpRole.setName(SKIP_OTP_ROLE);
+        skipOtpRole.setLabel("Skip OTP for Role");
+        skipOtpRole.setHelpText("OTP is always skipped if user has the given Role.");
+
         ProviderConfigProperty forceOtpRole = new ProviderConfigProperty();
         forceOtpRole.setType(ROLE_TYPE);
         forceOtpRole.setName(FORCE_OTP_ROLE);
@@ -127,6 +133,6 @@ public class ConditionalOtpFormAuthenticatorFactory implements AuthenticatorFact
         defaultOutcome.setDefaultValue(asList(SKIP, FORCE));
         defaultOutcome.setHelpText("What to do in case of every check abstains. Defaults to force OTP authentication.");
 
-        return asList(forceOtpUserAttribute, forceOtpRole, noOtpRequiredForHttpHeader, forceOtpForHttpHeader, defaultOutcome);
+        return asList(forceOtpUserAttribute, skipOtpRole, forceOtpRole, noOtpRequiredForHttpHeader, forceOtpForHttpHeader, defaultOutcome);
     }
 }

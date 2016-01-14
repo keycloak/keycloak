@@ -37,8 +37,9 @@ import static org.keycloak.models.utils.KeycloakModelUtils.hasRole;
  * </p>
  * <p>
  * <h2>Role</h2>
- * A role can be used to control the OTP authentication. If the user has the specified role the OTP authentication is forced.
- * Otherwise if no role is selected the setting is ignored.
+ * A role can be used to control the OTP authentication. If the user has the specified skip OTP role then OTP authentication is skipped for the user.
+ * If the user has the specified force OTP role, then the OTP authentication is required for the user.
+ * If not configured, e.g.  if no role is selected, then this setting is ignored.
  * <p>
  * </p>
  * <p>
@@ -67,6 +68,8 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
 
     public static final String OTP_CONTROL_USER_ATTRIBUTE = "otpControlAttribute";
 
+    public static final String SKIP_OTP_ROLE = "skipOtpRole";
+
     public static final String FORCE_OTP_ROLE = "forceOtpRole";
 
     public static final String NO_OTP_REQUIRED_FOR_HTTP_HEADER = "noOtpRequiredForHeaderPattern";
@@ -88,7 +91,7 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             return;
         }
 
-        if (tryConcludeBasedOn(voteForUserForceOtpRole(context, config), context)) {
+        if (tryConcludeBasedOn(voteForUserRole(context, config), context)) {
             return;
         }
 
@@ -216,19 +219,32 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
         return false;
     }
 
-    private OtpDecision voteForUserForceOtpRole(AuthenticationFlowContext context, Map<String, String> config) {
+    private OtpDecision voteForUserRole(AuthenticationFlowContext context, Map<String, String> config) {
 
-        if (!config.containsKey(FORCE_OTP_ROLE)) {
+        if (!config.containsKey(SKIP_OTP_ROLE) && !config.containsKey(FORCE_OTP_ROLE)) {
             return ABSTAIN;
         }
 
-        RoleModel forceOtpRole = getRoleFromString(context.getRealm(), config.get(FORCE_OTP_ROLE));
-        UserModel user = context.getUser();
+        if (userHasRole(context, config.get(SKIP_OTP_ROLE))) {
+            return SKIP_OTP;
+        }
 
-        if (hasRole(user.getRoleMappings(), forceOtpRole)) {
+        if (userHasRole(context, config.get(FORCE_OTP_ROLE))) {
             return SHOW_OTP;
         }
 
         return ABSTAIN;
+    }
+
+    private boolean userHasRole(AuthenticationFlowContext context, String roleName) {
+
+        if (roleName == null) {
+            return false;
+        }
+
+        RoleModel role = getRoleFromString(context.getRealm(), roleName);
+        UserModel user = context.getUser();
+
+        return hasRole(user.getRoleMappings(), role);
     }
 }
