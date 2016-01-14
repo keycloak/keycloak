@@ -98,20 +98,26 @@ public class ConditionalOtpFormAuthenticatorFactory implements AuthenticatorFact
                 "If attribute value is 'force' then OTP is always required. " +
                 "If value is 'skip' the OTP auth is skipped. Otherwise this check is ignored.");
 
+        ProviderConfigProperty skipOtpRole = new ProviderConfigProperty();
+        skipOtpRole.setType(ROLE_TYPE);
+        skipOtpRole.setName(SKIP_OTP_ROLE);
+        skipOtpRole.setLabel("Skip OTP for Role");
+        skipOtpRole.setHelpText("OTP is always skipped if user has the given Role.");
+
         ProviderConfigProperty forceOtpRole = new ProviderConfigProperty();
         forceOtpRole.setType(ROLE_TYPE);
         forceOtpRole.setName(FORCE_OTP_ROLE);
         forceOtpRole.setLabel("Force OTP for Role");
         forceOtpRole.setHelpText("OTP is always required if user has the given Role.");
 
-        ProviderConfigProperty noOtpRequiredForHttpHeader = new ProviderConfigProperty();
-        noOtpRequiredForHttpHeader.setType(STRING_TYPE);
-        noOtpRequiredForHttpHeader.setName(NO_OTP_REQUIRED_FOR_HTTP_HEADER);
-        noOtpRequiredForHttpHeader.setLabel("No OTP for Header");
-        noOtpRequiredForHttpHeader.setHelpText("OTP required if a HTTP request header does not match the given pattern." +
+        ProviderConfigProperty skipOtpForHttpHeader = new ProviderConfigProperty();
+        skipOtpForHttpHeader.setType(STRING_TYPE);
+        skipOtpForHttpHeader.setName(SKIP_OTP_FOR_HTTP_HEADER);
+        skipOtpForHttpHeader.setLabel("Skip OTP for Header");
+        skipOtpForHttpHeader.setHelpText("OTP is skipped if a HTTP request header does matches the given pattern." +
                 "Can be used to specify trusted networks via: X-Forwarded-Host: (1.2.3.4|1.2.3.5)." +
                 "In this case requests from 1.2.3.4 and 1.2.3.5 come from a trusted source.");
-        noOtpRequiredForHttpHeader.setDefaultValue("");
+        skipOtpForHttpHeader.setDefaultValue("");
 
         ProviderConfigProperty forceOtpForHttpHeader = new ProviderConfigProperty();
         forceOtpForHttpHeader.setType(STRING_TYPE);
@@ -127,6 +133,6 @@ public class ConditionalOtpFormAuthenticatorFactory implements AuthenticatorFact
         defaultOutcome.setDefaultValue(asList(SKIP, FORCE));
         defaultOutcome.setHelpText("What to do in case of every check abstains. Defaults to force OTP authentication.");
 
-        return asList(forceOtpUserAttribute, forceOtpRole, noOtpRequiredForHttpHeader, forceOtpForHttpHeader, defaultOutcome);
+        return asList(forceOtpUserAttribute, skipOtpRole, forceOtpRole, skipOtpForHttpHeader, forceOtpForHttpHeader, defaultOutcome);
     }
 }
