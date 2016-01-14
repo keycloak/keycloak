@@ -55,7 +55,7 @@
             You can exclude one or more events by editing <literal>standalone/configuration/keycloak-server.json</literal>
             and adding for example:
 <programlisting><![CDATA[
-"eventListener": {
+"eventsListener": {
     "email": {
         "exclude-events": [ "UPDATE_TOTP", "REMOVE_TOTP" ]
     }

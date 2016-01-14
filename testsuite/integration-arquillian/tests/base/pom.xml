@@ -14,6 +14,8 @@
     <properties>
         <exclude.console>-</exclude.console>
         <exclude.account>-</exclude.account>
+        <exclude.client>-</exclude.client>
+        <exclude.migration>-</exclude.migration>
     </properties>
 	<dependencies>
 	    <dependency>
@@ -48,6 +50,8 @@
                     <excludes>
                         <exclude>${exclude.console}</exclude>
                         <exclude>${exclude.account}</exclude>
+                        <exclude>${exclude.client}</exclude>
+                        <exclude>${exclude.migration}</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -70,10 +74,19 @@
             </properties>
         </profile>
         <profile>
+            <id>no-client</id>
+            <properties>
+                <!-- Exclude all account management tests. -->
+                <exclude.account>**/client/**/*Test.java</exclude.account>
+            </properties>
+        </profile>
+        <profile>
             <id>adapters-only</id>
             <properties>
                 <exclude.console>**/console/**/*Test.java</exclude.console>           
                 <exclude.account>**/account/**/*Test.java</exclude.account>
+                <exclude.client>**/client/**/*Test.java</exclude.client>
+                <exclude.migration>**/migration/**/*Test.java</exclude.migration>
             </properties>
         </profile>
     </profiles>

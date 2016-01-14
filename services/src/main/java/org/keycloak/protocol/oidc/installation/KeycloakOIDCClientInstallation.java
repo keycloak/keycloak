@@ -78,7 +78,7 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
 
     @Override
     public String getDisplayType() {
-        return "Keycloak OIDC keycloak.json";
+        return "Keycloak OIDC JSON";
     }
 
     @Override

@@ -31,6 +31,11 @@
             <artifactId>keycloak-wildfly-adapter-dist</artifactId>
             <type>zip</type>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
+            <type>zip</type>
+        </dependency>
     </dependencies>
 
     <build>
@@ -68,6 +73,13 @@
                                     <type>zip</type>
                                     <outputDirectory>${adapter.libs.wildfly}</outputDirectory>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${adapter.libs.wildfly}</outputDirectory>
+                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
@@ -77,7 +89,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.18.1</version>
                 <configuration>
                     <systemPropertyVariables>
                         <app.server.wildfly>true</app.server.wildfly>
@@ -100,35 +111,6 @@
             <properties>
                 <adapter.libs.wildfly>${app.server.wildfly.home}</adapter.libs.wildfly>
             </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>configure-adapter-subsystem</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <transformationSet>
-                                            <dir>${app.server.wildfly.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                            </includes>
-                                            <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
-                                            <outputDir>${app.server.wildfly.home}/standalone/configuration</outputDir>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
         <profile>
             <id>ssl</id>
@@ -166,7 +148,6 @@
                     </plugin>
                     <plugin>
                         <artifactId>maven-resources-plugin</artifactId>
-                        <version>2.7</version>
                         <executions>
                             <execution>
                                 <id>copy-keystore</id>
@@ -175,20 +156,20 @@
                                     <goal>copy-resources</goal>
                                 </goals>
                                 <configuration>
-                                     <outputDirectory>${app.server.wildfly.home}/standalone/configuration</outputDirectory>
-                                     <resources>
-                                         <resource>
-                                              <directory>src/main/keystore</directory>
-                                              <includes>
-                                                  <include>adapter.jks</include>
-                                                  <include>keycloak.truststore</include>
-                                              </includes>
-                                         </resource>
-                                     </resources>
-                                     <nonFilteredFileExtensions>
+                                    <outputDirectory>${app.server.wildfly.home}/standalone/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/keystore</directory>
+                                            <includes>
+                                                <include>adapter.jks</include>
+                                                <include>keycloak.truststore</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <nonFilteredFileExtensions>
                                         <nonFilteredFileExtension>jks</nonFilteredFileExtension>
                                         <nonFilteredFileExtension>truststore</nonFilteredFileExtension>
-                                     </nonFilteredFileExtensions>
+                                    </nonFilteredFileExtensions>
                                 </configuration>
                             </execution>
                         </executions>

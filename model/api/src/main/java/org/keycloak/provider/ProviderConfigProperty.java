@@ -10,6 +10,7 @@ public class ProviderConfigProperty {
     public static final String ROLE_TYPE="Role";
     public static final String LIST_TYPE="List";
     public static final String CLIENT_LIST_TYPE="ClientList";
+    public static final String PASSWORD="Password";
 
     protected String name;
     protected String label;

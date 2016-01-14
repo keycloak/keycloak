@@ -11,7 +11,7 @@
                     <label for="otp" class="${properties.kcLabelClass!}">${msg("loginTotpOneTime")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="totp" name="totp" class="${properties.kcInputClass!}" />
+                    <input type="text" id="totp" name="totp" autocomplete="off" class="${properties.kcInputClass!}" />
                 </div>
                 <input type="hidden" id="totpSecret" name="totpSecret" value="${totp.totpSecret}" />
             </div>

@@ -30,7 +30,7 @@
     <xsl:param name="pool.prefill" select="'true'"/>
     
     <xsl:variable name="newDatasourceDefinition">
-        <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
+        <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" use-java-context="true">
             <connection-url>
                 <xsl:value-of select="$jdbc.url"/>
             </connection-url>

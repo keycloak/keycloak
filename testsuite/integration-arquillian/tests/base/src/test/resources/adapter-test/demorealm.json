@@ -21,7 +21,7 @@
                 { "type" : "password",
                     "value" : "password" }
             ],
-            "realmRoles": [ "user", "admin" ],
+            "realmRoles": [ "user" ],
             "applicationRoles": {
                 "account": [ "manage-account" ]
             }
@@ -34,12 +34,36 @@
             "lastName": "Posolda",
             "credentials" : [
                 { "type" : "password",
-                  "value" : "password" }
+                    "value" : "password" }
             ],
             "realmRoles": [ "user" ],
             "applicationRoles": {
                 "account": [ "manage-account" ]
             }
+        },
+        {
+            "username" : "topGroupUser",
+            "enabled": true,
+            "email" : "top@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/top"
+            ]
+        },
+        {
+            "username" : "level2GroupUser",
+            "enabled": true,
+            "email" : "level2@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/top/level2"
+            ]
         }
     ],
     "roles" : {
@@ -54,6 +78,29 @@
             }
         ]
     },
+    "groups" : [
+        {
+            "name": "top",
+            "attributes": {
+                "topAttribute": ["true"]
+
+            },
+            "realmRoles": ["user"],
+            "clientRoles": {
+                "account": ["manage-account"]
+            },
+            "subGroups": [
+                {
+                    "name": "level2",
+                    "realmRoles": ["admin"],
+                    "attributes": {
+                        "level2Attribute": ["true"]
+
+                    }
+                }
+            ]
+        }
+    ],
     "scopeMappings": [
         {
             "client": "third-party",
@@ -69,38 +116,39 @@
         }
 
     ],
-    "clients": [
+    "applications": [
         {
-            "clientId": "customer-portal",
+            "name": "customer-portal",
             "enabled": true,
-            "adminUrl": "/customer-portal",
-            "baseUrl": "/customer-portal",
+            "directAccessGrantsEnabled": true,
+            "adminUrl": "http://localhost:8081/customer-portal",
+            "baseUrl": "http://localhost:8081/customer-portal",
             "redirectUris": [
-                "/customer-portal/*"
+                "http://localhost:8081/customer-portal/*"
             ],
             "secret": "password"
         },
         {
-            "clientId": "customer-cookie-portal",
+            "name": "customer-cookie-portal",
             "enabled": true,
-            "baseUrl": "/customer-cookie-portal",
+            "baseUrl": "http://localhost:8081/customer-cookie-portal",
             "redirectUris": [
-                "/customer-cookie-portal/*"
+                "http://localhost:8081/customer-cookie-portal/*"
             ],
             "secret": "password"
         },
         {
-            "clientId": "customer-portal-js",
+            "name": "customer-portal-js",
             "enabled": true,
             "publicClient": true,
-            "adminUrl": "/customer-portal-js",
-            "baseUrl": "/customer-portal-js",
+            "adminUrl": "http://localhost:8081/customer-portal-js",
+            "baseUrl": "http://localhost:8081/customer-portal-js",
             "redirectUris": [
-                "/customer-portal-js/*"
+                "http://localhost:8080/customer-portal-js/*"
             ]
         },
         {
-            "clientId": "customer-portal-cli",
+            "name": "customer-portal-cli",
             "enabled": true,
             "publicClient": true,
             "redirectUris": [
@@ -109,51 +157,56 @@
             ]
         },
         {
-            "clientId": "product-portal",
+            "name": "product-portal",
             "enabled": true,
-            "adminUrl": "/product-portal",
-            "baseUrl": "/product-portal",
+            "adminUrl": "http://localhost:8081/product-portal",
+            "baseUrl": "http://localhost:8081/product-portal",
             "redirectUris": [
-                "/product-portal/*"
+                "http://localhost:8081/product-portal/*"
             ],
             "secret": "password"
         },
         {
-            "clientId": "secure-portal",
+            "name": "secure-portal",
             "enabled": true,
-            "adminUrl": "/secure-portal",
-            "baseUrl": "/secure-portal",
+            "adminUrl": "http://localhost:8081/secure-portal",
+            "baseUrl": "http://localhost:8081/secure-portal",
+            "clientAuthenticatorType": "client-jwt",
             "redirectUris": [
-                "/secure-portal/*"
+                "http://localhost:8081/secure-portal/*"
+            ],
+            "attributes": {
+                "jwt.credential.certificate": "MIICnTCCAYUCBgFPPLDaTzANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdjbGllbnQxMB4XDTE1MDgxNzE3MjI0N1oXDTI1MDgxNzE3MjQyN1owEjEQMA4GA1UEAwwHY2xpZW50MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIUjjgv+V3s96O+Za9002Lp/trtGuHBeaeVL9dFKMKzO2MPqdRmHB4PqNlDdd28Rwf5Xn6iWdFpyUKOnI/yXDLhdcuFpR0sMNK/C9Lt+hSpPFLuzDqgtPgDotlMxiHIWDOZ7g9/gPYNXbNvjv8nSiyqoguoCQiiafW90bPHsiVLdP7ZIUwCcfi1qQm7FhxRJ1NiW5dvUkuCnnWEf0XR+Wzc5eC9EgB0taLFiPsSEIlWMm5xlahYyXkPdNOqZjiRnrTWm5Y4uk8ZcsD/KbPTf/7t7cQXipVaswgjdYi1kK2/zRwOhg1QwWFX/qmvdd+fLxV0R6VqRDhn7Qep2cxwMxLsCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAKE6OA46sf20bz8LZPoiNsqRwBUDkaMGXfnob7s/hJZIIwDEx0IAQ3uKsG7q9wb+aA6s+v7S340zb2k3IxuhFaHaZpAd4CyR5cn1FHylbzoZ7rI/3ASqHDqpljdJaFqPH+m7nZWtyDvtZf+gkZ8OjsndwsSBK1d/jMZPp29qYbl1+XfO7RCp/jDqro/R3saYFaIFiEZPeKn1hUJn6BO48vxH1xspSu9FmlvDOEAOz4AuM58z4zRMP49GcFdCWr1wkonJUHaSptJaQwmBwLFUkCbE5I1ixGMb7mjEud6Y5jhfzJiZMo2U8RfcjNbrN0diZl3jB6LQIwESnhYSghaTjNQ=="
+            }
+        },
+        {
+            "name": "session-portal",
+            "enabled": true,
+            "adminUrl": "http://localhost:8081/session-portal",
+            "baseUrl": "http://localhost:8081/session-portal",
+            "redirectUris": [
+                "http://localhost:8081/session-portal/*"
             ],
             "secret": "password"
         },
         {
-            "clientId": "session-portal",
+            "name": "input-portal",
             "enabled": true,
-            "adminUrl": "/session-portal",
-            "baseUrl": "/session-portal",
+            "adminUrl": "http://localhost:8081/input-portal",
+            "baseUrl": "http://localhost:8081/input-portal",
             "redirectUris": [
-                "/session-portal/*"
+                "http://localhost:8081/input-portal/*"
             ],
             "secret": "password"
-        },
+        }
+    ],
+    "oauthClients": [
         {
-            "clientId": "input-portal",
-            "enabled": true,
-            "adminUrl": "/input-portal",
-            "baseUrl": "/input-portal",
-            "redirectUris": [
-                "/input-portal/*"
-            ],
-            "secret": "password"
-        },
-        {
-            "clientId": "third-party",
+            "name": "third-party",
             "enabled": true,
             "redirectUris": [
-                "/oauth-client/*",
-                "/oauth-client-cdi/*"
+                "http://localhost:8081/oauth-client/*",
+                "http://localhost:8081/oauth-client-cdi/*"
             ],
             "secret": "password"
         }

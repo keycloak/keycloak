@@ -1,11 +1,7 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xalan="http://xml.apache.org/xalan"
-                xmlns:j="urn:jboss:domain:3.0"
-                xmlns:ds="urn:jboss:domain:datasources:3.0"
-                xmlns:k="urn:jboss:domain:keycloak:1.1"
-                xmlns:sec="urn:jboss:domain:security:1.2"
                 version="2.0"
-                exclude-result-prefixes="xalan j ds k sec">
+                exclude-result-prefixes="xalan">
 
     <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" standalone="no"/>
     <xsl:strip-space elements="*"/>
@@ -30,7 +26,7 @@
     <xsl:param name="pool.prefill" select="'true'"/>
     
     <xsl:variable name="newDatasourceDefinition">
-        <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
+        <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" use-java-context="true">
             <connection-url>
                 <xsl:value-of select="$jdbc.url"/>
             </connection-url>

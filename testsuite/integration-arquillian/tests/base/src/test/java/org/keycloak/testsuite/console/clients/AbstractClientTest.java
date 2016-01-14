@@ -119,7 +119,7 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
     }
     
     private static void setRedirectUris(ClientRepresentation client, String... redirectUris) {
-        List<String> redirectUrisList = new ArrayList();
+        List<String> redirectUrisList = new ArrayList<>();
         redirectUrisList.addAll(Arrays.asList(redirectUris));
         client.setRedirectUris(redirectUrisList);
     }
