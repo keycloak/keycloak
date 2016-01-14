@@ -682,6 +682,11 @@
                 }
 
                 return oauth;
+            } else if (oauth.fragment) {
+                // logout has been performed, fragment needs to be updated in URL
+                oauth.newUrl += '#' + oauth.fragment;
+
+                return oauth;
             }
         }
 
