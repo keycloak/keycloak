@@ -72,7 +72,7 @@
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <!--<sun.xsom.version>20140925</sun.xsom.version>
         <javax.mail.version>1.4.5</javax.mail.version>-->
-        <infinispan.version>8.1.0.Final-redhat-1</infinispan.version>
+        <infinispan.version>8.0.1.Final-redhat-1</infinispan.version>
         <liquibase.version>3.4.1.redhat-1</liquibase.version>
         <jetty9.version>9.1.0.v20131115</jetty9.version>
         <!--<osgi.version>4.2.0</osgi.version>-->
