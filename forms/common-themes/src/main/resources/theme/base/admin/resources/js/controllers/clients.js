@@ -700,14 +700,28 @@ module.controller('ClientInstallationCtrl', function($scope, realm, client, serv
 
     $scope.changeFormat = function() {
         var url = ClientInstallation.url({ realm: $routeParams.realm, client: $routeParams.client, provider: $scope.configFormat.id });
-        $http.get(url).success(function(data) {
-            var installation = data;
-            if ($scope.configFormat.mediaType == 'application/json') {
-                installation = angular.fromJson(data);
-                installation = angular.toJson(installation, true);
-            }
-            $scope.installation = installation;
-        })
+        if ($scope.configFormat.mediaType == 'application/zip') {
+            $http({
+                url: url,
+                method: 'GET',
+                responseType: 'arraybuffer',
+                cache: false
+            }).success(function(data) {
+                var installation = data;
+                $scope.installation = installation;
+                }
+            );
+        } else {
+            $http.get(url).success(function (data) {
+                var installation = data;
+                if ($scope.configFormat.mediaType == 'application/json') {
+                    installation = angular.fromJson(data);
+                    installation = angular.toJson(installation, true);
+                }
+                $scope.installation = installation;
+            });
+        }
+
     };
     $scope.download = function() {
         saveAs(new Blob([$scope.installation], { type: $scope.configFormat.mediaType }), $scope.configFormat.filename);

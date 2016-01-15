@@ -38,6 +38,7 @@ import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.saml.SAML2NameIDPolicyBuilder;
+import org.keycloak.saml.SPMetadataDescriptor;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -227,31 +228,11 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 .build().toString();
 
 
-
-        String descriptor =
-                "<EntityDescriptor xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"" + getEntityId(uriInfo, realm) + "\">\n" +
-                "    <SPSSODescriptor AuthnRequestsSigned=\"" + getConfig().isWantAuthnRequestsSigned() + "\"\n" +
-                "            protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol http://schemas.xmlsoap.org/ws/2003/07/secext\">\n" +
-                "        <NameIDFormat>" + getConfig().getNameIDPolicyFormat() + "\n" +
-                "        </NameIDFormat>\n" +
-                "        <SingleLogoutService Binding=\"" + authnBinding + "\" Location=\"" + endpoint + "\"/>\n" +
-                "        <AssertionConsumerService\n" +
-                "                Binding=\"" + authnBinding + "\" Location=\"" + endpoint + "\"\n" +
-                "                index=\"1\" isDefault=\"true\" />\n";
-        if (getConfig().isWantAuthnRequestsSigned()) {
-            descriptor +=
-                "        <KeyDescriptor use=\"signing\">\n" +
-                "            <dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
-                "                <dsig:X509Data>\n" +
-                "                    <dsig:X509Certificate>\n" + realm.getCertificatePem() + "\n" +
-                "                    </dsig:X509Certificate>\n" +
-                "                </dsig:X509Data>\n" +
-                "            </dsig:KeyInfo>\n" +
-                "        </KeyDescriptor>\n";
-        }
-        descriptor +=
-                "    </SPSSODescriptor>\n" +
-                "</EntityDescriptor>\n";
+        boolean wantAuthnRequestsSigned = getConfig().isWantAuthnRequestsSigned();
+        String entityId = getEntityId(uriInfo, realm);
+        String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
+        String certificatePem = realm.getCertificatePem();
+        String descriptor = SPMetadataDescriptor.getSPDescriptor(authnBinding, endpoint, endpoint, wantAuthnRequestsSigned, entityId, nameIDPolicyFormat, certificatePem);
         return Response.ok(descriptor, MediaType.APPLICATION_XML_TYPE).build();
     }
 

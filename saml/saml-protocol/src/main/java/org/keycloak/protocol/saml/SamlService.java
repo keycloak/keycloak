@@ -1,5 +1,6 @@
 package org.keycloak.protocol.saml;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
@@ -14,6 +15,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -477,7 +479,12 @@ public class SamlService extends AuthorizationEndpointBase {
     @Path("descriptor")
     @Produces(MediaType.APPLICATION_XML)
     public String getDescriptor() throws Exception {
-        InputStream is = getClass().getResourceAsStream("/idp-metadata-template.xml");
+        return getIDPMetadataDescriptor(uriInfo, realm);
+
+    }
+
+    public static String getIDPMetadataDescriptor(UriInfo uriInfo, RealmModel realm) throws IOException {
+        InputStream is = SamlService.class.getResourceAsStream("/idp-metadata-template.xml");
         String template = StreamUtil.readString(is);
         template = template.replace("${idp.entityID}", RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
         template = template.replace("${idp.sso.HTTP-POST}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
@@ -485,7 +492,6 @@ public class SamlService extends AuthorizationEndpointBase {
         template = template.replace("${idp.sls.HTTP-POST}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
         template = template.replace("${idp.signing.certificate}", realm.getCertificatePem());
         return template;
-
     }
 
     @GET
