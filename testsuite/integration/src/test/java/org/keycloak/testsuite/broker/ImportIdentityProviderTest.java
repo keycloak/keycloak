@@ -34,7 +34,6 @@ import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.social.facebook.FacebookIdentityProvider;
 import org.keycloak.social.facebook.FacebookIdentityProviderFactory;

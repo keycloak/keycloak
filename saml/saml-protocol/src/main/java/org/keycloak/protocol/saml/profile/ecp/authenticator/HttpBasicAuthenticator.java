@@ -11,13 +11,10 @@ import org.keycloak.events.Errors;
 import org.keycloak.models.*;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.idm.CredentialRepresentation;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.List;
 
 /**

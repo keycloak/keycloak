@@ -20,7 +20,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-api</artifactId>
+            <artifactId>keycloak-server-spi</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

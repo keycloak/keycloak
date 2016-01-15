@@ -16,7 +16,6 @@ import org.keycloak.services.Urls;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.UriInfo;
-import java.io.IOException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -10,7 +10,6 @@ import liquibase.resource.ResourceAccessor;
 import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.SqlStatement;
 import liquibase.statement.core.UpdateStatement;
-import liquibase.structure.core.Schema;
 import liquibase.structure.core.Table;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;

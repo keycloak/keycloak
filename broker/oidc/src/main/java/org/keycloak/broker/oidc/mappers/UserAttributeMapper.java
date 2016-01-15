@@ -10,7 +10,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**

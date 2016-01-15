@@ -6,7 +6,6 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -32,7 +31,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Helper class for securing local services.  Provides login basics as well as CSRF check basics

@@ -22,8 +22,6 @@
 package org.keycloak.account.freemarker.model;
 
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
 
 import java.util.Set;
 

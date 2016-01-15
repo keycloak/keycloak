@@ -6,7 +6,6 @@ import org.apache.log.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
 import java.util.concurrent.atomic.AtomicInteger;

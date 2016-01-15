@@ -10,8 +10,6 @@ import javax.ws.rs.core.Response;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.keycloak.authentication.FlowStatus.SUCCESS;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $

@@ -26,7 +26,6 @@ import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.common.util.Time;
-import org.keycloak.hash.PasswordHashProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;

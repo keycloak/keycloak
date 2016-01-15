@@ -3,9 +3,7 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import liquibase.datatype.DataTypeFactory;
 import liquibase.exception.CustomChangeException;
-import liquibase.statement.core.InsertStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Table;
 import org.keycloak.models.utils.KeycloakModelUtils;

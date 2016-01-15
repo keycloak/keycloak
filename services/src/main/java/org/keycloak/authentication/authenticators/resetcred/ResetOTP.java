@@ -1,9 +1,6 @@
 package org.keycloak.authentication.authenticators.resetcred;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 
 /**

@@ -40,7 +40,7 @@
         <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
         <module name="org.keycloak.keycloak-login-api" services="import"/>
         <module name="org.keycloak.keycloak-login-freemarker" services="import"/>
-        <module name="org.keycloak.keycloak-model-api" services="import"/>
+        <module name="org.keycloak.keycloak-server-spi" services="import"/>
         <module name="org.keycloak.keycloak-model-jpa" services="import"/>
         <module name="org.keycloak.keycloak-model-mongo" services="import"/>
         <module name="org.keycloak.keycloak-model-sessions-infinispan" services="import"/>

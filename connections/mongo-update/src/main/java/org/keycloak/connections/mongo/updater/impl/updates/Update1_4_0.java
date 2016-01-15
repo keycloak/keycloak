@@ -8,7 +8,6 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

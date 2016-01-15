@@ -30,7 +30,6 @@ import org.keycloak.models.RoleModel;
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>

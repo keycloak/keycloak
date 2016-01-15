@@ -8,12 +8,10 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.RealmCache;
-import org.keycloak.models.cache.entities.CachedClient;
 import org.keycloak.models.cache.entities.CachedClientTemplate;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 

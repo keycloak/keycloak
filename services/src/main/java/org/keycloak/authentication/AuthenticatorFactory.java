@@ -1,8 +1,5 @@
 package org.keycloak.authentication;
 
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderFactory;
 
 /**

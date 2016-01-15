@@ -6,14 +6,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.cache.entities.CachedGroup;
-import org.keycloak.models.cache.entities.CachedUser;
 
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

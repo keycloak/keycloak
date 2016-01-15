@@ -11,7 +11,6 @@ import liquibase.statement.core.InsertStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Table;
 import org.keycloak.Config;
-import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClaimMask;

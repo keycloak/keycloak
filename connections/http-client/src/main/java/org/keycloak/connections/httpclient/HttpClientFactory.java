@@ -1,7 +1,5 @@
 package org.keycloak.connections.httpclient;
 
-import org.apache.http.client.HttpClient;
-import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
 /**

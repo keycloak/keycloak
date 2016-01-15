@@ -6,10 +6,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.services.Urls;
 
 import java.net.URI;
-import java.text.MessageFormat;
 import java.util.List;
-import java.util.Locale;
-import java.util.Properties;
 
 /**
  */
