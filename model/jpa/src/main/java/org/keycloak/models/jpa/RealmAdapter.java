@@ -1324,6 +1324,8 @@ public class RealmAdapter implements RealmModel {
 
         realm.addIdentityProvider(entity);
 
+        identityProvider.setInternalId(entity.getInternalId());
+
         em.persist(entity);
         em.flush();
     }
