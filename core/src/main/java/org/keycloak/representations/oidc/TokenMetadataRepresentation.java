@@ -17,7 +17,7 @@
  */
 package org.keycloak.representations.oidc;
 
-import org.codehaus.jackson.annotate.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.AccessToken;
 
 /**

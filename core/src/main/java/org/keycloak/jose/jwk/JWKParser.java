@@ -1,6 +1,6 @@
 package org.keycloak.jose.jwk;
 
-import org.codehaus.jackson.type.TypeReference;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
 

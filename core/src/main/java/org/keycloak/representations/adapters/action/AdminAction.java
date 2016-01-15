@@ -1,6 +1,6 @@
 package org.keycloak.representations.adapters.action;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.common.util.Time;
 
 /**

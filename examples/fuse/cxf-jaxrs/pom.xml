@@ -22,7 +22,7 @@
             META-INF.cxf.osgi;version="[2.7,3.2)";resolution:=optional,
             org.apache.cxf.transport.http;version="[2.7,3.2)",
             org.apache.cxf.*;version="[2.7,3.2)",
-            org.codehaus.jackson.jaxrs;version="${jackson.version}",
+            com.fasterxml.jackson.jaxrs;version="${jackson.version}",
             org.keycloak.adapters.jetty;version="${project.version}",
             org.keycloak.adapters;version="${project.version}",
             *

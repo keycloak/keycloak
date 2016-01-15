@@ -17,7 +17,7 @@
 
 package org.keycloak.partialimport;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * This class represents a single result for a resource imported.

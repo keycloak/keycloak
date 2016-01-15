@@ -1,45 +1,18 @@
 package org.keycloak.exportimport.util;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.keycloak.common.util.Base64;
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientTemplateRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.RolesRepresentation;
-import org.keycloak.representations.idm.ScopeMappingRepresentation;
-import org.keycloak.representations.idm.FederatedIdentityRepresentation;
-import org.keycloak.representations.idm.UserConsentRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -340,10 +313,10 @@ public class ExportUtils {
     // Streaming API
 
     public static void exportUsersToStream(KeycloakSession session, RealmModel realm, List<UserModel> usersToExport, ObjectMapper mapper, OutputStream os) throws IOException {
-        JsonFactory factory = mapper.getJsonFactory();
-        JsonGenerator generator = factory.createJsonGenerator(os, JsonEncoding.UTF8);
+        JsonFactory factory = mapper.getFactory();
+        JsonGenerator generator = factory.createGenerator(os, JsonEncoding.UTF8);
         try {
-            if (mapper.isEnabled(SerializationConfig.Feature.INDENT_OUTPUT)) {
+            if (mapper.isEnabled(SerializationFeature.INDENT_OUTPUT)) {
                 generator.useDefaultPrettyPrinter();
             }
             generator.writeStartObject();

@@ -1,9 +1,9 @@
 package org.keycloak.client.registration;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
@@ -19,9 +19,9 @@ public class ClientRegistration {
 
     public static final ObjectMapper outputMapper = new ObjectMapper();
     static {
-        outputMapper.getSerializationConfig().addMixInAnnotations(ClientRepresentation.class, ClientRepresentationMixIn.class);
-        outputMapper.getSerializationConfig().addMixInAnnotations(OIDCClientRepresentation.class, OIDCClientRepresentationMixIn.class);
-        outputMapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
+        outputMapper.addMixIn(ClientRepresentation.class, ClientRepresentationMixIn.class);
+        outputMapper.addMixIn(OIDCClientRepresentation.class, OIDCClientRepresentationMixIn.class);
+        outputMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
     private final String JSON = "application/json";

@@ -1,7 +1,7 @@
 package org.keycloak.adapters;
 
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.common.enums.SslRequired;
@@ -100,7 +100,7 @@ public class KeycloakDeploymentBuilder {
 
     public static AdapterConfig loadAdapterConfig(InputStream is) {
         ObjectMapper mapper = new ObjectMapper(new SystemPropertiesJsonParserFactory());
-        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);
         AdapterConfig adapterConfig;
         try {
             adapterConfig = mapper.readValue(is, AdapterConfig.class);
