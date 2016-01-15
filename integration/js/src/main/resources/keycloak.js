@@ -129,6 +129,7 @@
                 } else if (initOptions) {
                     if (initOptions.token || initOptions.refreshToken) {
                         setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken, false);
+                        kc.timeSkew = initOptions.timeSkew || 0;
 
                         if (loginIframe.enable) {
                             setupCheckLoginIframe().success(function() {
