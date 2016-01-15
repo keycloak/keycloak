@@ -31,6 +31,16 @@
     <name>Keycloak TestSuite</name>
     <description />
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-core</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
         <plugins>
             <plugin>

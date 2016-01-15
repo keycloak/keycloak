@@ -458,6 +458,12 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
                 <version>${infinispan.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.marshalling</groupId>
+                        <artifactId>jboss-marshalling-osgi</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.liquibase</groupId>
