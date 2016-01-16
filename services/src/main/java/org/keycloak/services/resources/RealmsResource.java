@@ -14,8 +14,6 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.wellknown.WellKnownProvider;
@@ -40,9 +38,6 @@ public class RealmsResource {
 
     @Context
     protected ClientConnection clientConnection;
-
-    @Context
-    protected BruteForceProtector protector;
 
     public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
         UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
@@ -177,7 +172,7 @@ public class RealmsResource {
     public IdentityBrokerService getBrokerService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
 
-        IdentityBrokerService brokerService = new IdentityBrokerService(realm, protector);
+        IdentityBrokerService brokerService = new IdentityBrokerService(realm);
         ResteasyProviderFactory.getInstance().injectProperties(brokerService);
 
         brokerService.init();

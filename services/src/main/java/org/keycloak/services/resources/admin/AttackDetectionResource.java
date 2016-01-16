@@ -45,9 +45,6 @@ public class AttackDetectionResource {
     @Context
     protected HttpHeaders headers;
 
-    @Context
-    protected BruteForceProtector protector;
-
     public AttackDetectionResource(RealmAuth auth, RealmModel realm, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
@@ -77,7 +74,7 @@ public class AttackDetectionResource {
 
         UsernameLoginFailureModel model = session.sessions().getUserLoginFailure(realm, username.toLowerCase());
         if (model == null) return data;
-        if (protector.isTemporarilyDisabled(session, realm, username)) {
+        if (session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, username)) {
             data.put("disabled", true);
         }
         data.put("numFailures", model.getNumFailures());

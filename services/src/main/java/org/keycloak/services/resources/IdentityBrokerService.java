@@ -56,7 +56,6 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
-import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.ErrorResponse;
@@ -116,13 +115,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private EventBuilder event;
 
-    private BruteForceProtector protector;
 
-    public IdentityBrokerService(RealmModel realmModel, BruteForceProtector protector) {
+    public IdentityBrokerService(RealmModel realmModel) {
         if (realmModel == null) {
             throw new IllegalArgumentException("Realm can not be null.");
         }
-        this.protector = protector;
         this.realmModel = realmModel;
     }
 

@@ -8,7 +8,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
 
 import java.util.List;
 
