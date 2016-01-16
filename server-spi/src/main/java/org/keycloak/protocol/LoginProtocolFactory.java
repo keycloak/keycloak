@@ -30,7 +30,7 @@ public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
      */
     List<ProtocolMapperModel> getDefaultBuiltinMappers();
 
-    Object createProtocolEndpoint(RealmModel realm, EventBuilder event, AuthenticationManager authManager);
+    Object createProtocolEndpoint(RealmModel realm, EventBuilder event);
 
     /**
      * Setup default values for new clients. This expects that the representation has already set up the client

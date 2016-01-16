@@ -11,3 +11,8 @@ org.keycloak.events.EventStoreSpi
 org.keycloak.exportimport.ExportSpi
 org.keycloak.exportimport.ImportSpi
 org.keycloak.timer.TimerSpi
+org.keycloak.services.managers.BruteForceProtectorSpi
+org.keycloak.protocol.ClientInstallationSpi
+org.keycloak.protocol.LoginProtocolSpi
+org.keycloak.protocol.ProtocolMapperSpi
+

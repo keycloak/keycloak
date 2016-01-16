@@ -699,7 +699,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 .setFlowId(flowId)
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
-                .setProtector(protector)
                 .setRealm(realmModel)
                 .setSession(session)
                 .setUriInfo(uriInfo)

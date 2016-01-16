@@ -84,6 +84,13 @@ public class AuthenticationProcessor {
         return this;
     }
 
+    public BruteForceProtector getBruteForceProtector() {
+        if (protector == null) {
+            protector = session.getProvider(BruteForceProtector.class);
+        }
+        return protector;
+    }
+
     public RealmModel getRealm() {
         return realm;
     }
@@ -146,11 +153,6 @@ public class AuthenticationProcessor {
 
     public AuthenticationProcessor setSession(KeycloakSession session) {
         this.session = session;
-        return this;
-    }
-
-    public AuthenticationProcessor setProtector(BruteForceProtector protector) {
-        this.protector = protector;
         return this;
     }
 
@@ -405,7 +407,7 @@ public class AuthenticationProcessor {
 
         @Override
         public BruteForceProtector getProtector() {
-            return AuthenticationProcessor.this.protector;
+            return AuthenticationProcessor.this.getBruteForceProtector();
         }
 
         @Override
@@ -571,7 +573,6 @@ public class AuthenticationProcessor {
                         .setForwardedSuccessMessage(reset.getSuccessMessage())
                         .setConnection(connection)
                         .setEventBuilder(event)
-                        .setProtector(protector)
                         .setRealm(realm)
                         .setSession(session)
                         .setUriInfo(uriInfo)

@@ -81,10 +81,9 @@ public class RealmsResource {
         RealmModel realm = init(name);
 
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        AuthenticationManager authManager = new AuthenticationManager(protector);
 
         LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
-        OIDCLoginProtocolService endpoint = (OIDCLoginProtocolService)factory.createProtocolEndpoint(realm, event, authManager);
+        OIDCLoginProtocolService endpoint = (OIDCLoginProtocolService)factory.createProtocolEndpoint(realm, event);
 
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.getLoginStatusIframe();
@@ -97,10 +96,9 @@ public class RealmsResource {
         RealmModel realm = init(name);
 
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        AuthenticationManager authManager = new AuthenticationManager(protector);
 
         LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
-        Object endpoint = factory.createProtocolEndpoint(realm, event, authManager);
+        Object endpoint = factory.createProtocolEndpoint(realm, event);
 
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
@@ -117,8 +115,7 @@ public class RealmsResource {
     public LoginActionsService getLoginActionsService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        AuthenticationManager authManager = new AuthenticationManager(protector);
-        LoginActionsService service = new LoginActionsService(realm, authManager, event);
+        LoginActionsService service = new LoginActionsService(realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         return service;
     }

@@ -20,8 +20,8 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class BruteForceProtector implements Runnable {
-    protected static Logger logger = Logger.getLogger(BruteForceProtector.class);
+public class DefaultBruteForceProtector implements Runnable, BruteForceProtector {
+    protected static Logger logger = Logger.getLogger(DefaultBruteForceProtector.class);
 
     protected volatile boolean run = true;
     protected int maxDeltaTimeSeconds = 60 * 60 * 12; // 12 hours
@@ -67,7 +67,7 @@ public class BruteForceProtector implements Runnable {
         }
     }
 
-    public BruteForceProtector(KeycloakSessionFactory factory) {
+    public DefaultBruteForceProtector(KeycloakSessionFactory factory) {
         this.factory = factory;
     }
 
@@ -204,6 +204,7 @@ public class BruteForceProtector implements Runnable {
         }
     }
 
+    @Override
     public void failedLogin(RealmModel realm, String username, ClientConnection clientConnection) {
         try {
             FailedLogin event = new FailedLogin(realm.getId(), username, clientConnection.getRemoteAddr());
@@ -217,6 +218,7 @@ public class BruteForceProtector implements Runnable {
         }
     }
 
+    @Override
     public boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, String username) {
         UsernameLoginFailureModel failure = session.sessions().getUserLoginFailure(realm, username.toLowerCase());
         if (failure == null) {
@@ -231,4 +233,8 @@ public class BruteForceProtector implements Runnable {
         return false;
     }
 
+    @Override
+    public void close() {
+
+    }
 }

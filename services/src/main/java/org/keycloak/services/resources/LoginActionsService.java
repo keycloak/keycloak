@@ -21,6 +21,7 @@
  */
 package org.keycloak.services.resources;
 
+import org.apache.http.auth.AUTH;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
@@ -121,8 +122,6 @@ public class LoginActionsService {
     @Context
     protected KeycloakSession session;
 
-    private AuthenticationManager authManager;
-
     private EventBuilder event;
 
     public static UriBuilder loginActionsBaseUrl(UriInfo uriInfo) {
@@ -154,9 +153,8 @@ public class LoginActionsService {
         return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getLoginActionsService");
     }
 
-    public LoginActionsService(RealmModel realm, AuthenticationManager authManager, EventBuilder event) {
+    public LoginActionsService(RealmModel realm, EventBuilder event) {
         this.realm = realm;
-        this.authManager = authManager;
         this.event = event;
     }
 
@@ -293,7 +291,6 @@ public class LoginActionsService {
                 .setFlowId(flow.getId())
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
-                .setProtector(authManager.getProtector())
                 .setRealm(realm)
                 .setSession(session)
                 .setUriInfo(uriInfo)
@@ -454,7 +451,7 @@ public class LoginActionsService {
         ClientSessionModel clientSession = clientSessionCode.getClientSession();
 
 
-        authManager.expireIdentityCookie(realm, uriInfo, clientConnection);
+        AuthenticationManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
         return processRegistration(execution, clientSession, null);
     }
@@ -648,7 +645,7 @@ public class LoginActionsService {
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
         event.success();
 
-        return authManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection, event);
+        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection, event);
     }
 
     @Path("email-verification")

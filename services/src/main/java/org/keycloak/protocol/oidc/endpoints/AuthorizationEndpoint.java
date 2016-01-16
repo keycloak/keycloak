@@ -63,8 +63,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     private String legacyResponseType;
 
-    public AuthorizationEndpoint(AuthenticationManager authManager, RealmModel realm, EventBuilder event) {
-        super(realm, event, authManager);
+    public AuthorizationEndpoint(RealmModel realm, EventBuilder event) {
+        super(realm, event);
         event.event(EventType.LOGIN);
     }
 

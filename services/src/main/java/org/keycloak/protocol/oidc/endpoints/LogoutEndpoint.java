@@ -61,13 +61,11 @@ public class LogoutEndpoint {
     private UriInfo uriInfo;
 
     private TokenManager tokenManager;
-    private AuthenticationManager authManager;
     private RealmModel realm;
     private EventBuilder event;
 
-    public LogoutEndpoint(TokenManager tokenManager, AuthenticationManager authManager, RealmModel realm, EventBuilder event) {
+    public LogoutEndpoint(TokenManager tokenManager, RealmModel realm, EventBuilder event) {
         this.tokenManager = tokenManager;
-        this.authManager = authManager;
         this.realm = realm;
         this.event = event;
     }
@@ -117,7 +115,7 @@ public class LogoutEndpoint {
         }
 
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
-        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, false);
+        AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
         if (authResult != null) {
             userSession = userSession != null ? userSession : authResult.getSession();
             if (redirect != null) userSession.setNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI, redirect);
@@ -129,7 +127,7 @@ public class LogoutEndpoint {
             return response;
         } else if (userSession != null) { // non browser logout
             event.event(EventType.LOGOUT);
-            authManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
+            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
             event.user(userSession.getUser()).session(userSession).success();
         }
 
@@ -185,7 +183,7 @@ public class LogoutEndpoint {
     }
 
     private void logout(UserSessionModel userSession) {
-        authManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
+        AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
         event.user(userSession.getUser()).session(userSession).success();
     }
 
