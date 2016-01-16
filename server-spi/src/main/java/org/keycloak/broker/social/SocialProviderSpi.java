@@ -15,13 +15,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.social;
+package org.keycloak.broker.social;
 
-import org.keycloak.broker.provider.IdentityProvider;
-import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
 /**
  * @author Pedro Igor
  */
-public interface SocialIdentityProvider<C extends IdentityProviderModel> extends IdentityProvider<C> {
+public class SocialProviderSpi implements Spi {
+
+    public static final String SOCIAL_SPI_NAME = "social";
+
+    @Override
+    public boolean isInternal() {
+        return false;
+    }
+
+    @Override
+    public String getName() {
+        return SOCIAL_SPI_NAME;
+    }
+
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return SocialIdentityProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return SocialIdentityProviderFactory.class;
+    }
 }

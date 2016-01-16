@@ -9,7 +9,6 @@
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>
-        <module name="org.keycloak.keycloak-broker-core"/>
         <module name="org.keycloak.keycloak-saml-core"/>
         <module name="org.keycloak.keycloak-saml-protocol"/>
         <module name="org.keycloak.keycloak-services"/>

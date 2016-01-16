@@ -20,7 +20,7 @@ package org.keycloak.social.linkedin;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.social.SocialIdentityProviderFactory;
+import org.keycloak.broker.social.SocialIdentityProviderFactory;
 
 /**
  * @author Vlastimil Elias (velias at redhat dot com)

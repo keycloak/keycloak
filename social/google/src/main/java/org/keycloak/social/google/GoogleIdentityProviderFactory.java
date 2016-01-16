@@ -20,7 +20,7 @@ package org.keycloak.social.google;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.social.SocialIdentityProviderFactory;
+import org.keycloak.broker.social.SocialIdentityProviderFactory;
 
 /**
  * @author Pedro Igor

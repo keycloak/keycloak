@@ -607,11 +607,6 @@
             <!-- keycloak -->
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-broker-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-broker-oidc</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1060,11 +1055,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-services</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-social-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

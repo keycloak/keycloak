@@ -20,7 +20,7 @@ package org.keycloak.social.facebook;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.social.SocialIdentityProviderFactory;
+import org.keycloak.broker.social.SocialIdentityProviderFactory;
 
 /**
  * @author Pedro Igor

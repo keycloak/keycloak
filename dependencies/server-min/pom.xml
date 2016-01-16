@@ -60,12 +60,6 @@
             <artifactId>keycloak-js-adapter</artifactId>
         </dependency>
 
-        <!-- social -->
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-social-core</artifactId>
-        </dependency>
-
         <!-- forms -->
         <dependency>
             <groupId>org.keycloak</groupId>

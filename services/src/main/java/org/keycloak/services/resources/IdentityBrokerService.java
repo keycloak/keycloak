@@ -62,7 +62,7 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.social.SocialIdentityProvider;
+import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.util.JsonSerialization;
 

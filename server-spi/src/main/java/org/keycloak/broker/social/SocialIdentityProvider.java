@@ -15,12 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.social;
+package org.keycloak.broker.social;
 
-import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.models.IdentityProviderModel;
 
 /**
  * @author Pedro Igor
  */
-public interface SocialIdentityProviderFactory<I extends SocialIdentityProvider> extends IdentityProviderFactory<I> {
+public interface SocialIdentityProvider<C extends IdentityProviderModel> extends IdentityProvider<C> {
 }

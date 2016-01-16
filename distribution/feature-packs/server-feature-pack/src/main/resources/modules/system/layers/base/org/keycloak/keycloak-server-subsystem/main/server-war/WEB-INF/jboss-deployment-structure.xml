@@ -32,7 +32,6 @@
             <module name="org.keycloak.keycloak-model-sessions-infinispan" services="import"/>
             <module name="org.keycloak.keycloak-saml-protocol" services="import"/>
             <module name="org.keycloak.keycloak-services" export="true" services="import"/>
-            <module name="org.keycloak.keycloak-social-core" services="import"/>
             <module name="org.keycloak.keycloak-social-facebook" services="import"/>
             <module name="org.keycloak.keycloak-social-github" services="import"/>
             <module name="org.keycloak.keycloak-social-google" services="import"/>

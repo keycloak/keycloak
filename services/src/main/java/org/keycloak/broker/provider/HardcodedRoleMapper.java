@@ -16,13 +16,12 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
-    public static final String ROLE = "role";
     protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     static {
         ProviderConfigProperty property;
         property = new ProviderConfigProperty();
-        property.setName(ROLE);
+        property.setName(ConfigConstants.ROLE);
         property.setLabel("Role");
         property.setHelpText("Role to grant to user.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
@@ -61,7 +60,7 @@ public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(ROLE);
+        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
         if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
         user.grantRole(role);

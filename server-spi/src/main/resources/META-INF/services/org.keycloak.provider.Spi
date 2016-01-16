@@ -15,4 +15,7 @@ org.keycloak.services.managers.BruteForceProtectorSpi
 org.keycloak.protocol.ClientInstallationSpi
 org.keycloak.protocol.LoginProtocolSpi
 org.keycloak.protocol.ProtocolMapperSpi
+org.keycloak.broker.provider.IdentityProviderSpi
+org.keycloak.broker.provider.IdentityProviderMapperSpi
+org.keycloak.broker.social.SocialProviderSpi
 
