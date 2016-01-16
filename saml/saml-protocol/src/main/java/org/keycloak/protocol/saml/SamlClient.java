@@ -3,7 +3,6 @@ package org.keycloak.protocol.saml;
 import org.keycloak.models.ClientConfigResolver;
 import org.keycloak.models.ClientModel;
 import org.keycloak.saml.SignatureAlgorithm;
-import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 
 /**

@@ -18,10 +18,8 @@
 package org.keycloak.broker.provider;
 
 import org.keycloak.Config;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
 
 import java.io.InputStream;
 import java.util.HashMap;

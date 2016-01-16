@@ -13,7 +13,6 @@ import org.keycloak.services.util.CookieHelper;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 
 /**

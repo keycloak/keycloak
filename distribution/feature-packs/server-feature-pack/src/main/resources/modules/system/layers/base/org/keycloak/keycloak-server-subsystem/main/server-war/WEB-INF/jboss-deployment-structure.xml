@@ -13,14 +13,10 @@
             <module name="org.keycloak.keycloak-core" services="import"/>
             <module name="org.keycloak.keycloak-email-api" services="import"/>
             <module name="org.keycloak.keycloak-email-freemarker" services="import"/>
-            <module name="org.keycloak.keycloak-events-api" services="import"/>
             <module name="org.keycloak.keycloak-events-email" services="import"/>
             <module name="org.keycloak.keycloak-events-jboss-logging" services="import"/>
             <module name="org.keycloak.keycloak-events-jpa" services="import"/>
             <module name="org.keycloak.keycloak-events-mongo" services="import"/>
-            <module name="org.keycloak.keycloak-export-import-api" services="import"/>
-            <module name="org.keycloak.keycloak-export-import-dir" services="import"/>
-            <module name="org.keycloak.keycloak-export-import-single-file" services="import"/>
             <module name="org.keycloak.keycloak-forms-common-freemarker" services="import"/>
             <module name="org.keycloak.keycloak-forms-common-themes" services="import"/>
             <module name="org.keycloak.keycloak-invalidation-cache-infinispan" services="import"/>
@@ -30,7 +26,7 @@
             <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
             <module name="org.keycloak.keycloak-login-api" services="import"/>
             <module name="org.keycloak.keycloak-login-freemarker" services="import"/>
-            <module name="org.keycloak.keycloak-model-api" services="import"/>
+            <module name="org.keycloak.keycloak-server-spi" services="import"/>
             <module name="org.keycloak.keycloak-model-jpa" services="import"/>
             <module name="org.keycloak.keycloak-model-mongo" services="import"/>
             <module name="org.keycloak.keycloak-model-sessions-infinispan" services="import"/>
@@ -43,8 +39,6 @@
             <module name="org.keycloak.keycloak-social-twitter" services="import"/>
             <module name="org.keycloak.keycloak-social-linkedin" services="import"/>
             <module name="org.keycloak.keycloak-social-stackoverflow" services="import"/>
-            <module name="org.keycloak.keycloak-timer-api" services="import"/>
-            <module name="org.keycloak.keycloak-timer-basic" services="import"/>
             <module name="org.hibernate" services="import"/>
             <module name="org.bouncycastle"/>
 

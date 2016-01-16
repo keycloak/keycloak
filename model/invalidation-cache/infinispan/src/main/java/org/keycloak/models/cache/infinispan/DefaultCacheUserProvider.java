@@ -4,8 +4,6 @@ import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.entities.CachedUser;
-import org.keycloak.models.session.PersistentClientSessionModel;
-import org.keycloak.models.session.PersistentUserSessionModel;
 
 import java.util.*;
 

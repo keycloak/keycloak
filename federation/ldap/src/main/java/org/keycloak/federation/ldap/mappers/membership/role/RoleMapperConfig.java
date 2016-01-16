@@ -4,7 +4,6 @@ import java.util.Collection;
 
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
-import org.keycloak.federation.ldap.mappers.membership.UserRolesRetrieveStrategy;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.UserFederationMapperModel;

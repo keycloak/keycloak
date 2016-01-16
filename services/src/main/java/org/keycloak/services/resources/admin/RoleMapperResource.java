@@ -14,7 +14,6 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
 
 import javax.ws.rs.Consumes;
@@ -62,9 +61,6 @@ public class RoleMapperResource {
 
     @Context
     protected HttpHeaders headers;
-
-    @Context
-    protected BruteForceProtector protector;
 
     public RoleMapperResource(RealmModel realm, RealmAuth auth,  RoleMapperModel roleMapper, AdminEventBuilder adminEvent) {
         this.auth = auth;

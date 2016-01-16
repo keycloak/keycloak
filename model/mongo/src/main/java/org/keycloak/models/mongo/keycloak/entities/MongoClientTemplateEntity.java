@@ -1,11 +1,8 @@
 package org.keycloak.models.mongo.keycloak.entities;
 
-import com.mongodb.DBObject;
-import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.entities.ClientTemplateEntity;
 
 /**

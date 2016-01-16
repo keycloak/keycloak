@@ -1,7 +1,5 @@
 package org.keycloak.events.mongo;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,7 +10,6 @@ import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 

@@ -37,7 +37,6 @@ import org.openqa.selenium.WebDriver;
 
 import java.io.File;
 import java.net.URL;
-import java.util.regex.Matcher;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

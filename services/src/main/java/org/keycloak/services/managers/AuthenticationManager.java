@@ -37,7 +37,6 @@ import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
-import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
@@ -70,19 +69,6 @@ public class AuthenticationManager {
     public static final String KEYCLOAK_REMEMBER_ME = "KEYCLOAK_REMEMBER_ME";
     public static final String KEYCLOAK_LOGOUT_PROTOCOL = "KEYCLOAK_LOGOUT_PROTOCOL";
     public static final String CURRENT_REQUIRED_ACTION = "CURRENT_REQUIRED_ACTION";
-
-    protected BruteForceProtector protector;
-
-    public AuthenticationManager() {
-    }
-
-    public AuthenticationManager(BruteForceProtector protector) {
-        this.protector = protector;
-    }
-
-    public BruteForceProtector getProtector() {
-        return protector;
-    }
 
     public static boolean isSessionValid(RealmModel realm, UserSessionModel userSession) {
         if (userSession == null) {

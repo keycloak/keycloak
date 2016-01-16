@@ -1,8 +1,5 @@
 package org.keycloak.federation.ldap.mappers;
 
-import java.util.List;
-import java.util.Map;
-
 import org.keycloak.Config;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
@@ -13,7 +10,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.UserFederationMapperSyncConfigRepresentation;
 

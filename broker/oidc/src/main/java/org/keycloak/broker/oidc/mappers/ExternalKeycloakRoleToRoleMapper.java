@@ -2,7 +2,6 @@ package org.keycloak.broker.oidc.mappers;
 
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
-import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.HardcodedRoleMapper;
 import org.keycloak.broker.provider.IdentityBrokerException;

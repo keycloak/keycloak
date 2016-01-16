@@ -3,9 +3,7 @@ package org.keycloak.protocol.saml.mappers;
 import org.keycloak.Config;
 import org.keycloak.models.*;
 import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.protocol.saml.SamlProtocol;
 
 import java.util.ArrayList;

@@ -24,7 +24,6 @@ package org.keycloak.email.freemarker.beans;
 import org.jboss.logging.Logger;
 import org.keycloak.models.UserModel;
 
-import javax.ws.rs.core.MultivaluedMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

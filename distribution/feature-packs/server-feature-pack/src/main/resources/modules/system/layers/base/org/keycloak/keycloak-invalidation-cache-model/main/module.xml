@@ -7,7 +7,7 @@
         <artifact name="${org.keycloak:keycloak-invalidation-cache-model}"/>
     </resources>
     <dependencies>
-        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-server-spi"/>
         <module name="javax.ws.rs.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         <module name="org.jboss.logging"/>

@@ -9,8 +9,7 @@
     <dependencies>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
-        <module name="org.keycloak.keycloak-model-api"/>
-        <module name="org.keycloak.keycloak-events-api"/>
+        <module name="org.keycloak.keycloak-server-spi"/>
         <module name="org.keycloak.keycloak-email-api"/>
         <module name="javax.mail.api"/>
         <module name="org.jboss.logging"/>

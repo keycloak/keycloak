@@ -105,9 +105,6 @@ public class UsersResource {
     @Context
     protected HttpHeaders headers;
 
-    @Context
-    protected BruteForceProtector protector;
-
     public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
@@ -270,7 +267,7 @@ public class UsersResource {
             rep.setFederatedIdentities(reps);
         }
 
-        if ((protector != null) && protector.isTemporarilyDisabled(session, realm, rep.getUsername())) {
+        if (session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, rep.getUsername())) {
             rep.setEnabled(false);
         }
 

@@ -26,8 +26,6 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.services.managers.ClientManager;
-import org.keycloak.services.managers.RealmManager;
 
 /**
  * PartialImport handler for Clients.

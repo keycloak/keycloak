@@ -17,15 +17,10 @@
  */
 package org.keycloak.broker.oidc;
 
-import org.keycloak.broker.oidc.mappers.UsernameTemplateMapper;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
-import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Map;
 
 /**

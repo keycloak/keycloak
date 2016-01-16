@@ -1,6 +1,5 @@
 package org.keycloak.protocol.saml;
 
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.saml.SignatureAlgorithm;
 

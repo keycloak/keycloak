@@ -32,8 +32,8 @@ import java.util.List;
 public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
 
     @Override
-    public Object createProtocolEndpoint(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
-        return new SamlService(realm, event, authManager);
+    public Object createProtocolEndpoint(RealmModel realm, EventBuilder event) {
+        return new SamlService(realm, event);
     }
 
     @Override

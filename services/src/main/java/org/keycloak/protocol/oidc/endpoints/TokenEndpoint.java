@@ -76,7 +76,6 @@ public class TokenEndpoint {
     private ClientConnection clientConnection;
 
     private final TokenManager tokenManager;
-    private final AuthenticationManager authManager;
     private final RealmModel realm;
     private final EventBuilder event;
 
@@ -86,9 +85,8 @@ public class TokenEndpoint {
 
     private String legacyGrantType;
 
-    public TokenEndpoint(TokenManager tokenManager, AuthenticationManager authManager, RealmModel realm, EventBuilder event) {
+    public TokenEndpoint(TokenManager tokenManager, RealmModel realm, EventBuilder event) {
         this.tokenManager = tokenManager;
-        this.authManager = authManager;
         this.realm = realm;
         this.event = event;
     }
@@ -372,7 +370,6 @@ public class TokenEndpoint {
                 .setFlowId(flowId)
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
-                .setProtector(authManager.getProtector())
                 .setRealm(realm)
                 .setSession(session)
                 .setUriInfo(uriInfo)

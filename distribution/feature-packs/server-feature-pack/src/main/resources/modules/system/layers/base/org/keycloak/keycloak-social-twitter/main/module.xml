@@ -12,7 +12,7 @@
         <module name="org.keycloak.keycloak-social-core"/>
         <module name="org.keycloak.keycloak-broker-core"/>
         <module name="org.keycloak.keycloak-broker-oidc"/>
-        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-server-spi"/>
         <module name="org.keycloak.keycloak-services"/>
         <module name="org.twitter4j"/>
         <module name="org.jboss.logging"/>

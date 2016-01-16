@@ -32,8 +32,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
-import java.io.IOException;
-
 /**
  * Root resource for admin console and admin REST API
  *

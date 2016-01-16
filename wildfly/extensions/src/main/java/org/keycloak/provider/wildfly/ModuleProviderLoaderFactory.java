@@ -3,7 +3,6 @@ package org.keycloak.provider.wildfly;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleIdentifier;
-import org.jboss.modules.ModuleLoadException;
 import org.keycloak.provider.DefaultProviderLoader;
 import org.keycloak.provider.ProviderLoader;
 import org.keycloak.provider.ProviderLoaderFactory;

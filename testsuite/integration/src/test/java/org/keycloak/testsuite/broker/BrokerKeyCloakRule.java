@@ -20,7 +20,6 @@ package org.keycloak.testsuite.broker;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.adapter.CustomerDatabaseServlet;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 

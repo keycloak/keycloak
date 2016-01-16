@@ -1,7 +1,5 @@
 package org.keycloak.models.jpa.entities;
 
-import org.keycloak.models.UserModel;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;

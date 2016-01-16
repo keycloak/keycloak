@@ -4,13 +4,9 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.UserModel;
 
 import java.io.Serializable;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 /**

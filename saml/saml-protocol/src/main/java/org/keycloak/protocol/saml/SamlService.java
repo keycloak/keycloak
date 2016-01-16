@@ -61,8 +61,8 @@ public class SamlService extends AuthorizationEndpointBase {
 
     protected static final Logger logger = Logger.getLogger(SamlService.class);
 
-    public SamlService(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
-        super(realm, event, authManager);
+    public SamlService(RealmModel realm, EventBuilder event) {
+        super(realm, event);
     }
 
     public abstract class BindingProtocol {
@@ -556,7 +556,7 @@ public class SamlService extends AuthorizationEndpointBase {
     @POST
     @Consumes("application/soap+xml")
     public Response soapBinding(InputStream inputStream) {
-        SamlEcpProfileService bindingService = new SamlEcpProfileService(realm, event, authManager);
+        SamlEcpProfileService bindingService = new SamlEcpProfileService(realm, event);
 
         ResteasyProviderFactory.getInstance().injectProperties(bindingService);
 

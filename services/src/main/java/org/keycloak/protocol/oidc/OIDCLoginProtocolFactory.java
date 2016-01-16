@@ -160,8 +160,8 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
     @Override
-    public Object createProtocolEndpoint(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
-        return new OIDCLoginProtocolService(realm, event, authManager);
+    public Object createProtocolEndpoint(RealmModel realm, EventBuilder event) {
+        return new OIDCLoginProtocolService(realm, event);
     }
 
     @Override

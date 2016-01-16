@@ -51,12 +51,12 @@ public class AuthenticationProcessor {
     protected ClientConnection connection;
     protected UriInfo uriInfo;
     protected KeycloakSession session;
-    protected BruteForceProtector protector;
     protected EventBuilder event;
     protected HttpRequest request;
     protected String flowId;
     protected String flowPath;
     protected boolean browserFlow;
+    protected BruteForceProtector protector;
     /**
      * This could be an error message forwarded from another authenticator
      */
@@ -82,6 +82,13 @@ public class AuthenticationProcessor {
     public AuthenticationProcessor setBrowserFlow(boolean browserFlow) {
         this.browserFlow = browserFlow;
         return this;
+    }
+
+    public BruteForceProtector getBruteForceProtector() {
+        if (protector == null) {
+            protector = session.getProvider(BruteForceProtector.class);
+        }
+        return protector;
     }
 
     public RealmModel getRealm() {
@@ -146,11 +153,6 @@ public class AuthenticationProcessor {
 
     public AuthenticationProcessor setSession(KeycloakSession session) {
         this.session = session;
-        return this;
-    }
-
-    public AuthenticationProcessor setProtector(BruteForceProtector protector) {
-        this.protector = protector;
         return this;
     }
 
@@ -405,7 +407,7 @@ public class AuthenticationProcessor {
 
         @Override
         public BruteForceProtector getProtector() {
-            return AuthenticationProcessor.this.protector;
+            return AuthenticationProcessor.this.getBruteForceProtector();
         }
 
         @Override
@@ -521,7 +523,7 @@ public class AuthenticationProcessor {
             if (username == null) {
 
             } else {
-                protector.failedLogin(realm, username, connection);
+                getBruteForceProtector().failedLogin(realm, username, connection);
 
             }
         }
@@ -571,7 +573,6 @@ public class AuthenticationProcessor {
                         .setForwardedSuccessMessage(reset.getSuccessMessage())
                         .setConnection(connection)
                         .setEventBuilder(event)
-                        .setProtector(protector)
                         .setRealm(realm)
                         .setSession(session)
                         .setUriInfo(uriInfo)
@@ -795,7 +796,7 @@ public class AuthenticationProcessor {
         if (authenticatedUser == null) return;
         if (!authenticatedUser.isEnabled()) throw new AuthenticationFlowException(AuthenticationFlowError.USER_DISABLED);
         if (realm.isBruteForceProtected()) {
-            if (protector.isTemporarilyDisabled(session, realm, authenticatedUser.getUsername())) {
+            if (getBruteForceProtector().isTemporarilyDisabled(session, realm, authenticatedUser.getUsername())) {
                 throw new AuthenticationFlowException(AuthenticationFlowError.USER_TEMPORARILY_DISABLED);
             }
         }

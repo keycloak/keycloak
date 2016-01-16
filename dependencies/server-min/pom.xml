@@ -41,15 +41,11 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-api</artifactId>
+            <artifactId>keycloak-server-spi</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-invalidation-cache-model</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-events-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -108,30 +104,7 @@
             <artifactId>keycloak-login-freemarker</artifactId>
         </dependency>
 
-        <!-- timer -->
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-timer-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-timer-basic</artifactId>
-        </dependency>
-
-        <!-- export/import -->
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-export-import-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-export-import-dir</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-export-import-single-file</artifactId>
-        </dependency>
-        <dependency>
+         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-connections-truststore</artifactId>
         </dependency>

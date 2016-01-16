@@ -3,7 +3,6 @@ package org.keycloak.federation.ldap;
 import org.jboss.logging.Logger;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
-import org.keycloak.federation.ldap.idm.model.LDAPDn;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
@@ -11,8 +10,6 @@ import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilde
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
-import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapper;
-import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapperFactory;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -32,7 +29,6 @@ import org.keycloak.common.constants.KerberosConstants;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;

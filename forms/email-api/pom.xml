@@ -21,12 +21,7 @@
 		</dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-events-api</artifactId>
+            <artifactId>keycloak-server-spi</artifactId>
             <scope>provided</scope>
         </dependency>
 	</dependencies>

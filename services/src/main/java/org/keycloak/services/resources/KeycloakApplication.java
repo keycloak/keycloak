@@ -17,7 +17,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.filters.KeycloakTransactionCommitter;
 import org.keycloak.services.managers.ApplianceBootstrap;
-import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.resources.admin.AdminRoot;
@@ -60,12 +59,7 @@ public class KeycloakApplication extends Application {
         this.sessionFactory = createSessionFactory();
 
         dispatcher.getDefaultContextObjects().put(KeycloakApplication.class, this);
-        BruteForceProtector protector = new BruteForceProtector(sessionFactory);
-        dispatcher.getDefaultContextObjects().put(BruteForceProtector.class, protector);
-        ResteasyProviderFactory.pushContext(BruteForceProtector.class, protector); // for injection
         ResteasyProviderFactory.pushContext(KeycloakApplication.class, this); // for injection
-        protector.start();
-        context.setAttribute(BruteForceProtector.class.getName(), protector);
         context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
         singletons.add(new ServerVersionResource());
