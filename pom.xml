@@ -154,8 +154,6 @@
         <module>social</module>
         <module>forms</module>
         <module>examples</module>
-        <module>timer</module>
-        <module>export-import</module>
         <module>util</module>
         <module>wildfly</module>
         <module>testsuite</module>
@@ -679,11 +677,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-events-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-events-email</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -705,21 +698,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-events-syslog</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-export-import-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-export-import-dir</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-export-import-single-file</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1117,16 +1095,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-social-twitter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-timer-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-timer-basic</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

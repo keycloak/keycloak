@@ -161,7 +161,6 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
     <dependencies>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>
-        <module name="org.keycloak.keycloak-events-api"/>
     </dependencies>
 </module>
 ]]></programlisting>

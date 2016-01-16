@@ -34,12 +34,7 @@
             <artifactId>keycloak-services</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-events-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
+       <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-forms-common-freemarker</artifactId>
             <scope>provided</scope>

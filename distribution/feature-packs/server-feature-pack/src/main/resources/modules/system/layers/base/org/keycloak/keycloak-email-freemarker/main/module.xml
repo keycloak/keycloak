@@ -9,7 +9,6 @@
     <dependencies>
         <module name="org.keycloak.keycloak-forms-common-freemarker"/>
         <module name="org.keycloak.keycloak-email-api"/>
-        <module name="org.keycloak.keycloak-events-api"/>
         <module name="org.keycloak.keycloak-server-spi"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>

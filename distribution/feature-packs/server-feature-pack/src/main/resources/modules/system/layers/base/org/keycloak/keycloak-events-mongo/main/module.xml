@@ -10,7 +10,6 @@
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>
-        <module name="org.keycloak.keycloak-events-api"/>
         <module name="org.keycloak.keycloak-connections-mongo"/>
         <module name="org.mongodb.mongo-java-driver"/>
         <module name="com.fasterxml.jackson.core.jackson-core"/>

@@ -8,7 +8,6 @@
     </resources>
     <dependencies>
         <module name="org.keycloak.keycloak-common"/>
-        <module name="org.keycloak.keycloak-events-api"/>
         <module name="org.keycloak.keycloak-server-spi"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.jboss.logging"/>
