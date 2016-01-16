@@ -1,6 +1,6 @@
 package org.keycloak.authentication;
 
-import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.provider.Provider;
 
 import javax.ws.rs.core.Response;

@@ -8,7 +8,7 @@ import java.util.Set;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;

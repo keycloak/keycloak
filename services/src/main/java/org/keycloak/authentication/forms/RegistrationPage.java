@@ -4,7 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.authentication.FormAuthenticator;
 import org.keycloak.authentication.FormAuthenticatorFactory;
 import org.keycloak.authentication.FormContext;
-import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;

@@ -17,11 +17,8 @@
     <modules>
         <module>common-freemarker</module>
         <module>common-themes</module>
-        <module>account-api</module>
         <module>account-freemarker</module>
-        <module>email-api</module>
         <module>email-freemarker</module>
-        <module>login-api</module>
         <module>login-freemarker</module>
     </modules>
 

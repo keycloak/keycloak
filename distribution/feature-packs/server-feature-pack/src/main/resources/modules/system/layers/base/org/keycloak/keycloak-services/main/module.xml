@@ -7,7 +7,6 @@
         <artifact name="${org.keycloak:keycloak-services}"/>
     </resources>
     <dependencies>
-        <module name="org.keycloak.keycloak-account-api" services="import"/>
         <module name="org.keycloak.keycloak-account-freemarker" services="import"/>
         <module name="org.keycloak.keycloak-broker-oidc" services="import"/>
         <module name="org.keycloak.keycloak-broker-saml" services="import"/>
@@ -20,7 +19,6 @@
         <module name="org.keycloak.keycloak-connections-truststore" services="import"/>
         <module name="org.keycloak.keycloak-common" services="import"/>
         <module name="org.keycloak.keycloak-core" services="import"/>
-        <module name="org.keycloak.keycloak-email-api" services="import"/>
         <module name="org.keycloak.keycloak-email-freemarker" services="import"/>
         <module name="org.keycloak.keycloak-events-email" services="import"/>
         <module name="org.keycloak.keycloak-events-jboss-logging" services="import"/>
@@ -33,7 +31,6 @@
         <module name="org.keycloak.keycloak-js-adapter" services="import"/>
         <module name="org.keycloak.keycloak-kerberos-federation" services="import"/>
         <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
-        <module name="org.keycloak.keycloak-login-api" services="import"/>
         <module name="org.keycloak.keycloak-login-freemarker" services="import"/>
         <module name="org.keycloak.keycloak-server-spi" services="import"/>
         <module name="org.keycloak.keycloak-model-jpa" services="import"/>

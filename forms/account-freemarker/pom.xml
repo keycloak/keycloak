@@ -19,11 +19,6 @@
 			<artifactId>keycloak-core</artifactId>
             <scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.keycloak</groupId>
-			<artifactId>keycloak-account-api</artifactId>
-            <scope>provided</scope>
-		</dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi</artifactId>
