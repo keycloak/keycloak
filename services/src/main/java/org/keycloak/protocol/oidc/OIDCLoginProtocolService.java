@@ -14,9 +14,7 @@ import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
-import org.keycloak.protocol.oidc.endpoints.TokenIntrospectionEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
-import org.keycloak.protocol.oidc.endpoints.ValidateTokenEndpoint;
 import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
 import org.keycloak.services.resources.RealmsResource;
 
@@ -88,17 +86,6 @@ public class OIDCLoginProtocolService {
         return tokenUrl(baseUriBuilder).path(TokenEndpoint.class, "introspect");
     }
 
-    /**
-     * @deprecated use {@link OIDCLoginProtocolService#tokenIntrospectionUrl(UriBuilder)} instead
-     * @param baseUriBuilder
-     * @return
-     */
-    @Deprecated
-    public static UriBuilder validateAccessTokenUrl(UriBuilder baseUriBuilder) {
-        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OIDCLoginProtocolService.class, "validateAccessToken");
-    }
-
     public static UriBuilder logoutUrl(UriInfo uriInfo) {
         UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
         return logoutUrl(baseUriBuilder);
@@ -149,58 +136,11 @@ public class OIDCLoginProtocolService {
         return endpoint;
     }
 
-    @Path("login")
-    @Deprecated
-    public Object loginPage() {
-        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(realm, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.legacy(OIDCLoginProtocol.CODE_PARAM);
-    }
-
     @Path("login-status-iframe.html")
     public Object getLoginStatusIframe() {
         LoginStatusIframeEndpoint endpoint = new LoginStatusIframeEndpoint(realm);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
-    }
-
-    @Path("grants/access")
-    @Deprecated
-    public Object grantAccessToken() {
-        TokenEndpoint endpoint = new TokenEndpoint(tokenManager, realm, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.legacy(OAuth2Constants.PASSWORD);
-    }
-
-    @Path("refresh")
-    @Deprecated
-    public Object refreshAccessToken() {
-        TokenEndpoint endpoint = new TokenEndpoint(tokenManager, realm, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.legacy(OAuth2Constants.REFRESH_TOKEN);
-    }
-
-    @Path("access/codes")
-    @Deprecated
-    public Object accessCodeToToken() {
-        TokenEndpoint endpoint = new TokenEndpoint(tokenManager, realm, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.legacy(OAuth2Constants.AUTHORIZATION_CODE);
-    }
-
-    /**
-     * @deprecated use {@link TokenIntrospectionEndpoint#introspect()} instead
-     * @param tokenString
-     * @return
-     */
-    @Path("validate")
-    @Deprecated
-    public Object validateAccessToken(@QueryParam("access_token") String tokenString) {
-        logger.warnv("Invoking deprecated endpoint {0}", uriInfo.getRequestUri());
-        ValidateTokenEndpoint endpoint = new ValidateTokenEndpoint(tokenManager, realm, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint;
-
     }
 
     @GET

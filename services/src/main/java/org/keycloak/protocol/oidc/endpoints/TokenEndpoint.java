@@ -83,8 +83,6 @@ public class TokenEndpoint {
 
     private String grantType;
 
-    private String legacyGrantType;
-
     public TokenEndpoint(TokenManager tokenManager, RealmModel realm, EventBuilder event) {
         this.tokenManager = tokenManager;
         this.realm = realm;
@@ -132,15 +130,6 @@ public class TokenEndpoint {
         return Cors.add(request, Response.ok()).auth().preflight().build();
     }
 
-    /**
-     * @deprecated
-     */
-    public TokenEndpoint legacy(String legacyGrantType) {
-        logger.warnv("Invoking deprecated endpoint {0}", uriInfo.getRequestUri());
-        this.legacyGrantType = legacyGrantType;
-        return this;
-    }
-
     private void checkSsl() {
         if (!uriInfo.getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
             throw new ErrorResponseException("invalid_request", "HTTPS required", Response.Status.FORBIDDEN);
@@ -165,11 +154,7 @@ public class TokenEndpoint {
 
     private void checkGrantType() {
         if (grantType == null) {
-            if (legacyGrantType != null) {
-                grantType = legacyGrantType;
-            } else {
-                throw new ErrorResponseException("invalid_request", "Missing form parameter: " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
-            }
+            throw new ErrorResponseException("invalid_request", "Missing form parameter: " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
         }
 
         if (grantType.equals(OAuth2Constants.AUTHORIZATION_CODE)) {
