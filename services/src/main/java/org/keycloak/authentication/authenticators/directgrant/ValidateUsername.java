@@ -1,6 +1,5 @@
 package org.keycloak.authentication.authenticators.directgrant;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
@@ -13,6 +12,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -26,7 +26,7 @@ import java.util.List;
  */
 public class ValidateUsername extends AbstractDirectGrantAuthenticator {
 
-    private static final Logger logger = Logger.getLogger(ValidateUsername.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     public static final String PROVIDER_ID = "direct-grant-validate-username";
 
     @Override
@@ -46,7 +46,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
         try {
             user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
         } catch (ModelDuplicateException mde) {
-            logger.error(mde.getMessage(), mde);
+            logger.modelDuplicateException(mde);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
