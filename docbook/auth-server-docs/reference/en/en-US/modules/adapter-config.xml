@@ -30,6 +30,7 @@
    "client-keystore" : "path/to/client-keystore.jks",
    "client-keystore-password" : "geheim",
    "client-key-password" : "geheim"
+   "token-minimum-time-to-live" : 60
 }]]>
 
 </programlisting>
@@ -376,6 +377,17 @@
                     <para>
                         OpenID Connection ID Token attribute to populate the UserPrincipal name with.  If token attribute is null, defaults to <literal>sub</literal>.
                         Possible values are <literal>sub</literal>, <literal>preferred_username</literal>, <literal>email</literal>, <literal>name</literal>, <literal>nickname</literal>, <literal>given_name</literal>, <literal>family_name</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>token-minimum-time-to-live</term>
+                <listitem>
+                    <para>
+                        Amount of time, in seconds, to preemptively refresh an active access token with the Keycloak server before it expires.
+                        This is especially useful in when the access token is sent to another client where it could expire before being evaluated.
+                        This value should never exceed the realm's access token lifespan.
+                        This is <emphasis>OPTIONAL</emphasis>.  The default value is <literal>5</literal> seconds.
                     </para>
                 </listitem>
             </varlistentry>
