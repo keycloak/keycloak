@@ -1,11 +1,11 @@
 package org.keycloak.email;
 
-import org.jboss.logging.Logger;
 import org.keycloak.truststore.HostnameVerificationPolicy;
 import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.ServicesLogger;
 
 import javax.mail.Message;
 import javax.mail.Multipart;
@@ -26,7 +26,7 @@ import java.util.Properties;
  */
 public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
-    private static final Logger log = Logger.getLogger(DefaultEmailSenderProvider.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private final KeycloakSession session;
 
@@ -104,7 +104,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             }
             transport.sendMessage(msg, new InternetAddress[]{new InternetAddress(address)});
         } catch (Exception e) {
-            log.error("Failed to send email", e);
+            logger.failedToSendEmail(e);
             throw new EmailException(e);
         }
     }
