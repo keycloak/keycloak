@@ -343,8 +343,8 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
     };
 
     $scope.$watch('realm.supportedLocales', function(oldVal, newVal) {
-        if(angular.isUndefined(newVal) || (angular.isArray(newVal) && newVal.length == 0)){
-            $scope.realm.defaultLocale = undefined;
+        if ($scope.realm.defaultLocale && newVal && newVal.indexOf($scope.realm.defaultLocale) == -1) {
+            $scope.realm.defaultLocale = null;
         }
     }, true);
 });
