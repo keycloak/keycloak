@@ -177,7 +177,15 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=35, value="Export finished successfully")
     void exportSuccess();
 
-    
+    @LogMessage(level = ERROR)
+    @Message(id=36, value="Error overwriting %s")
+    void overwriteError(@Cause Exception e, String name);
 
+    @LogMessage(level = ERROR)
+    @Message(id=37, value="Error creating %s")
+    void creationError(@Cause Exception e, String name);
 
+    @LogMessage(level = ERROR)
+    @Message(id=38, value="Error importing roles")
+    void roleImportError(@Cause Exception e);
 }
