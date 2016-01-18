@@ -401,65 +401,6 @@ public class AccessTokenTest {
     }
 
     @Test
-    public void testValidateAccessToken() throws Exception {
-        Client client = ClientBuilder.newClient();
-        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
-        WebTarget grantTarget = client.target(grantUri);
-        builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-        URI validateUri = OIDCLoginProtocolService.validateAccessTokenUrl(builder).build("test");
-        WebTarget validateTarget = client.target(validateUri);
-
-        {
-            Response response = validateTarget.queryParam("access_token", "bad token").request().get();
-            Assert.assertEquals(400, response.getStatus());
-            HashMap<String, String> error = response.readEntity(new GenericType<HashMap<String, String>>() {
-            });
-            Assert.assertNotNull(error.get("error"));
-        }
-
-
-        org.keycloak.representations.AccessTokenResponse tokenResponse = null;
-        {
-            Response response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(200, response.getStatus());
-            tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
-            response.close();
-        }
-
-        {
-            Response response = validateTarget.queryParam("access_token", tokenResponse.getToken()).request().get();
-            Assert.assertEquals(200, response.getStatus());
-            AccessToken token = response.readEntity(AccessToken.class);
-            Assert.assertNotNull(token);
-            response.close();
-        }
-        {
-            builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
-            URI logoutUri = OIDCLoginProtocolService.logoutUrl(builder).build("test");
-            String header = BasicAuthHelper.createHeader("test-app", "password");
-            Form form = new Form();
-            form.param("refresh_token", tokenResponse.getRefreshToken());
-            Response response = client.target(logoutUri).request()
-                    .header(HttpHeaders.AUTHORIZATION, header)
-                    .post(Entity.form(form));
-            Assert.assertEquals(204, response.getStatus());
-            response.close();
-        }
-        {
-            Response response = validateTarget.queryParam("access_token", tokenResponse.getToken()).request().get();
-            Assert.assertEquals(400, response.getStatus());
-            HashMap<String, String> error = response.readEntity(new GenericType<HashMap<String, String>>() {
-            });
-            Assert.assertNotNull(error.get("error"));
-        }
-
-        client.close();
-        events.clear();
-
-    }
-
-    @Test
     public void testGrantAccessToken() throws Exception {
         Client client = ClientBuilder.newClient();
         UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
