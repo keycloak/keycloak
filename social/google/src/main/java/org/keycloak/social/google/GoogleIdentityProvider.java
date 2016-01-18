@@ -23,7 +23,7 @@ package org.keycloak.social.google;
 
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
-import org.keycloak.social.SocialIdentityProvider;
+import org.keycloak.broker.social.SocialIdentityProvider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

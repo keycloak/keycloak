@@ -36,7 +36,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -56,14 +56,13 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
-import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.social.SocialIdentityProvider;
+import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -116,13 +115,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private EventBuilder event;
 
-    private BruteForceProtector protector;
 
-    public IdentityBrokerService(RealmModel realmModel, BruteForceProtector protector) {
+    public IdentityBrokerService(RealmModel realmModel) {
         if (realmModel == null) {
             throw new IllegalArgumentException("Realm can not be null.");
         }
-        this.protector = protector;
         this.realmModel = realmModel;
     }
 
@@ -699,7 +696,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 .setFlowId(flowId)
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
-                .setProtector(protector)
                 .setRealm(realmModel)
                 .setSession(session)
                 .setUriInfo(uriInfo)

@@ -6,9 +6,6 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import sun.rmi.runtime.Log;
-
-import java.util.logging.Level;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -2,14 +2,13 @@ package org.keycloak.broker.saml.mappers;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.HardcodedRoleMapper;
+import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -17,11 +16,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.JsonWebToken;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,7 +55,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
         property = new ProviderConfigProperty();
-        property.setName(HardcodedRoleMapper.ROLE);
+        property.setName(ConfigConstants.ROLE);
         property.setLabel("Role");
         property.setHelpText("Role to grant to user.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
@@ -94,7 +91,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(HardcodedRoleMapper.ROLE);
+        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         if (isAttributePresent(mapperModel, context)) {
             RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
             if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
@@ -124,7 +121,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(HardcodedRoleMapper.ROLE);
+        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         if (!isAttributePresent(mapperModel, context)) {
             RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
             if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);

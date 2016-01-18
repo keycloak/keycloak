@@ -36,6 +36,23 @@
 
     <target name="modules">
 
+        <!-- jackson2 -->
+
+        <module-def name="com.fasterxml.jackson.core.jackson-annotations">
+            <maven-resource group="com.fasterxml.jackson.core" artifact="jackson-annotations"/>
+        </module-def>
+        <module-def name="com.fasterxml.jackson.core.jackson-core">
+            <maven-resource group="com.fasterxml.jackson.core" artifact="jackson-core"/>
+        </module-def>
+        <module-def name="com.fasterxml.jackson.core.jackson-databind">
+            <maven-resource group="com.fasterxml.jackson.core" artifact="jackson-databind"/>
+        </module-def>
+        <module-def name="com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider">
+            <maven-resource group="com.fasterxml.jackson.jaxrs" artifact="jackson-jaxrs-json-provider"/>
+            <maven-resource group="com.fasterxml.jackson.jaxrs" artifact="jackson-jaxrs-base"/>
+            <maven-resource group="com.fasterxml.jackson.module" artifact="jackson-module-jaxb-annotations"/>
+        </module-def>
+
         <!-- server min dependencies -->
 
         <module-def name="org.keycloak.keycloak-common">

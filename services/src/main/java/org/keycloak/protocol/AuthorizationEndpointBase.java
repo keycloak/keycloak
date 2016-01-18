@@ -48,10 +48,9 @@ public abstract class AuthorizationEndpointBase {
     @Context
     protected ClientConnection clientConnection;
 
-    public AuthorizationEndpointBase(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
+    public AuthorizationEndpointBase(RealmModel realm, EventBuilder event) {
         this.realm = realm;
         this.event = event;
-        this.authManager = authManager;
     }
 
     protected AuthenticationProcessor createProcessor(ClientSessionModel clientSession, String flowId, String flowPath) {
@@ -62,7 +61,6 @@ public abstract class AuthorizationEndpointBase {
                 .setBrowserFlow(true)
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
-                .setProtector(authManager.getProtector())
                 .setRealm(realm)
                 .setSession(session)
                 .setUriInfo(uriInfo)

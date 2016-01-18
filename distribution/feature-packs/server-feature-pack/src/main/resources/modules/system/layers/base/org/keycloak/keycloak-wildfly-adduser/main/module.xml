@@ -7,9 +7,10 @@
     <dependencies>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
-        <module name="org.keycloak.keycloak-model-api"/>
+        <module name="org.keycloak.keycloak-server-spi"/>
         <module name="org.jboss.aesh" slot="0.65"/>
         <module name="org.jboss.as.domain-management"/>
-        <module name="org.codehaus.jackson.jackson-core-asl"/>
+        <module name="com.fasterxml.jackson.core.jackson-core"/>
+        <module name="com.fasterxml.jackson.core.jackson-annotations"/>
     </dependencies>
 </module>

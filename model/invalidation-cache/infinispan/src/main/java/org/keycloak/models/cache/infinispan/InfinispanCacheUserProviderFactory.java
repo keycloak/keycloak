@@ -1,10 +1,6 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.infinispan.Cache;
-import org.infinispan.commands.write.RemoveCommand;
-import org.infinispan.container.entries.CacheEntry;
-import org.infinispan.context.InvocationContext;
-import org.infinispan.interceptors.base.CommandInterceptor;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.*;
 import org.infinispan.notifications.cachelistener.event.*;

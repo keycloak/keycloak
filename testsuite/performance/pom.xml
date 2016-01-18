@@ -25,7 +25,8 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-api</artifactId>
+            <artifactId>keycloak-server-spi</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -55,8 +56,8 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>jaxrs-api</artifactId>
+            <groupId>org.jboss.spec.javax.ws.rs</groupId>
+            <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -138,8 +139,8 @@
                                 <artifactId>keycloak-services</artifactId>
                             </dependency>
                             <dependency>
-                                <groupId>org.jboss.resteasy</groupId>
-                                <artifactId>jaxrs-api</artifactId>
+                                <groupId>org.jboss.spec.javax.ws.rs</groupId>
+                                <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
                             </dependency>
                             <dependency>
                                 <groupId>org.jboss.resteasy</groupId>

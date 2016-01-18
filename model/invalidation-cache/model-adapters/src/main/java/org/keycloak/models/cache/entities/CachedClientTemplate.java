@@ -1,6 +1,5 @@
 package org.keycloak.models.cache.entities;
 
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -11,11 +10,8 @@ import org.keycloak.models.cache.RealmCache;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

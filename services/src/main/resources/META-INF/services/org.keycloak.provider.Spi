@@ -1,5 +1,3 @@
-org.keycloak.protocol.LoginProtocolSpi
-org.keycloak.protocol.ProtocolMapperSpi
 org.keycloak.exportimport.ClientDescriptionConverterSpi
 org.keycloak.wellknown.WellKnownSpi
 org.keycloak.messages.MessagesSpi
@@ -9,4 +7,3 @@ org.keycloak.authentication.RequiredActionSpi
 org.keycloak.authentication.FormAuthenticatorSpi
 org.keycloak.authentication.FormActionSpi
 org.keycloak.services.clientregistration.ClientRegistrationSpi
-org.keycloak.protocol.ClientInstallationSpi

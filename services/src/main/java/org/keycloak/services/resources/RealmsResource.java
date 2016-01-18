@@ -3,7 +3,6 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -15,8 +14,6 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.wellknown.WellKnownProvider;
@@ -42,11 +39,13 @@ public class RealmsResource {
     @Context
     protected ClientConnection clientConnection;
 
-    @Context
-    protected BruteForceProtector protector;
-
     public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
-        return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getRealmResource");
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        return realmBaseUrl(baseUriBuilder);
+    }
+
+    public static UriBuilder realmBaseUrl(UriBuilder baseUriBuilder) {
+        return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getRealmResource");
     }
 
     public static UriBuilder accountUrl(UriBuilder base) {
@@ -77,10 +76,9 @@ public class RealmsResource {
         RealmModel realm = init(name);
 
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        AuthenticationManager authManager = new AuthenticationManager(protector);
 
         LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
-        OIDCLoginProtocolService endpoint = (OIDCLoginProtocolService)factory.createProtocolEndpoint(realm, event, authManager);
+        OIDCLoginProtocolService endpoint = (OIDCLoginProtocolService)factory.createProtocolEndpoint(realm, event);
 
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.getLoginStatusIframe();
@@ -93,10 +91,9 @@ public class RealmsResource {
         RealmModel realm = init(name);
 
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        AuthenticationManager authManager = new AuthenticationManager(protector);
 
         LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
-        Object endpoint = factory.createProtocolEndpoint(realm, event, authManager);
+        Object endpoint = factory.createProtocolEndpoint(realm, event);
 
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
@@ -113,8 +110,7 @@ public class RealmsResource {
     public LoginActionsService getLoginActionsService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        AuthenticationManager authManager = new AuthenticationManager(protector);
-        LoginActionsService service = new LoginActionsService(realm, authManager, event);
+        LoginActionsService service = new LoginActionsService(realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         return service;
     }
@@ -176,7 +172,7 @@ public class RealmsResource {
     public IdentityBrokerService getBrokerService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
 
-        IdentityBrokerService brokerService = new IdentityBrokerService(realm, protector);
+        IdentityBrokerService brokerService = new IdentityBrokerService(realm);
         ResteasyProviderFactory.getInstance().injectProperties(brokerService);
 
         brokerService.init();

@@ -2,9 +2,8 @@ package org.keycloak.broker.oidc.mappers;
 
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
-import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.HardcodedRoleMapper;
+import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
@@ -39,7 +38,7 @@ public class ExternalKeycloakRoleToRoleMapper extends AbstractClaimMapper {
         property1.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property1);
         property = new ProviderConfigProperty();
-        property.setName(HardcodedRoleMapper.ROLE);
+        property.setName(ConfigConstants.ROLE);
         property.setLabel("Role");
         property.setHelpText("Role to grant to user if external role is present.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
@@ -85,7 +84,7 @@ public class ExternalKeycloakRoleToRoleMapper extends AbstractClaimMapper {
     private RoleModel hasRole(RealmModel realm,IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         JsonWebToken token = (JsonWebToken)context.getContextData().get(KeycloakOIDCIdentityProvider.VALIDATED_ACCESS_TOKEN);
         //if (token == null) return;
-        String roleName = mapperModel.getConfig().get(HardcodedRoleMapper.ROLE);
+        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         String[] parseRole = KeycloakModelUtils.parseRole(mapperModel.getConfig().get(EXTERNAL_ROLE));
         String externalRoleName = parseRole[1];
         String claimName = null;

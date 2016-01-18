@@ -1,34 +1,24 @@
 package org.keycloak.testsuite.admin;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.*;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest;
 import org.keycloak.testsuite.forms.ResetPasswordTest;
 import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.rule.GreenMailRule;
-import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;

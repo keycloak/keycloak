@@ -1,8 +1,6 @@
 package org.keycloak.authentication.requiredactions;
 
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;

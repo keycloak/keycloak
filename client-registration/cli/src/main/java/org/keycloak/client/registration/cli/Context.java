@@ -1,6 +1,6 @@
 package org.keycloak.client.registration.cli;
 
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.keycloak.client.registration.ClientRegistration;

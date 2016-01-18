@@ -24,7 +24,7 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.social.SocialIdentityProvider;
+import org.keycloak.broker.social.SocialIdentityProvider;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;

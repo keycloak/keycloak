@@ -129,6 +129,7 @@
                 } else if (initOptions) {
                     if (initOptions.token || initOptions.refreshToken) {
                         setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken, false);
+                        kc.timeSkew = initOptions.timeSkew || 0;
 
                         if (loginIframe.enable) {
                             setupCheckLoginIframe().success(function() {
@@ -680,6 +681,11 @@
                 if (oauth.fragment) {
                     oauth.newUrl += '#' + oauth.fragment;
                 }
+
+                return oauth;
+            } else if (oauth.fragment) {
+                // logout has been performed, fragment needs to be updated in URL
+                oauth.newUrl += '#' + oauth.fragment;
 
                 return oauth;
             }

@@ -28,7 +28,6 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.migration.MigrationModel;

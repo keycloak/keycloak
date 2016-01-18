@@ -5,7 +5,6 @@ import java.net.URI;
 import java.util.Set;
 
 import javax.mail.MessagingException;
-import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -26,7 +25,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.Urls;
-import org.keycloak.testsuite.MailUtil;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;

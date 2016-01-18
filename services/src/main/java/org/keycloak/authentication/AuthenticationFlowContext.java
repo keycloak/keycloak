@@ -1,6 +1,6 @@
 package org.keycloak.authentication;
 
-import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;

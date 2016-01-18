@@ -2,8 +2,6 @@ package org.keycloak.authentication;
 
 import org.keycloak.provider.Provider;
 
-import javax.ws.rs.core.Response;
-
 /**
  * RequiredAction provider.  Required actions are one-time actions that a user must perform before they are logged in.
  *

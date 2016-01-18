@@ -3,6 +3,7 @@ package org.keycloak.protocol.saml;
 import org.keycloak.models.ClientConfigResolver;
 import org.keycloak.models.ClientModel;
 import org.keycloak.saml.SignatureAlgorithm;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -37,7 +38,24 @@ public class SamlClient extends ClientConfigResolver {
     }
 
     public String getNameIDFormat() {
-        return resolveAttribute(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE);
+        String nameIdFormat = null;
+
+        String configuredNameIdFormat = resolveAttribute(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE);
+        if (configuredNameIdFormat != null) {
+            if (configuredNameIdFormat.equals("email")) {
+                nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get();
+            } else if (configuredNameIdFormat.equals("persistent")) {
+                nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get();
+            } else if (configuredNameIdFormat.equals("transient")) {
+                nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get();
+            } else if (configuredNameIdFormat.equals("username")) {
+                nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get();
+            } else {
+                nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get();
+            }
+        }
+        return nameIdFormat;
+
     }
     public void setNameIDFormat(String format) {
         client.setAttribute(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, format);

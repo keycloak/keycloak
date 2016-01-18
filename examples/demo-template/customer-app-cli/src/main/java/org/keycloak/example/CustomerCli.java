@@ -1,10 +1,10 @@
 package org.keycloak.example;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.adapters.installed.KeycloakInstalled;
 import org.keycloak.common.util.Time;
@@ -23,8 +23,8 @@ public class CustomerCli {
     public static final ObjectMapper mapper = new ObjectMapper();
 
     static {
-        mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
-        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
     private static BufferedReader br;

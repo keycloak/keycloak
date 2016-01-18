@@ -36,8 +36,8 @@ public class SamlEcpProfileService extends SamlService {
     private static final String NS_PREFIX_SAML_PROTOCOL = "samlp";
     private static final String NS_PREFIX_SAML_ASSERTION = "saml";
 
-    public SamlEcpProfileService(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
-        super(realm, event, authManager);
+    public SamlEcpProfileService(RealmModel realm, EventBuilder event) {
+        super(realm, event);
     }
 
     public Response authenticate(InputStream inputStream) {

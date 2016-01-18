@@ -7,9 +7,10 @@
         <artifact name="${org.keycloak:keycloak-core}"/>
     </resources>
     <dependencies>
-        <module name="org.codehaus.jackson.jackson-core-asl"/>
-        <module name="org.codehaus.jackson.jackson-mapper-asl"/>
-        <module name="org.codehaus.jackson.jackson-xc"/>
+        <module name="com.fasterxml.jackson.core.jackson-core"/>
+        <module name="com.fasterxml.jackson.core.jackson-annotations"/>
+        <module name="com.fasterxml.jackson.core.jackson-databind"/>
+        <module name="com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.bouncycastle" />
         <module name="javax.api"/>

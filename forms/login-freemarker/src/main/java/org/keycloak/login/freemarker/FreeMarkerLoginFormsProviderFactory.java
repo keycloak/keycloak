@@ -2,8 +2,8 @@ package org.keycloak.login.freemarker;
 
 import org.keycloak.Config;
 import org.keycloak.freemarker.FreeMarkerUtil;
-import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.login.LoginFormsProviderFactory;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.forms.login.LoginFormsProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 

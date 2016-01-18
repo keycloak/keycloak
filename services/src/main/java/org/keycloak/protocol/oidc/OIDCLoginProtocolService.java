@@ -7,7 +7,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
@@ -18,7 +18,6 @@ import org.keycloak.protocol.oidc.endpoints.TokenIntrospectionEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
 import org.keycloak.protocol.oidc.endpoints.ValidateTokenEndpoint;
 import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.RealmsResource;
 
 import javax.ws.rs.GET;
@@ -45,7 +44,6 @@ public class OIDCLoginProtocolService {
     private RealmModel realm;
     private TokenManager tokenManager;
     private EventBuilder event;
-    private AuthenticationManager authManager;
 
     @Context
     private UriInfo uriInfo;
@@ -56,11 +54,10 @@ public class OIDCLoginProtocolService {
     @Context
     private HttpHeaders headers;
 
-    public OIDCLoginProtocolService(RealmModel realm, EventBuilder event, AuthenticationManager authManager) {
+    public OIDCLoginProtocolService(RealmModel realm, EventBuilder event) {
         this.realm = realm;
         this.tokenManager = new TokenManager();
         this.event = event;
-        this.authManager = authManager;
     }
 
     public static UriBuilder tokenServiceBaseUrl(UriInfo uriInfo) {
@@ -117,7 +114,7 @@ public class OIDCLoginProtocolService {
      */
     @Path("auth")
     public Object auth() {
-        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(authManager, realm, event);
+        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }
@@ -127,7 +124,7 @@ public class OIDCLoginProtocolService {
      */
     @Path("registrations")
     public Object registerPage() {
-        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(authManager, realm, event);
+        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.register();
     }
@@ -137,7 +134,7 @@ public class OIDCLoginProtocolService {
      */
     @Path("forgot-credentials")
     public Object forgotCredentialsPage() {
-        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(authManager, realm, event);
+        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.forgotCredentials();
     }
@@ -147,7 +144,7 @@ public class OIDCLoginProtocolService {
      */
     @Path("token")
     public Object token() {
-        TokenEndpoint endpoint = new TokenEndpoint(tokenManager, authManager, realm, event);
+        TokenEndpoint endpoint = new TokenEndpoint(tokenManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }
@@ -155,7 +152,7 @@ public class OIDCLoginProtocolService {
     @Path("login")
     @Deprecated
     public Object loginPage() {
-        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(authManager, realm, event);
+        AuthorizationEndpoint endpoint = new AuthorizationEndpoint(realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.legacy(OIDCLoginProtocol.CODE_PARAM);
     }
@@ -170,7 +167,7 @@ public class OIDCLoginProtocolService {
     @Path("grants/access")
     @Deprecated
     public Object grantAccessToken() {
-        TokenEndpoint endpoint = new TokenEndpoint(tokenManager, authManager, realm, event);
+        TokenEndpoint endpoint = new TokenEndpoint(tokenManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.legacy(OAuth2Constants.PASSWORD);
     }
@@ -178,7 +175,7 @@ public class OIDCLoginProtocolService {
     @Path("refresh")
     @Deprecated
     public Object refreshAccessToken() {
-        TokenEndpoint endpoint = new TokenEndpoint(tokenManager, authManager, realm, event);
+        TokenEndpoint endpoint = new TokenEndpoint(tokenManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.legacy(OAuth2Constants.REFRESH_TOKEN);
     }
@@ -186,7 +183,7 @@ public class OIDCLoginProtocolService {
     @Path("access/codes")
     @Deprecated
     public Object accessCodeToToken() {
-        TokenEndpoint endpoint = new TokenEndpoint(tokenManager, authManager, realm, event);
+        TokenEndpoint endpoint = new TokenEndpoint(tokenManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.legacy(OAuth2Constants.AUTHORIZATION_CODE);
     }
@@ -225,7 +222,7 @@ public class OIDCLoginProtocolService {
 
     @Path("logout")
     public Object logout() {
-        LogoutEndpoint endpoint = new LogoutEndpoint(tokenManager, authManager, realm, event);
+        LogoutEndpoint endpoint = new LogoutEndpoint(tokenManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }

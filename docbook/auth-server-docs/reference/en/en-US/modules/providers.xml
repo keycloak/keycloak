@@ -147,7 +147,7 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
                 script or manually create a folder inside KEYCLOAK_HOME/modules and add your jar and a <literal>module.xml</literal>.
                 For example to add the event listener sysout example provider using the jboss-cli script execute:
 <programlisting><![CDATA[
-    KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.examples.event-sysout --resources=target/event-listener-sysout-example.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-model-api,org.keycloak.keycloak-events-api"
+    KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.examples.event-sysout --resources=target/event-listener-sysout-example.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-server-spi,org.keycloak.keycloak-events-api"
 ]]></programlisting>
                 Or to manually create it start by creating the folder <literal>KEYCLOAK_HOME/modules/org/keycloak/examples/event-sysout/main</literal>.
                 Then copy <literal>event-listener-sysout-example.jar</literal> to this folder and create <literal>module.xml</literal>
@@ -160,8 +160,7 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
     </resources>
     <dependencies>
         <module name="org.keycloak.keycloak-core"/>
-        <module name="org.keycloak.keycloak-model-api"/>
-        <module name="org.keycloak.keycloak-events-api"/>
+        <module name="org.keycloak.keycloak-server-spi"/>
     </dependencies>
 </module>
 ]]></programlisting>

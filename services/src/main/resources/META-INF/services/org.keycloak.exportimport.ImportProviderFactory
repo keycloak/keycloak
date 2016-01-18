@@ -1,0 +1,2 @@
+org.keycloak.exportimport.dir.DirImportProviderFactory
+org.keycloak.exportimport.singlefile.SingleFileImportProviderFactory

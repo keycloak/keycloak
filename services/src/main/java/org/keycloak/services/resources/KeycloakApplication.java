@@ -1,8 +1,8 @@
 package org.keycloak.services.resources;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -15,8 +15,8 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
+import org.keycloak.services.filters.KeycloakTransactionCommitter;
 import org.keycloak.services.managers.ApplianceBootstrap;
-import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.resources.admin.AdminRoot;
@@ -59,12 +59,7 @@ public class KeycloakApplication extends Application {
         this.sessionFactory = createSessionFactory();
 
         dispatcher.getDefaultContextObjects().put(KeycloakApplication.class, this);
-        BruteForceProtector protector = new BruteForceProtector(sessionFactory);
-        dispatcher.getDefaultContextObjects().put(BruteForceProtector.class, protector);
-        ResteasyProviderFactory.pushContext(BruteForceProtector.class, protector); // for injection
         ResteasyProviderFactory.pushContext(KeycloakApplication.class, this); // for injection
-        protector.start();
-        context.setAttribute(BruteForceProtector.class.getName(), protector);
         context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
         singletons.add(new ServerVersionResource());
@@ -74,6 +69,8 @@ public class KeycloakApplication extends Application {
         classes.add(QRCodeResource.class);
         classes.add(ThemeResource.class);
         classes.add(JsResource.class);
+
+        classes.add(KeycloakTransactionCommitter.class);
 
         singletons.add(new ObjectMapperResolver(Boolean.parseBoolean(System.getProperty("keycloak.jsonPrettyPrint", "false"))));
 

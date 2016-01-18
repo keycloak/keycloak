@@ -26,7 +26,7 @@
             <div class="form-group" ng-show="installation">
                 <div class="col-sm-12">
                     <a class="btn btn-primary btn-lg" data-ng-click="download()" type="submit" ng-show="installation">{{:: 'download' | translate}}</a>
-                    <textarea class="form-control" rows="20" kc-select-action="click">{{installation}}</textarea>
+                    <textarea class="form-control" rows="20" kc-select-action="click" data-ng-hide="configFormat.downloadOnly">{{installation}}</textarea>
                 </div>
             </div>
         </fieldset>

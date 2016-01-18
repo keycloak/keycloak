@@ -11,7 +11,6 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.managers.ClientManager;
 
 import javax.ws.rs.core.Response;
 

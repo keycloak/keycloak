@@ -17,7 +17,7 @@
  */
 package org.keycloak.examples.broker.twitter;
 
-import org.codehaus.jackson.annotate.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author pedroigor
