@@ -5,7 +5,6 @@ import java.util.List;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -21,6 +20,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
 
@@ -29,7 +29,7 @@ import org.keycloak.services.validation.Validation;
  */
 public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static Logger logger = Logger.getLogger(IdpReviewProfileAuthenticator.class);
+    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     @Override
     public boolean requiresUser() {

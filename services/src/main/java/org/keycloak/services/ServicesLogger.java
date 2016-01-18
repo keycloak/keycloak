@@ -110,4 +110,28 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id=18, value="Client %s doesn't have have authentication method configured. Fallback to %s")
     void authMethodFallback(String clientId, String expectedClientAuthType);
+
+    @LogMessage(level = WARN)
+    @Message(id=19, value="No duplication detected.")
+    void noDuplicationDetected();
+
+    @LogMessage(level = WARN)
+    @Message(id=20, value="%s is null. Reset flow and enforce showing reviewProfile page")
+    void resetFlow(String emailOrUserName);
+
+    @LogMessage(level = ERROR)
+    @Message(id=21, value="Failed to send email to confirm identity broker linking")
+    void confirmBrokerEmailFailed(@Cause Throwable t);
+
+    @LogMessage(level = ERROR)
+    @Message(id=22, value="Key parameter don't match with the expected value from client session")
+    void keyParamDoesNotMatch();
+
+    @LogMessage(level = WARN)
+    @Message(id=23, value="Smtp is not configured for the realm. Ignoring email verification authenticator")
+    void smtpNotConfigured();
+
+    @LogMessage(level = WARN)
+    @Message(id=23, value="Smtp is not configured for the realm. Ignoring email verification authenticator")
+    void smtpNotConfigured();
 }
