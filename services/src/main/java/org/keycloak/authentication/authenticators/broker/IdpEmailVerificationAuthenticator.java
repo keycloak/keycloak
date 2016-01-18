@@ -6,7 +6,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.requiredactions.VerifyEmail;
@@ -24,6 +23,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 
@@ -32,7 +32,7 @@ import org.keycloak.services.resources.LoginActionsService;
  */
 public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static Logger logger = Logger.getLogger(IdpEmailVerificationAuthenticator.class);
+    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
@@ -41,7 +41,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         ClientSessionModel clientSession = context.getClientSession();
 
         if (realm.getSmtpConfig().size() == 0) {
-            logger.warnf("Smtp is not configured for the realm. Ignoring email verification authenticator");
+            logger.smtpNotConfigured();
             context.attempted();
             return;
         }
@@ -78,7 +78,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         } catch (EmailException e) {
             event.error(Errors.EMAIL_SEND_FAILED);
 
-            logger.error("Failed to send email to confirm identity broker linking", e);
+            logger.confirmBrokerEmailFailed(e);
             Response challenge = context.form()
                     .setError(Messages.EMAIL_SENT_ERROR)
                     .createErrorPage();
@@ -118,7 +118,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                 context.setUser(existingUser);
                 context.success();
             } else {
-                logger.error("Key parameter don't match with the expected value from client session");
+                logger.keyParamDoesNotMatch();
                 Response challengeResponse = context.form()
                         .setError(Messages.INVALID_ACCESS_CODE)
                         .createErrorPage();
