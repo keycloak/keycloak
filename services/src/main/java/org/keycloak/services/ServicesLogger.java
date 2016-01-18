@@ -86,4 +86,28 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=12, value="Failed to delete '%s'")
     void failedToDeleteFile(String fileName);
+
+    @LogMessage(level = ERROR)
+    @Message(id=13, value="failed authentication")
+    void failedAuthentication(@Cause Throwable t);
+
+    @LogMessage(level = ERROR)
+    @Message(id=14, value="Failed client authentication")
+    void failedClientAuthentication(@Cause Throwable t);
+
+    @LogMessage(level = ERROR)
+    @Message(id=15, value="Unexpected error when authenticating client")
+    void errorAuthenticatingClient(@Cause Throwable t);
+
+    @LogMessage(level = ERROR)
+    @Message(id=16, value="Unknown flow to execute with")
+    void unknownFlow();
+
+    @LogMessage(level = ERROR)
+    @Message(id=17, value="Unknown result status")
+    void unknownResultStatus();
+
+    @LogMessage(level = WARN)
+    @Message(id=18, value="Client %s doesn't have have authentication method configured. Fallback to %s")
+    void authMethodFallback(String clientId, String expectedClientAuthType);
 }
