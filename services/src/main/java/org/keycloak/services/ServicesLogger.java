@@ -27,6 +27,7 @@ import org.jboss.logging.annotations.MessageLogger;
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
+import org.keycloak.email.EmailException;
 import org.keycloak.models.ModelDuplicateException;
 
 
@@ -139,4 +140,8 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=25, value="Error when validating client assertion")
     void errorValidatingAssertion(@Cause Throwable t);
+
+    @LogMessage(level = ERROR)
+    @Message(id=26, value="Failed to send password reset email")
+    void failedToSendPwdResetEmail(@Cause EmailException e);
 }
