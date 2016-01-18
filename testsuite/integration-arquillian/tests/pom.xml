@@ -15,6 +15,7 @@
     <modules>
         <module>base</module>
         <module>adapters</module>
+        <module>console</module>
     </modules>
     
     <properties>
