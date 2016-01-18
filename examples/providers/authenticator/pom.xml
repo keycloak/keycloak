@@ -34,11 +34,6 @@
             <artifactId>keycloak-services</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-login-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
 
     <build>

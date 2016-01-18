@@ -36,7 +36,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -62,7 +62,7 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.social.SocialIdentityProvider;
+import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.util.JsonSerialization;
 

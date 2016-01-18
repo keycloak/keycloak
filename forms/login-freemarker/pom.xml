@@ -24,16 +24,6 @@
             <artifactId>keycloak-forms-common-freemarker</artifactId>
             <scope>provided</scope>
         </dependency>
-		<dependency>
-			<groupId>org.keycloak</groupId>
-			<artifactId>keycloak-login-api</artifactId>
-            <scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.keycloak</groupId>
-			<artifactId>keycloak-email-api</artifactId>
-            <scope>provided</scope>
-		</dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi</artifactId>
@@ -42,11 +32,6 @@
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-services</artifactId>
-            <scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.keycloak</groupId>
-			<artifactId>keycloak-social-core</artifactId>
             <scope>provided</scope>
 		</dependency>
         <dependency>

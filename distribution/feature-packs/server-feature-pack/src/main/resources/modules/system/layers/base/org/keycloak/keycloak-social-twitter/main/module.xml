@@ -9,8 +9,6 @@
     <dependencies>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
-        <module name="org.keycloak.keycloak-social-core"/>
-        <module name="org.keycloak.keycloak-broker-core"/>
         <module name="org.keycloak.keycloak-broker-oidc"/>
         <module name="org.keycloak.keycloak-server-spi"/>
         <module name="org.keycloak.keycloak-services"/>

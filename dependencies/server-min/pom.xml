@@ -60,12 +60,6 @@
             <artifactId>keycloak-js-adapter</artifactId>
         </dependency>
 
-        <!-- social -->
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-social-core</artifactId>
-        </dependency>
-
         <!-- forms -->
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -81,23 +75,11 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-account-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-account-freemarker</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-email-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-email-freemarker</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-login-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

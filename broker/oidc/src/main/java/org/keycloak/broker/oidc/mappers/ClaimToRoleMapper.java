@@ -3,7 +3,7 @@ package org.keycloak.broker.oidc.mappers;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.HardcodedRoleMapper;
+import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
@@ -42,7 +42,7 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
         property1.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property1);
         property = new ProviderConfigProperty();
-        property.setName(HardcodedRoleMapper.ROLE);
+        property.setName(ConfigConstants.ROLE);
         property.setLabel("Role");
         property.setHelpText("Role to grant to user if claim is present.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
@@ -79,7 +79,7 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(HardcodedRoleMapper.ROLE);
+        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         if (hasClaimValue(mapperModel, context)) {
             RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
             if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
@@ -89,7 +89,7 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(HardcodedRoleMapper.ROLE);
+        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         if (!hasClaimValue(mapperModel, context)) {
             RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
             if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);

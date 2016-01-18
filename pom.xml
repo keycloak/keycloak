@@ -607,11 +607,6 @@
             <!-- keycloak -->
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-broker-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-broker-oidc</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -712,11 +707,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-account-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-account-freemarker</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -740,11 +730,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-forms-common-themes</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-email-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -954,11 +939,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-login-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-login-freemarker</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1060,11 +1040,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-services</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-social-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

@@ -17,8 +17,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-broker-core</artifactId>
-            <scope>provided</scope>
+            <artifactId>keycloak-server-spi</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

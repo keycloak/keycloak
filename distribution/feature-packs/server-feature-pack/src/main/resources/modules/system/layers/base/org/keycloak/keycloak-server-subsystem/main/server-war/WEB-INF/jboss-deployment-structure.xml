@@ -1,7 +1,6 @@
 <jboss-deployment-structure>
     <deployment>
         <dependencies>
-            <module name="org.keycloak.keycloak-account-api" services="import"/>
             <module name="org.keycloak.keycloak-account-freemarker" services="import"/>
             <module name="org.keycloak.keycloak-connections-infinispan" services="import"/>
             <module name="org.keycloak.keycloak-connections-jpa" services="import" meta-inf="import"/>
@@ -11,7 +10,6 @@
             <module name="org.keycloak.keycloak-connections-truststore" services="import"/>
             <module name="org.keycloak.keycloak-common" services="import"/>
             <module name="org.keycloak.keycloak-core" services="import"/>
-            <module name="org.keycloak.keycloak-email-api" services="import"/>
             <module name="org.keycloak.keycloak-email-freemarker" services="import"/>
             <module name="org.keycloak.keycloak-events-email" services="import"/>
             <module name="org.keycloak.keycloak-events-jboss-logging" services="import"/>
@@ -24,7 +22,6 @@
             <module name="org.keycloak.keycloak-js-adapter" services="import"/>
             <module name="org.keycloak.keycloak-kerberos-federation" services="import"/>
             <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
-            <module name="org.keycloak.keycloak-login-api" services="import"/>
             <module name="org.keycloak.keycloak-login-freemarker" services="import"/>
             <module name="org.keycloak.keycloak-server-spi" services="import"/>
             <module name="org.keycloak.keycloak-model-jpa" services="import"/>
@@ -32,7 +29,6 @@
             <module name="org.keycloak.keycloak-model-sessions-infinispan" services="import"/>
             <module name="org.keycloak.keycloak-saml-protocol" services="import"/>
             <module name="org.keycloak.keycloak-services" export="true" services="import"/>
-            <module name="org.keycloak.keycloak-social-core" services="import"/>
             <module name="org.keycloak.keycloak-social-facebook" services="import"/>
             <module name="org.keycloak.keycloak-social-github" services="import"/>
             <module name="org.keycloak.keycloak-social-google" services="import"/>

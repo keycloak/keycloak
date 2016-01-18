@@ -8,7 +8,7 @@ import org.keycloak.broker.oidc.util.JsonSimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.social.SocialIdentityProvider;
+import org.keycloak.broker.social.SocialIdentityProvider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

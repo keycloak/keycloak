@@ -21,7 +21,7 @@
  */
 package org.keycloak.services;
 
-import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 
 import javax.ws.rs.core.Response;

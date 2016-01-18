@@ -1,6 +1,6 @@
 package org.keycloak.login.freemarker;
 
-import org.keycloak.login.LoginFormsPages;
+import org.keycloak.forms.login.LoginFormsPages;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

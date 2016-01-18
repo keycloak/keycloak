@@ -22,14 +22,14 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.keycloak.account.AccountPages;
-import org.keycloak.account.AccountProvider;
+import org.keycloak.forms.account.AccountPages;
+import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
-import org.keycloak.login.LoginFormsProvider;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
