@@ -27,6 +27,7 @@ import org.jboss.logging.annotations.MessageLogger;
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
+import org.keycloak.models.ModelDuplicateException;
 
 
 /**
@@ -131,7 +132,7 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=23, value="Smtp is not configured for the realm. Ignoring email verification authenticator")
     void smtpNotConfigured();
 
-    @LogMessage(level = WARN)
-    @Message(id=23, value="Smtp is not configured for the realm. Ignoring email verification authenticator")
-    void smtpNotConfigured();
+    @LogMessage(level = ERROR)
+    @Message(id=24, value="")
+    void modelDuplicateException(@Cause ModelDuplicateException mde);
 }
