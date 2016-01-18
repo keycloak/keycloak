@@ -144,4 +144,8 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=26, value="Failed to send password reset email")
     void failedToSendPwdResetEmail(@Cause EmailException e);
+
+    @LogMessage(level = ERROR)
+    @Message(id=28, value="Recaptcha failed")
+    void recaptchaFailed(@Cause Exception e);
 }
