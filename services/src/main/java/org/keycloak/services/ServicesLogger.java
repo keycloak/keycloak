@@ -17,6 +17,7 @@
 
 package org.keycloak.services;
 
+import java.net.URI;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -188,4 +189,16 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=38, value="Error importing roles")
     void roleImportError(@Cause Exception e);
+
+    @LogMessage(level = WARN)
+    @Message(id=39, value="Untranslated protocol Error: %s so we return default SAML error")
+    void untranslatedProtocol(String errorName);
+
+    @LogMessage(level = WARN)
+    @Message(id=40, value="Using deprecated 'directGrantsOnly' configuration in JSON representation. It will be removed in future versions")
+    void usingDeprecatedDirectGrantsOnly();
+
+    @LogMessage(level = WARN)
+    @Message(id=41, value="Invoking deprecated endpoint %s")
+    void invokingDeprecatedEndpoint(URI requestUri);
 }
