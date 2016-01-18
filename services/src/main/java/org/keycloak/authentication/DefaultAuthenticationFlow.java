@@ -1,10 +1,10 @@
 package org.keycloak.authentication;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.ServicesLogger;
 
 import javax.ws.rs.core.Response;
 import java.util.Iterator;
@@ -15,7 +15,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class DefaultAuthenticationFlow implements AuthenticationFlow {
-    protected static Logger logger = Logger.getLogger(DefaultAuthenticationFlow.class);
+    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     Response alternativeChallenge = null;
     AuthenticationExecutionModel challengedAlternativeExecution = null;
     boolean alternativeSuccessful = false;
@@ -222,7 +222,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return processor.authenticate();
             default:
                 logger.debugv("authenticator INTERNAL_ERROR: {0}", execution.getAuthenticator());
-                logger.error("Unknown result status");
+                logger.unknownResultStatus();
                 throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
         }
     }
