@@ -1,6 +1,5 @@
 package org.keycloak.authentication.authenticators.resetcred;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -22,6 +21,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.Response;
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory {
     public static final String RESET_CREDENTIAL_SECRET = "RESET_CREDENTIAL_SECRET";
 
-    protected static Logger logger = Logger.getLogger(ResetCredentialEmail.class);
+    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public static final String PROVIDER_ID = "reset-credential-email";
 
@@ -83,7 +83,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
                     .detail(Details.USERNAME, username)
                     .user(user)
                     .error(Errors.EMAIL_SEND_FAILED);
-            logger.error("Failed to send password reset email", e);
+            logger.failedToSendPwdResetEmail(e);
             Response challenge = context.form()
                     .setError(Messages.EMAIL_SENT_ERROR)
                     .createErrorPage();
