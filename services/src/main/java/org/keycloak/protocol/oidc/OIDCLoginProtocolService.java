@@ -1,6 +1,5 @@
 package org.keycloak.protocol.oidc;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
@@ -18,6 +17,7 @@ import org.keycloak.protocol.oidc.endpoints.TokenIntrospectionEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
 import org.keycloak.protocol.oidc.endpoints.ValidateTokenEndpoint;
 import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.RealmsResource;
 
@@ -40,7 +40,7 @@ import javax.ws.rs.core.UriInfo;
  */
 public class OIDCLoginProtocolService {
 
-    protected static final Logger logger = Logger.getLogger(OIDCLoginProtocolService.class);
+    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private RealmModel realm;
     private TokenManager tokenManager;
@@ -199,7 +199,7 @@ public class OIDCLoginProtocolService {
     @Path("validate")
     @Deprecated
     public Object validateAccessToken(@QueryParam("access_token") String tokenString) {
-        logger.warnv("Invoking deprecated endpoint {0}", uriInfo.getRequestUri());
+        logger.invokingDeprecatedEndpoint(uriInfo.getRequestUri());
         ValidateTokenEndpoint endpoint = new ValidateTokenEndpoint(tokenManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;

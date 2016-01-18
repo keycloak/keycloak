@@ -21,7 +21,6 @@
  */
 package org.keycloak.protocol.oidc;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
@@ -37,6 +36,7 @@ import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 
@@ -68,7 +68,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     public static final String RESPONSE_MODE_PARAM = "response_mode";
 
-    private static final Logger log = Logger.getLogger(OIDCLoginProtocol.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     protected KeycloakSession session;
 
@@ -143,7 +143,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         String redirect = clientSession.getRedirectUri();
         OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode);
         String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
-        log.debugv("redirectAccessCode: state: {0}", state);
+        logger.debugv("redirectAccessCode: state: {0}", state);
         if (state != null)
             redirectUri.addParam(OAuth2Constants.STATE, state);
 
@@ -203,7 +203,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
             case PASSIVE_LOGIN_REQUIRED:
                 return "login_required";
             default:
-                log.warn("Untranslated protocol Error: " + error.name() + " so we return default SAML error");
+                logger.untranslatedProtocol(error.name());
                 return "access_denied";
         }
     }
