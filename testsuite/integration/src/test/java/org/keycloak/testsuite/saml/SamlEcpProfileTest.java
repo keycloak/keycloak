@@ -108,7 +108,7 @@ public class SamlEcpProfileTest {
 
         Response authenticationResponse = ClientBuilder.newClient().target(singleSignOnService).request()
                 .header(HttpHeaders.AUTHORIZATION, authHeader)
-                .post(Entity.entity(DocumentUtil.asString(authenticationRequest), "application/soap+xml"));
+                .post(Entity.entity(DocumentUtil.asString(authenticationRequest), "text/xml"));
 
         assertEquals(OK.getStatusCode(), authenticationResponse.getStatus());
 

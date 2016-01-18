@@ -548,7 +548,7 @@ public class SamlService extends AuthorizationEndpointBase {
     }
 
     @POST
-    @Consumes("application/soap+xml")
+    @Consumes({"application/soap+xml",MediaType.TEXT_XML})
     public Response soapBinding(InputStream inputStream) {
         SamlEcpProfileService bindingService = new SamlEcpProfileService(realm, event, authManager);
 
