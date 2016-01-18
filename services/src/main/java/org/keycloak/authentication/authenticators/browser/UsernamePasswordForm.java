@@ -1,6 +1,5 @@
 package org.keycloak.authentication.authenticators.browser;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -12,6 +11,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -22,7 +22,7 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator implements Authenticator {
-    protected static Logger logger = Logger.getLogger(UsernamePasswordForm.class);
+    protected static ServicesLogger log = ServicesLogger.ROOT_LOGGER;
 
     @Override
     public void action(AuthenticationFlowContext context) {
