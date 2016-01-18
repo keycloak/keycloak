@@ -135,4 +135,8 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=24, value="")
     void modelDuplicateException(@Cause ModelDuplicateException mde);
+
+    @LogMessage(level = ERROR)
+    @Message(id=25, value="Error when validating client assertion")
+    void errorValidatingAssertion(@Cause Throwable t);
 }
