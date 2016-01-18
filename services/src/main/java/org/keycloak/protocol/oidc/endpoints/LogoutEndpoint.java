@@ -1,6 +1,5 @@
 package org.keycloak.protocol.oidc.endpoints;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
@@ -21,6 +20,7 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
@@ -43,7 +43,7 @@ import javax.ws.rs.core.UriInfo;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class LogoutEndpoint {
-    protected static Logger logger = Logger.getLogger(LogoutEndpoint.class);
+    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     @Context
     private KeycloakSession session;

@@ -1,6 +1,5 @@
 package org.keycloak.protocol.oidc.endpoints;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
@@ -15,6 +14,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 
 import javax.ws.rs.GET;
@@ -31,7 +31,7 @@ import java.util.Map;
 @Deprecated
 public class ValidateTokenEndpoint {
 
-    private static final Logger logger = Logger.getLogger(ValidateTokenEndpoint.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     @Context
     private KeycloakSession session;
@@ -75,7 +75,7 @@ public class ValidateTokenEndpoint {
             Map<String, String> err = new HashMap<String, String>();
             err.put(OAuth2Constants.ERROR, OAuthErrorException.INVALID_GRANT);
             err.put(OAuth2Constants.ERROR_DESCRIPTION, "Token invalid");
-            logger.error("Invalid token. Token verification failed.");
+            logger.invalidToken();
             event.error(Errors.INVALID_TOKEN);
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
                     .build();

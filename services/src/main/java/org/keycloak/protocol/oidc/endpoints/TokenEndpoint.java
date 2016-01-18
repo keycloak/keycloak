@@ -1,6 +1,5 @@
 package org.keycloak.protocol.oidc.endpoints;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
@@ -27,6 +26,7 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -51,7 +51,7 @@ import java.util.Map;
  */
 public class TokenEndpoint {
 
-    private static final Logger logger = Logger.getLogger(TokenEndpoint.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     private MultivaluedMap<String, String> formParams;
     private ClientModel client;
     private Map<String, String> clientAuthAttributes;
@@ -138,7 +138,7 @@ public class TokenEndpoint {
      * @deprecated
      */
     public TokenEndpoint legacy(String legacyGrantType) {
-        logger.warnv("Invoking deprecated endpoint {0}", uriInfo.getRequestUri());
+        logger.invokingDeprecatedEndpoint(uriInfo.getRequestUri());
         this.legacyGrantType = legacyGrantType;
         return this;
     }
@@ -302,7 +302,7 @@ public class TokenEndpoint {
     private void updateClientSession(ClientSessionModel clientSession) {
 
         if(clientSession == null) {
-            logger.error("client session is null");
+            logger.clientSessionNull();
             return;
         }
 
@@ -320,16 +320,16 @@ public class TokenEndpoint {
 
     private void updateClientSessions(List<ClientSessionModel> clientSessions) {
         if(clientSessions == null) {
-            logger.error("client sessions is null");
+            logger.clientSessionNull();
             return;
         }
         for (ClientSessionModel clientSession : clientSessions) {
             if(clientSession == null) {
-                logger.error("client session is null");
+                logger.clientSessionNull();
                 continue;
             }
             if(clientSession.getClient() == null) {
-                logger.error("client model in client session is null");
+                logger.clientModelNull();
                 continue;
             }
             if(client.getId().equals(clientSession.getClient().getId())) {
