@@ -201,4 +201,20 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id=41, value="Invoking deprecated endpoint %s")
     void invokingDeprecatedEndpoint(URI requestUri);
+
+    @LogMessage(level = ERROR)
+    @Message(id=42, value="Response_mode 'query' not allowed for implicit or hybrid flow")
+    void responseModeQueryNotAllowed();
+
+    @LogMessage(level = ERROR)
+    @Message(id=43, value="Client session is null")
+    void clientSessionNull();
+
+    @LogMessage(level = ERROR)
+    @Message(id=44, value="Client model in client session is null")
+    void clientModelNull();
+
+    @LogMessage(level = ERROR)
+    @Message(id=45, value="Invalid token. Token verification failed.")
+    void invalidToken();
 }
