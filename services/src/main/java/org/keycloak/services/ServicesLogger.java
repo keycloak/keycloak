@@ -152,4 +152,32 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=29, value="Failed to send email")
     void failedToSendEmail(@Cause Exception e);
+
+    @LogMessage(level = INFO)
+    @Message(id=30, value="Full model import requested. Strategy: %s")
+    void fullModelImport(String strategy);
+
+    @LogMessage(level = INFO)
+    @Message(id=31, value="Import of realm '%s' requested. Strategy: %s")
+    void realmImportRequested(String realmName, String strategy);
+
+    @LogMessage(level = INFO)
+    @Message(id=32, value="Import finished successfully")
+    void importSuccess();
+
+    @LogMessage(level = INFO)
+    @Message(id=33, value="Full model export requested")
+    void fullModelExportRequested();
+
+    @LogMessage(level = INFO)
+    @Message(id=34, value="Export of realm '%s' requested.")
+    void realmExportRequested(String realmName);
+
+    @LogMessage(level = INFO)
+    @Message(id=35, value="Export finished successfully")
+    void exportSuccess();
+
+    
+
+
 }
