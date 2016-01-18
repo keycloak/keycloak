@@ -148,4 +148,8 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=28, value="Recaptcha failed")
     void recaptchaFailed(@Cause Exception e);
+
+    @LogMessage(level = ERROR)
+    @Message(id=29, value="Failed to send email")
+    void failedToSendEmail(@Cause Exception e);
 }
