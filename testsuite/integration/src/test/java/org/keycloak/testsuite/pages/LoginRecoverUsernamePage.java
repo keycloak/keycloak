@@ -35,7 +35,7 @@ public class LoginRecoverUsernamePage extends AbstractPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "feedback-error")
+    @FindBy(className = "alert-error")
     private WebElement emailErrorMessage;
 
     public void recoverUsername(String email) {

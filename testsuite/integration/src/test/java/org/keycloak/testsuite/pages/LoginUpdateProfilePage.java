@@ -43,7 +43,7 @@ public class LoginUpdateProfilePage extends AbstractPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "feedback-error")
+    @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
 
     public void update(String firstName, String lastName, String email) {

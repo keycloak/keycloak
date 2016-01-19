@@ -62,13 +62,13 @@ public class LoginPage extends AbstractPage {
     @FindBy(linkText = "Username")
     private WebElement recoverUsernameLink;
 
-    @FindBy(className = "feedback-error")
+    @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
 
-    @FindBy(className = "feedback-warning")
+    @FindBy(className = "alert-warning")
     private WebElement loginWarningMessage;
 
-    @FindBy(className = "feedback-success")
+    @FindBy(className = "alert-success")
     private WebElement emailSuccessMessage;
 
 

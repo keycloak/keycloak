@@ -62,7 +62,7 @@
                                 <#if message.type = 'success'><span class="${properties.kcFeedbackSuccessIcon}"></span></#if>
                                 <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon}"></span></#if>
                                 <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon}"></span></#if>
-                                <span>${message.summary}</span>
+                                <span class="kc-feedback-text">${message.summary}</span>
                             </div>
                         </div>
                     </#if>

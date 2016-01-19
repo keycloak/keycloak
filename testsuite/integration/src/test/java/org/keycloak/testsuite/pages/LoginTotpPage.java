@@ -42,7 +42,7 @@ public class LoginTotpPage extends AbstractPage {
     @FindBy(id = "kc-cancel")
     private WebElement cancelButton;
 
-    @FindBy(className = "feedback-error")
+    @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
 
     public void login(String totp) {
