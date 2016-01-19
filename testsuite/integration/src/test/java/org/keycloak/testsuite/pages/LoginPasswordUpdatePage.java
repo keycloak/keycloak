@@ -38,7 +38,7 @@ public class LoginPasswordUpdatePage extends AbstractPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "feedback-error")
+    @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
 
     public void changePassword(String newPassword, String passwordConfirm) {
