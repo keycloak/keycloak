@@ -287,4 +287,12 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=62, value="Error occurred during sync of changed users")
     void errorDuringChangedUserSync(@Cause Throwable t);
+
+    @LogMessage(level = WARN)
+    @Message(id=63, value="Failed to format message due to: %s")
+    void failedToFormatMessage(String cause);
+
+    @LogMessage(level = WARN)
+    @Message(id=64, value="Failed to load messages")
+    void failedToloadMessages(@Cause IOException ioe);
 }
