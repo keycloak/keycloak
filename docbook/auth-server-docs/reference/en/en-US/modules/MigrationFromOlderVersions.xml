@@ -80,6 +80,23 @@
     <section>
         <title>Version specific migration</title>
         <section>
+            <title>Migrating to 1.9.0</title>
+            <simplesect>
+                <title>Deprecated OpenID Connect endpoints</title>
+                <para>
+                    In 1.2 we deprecated a number of endpoints that where not consistent with the OpenID Connect
+                    specifications, these have now been removed. This also applies to the validate token endpoints that
+                    was replaced with the new introspect endpoint in 1.8.
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>Updates to theme templates</title>
+                <para>
+                    Feedback in template.ftl has been moved and format has changed slightly.
+                </para>
+            </simplesect>
+        </section>
+        <section>
             <title>Migrating to 1.8.0</title>
             <simplesect>
             <title>Admin account</title>

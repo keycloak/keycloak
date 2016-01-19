@@ -60,8 +60,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     private String nonce;
     private String idpHint;
 
-    private String legacyResponseType;
-
     public AuthorizationEndpoint(RealmModel realm, EventBuilder event) {
         super(realm, event);
         event.event(EventType.LOGIN);
@@ -100,15 +98,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
 
         throw new RuntimeException("Unknown action " + action);
-    }
-
-    /**
-     * @deprecated
-     */
-    public AuthorizationEndpoint legacy(String legacyResponseType) {
-        logger.warnv("Invoking deprecated endpoint {0}", uriInfo.getRequestUri());
-        this.legacyResponseType = legacyResponseType;
-        return this;
     }
 
     public AuthorizationEndpoint register() {
@@ -181,12 +170,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     private void checkResponseType() {
         if (responseType == null) {
-            if (legacyResponseType != null) {
-                responseType = legacyResponseType;
-            } else {
-                event.error(Errors.INVALID_REQUEST);
-                throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
-            }
+            event.error(Errors.INVALID_REQUEST);
+            throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         }
 
         event.detail(Details.RESPONSE_TYPE, responseType);

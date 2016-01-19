@@ -106,23 +106,23 @@ Authorization: bearer eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJmMjJmNzQyYy04ZjNlLTQ2M....
         </para>
         <para>
             To create a client create a Client Representation (JSON) then do a HTTP POST to:
-            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/default</literal>. It will return a Client Representation
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/default</literal>. It will return a Client Representation
             that also includes the registration access token. You should save the registration access token somewhere
             if you want to retrieve the config, update or delete the client later.
         </para>
         <para>
             To retrieve the Client Representation then do a HTTP GET to:
-            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;clients/&lt;provider&gt;/default/&lt;client id&gt;</literal>. It will also
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/default/&lt;client id&gt;</literal>. It will also
             return a new registration access token.
         </para>
         <para>
             To update the Client Representation then do a HTTP PUT to with the updated Client Representation to:
-            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/default/&lt;client id&gt;</literal>. It will also
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/default/&lt;client id&gt;</literal>. It will also
             return a new registration access token.
         </para>
         <para>
             To delete the Client Representation then do a HTTP DELETE to:
-            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/default/&lt;client id&gt;</literal>
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/default/&lt;client id&gt;</literal>
         </para>
     </section>
 
@@ -138,7 +138,7 @@ Authorization: basic BASE64(client-id + ':' + client-secret)
         </para>
         <para>
             To retrieve the Adapter Configuration then do a HTTP GET to:
-            <literal>&lt;KEYCLOAK URL&gt;//realms/&lt;realm&gt;clients/&lt;provider&gt;/installation/&lt;client id&gt;</literal>
+            <literal>&lt;KEYCLOAK URL&gt;//realms/&lt;realm&gt;/clients/installation/&lt;client id&gt;</literal>
         </para>
         <para>
             No authentication is required for public clients. This means that for the JavaScript adapter you can
@@ -155,7 +155,7 @@ Authorization: basic BASE64(client-id + ':' + client-secret)
         </para>
         <para>
             The endpoint to use these specifications to register clients in Keycloak is:
-            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/oidc[/&lt;client id&gt;]</literal>.
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/oidc[/&lt;client id&gt;]</literal>.
         </para>
         <para>
             This endpoints can also be found in the OpenID Connect Discovery endpoint for the realm:
@@ -173,7 +173,7 @@ Authorization: basic BASE64(client-id + ':' + client-secret)
         </para>
         <para>
             To create a client do a HTTP POST with the SAML Entity Descriptor to:
-            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;/saml2-entity-descriptor</literal>.
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/saml2-entity-descriptor</literal>.
         </para>
     </section>
 

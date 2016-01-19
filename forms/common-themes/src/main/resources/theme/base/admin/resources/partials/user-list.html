@@ -5,7 +5,7 @@
         <caption data-ng-show="users" class="hidden">Table of realm users</caption>
         <thead>
         <tr>
-            <th colspan="{{access.impersonation == true ? '7' : '6'}}">
+            <th colspan="{{access.impersonation == true ? '8' : '7'}}">
                 <div class="form-inline">
                     <div class="form-group">
                         <div class="input-group">
@@ -26,10 +26,11 @@
         </tr>
         <tr>
         <tr data-ng-show="searchLoaded && users.length > 0">
-            <th>Username</th>
-            <th>Last Name</th>
-            <th>First Name</th>
-            <th>Email</th>
+            <th class="w-15">ID</th>
+            <th class="w-15">Username</th>
+            <th class="w-15">Email</th>
+            <th class="w-15">Last Name</th>
+            <th class="w-15">First Name</th>
             <th colspan="{{access.impersonation == true ? '3' : '2'}}">Actions</th>
         </tr>
         </tr>
@@ -47,10 +48,11 @@
         </tfoot>
         <tbody>
         <tr ng-repeat="user in users">
-            <td><a href="#/realms/{{realm.realm}}/users/{{user.id}}">{{user.username}}</a></td>
-            <td>{{user.lastName}}</td>
-            <td>{{user.firstName}}</td>
-            <td>{{user.email}}</td>
+            <td class="clip"><a href="#/realms/{{realm.realm}}/users/{{user.id}}">{{user.id}}</a></td>
+            <td class="clip">{{user.username}}</td>
+            <td class="clip">{{user.email}}</td>
+            <td class="clip">{{user.lastName}}</td>
+            <td class="clip">{{user.firstName}}</td>
             <td class="kc-action-cell">
                 <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">Edit</button>
             </td>

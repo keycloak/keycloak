@@ -43,6 +43,8 @@
         <skip.unpack.server>true</skip.unpack.server>
         <skip.unpack.previous>true</skip.unpack.previous>
         <skip.install.adapters>true</skip.install.adapters>
+        
+        <jboss.server.config.dir>${project.build.directory}/undertow-configuration</jboss.server.config.dir>
     </properties>
 
     <dependencyManagement>
@@ -96,7 +98,7 @@
                             <auth.server.management.port.jmx>${auth.server.management.port.jmx}</auth.server.management.port.jmx>
                             <auth.server.ssl.required>${auth.server.ssl.required}</auth.server.ssl.required>
                             <startup.timeout.sec>${startup.timeout.sec}</startup.timeout.sec>
-                            <jboss.server.config.dir>${project.build.directory}/undertow-configuration</jboss.server.config.dir>
+                            <jboss.server.config.dir>${jboss.server.config.dir}</jboss.server.config.dir>
                             <skip.install.adapters>${skip.install.adapters}</skip.install.adapters>
                         </systemPropertyVariables>
                         <properties>

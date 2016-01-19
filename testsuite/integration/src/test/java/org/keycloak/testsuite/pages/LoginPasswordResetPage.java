@@ -35,10 +35,10 @@ public class LoginPasswordResetPage extends AbstractPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "feedback-success")
+    @FindBy(className = "alert-success")
     private WebElement emailSuccessMessage;
 
-    @FindBy(className = "feedback-error")
+    @FindBy(className = "alert-error")
     private WebElement emailErrorMessage;
 
     @FindBy(partialLinkText = "Back to Login")

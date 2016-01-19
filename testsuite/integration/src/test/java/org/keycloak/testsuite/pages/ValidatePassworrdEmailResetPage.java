@@ -38,10 +38,10 @@ public class ValidatePassworrdEmailResetPage extends AbstractPage {
     @FindBy(id="kc-cancel")
     private WebElement cancelButton;
 
-    @FindBy(className = "feedback-success")
+    @FindBy(className = "alert-success")
     private WebElement emailSuccessMessage;
 
-    @FindBy(className = "feedback-error")
+    @FindBy(className = "alert-error")
     private WebElement emailErrorMessage;
 
     public void submitCode(String code) {

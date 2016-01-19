@@ -3,60 +3,64 @@
     background-size: 100% auto;
 }
 
-.kc-dropdown{
-    position: relative;
-    z-index: 9999;
+.alert-error {
+    background-color: #ffffff;
+    border-color: #cc0000;
+    color: #333333;
 }
-.kc-dropdown > a{
+
+#kc-locale ul {
+    display: none;
     position: absolute;
-    right: 0px;
-    display:block;
-    padding: 11px 10px 12px;
-    line-height: 12px;
-    font-size: 12px;
-    color: #fff !important;
-    text-decoration: none;
+    background-color: #fff;
+    list-style: none;
+    right: 20px;
+    top: 30px;
+    width: 200px;
+    padding: 2px;
 }
-.kc-dropdown > a::after{
-    content: "\2c5";
-    margin-left: 4px;
+
+#kc-locale:hover ul {
+    display: block;
+    margin: 0;
 }
-.kc-dropdown:hover > a{
-    background-color: rgba(0,0,0,0.2);
-}
-.kc-dropdown ul li a{
+
+#kc-locale ul li a {
+    display: block;
     padding: 1px 11px;
-    font-size: 12px;
     color: #000 !important;
     border: 1px solid #fff;
     text-decoration: none;
     display:block;
     line-height: 20px;
 }
-.kc-dropdown ul li a:hover{
+
+#kc-locale ul li a:hover {
     color: #4d5258;
     background-color: #d4edfa;
     border-color: #b3d3e7;
 }
-.kc-dropdown ul{
-    position: absolute;
-    right: 0px;
-    top: 35px;
-    z-index: 2000;
-    list-style:none;
-    display:none;
-    padding: 5px 0px;
-    margin: 0px;
-    background-color: #fff !important;
-    border: 1px solid #b6b6b6;
-    border-radius: 1px;
-    -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-    background-clip: padding-box;
-    min-width: 100px;
+
+#kc-locale-dropdown a {
+    color: #fff;
 }
-.kc-dropdown:hover ul{
-    display:block;
+
+#kc-locale-dropdown a:hover {
+    text-decoration: none;
+}
+
+a#kc-current-locale-link {
+    display: block;
+    padding: 5px;
+}
+
+a#kc-current-locale-link:hover {
+    background-color: rgba(0,0,0,0.2);
+}
+
+a#kc-current-locale-link::after {
+    content: "\2c5";
+    margin-left: 4px;
 }
 
 .login-pf .container {
@@ -114,57 +118,8 @@
     display: block;
 }
 
-#kc-feedback-wrapper {
-    display: inline-block;
-    width: auto;
-    background-position: left bottom;
-    background-repeat: no-repeat;
-    padding-bottom: 10px;
-}
-
-#kc-feedback span {
-    display: block;
-    padding: 0.90909090909091em 3.63636363636364em;
-    border-style: solid;
-    border-width: 1px 1px 0px 1px;
-    background-repeat: no-repeat;
-    background-position: 1.27272727272727em center;
-    font-weight: normal;
-    line-height: 1.4em;
-    border-radius: 2px;
-    color: #4d5258;
-    margin-bottom: 0;
-}
-
 #kc-terms-text {
     margin-bottom: 20px;
-}
-
-.feedback-error #kc-feedback-wrapper {
-    background-image: url(../img/feedback-error-arrow-down.png);
-}
-.feedback-error span {
-    border-color: #b91415;
-    background-image: url(../img/feedback-error-sign.png);
-    background-color: #f8e7e7;
-}
-
-.feedback-success #kc-feedback-wrapper {
-    background-image: url(../img/feedback-success-arrow-down.png);
-}
-.feedback-success span {
-    border-color: #4b9e39;
-    background-image: url(../img/feedback-success-sign.png);
-    background-color: #e4f1e1;
-}
-
-.feedback-warning #kc-feedback-wrapper {
-    background-image: url(../img/feedback-warning-arrow-down.png);
-}
-.feedback-warning span {
-    border-color: #f17528;
-    background-image: url(../img/feedback-warning-sign.png);
-    background-color: #fef1e9;
 }
 
 #kc-registration {
@@ -283,6 +238,18 @@ ol#kc-totp-settings li:first-of-type {
         top: 50px;
         right: 50px;
     }
+
+    .login-pf .container {
+        padding-right: 80px;
+    }
+
+    #kc-locale {
+        position: relative;
+        width: 200px;
+        left: -230px;
+        text-align: right;
+        z-index: 9999;
+    }
 }
 
 @media (max-width: 767px) {
@@ -298,12 +265,6 @@ ol#kc-totp-settings li:first-of-type {
         padding-right: 15px;
         float: none;
         text-align: center;
-    }
-
-    #kc-feedback {
-        padding-left: 15px;
-        padding-right: 15px;
-        float: none;
     }
 
     #kc-form {
@@ -326,6 +287,15 @@ ol#kc-totp-settings li:first-of-type {
     .login-pf .container {
         padding-top: 15px;
         padding-bottom: 15px;
+    }
+
+    #kc-locale {
+        position: absolute;
+        width: 200px;
+        top: 10px;
+        right: 0px;
+        text-align: right;
+        z-index: 9999;
     }
 }
 
