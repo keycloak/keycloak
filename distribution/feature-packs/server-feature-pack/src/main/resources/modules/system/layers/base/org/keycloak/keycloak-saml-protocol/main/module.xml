@@ -12,7 +12,6 @@
         <module name="org.keycloak.keycloak-saml-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>
         <module name="org.keycloak.keycloak-services"/>
-        <module name="org.keycloak.keycloak-forms-common-freemarker"/>
         <module name="org.apache.httpcomponents" />
         <module name="org.jboss.logging"/>
         <module name="javax.ws.rs.api"/>
