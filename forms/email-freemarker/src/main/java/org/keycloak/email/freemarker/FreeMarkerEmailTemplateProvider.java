@@ -55,6 +55,14 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         return this;
     }
 
+    private String getRealmName() {
+        if (realm.getDisplayName() != null) {
+            return realm.getDisplayName();
+        } else {
+            return ObjectUtil.capitalize(realm.getName());
+        }
+    }
+
     @Override
     public void sendEvent(Event event) throws EmailException {
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -71,8 +79,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
-        String realmName = ObjectUtil.capitalize(realm.getName());
-        attributes.put("realmName", realmName);
+        attributes.put("realmName", getRealmName());
 
         send("passwordResetSubject", "password-reset.ftl", attributes);
     }
@@ -84,8 +91,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
-        String realmName = ObjectUtil.capitalize(realm.getName());
-        attributes.put("realmName", realmName);
+        attributes.put("realmName", getRealmName());
 
         BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
         String idpAlias = brokerContext.getIdpConfig().getAlias();
@@ -105,8 +111,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
-        String realmName = ObjectUtil.capitalize(realm.getName());
-        attributes.put("realmName", realmName);
+        attributes.put("realmName", getRealmName());
 
         send("executeActionsSubject", "executeActions.ftl", attributes);
 
@@ -119,8 +124,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
-        String realmName = ObjectUtil.capitalize(realm.getName());
-        attributes.put("realmName", realmName);
+        attributes.put("realmName", getRealmName());
 
         send("emailVerificationSubject", "email-verification.ftl", attributes);
     }
