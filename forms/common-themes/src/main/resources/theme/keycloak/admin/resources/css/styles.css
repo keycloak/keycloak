@@ -26,7 +26,46 @@ table {
     margin-top: 0px !important;
 }
 
+table {
+    max-width: 100%;
+}
 
+td.clip {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 0;
+}
+
+th.w-10 {
+    width: 10%;
+}
+
+th.w-15 {
+    width: 15%;
+}
+
+th.w-20 {
+    width: 20%;
+}
+
+
+th.w-25 {
+    width: 25%;
+}
+
+th.w-30 {
+    width: 30%;
+}
+
+
+th.w-35 {
+    width: 35%;
+}
+
+th.w-40 {
+    width: 40%;
+}
 
 /*********** Loading ***********/
 
@@ -299,6 +338,9 @@ h1 i {
 .kc-action-cell {
     position: relative;
     width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .kc-action-cell .btn {
@@ -308,6 +350,9 @@ h1 i {
     left: 0;
     right: 0;
     bottom: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .kc-sorter span {
