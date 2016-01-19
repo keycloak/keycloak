@@ -229,4 +229,8 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=48, value="Exception during rollback")
     void exceptionDuringRollback(@Cause RuntimeException e);
+
+    @LogMessage(level = ERROR)
+    @Message(id=49, value="%s")
+    void clientRegistrationException(String message);
 }
