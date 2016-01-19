@@ -295,4 +295,60 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id=64, value="Failed to load messages")
     void failedToloadMessages(@Cause IOException ioe);
+
+    @LogMessage(level = ERROR)
+    @Message(id=65, value="Failed to update Password")
+    void failedToUpdatePassword(@Cause Exception e);
+
+    @LogMessage(level = ERROR)
+    @Message(id=66, value="Could not fire event.")
+    void couldNotFireEvent(@Cause Exception e);
+
+    @LogMessage(level = ERROR)
+    @Message(id=67, value="failed to parse RestartLoginCookie")
+    void failedToParseRestartLoginCookie(@Cause Exception e);
+
+    @LogMessage(level = ERROR)
+    @Message(id=68, value="Not found serialized context in clientSession under note '%s'")
+    void notFoundSerializedCtxInClientSession(String noteKey);
+
+    @LogMessage(level = ERROR)
+    @Message(id=69, value="Flow not configured for identity provider '%s'")
+    void flowNotConfigForIDP(String identityProviderAlias);
+
+    @LogMessage(level = ERROR)
+    @Message(id=70, value="Not found configured flow with ID '%s' for identity provider '%s'")
+    void flowNotFoundForIDP(String flowId, String identityProviderAlias);
+
+    @LogMessage(level = ERROR)
+    @Message(id=71, value="required action doesn't match current required action")
+    void reqdActionDoesNotMatch();
+
+    @LogMessage(level = ERROR)
+    @Message(id=72, value="Invalid key for email verification")
+    void invalidKeyForEmailVerification();
+
+    @LogMessage(level = ERROR)
+    @Message(id=73, value="User session was null")
+    void userSessionNull();
+
+    @LogMessage(level = ERROR)
+    @Message(id=74, value="Required action provider was null")
+    void actionProviderNull();
+
+    @LogMessage(level = WARN)
+    @Message(id=75, value="Failed to get theme request")
+    void failedToGetThemeRequest(@Cause Exception e);
+
+    @LogMessage(level = ERROR)
+    @Message(id=76, value="Rejected non-local attempt to create initial user from %s")
+    void rejectedNonLocalAttemptToCreateInitialUser(String remoteAddr);
+
+    @LogMessage(level = INFO)
+    @Message(id=77, value="Created initial admin user with username %s")
+    void createdInitialAdminUser(String userName);
+
+    @LogMessage(level = WARN)
+    @Message(id=78, value="Rejected attempt to create initial user as user is already created")
+    void initialUserAlreadyCreated();
 }
