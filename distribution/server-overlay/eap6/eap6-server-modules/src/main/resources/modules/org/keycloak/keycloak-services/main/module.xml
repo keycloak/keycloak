@@ -55,6 +55,7 @@
         <module name="org.keycloak.keycloak-social-twitter" services="import"/>
         <module name="org.keycloak.keycloak-social-linkedin" services="import"/>
         <module name="org.keycloak.keycloak-social-stackoverflow" services="import"/>
+        <module name="org.keycloak.keycloak-social-microsoft" services="import"/>
         <module name="org.keycloak.keycloak-timer-api" services="import"/>
         <module name="org.keycloak.keycloak-timer-basic" services="import"/>
         <module name="org.keycloak.keycloak-wildfly-extensions" services="import"/>
