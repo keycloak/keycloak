@@ -106,19 +106,7 @@
         <!-- mongo -->
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-connections-mongo</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-connections-mongo-update</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-mongo</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-events-mongo</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>

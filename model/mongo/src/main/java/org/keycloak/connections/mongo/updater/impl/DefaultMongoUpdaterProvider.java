@@ -6,7 +6,6 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.mongo.updater.MongoUpdaterProvider;
-import org.keycloak.connections.mongo.updater.impl.updates.*;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.Date;
