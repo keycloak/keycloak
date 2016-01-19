@@ -6,6 +6,15 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.mongo.updater.MongoUpdaterProvider;
+import org.keycloak.connections.mongo.updater.impl.updates.Update;
+import org.keycloak.connections.mongo.updater.impl.updates.Update1_0_0_Final;
+import org.keycloak.connections.mongo.updater.impl.updates.Update1_1_0_Beta1;
+import org.keycloak.connections.mongo.updater.impl.updates.Update1_2_0_Beta1;
+import org.keycloak.connections.mongo.updater.impl.updates.Update1_2_0_CR1;
+import org.keycloak.connections.mongo.updater.impl.updates.Update1_3_0;
+import org.keycloak.connections.mongo.updater.impl.updates.Update1_4_0;
+import org.keycloak.connections.mongo.updater.impl.updates.Update1_7_0;
+import org.keycloak.connections.mongo.updater.impl.updates.Update1_8_0;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.Date;
