@@ -28,7 +28,7 @@
         <profile>
             <id>auth-server-eap7</id>
             <properties>
-                <keycloak.server.home>${project.build.directory}/unpacked/RH-SSO-7.0</keycloak.server.home>
+                <keycloak.server.home>${project.build.directory}/unpacked/${unpacked.container.folder.name}</keycloak.server.home>
             </properties>
             <build>
                 <plugins>
@@ -45,6 +45,9 @@
                                     <rules>
                                         <requireProperty>
                                             <property>version.server.dist</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>unpacked.container.folder.name</property>
                                         </requireProperty>
                                     </rules>
                                 </configuration>
