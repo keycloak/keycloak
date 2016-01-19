@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.managers;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.session.UserSessionPersisterProvider;
@@ -61,7 +60,6 @@ import org.keycloak.protocol.ProtocolMapperUtils;
  * @version $Revision: 1 $
  */
 public class RealmManager implements RealmImporter {
-    protected static final Logger logger = Logger.getLogger(RealmManager.class);
 
     protected KeycloakSession session;
     protected RealmProvider model;

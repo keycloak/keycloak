@@ -1,12 +1,28 @@
+/*
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.keycloak.services.managers;
 
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.services.ServicesLogger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  * @version $Revision: 1 $
  */
 public class BruteForceProtector implements Runnable {
-    protected static Logger logger = Logger.getLogger(BruteForceProtector.class);
+    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     protected volatile boolean run = true;
     protected int maxDeltaTimeSeconds = 60 * 60 * 12; // 12 hours
@@ -178,7 +194,7 @@ public class BruteForceProtector implements Runnable {
                             session.close();
                         }
                     } catch (Exception e) {
-                        logger.error("Failed processing type", e);
+                        logger.failedProcessingType(e);
                     }
                 } catch (InterruptedException e) {
                     break;
@@ -190,7 +206,7 @@ public class BruteForceProtector implements Runnable {
     }
 
     protected void logFailure(LoginEvent event) {
-        logger.warn("login failure for user " + event.username + " from ip " + event.ip);
+        logger.loginFailure(event.username, event.ip);
         failures++;
         long delta = 0;
         if (lastFailure > 0) {
