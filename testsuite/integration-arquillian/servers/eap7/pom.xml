@@ -21,24 +21,6 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>            
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>create-zip</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>assembly.xml</descriptor>
-                            </descriptors>
-                            <appendAssemblyId>false</appendAssemblyId>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
     
@@ -46,16 +28,8 @@
         <profile>
             <id>auth-server-eap7</id>
             <properties>
-                <keycloak.server.home>${project.build.directory}/unpacked/jboss-iam-1.0</keycloak.server.home>
+                <keycloak.server.home>${project.build.directory}/unpacked/RH-SSO-7.0</keycloak.server.home>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-eap6-server-dist</artifactId>
-                    <version>${version.server.dist}</version>
-                    <type>zip</type>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -97,6 +71,24 @@
                                             <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
                                         </artifactItem>
                                     </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>create-zip</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>assembly.xml</descriptor>
+                                    </descriptors>
+                                    <appendAssemblyId>false</appendAssemblyId>
                                 </configuration>
                             </execution>
                         </executions>
