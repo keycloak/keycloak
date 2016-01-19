@@ -221,4 +221,12 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id=46, value="Multiple values found '%s' for protocol mapper '%s' but expected just single value")
     void multipleValuesForMapper(String attrValue, String mapper);
+
+    @LogMessage(level = WARN)
+    @Message(id=47, value="%s (%s) is implementing the internal SPI %s. This SPI is internal and may change without notice")
+    void spiMayChange(String factoryId, String factoryClass, String spiName);
+
+    @LogMessage(level = ERROR)
+    @Message(id=48, value="Exception during rollback")
+    void exceptionDuringRollback(@Cause RuntimeException e);
 }
