@@ -796,7 +796,11 @@ public class UsersResource {
             String link = builder.build(realm.getName()).toString();
             long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
 
-            this.session.getProvider(EmailTemplateProvider.class).setRealm(realm).setUser(user).sendExecuteActions(link, expiration);
+            this.session.getProvider(EmailTemplateProvider.class) //
+                        .setRealm(realm) //
+                        .setUser(user) //
+                        .setAttribute("clientId", clientSession.getClient().getClientId()) //
+                        .sendExecuteActions(link, expiration);
 
             //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
 

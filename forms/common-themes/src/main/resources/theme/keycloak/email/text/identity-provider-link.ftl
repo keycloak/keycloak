@@ -1,1 +1,1 @@
-${msg("identityProviderLinkBody", identityProviderAlias, realmName, identityProviderContext.username, link, linkExpiration)}
+${msg("identityProviderLinkBody", identityProviderAlias, realmName, identityProviderContext.username, link, linkExpiration, clientId)}
