@@ -11,8 +11,6 @@
         <module name="org.keycloak.keycloak-broker-saml" services="import"/>
         <module name="org.keycloak.keycloak-connections-http-client" services="import"/>
         <module name="org.keycloak.keycloak-connections-infinispan" services="import"/>
-        <module name="org.keycloak.keycloak-connections-jpa" services="import"/>
-        <module name="org.keycloak.keycloak-connections-jpa-liquibase" services="import"/>
         <module name="org.keycloak.keycloak-connections-mongo" services="import"/>
         <module name="org.keycloak.keycloak-connections-mongo-update" services="import"/>
         <module name="org.keycloak.keycloak-connections-truststore" services="import"/>
@@ -20,7 +18,6 @@
         <module name="org.keycloak.keycloak-core" services="import"/>
         <module name="org.keycloak.keycloak-events-email" services="import"/>
         <module name="org.keycloak.keycloak-events-jboss-logging" services="import"/>
-        <module name="org.keycloak.keycloak-events-jpa" services="import"/>
         <module name="org.keycloak.keycloak-events-mongo" services="import"/>
         <module name="org.keycloak.keycloak-forms-common-themes" services="import"/>
         <module name="org.keycloak.keycloak-invalidation-cache-infinispan" services="import"/>

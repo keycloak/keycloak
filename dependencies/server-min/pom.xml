@@ -49,10 +49,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-events-jpa</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-events-jboss-logging</artifactId>
         </dependency>
         <dependency>

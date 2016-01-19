@@ -22,14 +22,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-connections-jpa</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-connections-jpa-liquibase</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-connections-infinispan</artifactId>
         </dependency>
         <dependency>
@@ -43,10 +35,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-invalidation-cache-infinispan</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-events-jpa</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
