@@ -70,6 +70,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.keycloak.models.UsernameLoginFailureModel;
@@ -207,9 +208,15 @@ public class UsersResource {
         if (realm.isEditUsernameAllowed()) {
             user.setUsername(rep.getUsername());
         }
-        user.setEmail(rep.getEmail());
-        user.setFirstName(rep.getFirstName());
-        user.setLastName(rep.getLastName());
+        if (!Objects.equals(user.getEmail(), rep.getEmail())) {
+            user.setEmail(rep.getEmail());
+        }
+        if (!Objects.equals(user.getFirstName(), rep.getFirstName())) {
+            user.setFirstName(rep.getFirstName());
+        }
+        if (!Objects.equals(user.getLastName(), rep.getLastName())) {
+            user.setLastName(rep.getLastName());
+        }
 
         if (rep.isEnabled() != null) user.setEnabled(rep.isEnabled());
         if (rep.isTotp() != null) user.setOtpEnabled(rep.isTotp());
