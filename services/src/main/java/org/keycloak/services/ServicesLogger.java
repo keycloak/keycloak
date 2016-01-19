@@ -217,4 +217,8 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=45, value="Invalid token. Token verification failed.")
     void invalidToken();
+
+    @LogMessage(level = WARN)
+    @Message(id=46, value="Multiple values found '%s' for protocol mapper '%s' but expected just single value")
+    void multipleValuesForMapper(String attrValue, String mapper);
 }

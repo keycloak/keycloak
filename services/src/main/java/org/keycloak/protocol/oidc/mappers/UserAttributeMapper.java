@@ -1,6 +1,5 @@
 package org.keycloak.protocol.oidc.mappers;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -111,7 +110,7 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         if (multivalued) {
             mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
         }
-        
+
         return mapper;
     }
 
