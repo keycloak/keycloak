@@ -51,6 +51,7 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
@@ -91,7 +92,7 @@ import java.util.UUID;
  */
 public class AccountService extends AbstractSecuredLocalService {
 
-    private static final Logger logger = Logger.getLogger(AccountService.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private static Set<String> VALID_PATHS = new HashSet<String>();
     static {
@@ -641,11 +642,11 @@ public class AccountService extends AbstractSecuredLocalService {
             setReferrerOnPage();
             return account.setError(Messages.READ_ONLY_PASSWORD).createResponse(AccountPages.PASSWORD);
         }catch (ModelException me) {
-            logger.error("Failed to update password", me);
+            logger.failedToUpdatePassword(me);
             setReferrerOnPage();
             return account.setError(me.getMessage(), me.getParameters()).createResponse(AccountPages.PASSWORD);
         }catch (Exception ape) {
-            logger.error("Failed to update password", ape);
+            logger.failedToUpdatePassword(ape);
             setReferrerOnPage();
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }

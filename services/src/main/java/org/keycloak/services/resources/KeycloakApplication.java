@@ -1,3 +1,20 @@
+/*
+ * JBoss, Home of Professional Open Source
+ *
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.services.resources;
 
 import org.codehaus.jackson.JsonNode;
@@ -44,7 +61,7 @@ import java.util.*;
  */
 public class KeycloakApplication extends Application {
 
-    private static final ServicesLogger log = ServicesLogger.ROOT_LOGGER;
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
@@ -138,7 +155,7 @@ public class KeycloakApplication extends Application {
             session.getTransaction().commit();
         } catch (Exception e) {
             session.getTransaction().rollback();
-            log.migrationFailure(e);
+            logger.migrationFailure(e);
         } finally {
             session.close();
         }
@@ -166,7 +183,7 @@ public class KeycloakApplication extends Application {
             if (configDir != null) {
                 File f = new File(configDir + File.separator + "keycloak-server.json");
                 if (f.isFile()) {
-                    log.loadingFrom(f.getAbsolutePath());
+                    logger.loadingFrom(f.getAbsolutePath());
                     node = new ObjectMapper().readTree(f);
                 }
             }
@@ -174,7 +191,7 @@ public class KeycloakApplication extends Application {
             if (node == null) {
                 URL resource = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
                 if (resource != null) {
-                    log.loadingFrom(resource);
+                    logger.loadingFrom(resource);
                     node = new ObjectMapper().readTree(resource);
                 }
             }
@@ -250,22 +267,22 @@ public class KeycloakApplication extends Application {
             manager.setContextPath(getContextPath());
 
             if (rep.getId() != null && manager.getRealm(rep.getId()) != null) {
-                log.realmExists(rep.getRealm(), from);
+                logger.realmExists(rep.getRealm(), from);
                 return;
             }
 
             if (manager.getRealmByName(rep.getRealm()) != null) {
-                log.realmExists(rep.getRealm(), from);
+                logger.realmExists(rep.getRealm(), from);
                 return;
             }
 
             try {
                 RealmModel realm = manager.importRealm(rep);
                 session.getTransaction().commit();
-                log.importedRealm(realm.getName(), from);
+                logger.importedRealm(realm.getName(), from);
             } catch (Throwable t) {
                 session.getTransaction().rollback();
-                log.unableToImportRealm(t, rep.getRealm(), from);
+                logger.unableToImportRealm(t, rep.getRealm(), from);
             }
         } finally {
             session.close();
@@ -277,14 +294,14 @@ public class KeycloakApplication extends Application {
         if (configDir != null) {
             File addUserFile = new File(configDir + File.separator + "keycloak-add-user.json");
             if (addUserFile.isFile()) {
-                log.imprtingUsersFrom(addUserFile);
+                logger.imprtingUsersFrom(addUserFile);
 
                 List<RealmRepresentation> realms;
                 try {
                     realms = JsonSerialization.readValue(new FileInputStream(addUserFile), new TypeReference<List<RealmRepresentation>>() {
                     });
                 } catch (IOException e) {
-                    log.failedToLoadUsers(e);
+                    logger.failedToLoadUsers(e);
                     return;
                 }
 
@@ -296,7 +313,7 @@ public class KeycloakApplication extends Application {
 
                             RealmModel realm = session.realms().getRealmByName(realmRep.getRealm());
                             if (realm == null) {
-                                log.addUserFailedRealmNotFound(userRep.getUsername(), realmRep.getRealm());
+                                logger.addUserFailedRealmNotFound(userRep.getUsername(), realmRep.getRealm());
                             } else {
                                 UserModel user = session.users().addUser(realm, userRep.getUsername());
                                 user.setEnabled(userRep.isEnabled());
@@ -305,12 +322,12 @@ public class KeycloakApplication extends Application {
                             }
 
                             session.getTransaction().commit();
-                            log.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
+                            logger.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
                         } catch (ModelDuplicateException e) {
-                            log.addUserFailedUserExists(userRep.getUsername(), realmRep.getRealm());
+                            logger.addUserFailedUserExists(userRep.getUsername(), realmRep.getRealm());
                         } catch (Throwable t) {
                             session.getTransaction().rollback();
-                            log.addUserFailed(t, userRep.getUsername(), realmRep.getRealm());
+                            logger.addUserFailed(t, userRep.getUsername(), realmRep.getRealm());
                         } finally {
                             session.close();
                         }
@@ -318,7 +335,7 @@ public class KeycloakApplication extends Application {
                 }
 
                 if (!addUserFile.delete()) {
-                    log.failedToDeleteFile(addUserFile.getAbsolutePath());
+                    logger.failedToDeleteFile(addUserFile.getAbsolutePath());
                 }
             }
         }
