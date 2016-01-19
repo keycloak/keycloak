@@ -17,7 +17,9 @@
 
 package org.keycloak.services;
 
+import java.io.IOException;
 import java.net.URI;
+import javax.naming.NamingException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -233,4 +235,56 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=49, value="%s")
     void clientRegistrationException(String message);
+
+    @LogMessage(level = INFO)
+    @Message(id=50, value="Initializing %s realm")
+    void initializingAdminRealm(String adminRealmName);
+
+    @LogMessage(level = WARN)
+    @Message(id=51, value="Failed to logout client, continuing")
+    void failedToLogoutClient(@Cause Exception e);
+
+    @LogMessage(level = ERROR)
+    @Message(id=52, value="Failed processing type")
+    void failedProcessingType(@Cause Exception e);
+
+    @LogMessage(level = WARN)
+    @Message(id=53, value="login failure for user %s from ip %s")
+    void loginFailure(String user, String ip);
+
+    @LogMessage(level = ERROR)
+    @Message(id=54, value="Unknown action: %s")
+    void unknownAction(String action);
+
+    @LogMessage(level = ERROR)
+    @Message(id=55, value="%s")
+    void errorAuthenticating(@Cause Exception e, String message);
+
+    @LogMessage(level = WARN)
+    @Message(id=56, value="Error when closing LDAP connection")
+    void errorClosingLDAP(@Cause NamingException ne);
+
+    @LogMessage(level = WARN)
+    @Message(id=57, value="Logout for client '%s' failed")
+    void logoutFailed(@Cause IOException ioe, String clientId);
+
+    @LogMessage(level = WARN)
+    @Message(id=58, value="Failed to send revocation request")
+    void failedToSendRevocation(@Cause IOException ioe);
+
+    @LogMessage(level = WARN)
+    @Message(id=59, value="Availability test failed for uri '%s'")
+    void availabilityTestFailed(String managementUrl);
+
+    @LogMessage(level = WARN)
+    @Message(id=60, value="Role '%s' not available in realm")
+    void roleNotInRealm(String offlineAccessRole);
+
+    @LogMessage(level = ERROR)
+    @Message(id=61, value="Error occurred during full sync of users")
+    void errorDuringFullUserSync(@Cause Throwable t);
+
+    @LogMessage(level = ERROR)
+    @Message(id=62, value="Error occurred during sync of changed users")
+    void errorDuringChangedUserSync(@Cause Throwable t);
 }
