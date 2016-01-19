@@ -110,7 +110,7 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         if (multivalued) {
             mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
         }
-        
+
         return mapper;
     }
 
