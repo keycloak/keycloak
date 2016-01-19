@@ -11,14 +11,13 @@
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-saml-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>
-        <module name="org.keycloak.keycloak-services"/>
+        <module name="org.keycloak.keycloak-services" services="import"/>
         <module name="org.apache.httpcomponents" />
         <module name="org.jboss.logging"/>
         <module name="javax.ws.rs.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         <module name="org.jboss.resteasy.resteasy-crypto"/>
         <module name="org.jboss.resteasy.resteasy-multipart-provider"/>
-        <module name="org.keycloak.keycloak-connections-http-client" services="import"/>
 
         <module name="javax.api"/>
         <module name="javax.xml.soap.api"/>

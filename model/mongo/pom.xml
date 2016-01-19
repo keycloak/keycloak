@@ -30,7 +30,6 @@
             <artifactId>keycloak-server-spi</artifactId>
             <scope>provided</scope>
         </dependency>
-         </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>

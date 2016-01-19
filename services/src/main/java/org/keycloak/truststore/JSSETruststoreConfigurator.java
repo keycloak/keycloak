@@ -1,9 +1,12 @@
-package org.keycloak.connections.truststore;
+package org.keycloak.truststore;
 
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.truststore.HostnameVerificationPolicy;
+import org.keycloak.truststore.TruststoreProvider;
+import org.keycloak.truststore.TruststoreProviderFactory;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;

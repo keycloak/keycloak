@@ -1,4 +1,4 @@
-package org.keycloak.connections.truststore;
+package org.keycloak.truststore;
 
 import org.keycloak.provider.Provider;
 

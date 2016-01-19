@@ -14,8 +14,6 @@
 
     <modules>
         <module>infinispan</module>
-        <module>http-client</module>
-        <module>truststore</module>
     </modules>
 
     <build>

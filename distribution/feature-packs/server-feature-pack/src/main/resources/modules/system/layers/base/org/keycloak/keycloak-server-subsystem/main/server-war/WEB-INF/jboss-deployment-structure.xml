@@ -2,7 +2,6 @@
     <deployment>
         <dependencies>
             <module name="org.keycloak.keycloak-connections-infinispan" services="import"/>
-            <module name="org.keycloak.keycloak-connections-truststore" services="import"/>
             <module name="org.keycloak.keycloak-common" services="import"/>
             <module name="org.keycloak.keycloak-core" services="import"/>
             <module name="org.keycloak.keycloak-events-email" services="import"/>
