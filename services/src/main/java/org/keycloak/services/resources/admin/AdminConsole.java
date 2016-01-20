@@ -1,7 +1,22 @@
+/*
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.keycloak.services.resources.admin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
@@ -21,6 +36,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -48,7 +64,7 @@ import javax.ws.rs.QueryParam;
  * @version $Revision: 1 $
  */
 public class AdminConsole {
-    protected static final Logger logger = Logger.getLogger(AdminConsole.class);
+    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     @Context
     protected UriInfo uriInfo;
@@ -302,18 +318,18 @@ public class AdminConsole {
     @Produces(MediaType.APPLICATION_JSON)
     public Properties getMessages(@QueryParam("lang") String lang) {
         if (lang == null) {
-            logger.warn("Locale not specified for messages.json");
+            logger.localeNotSpecified();
             lang = "en";
         }
 
         try {
             Properties msgs = getTheme().getMessages("admin-messages", Locale.forLanguageTag(lang));
             if (msgs.isEmpty()) {
-                logger.warn("Message bundle not found for language code '" + lang + "'");
+                logger.msgBundleNotFound(lang);
                 msgs = getTheme().getMessages("admin-messages", Locale.ENGLISH);
             }
 
-            if (msgs.isEmpty()) logger.fatal("Message bundle not found for language code 'en'");
+            if (msgs.isEmpty()) logger.msgBundleNotFoundForEn();
 
             return msgs;
         } catch (IOException e) {
