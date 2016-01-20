@@ -1,6 +1,21 @@
+/*
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.keycloak.services.resources.admin;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
@@ -23,6 +38,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.Consumes;
@@ -57,7 +73,7 @@ public class AuthenticationManagementResource {
     @Context
     private UriInfo uriInfo;
 
-    private static Logger logger = Logger.getLogger(AuthenticationManagementResource.class);
+    private static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public AuthenticationManagementResource(RealmModel realm, KeycloakSession session, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
@@ -276,7 +292,7 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createFlow(AuthenticationFlowModel model) {
         this.auth.requireManage();
-        
+
         if (model.getAlias() == null || model.getAlias().isEmpty()) {
             return ErrorResponse.exists("Failed to create flow with empty alias name");
         }
@@ -715,12 +731,12 @@ public class AuthenticationManagementResource {
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to remove execution from a built in flow");
         }
-        
+
         if(model.getFlowId() != null) {
         	AuthenticationFlowModel nonTopLevelFlow = realm.getAuthenticationFlowById(model.getFlowId());
         	realm.removeAuthenticationFlow(nonTopLevelFlow);
         }
-		
+
         realm.removeAuthenticatorExecution(model);
     }
 
