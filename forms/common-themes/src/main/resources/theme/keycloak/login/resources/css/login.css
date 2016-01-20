@@ -246,6 +246,9 @@ ol#kc-totp-settings li:first-of-type {
 .zocial.facebook,
 .zocial.github,
 .zocial.google,
+.zocial.microsoft,
+.zocial.stackoverflow,
+.zocial.linkedin,
 .zocial.twitter {
     background-image: none;
     border-radius: 2px;
@@ -267,9 +270,17 @@ ol#kc-totp-settings li:first-of-type {
 .zocial.facebook:hover,
 .zocial.github:hover,
 .zocial.google:hover,
+.zocial.microsoft:hover,
+.zocial.stackoverflow:hover,
+.zocial.linkedin:hover,
 .zocial.twitter:hover {
     background-image: linear-gradient(rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 100%) !important;
 }
+
+/* Copy of zocial windows classes to be used for microsoft's social provider button */
+.zocial.microsoft {background-color: #0052a4; color: #fff;}
+.zocial.microsoft:before { content: "\f15d"; }
+
 
 @media (min-width: 768px) {
     #kc-container-wrapper {
