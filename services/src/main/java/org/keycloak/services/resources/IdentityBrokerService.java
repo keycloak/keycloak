@@ -94,7 +94,6 @@ import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 public class IdentityBrokerService implements IdentityProvider.AuthenticationCallback {
 
     private static final Logger LOGGER = Logger.getLogger(IdentityBrokerService.class);
-    public static final String BROKER_PROVIDER_ID = "BROKER_PROVIDER_ID";
 
     private final RealmModel realmModel;
 
@@ -514,7 +513,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         TokenManager.attachClientSession(userSession, clientSession);
         context.getIdp().attachUserSession(userSession, clientSession, context);
-        userSession.setNote(BROKER_PROVIDER_ID, providerId);
+        userSession.setNote(Details.IDENTITY_PROVIDER, providerId);
+        userSession.setNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
 
         if (isDebugEnabled()) {
             LOGGER.debugf("Performing local authentication for user [%s].", federatedUser);
