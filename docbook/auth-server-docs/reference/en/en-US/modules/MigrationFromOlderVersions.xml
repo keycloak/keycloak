@@ -95,6 +95,15 @@
                     Feedback in template.ftl has been moved and format has changed slightly.
                 </para>
             </simplesect>
+            <simplesect>
+                <title>Module and Source Code Re-org</title>
+                <para>
+                    Most of our modules and source code have been consolidated into two maven modules:  keycloak-server-spi and
+                    keycloak-services.  SPI interfaces are in server-spi, implementations are in keycloak-services.
+                    All JPA dependent modules have been consolidated under keycloak-model-jpa.  Same goes
+                    with mongo and infinispan under modules keycloak-model-mongo and keycloak-model-infinispan.
+                </para>
+            </simplesect>
         </section>
         <section>
             <title>Migrating to 1.8.0</title>

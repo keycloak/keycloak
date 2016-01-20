@@ -15,3 +15,4 @@ org.keycloak.authentication.authenticators.broker.IdpConfirmLinkAuthenticatorFac
 org.keycloak.authentication.authenticators.broker.IdpEmailVerificationAuthenticatorFactory
 org.keycloak.authentication.authenticators.broker.IdpUsernamePasswordFormFactory
 org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticatorFactory
+org.keycloak.protocol.saml.profile.ecp.authenticator.HttpBasicAuthenticator

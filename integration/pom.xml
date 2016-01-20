@@ -14,24 +14,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>adapter-spi</module>
-        <module>servlet-adapter-spi</module>
-        <module>adapter-core</module>
-        <module>jaxrs-oauth-client</module>
-        <module>servlet-oauth-client</module>
-        <module>jboss-adapter-core</module>
-        <module>tomcat</module>
-        <module>as7-eap6</module>
-        <module>jetty</module>
-        <module>undertow-adapter-spi</module>
-        <module>undertow</module>
-        <module>wildfly</module>
-        <module>servlet-filter</module>
-        <module>js</module>
-        <module>installed</module>
         <module>admin-client</module>
-        <module>osgi-adapter</module>
-        <module>spring-boot</module>
-        <module>spring-security</module>
     </modules>
 </project>
