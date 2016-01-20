@@ -393,4 +393,12 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=88, value="Failed to send execute actions email")
     void failedToSendActionsEmail(@Cause EmailException e);
+
+    @LogMessage(level = ERROR)
+    @Message(id=89, value="Failed to run scheduled task %s")
+    void failedToRunScheduledTask(@Cause Throwable t, String taskClass);
+
+    @LogMessage(level = ERROR)
+    @Message(id=90, value="Failed to close ProviderSession")
+    void failedToCloseProviderSession(@Cause Throwable t);
 }
