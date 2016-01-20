@@ -49,10 +49,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-events-jpa</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-events-jboss-logging</artifactId>
         </dependency>
         <dependency>
@@ -68,14 +64,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-forms-common-themes</artifactId>
-        </dependency>
-         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-connections-truststore</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-connections-http-client</artifactId>
         </dependency>
     </dependencies>
 

@@ -1,8 +1,8 @@
 package org.keycloak.email;
 
 import org.jboss.logging.Logger;
-import org.keycloak.connections.truststore.HostnameVerificationPolicy;
-import org.keycloak.connections.truststore.JSSETruststoreConfigurator;
+import org.keycloak.truststore.HostnameVerificationPolicy;
+import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
