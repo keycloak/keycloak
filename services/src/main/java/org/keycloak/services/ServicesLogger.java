@@ -28,9 +28,11 @@ import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 
 import static org.jboss.logging.Logger.Level.ERROR;
+import static org.jboss.logging.Logger.Level.FATAL;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 import org.keycloak.email.EmailException;
+import org.keycloak.events.EventListenerProvider;
 import org.keycloak.models.ModelDuplicateException;
 
 
@@ -351,4 +353,44 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id=78, value="Rejected attempt to create initial user as user is already created")
     void initialUserAlreadyCreated();
+
+    @LogMessage(level = WARN)
+    @Message(id=79, value="Locale not specified for messages.json")
+    void localeNotSpecified();
+
+    @LogMessage(level = WARN)
+    @Message(id=80, value="Message bundle not found for language code '%s'")
+    void msgBundleNotFound(String lang);
+
+    @LogMessage(level = FATAL)
+    @Message(id=81, value="Message bundle not found for language code 'en'")
+    void msgBundleNotFoundForEn();
+
+    @LogMessage(level = ERROR)
+    @Message(id=82, value="Admin Events enabled, but no event store provider configured")
+    void noEventStoreProvider();
+
+    @LogMessage(level = ERROR)
+    @Message(id=83, value="Event listener '%s' registered, but provider not found")
+    void providerNotFound(String id);
+
+    @LogMessage(level = ERROR)
+    @Message(id=84, value="Failed to save event")
+    void failedToSaveEvent(@Cause Throwable t);
+
+    @LogMessage(level = ERROR)
+    @Message(id=85, value="Failed to send type to %s")
+    void failedToSendType(@Cause Throwable t, EventListenerProvider listener);
+
+    @LogMessage(level = INFO)
+    @Message(id=86, value="Added 'kerberos' to required realm credentials")
+    void addedKerberosToRealmCredentials();
+
+    @LogMessage(level = INFO)
+    @Message(id=87, value="Syncing data for mapper '%s' of type '%s'. Direction: %s")
+    void syncingDataForMapper(String modelName, String mapperType, String direction);
+
+    @LogMessage(level = ERROR)
+    @Message(id=88, value="Failed to send execute actions email")
+    void failedToSendActionsEmail(@Cause EmailException e);
 }

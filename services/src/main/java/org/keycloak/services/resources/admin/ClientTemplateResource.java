@@ -1,6 +1,21 @@
+/*
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.keycloak.services.resources.admin;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
@@ -26,6 +41,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
@@ -63,7 +79,7 @@ import static java.lang.Boolean.TRUE;
  * @version $Revision: 1 $
  */
 public class ClientTemplateResource {
-    protected static final Logger logger = Logger.getLogger(ClientTemplateResource.class);
+    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     protected RealmModel realm;
     private RealmAuth auth;
     private AdminEventBuilder adminEvent;
