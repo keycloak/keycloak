@@ -25,5 +25,6 @@ org.keycloak.email.EmailTemplateSpi
 org.keycloak.theme.ThemeSpi
 org.keycloak.truststore.TruststoreSpi
 org.keycloak.connections.httpclient.HttpClientSpi
-
+org.keycloak.models.cache.CacheRealmProviderSpi
+org.keycloak.models.cache.CacheUserProviderSpi
 

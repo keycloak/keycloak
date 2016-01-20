@@ -22,19 +22,11 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-connections-infinispan</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-jpa</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-sessions-infinispan</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-invalidation-cache-infinispan</artifactId>
+            <artifactId>keycloak-model-infinispan</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

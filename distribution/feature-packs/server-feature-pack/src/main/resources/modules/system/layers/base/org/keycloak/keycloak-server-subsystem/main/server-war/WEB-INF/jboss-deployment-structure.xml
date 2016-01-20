@@ -1,21 +1,18 @@
 <jboss-deployment-structure>
     <deployment>
         <dependencies>
-            <module name="org.keycloak.keycloak-connections-infinispan" services="import"/>
             <module name="org.keycloak.keycloak-common" services="import"/>
             <module name="org.keycloak.keycloak-core" services="import"/>
             <module name="org.keycloak.keycloak-events-email" services="import"/>
             <module name="org.keycloak.keycloak-events-jboss-logging" services="import"/>
             <module name="org.keycloak.keycloak-forms-common-themes" services="import"/>
-            <module name="org.keycloak.keycloak-invalidation-cache-infinispan" services="import"/>
-            <module name="org.keycloak.keycloak-invalidation-cache-model" services="import"/>
             <module name="org.keycloak.keycloak-js-adapter" services="import"/>
             <module name="org.keycloak.keycloak-kerberos-federation" services="import"/>
             <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
             <module name="org.keycloak.keycloak-server-spi" services="import"/>
             <module name="org.keycloak.keycloak-model-jpa" services="import" meta-inf="import"/>
             <module name="org.keycloak.keycloak-model-mongo" services="import"/>
-            <module name="org.keycloak.keycloak-model-sessions-infinispan" services="import"/>
+            <module name="org.keycloak.keycloak-model-infinispan" services="import"/>
             <module name="org.keycloak.keycloak-saml-protocol" services="import"/>
             <module name="org.keycloak.keycloak-services" export="true" services="import"/>
             <module name="org.keycloak.keycloak-social-facebook" services="import"/>

@@ -45,10 +45,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-invalidation-cache-model</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-events-jboss-logging</artifactId>
         </dependency>
         <dependency>
