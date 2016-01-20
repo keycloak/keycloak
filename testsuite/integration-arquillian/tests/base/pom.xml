@@ -9,7 +9,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>integration-arquillian-tests-base</artifactId>
-    <name>Base Test Suite</name>
+
+    <name>Base TestSuite</name>
+    
+    <description></description>
 
     <properties>
         <exclude.console>-</exclude.console>
@@ -17,8 +20,9 @@
         <exclude.client>-</exclude.client>
         <exclude.migration>-</exclude.migration>
     </properties>
-	<dependencies>
-	    <dependency>
+    
+    <dependencies>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-util-embedded-ldap</artifactId>
             <exclusions>
@@ -28,7 +32,8 @@
                 </exclusion>
             </exclusions>
         </dependency>
-	</dependencies>
+    </dependencies>
+    
     <build>
         <plugins>
             <plugin>
@@ -43,6 +48,7 @@
                     </execution>
                 </executions>
             </plugin>
+            
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -55,17 +61,37 @@
                     </excludes>
                 </configuration>
             </plugin>
+        
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-admin-user-json-file</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${jboss.server.config.dir}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/test/resources</directory>
+                                    <includes>
+                                        <include>keycloak-add-user.json</include>
+                                    </includes>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
         </plugins>
+
     </build>
     
     <profiles>    
-        <profile>
-            <id>no-console</id>
-            <properties>
-                <!-- Exclude all admin console tests. -->
-                <exclude.console>**/console/**/*Test.java</exclude.console>           
-            </properties>
-        </profile>
         <profile>
             <id>no-account</id>
             <properties>
@@ -76,14 +102,13 @@
         <profile>
             <id>no-client</id>
             <properties>
-                <!-- Exclude all account management tests. -->
-                <exclude.account>**/client/**/*Test.java</exclude.account>
+                <!-- Exclude all client tests. -->
+                <exclude.client>**/client/**/*Test.java</exclude.client>
             </properties>
         </profile>
         <profile>
             <id>adapters-only</id>
             <properties>
-                <exclude.console>**/console/**/*Test.java</exclude.console>           
                 <exclude.account>**/account/**/*Test.java</exclude.account>
                 <exclude.client>**/client/**/*Test.java</exclude.client>
                 <exclude.migration>**/migration/**/*Test.java</exclude.migration>

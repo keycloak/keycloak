@@ -1,18 +1,21 @@
 <?xml version="1.0"?>
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <version>1.9.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
     
     <groupId>org.keycloak.testsuite</groupId>
     <artifactId>integration-arquillian</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak Integration TestSuite with Arquillian</name>
+
+    <name>Keycloak Arquillian Integration TestSuite</name>
     
     <modules>
         <module>servers</module>
