@@ -149,6 +149,7 @@
         <module>model</module>
         <module>events</module>
         <module>saml</module>
+        <!-- force -->
         <module>broker</module>
         <module>social</module>
         <module>forms</module>
