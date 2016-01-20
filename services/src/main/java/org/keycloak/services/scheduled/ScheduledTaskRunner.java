@@ -1,15 +1,15 @@
 package org.keycloak.services.scheduled;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.services.ServicesLogger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ScheduledTaskRunner implements Runnable {
 
-    private static final Logger logger = Logger.getLogger(ScheduledTaskRunner.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private final KeycloakSessionFactory sessionFactory;
     private final ScheduledTask task;
@@ -29,14 +29,14 @@ public class ScheduledTaskRunner implements Runnable {
 
             logger.debug("Executed scheduled task " + task.getClass().getSimpleName());
         } catch (Throwable t) {
-            logger.error("Failed to run scheduled task " + task.getClass().getSimpleName(), t);
+            logger.failedToRunScheduledTask(t, task.getClass().getSimpleName());
 
             session.getTransaction().rollback();
         } finally {
             try {
                 session.close();
             } catch (Throwable t) {
-                logger.error("Failed to close ProviderSession", t);
+                logger.failedToCloseProviderSession(t);
             }
         }
     }
