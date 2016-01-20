@@ -20,6 +20,7 @@
     <properties>
         <containers.home>${project.build.directory}/containers</containers.home>
         <examples.home>${project.build.directory}/examples</examples.home>
+        <jboss.server.config.dir>${project.build.directory}/undertow-configuration</jboss.server.config.dir>
 
         <auth.server.container>auth-server-undertow</auth.server.container>
         <auth.server.port.offset>100</auth.server.port.offset>
@@ -39,6 +40,7 @@
         <arquillian-graphene.version>2.1.0.Alpha2</arquillian-graphene.version>
         <arquillian-wildfly-container.version>8.2.0.Final</arquillian-wildfly-container.version>
         <version.shrinkwrap.resolvers>2.1.1</version.shrinkwrap.resolvers>
+        
         <skip.unpack.server>true</skip.unpack.server>
         <skip.unpack.previous>true</skip.unpack.previous>
         <skip.install.adapters>true</skip.install.adapters>
@@ -166,7 +168,7 @@
                                 <goal>copy-resources</goal>
                             </goals>
                             <configuration>
-                                <outputDirectory>${project.build.directory}/undertow-configuration</outputDirectory>
+                                <outputDirectory>${jboss.server.config.dir}</outputDirectory>
                                 <resources>
                                     <resource>
                                         <directory>src/test/resources</directory>
@@ -444,30 +446,6 @@
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
-                        <plugin>
-                            <artifactId>maven-resources-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>copy-admin-user-json-file</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>copy-resources</goal>
-                                    </goals>
-                                    <configuration>
-                                        <outputDirectory>${jboss.server.config.dir}</outputDirectory>
-                                        <resources>
-                                            <resource>
-                                                <directory>src/test/resources</directory>
-                                                <includes>
-                                                    <include>keycloak-add-user.json</include>
-                                                </includes>
-                                                <filtering>true</filtering>
-                                            </resource>
-                                        </resources>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
                     </plugins>
                 </pluginManagement>
             </build>
@@ -523,30 +501,6 @@
                                     <adapter.test.props>${adapter.test.props}</adapter.test.props>
                                 </systemPropertyVariables>
                             </configuration>
-                        </plugin>
-                        <plugin>
-                            <artifactId>maven-resources-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>copy-admin-user-json-file</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>copy-resources</goal>
-                                    </goals>
-                                    <configuration>
-                                        <outputDirectory>${jboss.server.config.dir}</outputDirectory>
-                                        <resources>
-                                            <resource>
-                                                <directory>src/test/resources</directory>
-                                                <includes>
-                                                    <include>keycloak-add-user.json</include>
-                                                </includes>
-                                                <filtering>true</filtering>
-                                            </resource>
-                                        </resources>
-                                    </configuration>
-                                </execution>
-                            </executions>
                         </plugin>
                     </plugins>
                 </pluginManagement>
