@@ -1,3 +1,0 @@
-org.keycloak.broker.saml.mappers.AttributeToRoleMapper
-org.keycloak.broker.saml.mappers.UserAttributeMapper
-org.keycloak.broker.saml.mappers.UsernameTemplateMapper

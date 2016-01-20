@@ -1,1 +1,2 @@
 org.keycloak.protocol.oidc.OIDCLoginProtocolFactory
+org.keycloak.protocol.saml.SamlProtocolFactory

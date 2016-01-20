@@ -142,18 +142,17 @@
         <module>client-registration</module>
         <module>dependencies</module>
         <module>server-spi</module>
-        <module>integration</module>
+        <module>saml</module>
         <module>proxy</module>
         <module>federation</module>
         <module>services</module>
+        <module>forms</module>
         <module>model</module>
         <module>events</module>
-        <module>saml</module>
-        <module>broker</module>
-        <module>social</module>
-        <module>forms</module>
         <module>util</module>
         <module>wildfly</module>
+        <module>integration</module>
+        <module>adapters</module>
         <module>examples</module>
         <module>testsuite</module>
     </modules>
@@ -606,16 +605,6 @@
             <!-- keycloak -->
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-broker-oidc</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-broker-saml</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-client-registration-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -903,11 +892,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-protocol</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-adapter-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -954,36 +938,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-services</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-social-facebook</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-social-github</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-social-google</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-social-linkedin</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-social-stackoverflow</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-social-twitter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

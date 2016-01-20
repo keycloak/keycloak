@@ -1,0 +1,32 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>1.9.0.CR1-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <name>Keycloak OIDC Client Adapter Modules</name>
+    <description/>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>keycloak-oidc-client-adapter-pom</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>adapter-core</module>
+        <module>as7-eap6</module>
+        <module>installed</module>
+        <module>jaxrs-oauth-client</module>
+        <module>jetty</module>
+        <module>js</module>
+        <module>osgi-adapter</module>
+        <module>servlet-filter</module>
+        <module>servlet-oauth-client</module>
+        <module>spring-boot</module>
+        <module>spring-security</module>
+        <module>tomcat</module>
+        <module>undertow</module>
+        <module>wildfly</module>
+    </modules>
+</project>

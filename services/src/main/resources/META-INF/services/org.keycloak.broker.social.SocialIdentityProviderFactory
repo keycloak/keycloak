@@ -1,0 +1,6 @@
+org.keycloak.social.facebook.FacebookIdentityProviderFactory
+org.keycloak.social.github.GitHubIdentityProviderFactory
+org.keycloak.social.google.GoogleIdentityProviderFactory
+org.keycloak.social.linkedin.LinkedInIdentityProviderFactory
+org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory
+org.keycloak.social.twitter.TwitterIdentityProviderFactory

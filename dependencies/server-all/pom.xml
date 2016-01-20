@@ -30,42 +30,9 @@
         </dependency>
         <!-- identity providers -->
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-broker-oidc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-broker-saml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-social-github</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-social-google</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-social-twitter</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.twitter4j</groupId>
             <artifactId>twitter4j-core</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-social-facebook</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-social-linkedin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-social-stackoverflow</artifactId>
-        </dependency>
-
         <!-- ldap federation api -->
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -81,11 +48,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-core</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-protocol</artifactId>
-        </dependency>
-
         <!-- mongo -->
         <dependency>
             <groupId>org.keycloak</groupId>

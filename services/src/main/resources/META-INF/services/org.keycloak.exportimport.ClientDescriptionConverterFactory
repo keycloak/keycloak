@@ -1,2 +1,3 @@
 org.keycloak.exportimport.KeycloakClientDescriptionConverter
 org.keycloak.protocol.oidc.OIDCClientDescriptionConverter
+org.keycloak.protocol.saml.EntityDescriptorDescriptionConverter
