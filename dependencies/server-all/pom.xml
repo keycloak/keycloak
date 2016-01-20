@@ -28,15 +28,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-infinispan</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-events-jboss-logging</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-events-email</artifactId>
-        </dependency>
-
         <!-- identity providers -->
         <dependency>
             <groupId>org.keycloak</groupId>

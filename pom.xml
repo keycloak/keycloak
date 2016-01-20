@@ -149,13 +149,12 @@
         <module>model</module>
         <module>events</module>
         <module>saml</module>
-        <!-- force -->
         <module>broker</module>
         <module>social</module>
         <module>forms</module>
-        <module>examples</module>
         <module>util</module>
         <module>wildfly</module>
+        <module>examples</module>
         <module>testsuite</module>
     </modules>
 
@@ -633,16 +632,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-client-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-events-email</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-events-jboss-logging</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

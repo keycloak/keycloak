@@ -16,8 +16,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>email</module>
-        <module>jboss-logging</module>
         <module>syslog</module>
     </modules>
 </project>
