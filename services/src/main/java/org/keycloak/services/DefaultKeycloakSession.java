@@ -1,25 +1,12 @@
 package org.keycloak.services;
 
-import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakTransactionManager;
-import org.keycloak.models.RealmProvider;
-import org.keycloak.models.UserFederationManager;
-import org.keycloak.models.UserProvider;
-import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -35,8 +22,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private UserSessionProvider sessionProvider;
     private UserFederationManager federationManager;
     private KeycloakContext context;
-    
-    private static final Logger logger = Logger.getLogger(DefaultKeycloakSession.class);
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -51,16 +36,18 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     private RealmProvider getRealmProvider() {
-        if (factory.getDefaultProvider(CacheRealmProvider.class) != null) {
-            return getProvider(CacheRealmProvider.class);
+        CacheRealmProvider cache = getProvider(CacheRealmProvider.class);
+        if (cache != null) {
+            return cache;
         } else {
             return getProvider(RealmProvider.class);
         }
     }
 
     private UserProvider getUserProvider() {
-        if (factory.getDefaultProvider(CacheUserProvider.class) != null) {
-            return getProvider(CacheUserProvider.class);
+        CacheUserProvider cache = getProvider(CacheUserProvider.class);
+        if (cache != null) {
+            return cache;
         } else {
             return getProvider(UserProvider.class);
         }
@@ -87,7 +74,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
             userModel = getUserProvider();
         }
         return userModel;
-
     }
 
     public <T extends Provider> T getProvider(Class<T> clazz) {

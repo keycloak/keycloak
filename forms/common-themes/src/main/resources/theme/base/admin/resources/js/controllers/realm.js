@@ -349,8 +349,20 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
     }, true);
 });
 
-module.controller('RealmCacheCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
-    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/cache-settings");
+module.controller('RealmCacheCtrl', function($scope, realm, RealmClearUserCache, RealmClearRealmCache, Notifications) {
+
+    $scope.clearUserCache = function() {
+        RealmClearUserCache.save({ realm: realm.realm}, function () {
+            Notifications.success("User cache cleared");
+        });
+    }
+
+    $scope.clearRealmCache = function() {
+        RealmClearRealmCache.save({ realm: realm.realm}, function () {
+           Notifications.success("Realm cache cleared");
+        });
+    }
+
 });
 
 module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, PasswordPolicy) {

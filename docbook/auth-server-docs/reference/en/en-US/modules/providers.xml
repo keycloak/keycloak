@@ -218,6 +218,21 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
 }]]></programlisting>
             </para>
         </section>
+
+        <section>
+            <title>Disabling a provider</title>
+            <para>
+                You can disable a provider by setting the enabled field for the provider to false in <literal>keycloak-server.json</literal>.
+                For example to disable the Infinispan user cache provider add:
+<programlisting><![CDATA[{
+"userCache": {
+    "infinispan" : {
+        "enabled": false
+    }
+}
+}]]></programlisting>
+            </para>
+        </section>
     </section>
 
     <section>

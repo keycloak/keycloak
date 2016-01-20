@@ -191,16 +191,7 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     public RealmRepresentation getRealm() {
         if (auth.hasView()) {
-            RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, false);
-            if (session.realms() instanceof CacheRealmProvider) {
-                CacheRealmProvider cacheRealmProvider = (CacheRealmProvider)session.realms();
-                rep.setRealmCacheEnabled(cacheRealmProvider.isEnabled());
-            }
-            if (session.userStorage() instanceof CacheUserProvider) {
-                CacheUserProvider cache = (CacheUserProvider)session.userStorage();
-                rep.setUserCacheEnabled(cache.isEnabled());
-            }
-            return rep;
+            return ModelToRepresentation.toRepresentation(realm, false);
         } else {
             auth.requireAny();
 
@@ -227,14 +218,6 @@ public class RealmAdminResource {
         logger.debug("updating realm: " + realm.getName());
         try {
             RepresentationToModel.updateRealm(rep, realm);
-            if (rep.isRealmCacheEnabled() != null && session.realms() instanceof CacheRealmProvider) {
-                CacheRealmProvider cacheRealmProvider = (CacheRealmProvider)session.realms();
-                cacheRealmProvider.setEnabled(rep.isRealmCacheEnabled());
-            }
-            if (rep.isUserCacheEnabled() != null && session.userStorage() instanceof CacheUserProvider) {
-                CacheUserProvider cache = (CacheUserProvider)session.userStorage();
-                cache.setEnabled(rep.isUserCacheEnabled());
-            }
 
             // Refresh periodic sync tasks for configured federationProviders
             List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
@@ -724,4 +707,35 @@ public class RealmAdminResource {
         PartialImportManager partialImport = new PartialImportManager(rep, session, realm, adminEvent);
         return partialImport.saveResources();
     }
+
+    /**
+     * Clear realm cache
+     *
+     */
+    @Path("clear-realm-cache")
+    @POST
+    public void clearRealmCache() {
+        auth.requireManage();
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+        CacheRealmProvider cache = session.getProvider(CacheRealmProvider.class);
+        if (cache != null) {
+            cache.clear();
+        }
+    }
+
+    /**
+     * Clear user cache
+     *
+     */
+    @Path("clear-user-cache")
+    @POST
+    public void clearUserCache() {
+        auth.requireManage();
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+        CacheUserProvider cache = session.getProvider(CacheUserProvider.class);
+        if (cache != null) {
+            cache.clear();
+        }
+    }
+
 }

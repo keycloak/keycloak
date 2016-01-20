@@ -29,29 +29,10 @@ public class InfinispanUserCache implements UserCache {
     }
 
     @Override
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    @Override
-    public void setEnabled(boolean enabled) {
-        if (this.enabled && !enabled) {
-            clear();
-        }
-        this.enabled = enabled;
-    }
-
-    @Override
     public CachedUser getCachedUser(String realmId, String id) {
         if (realmId == null || id == null) return null;
         CachedUser user = cache.get(id);
         return user != null && realmId.equals(user.getRealm()) ? user : null;
-    }
-
-    @Override
-    public void invalidateCachedUser(String realmId, CachedUser user) {
-        logger.tracev("Invalidating user {0}", user.getId());
-        cache.remove(user.getId());
     }
 
     @Override

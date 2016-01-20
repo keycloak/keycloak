@@ -22,8 +22,6 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     protected Set<String> realmInvalidations = new HashSet<>();
     protected Map<String, UserModel> managedUsers = new HashMap<>();
 
-    protected boolean clearAll;
-
     public DefaultCacheUserProvider(UserCache cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
@@ -32,13 +30,8 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
     }
 
     @Override
-    public boolean isEnabled() {
-        return cache.isEnabled();
-    }
-
-    @Override
-    public void setEnabled(boolean enabled) {
-        cache.setEnabled(enabled);
+    public void clear() {
+        cache.clear();
     }
 
     @Override
@@ -73,9 +66,6 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
             @Override
             public void commit() {
                 if (delegate == null) return;
-                if (clearAll) {
-                    cache.clear();
-                }
                 runInvalidations();
                 transactionActive = false;
             }
@@ -110,7 +100,6 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
 
     @Override
     public UserModel getUserById(String id, RealmModel realm) {
-        if (!cache.isEnabled()) return getDelegate().getUserById(id, realm);
         if (isRegisteredForInvalidation(realm, id)) {
             return getDelegate().getUserById(id, realm);
         }
@@ -136,7 +125,6 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
         
         username = username.toLowerCase();
         
-        if (!cache.isEnabled()) return getDelegate().getUserByUsername(username, realm);
         if (realmInvalidations.contains(realm.getId())) {
             return getDelegate().getUserByUsername(username, realm);
         }
@@ -164,7 +152,6 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
         
         email = email.toLowerCase();
         
-        if (!cache.isEnabled()) return getDelegate().getUserByEmail(email, realm);
         if (realmInvalidations.contains(realm.getId())) {
             return getDelegate().getUserByEmail(email, realm);
         }
@@ -276,7 +263,6 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        if (!cache.isEnabled()) return getDelegate().removeUser(realm, user);
         registerUserInvalidation(realm, user.getId());
         return getDelegate().removeUser(realm, user);
     }

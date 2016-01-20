@@ -79,20 +79,24 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
             } else {
                 for (ProviderFactory factory : pm.load(spi)) {
                     Config.Scope scope = Config.scope(spi.getName(), factory.getId());
-                    factory.init(scope);
+                    if (scope.getBoolean("enabled", true)) {
+                        factory.init(scope);
 
-                    if (spi.isInternal() && !isInternal(factory)) {
-                        log.warnv("{0} ({1}) is implementing the internal SPI {2}. This SPI is internal and may change without notice", factory.getId(), factory.getClass().getName(), spi.getName());
+                        if (spi.isInternal() && !isInternal(factory)) {
+                            log.warnv("{0} ({1}) is implementing the internal SPI {2}. This SPI is internal and may change without notice", factory.getId(), factory.getClass().getName(), spi.getName());
+                        }
+
+                        factories.put(factory.getId(), factory);
+                    } else {
+                        log.debugv("SPI {0} provider {1} disabled", spi.getName(), factory.getId());
                     }
-
-                    factories.put(factory.getId(), factory);
                 }
 
                 if (factories.size() == 1) {
                     provider = factories.values().iterator().next().getId();
                     this.provider.put(spi.getProviderClass(), provider);
 
-                    log.debugv("Loaded SPI {0}  (provider = {1})", spi.getName(), provider);
+                    log.debugv("Loaded SPI {0} (provider = {1})", spi.getName(), provider);
                 } else {
                     log.debugv("Loaded SPI {0} (providers = {1})", spi.getName(), factories.keySet());
                 }
