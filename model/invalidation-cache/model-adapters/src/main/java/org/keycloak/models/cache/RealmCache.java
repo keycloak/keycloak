@@ -55,10 +55,6 @@ public interface RealmCache {
 
     void invalidateGroupById(String id);
 
-    boolean isEnabled();
-
-    void setEnabled(boolean enabled);
-
     CachedClientTemplate getClientTemplate(String id);
 
     void invalidateClientTemplate(CachedClientTemplate app);

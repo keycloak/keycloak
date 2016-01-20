@@ -26,6 +26,18 @@
         "provider": "${keycloak.userSessionPersister.provider:jpa}"
     },
 
+    "userCache": {
+        "infinispan" : {
+            "enabled": true
+        }
+    },
+
+    "realmCache": {
+        "infinispan" : {
+            "enabled": true
+        }
+    },
+
     "timer": {
         "provider": "basic"
     },

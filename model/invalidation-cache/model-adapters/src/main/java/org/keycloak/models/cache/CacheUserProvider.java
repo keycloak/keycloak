@@ -8,8 +8,7 @@ import org.keycloak.models.UserProvider;
  * @version $Revision: 1 $
  */
 public interface CacheUserProvider extends UserProvider {
+    void clear();
     UserProvider getDelegate();
-    boolean isEnabled();
-    void setEnabled(boolean enabled);
     void registerUserInvalidation(RealmModel realm, String id);
 }

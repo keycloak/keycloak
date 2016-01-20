@@ -595,6 +595,18 @@ module.factory('RealmPushRevocation', function($resource) {
     });
 });
 
+module.factory('RealmClearUserCache', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clear-user-cache', {
+        realm : '@realm'
+    });
+});
+
+module.factory('RealmClearRealmCache', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clear-realm-cache', {
+        realm : '@realm'
+    });
+});
+
 module.factory('RealmSessionStats', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/session-stats', {
         realm : '@realm'

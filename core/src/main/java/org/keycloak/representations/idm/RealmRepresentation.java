@@ -34,7 +34,9 @@ public class RealmRepresentation {
     protected Boolean resetPasswordAllowed;
     protected Boolean editUsernameAllowed;
 
+    @Deprecated
     protected Boolean userCacheEnabled;
+    @Deprecated
     protected Boolean realmCacheEnabled;
 
     //--- brute force settings
@@ -365,22 +367,6 @@ public class RealmRepresentation {
 
     public void setRememberMe(Boolean rememberMe) {
         this.rememberMe = rememberMe;
-    }
-
-    public Boolean isRealmCacheEnabled() {
-        return realmCacheEnabled;
-    }
-
-    public void setRealmCacheEnabled(Boolean realmCacheEnabled) {
-        this.realmCacheEnabled = realmCacheEnabled;
-    }
-
-    public Boolean isUserCacheEnabled() {
-        return userCacheEnabled;
-    }
-
-    public void setUserCacheEnabled(Boolean userCacheEnabled) {
-        this.userCacheEnabled = userCacheEnabled;
     }
 
     public Boolean isVerifyEmail() {

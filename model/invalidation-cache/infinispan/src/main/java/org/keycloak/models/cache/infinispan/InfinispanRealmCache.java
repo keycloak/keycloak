@@ -20,11 +20,14 @@ public class InfinispanRealmCache implements RealmCache {
 
     protected final Cache<String, Object> cache;
     protected final ConcurrentHashMap<String, String> realmLookup;
-    protected volatile boolean enabled = true;
 
     public InfinispanRealmCache(Cache<String, Object> cache, ConcurrentHashMap<String, String> realmLookup) {
         this.cache = cache;
         this.realmLookup = realmLookup;
+    }
+
+    public Cache<String, Object> getCache() {
+        return cache;
     }
 
     @Override
@@ -33,21 +36,7 @@ public class InfinispanRealmCache implements RealmCache {
     }
 
     @Override
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    @Override
-    public void setEnabled(boolean enabled) {
-        if (this.enabled && !enabled) {
-            clear();
-        }
-        this.enabled = enabled;
-    }
-
-    @Override
     public CachedRealm getCachedRealm(String id) {
-        if (!enabled) return null;
         return get(id, CachedRealm.class);
     }
 
@@ -66,7 +55,6 @@ public class InfinispanRealmCache implements RealmCache {
 
     @Override
     public void addCachedRealm(CachedRealm realm) {
-        if (!enabled) return;
         logger.tracev("Adding realm {0}", realm.getId());
         cache.putForExternalRead(realm.getId(), realm);
         realmLookup.put(realm.getName(), realm.getId());
@@ -74,14 +62,12 @@ public class InfinispanRealmCache implements RealmCache {
 
     @Override
     public CachedRealm getCachedRealmByName(String name) {
-        if (!enabled) return null;
         String id = realmLookup.get(name);
         return id != null ? getCachedRealm(id) : null;
     }
 
     @Override
     public CachedClient getApplication(String id) {
-        if (!enabled) return null;
         return get(id, CachedClient.class);
     }
 
@@ -93,7 +79,6 @@ public class InfinispanRealmCache implements RealmCache {
 
     @Override
     public void addCachedClient(CachedClient app) {
-        if (!enabled) return;
         logger.tracev("Adding application {0}", app.getId());
         cache.putForExternalRead(app.getId(), app);
     }
@@ -112,7 +97,6 @@ public class InfinispanRealmCache implements RealmCache {
 
     @Override
     public CachedGroup getGroup(String id) {
-        if (!enabled) return null;
         return get(id, CachedGroup.class);
     }
 
@@ -124,7 +108,6 @@ public class InfinispanRealmCache implements RealmCache {
 
     @Override
     public void addCachedGroup(CachedGroup role) {
-        if (!enabled) return;
         logger.tracev("Adding group {0}", role.getId());
         cache.putForExternalRead(role.getId(), role);
     }
@@ -144,7 +127,6 @@ public class InfinispanRealmCache implements RealmCache {
 
     @Override
     public CachedRole getRole(String id) {
-        if (!enabled) return null;
         return get(id, CachedRole.class);
     }
 
@@ -168,7 +150,6 @@ public class InfinispanRealmCache implements RealmCache {
 
     @Override
     public void addCachedRole(CachedRole role) {
-        if (!enabled) return;
         logger.tracev("Adding role {0}", role.getId());
         cache.putForExternalRead(role.getId(), role);
     }
@@ -186,7 +167,6 @@ public class InfinispanRealmCache implements RealmCache {
 
     @Override
     public CachedClientTemplate getClientTemplate(String id) {
-        if (!enabled) return null;
         return get(id, CachedClientTemplate.class);
     }
 
@@ -198,7 +178,6 @@ public class InfinispanRealmCache implements RealmCache {
 
     @Override
     public void addCachedClientTemplate(CachedClientTemplate app) {
-        if (!enabled) return;
         logger.tracev("Adding client template {0}", app.getId());
         cache.putForExternalRead(app.getId(), app);
     }

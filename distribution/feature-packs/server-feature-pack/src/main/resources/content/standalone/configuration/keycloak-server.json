@@ -22,6 +22,18 @@
         "provider": "jpa"
     },
 
+    "userCache": {
+        "infinispan" : {
+            "enabled": true
+        }
+    },
+
+    "realmCache": {
+        "infinispan" : {
+            "enabled": true
+        }
+    },
+
     "userSessionPersister": {
         "provider": "jpa"
     },

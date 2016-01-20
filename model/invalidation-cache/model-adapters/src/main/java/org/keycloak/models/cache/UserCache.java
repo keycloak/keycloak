@@ -7,11 +7,10 @@ import org.keycloak.models.cache.entities.CachedUser;
  * @version $Revision: 1 $
  */
 public interface UserCache {
+
     void clear();
 
     CachedUser getCachedUser(String realmId, String id);
-
-    void invalidateCachedUser(String realmId, CachedUser user);
 
     void addCachedUser(String realmId, CachedUser user);
 
@@ -23,7 +22,4 @@ public interface UserCache {
 
     void invalidateRealmUsers(String realmId);
 
-    boolean isEnabled();
-
-    void setEnabled(boolean enabled);
 }
