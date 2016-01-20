@@ -70,9 +70,7 @@
             <div id="kc-social-providers">
                 <ul>
                     <#list social.providers as p>
-                        <#assign zocialclass=p.alias>
-                        <#if zocialclass=="microsoft"><#assign zocialclass="windows"></#if>
-                        <li><a href="${p.loginUrl}" id="zocial-${p.alias}" class="zocial ${zocialclass}"> <span class="text">${p.alias}</span></a></li>
+                        <li><a href="${p.loginUrl}" id="zocial-${p.alias}" class="zocial ${p.providerId}"> <span class="text">${p.alias}</span></a></li>
                     </#list>
                 </ul>
             </div>
