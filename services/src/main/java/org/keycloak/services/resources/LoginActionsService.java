@@ -780,7 +780,10 @@ public class LoginActionsService {
                 .detail(Details.AUTH_METHOD, userSession.getAuthMethod())
                 .detail(Details.USERNAME, userSession.getLoginUsername())
                 .detail(Details.RESPONSE_TYPE, responseType)
-                .detail(Details.RESPONSE_MODE, responseMode.toString().toLowerCase());
+                .detail(Details.RESPONSE_MODE, responseMode.toString().toLowerCase())
+                .detail(Details.IDENTITY_PROVIDER, userSession.getNote(Details.IDENTITY_PROVIDER))
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, userSession.getNote(Details.IDENTITY_PROVIDER_USERNAME));
+
         if (userSession.isRememberMe()) {
             event.detail(Details.REMEMBER_ME, "true");
         }
