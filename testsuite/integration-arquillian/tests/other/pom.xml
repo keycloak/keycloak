@@ -21,9 +21,8 @@
 
     <modules>
         <module>adapters</module>
-        <module>console</module>
     </modules>
-
+    
     <build>
         <pluginManagement>
             <plugins>
@@ -111,6 +110,12 @@
                     <type>test-jar</type>
                 </dependency>
             </dependencies>
+        </profile>
+        <profile>
+            <id>console-ui-tests</id>
+            <modules>
+                <module>console</module>
+            </modules>
         </profile>
     </profiles>
 
