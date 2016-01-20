@@ -140,7 +140,6 @@
         <module>common</module>
         <module>core</module>
         <module>client-registration</module>
-        <module>connections</module>
         <module>dependencies</module>
         <module>server-spi</module>
         <module>integration</module>
@@ -617,11 +616,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-connections-infinispan</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-client-registration-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -889,16 +883,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-invalidation-cache-infinispan</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-invalidation-cache-model</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-model-jpa</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -909,7 +893,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-model-sessions-infinispan</artifactId>
+                <artifactId>keycloak-model-infinispan</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

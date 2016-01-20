@@ -25,9 +25,8 @@
         </plugins>
     </build>
     <modules>
-        <module>invalidation-cache</module>
         <module>jpa</module>
         <module>mongo</module>
-        <module>sessions-infinispan</module>
+        <module>infinispan</module>
     </modules>
 </project>
