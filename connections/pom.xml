@@ -13,13 +13,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>jpa</module>
-        <module>jpa-liquibase</module>
         <module>infinispan</module>
-        <module>mongo</module>
-        <module>mongo-update</module>
-        <module>http-client</module>
-        <module>truststore</module>
     </modules>
 
     <build>

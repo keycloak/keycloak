@@ -49,10 +49,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-events-jpa</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-events-jboss-logging</artifactId>
         </dependency>
         <dependency>
@@ -62,37 +58,12 @@
 
         <!-- forms -->
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-forms-common-freemarker</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-forms-common-themes</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-account-freemarker</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-email-freemarker</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-login-freemarker</artifactId>
-        </dependency>
-
-         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-connections-truststore</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-connections-http-client</artifactId>
         </dependency>
     </dependencies>
 

@@ -12,6 +12,7 @@
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.bouncycastle" />
         <module name="javax.api"/>
+        <module name="org.apache.httpcomponents"/>
     </dependencies>
 
 </module>

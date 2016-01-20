@@ -121,7 +121,7 @@ public class AuthenticationManager {
             backchannelLogoutClientSession(session, realm, clientSession, userSession, uriInfo, headers);
         }
         if (logoutBroker) {
-            String brokerId = userSession.getNote(IdentityBrokerService.BROKER_PROVIDER_ID);
+            String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
             if (brokerId != null) {
                 IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
                 try {
@@ -220,7 +220,7 @@ public class AuthenticationManager {
             }
 
         }
-        String brokerId = userSession.getNote(IdentityBrokerService.BROKER_PROVIDER_ID);
+        String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
         if (brokerId != null) {
             IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
             Response response = identityProvider.keycloakInitiatedBrowserLogout(userSession, uriInfo, realm);

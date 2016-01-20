@@ -17,9 +17,7 @@
 
     <modules>
         <module>email</module>
-        <module>jpa</module>
         <module>jboss-logging</module>
         <module>syslog</module>
-        <module>mongo</module>
     </modules>
 </project>

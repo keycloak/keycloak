@@ -95,28 +95,32 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
     }
 
     protected void modifyClientWebOrigins(RealmRepresentation realm, String regex, String replacement) {
-        for (ClientRepresentation client : realm.getClients()) {
-            List<String> webOrigins = client.getWebOrigins();
-            if (webOrigins != null) {
-                List<String> newWebOrigins = new ArrayList<>();
-                for (String uri : webOrigins) {
-                    newWebOrigins.add(uri.replaceAll(regex, replacement));
+        if (realm.getClients() != null) {
+            for (ClientRepresentation client : realm.getClients()) {
+                List<String> webOrigins = client.getWebOrigins();
+                if (webOrigins != null) {
+                    List<String> newWebOrigins = new ArrayList<>();
+                    for (String uri : webOrigins) {
+                        newWebOrigins.add(uri.replaceAll(regex, replacement));
+                    }
+                    client.setWebOrigins(newWebOrigins);
                 }
-                client.setWebOrigins(newWebOrigins);
             }
         }
     }
 
     protected void modifySamlMasterURLs(RealmRepresentation realm, String regex, String replacement) {
-        for (ClientRepresentation client : realm.getClients()) {
-            if (client.getProtocol() != null && client.getProtocol().equals("saml")) {
-                log.info("Modifying master URL of SAML client: " + client.getClientId());
-                String masterUrl = client.getAdminUrl();
-                if (masterUrl == null) {
-                    masterUrl = client.getBaseUrl();
+        if (realm.getClients() != null) {
+            for (ClientRepresentation client : realm.getClients()) {
+                if (client.getProtocol() != null && client.getProtocol().equals("saml")) {
+                    log.info("Modifying master URL of SAML client: " + client.getClientId());
+                    String masterUrl = client.getAdminUrl();
+                    if (masterUrl == null) {
+                        masterUrl = client.getBaseUrl();
+                    }
+                    masterUrl = masterUrl.replaceFirst(regex, replacement);
+                    client.setAdminUrl(masterUrl);
                 }
-                masterUrl = masterUrl.replaceFirst(regex, replacement);
-                client.setAdminUrl(masterUrl);
             }
         }
     }

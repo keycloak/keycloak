@@ -2,9 +2,9 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.freemarker.FreeMarkerUtil;
-import org.keycloak.freemarker.Theme;
-import org.keycloak.freemarker.ThemeProvider;
+import org.keycloak.theme.FreeMarkerUtil;
+import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.services.managers.ApplianceBootstrap;

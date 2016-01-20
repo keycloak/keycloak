@@ -120,13 +120,6 @@
             <properties>
                 <keycloak.server.home>${project.build.directory}/unpacked/keycloak-${project.version}</keycloak.server.home>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-server-dist</artifactId>
-                    <type>zip</type>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -164,18 +157,6 @@
                     <name>!adapter.libs.bundled</name>
                 </property>
             </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-wildfly-adapter-dist</artifactId>
-                    <type>zip</type>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
-                    <type>zip</type>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>
