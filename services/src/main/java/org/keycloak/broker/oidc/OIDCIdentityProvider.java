@@ -195,7 +195,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    protected BrokeredIdentityContext getFederatedIdentity(String response) {
+    public BrokeredIdentityContext getFederatedIdentity(String response) {
         AccessTokenResponse tokenResponse = null;
         try {
             tokenResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);

@@ -144,7 +144,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 		return value;
 	}
 
-	protected static String getJsonValue(JsonNode baseNode, String fieldPath) {
+	public static String getJsonValue(JsonNode baseNode, String fieldPath) {
 		logger.debug("Going to process JsonNode path " + fieldPath + " on data " + baseNode);
 		if (baseNode != null) {
 

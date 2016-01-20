@@ -136,7 +136,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return null;
     }
 
-    protected BrokeredIdentityContext getFederatedIdentity(String response) {
+    public BrokeredIdentityContext getFederatedIdentity(String response) {
         String accessToken = extractTokenFromResponse(response, OAUTH2_PARAMETER_ACCESS_TOKEN);
 
         if (accessToken == null) {
@@ -168,7 +168,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
      * @param name of property to get
      * @return string value of the property or null.
      */
-    protected String getJsonProperty(JsonNode jsonNode, String name) {
+    public String getJsonProperty(JsonNode jsonNode, String name) {
         if (jsonNode.has(name) && !jsonNode.get(name).isNull()) {
         	  String s = jsonNode.get(name).asText();
         	  if(s != null && !s.isEmpty())
@@ -180,7 +180,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return null;
     }
 
-    protected JsonNode asJsonNode(String json) throws IOException {
+    public JsonNode asJsonNode(String json) throws IOException {
         return mapper.readTree(json);
     }
 
