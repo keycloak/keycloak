@@ -61,7 +61,8 @@
         <jboss.logging.tools.version>2.0.1.Final-redhat-1</jboss.logging.tools.version>
         <jboss.logging.tools.wf8.version>1.2.0.Final</jboss.logging.tools.wf8.version>
         <log4j.version>1.2.16</log4j.version>
-	<resteasy.community.version>3.0.14.Final</resteasy.community.version>
+	<resteasy.version>3.0.14.Final-redhat-1</resteasy.version>
+        <resteasy.community.version>3.0.14.Final</resteasy.community.version>
         <slf4j.version>1.7.7.redhat-2</slf4j.version>
         <wildfly.core.version>2.0.11.Final-redhat-1</wildfly.core.version>
         <wildfly.build-tools.version>1.1.0.Final</wildfly.build-tools.version>
@@ -286,6 +287,17 @@
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
                 <version>${commons.logging.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-multipart-provider</artifactId>
+                <version>${resteasy.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.sun.xml.bind</groupId>
+                        <artifactId>jaxb-impl</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- Twitter -->
