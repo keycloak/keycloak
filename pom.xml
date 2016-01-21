@@ -49,6 +49,7 @@
         <!-- both httpcomponents versions have to be in sync with eap6-supported-artifacts bom -->
         <apache.httpcomponents.version>4.3.6.redhat-1</apache.httpcomponents.version>
         <apache.httpcomponents.httpcore.version>4.3.3.redhat-1</apache.httpcomponents.httpcore.version>
+        <resteasy.version>3.0.14.Final-redhat-1</resteasy.version>
         <resteasy.community.version>3.0.14.Final</resteasy.community.version>
         <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
@@ -291,6 +292,17 @@
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
                 <version>${commons.logging.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-multipart-provider</artifactId>
+                <version>${resteasy.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.sun.xml.bind</groupId>
+                        <artifactId>jaxb-impl</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- Twitter -->
