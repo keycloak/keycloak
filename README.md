@@ -61,10 +61,10 @@ Contributing
 ------------
 
 * Developer documentation
-    * [Hacking on Keycloak](misc/HackingOnKeycloak.md) - how to become a Keycloak contributor
-    * [Testsuite](misc/Testsuite.md) - details about testsuite, but also how to quickly run Keycloak during development and a few test tools (OTP generation, LDAP server, Mail server)
-    * [Database Testing](misc/DatabaseTesting.md) - how to do testing of Keycloak on different databases
-    * [Updating Database](misc/UpdatingDatabaseSchema.md) - how to change the Keycloak database
+    * [Hacking on Keycloak](misc/HackingOnKeycloak.md) - How to become a Keycloak contributor
+    * [Testsuite](misc/Testsuite.md) - Details about testsuite, but also how to quickly run Keycloak during development and a few test tools (OTP generation, LDAP server, Mail server)
+    * [Database Testing](misc/DatabaseTesting.md) - How to do testing of Keycloak on different databases
+    * [Updating Database](misc/UpdatingDatabaseSchema.md) - How to change the Keycloak database
 * [Developer Mailing List](https://lists.jboss.org/mailman/listinfo/keycloak-dev) - Mailing list to discuss development of Keycloak
 
 
