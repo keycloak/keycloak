@@ -63,6 +63,13 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         }
     }
 
+    private String getClientId() {
+
+        // If a clientId is not available we fall back to the "account" clientId.
+        Object clientId = this.attributes.get("clientId");
+        return clientId == null ? "account" : clientId.toString();
+    }
+
     @Override
     public void sendEvent(Event event) throws EmailException {
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -78,7 +85,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("user", new ProfileBean(user));
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
-
+        attributes.put("clientId", getClientId());
         attributes.put("realmName", getRealmName());
 
         send("passwordResetSubject", "password-reset.ftl", attributes);
@@ -90,7 +97,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("user", new ProfileBean(user));
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
-
+        attributes.put("clientId", getClientId());
         attributes.put("realmName", getRealmName());
 
         BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
@@ -111,11 +118,13 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
 
+        attributes.put("clientId", getClientId());
         attributes.put("realmName", getRealmName());
 
         send("executeActionsSubject", "executeActions.ftl", attributes);
 
     }
+
 
     @Override
     public void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException {
@@ -123,7 +132,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("user", new ProfileBean(user));
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
-
+        attributes.put("clientId", getClientId());
         attributes.put("realmName", getRealmName());
 
         send("emailVerificationSubject", "email-verification.ftl", attributes);

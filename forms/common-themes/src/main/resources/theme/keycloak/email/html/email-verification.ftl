@@ -1,5 +1,5 @@
 <html>
 <body>
-${msg("emailVerificationBodyHtml",link, linkExpiration, realmName)}
+${msg("emailVerificationBodyHtml",link, linkExpiration, realmName, clientId)}
 </body>
 </html>
