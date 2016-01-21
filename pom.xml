@@ -1334,14 +1334,6 @@
             </build>
         </profile>
 
-        <profile>
-            <id>arquillian-integration-tests</id>
-            <modules>
-                <module>distribution</module>
-                <module>testsuite/integration-arquillian</module>
-            </modules>
-        </profile>
-
         <!-- Configure the JBoss Early Access Maven repository -->
         <profile>
             <id>jboss-earlyaccess-repository</id>

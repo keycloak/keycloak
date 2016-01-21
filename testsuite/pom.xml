@@ -1,18 +1,18 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<parent>
-		<artifactId>keycloak-parent</artifactId>
-		<groupId>org.keycloak</groupId>
-		<version>1.9.0.CR1-SNAPSHOT</version>
-		<relativePath>../pom.xml</relativePath>
-	</parent>
-	<modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>1.9.0.CR1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-	<artifactId>keycloak-testsuite-pom</artifactId>
+    <artifactId>keycloak-testsuite-pom</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak TestSuite</name>
-	<description />
+    <description />
 
     <build>
         <plugins>
@@ -40,7 +40,7 @@
         <module>tomcat8</module>
         <module>jetty</module>
         <module>performance</module>
-        <!--<module>docker-cluster</module>-->
+        <module>integration-arquillian</module>
     </modules>
 
     <profiles>
