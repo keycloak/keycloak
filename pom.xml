@@ -139,7 +139,6 @@
     <modules>
         <module>common</module>
         <module>core</module>
-        <module>client-registration</module>
         <module>dependencies</module>
         <module>server-spi</module>
         <module>saml</module>
