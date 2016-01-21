@@ -1,7 +1,7 @@
 package org.keycloak.exportimport;
 
 
-import org.jboss.logging.Logger;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -12,7 +12,7 @@ import java.io.IOException;
  */
 public class ExportImportManager {
 
-    private static final Logger logger = Logger.getLogger(ExportImportManager.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private KeycloakSessionFactory sessionFactory;
 
@@ -65,13 +65,13 @@ public class ExportImportManager {
         try {
             Strategy strategy = ExportImportConfig.getStrategy();
             if (realmName == null) {
-                logger.infof("Full model import requested. Strategy: %s", strategy.toString());
+                logger.fullModelImport(strategy.toString());
                 importProvider.importModel(sessionFactory, strategy);
             } else {
-                logger.infof("Import of realm '%s' requested. Strategy: %s", realmName, strategy.toString());
+                logger.realmImportRequested(realmName, strategy.toString());
                 importProvider.importRealm(sessionFactory, realmName, strategy);
             }
-            logger.info("Import finished successfully");
+            logger.importSuccess();
         } catch (IOException e) {
             throw new RuntimeException("Failed to run import", e);
         }
@@ -80,13 +80,13 @@ public class ExportImportManager {
     public void runExport() {
         try {
             if (realmName == null) {
-                logger.info("Full model export requested");
+                logger.fullModelExportRequested();
                 exportProvider.exportModel(sessionFactory);
             } else {
-                logger.infof("Export of realm '%s' requested", realmName);
+                logger.realmExportRequested(realmName);
                 exportProvider.exportRealm(sessionFactory, realmName);
             }
-            logger.info("Export finished successfully");
+            logger.exportSuccess();
         } catch (IOException e) {
             throw new RuntimeException("Failed to run export");
         }

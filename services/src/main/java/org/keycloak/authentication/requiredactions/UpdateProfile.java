@@ -1,6 +1,5 @@
 package org.keycloak.authentication.requiredactions;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -13,6 +12,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
@@ -26,7 +26,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class UpdateProfile implements RequiredActionProvider, RequiredActionFactory {
-    protected static Logger logger = Logger.getLogger(UpdateProfile.class);
+    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
     }
