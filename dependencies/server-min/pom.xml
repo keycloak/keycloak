@@ -55,7 +55,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-forms-common-themes</artifactId>
+            <artifactId>keycloak-themes</artifactId>
         </dependency>
     </dependencies>
 

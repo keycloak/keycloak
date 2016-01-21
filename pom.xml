@@ -144,7 +144,7 @@
         <module>proxy</module>
         <module>federation</module>
         <module>services</module>
-        <module>forms</module>
+        <module>themes</module>
         <module>model</module>
         <module>util</module>
         <module>wildfly</module>
@@ -639,7 +639,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-forms-common-themes</artifactId>
+                <artifactId>keycloak-themes</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
