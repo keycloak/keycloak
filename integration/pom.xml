@@ -10,10 +10,11 @@
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-integration-pom</artifactId>
+    <artifactId>keycloak-integration-parent</artifactId>
     <packaging>pom</packaging>
 
     <modules>
         <module>admin-client</module>
+        <module>client-registration</module>
     </modules>
 </project>
