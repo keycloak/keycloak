@@ -724,8 +724,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         "bearer-only"
     ];
 
-    $scope.protocols = ['openid-connect',
-                        'saml'];//Object.keys(serverInfo.providers['login-protocol'].providers).sort();
+    $scope.protocols = Object.keys(serverInfo.providers['login-protocol'].providers).sort();
 
     $scope.templates = [ {name:'NONE'}];
     for (var i = 0; i < templates.length; i++) {
@@ -2111,10 +2110,3 @@ module.controller('ClientTemplateScopeMappingCtrl', function($scope, $http, real
 
     updateTemplateRealmRoles();
 });
-
-
-
-
-
-
-
