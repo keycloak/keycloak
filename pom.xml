@@ -462,6 +462,10 @@
                         <groupId>org.jboss.marshalling</groupId>
                         <artifactId>jboss-marshalling-osgi</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.jboss.spec.javax.transaction</groupId>
+                        <artifactId>jboss-transaction-api_1.1_spec</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
