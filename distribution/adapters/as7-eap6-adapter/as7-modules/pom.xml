@@ -23,10 +23,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>keycloak-parent</artifactId>
+        <artifactId>keycloak-as7-eap6-adapter-dist-pom</artifactId>
         <groupId>org.keycloak</groupId>
         <version>1.9.0.CR1</version>
-        <relativePath>../../../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>keycloak-as7-modules</artifactId>
