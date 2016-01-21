@@ -2,10 +2,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>keycloak-parent</artifactId>
+        <artifactId>keycloak-as7-eap6-adapter-dist-pom</artifactId>
         <groupId>org.keycloak</groupId>
         <version>1.8.0.CR2</version>
-        <relativePath>../../../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>keycloak-eap6-adapter-dist</artifactId>
