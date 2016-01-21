@@ -12,8 +12,6 @@ import org.keycloak.testsuite.adapter.page.JSConsoleExample;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
-import org.keycloak.testsuite.console.page.clients.Clients;
-import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
 import org.openqa.selenium.By;
@@ -36,12 +34,6 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
     @Page
     private JSConsoleExample jsConsoleExamplePage;
-
-    @Page
-    private Clients clientsPage;
-
-    @Page
-    private ClientSettings clientSettingsPage;
 
     @Page
     private Config configPage;
@@ -167,17 +159,12 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     public void grantBrowserBasedApp() {
         testRealmPage.setAuthRealm(EXAMPLE);
         testRealmLoginPage.setAuthRealm(EXAMPLE);
-        clientsPage.setConsoleRealm(EXAMPLE);
         configPage.setConsoleRealm(EXAMPLE);
         loginEventsPage.setConsoleRealm(EXAMPLE);
         applicationsPage.setAuthRealm(EXAMPLE);
 
         jsConsoleExamplePage.navigateTo();
         driver.manage().deleteAllCookies();
-
-        clientsPage.navigateTo();
-
-        loginPage.form().login("admin", "admin");
 
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "js-console");
         ClientRepresentation client = clientResource.toRepresentation();
@@ -208,6 +195,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(oAuthGrantPage.isCurrent());
 
         loginEventsPage.navigateTo();
+        loginPage.form().login(adminUser);
         loginEventsPage.table().filter();
         loginEventsPage.table().filterForm().addEventType("REVOKE_GRANT");
         loginEventsPage.table().update();

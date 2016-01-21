@@ -89,7 +89,7 @@
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
-                                    <version>${version.adapter.dist}</version>
+                                    <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${adapter.libs.eap6}</outputDirectory>
                                 </artifactItem>

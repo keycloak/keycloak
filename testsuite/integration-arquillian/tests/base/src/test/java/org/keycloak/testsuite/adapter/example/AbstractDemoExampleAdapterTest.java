@@ -17,8 +17,6 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
-import org.keycloak.testsuite.console.page.clients.Clients;
-import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
 import org.openqa.selenium.By;
@@ -48,12 +46,6 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
     @Page
     private Account testRealmAccountPage;
-
-    @Page
-    private Clients clientsPage;
-
-    @Page
-    private ClientSettings clientSettingsPage;
 
     @Page
     private Config configPage;
@@ -94,7 +86,6 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         testRealmPage.setAuthRealm(DEMO);
         testRealmLoginPage.setAuthRealm(DEMO);
         testRealmAccountPage.setAuthRealm(DEMO);
-        clientsPage.setConsoleRealm(DEMO);
         configPage.setConsoleRealm(DEMO);
         loginEventsPage.setConsoleRealm(DEMO);
         applicationsPage.setAuthRealm(DEMO);

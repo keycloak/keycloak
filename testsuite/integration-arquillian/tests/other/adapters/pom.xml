@@ -1,15 +1,19 @@
 <?xml version="1.0"?>
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <parent>
-        <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-tests</artifactId>
-        <version>1.9.0.CR1-SNAPSHOT</version>
-    </parent>
+
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian-tests-other</artifactId>
+        <version>1.9.0.CR1-SNAPSHOT</version>
+    </parent>
+
     <artifactId>integration-arquillian-tests-adapters</artifactId>
+
     <packaging>pom</packaging>
+
     <name>Adapter Tests</name>
     
     <properties>
@@ -29,48 +33,6 @@
     <build>
         <pluginManagement>
             <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>unpack-common-arquillian-xml</id>
-                            <phase>generate-resources</phase>
-                            <goals>
-                                <goal>unpack</goal>
-                            </goals>
-                            <configuration>
-                                <artifactItems>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>integration-arquillian-tests-base</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>test-jar</type>
-                                        <includes>**/arquillian.xml</includes>
-                                    </artifactItem>
-                                </artifactItems>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>unpack-add-user-json</id>
-                            <phase>generate-resources</phase>
-                            <goals>
-                                <goal>unpack</goal>
-                            </goals>
-                            <configuration>
-                                <artifactItems>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>integration-arquillian-tests-base</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>test-jar</type>
-                                        <includes>**/keycloak-add-user.json</includes>
-                                    </artifactItem>
-                                </artifactItems>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>            
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>xml-maven-plugin</artifactId>
@@ -107,7 +69,6 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <systemPropertyVariables>
-                            <arquillian.xml>${project.build.directory}/dependency/arquillian.xml</arquillian.xml>
 
                             <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
                             <app.server.http.port>${app.server.http.port}</app.server.http.port>
@@ -127,75 +88,12 @@
                         </excludes>
                     </configuration>
                 </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-resources-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>copy-admin-user-json-file</id>
-                            <phase>process-test-resources</phase>
-                            <goals>
-                                <goal>copy-resources</goal>
-                            </goals>
-                            <configuration>
-                                <outputDirectory>${jboss.server.config.dir}</outputDirectory>
-                                <resources>
-                                    <resource>
-                                        <directory>${project.build.directory}/dependency</directory>
-                                        <includes>
-                                            <include>keycloak-add-user.json</include>
-                                        </includes>
-                                        <filtering>true</filtering>
-                                    </resource>
-                                </resources>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
             </plugins>
         </pluginManagement>        
     </build>
     
     <profiles>
 
-        <profile>
-            <id>common-for-adapter-tests</id>
-            <activation>
-                <file>
-                    <exists>src</exists>
-                </file>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-tests-base</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-tests-base</artifactId>
-                    <version>${project.version}</version>
-                    <type>test-jar</type>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        
         <profile>
             <id>adapter-libs-provided</id>
             <activation>    
@@ -326,14 +224,7 @@
                                                 <artifactId>keycloak-examples-dist</artifactId>        
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
-                                                <includes>**/*realm.json</includes>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>keycloak-examples-dist</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                                <includes>**/testsaml.json</includes>
+                                                <includes>**/*realm.json,**/testsaml.json</includes>
                                             </artifactItem>
                                         </artifactItems>
                                         <outputDirectory>${examples.home}</outputDirectory>
@@ -384,16 +275,11 @@
                 <module>wildfly-relative</module>
             </modules>
         </profile>
+        
         <profile>
             <id>app-server-eap6</id>
             <modules>
                 <module>eap6</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-eap7</id>
-            <modules>
-                <module>eap7</module>
             </modules>
         </profile>
         <profile>
@@ -414,6 +300,7 @@
                 <module>as7</module>
             </modules>
         </profile>
+        
         <profile>
             <id>app-server-tomcat</id>
             <modules>
