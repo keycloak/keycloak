@@ -2,8 +2,8 @@
     <h1>Roles</h1>
 
     <ul class="nav nav-tabs">
-        <li class="active"><a href="#/realms/{{realm.realm}}/roles">Realm Roles</a></li>
-        <li><a href="#/realms/{{realm.realm}}/default-roles">Default Roles</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/roles">{{:: 'realm-roles' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/default-roles">{{:: 'default-roles' | translate}}</a></li>
     </ul>
 
     <table class="table table-striped table-bordered">
@@ -13,7 +13,7 @@
                 <div class="form-inline">
                     <div class="form-group">
                         <div class="input-group">
-                            <input type="text" placeholder="Search..." data-ng-model="searchQuery" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                            <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="searchQuery" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
                             <div class="input-group-addon">
                                 <i class="fa fa-search" type="submit"></i>
                             </div>
@@ -21,33 +21,33 @@
                     </div>
 
                     <div class="pull-right" data-ng-show="access.manageRealm">
-                        <a id="createRole" class="btn btn-default" href="#/create/role/{{realm.realm}}">Add Role</a>
+                        <a id="createRole" class="btn btn-default" href="#/create/role/{{realm.realm}}">{{:: 'add-role' | translate}}</a>
                     </div>
                 </div>
             </th>
         </tr>
         <tr data-ng-show="roles && roles.length > 0">
-            <th>Role Name</th>
-            <th>Composite</th>
-            <th>Description</th>
-            <th colspan="2">Actions</th>
+            <th>{{:: 'role-name' | translate}}</th>
+            <th>{{:: 'composite' | translate}}</th>
+            <th>{{:: 'description' | translate}}</th>
+            <th colspan="2">{{:: 'actions' | translate}}</th>
         </tr>
         </thead>
         <tbody>
         <tr ng-repeat="role in roles | orderBy:'name' | filter:{name: searchQuery}">
             <td><a href="#/realms/{{realm.realm}}/roles/{{role.id}}">{{role.name}}</a></td>
-            <td>{{role.composite}}</td>
+            <td translate="{{role.composite}}"></td>
             <td>{{role.description}}</td>
             <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/roles/{{role.id}}">Edit</button>
+                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/roles/{{role.id}}">{{:: 'edit' | translate}}</button>
             </td>
             <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="removeRole(role)">Delete</button>
+                <button class="btn btn-default btn-block btn-sm" data-ng-click="removeRole(role)">{{:: 'delete' | translate}}</button>
             </td>
         </tr>
         <tr data-ng-show="(roles | filter:{name: searchQuery}).length == 0">
-            <td class="text-muted" colspan="3" data-ng-show="searchQuery">No results</td>
-            <td class="text-muted" colspan="3" data-ng-hide="searchQuery">No realm roles available</td>
+            <td class="text-muted" colspan="3" data-ng-show="searchQuery">{{:: 'no-results' | translate}}</td>
+            <td class="text-muted" colspan="3" data-ng-hide="searchQuery">{{:: 'no-realm-roles-available' | translate}}</td>
         </tr>
         </tbody>
     </table>

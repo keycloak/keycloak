@@ -1,6 +1,6 @@
 <div data-ng-controller="ClientTemplateTabCtrl">
 
-    <h1 data-ng-show="create">Add Client Template</h1>
+    <h1 data-ng-show="create">{{:: 'add-client-template' | translate}}</h1>
     <h1 data-ng-hide="create">
         {{template.name|capitalize}}
         <i id="removeClientTemplate" class="pficon pficon-delete clickable" data-ng-show="access.manageClients" data-ng-click="removeClientTemplate()"></i>

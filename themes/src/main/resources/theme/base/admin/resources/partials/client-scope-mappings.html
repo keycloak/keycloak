@@ -32,7 +32,7 @@
                     <label class="col-md-2 control-label" for="fullScopeAllowed">{{:: 'full-scope-allowed' | translate}}</label>
                     <kc-tooltip>Client template has full scope allowed, which means this client will have the full scope of all roles.</kc-tooltip>
                     <div class="col-md-1">
-                        <input ng-model="template.fullScopeAllowed" name="fullScopeAllowed" id="fullScopeAllowed" ng-disabled="true" onoffswitch />
+                        <input ng-model="template.fullScopeAllowed" name="fullScopeAllowed" id="fullScopeAllowed" ng-disabled="true" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                     </div>
                     <div class="col-md-1">
                         <i>inherited</i>

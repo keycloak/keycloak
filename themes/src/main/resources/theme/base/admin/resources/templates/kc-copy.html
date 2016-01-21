@@ -7,12 +7,12 @@
 <div class="modal-body">
     <form>
         <div>
-            <label class="control-label" for="name">New name</label>
+            <label class="control-label" for="name">{{:: 'new-name' | translate}}</label>
             <input class="form-control" type="text" id="name" data-ng-model="name.value">
         </div>
     </form>
 </div>
 <div class="modal-footer">
-    <button type="button" class="btn btn-default" ng-click="cancel()">Cancel</button>
-    <button type="button" class="btn btn-primary" ng-click="ok()">Ok</button>
+    <button type="button" class="btn btn-default" ng-click="cancel()">{{:: 'cancel' | translate}}</button>
+    <button type="button" class="btn btn-primary" ng-click="ok()">{{:: 'ok' | translate}}</button>
 </div>

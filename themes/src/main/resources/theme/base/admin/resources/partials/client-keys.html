@@ -9,9 +9,9 @@
 
     <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!access.manageRealm">
         <fieldset>
-            <legend collapsed><span class="text">Import Keys and Cert</span> <kc-tooltip>Upload the client's key pair and cert.</kc-tooltip></legend>
+            <legend collapsed><span class="text">{{:: 'import-keys-and-cert' | translate}}</span> <kc-tooltip>{{:: 'import-keys-and-cert.tooltip' | translate}}</kc-tooltip></legend>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="uploadKeyFormat">Archive Format</label>
+                <label class="col-md-2 control-label" for="uploadKeyFormat">{{:: 'archive-format' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="uploadKeyFormat"
@@ -20,34 +20,34 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>Java keystore or PKCS12 archive format.</kc-tooltip>
+                <kc-tooltip>{{:: 'archive-format.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="uploadKeyAlias">Key Alias</label>
+                <label class="col-md-2 control-label" for="uploadKeyAlias">{{:: 'key-alias' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="text" id="uploadKeyAlias" name="uploadKeyAlias" data-ng-model="uploadKeyAlias" autofocus required>
                 </div>
-                <kc-tooltip>Archive alias for your private key and certificate.</kc-tooltip>
+                <kc-tooltip>{{:: 'key-alias.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="keyPassword">Key Password</label>
+                <label class="col-md-2 control-label" for="keyPassword">{{:: 'key-password' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="password" id="uploadKeyPassword" name="uploadKeyPassword" data-ng-model="uploadKeyPassword" autofocus required>
                 </div>
-                <kc-tooltip>Password to access the private key in the archive</kc-tooltip>
+                <kc-tooltip>{{:: 'key-password.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="uploadStorePassword">Store Password</label>
+                <label class="col-md-2 control-label" for="uploadStorePassword">{{:: 'store-password' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="password" id="uploadStorePassword" name="uploadStorePassword" data-ng-model="uploadStorePassword" autofocus required>
                 </div>
-                <kc-tooltip>Password to access the archive itself</kc-tooltip>
+                <kc-tooltip>{{:: 'store-password.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label">Upload Keys </label>
+                <label class="col-md-2 control-label">{{:: 'upload-keys' | translate}} </label>
                 <div class="col-md-6">
                     <div class="controls kc-button-input-file" data-ng-show="!files || files.length == 0">
-                        <a href="#" class="btn btn-default"><span class="kc-icon-upload">Icon: Upload</span>Choose a File...</a>
+                        <a href="#" class="btn btn-default"><span class="kc-icon-upload">Icon: Upload</span>{{:: 'choose-a-file.placeholder' | translate}}</a>
                         <input id="import-file" type="file" class="transparent" ng-file-select="onFileSelect($files)">
                     </div>
                     <span class="kc-uploaded-file" data-ng-show="files.length > 0">
@@ -56,14 +56,14 @@
                 </div>
             </div>
             <div class="pull-right form-actions" data-ng-show="files.length > 0">
-                <button type="submit" data-ng-click="clearFileSelect()" class="btn btn-lg btn-default">Cancel</button>
-                <button type="submit" data-ng-click="uploadFile()" class="btn btn-lg btn-primary">Upload</button>
+                <button type="submit" data-ng-click="clearFileSelect()" class="btn btn-lg btn-default">{{:: 'cancel' | translate}}</button>
+                <button type="submit" data-ng-click="uploadFile()" class="btn btn-lg btn-primary">{{:: 'upload' | translate}}</button>
             </div>
         </fieldset>
         <fieldset class="form-group col-sm-10" data-ng-hide="!keyInfo.privateKey">
-            <legend collapsed><span class="text">Download Keys and Cert</span>  <kc-tooltip>Client key pair, cert, and realm certificate will be stuffed into a PKCS12 or Java keystore that you can use in your clients.</kc-tooltip></legend>
+            <legend collapsed><span class="text">{{:: 'download-keys-and-cert' | translate}}</span>  <kc-tooltip>Client key pair, cert, and realm certificate will be stuffed into a PKCS12 or Java keystore that you can use in your clients.</kc-tooltip></legend>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="downloadKeyFormat">Archive Format</label>
+                <label class="col-md-2 control-label" for="downloadKeyFormat">{{:: 'archive-format' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="downloadKeyFormat"

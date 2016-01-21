@@ -1,6 +1,6 @@
     <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
+        <li><a href="#/realms/{{realm.realm}}/users">{{:: 'users' | translate}}</a></li>
         <li>{{user.username}}</li>
     </ol>
 
@@ -11,16 +11,16 @@
         <tr data-ng-show="access.manageUsers">
             <th class="kc-table-actions" colspan="6">
                 <div class="pull-right" data-ng-show="access.manageUsers">
-                    <a id="logoutAllSessions" class="btn btn-default" ng-click="logoutAll()">Logout All Sessions</a>
+                    <a id="logoutAllSessions" class="btn btn-default" ng-click="logoutAll()">{{:: 'logout-all-sessions' | translate}}</a>
                 </div>
             </th>
         </tr>
         <tr>
-            <th>IP Address</th>
-            <th>Started</th>
-            <th>Last Access</th>
+            <th>{{:: 'ip-address' | translate}}</th>
+            <th>{{:: 'started' | translate}}</th>
+            <th>{{:: 'last-access' | translate}}</th>
             <th>{{:: 'clients' | translate}}</th>
-            <th data-ng-show="access.manageUsers">Action</th>
+            <th data-ng-show="access.manageUsers">{{:: 'action' | translate}}</th>
         </tr>
         </thead>
         <tbody>
@@ -35,7 +35,7 @@
             </ul>
             </td>
             <td class="kc-action-cell" data-ng-show="access.manageUsers">
-                <button class="btn btn-default btn-block btn-sm" ng-click="logoutSession(session.id)">Logout</button>
+                <button class="btn btn-default btn-block btn-sm" ng-click="logoutSession(session.id)">{{:: 'logout' | translate}}</button>
             </td>
         </tr>
         </tbody>

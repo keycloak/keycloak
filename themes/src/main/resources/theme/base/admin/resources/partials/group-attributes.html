@@ -10,9 +10,9 @@
         <table class="table table-striped table-bordered">
             <thead>
             <tr>
-                <th>Key</th>
-                <th>Value</th>
-                <th>Actions</th>
+                <th>{{:: 'key' | translate}}</th>
+                <th>{{:: 'value' | translate}}</th>
+                <th>{{:: 'actions' | translate}}</th>
             </tr>
             </thead>
             <tbody>
@@ -20,14 +20,14 @@
                 <td>{{key}}</td>
                 <td><input ng-model="group.attributes[key]" class="form-control" type="text" name="{{key}}" id="attribute-{{key}}" /></td>
                 <td class="kc-action-cell">
-                    <button type="button" class="btn btn-default btn-block btn-sm" data-ng-click="removeAttribute(key)">Delete</button>
+                    <button type="button" class="btn btn-default btn-block btn-sm" data-ng-click="removeAttribute(key)">{{:: 'delete' | translate}}</button>
                 </td>
             </tr>
             <tr>
                 <td><input ng-model="newAttribute.key" class="form-control" type="text" id="newAttributeKey" /></td>
                 <td><input ng-model="newAttribute.value" class="form-control" type="text" id="newAttributeValue" /></td>
                 <td class="kc-action-cell">
-                    <button class="btn btn-default btn-block btn-sm" data-ng-click="addAttribute()" data-ng-disabled="!newAttribute.key.length || !newAttribute.value.length">Add</button>
+                    <button class="btn btn-default btn-block btn-sm" data-ng-click="addAttribute()" data-ng-disabled="!newAttribute.key.length || !newAttribute.value.length">{{:: 'add' | translate}}</button>
                 </td>
             </tr>
             </tbody>
@@ -35,8 +35,8 @@
 
         <div class="form-group" data-ng-show="access.manageUsers">
             <div class="col-md-12">
-                <button kc-save  data-ng-disabled="!changed">Save</button>
-                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
     </form>

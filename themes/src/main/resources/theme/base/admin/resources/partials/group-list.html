@@ -7,11 +7,11 @@
              <th class="kc-table-actions" colspan="5">
                  <div class="form-inline">
                       <div class="pull-right" data-ng-show="access.manageUsers">
-                          <button id="createGroup" class="btn btn-default" ng-click="createGroup(tree.currentNode)">New</button>
-                          <button id="editGroup" ng-disabled="isDisabled()" class="btn btn-default" ng-click="edit(tree.currentNode)">Edit</button>
-                          <button id="cutGroup" ng-disabled="isDisabled()" class="btn btn-default" ng-click="cut(tree.currentNode)">Cut</button>
-                          <button id="pasteGroup" ng-disabled="!cutNode" class="btn btn-default" ng-click="paste(tree.currentNode)">Paste</button>
-                          <button id="removeGroup" ng-disabled="isDisabled()" class="btn btn-default" ng-click="remove(tree.currentNode)">Delete</button>
+                          <button id="createGroup" class="btn btn-default" ng-click="createGroup(tree.currentNode)">{{:: 'new' | translate}}</button>
+                          <button id="editGroup" ng-disabled="isDisabled()" class="btn btn-default" ng-click="edit(tree.currentNode)">{{:: 'edit' | translate}}</button>
+                          <button id="cutGroup" ng-disabled="isDisabled()" class="btn btn-default" ng-click="cut(tree.currentNode)">{{:: 'cut' | translate}}</button>
+                          <button id="pasteGroup" ng-disabled="!cutNode" class="btn btn-default" ng-click="paste(tree.currentNode)">{{:: 'paste' | translate}}</button>
+                          <button id="removeGroup" ng-disabled="isDisabled()" class="btn btn-default" ng-click="remove(tree.currentNode)">{{:: 'delete' | translate}}</button>
                      </div>
                  </div>
              </th>

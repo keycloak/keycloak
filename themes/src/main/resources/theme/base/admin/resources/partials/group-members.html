@@ -1,19 +1,19 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/groups">Groups</a></li>
+        <li><a href="#/realms/{{realm.realm}}/groups">{{:: 'groups' | translate}}</a></li>
         <li>{{group.name}}</li>
     </ol>
     <kc-tabs-group></kc-tabs-group>
 
     <table class="table table-striped table-bordered">
-        <caption data-ng-show="users" class="hidden">Table of group members</caption>
+        <caption data-ng-show="users" class="hidden">{{:: 'table-of-group-members' | translate}}</caption>
         <thead>
          <tr>
         <tr data-ng-show="searchLoaded && users.length > 0">
-            <th>Username</th>
-            <th>Last Name</th>
-            <th>First Name</th>
-            <th>Email</th>
+            <th>{{:: 'username' | translate}}</th>
+            <th>{{:: 'last-name' | translate}}</th>
+            <th>{{:: 'first-name' | translate}}</th>
+            <th>{{:: 'email' | translate}}</th>
             <th></th>
         </tr>
         </tr>
@@ -22,9 +22,9 @@
         <tr>
             <td colspan="7">
                 <div class="table-nav">
-                    <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">First page</button>
-                    <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">Previous page</button>
-                    <button data-ng-click="nextPage()" class="next" ng-disabled="users.length < query.max">Next page</button>
+                    <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
+                    <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
+                    <button data-ng-click="nextPage()" class="next" ng-disabled="users.length < query.max">{{:: 'next-page' | translate}}</button>
                 </div>
             </td>
         </tr>
@@ -36,12 +36,12 @@
             <td>{{user.firstName}}</td>
             <td>{{user.email}}</td>
             <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">Edit</button>
+                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">{{:: 'edit' | translate}}</button>
             </td>
         </tr>
         <tr data-ng-show="!users || users.length == 0">
-            <td class="text-muted" data-ng-show="searchLoaded && users.length == 0 && lastSearch != null">No group members</td>
-            <td class="text-muted" data-ng-show="searchLoaded && users.length == 0 && lastSearch == null">No group members</td>
+            <td class="text-muted" data-ng-show="searchLoaded && users.length == 0 && lastSearch != null">{{:: 'no-group-members' | translate}}</td>
+            <td class="text-muted" data-ng-show="searchLoaded && users.length == 0 && lastSearch == null">{{:: 'no-group-members' | translate}}</td>
         </tr>
         </tbody>
     </table>

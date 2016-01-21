@@ -1,8 +1,8 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/user-federation">User Federation</a></li>
+        <li><a href="#/realms/{{realm.realm}}/user-federation">{{:: 'user-federation' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/user-federation/providers/{{provider.providerName}}/{{provider.id}}">{{provider.displayName|capitalize}}</a></li>
-        <li>User Federation Mappers</li>
+        <li>{{:: 'user-federation-mappers' | translate}}</li>
     </ol>
 
     <kc-tabs-user-federation></kc-tabs-user-federation>
@@ -14,22 +14,22 @@
                 <div class="form-inline">
                     <div class="form-group">
                         <div class="input-group">
-                            <input type="text" placeholder="Search..." data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                            <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
                             <div class="input-group-addon">
                                 <i class="fa fa-search" type="submit"></i>
                             </div>
                         </div>
                     </div>
                     <div class="pull-right" data-ng-show="hasAnyMapperTypes">
-                        <a class="btn btn-primary" href="#/create/user-federation-mappers/{{realm.realm}}/{{provider.providerName}}/{{provider.id}}">Create</a>
+                        <a class="btn btn-primary" href="#/create/user-federation-mappers/{{realm.realm}}/{{provider.providerName}}/{{provider.id}}">{{:: 'create' | translate}}</a>
                     </div>
                 </div>
             </th>
         </tr>
         <tr data-ng-hide="mappers.length == 0">
-            <th>Name</th>
-            <th>Category</th>
-            <th>Type</th>
+            <th>{{:: 'name' | translate}}</th>
+            <th>{{:: 'category' | translate}}</th>
+            <th>{{:: 'type' | translate}}</th>
         </tr>
         </thead>
         <tbody>
@@ -39,7 +39,7 @@
             <td>{{mapperTypes[mapper.federationMapperType].name}}</td>
         </tr>
         <tr data-ng-show="mappers.length == 0">
-            <td>No mappers available</td>
+            <td>{{:: 'no-mappers-available' | translate}}</td>
         </tr>
         </tbody>
     </table>

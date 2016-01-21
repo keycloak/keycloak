@@ -1,8 +1,8 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/client-templates">Client Templates</a></li>
-        <li data-ng-show="create">Add Client Template</li>
+        <li><a href="#/realms/{{realm.realm}}/client-templates">{{:: 'client-templates' | translate}}</a></li>
+        <li data-ng-show="create">{{:: 'add-client-template' | translate}}</li>
         <li data-ng-hide="create">{{template.name}}</li>
     </ol>
 
@@ -11,21 +11,21 @@
     <form class="form-horizontal" name="clientForm" novalidate kc-read-only="!access.manageClients">
         <fieldset class="border-top">
             <div class="form-group">
-                <label class="col-md-2 control-label" for="name">Name </label>
+                <label class="col-md-2 control-label" for="name">{{:: 'name' | translate}} </label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" id="name" name="name" data-ng-model="template.name" autofocus>
                 </div>
-                <kc-tooltip>Name of the client template.  Must be unique in the realm</kc-tooltip>
+                <kc-tooltip>{{:: 'client-template.name.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="description">Description </label>
+                <label class="col-md-2 control-label" for="description">{{:: 'description' | translate}} </label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" id="description" name="description" data-ng-model="template.description">
                 </div>
-                <kc-tooltip>Description of the client template</kc-tooltip>
+                <kc-tooltip>{{:: 'client-template.description.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="protocol">Protocol</label>
+                <label class="col-md-2 control-label" for="protocol">{{:: 'protocol' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="protocol"
@@ -35,7 +35,7 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>Which SSO protocol configuration is being supplied by this client template</kc-tooltip>
+                <kc-tooltip>{{:: 'client-template.protocol.tooltip' | translate}}</kc-tooltip>
             </div>
          </fieldset>
 
