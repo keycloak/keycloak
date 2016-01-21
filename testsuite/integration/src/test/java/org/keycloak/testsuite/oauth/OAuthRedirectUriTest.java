@@ -245,6 +245,14 @@ public class OAuthRedirectUriTest {
     }
 
     @Test
+    public void testDifferentCaseInScheme() throws IOException {
+        oauth.clientId("test-dash");
+
+        checkRedirectUri("HTTP://with-dash.example.com", true);
+        checkRedirectUri("Http://wiTh-dAsh.example.com", true);
+    }
+
+    @Test
     public void testLocalhost() throws IOException {
         oauth.clientId("test-installed");
 
