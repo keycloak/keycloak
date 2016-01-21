@@ -279,6 +279,17 @@
                 <artifactId>commons-logging</artifactId>
                 <version>${commons.logging.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-multipart-provider</artifactId>
+                <version>${resteasy.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.sun.xml.bind</groupId>
+                        <artifactId>jaxb-impl</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
 
             <!-- Twitter -->
             <dependency>

@@ -29,6 +29,22 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-core</artifactId>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.xml.bind</groupId>
+            <artifactId>jboss-jaxb-api_2.2_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-common</artifactId>
             <scope>provided</scope>

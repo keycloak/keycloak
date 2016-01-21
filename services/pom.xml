@@ -123,6 +123,20 @@
             <artifactId>resteasy-multipart-provider</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.xml.bind</groupId>
+            <artifactId>jboss-jaxb-api_2.2_spec</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.codehaus.jackson</groupId>
             <artifactId>jackson-core-asl</artifactId>
         </dependency>
