@@ -155,12 +155,16 @@ public class KeycloakServer {
             }
 
             File dir = new File(resources).getAbsoluteFile();
-            if (!dir.isDirectory() || !new File(dir, "forms").isDirectory()) {
-                throw new RuntimeException("Invalid resources directory");
+            if (!dir.isDirectory()) {
+                throw new RuntimeException("Invalid base resources directory");
+
+            }
+            if (!new File(dir, "themes").isDirectory()) {
+                throw new RuntimeException("Invalid resources forms directory");
             }
 
             if (!System.getProperties().containsKey("keycloak.theme.dir")) {
-                System.setProperty("keycloak.theme.dir", file(dir.getAbsolutePath(), "forms", "common-themes", "src", "main", "resources", "theme").getAbsolutePath());
+                System.setProperty("keycloak.theme.dir", file(dir.getAbsolutePath(), "themes", "src", "main", "resources", "theme").getAbsolutePath());
             } else {
                 String foo = System.getProperty("keycloak.theme.dir");
                 System.out.println(foo);
