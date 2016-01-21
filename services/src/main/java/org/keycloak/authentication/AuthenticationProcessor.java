@@ -1,6 +1,5 @@
 package org.keycloak.authentication;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
@@ -24,6 +23,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -44,7 +44,7 @@ import java.util.Map;
  */
 public class AuthenticationProcessor {
     public static final String CURRENT_AUTHENTICATION_EXECUTION = "current.authentication.execution";
-    protected static Logger logger = Logger.getLogger(AuthenticationProcessor.class);
+    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     protected RealmModel realm;
     protected UserSessionModel userSession;
     protected ClientSessionModel clientSession;
@@ -539,25 +539,25 @@ public class AuthenticationProcessor {
         if (failure instanceof AuthenticationFlowException) {
             AuthenticationFlowException e = (AuthenticationFlowException) failure;
             if (e.getError() == AuthenticationFlowError.INVALID_USER) {
-                logger.error("failed authentication: " + e.getError().toString(), e);
+                logger.failedAuthentication(e);
                 event.error(Errors.USER_NOT_FOUND);
                 return ErrorPage.error(session, Messages.INVALID_USER);
             } else if (e.getError() == AuthenticationFlowError.USER_DISABLED) {
-                logger.error("failed authentication: " + e.getError().toString(), e);
+                logger.failedAuthentication(e);
                 event.error(Errors.USER_DISABLED);
                 return ErrorPage.error(session, Messages.ACCOUNT_DISABLED);
             } else if (e.getError() == AuthenticationFlowError.USER_TEMPORARILY_DISABLED) {
-                logger.error("failed authentication: " + e.getError().toString(), e);
+                logger.failedAuthentication(e);
                 event.error(Errors.USER_TEMPORARILY_DISABLED);
                 return ErrorPage.error(session, Messages.ACCOUNT_TEMPORARILY_DISABLED);
 
             } else if (e.getError() == AuthenticationFlowError.INVALID_CLIENT_SESSION) {
-                logger.error("failed authentication: " + e.getError().toString(), e);
+                logger.failedAuthentication(e);
                 event.error(Errors.INVALID_CODE);
                 return ErrorPage.error(session, Messages.INVALID_CODE);
 
             } else if (e.getError() == AuthenticationFlowError.EXPIRED_CODE) {
-                logger.error("failed authentication: " + e.getError().toString(), e);
+                logger.failedAuthentication(e);
                 event.error(Errors.EXPIRED_CODE);
                 return ErrorPage.error(session, Messages.EXPIRED_CODE);
 
@@ -580,13 +580,13 @@ public class AuthenticationProcessor {
                 return processor.authenticate();
 
             } else {
-                logger.error("failed authentication: " + e.getError().toString(), e);
+                logger.failedAuthentication(e);
                 event.error(Errors.INVALID_USER_CREDENTIALS);
                 return ErrorPage.error(session, Messages.INVALID_USER);
             }
 
         } else {
-            logger.error("failed authentication", failure);
+            logger.failedAuthentication(failure);
             event.error(Errors.INVALID_USER_CREDENTIALS);
             return ErrorPage.error(session, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST);
         }
@@ -596,7 +596,7 @@ public class AuthenticationProcessor {
     public Response handleClientAuthException(Exception failure) {
         if (failure instanceof AuthenticationFlowException) {
             AuthenticationFlowException e = (AuthenticationFlowException) failure;
-            logger.error("Failed client authentication: " + e.getError().toString(), e);
+            logger.failedClientAuthentication(e);
             if (e.getError() == AuthenticationFlowError.CLIENT_NOT_FOUND) {
                 event.error(Errors.CLIENT_NOT_FOUND);
                 return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Could not find client");
@@ -611,7 +611,7 @@ public class AuthenticationProcessor {
                 return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", e.getError().toString() + ": " + e.getMessage());
             }
         } else {
-            logger.error("Unexpected error when authenticating client", failure);
+            logger.errorAuthenticatingClient(failure);
             event.error(Errors.INVALID_CLIENT_CREDENTIALS);
             return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Unexpected error when authenticating client: " + failure.getMessage());
         }

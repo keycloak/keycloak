@@ -1,6 +1,5 @@
 package org.keycloak.authentication.requiredactions;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -14,6 +13,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.HmacOTP;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.validation.Validation;
 
@@ -24,7 +24,7 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class VerifyEmail implements RequiredActionProvider, RequiredActionFactory {
-    protected static Logger logger = Logger.getLogger(VerifyEmail.class);
+    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
         if (context.getRealm().isVerifyEmail() && !context.getUser().isEmailVerified()) {

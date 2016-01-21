@@ -1,6 +1,5 @@
 package org.keycloak.authentication.authenticators.browser;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AbstractFormAuthenticator;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -11,6 +10,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 
@@ -25,7 +25,7 @@ import java.util.List;
  */
 public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuthenticator {
 
-    private static final Logger logger = Logger.getLogger(AbstractUsernameFormAuthenticator.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public static final String REGISTRATION_FORM_ACTION = "registration_form";
     public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
@@ -109,7 +109,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         try {
             user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
         } catch (ModelDuplicateException mde) {
-            logger.error(mde.getMessage(), mde);
+            logger.modelDuplicateException(mde);
 
             // Could happen during federation import
             if (mde.getDuplicateFieldName() != null && mde.getDuplicateFieldName().equals(UserModel.EMAIL)) {

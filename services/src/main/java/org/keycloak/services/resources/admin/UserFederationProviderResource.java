@@ -1,3 +1,19 @@
+/*
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.keycloak.services.resources.admin;
 
 import java.util.Collections;
@@ -21,7 +37,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
@@ -46,6 +61,7 @@ import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperTypeRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.timer.TimerProvider;
 
@@ -54,7 +70,7 @@ import org.keycloak.timer.TimerProvider;
  */
 public class UserFederationProviderResource {
 
-    protected static final Logger logger = Logger.getLogger(UserFederationProviderResource.class);
+    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private final KeycloakSession session;
     private final RealmModel realm;
@@ -93,7 +109,7 @@ public class UserFederationProviderResource {
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
         boolean kerberosCredsAdded = UserFederationProvidersResource.checkKerberosCredential(session, realm, model);
         if (kerberosCredsAdded) {
-            logger.info("Added 'kerberos' to required realm credentials");
+            logger.addedKerberosToRealmCredentials();
         }
 
         adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
@@ -335,7 +351,7 @@ public class UserFederationProviderResource {
         UserFederationProviderFactory providerFactory = (UserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, providerModel.getProviderName());
         UserFederationProvider federationProvider = providerFactory.getInstance(session, providerModel);
 
-        logger.infof("Syncing data for mapper '%s' of type '%s'. Direction: %s", mapperModel.getName(), mapperModel.getFederationMapperType(), direction);
+        logger.syncingDataForMapper(mapperModel.getName(), mapperModel.getFederationMapperType(), direction);
 
         UserFederationSyncResult syncResult;
         if ("fedToKeycloak".equals(direction)) {

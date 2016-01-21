@@ -5,7 +5,6 @@ import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
@@ -16,6 +15,7 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 
 /**
@@ -23,7 +23,7 @@ import org.keycloak.services.messages.Messages;
  */
 public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static Logger logger = Logger.getLogger(IdpCreateUserIfUniqueAuthenticator.class);
+    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
 
     @Override
@@ -43,7 +43,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
 
         String username = getUsername(context, serializedCtx, brokerContext);
         if (username == null) {
-            logger.warnf("%s is null. Reset flow and enforce showing reviewProfile page", realm.isRegistrationEmailAsUsername() ? "Email" : "Username");
+            logger.resetFlow(realm.isRegistrationEmailAsUsername() ? "Email" : "Username");
             context.getClientSession().setNote(ENFORCE_UPDATE_PROFILE, "true");
             context.resetFlow();
             return;
