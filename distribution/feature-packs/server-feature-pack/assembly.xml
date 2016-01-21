@@ -59,7 +59,7 @@
             <outputDirectory>content</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../../../forms/common-themes/src/main/resources/theme</directory>
+            <directory>../../../themes/src/main/resources/theme</directory>
             <outputDirectory>content/standalone/configuration/themes</outputDirectory>
             <includes>
                 <include>**/**</include>

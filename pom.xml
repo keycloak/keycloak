@@ -36,7 +36,6 @@
         <picketlink.version>2.7.0.Final</picketlink.version>
         <mongo.driver.version>3.2.0</mongo.driver.version>
         <jboss.logging.version>3.1.4.GA</jboss.logging.version>
-        <syslog4j.version>0.9.30</syslog4j.version>
         <jboss-logging-tools.version>1.2.0.Beta1</jboss-logging-tools.version>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>1.0.4.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>
         <jboss-jaxrs-api_2.0_spec>1.0.0.Final</jboss-jaxrs-api_2.0_spec>
@@ -145,9 +144,8 @@
         <module>proxy</module>
         <module>federation</module>
         <module>services</module>
-        <module>forms</module>
+        <module>themes</module>
         <module>model</module>
-        <module>events</module>
         <module>util</module>
         <module>wildfly</module>
         <module>integration</module>
@@ -298,11 +296,6 @@
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging</artifactId>
                 <version>${jboss.logging.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.syslog4j</groupId>
-                <artifactId>syslog4j</artifactId>
-                <version>${syslog4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>log4j</groupId>
@@ -624,11 +617,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-events-syslog</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-kerberos-federation</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -651,7 +639,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-forms-common-themes</artifactId>
+                <artifactId>keycloak-themes</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
