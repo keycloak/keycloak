@@ -812,15 +812,16 @@ public class LoginActionsService {
         final ClientSessionCode clientCode = checks.clientCode;
         final ClientSessionModel clientSession = clientCode.getClientSession();
 
-        if (clientSession.getUserSession() == null) {
+        final UserSessionModel userSession = clientSession.getUserSession();
+        if (userSession == null) {
             logger.userSessionNull();
             event.error(Errors.USER_SESSION_NOT_FOUND);
             throw new WebApplicationException(ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE));
         }
-        if (action == null && clientSession.getUserSession() != null) { // do next required action only if user is already authenticated
+        if (action == null && userSession != null) { // do next required action only if user is already authenticated
             initEvent(clientSession);
             event.event(EventType.LOGIN);
-            return AuthenticationManager.nextActionAfterAuthentication(session, clientSession.getUserSession(), clientSession, clientConnection, request, uriInfo, event);
+            return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
         }
 
         if (!action.equals(clientSession.getNote(AuthenticationManager.CURRENT_REQUIRED_ACTION))) {
@@ -841,7 +842,7 @@ public class LoginActionsService {
         event.event(EventType.CUSTOM_REQUIRED_ACTION);
 
 
-        RequiredActionContextResult context = new RequiredActionContextResult(clientSession.getUserSession(), clientSession, realm, event, session, request, clientSession.getUserSession().getUser(), factory) {
+        RequiredActionContextResult context = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, userSession.getUser(), factory) {
             @Override
             public void ignore() {
                 throw new RuntimeException("Cannot call ignore within processAction()");
@@ -850,16 +851,19 @@ public class LoginActionsService {
         provider.processAction(context);
         if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
             event.clone().success();
-            // do both
-            clientSession.removeRequiredAction(factory.getId());
-            clientSession.getUserSession().getUser().removeRequiredAction(factory.getId());
-            clientSession.removeNote(AuthenticationManager.CURRENT_REQUIRED_ACTION);
-            // redirect to a generic code URI so that browser refresh will work
-            //return redirectToRequiredActions(code);
-            event.removeDetail(Details.CUSTOM_REQUIRED_ACTION);
             initEvent(clientSession);
             event.event(EventType.LOGIN);
-            return AuthenticationManager.nextActionAfterAuthentication(session, clientSession.getUserSession(), clientSession, clientConnection, request, uriInfo, event);
+            clientSession.removeRequiredAction(factory.getId());
+            userSession.getUser().removeRequiredAction(factory.getId());
+            clientSession.removeNote(AuthenticationManager.CURRENT_REQUIRED_ACTION);
+
+            if (AuthenticationManager.isActionRequired(session, userSession, clientSession, clientConnection, request, uriInfo, event)) {
+                // redirect to a generic code URI so that browser refresh will work
+                return redirectToRequiredActions(code);
+            } else {
+                return AuthenticationManager.finishedRequiredActions(session, userSession, clientSession, clientConnection, request, uriInfo, event);
+
+            }
        }
         if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
             return context.getChallenge();

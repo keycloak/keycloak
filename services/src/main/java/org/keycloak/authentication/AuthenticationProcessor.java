@@ -57,6 +57,7 @@ public class AuthenticationProcessor {
     protected String flowPath;
     protected boolean browserFlow;
     protected BruteForceProtector protector;
+    protected boolean oneActionWasSuccessful;
     /**
      * This could be an error message forwarded from another authenticator
      */
@@ -759,6 +760,28 @@ public class AuthenticationProcessor {
             throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
         }
         return challenge;
+    }
+
+    /**
+     * Marks that at least one action was successful
+     *
+     */
+    public void setActionSuccessful() {
+        oneActionWasSuccessful = true;
+    }
+
+    public Response checkWasSuccessfulBrowserAction() {
+        if (oneActionWasSuccessful && isBrowserFlow()) {
+            // redirect to non-action url so browser refresh button works without reposting past data
+            String code = generateCode();
+
+            URI redirect = LoginActionsService.loginActionsBaseUrl(getUriInfo())
+                    .path(flowPath)
+                    .queryParam(OAuth2Constants.CODE, code).build(getRealm().getName());
+            return Response.status(302).location(redirect).build();
+        } else {
+            return null;
+        }
     }
 
     public void attachSession() {

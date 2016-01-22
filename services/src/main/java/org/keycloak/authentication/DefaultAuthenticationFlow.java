@@ -68,6 +68,10 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 Response response = processResult(result);
                 if (response == null) {
                     processor.getClientSession().removeNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+                    if (result.status == FlowStatus.SUCCESS) {
+                        // we do this so that flow can redirect to a non-action URL
+                        processor.setActionSuccessful();
+                    }
                     return processFlow();
                 } else return response;
             }
@@ -153,6 +157,10 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                     }
                 }
             }
+            // skip if action as successful already
+            Response redirect = processor.checkWasSuccessfulBrowserAction();
+            if (redirect != null) return redirect;
+
             AuthenticationProcessor.Result context = processor.createAuthenticatorContext(model, authenticator, executions);
             logger.debug("invoke authenticator.authenticate");
             authenticator.authenticate(context);
