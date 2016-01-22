@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.managers;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
@@ -39,6 +38,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -60,7 +60,7 @@ import java.util.Set;
  */
 public class AuthenticationManager {
     public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
-    protected static Logger logger = Logger.getLogger(AuthenticationManager.class);
+    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     public static final String FORM_USERNAME = "username";
     // used for auth login
     public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
@@ -195,7 +195,7 @@ public class AuthenticationManager {
                     protocol.backchannelLogout(userSession, clientSession);
                     clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
                 } catch (Exception e) {
-                    logger.warn("Failed to logout client, continuing", e);
+                    logger.failedToLogoutClient(e);
                 }
             }
         }
@@ -216,7 +216,7 @@ public class AuthenticationManager {
                     return response;
                 }
             } catch (Exception e) {
-                logger.warn("Failed to logout client, continuing", e);
+                logger.failedToLogoutClient(e);
             }
 
         }

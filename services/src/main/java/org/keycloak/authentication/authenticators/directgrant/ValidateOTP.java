@@ -1,6 +1,5 @@
 package org.keycloak.authentication.authenticators.directgrant;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.events.Errors;
@@ -23,7 +22,6 @@ import java.util.List;
  */
 public class ValidateOTP extends AbstractDirectGrantAuthenticator {
 
-    private static final Logger logger = Logger.getLogger(ValidateOTP.class);
     public static final String PROVIDER_ID = "direct-grant-validate-otp";
 
     @Override

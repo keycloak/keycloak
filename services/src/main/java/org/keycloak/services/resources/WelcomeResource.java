@@ -1,12 +1,29 @@
+/*
+ * JBoss, Home of Professional Open Source
+ *
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.services.resources;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.common.util.MimeTypeUtil;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
 
@@ -27,7 +44,7 @@ import java.util.Map;
 @Path("/")
 public class WelcomeResource {
 
-    private static final Logger logger = Logger.getLogger(WelcomeResource.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private boolean bootstrap;
 
@@ -69,7 +86,7 @@ public class WelcomeResource {
             return createWelcomePage(null, null);
         } else {
             if (!isLocal()) {
-                logger.errorv("Rejected non-local attempt to create initial user from {0}", session.getContext().getConnection().getRemoteAddr());
+                logger.rejectedNonLocalAttemptToCreateInitialUser(session.getContext().getConnection().getRemoteAddr());
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
 
@@ -94,10 +111,10 @@ public class WelcomeResource {
                 bootstrap = false;
                 applianceBootstrap.createMasterRealmUser(username, password);
 
-                logger.infov("Created initial admin user with username {0}", username);
+                logger.createdInitialAdminUser(username);
                 return createWelcomePage("User created", null);
             } else {
-                logger.warnv("Rejected attempt to create initial user as user is already created");
+                logger.initialUserAlreadyCreated();
                 return createWelcomePage(null, "Users already exists");
             }
         }
