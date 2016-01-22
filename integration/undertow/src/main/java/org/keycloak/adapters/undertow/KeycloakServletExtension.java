@@ -178,6 +178,8 @@ public class KeycloakServletExtension implements ServletExtension {
         cookieConfig.setPath(deploymentInfo.getContextPath());
         deploymentInfo.setServletSessionConfig(cookieConfig);
 
+        ChangeSessionIdOnLogin.turnOffChangeSessionIdOnLogin(deploymentInfo);
+
         deploymentInfo.addListener(new ListenerInfo(UndertowNodesRegistrationManagementWrapper.class, new InstanceFactory<UndertowNodesRegistrationManagementWrapper>() {
 
             @Override
