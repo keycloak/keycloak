@@ -293,7 +293,7 @@ public class OAuthRequestAuthenticator {
         strippedOauthParametersRequestUri = stripOauthParametersFromRedirect();
         try {
             // For COOKIE store we don't have httpSessionId and single sign-out won't be available
-            String httpSessionId = deployment.getTokenStore() == TokenStore.SESSION ? reqAuthenticator.getHttpSessionId(true) : null;
+            String httpSessionId = deployment.getTokenStore() == TokenStore.SESSION ? reqAuthenticator.changeHttpSessionId(true) : null;
             tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, strippedOauthParametersRequestUri, httpSessionId);
         } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to turn code into token");

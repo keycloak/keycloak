@@ -6,6 +6,10 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.apache.tomcat.util.descriptor.web.LoginConfig;
 import org.keycloak.adapters.saml.AbstractSamlAuthenticatorValve;
+import org.keycloak.adapters.saml.CatalinaSamlSessionStore;
+import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.adapters.saml.SamlSessionStore;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
 
 import javax.servlet.http.HttpServletResponse;
@@ -68,4 +72,12 @@ public class SamlAuthenticatorValve extends AbstractSamlAuthenticatorValve {
             }
         };
     }
+
+    @Override
+    protected SamlSessionStore createSessionStore(Request request, HttpFacade facade, SamlDeployment resolvedDeployment) {
+        SamlSessionStore store;
+        store = new Tomcat8SamlSessionStore(userSessionManagement, createPrincipalFactory(), mapper, request, this, facade, resolvedDeployment);
+        return store;
+    }
+
 }

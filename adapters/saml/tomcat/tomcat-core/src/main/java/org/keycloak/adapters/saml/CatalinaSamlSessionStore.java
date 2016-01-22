@@ -32,15 +32,18 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
     protected final Request request;
     protected final AbstractSamlAuthenticatorValve valve;
     protected final HttpFacade facade;
+    protected final SamlDeployment deployment;
 
     public CatalinaSamlSessionStore(CatalinaUserSessionManagement sessionManagement, GenericPrincipalFactory principalFactory,
-                                    SessionIdMapper idMapper, Request request, AbstractSamlAuthenticatorValve valve, HttpFacade facade) {
+                                    SessionIdMapper idMapper, Request request, AbstractSamlAuthenticatorValve valve, HttpFacade facade,
+                                    SamlDeployment deployment) {
         this.sessionManagement = sessionManagement;
         this.principalFactory = principalFactory;
         this.idMapper = idMapper;
         this.request = request;
         this.valve = valve;
         this.facade = facade;
+        this.deployment = deployment;
     }
 
     @Override
@@ -173,8 +176,13 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
         }
         request.setUserPrincipal(principal);
         request.setAuthType("KEYCLOAK-SAML");
-        idMapper.map(account.getSessionIndex(), account.getPrincipal().getSamlSubject(), session.getId());
+        String newId = changeSessionId(session);
+        idMapper.map(account.getSessionIndex(), account.getPrincipal().getSamlSubject(), newId);
 
+    }
+
+    protected String changeSessionId(Session session) {
+        return session.getId();
     }
 
     @Override

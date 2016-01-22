@@ -141,7 +141,13 @@ public abstract class RequestAuthenticator {
 
     protected abstract void completeOAuthAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
     protected abstract void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal, String method);
-    protected abstract String getHttpSessionId(boolean create);
+
+    /**
+     * After code is received, we change the session id if possible to guard against https://www.owasp.org/index.php/Session_Fixation
+     * @param create
+     * @return
+     */
+    protected abstract String changeHttpSessionId(boolean create);
 
     protected void completeAuthentication(BearerTokenRequestAuthenticator bearer, String method) {
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, null, bearer.getTokenString(), bearer.getToken(), null, null, null);

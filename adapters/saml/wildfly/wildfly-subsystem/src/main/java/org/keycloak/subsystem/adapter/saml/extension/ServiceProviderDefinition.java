@@ -59,6 +59,15 @@ public class ServiceProviderDefinition extends SimpleResourceDefinition {
                     .setXmlName(Constants.XML.FORCE_AUTHENTICATION)
                     .build();
 
+    static final SimpleAttributeDefinition IS_PASSIVE =
+            new SimpleAttributeDefinitionBuilder(Constants.Model.IS_PASSIVE, ModelType.BOOLEAN, true)
+                    .setXmlName(Constants.XML.IS_PASSIVE)
+                    .build();
+    static final SimpleAttributeDefinition TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN =
+            new SimpleAttributeDefinitionBuilder(Constants.Model.TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN, ModelType.BOOLEAN, true)
+                    .setXmlName(Constants.XML.TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN)
+                    .build();
+
     static final SimpleAttributeDefinition PRINCIPAL_NAME_MAPPING_POLICY =
             new SimpleAttributeDefinitionBuilder(Constants.Model.PRINCIPAL_NAME_MAPPING_POLICY, ModelType.STRING, true)
                     .setXmlName(Constants.XML.PRINCIPAL_NAME_MAPPING_POLICY)
@@ -74,7 +83,7 @@ public class ServiceProviderDefinition extends SimpleResourceDefinition {
                     .setAllowNull(false)
                     .build();
 
-    static final SimpleAttributeDefinition[] ATTRIBUTES = {SSL_POLICY, NAME_ID_POLICY_FORMAT, LOGOUT_PAGE, FORCE_AUTHENTICATION};
+    static final SimpleAttributeDefinition[] ATTRIBUTES = {SSL_POLICY, NAME_ID_POLICY_FORMAT, LOGOUT_PAGE, FORCE_AUTHENTICATION, IS_PASSIVE, TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN};
     static final AttributeDefinition[] ELEMENTS = {PRINCIPAL_NAME_MAPPING_POLICY, PRINCIPAL_NAME_MAPPING_ATTRIBUTE_NAME, ROLE_ATTRIBUTES};
 
 

@@ -72,7 +72,7 @@ public abstract class AbstractUndertowRequestAuthenticator extends RequestAuthen
     }
 
     @Override
-    protected String getHttpSessionId(boolean create) {
+    protected String changeHttpSessionId(boolean create) {
         if (create) {
             Session session = Sessions.getOrCreateSession(exchange);
             return session.getId();

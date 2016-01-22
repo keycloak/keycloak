@@ -185,7 +185,7 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
 
         nodesRegistrationManagement.tryRegister(deployment);
 
-        CatalinaRequestAuthenticator authenticator = new CatalinaRequestAuthenticator(deployment, tokenStore, facade, request, createPrincipalFactory());
+        CatalinaRequestAuthenticator authenticator = createRequestAuthenticator(request, facade, deployment, tokenStore);
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             if (facade.isEnded()) {
@@ -198,6 +198,10 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
             challenge.challenge(facade);
         }
         return false;
+    }
+
+    protected CatalinaRequestAuthenticator createRequestAuthenticator(Request request, CatalinaHttpFacade facade, KeycloakDeployment deployment, AdapterTokenStore tokenStore) {
+        return new CatalinaRequestAuthenticator(deployment, tokenStore, facade, request, createPrincipalFactory());
     }
 
     /**
@@ -230,12 +234,18 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
         }
 
         if (resolvedDeployment.getTokenStore() == TokenStore.SESSION) {
-            store = new CatalinaSessionTokenStore(request, resolvedDeployment, userSessionManagement, createPrincipalFactory(), this);
+            store = createSessionTokenStore(request, resolvedDeployment);
         } else {
             store = new CatalinaCookieTokenStore(request, facade, resolvedDeployment, createPrincipalFactory());
         }
 
         request.setNote(TOKEN_STORE_NOTE, store);
+        return store;
+    }
+
+    private AdapterTokenStore createSessionTokenStore(Request request, KeycloakDeployment resolvedDeployment) {
+        AdapterTokenStore store;
+        store = new CatalinaSessionTokenStore(request, resolvedDeployment, userSessionManagement, createPrincipalFactory(), this);
         return store;
     }
 

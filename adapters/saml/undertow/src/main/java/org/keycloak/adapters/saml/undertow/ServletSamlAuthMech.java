@@ -32,7 +32,7 @@ public class ServletSamlAuthMech extends AbstractSamlAuthMech {
 
     @Override
     protected SamlSessionStore getTokenStore(HttpServerExchange exchange, HttpFacade facade, SamlDeployment deployment, SecurityContext securityContext) {
-        return new ServletSamlSessionStore(exchange, sessionManagement, securityContext, idMapper);
+        return new ServletSamlSessionStore(exchange, sessionManagement, securityContext, idMapper, deployment);
     }
 
     @Override

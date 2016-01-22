@@ -20,6 +20,6 @@ public class WildflySamlAuthMech extends ServletSamlAuthMech {
 
     @Override
     protected SamlSessionStore getTokenStore(HttpServerExchange exchange, HttpFacade facade, SamlDeployment deployment, SecurityContext securityContext) {
-        return new WildflySamlSessionStore(exchange, sessionManagement, securityContext, idMapper);
+        return new WildflySamlSessionStore(exchange, sessionManagement, securityContext, idMapper, deployment);
     }
 }

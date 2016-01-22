@@ -88,6 +88,9 @@ public class KeycloakDeploymentBuilder {
             throw new RuntimeException("You must specify auth-url");
         }
         deployment.setAuthServerBaseUrl(adapterConfig);
+        if (adapterConfig.getTurnOffChangeSessionIdOnLogin() != null) {
+            deployment.setTurnOffChangeSessionIdOnLogin(adapterConfig.getTurnOffChangeSessionIdOnLogin());
+        }
 
         log.debug("Use authServerUrl: " + deployment.getAuthServerBaseUrl() + ", tokenUrl: " + deployment.getTokenUrl() + ", relativeUrls: " + deployment.getRelativeUrls());
         return deployment;

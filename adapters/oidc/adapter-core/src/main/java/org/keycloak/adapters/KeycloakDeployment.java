@@ -57,6 +57,8 @@ public class KeycloakDeployment {
     protected boolean alwaysRefreshToken;
     protected boolean registerNodeAtStartup;
     protected int registerNodePeriod;
+    protected boolean turnOffChangeSessionIdOnLogin;
+
     protected volatile int notBefore;
 
     public KeycloakDeployment() {
@@ -360,5 +362,13 @@ public class KeycloakDeployment {
 
     public void setPrincipalAttribute(String principalAttribute) {
         this.principalAttribute = principalAttribute;
+    }
+
+    public boolean isTurnOffChangeSessionIdOnLogin() {
+        return turnOffChangeSessionIdOnLogin;
+    }
+
+    public void setTurnOffChangeSessionIdOnLogin(boolean turnOffChangeSessionIdOnLogin) {
+        this.turnOffChangeSessionIdOnLogin = turnOffChangeSessionIdOnLogin;
     }
 }

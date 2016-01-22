@@ -201,6 +201,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
     private String nameIDPolicyFormat;
     private boolean forceAuthentication;
     private boolean isPassive;
+    private boolean turnOffChangeSessionIdOnLogin;
     private PrivateKey decryptionKey;
     private KeyPair signingKeyPair;
     private String assertionConsumerServiceUrl;
@@ -210,6 +211,16 @@ public class DefaultSamlDeployment implements SamlDeployment {
     private String logoutPage;
     private SignatureAlgorithm signatureAlgorithm;
     private String signatureCanonicalizationMethod;
+
+    @Override
+    public boolean turnOffChangeSessionIdOnLogin() {
+        return turnOffChangeSessionIdOnLogin;
+    }
+
+    public void setTurnOffChangeSessionIdOnLogin(boolean turnOffChangeSessionIdOnLogin) {
+        this.turnOffChangeSessionIdOnLogin = turnOffChangeSessionIdOnLogin;
+    }
+
 
     @Override
     public IDP getIDP() {

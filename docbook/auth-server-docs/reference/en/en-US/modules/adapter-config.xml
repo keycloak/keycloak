@@ -379,6 +379,15 @@
                     </para>
                 </listitem>
             </varlistentry>
+            <varlistentry>
+                <term>turn-off-change-session-id-on-login</term>
+                <listitem>
+                    <para>
+                        The session id is changed by default on a successful login on some platforms to plug a security attack vector (Tomcat 8, Jetty9, Undertow/Wildfly).  Change this to true if you want to turn this off
+                        This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
         </variablelist>
     </para>
 </section>

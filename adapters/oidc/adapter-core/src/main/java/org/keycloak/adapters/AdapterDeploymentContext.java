@@ -433,6 +433,16 @@ public class AdapterDeploymentContext {
         public void setPrincipalAttribute(String principalAttribute) {
             delegate.setPrincipalAttribute(principalAttribute);
         }
+
+        @Override
+        public boolean isTurnOffChangeSessionIdOnLogin() {
+            return delegate.isTurnOffChangeSessionIdOnLogin();
+        }
+
+        @Override
+        public void setTurnOffChangeSessionIdOnLogin(boolean turnOffChangeSessionIdOnLogin) {
+            delegate.setTurnOffChangeSessionIdOnLogin(turnOffChangeSessionIdOnLogin);
+        }
     }
 
     protected KeycloakUriBuilder getBaseBuilder(HttpFacade facade, String base) {

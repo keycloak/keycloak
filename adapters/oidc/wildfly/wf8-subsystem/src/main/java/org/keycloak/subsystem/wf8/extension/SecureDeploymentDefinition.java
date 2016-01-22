@@ -77,6 +77,12 @@ public class SecureDeploymentDefinition extends SimpleResourceDefinition {
                     .setAllowExpression(true)
                     .setDefaultValue(new ModelNode(false))
                     .build();
+    protected static final SimpleAttributeDefinition TURN_OFF_CHANGE_SESSION =
+            new SimpleAttributeDefinitionBuilder("turn-off-change-session-id-on-login", ModelType.BOOLEAN, true)
+                    .setXmlName("turn-off-change-session-id-on-login")
+                    .setAllowExpression(true)
+                    .setDefaultValue(new ModelNode(false))
+                    .build();
 
     protected static final List<SimpleAttributeDefinition> DEPLOYMENT_ONLY_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
     static {
@@ -86,6 +92,7 @@ public class SecureDeploymentDefinition extends SimpleResourceDefinition {
         DEPLOYMENT_ONLY_ATTRIBUTES.add(BEARER_ONLY);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(ENABLE_BASIC_AUTH);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(PUBLIC_CLIENT);
+        DEPLOYMENT_ONLY_ATTRIBUTES.add(TURN_OFF_CHANGE_SESSION);
     }
 
     protected static final List<SimpleAttributeDefinition> ALL_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();

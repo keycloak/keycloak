@@ -3,6 +3,7 @@ package org.keycloak.testsuite.keycloaksaml;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.saml.SamlAuthenticationError;
 import org.keycloak.adapters.saml.SamlPrincipal;
 import org.keycloak.admin.client.Keycloak;
@@ -12,6 +13,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.saml.mappers.HardcodedAttributeMapper;
@@ -27,6 +29,7 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.KeycloakServer;
+import org.keycloak.testsuite.adapter.*;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.ErrorServlet;
@@ -38,7 +41,10 @@ import org.w3c.dom.Document;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Form;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
@@ -70,6 +76,8 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     protected WebDriver driver;
     @WebResource
     protected LoginPage loginPage;
+    @WebResource
+    protected InputPage inputPage;
 
     @Override
     protected void before() throws Throwable {
@@ -100,6 +108,38 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         driver.navigate().to(mainUrl);
         Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
     }
+
+    public void testSavedPostRequest() throws Exception {
+        // test login to customer-portal which does a bearer request to customer-db
+        driver.navigate().to(APP_SERVER_BASE_URL + "/input-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(APP_SERVER_BASE_URL + "/input-portal"));
+        inputPage.execute("hello");
+
+        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/input-portal/secured/post");
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("parameter=hello"));
+
+        // test logout
+
+        driver.navigate().to(APP_SERVER_BASE_URL + "/input-portal?GLO=true");
+
+        // test unsecured POST KEYCLOAK-901
+
+        Client client = ClientBuilder.newClient();
+        Form form = new Form();
+        form.param("parameter", "hello");
+        String text = client.target(APP_SERVER_BASE_URL + "/input-portal/unsecured").request().post(Entity.form(form), String.class);
+        Assert.assertTrue(text.contains("parameter=hello"));
+        client.close();
+
+    }
+
+
 
     public void testErrorHandling() throws Exception {
         ErrorServlet.authError = null;

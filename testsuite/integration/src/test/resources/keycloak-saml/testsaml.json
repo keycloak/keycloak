@@ -86,6 +86,23 @@
             }
         },
         {
+            "name": "http://localhost:8081/input-portal/",
+            "enabled": true,
+            "fullScopeAllowed": true,
+            "protocol": "saml",
+            "baseUrl": "http://localhost:8081/input-portal/",
+            "redirectUris": [
+                "http://localhost:8081/input-portal/*"
+            ],
+            "attributes": {
+                "saml.authnstatement": "true",
+                "saml_assertion_consumer_url_post": "http://localhost:8081/input-portal/",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8081/input-portal/",
+                "saml_single_logout_service_url_post": "http://localhost:8081/input-portal/",
+                "saml_single_logout_service_url_redirect": "http://localhost:8081/input-portal/"
+            }
+        },
+        {
             "name": "http://localhost:8081/sales-post-passive/",
             "enabled": true,
             "fullScopeAllowed": true,

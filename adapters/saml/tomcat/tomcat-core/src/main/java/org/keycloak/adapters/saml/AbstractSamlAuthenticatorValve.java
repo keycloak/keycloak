@@ -61,7 +61,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
     protected void logoutInternal(Request request) {
         CatalinaHttpFacade facade = new CatalinaHttpFacade(null, request);
         SamlDeployment deployment = deploymentContext.resolveDeployment(facade);
-        SamlSessionStore tokenStore = getTokenStore(request, facade, deployment);
+        SamlSessionStore tokenStore = getSessionStore(request, facade, deployment);
         tokenStore.logoutAccount();
         request.setUserPrincipal(null);
     }
@@ -184,7 +184,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
             log.fine("deployment not configured");
             return false;
         }
-        SamlSessionStore tokenStore = getTokenStore(request, facade, deployment);
+        SamlSessionStore tokenStore = getSessionStore(request, facade, deployment);
 
 
         CatalinaSamlAuthenticator authenticator = new CatalinaSamlAuthenticator(facade, deployment, tokenStore);
@@ -229,15 +229,21 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
         }
     }
 
-    protected SamlSessionStore getTokenStore(Request request, HttpFacade facade, SamlDeployment resolvedDeployment) {
+    protected SamlSessionStore getSessionStore(Request request, HttpFacade facade, SamlDeployment resolvedDeployment) {
         SamlSessionStore store = (SamlSessionStore)request.getNote(TOKEN_STORE_NOTE);
         if (store != null) {
             return store;
         }
 
-        store = new CatalinaSamlSessionStore(userSessionManagement, createPrincipalFactory(), mapper, request, this, facade);
+        store = createSessionStore(request, facade, resolvedDeployment);
 
         request.setNote(TOKEN_STORE_NOTE, store);
+        return store;
+    }
+
+    protected SamlSessionStore createSessionStore(Request request, HttpFacade facade, SamlDeployment resolvedDeployment) {
+        SamlSessionStore store;
+        store = new CatalinaSamlSessionStore(userSessionManagement, createPrincipalFactory(), mapper, request, this, facade, resolvedDeployment);
         return store;
     }
 

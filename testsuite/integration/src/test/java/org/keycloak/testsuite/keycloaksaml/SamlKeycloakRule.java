@@ -15,6 +15,7 @@ import io.undertow.servlet.api.WebResourceCollection;
 import org.keycloak.adapters.saml.undertow.SamlServletExtension;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 
+import javax.servlet.Servlet;
 import java.io.IOException;
 import java.net.URL;
 
@@ -92,12 +93,19 @@ public abstract class SamlKeycloakRule extends AbstractKeycloakRule {
 
     public void initializeSamlSecuredWar(String warResourcePath, String contextPath, String warDeploymentName, ClassLoader classLoader) {
 
-        ServletInfo regularServletInfo = new ServletInfo("servlet", SendUsernameServlet.class)
+        Class<SendUsernameServlet> servletClass = SendUsernameServlet.class;
+        String constraintUrl = "/*";
+
+        initializeSamlSecuredWar(warResourcePath, contextPath, warDeploymentName, classLoader, servletClass, constraintUrl);
+    }
+
+    public void initializeSamlSecuredWar(String warResourcePath, String contextPath, String warDeploymentName, ClassLoader classLoader, Class<? extends Servlet> servletClass, String constraintUrl) {
+        ServletInfo regularServletInfo = new ServletInfo("servlet", servletClass)
                 .addMapping("/*");
 
         SecurityConstraint constraint = new SecurityConstraint();
         WebResourceCollection collection = new WebResourceCollection();
-        collection.addUrlPattern("/*");
+        collection.addUrlPattern(constraintUrl);
         constraint.addWebResourceCollection(collection);
         constraint.addRoleAllowed("manager");
         constraint.addRoleAllowed("el-jefe");
