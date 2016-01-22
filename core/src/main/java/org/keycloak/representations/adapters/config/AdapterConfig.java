@@ -50,6 +50,8 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected String tokenStore;
     @JsonProperty("principal-attribute")
     protected String principalAttribute;
+    @JsonProperty("turn-off-change-session-id-on-login")
+    protected Boolean turnOffChangeSessionIdOnLogin;
 
     public boolean isAllowAnyHostname() {
         return allowAnyHostname;
@@ -161,5 +163,13 @@ public class AdapterConfig extends BaseAdapterConfig {
 
     public void setPrincipalAttribute(String principalAttribute) {
         this.principalAttribute = principalAttribute;
+    }
+
+    public Boolean getTurnOffChangeSessionIdOnLogin() {
+        return turnOffChangeSessionIdOnLogin;
+    }
+
+    public void setTurnOffChangeSessionIdOnLogin(Boolean turnOffChangeSessionIdOnLogin) {
+        this.turnOffChangeSessionIdOnLogin = turnOffChangeSessionIdOnLogin;
     }
 }

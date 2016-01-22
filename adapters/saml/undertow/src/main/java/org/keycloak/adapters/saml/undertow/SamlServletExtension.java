@@ -35,7 +35,7 @@ import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
 import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
-import org.keycloak.adapters.undertow.ChangeSessionIdOnLogin;
+import org.keycloak.adapters.undertow.ChangeSessionId;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 import org.keycloak.saml.common.exceptions.ParsingException;
 
@@ -184,7 +184,7 @@ public class SamlServletExtension implements ServletExtension {
         ServletSessionConfig cookieConfig = new ServletSessionConfig();
         cookieConfig.setPath(deploymentInfo.getContextPath());
         deploymentInfo.setServletSessionConfig(cookieConfig);
-        ChangeSessionIdOnLogin.turnOffChangeSessionIdOnLogin(deploymentInfo);
+        ChangeSessionId.turnOffChangeSessionIdOnLogin(deploymentInfo);
 
      }
 

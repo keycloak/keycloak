@@ -76,7 +76,7 @@ public class JettyRequestAuthenticator extends RequestAuthenticator {
 
 
     @Override
-    protected String getHttpSessionId(boolean create) {
+    protected String changeHttpSessionId(boolean create) {
         HttpSession session = request.getSession(create);
         return session != null ? session.getId() : null;
     }

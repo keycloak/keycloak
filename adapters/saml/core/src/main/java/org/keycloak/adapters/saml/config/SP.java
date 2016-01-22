@@ -34,6 +34,7 @@ public class SP implements Serializable {
     private String sslPolicy;
     private boolean forceAuthentication;
     private boolean isPassive;
+    private boolean turnOffChangeSessionIdOnLogin;
     private String logoutPage;
     private List<Key> keys;
     private String nameIDPolicyFormat;
@@ -71,6 +72,14 @@ public class SP implements Serializable {
 
     public void setIsPassive(boolean isPassive) {
         this.isPassive = isPassive;
+    }
+
+    public boolean isTurnOffChangeSessionIdOnLogin() {
+        return turnOffChangeSessionIdOnLogin;
+    }
+
+    public void setTurnOffChangeSessionIdOnLogin(boolean turnOffChangeSessionIdOnLogin) {
+        this.turnOffChangeSessionIdOnLogin = turnOffChangeSessionIdOnLogin;
     }
 
     public List<Key> getKeys() {

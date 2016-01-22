@@ -7,6 +7,9 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.descriptor.web.LoginConfig;
+import org.keycloak.adapters.AdapterTokenStore;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.spi.HttpFacade;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -70,5 +73,10 @@ public class KeycloakAuthenticatorValve extends AbstractKeycloakAuthenticatorVal
                 return new GenericPrincipal(userPrincipal.getName(), null, roles, userPrincipal, null);
             }
         };
+    }
+
+    @Override
+    protected AdapterTokenStore getTokenStore(Request request, HttpFacade facade, KeycloakDeployment resolvedDeployment) {
+        return super.getTokenStore(request, facade, resolvedDeployment);
     }
 }

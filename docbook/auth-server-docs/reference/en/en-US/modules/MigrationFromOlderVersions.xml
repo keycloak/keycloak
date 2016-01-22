@@ -104,6 +104,14 @@
                     with mongo and infinispan under modules keycloak-model-mongo and keycloak-model-infinispan.
                 </para>
             </simplesect>
+            <simplesect>
+                <title>For adapters, session id changed after login</title>
+                <para>
+                    To plug a security attack vector, for platforms that support it (Tomcat 8, Undertow/Wildfly, Jetty 9),
+                    the keycloak oidc and saml adapters will change the session id after login.  You can turn off this behavior
+                    check adapter config switches.
+                </para>
+            </simplesect>
         </section>
         <section>
             <title>Migrating to 1.8.0</title>

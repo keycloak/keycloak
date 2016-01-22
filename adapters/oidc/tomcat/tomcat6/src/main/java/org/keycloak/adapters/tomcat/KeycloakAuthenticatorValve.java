@@ -6,6 +6,8 @@ import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.apache.catalina.realm.GenericPrincipal;
+import org.keycloak.adapters.AdapterTokenStore;
+import org.keycloak.adapters.KeycloakDeployment;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
@@ -55,4 +57,5 @@ public class KeycloakAuthenticatorValve extends AbstractKeycloakAuthenticatorVal
             }
         };
     }
+
 }

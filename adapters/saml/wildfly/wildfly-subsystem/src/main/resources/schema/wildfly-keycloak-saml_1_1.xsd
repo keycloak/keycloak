@@ -66,6 +66,16 @@
                 <xs:documentation>Redirected unauthenticated request to a login page</xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="isPassive" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>If user isn't logged in just return with an error.  Used to check if a user is already logged in or not</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="turnOffChangeSessionIdOnLogin" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>The session id is changed by default on a successful login.  Change this to true if you want to turn this off</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="identity-provider-type">
         <xs:all minOccurs="1" maxOccurs="1">

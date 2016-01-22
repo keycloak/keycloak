@@ -14,7 +14,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>jetty-adapter-spi</module>
         <module>jetty-core</module>
         <module>jetty8.1</module>
         <module>jetty9.2</module>

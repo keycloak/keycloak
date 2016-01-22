@@ -95,13 +95,13 @@ public class SpringSecurityRequestAuthenticatorTest {
 
     @Test
     public void testGetHttpSessionIdTrue() throws Exception {
-        String sessionId = authenticator.getHttpSessionId(true);
+        String sessionId = authenticator.changeHttpSessionId(true);
         assertNotNull(sessionId);
     }
 
     @Test
     public void testGetHttpSessionIdFalse() throws Exception {
-        String sessionId = authenticator.getHttpSessionId(false);
+        String sessionId = authenticator.changeHttpSessionId(false);
         assertNull(sessionId);
     }
 }

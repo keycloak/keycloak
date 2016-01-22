@@ -2,6 +2,7 @@ package org.keycloak.adapters.saml.jetty;
 
 import org.eclipse.jetty.server.Request;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.SessionIdMapper;
@@ -23,19 +24,21 @@ import java.util.Set;
 public class JettySamlSessionStore implements SamlSessionStore {
     public static final String SAML_REDIRECT_URI = "SAML_REDIRECT_URI";
     private static final Logger log = Logger.getLogger(JettySamlSessionStore.class);
-    private Request request;
+    protected Request request;
     protected AdapterSessionStore sessionStore;
     protected HttpFacade facade;
     protected SessionIdMapper idMapper;
     protected JettyUserSessionManagement sessionManagement;
+    protected final SamlDeployment deployment;
 
     public JettySamlSessionStore(Request request, AdapterSessionStore sessionStore, HttpFacade facade,
-                                 SessionIdMapper idMapper, JettyUserSessionManagement sessionManagement) {
+                                 SessionIdMapper idMapper, JettyUserSessionManagement sessionManagement, SamlDeployment deployment) {
         this.request = request;
         this.sessionStore = sessionStore;
         this.facade = facade;
         this.idMapper = idMapper;
         this.sessionManagement = sessionManagement;
+        this.deployment = deployment;
     }
 
     @Override
@@ -132,8 +135,12 @@ public class JettySamlSessionStore implements SamlSessionStore {
         HttpSession session = request.getSession(true);
         session.setAttribute(SamlSession.class.getName(), account);
 
-        idMapper.map(account.getSessionIndex(), account.getPrincipal().getSamlSubject(), session.getId());
+        idMapper.map(account.getSessionIndex(), account.getPrincipal().getSamlSubject(), changeSessionId(session));
 
+    }
+
+    protected String changeSessionId(HttpSession session) {
+        return session.getId();
     }
 
     @Override

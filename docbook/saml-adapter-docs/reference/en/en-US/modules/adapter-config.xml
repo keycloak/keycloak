@@ -12,7 +12,8 @@
         nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
         logoutPage="/logout.jsp"
         forceAuthentication="false"
-        isPassive="false">
+        isPassive="false"
+        turnOffChangeSessionIdOnLogin="false">
         <Keys>
             <Key signing="true" >
                 <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
@@ -122,6 +123,15 @@
                             they are not logged in at the IDP. Set this to <literal>true</literal> if you want this.
                             Do not use together with <literal>forceAuthentication</literal> as they are opposite.
                             <emphasis>OPTIONAL.</emphasis>. Set to <literal>false</literal> by default.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>turnOffChangeSessionIdOnLogin</term>
+                    <listitem>
+                        <para>
+                            The session id is changed by default on a successful login on some platforms to plug a security attack vector (Tomcat 8, Jetty9, Undertow/Wildfly).  Change this to true if you want to turn this off
+                            This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
                         </para>
                     </listitem>
                 </varlistentry>

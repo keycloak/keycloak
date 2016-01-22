@@ -7,9 +7,11 @@ import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import io.undertow.servlet.spec.HttpSessionImpl;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
+import org.keycloak.adapters.undertow.ChangeSessionId;
 import org.keycloak.adapters.undertow.SavedRequest;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -36,15 +38,17 @@ public class ServletSamlSessionStore implements SamlSessionStore {
     private final UndertowUserSessionManagement sessionManagement;
     private final SecurityContext securityContext;
     private final SessionIdMapper idMapper;
+    protected final SamlDeployment deployment;
 
 
     public ServletSamlSessionStore(HttpServerExchange exchange, UndertowUserSessionManagement sessionManagement,
                                    SecurityContext securityContext,
-                                   SessionIdMapper idMapper) {
+                                   SessionIdMapper idMapper, SamlDeployment deployment) {
         this.exchange = exchange;
         this.sessionManagement = sessionManagement;
         this.securityContext = securityContext;
         this.idMapper = idMapper;
+        this.deployment = deployment;
     }
 
     @Override
@@ -155,8 +159,14 @@ public class ServletSamlSessionStore implements SamlSessionStore {
         HttpSession session = getSession(true);
         session.setAttribute(SamlSession.class.getName(), account);
         sessionManagement.login(servletRequestContext.getDeployment().getSessionManager());
-        idMapper.map(account.getSessionIndex(), account.getPrincipal().getSamlSubject(), session.getId());
+        String sessionId = changeSessionId(session);
+        idMapper.map(account.getSessionIndex(), account.getPrincipal().getSamlSubject(), sessionId);
 
+    }
+
+    protected String changeSessionId(HttpSession session) {
+        if (deployment.turnOffChangeSessionIdOnLogin() == false) return ChangeSessionId.changeSessionId(exchange, false);
+        else return session.getId();
     }
 
     @Override

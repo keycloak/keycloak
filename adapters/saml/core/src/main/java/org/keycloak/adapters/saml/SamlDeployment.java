@@ -57,6 +57,7 @@ public interface SamlDeployment {
     String getNameIDPolicyFormat();
     boolean isForceAuthentication();
     boolean isIsPassive();
+    boolean turnOffChangeSessionIdOnLogin();
     PrivateKey getDecryptionKey();
     KeyPair getSigningKeyPair();
     String getSignatureCanonicalizationMethod();

@@ -12,6 +12,7 @@ public class ConfigXmlConstants {
     public static final String NAME_ID_POLICY_FORMAT_ATTR = "nameIDPolicyFormat";
     public static final String FORCE_AUTHENTICATION_ATTR = "forceAuthentication";
     public static final String IS_PASSIVE_ATTR = "isPassive";
+    public static final String TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN_ATTR = "turnOffChangeSessionIdOnLogin";
     public static final String SIGNATURE_ALGORITHM_ATTR = "signatureAlgorithm";
     public static final String SIGNATURE_CANONICALIZATION_METHOD_ATTR = "signatureCanonicalizationMethod";
     public static final String LOGOUT_PAGE_ATTR = "logoutPage";
