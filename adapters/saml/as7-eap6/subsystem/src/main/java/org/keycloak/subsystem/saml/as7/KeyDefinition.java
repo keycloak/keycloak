@@ -64,7 +64,6 @@ public class KeyDefinition extends SimpleResourceDefinition {
     static final ObjectTypeAttributeDefinition KEY_STORE =
             ObjectTypeAttributeDefinition.Builder.of(Constants.Model.KEY_STORE,
                     KeyStoreDefinition.ALL_ATTRIBUTES)
-                    .setAllowNull(false)
                     .build();
 
     static final SimpleAttributeDefinition[] ATTRIBUTES = {SIGNING, ENCRYPTION};
