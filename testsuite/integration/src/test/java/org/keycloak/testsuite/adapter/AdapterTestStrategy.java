@@ -489,7 +489,9 @@ public class AdapterTestStrategy extends ExternalResource {
         String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
                 .queryParam(OAuth2Constants.REDIRECT_URI, APP_SERVER_BASE_URL + "/secure-portal").build("demo").toString();
         driver.navigate().to(logoutUri);
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        String currentUrl = driver.getCurrentUrl();
+        pageSource = driver.getPageSource();
+        Assert.assertTrue(currentUrl.startsWith(LOGIN_URL));
         driver.navigate().to(APP_SERVER_BASE_URL + "/secure-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
     }

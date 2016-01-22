@@ -17,8 +17,10 @@
 package org.keycloak.adapters.undertow;
 
 import io.undertow.server.session.SessionManager;
+import io.undertow.servlet.api.DeploymentInfo;
 import org.keycloak.adapters.spi.UserSessionManagement;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 /**
@@ -44,4 +46,5 @@ public class SessionManagementBridge implements UserSessionManagement {
     public void logoutHttpSessions(List<String> ids) {
         userSessionManagement.logoutHttpSessions(sessionManager, ids);
     }
+
 }
