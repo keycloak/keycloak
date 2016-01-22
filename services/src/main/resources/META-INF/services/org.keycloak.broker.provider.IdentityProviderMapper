@@ -13,3 +13,4 @@ org.keycloak.social.github.GitHubUserAttributeMapper
 org.keycloak.social.google.GoogleUserAttributeMapper
 org.keycloak.social.linkedin.LinkedInUserAttributeMapper
 org.keycloak.social.stackoverflow.StackoverflowUserAttributeMapper
+org.keycloak.social.microsoft.MicrosoftUserAttributeMapper

@@ -211,7 +211,7 @@
                     <para>
                         Social providers allows you to enable social authentication to your realm.
                         Keycloak makes it easy to let users log in to your application using an existing account with a social network.
-                        Currently Facebook, Google, Twitter, GitHub, LinkedIn and StackOverflow are supported with more planned for the future.
+                        Currently Facebook, Google, Twitter, GitHub, LinkedIn, Microsoft and StackOverflow are supported with more planned for the future.
                     </para>
                 </listitem>
             </varlistentry>
@@ -357,7 +357,7 @@
             So is trying to remember yet another username and password combination.
             Social identity providers makes it easy for users to register on your realm and quickly sign in using a social network.
             Keycloak provides built-in support for the most common social networks out there, such as Google, Facebook, Twitter,
-            Github, LinkedId and StackOverflow.
+            Github, LinkedId, Microsoft and StackOverflow.
         </para>
 
         <section>
@@ -856,6 +856,95 @@
             </table>
         </section>
         <section>
+            <title>Microsoft</title>
+            <para>
+                To enable login with Microsoft account you first have to register an OAuth application on
+                <ulink url="https://account.live.com/developers/applications/index">Microsoft account Developer Center</ulink>. Then you need to copy the client id and secret into the Keycloak Admin Console.
+            </para>
+            <para>
+                Let's see first how to create an application with Microsoft.
+            </para>
+            <orderedlist>
+                <listitem>
+                    <para>
+                        Go to <ulink url="https://account.live.com/developers/applications/create">create new application on Microsoft account Developer Center</ulink> url and login here. 
+                        Use any value for <literal>Application Name</literal>, <literal>Application Logo</literal> and <literal>URLs</literal> you want.
+                        In <literal>API Settings</literal> set <literal>Target Domain</literal> to the domain where your Keycloak instance runs.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Copy <literal>Client Id</literal> and <literal>Client Secret</literal> from <literal>App Settings</literal> page.
+                    </para>
+                </listitem>
+            </orderedlist>
+            <para>
+                Now that you have the client id and secret you can proceed with the creation of a Microsoft Identity Provider in Keycloak. As follows:
+            </para>
+            <orderedlist>
+                <listitem>
+                    <para>
+                        Select the <literal>Microsoft</literal> identity provider from the drop-down box on the top right corner of the identity providers table in Keycloak's Admin Console. You should be presented with a specific page to configure the selected provided.
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>
+                        Copy the client id and client secret to their corresponding fields in the Keycloak Admin Console. Click <literal>Save</literal>.
+                    </para>
+                </listitem>
+            </orderedlist>
+            <para>
+                Once you create the identity provider in Keycloak, you must update your Microsoft application with the redirect url that was
+                generated to your identity provider.
+            </para>
+            <orderedlist>
+                <listitem>
+                    <para>
+                        Open the Microsoft account Developer Center and select <literal>API Settings</literal> of your application. In <literal>Redirect URLs</literal>
+                        insert the redirect uri created by Keycloak. The redirect uri
+                        usually have the following format: <literal>http://{host}:{port}/auth/realms/{realm}/broker/microsoft/endpoint</literal>.
+                    </para>
+                </listitem>
+            </orderedlist>
+            <note>
+                <para>
+                    You can always get the redirect url for a specific identity provider from the table presented when you
+                    click on the 'Identity Provider' tab in <emphasis>Realm > Settings</emphasis>.
+                </para>
+            </note>
+            <para>
+                That is it! This pretty much what you need to do in order to setup this identity provider.
+            </para>
+             <para>
+                The table below lists some additional configuration options you may use when configuring this provider.
+            </para>
+            <table>
+                <title>Configuration Options</title>
+                <tgroup align="left" cols="2">
+                    <thead>
+                        <row>
+                            <entry>
+                                Configuration
+                            </entry>
+                            <entry>
+                                Description
+                            </entry>
+                        </row>
+                    </thead>
+                    <tbody valign="top">
+                        <row>
+                            <entry>
+                                <literal>Default Scopes</literal>
+                            </entry>
+                            <entry>
+                                Allows you to manually specify the scopes that users must authorize when authenticating with this provider. For a complete list of scopes, please take a look at <ulink url="https://msdn.microsoft.com/en-us/library/hh243646.aspx">https://msdn.microsoft.com/en-us/library/hh243646.aspx</ulink>. By default, Keycloak uses the following scopes: <literal>wl.basic,wl.emails</literal>
+                            </entry>
+                        </row>
+                    </tbody>
+                </tgroup>
+            </table>
+        </section>
+        <section>
             <title>StackOverflow</title>
             <para>
                 To enable login with StackOverflow you first have to register an OAuth application on
@@ -1282,7 +1371,7 @@ keycloak.createLoginUrl({
     <section>
         <title>Mapping/Importing User profile data from Social Identity Provider</title>
         <para>
-            You can import user profile data provided by social identity providers like Google, GitHub, LinkedIn, Stackoverflow and Facebook 
+            You can import user profile data provided by social identity providers like Google, GitHub, LinkedIn, Microsoft, Stackoverflow and Facebook 
             into new Keycloak user created from given social accounts. After you configure a broker, you'll see a <literal>Mappers</literal>
             button appear. Click on that and you'll get to the list of mappers that are assigned to this broker. There is a
             <literal>Create</literal> button on this page. Clicking on this create button allows you to create a broker mapper.
