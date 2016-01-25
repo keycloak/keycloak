@@ -1,7 +1,7 @@
 {
     "themes": [{
         "name" : "base",
-        "types": [ "admin", "account", "login" ]
+        "types": [ "admin", "account", "login", "email" ]
     }, {
         "name" : "keycloak",
         "types": [ "admin", "account", "login", "common", "email", "welcome" ]
