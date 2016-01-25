@@ -14,7 +14,7 @@ public class ServerInfoRepresentation {
     private SystemInfoRepresentation systemInfo;
     private MemoryInfoRepresentation memoryInfo;
 
-    private Map<String, List<String>> themes;
+    private Map<String, List<ThemeInfoRepresentation>> themes;
 
     private List<Map<String, String>> socialProviders;
     private List<Map<String, String>> identityProviders;
@@ -43,11 +43,12 @@ public class ServerInfoRepresentation {
     public void setMemoryInfo(MemoryInfoRepresentation memoryInfo) {
         this.memoryInfo = memoryInfo;
     }
-    public Map<String, List<String>> getThemes() {
+
+    public Map<String, List<ThemeInfoRepresentation>> getThemes() {
         return themes;
     }
 
-    public void setThemes(Map<String, List<String>> themes) {
+    public void setThemes(Map<String, List<ThemeInfoRepresentation>> themes) {
         this.themes = themes;
     }
 
