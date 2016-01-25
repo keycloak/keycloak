@@ -4,6 +4,7 @@
 /subsystem=infinispan/cache-container=keycloak/local-cache=realms:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=users:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=sessions:add()
+/subsystem=infinispan/cache-container=keycloak/local-cache=offlineSessions:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=loginFailures:add()
 /extension=org.keycloak.keycloak-server-subsystem/:add(module=org.keycloak.keycloak-server-subsystem)
 /subsystem=keycloak-server:add(web-context=auth)
