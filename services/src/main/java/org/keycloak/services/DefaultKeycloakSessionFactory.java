@@ -69,7 +69,17 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
 
         ProviderManager pm = new ProviderManager(getClass().getClassLoader(), Config.scope().getArray("providers"));
 
-        for (Spi spi : ServiceLoader.load(Spi.class, getClass().getClassLoader())) {
+        ServiceLoader<Spi> load = ServiceLoader.load(Spi.class, getClass().getClassLoader());
+        loadSPIs(pm, load);
+        for ( Map<String, ProviderFactory> factories : factoriesMap.values()) {
+            for (ProviderFactory factory : factories.values()) {
+                factory.postInit(this);
+            }
+        }
+    }
+
+    protected void loadSPIs(ProviderManager pm, ServiceLoader<Spi> load) {
+        for (Spi spi : load) {
             Map<String, ProviderFactory> factories = new HashMap<String, ProviderFactory>();
             factoriesMap.put(spi.getProviderClass(), factories);
 
@@ -116,11 +126,6 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
                 } else {
                     logger.debugv("Loaded SPI {0} (providers = {1})", spi.getName(), factories.keySet());
                 }
-            }
-        }
-        for ( Map<String, ProviderFactory> factories : factoriesMap.values()) {
-            for (ProviderFactory factory : factories.values()) {
-                factory.postInit(this);
             }
         }
     }
