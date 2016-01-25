@@ -47,6 +47,7 @@ import org.keycloak.services.Urls;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -317,23 +318,11 @@ public class AdminConsole {
     @Path("messages.json")
     @Produces(MediaType.APPLICATION_JSON)
     public Properties getMessages(@QueryParam("lang") String lang) {
-        if (lang == null) {
-            logger.localeNotSpecified();
-            lang = "en";
-        }
-
         try {
-            Properties msgs = getTheme().getMessages("admin-messages", Locale.forLanguageTag(lang));
-            if (msgs.isEmpty()) {
-                logger.msgBundleNotFound(lang);
-                msgs = getTheme().getMessages("admin-messages", Locale.ENGLISH);
-            }
-
-            if (msgs.isEmpty()) logger.msgBundleNotFoundForEn();
-
-            return msgs;
+            Locale locale = lang != null ? Locale.forLanguageTag(lang) : Locale.ENGLISH;
+            return getTheme().getMessages("admin-messages", locale);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new WebApplicationException("Failed to load message bundle", e);
         }
     }
 }
