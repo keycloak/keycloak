@@ -375,10 +375,10 @@
             </variablelist>
         </para>
     </section>    <section>
-    <title>IDP SingleSignOnService sub element</title>
+    <title>IDP SingleLogoutService sub element</title>
     <para>
-        The <literal>SignleSignOnService</literal> sub element defines the
-        login SAML endpoint of the IDP.
+        The <literal>SingleLogoutService</literal> sub element defines the
+        logout SAML endpoint of the IDP.
     </para>
     <programlisting><![CDATA[
 <SingleLogoutService validateRequestSignature="true"
