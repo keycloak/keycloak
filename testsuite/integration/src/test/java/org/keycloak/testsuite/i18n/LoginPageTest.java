@@ -71,7 +71,7 @@ public class LoginPageTest {
         loginPage.open();
         Assert.assertEquals("English", loginPage.getLanguageDropdownText());
 
-        loginPage.openLanguage("German");
+        loginPage.openLanguage("Deutsch");
         Assert.assertEquals("Deutsch", loginPage.getLanguageDropdownText());
 
         loginPage.openLanguage("English");

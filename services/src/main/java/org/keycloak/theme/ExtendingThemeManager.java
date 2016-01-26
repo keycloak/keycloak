@@ -235,6 +235,11 @@ public class ExtendingThemeManager implements ThemeProvider {
         public Properties getMessages(String baseBundlename, Locale locale) throws IOException {
             if (messages.get(baseBundlename) == null || messages.get(baseBundlename).get(locale) == null) {
                 Properties messages = new Properties();
+
+                if (!Locale.ENGLISH.equals(locale)) {
+                    messages.putAll(getMessages(baseBundlename, Locale.ENGLISH));
+                }
+
                 ListIterator<Theme> itr = themes.listIterator(themes.size());
                 while (itr.hasPrevious()) {
                     Properties m = itr.previous().getMessages(baseBundlename, locale);
