@@ -43,7 +43,7 @@
         <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
         <hibernate.javax.persistence.artifactId>hibernate-jpa-2.1-api</hibernate.javax.persistence.artifactId>
         <hibernate.entitymanager.version>4.3.10.Final</hibernate.entitymanager.version>
-        <h2.version>1.4.187</h2.version>
+        <h2.version>1.3.173</h2.version>
         <mysql.version>5.1.29</mysql.version>
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
         <dom4j.version>1.6.1</dom4j.version>
