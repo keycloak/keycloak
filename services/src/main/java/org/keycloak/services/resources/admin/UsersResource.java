@@ -220,12 +220,12 @@ public class UsersResource {
     }
 
     public static void updateUserFromRep(UserModel user, UserRepresentation rep, Set<String> attrsToRemove, RealmModel realm, KeycloakSession session) {
-        if (realm.isEditUsernameAllowed()) {
+        if (rep.getUsername() != null && realm.isEditUsernameAllowed()) {
             user.setUsername(rep.getUsername());
         }
-        user.setEmail(rep.getEmail());
-        user.setFirstName(rep.getFirstName());
-        user.setLastName(rep.getLastName());
+        if (rep.getEmail() != null) user.setEmail(rep.getEmail());
+        if (rep.getFirstName() != null) user.setFirstName(rep.getFirstName());
+        if (rep.getLastName() != null) user.setLastName(rep.getLastName());
 
         if (rep.isEnabled() != null) user.setEnabled(rep.isEnabled());
         if (rep.isTotp() != null) user.setOtpEnabled(rep.isTotp());
