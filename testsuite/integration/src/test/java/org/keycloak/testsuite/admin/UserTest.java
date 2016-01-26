@@ -529,6 +529,32 @@ public class UserTest extends AbstractClientTest {
     }
 
     @Test
+    public void updateUserWithoutUsername() {
+        switchEditUsernameAllowedOn();
+
+        String id = createUser();
+
+        UserResource user = realm.users().get(id);
+
+        UserRepresentation rep = new UserRepresentation();
+        rep.setFirstName("Firstname");
+
+        user.update(rep);
+
+        rep = new UserRepresentation();
+        rep.setLastName("Lastname");
+
+        user.update(rep);
+
+        rep = realm.users().get(id).toRepresentation();
+
+        assertEquals("user1", rep.getUsername());
+        assertEquals("user1@localhost", rep.getEmail());
+        assertEquals("Firstname", rep.getFirstName());
+        assertEquals("Lastname", rep.getLastName());
+    }
+
+    @Test
     public void updateUserWithNewUsernameNotPossible() {
         String id = createUser();
 
