@@ -74,6 +74,18 @@ public class OAuthRedirectUriTest {
             installedApp4.addRedirectUri("http://with-dash.example.com");
             installedApp4.addRedirectUri("http://with-dash.example.com/foo");
             installedApp4.setSecret("password");
+
+            ClientModel installedApp5 = KeycloakModelUtils.createClient(appRealm, "test-root-url");
+            installedApp5.setEnabled(true);
+            installedApp5.setRootUrl("http://with-dash.example.com");
+            installedApp5.addRedirectUri("/foo");
+            installedApp5.setSecret("password");
+
+            ClientModel installedApp6 = KeycloakModelUtils.createClient(appRealm, "test-relative-url");
+            installedApp6.setEnabled(true);
+            installedApp6.setRootUrl("");
+            installedApp6.addRedirectUri("/foo");
+            installedApp6.setSecret("password");
         }
     });
 
@@ -250,6 +262,22 @@ public class OAuthRedirectUriTest {
 
         checkRedirectUri("HTTP://with-dash.example.com", true);
         checkRedirectUri("Http://wiTh-dAsh.example.com", true);
+    }
+
+    @Test
+    public void testRelativeWithRoot() throws IOException {
+        oauth.clientId("test-root-url");
+
+        checkRedirectUri("http://with-dash.example.com/foo", true);
+        checkRedirectUri("http://localhost:8081/foo", false);
+    }
+
+    @Test
+    public void testRelative() throws IOException {
+        oauth.clientId("test-relative-url");
+
+        checkRedirectUri("http://with-dash.example.com/foo", false);
+        checkRedirectUri("http://localhost:8081/foo", true);
     }
 
     @Test

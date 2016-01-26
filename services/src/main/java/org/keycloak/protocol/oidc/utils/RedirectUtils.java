@@ -108,7 +108,7 @@ public class RedirectUtils {
     }
 
     private static String relativeToAbsoluteURI(UriInfo uriInfo, String rootUrl, String relative) {
-        if (rootUrl == null) {
+        if (rootUrl == null || rootUrl.isEmpty()) {
             URI baseUri = uriInfo.getBaseUri();
             String uri = baseUri.getScheme() + "://" + baseUri.getHost();
             if (baseUri.getPort() != -1) {
