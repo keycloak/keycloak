@@ -138,6 +138,7 @@
 
     <modules>
         <module>logging</module>
+        <module>common</module>
         <module>core</module>
         <module>dependencies</module>
         <module>server-spi</module>
