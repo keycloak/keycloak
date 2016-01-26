@@ -171,10 +171,10 @@ public class AuthorizationCodeTest {
     @Test
     public void authorizationRequestInvalidResponseType() throws IOException {
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        b.replaceQueryParam(OAuth2Constants.RESPONSE_TYPE, "token");
+        b.replaceQueryParam(OAuth2Constants.RESPONSE_TYPE, "tokenn");
         driver.navigate().to(b.build().toURL());
         assertEquals("Invalid parameter: response_type", errorPage.getError());
-        events.expectLogin().error(Errors.INVALID_REQUEST).client((String) null).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "token").assertEvent();
+        events.expectLogin().error(Errors.INVALID_REQUEST).client((String) null).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
     }
 
     private void assertCode(String expectedCodeId, String actualCode) {

@@ -63,9 +63,11 @@ public class OIDCResponseType {
         if (responseTypes.contains(NONE) && responseTypes.size() > 1) {
             throw new IllegalArgumentException("None not allowed with some other response_type");
         }
-        if (responseTypes.contains(TOKEN) && responseTypes.size() == 1) {
-            throw new IllegalArgumentException("Not supported to use response_type=token alone");
-        }
+
+        // response_type value "token" alone is not mentioned in OIDC specification, however it is supported by OAuth2. We allow it just to be compatible with pure OAuth2 clients like swagger.ui
+//        if (responseTypes.contains(TOKEN) && responseTypes.size() == 1) {
+//            throw new IllegalArgumentException("Not supported to use response_type=token alone");
+//        }
     }
 
 
@@ -79,7 +81,7 @@ public class OIDCResponseType {
     }
 
     public boolean isImplicitFlow() {
-        return hasResponseType(ID_TOKEN) && !hasResponseType(CODE);
+        return (hasResponseType(TOKEN) || hasResponseType(ID_TOKEN)) && !hasResponseType(CODE);
     }
 
 

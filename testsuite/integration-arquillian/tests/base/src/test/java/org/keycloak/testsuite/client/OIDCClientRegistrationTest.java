@@ -90,7 +90,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         try {
             OIDCClientRepresentation response = create();
             reg.auth(Auth.token(response));
-            response.setResponseTypes(Arrays.asList("code", "token"));
+            response.setResponseTypes(Arrays.asList("code", "tokenn"));
             reg.oidc().update(response);
             fail("Not expected to end with success");
         } catch (ClientRegistrationException cre) {
