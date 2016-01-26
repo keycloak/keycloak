@@ -15,6 +15,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+import javax.net.ssl.SSLSocketFactory;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
@@ -113,9 +114,12 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
         JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
 
-        props.put("mail.smtp.ssl.socketFactory", configurator.getSSLSocketFactory());
-        if (configurator.getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
-            props.setProperty("mail.smtp.ssl.trust", "*");
+        SSLSocketFactory factory = configurator.getSSLSocketFactory();
+        if (factory != null) {
+            props.put("mail.smtp.ssl.socketFactory", factory);
+            if (configurator.getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
+                props.setProperty("mail.smtp.ssl.trust", "*");
+            }
         }
     }
 
