@@ -34,7 +34,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.filters.ClientConnectionFilter;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
@@ -317,10 +316,6 @@ public class KeycloakServer {
             FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
             di.addFilter(filter);
             di.addFilterUrlMapping("SessionFilter", "/*", DispatcherType.REQUEST);
-
-            FilterInfo connectionFilter = Servlets.filter("ClientConnectionFilter", ClientConnectionFilter.class);
-            di.addFilter(connectionFilter);
-            di.addFilterUrlMapping("ClientConnectionFilter", "/*", DispatcherType.REQUEST);
 
             server.deploy(di);
 
