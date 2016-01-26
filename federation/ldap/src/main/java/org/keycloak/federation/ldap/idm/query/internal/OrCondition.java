@@ -23,6 +23,13 @@ class OrCondition implements Condition {
     }
 
     @Override
+    public void updateParameterName(String modelParamName, String ldapParamName) {
+        for (Condition innerCondition : innerConditions) {
+            innerCondition.updateParameterName(modelParamName, ldapParamName);
+        }
+    }
+
+    @Override
     public void applyCondition(StringBuilder filter) {
         filter.append("(|");
 

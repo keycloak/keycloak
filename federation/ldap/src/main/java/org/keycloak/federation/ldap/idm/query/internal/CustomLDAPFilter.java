@@ -23,6 +23,11 @@ class CustomLDAPFilter implements Condition {
     }
 
     @Override
+    public void updateParameterName(String modelParamName, String ldapParamName) {
+
+    }
+
+    @Override
     public void applyCondition(StringBuilder filter) {
         filter.append(customFilter);
     }

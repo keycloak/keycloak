@@ -55,12 +55,15 @@
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="vendor"><span class="required">*</span> Vendor</label>
                 <div class="col-md-6">
-                    <div>
+                    <div data-ng-show="create">
                         <select class="form-control" id="vendor"
                                 ng-model="instance.config.vendor"
                                 ng-options="vendor.id as vendor.name for vendor in ldapVendors"
                                 required>
                         </select>
+                    </div>
+                    <div data-ng-show="!create">
+                        <input class="form-control" id="vendor-ro" type="text" ng-model="vendorName" readonly>
                     </div>
                 </div>
                 <kc-tooltip>LDAP vendor (provider)</kc-tooltip>

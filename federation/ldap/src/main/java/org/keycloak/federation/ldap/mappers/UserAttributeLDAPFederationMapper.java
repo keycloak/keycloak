@@ -324,10 +324,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
 
         // Change conditions and use ldapAttribute instead of userModel
         for (Condition condition : query.getConditions()) {
-            String paramName = condition.getParameterName();
-            if (paramName != null && paramName.equalsIgnoreCase(userModelAttrName)) {
-                condition.setParameterName(ldapAttrName);
-            }
+            condition.updateParameterName(userModelAttrName, ldapAttrName);
         }
     }
 
