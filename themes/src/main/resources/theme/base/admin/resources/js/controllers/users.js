@@ -752,6 +752,25 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
 
 module.controller('LDAPCtrl', function($scope, $location, $route, Notifications, Dialog, realm, instance, UserFederationInstances, UserFederationSync, RealmLDAPConnectionTester) {
     console.log('LDAPCtrl');
+
+    $scope.ldapVendors = [
+        { "id": "ad", "name": "Active Directory" },
+        { "id": "rhds", "name": "Red Hat Directory Server" },
+        { "id": "tivoli", "name": "Tivoli" },
+        { "id": "edirectory", "name": "Novell eDirectory" },
+        { "id": "other", "name": "Other" }
+    ];
+
+    $scope.authTypes = [
+        { "id": "none", "name": "none" },
+        { "id": "simple", "name": "simple" }
+    ];
+
+    $scope.searchScopes = [
+        { "id": "1", "name": "One Level" },
+        { "id": "2", "name": "Subtree" }
+    ];
+
     var DEFAULT_BATCH_SIZE = "1000";
 
     $scope.create = !instance.providerName;
@@ -799,6 +818,12 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
 
             $scope.fullSyncEnabled = (instance.fullSyncPeriod && instance.fullSyncPeriod > 0);
             $scope.changedSyncEnabled = (instance.changedSyncPeriod && instance.changedSyncPeriod > 0);
+
+            for (var i=0 ; i<$scope.ldapVendors.length ; i++) {
+                if ($scope.ldapVendors[i].id === instance.config.vendor) {
+                    $scope.vendorName = $scope.ldapVendors[i].name;
+                }
+            };
         }
 
         $scope.changed = false;
@@ -807,24 +832,6 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
 
     initFederationSettings();
     $scope.instance = angular.copy(instance);
-
-    $scope.ldapVendors = [
-        { "id": "ad", "name": "Active Directory" },
-        { "id": "rhds", "name": "Red Hat Directory Server" },
-        { "id": "tivoli", "name": "Tivoli" },
-        { "id": "edirectory", "name": "Novell eDirectory" },
-        { "id": "other", "name": "Other" }
-    ];
-
-    $scope.authTypes = [
-        { "id": "none", "name": "none" },
-        { "id": "simple", "name": "simple" }
-    ];
-
-    $scope.searchScopes = [
-        { "id": "1", "name": "One Level" },
-        { "id": "2", "name": "Subtree" }
-    ];
 
     $scope.realm = realm;
 

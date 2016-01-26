@@ -22,4 +22,12 @@ public abstract class NamedParameterCondition implements Condition {
     public void setParameterName(String parameterName) {
         this.parameterName = parameterName;
     }
+
+
+    @Override
+    public void updateParameterName(String modelParamName, String ldapParamName) {
+        if (parameterName.equalsIgnoreCase(modelParamName)) {
+            this.parameterName = ldapParamName;
+        }
+    }
 }
