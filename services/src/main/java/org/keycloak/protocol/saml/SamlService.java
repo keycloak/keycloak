@@ -429,7 +429,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
         @Override
         protected SAMLDocumentHolder extractResponseDocument(String response) {
-            return SAMLRequestParser.parseRequestRedirectBinding(response);
+            return SAMLRequestParser.parseResponseRedirectBinding(response);
         }
 
         @Override

@@ -434,7 +434,7 @@ public class SAMLEndpoint {
 
         @Override
         protected SAMLDocumentHolder extractResponseDocument(String response) {
-            return SAMLRequestParser.parseRequestRedirectBinding(response);
+            return SAMLRequestParser.parseResponseRedirectBinding(response);
         }
 
         @Override
