@@ -11,6 +11,7 @@
                 <!ENTITY Assertions SYSTEM "modules/assertion-api.xml">
                 <!ENTITY Logout SYSTEM "modules/logout.xml">
                 <!ENTITY ErrorHandling SYSTEM "modules/adapter_error_handling.xml">
+                <!ENTITY DEBUGGING SYSTEM "modules/debugging.xml">
                 ]>
 
 <book>
@@ -53,6 +54,7 @@ This one is short
     &Logout;
     &Assertions;
     &ErrorHandling;
+    &DEBUGGING;
 
 
 
