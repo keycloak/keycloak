@@ -6,6 +6,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.openqa.selenium.WebDriver;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Form;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -148,4 +153,14 @@ public class SamlAdapterTest {
     public void testPostSignedLoginLogout() {
         testStrategy.testPostSignedLoginLogout();
     }
+
+    @Test
+    public void testIDPDescriptor() throws Exception {
+        Client client = ClientBuilder.newClient();
+        String text = client.target("http://localhost:8081/auth/realms/master/protocol/saml/descriptor").request().get(String.class);
+        client.close();
+
+    }
+
+
 }
