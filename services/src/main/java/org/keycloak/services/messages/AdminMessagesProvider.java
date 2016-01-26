@@ -21,16 +21,19 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.Properties;
+
+import org.jboss.logging.Logger;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.messages.MessagesProvider;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 
 /**
  * @author <a href="mailto:leonardo.zanivan@gmail.com">Leonardo Zanivan</a>
  */
 public class AdminMessagesProvider implements MessagesProvider {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, AdminMessagesProvider.class.getName());
 
     private KeycloakSession session;
     private Locale locale;
@@ -49,7 +52,7 @@ public class AdminMessagesProvider implements MessagesProvider {
         try {
             return new MessageFormat(message, locale).format(parameters);
         } catch (Exception e) {
-            logger.failedToFormatMessage(e.getMessage());
+            logger.CONFIG.failedToFormatMessage(e.getMessage());
             return message;
         }
     }
@@ -71,7 +74,7 @@ public class AdminMessagesProvider implements MessagesProvider {
             try {
                 properties.load(url.openStream());
             } catch (IOException ex) {
-                logger.failedToloadMessages(ex);
+                logger.CONFIG.failedToloadMessages(ex);
             }
         }
 

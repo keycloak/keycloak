@@ -137,7 +137,7 @@
     </contributors>
 
     <modules>
-        <module>common</module>
+        <module>logging</module>
         <module>core</module>
         <module>dependencies</module>
         <module>server-spi</module>
@@ -634,6 +634,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-ldap-federation</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-logging</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

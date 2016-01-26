@@ -16,7 +16,9 @@
  */
 package org.keycloak.provider;
 
-import org.keycloak.services.ServicesLogger;
+import org.jboss.logging.Logger;
+
+import org.keycloak.logging.KeycloakLogger;
 
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -30,7 +32,7 @@ import java.util.ServiceLoader;
  */
 public class ProviderManager {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, ProviderManager.class.getName());
 
     private List<ProviderLoader> loaders = new LinkedList<ProviderLoader>();
     private Map<String, List<ProviderFactory>> cache = new HashMap<String, List<ProviderFactory>>();

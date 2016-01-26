@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.admin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
@@ -36,7 +37,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -65,7 +66,7 @@ import javax.ws.rs.QueryParam;
  * @version $Revision: 1 $
  */
 public class AdminConsole {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, AdminConsole.class.getName());
 
     @Context
     protected UriInfo uriInfo;

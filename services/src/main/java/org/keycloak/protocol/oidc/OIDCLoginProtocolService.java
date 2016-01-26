@@ -1,5 +1,6 @@
 package org.keycloak.protocol.oidc;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
@@ -15,7 +16,7 @@ import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
 import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.resources.RealmsResource;
 
 import javax.ws.rs.GET;
@@ -37,7 +38,7 @@ import javax.ws.rs.core.UriInfo;
  */
 public class OIDCLoginProtocolService {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, OIDCLoginProtocolService.class.getName());
 
     private RealmModel realm;
     private TokenManager tokenManager;

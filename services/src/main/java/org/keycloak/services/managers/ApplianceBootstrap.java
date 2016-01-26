@@ -16,13 +16,15 @@
  */
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
+
 import org.keycloak.Config;
 import org.keycloak.common.Version;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -30,7 +32,7 @@ import org.keycloak.services.ServicesLogger;
  */
 public class ApplianceBootstrap {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, ApplianceBootstrap.class.getName());
     private final KeycloakSession session;
 
     public ApplianceBootstrap(KeycloakSession session) {
@@ -56,7 +58,7 @@ public class ApplianceBootstrap {
         }
 
         String adminRealmName = Config.getAdminRealm();
-        logger.initializingAdminRealm(adminRealmName);
+        logger.CONFIG.initializingAdminRealm(adminRealmName);
 
         RealmManager manager = new RealmManager(session);
         manager.setContextPath(contextPath);

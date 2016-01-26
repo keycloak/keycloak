@@ -17,7 +17,8 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.logging.Logger;
+
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
@@ -60,7 +61,7 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorPage;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.validation.Validation;
@@ -95,7 +96,7 @@ import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
  */
 public class IdentityBrokerService implements IdentityProvider.AuthenticationCallback {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, IdentityBrokerService.class.getName());
 
     private final RealmModel realmModel;
 
@@ -781,15 +782,15 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     this.session.getTransaction().commit();
                 }
             } catch (Exception e) {
-                logger.couldNotFireEvent(e);
+                logger.IDP.couldNotFireEvent(e);
                 rollback();
             }
         }
 
         if (throwable != null) {
-            logger.error(message, throwable);
+            logger.IDP.errorEvent(throwable, message);
         } else {
-            logger.error(message);
+            logger.IDP.eventError(message);
         }
     }
 

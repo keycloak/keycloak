@@ -17,13 +17,14 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.resources.admin.AdminRoot;
 
 import javax.ws.rs.GET;
@@ -42,7 +43,7 @@ import javax.ws.rs.core.UriInfo;
  * @version $Revision: 1 $
  */
 public class PublicRealmResource {
-    protected static final  ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final  KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, PublicRealmResource.class.getName());
 
     @Context
     protected UriInfo uriInfo;

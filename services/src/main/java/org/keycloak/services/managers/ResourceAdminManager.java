@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
+
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
@@ -30,7 +32,7 @@ import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -53,7 +55,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ResourceAdminManager {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, ResourceAdminManager.class.getName());
     private static final String CLIENT_SESSION_HOST_PROPERTY = "${application.session.host}";
 
     private KeycloakSession session;
@@ -253,7 +255,7 @@ public class ResourceAdminManager {
             logger.debugf("logout success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.logoutFailed(e, resource.getClientId());
+            logger.SESSION.logoutFailed(e, resource.getClientId());
             return false;
         }
     }
@@ -304,7 +306,7 @@ public class ResourceAdminManager {
             logger.debugf("pushRevocation success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.failedToSendRevocation(e);
+            logger.SESSION.failedToSendRevocation(e);
             return false;
         }
     }
@@ -342,7 +344,7 @@ public class ResourceAdminManager {
             logger.debugf("testAvailability success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.availabilityTestFailed(managementUrl);
+            logger.SESSION.availabilityTestFailed(managementUrl);
             return false;
         }
    }

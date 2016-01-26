@@ -16,13 +16,15 @@
  */
 package org.keycloak.services.clientregistration.oidc;
 
+import org.jboss.logging.Logger;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
 import org.keycloak.services.clientregistration.ClientRegistrationAuth;
 import org.keycloak.services.clientregistration.ClientRegistrationException;
@@ -38,7 +40,7 @@ import java.net.URI;
  */
 public class OIDCClientRegistrationProvider extends AbstractClientRegistrationProvider {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, OIDCClientRegistrationProvider.class.getName());
 
     public OIDCClientRegistrationProvider(KeycloakSession session) {
         super(session);
@@ -60,7 +62,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             clientOIDC.setClientIdIssuedAt(Time.currentTime());
             return Response.created(uri).entity(clientOIDC).build();
         } catch (ClientRegistrationException cre) {
-            logger.clientRegistrationException(cre.getMessage());
+            logger.CLIENT.clientRegistrationException(cre.getMessage());
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
         }
     }
@@ -85,7 +87,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             clientOIDC = DescriptionConverter.toExternalResponse(client, uri);
             return Response.ok(clientOIDC).build();
         } catch (ClientRegistrationException cre) {
-            logger.clientRegistrationException(cre.getMessage());
+            logger.CLIENT.clientRegistrationException(cre.getMessage());
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
         }
     }

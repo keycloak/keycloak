@@ -18,6 +18,9 @@ package org.keycloak.services.managers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+import org.jboss.logging.Logger;
+
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -36,7 +39,7 @@ import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.adapters.config.BaseRealmConfig;
 import org.keycloak.common.util.Time;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 
 import java.net.URI;
 import java.util.Collections;
@@ -51,7 +54,7 @@ import java.util.TreeSet;
  * @version $Revision: 1 $
  */
 public class ClientManager {
-    protected ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, ClientManager.class.getName());
 
     protected RealmManager realmManager;
 

@@ -16,7 +16,9 @@
  */
 package org.keycloak.services.managers;
 
-import org.keycloak.services.ServicesLogger;
+import org.jboss.logging.Logger;
+
+import org.keycloak.logging.KeycloakLogger;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -28,14 +30,14 @@ import java.util.Hashtable;
  */
 public class LDAPConnectionTestManager {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, LDAPConnectionTestManager.class.getName());
 
     public static final String TEST_CONNECTION = "testConnection";
     public static final String TEST_AUTHENTICATION = "testAuthentication";
 
     public boolean testLDAP(String action, String connectionUrl, String bindDn, String bindCredential) {
         if (!TEST_CONNECTION.equals(action) && !TEST_AUTHENTICATION.equals(action)) {
-            logger.unknownAction(action);
+            logger.IDP.unknownAction(action);
             return false;
         }
 
@@ -60,14 +62,14 @@ public class LDAPConnectionTestManager {
             return true;
         } catch (Exception ne) {
             String errorMessage = (TEST_AUTHENTICATION.equals(action)) ? "Error when authenticating to LDAP: " : "Error when connecting to LDAP: ";
-            logger.errorAuthenticating(ne, errorMessage + ne.getMessage());
+            logger.IDP.errorAuthenticating(ne, errorMessage + ne.getMessage());
             return false;
         } finally {
             if (ldapContext != null) {
                 try {
                     ldapContext.close();
                 } catch (NamingException ne) {
-                    logger.errorClosingLDAP(ne);
+                    logger.IDP.errorClosingLDAP(ne);
                 }
             }
         }

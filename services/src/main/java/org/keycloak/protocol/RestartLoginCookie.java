@@ -1,6 +1,9 @@
 package org.keycloak.protocol;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import org.jboss.logging.Logger;
+
 import org.keycloak.common.ClientConnection;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
@@ -9,7 +12,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
 
@@ -27,7 +30,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class RestartLoginCookie {
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, RestartLoginCookie.class.getName());
     public static final String KC_RESTART = "KC_RESTART";
     @JsonProperty("cs")
     protected String clientSession;

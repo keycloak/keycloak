@@ -16,7 +16,9 @@
  */
 package org.keycloak.provider;
 
-import org.keycloak.services.ServicesLogger;
+import org.jboss.logging.Logger;
+
+import org.keycloak.logging.KeycloakLogger;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -30,7 +32,7 @@ import java.util.List;
  */
 public class FileSystemProviderLoaderFactory implements ProviderLoaderFactory {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, FileSystemProviderLoaderFactory.class.getName());
 
     @Override
     public boolean supports(String type) {

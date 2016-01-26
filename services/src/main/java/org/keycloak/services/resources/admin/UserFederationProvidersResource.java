@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
+
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -35,7 +37,7 @@ import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.utils.CredentialHelper;
@@ -62,7 +64,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class UserFederationProvidersResource {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, UserFederationProvidersResource.class.getName());
 
     protected RealmModel realm;
 
@@ -181,7 +183,7 @@ public class UserFederationProvidersResource {
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
         boolean kerberosCredsAdded = checkKerberosCredential(session, realm, model);
         if (kerberosCredsAdded) {
-            logger.addedKerberosToRealmCredentials();
+            logger.REALM.addedKerberosToRealmCredentials();
         }
 
 
