@@ -169,6 +169,7 @@ public class LoginActionsService {
     private class Checks {
         ClientSessionCode clientCode;
         Response response;
+        ClientSessionCode.ParseResult result;
 
         boolean verifyCode(String code, String requiredAction, ClientSessionCode.ActionType actionType) {
             if (!verifyCode(code)) {
@@ -213,7 +214,7 @@ public class LoginActionsService {
                 response = ErrorPage.error(session, Messages.REALM_NOT_ENABLED);
                 return false;
             }
-            ClientSessionCode.ParseResult result = ClientSessionCode.parseResult(code, session, realm);
+            result = ClientSessionCode.parseResult(code, session, realm);
             clientCode = result.getCode();
             if (clientCode == null) {
                 if (result.isClientSessionNotFound()) { // timeout
@@ -654,6 +655,9 @@ public class LoginActionsService {
         if (key != null) {
             Checks checks = new Checks();
             if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
+                if (checks.clientCode == null && checks.result.isClientSessionNotFound() || checks.result.isIllegalHash()) {
+                   return ErrorPage.error(session, Messages.STALE_VERIFY_EMAIL_LINK);
+                }
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
@@ -661,7 +665,7 @@ public class LoginActionsService {
             if (!ClientSessionModel.Action.VERIFY_EMAIL.name().equals(clientSession.getNote(AuthenticationManager.CURRENT_REQUIRED_ACTION))) {
                 logger.reqdActionDoesNotMatch();
                 event.error(Errors.INVALID_CODE);
-                throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
+                throw new WebApplicationException(ErrorPage.error(session, Messages.STALE_VERIFY_EMAIL_LINK));
             }
 
             UserSessionModel userSession = clientSession.getUserSession();

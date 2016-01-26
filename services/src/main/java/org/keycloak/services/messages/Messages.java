@@ -151,6 +151,8 @@ public class Messages {
 
     public static final String INVALID_CODE = "invalidCodeMessage";
 
+    public static final String STALE_VERIFY_EMAIL_LINK = "staleEmailVerificationLink";
+
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
 
     public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFoundMessage";
