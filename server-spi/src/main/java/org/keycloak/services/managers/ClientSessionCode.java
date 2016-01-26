@@ -65,6 +65,7 @@ public class ClientSessionCode {
         ClientSessionCode code;
         boolean clientSessionNotFound;
         boolean illegalHash;
+        ClientSessionModel clientSession;
 
         public ClientSessionCode getCode() {
             return code;
@@ -76,6 +77,10 @@ public class ClientSessionCode {
 
         public boolean isIllegalHash() {
             return illegalHash;
+        }
+
+        public ClientSessionModel getClientSession() {
+            return clientSession;
         }
     }
 
@@ -89,19 +94,19 @@ public class ClientSessionCode {
             String[] parts = code.split("\\.");
             String id = parts[1];
 
-            ClientSessionModel clientSession = session.sessions().getClientSession(realm, id);
-            if (clientSession == null) {
+            result.clientSession = session.sessions().getClientSession(realm, id);
+            if (result.clientSession == null) {
                 result.clientSessionNotFound = true;
                 return result;
             }
 
-            String hash = createHash(realm, clientSession);
+            String hash = createHash(realm, result.clientSession);
             if (!hash.equals(parts[0])) {
                 result.illegalHash = true;
                 return result;
             }
 
-            result.code = new ClientSessionCode(realm, clientSession);
+            result.code = new ClientSessionCode(realm, result.clientSession);
             return result;
         } catch (RuntimeException e) {
             result.illegalHash = true;
