@@ -1,13 +1,13 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <h1>
-        <span>Admin Events</span>
-        <kc-tooltip>Displays saved admin events for the realm. Events are related to admin account, for example a realm creation. To enable persisted events go to config.</kc-tooltip>
+        <span>{{:: 'admin-events' | translate}}</span>
+        <kc-tooltip>{{:: 'admin-events.tooltip' | translate}}</kc-tooltip>
     </h1>
     
     <ul class="nav nav-tabs">
-        <li data-ng-class="(path[2] == 'events') && 'active'"><a href="#/realms/{{realm.realm}}/events">Login Events</a></li>
-        <li data-ng-class="(path[2] == 'admin-events') && 'active'"><a href="#/realms/{{realm.realm}}/admin-events">Admin Events</a></li>
-        <li data-ng-class="(path[2] == 'events-settings') && 'active'"><a href="#/realms/{{realm.realm}}/events-settings">Config</a></li>
+        <li data-ng-class="(path[2] == 'events') && 'active'"><a href="#/realms/{{realm.realm}}/events">{{:: 'login-events' | translate}}</a></li>
+        <li data-ng-class="(path[2] == 'admin-events') && 'active'"><a href="#/realms/{{realm.realm}}/admin-events">{{:: 'admin-events' | translate}}</a></li>
+        <li data-ng-class="(path[2] == 'events-settings') && 'active'"><a href="#/realms/{{realm.realm}}/events-settings">{{:: 'config' | translate}}</a></li>
     </ul>
     <h2></h2>
 
@@ -26,61 +26,61 @@
                         <button class="btn btn-default" data-ng-click="filter = !filter">
                             <span class="glyphicon glyphicon-plus" data-ng-show="!filter"></span>
                             <span class="glyphicon glyphicon-minus" data-ng-show="filter"></span>
-                            Filter
+                            {{:: 'filter' | translate}}
                         </button>
-                        <button class="btn btn-default btn-default" data-ng-click="update()">Update</button>
-                        <button class="btn btn-default btn-default" data-ng-click="reset()">Reset</button>
+                        <button class="btn btn-default btn-default" data-ng-click="update()">{{:: 'update' | translate}}</button>
+                        <button class="btn btn-default btn-default" data-ng-click="reset()">{{:: 'reset' | translate}}</button>
                     </div>
                     <form class="form-horizontal" data-ng-show="filter">
                         <div class="form-group">
-      			            <label class="col-sm-2 control-label" for="adminEnabledEventOperations">Operation Types</label>
+      			            <label class="col-sm-2 control-label" for="adminEnabledEventOperations">{{:: 'operation-types' | translate}}</label>
                     	    <div class="col-sm-5">
-                                <input ui-select2="adminEnabledEventOperationsOptions" id="adminEnabledEventOperations" ng-model="query.operationTypes" data-placeholder="Select operations..."/>
+                                <input ui-select2="adminEnabledEventOperationsOptions" id="adminEnabledEventOperations" ng-model="query.operationTypes" data-placeholder="{{:: 'select-operations.placeholder' | translate}}"/>
 			                </div>
 			            </div>
                         <div class="form-group">
-                            <label class="col-sm-2 control-label" for="resource">Resource Path</label>
+                            <label class="col-sm-2 control-label" for="resource">{{:: 'resource-path' | translate}}</label>
                             <div class="col-sm-4">
                                 <input class="form-control" type="text" id="resource" name="resource" data-ng-model="query.resourcePath">
                             </div>
-                            <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="Filter by resource path. Supports wildcards '*' to match a single part of the path and '**' matches multiple parts. For example 'realms/*/clients/asbc' matches client with id asbc in any realm, while or 'realms/master/**' matches anything in the master realm." class="fa fa-info-circle"></span>
+                            <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="{{:: 'resource-path.tooltip' | translate}}" class="fa fa-info-circle"></span>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-2 control-label" for="dateFrom">Date (From)</label>
+                            <label class="col-sm-2 control-label" for="dateFrom">{{:: 'date-(from)' | translate}}</label>
                             <div class="col-sm-4">
                                 <input class="form-control" type="text" id="dateFrom" name="dateFrom" data-ng-model="query.dateFrom"  placeholder="yyyy-MM-dd">
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-2 control-label" for="dateTo">Date (To)</label>
+                            <label class="col-sm-2 control-label" for="dateTo">{{:: 'date-(to)' | translate}}</label>
                             <div class="col-sm-4">
                                 <input class="form-control" type="text" id="dateTo" name="dateTo" data-ng-model="query.dateTo"  placeholder="yyyy-MM-dd">
                             </div>
                         </div>
 
                         <fieldset>
-                            <legend><span class="text">Authentication Details</span></legend>
+                            <legend><span class="text">{{:: 'authentication-details' | translate}}</span></legend>
 
                             <div class="form-group">
-                                <label class="col-sm-2 control-label" for="realm">Realm</label>
+                                <label class="col-sm-2 control-label" for="realm">{{:: 'realm' | translate}}</label>
                                 <div class="col-sm-4">
                                     <input class="form-control" type="text" id="realm" name="realm" data-ng-model="query.authRealm">
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="col-sm-2 control-label" for="client">Client</label>
+                                <label class="col-sm-2 control-label" for="client">{{:: 'client' | translate}}</label>
                                 <div class="col-sm-4">
                                     <input class="form-control" type="text" id="client" name="client" data-ng-model="query.authClient">
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="col-sm-2 control-label" for="user">User</label>
+                                <label class="col-sm-2 control-label" for="user">{{:: 'user' | translate}}</label>
                                 <div class="col-sm-4">
                                     <input class="form-control" type="text" id="user" name="user" data-ng-model="query.authUser">
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="col-sm-2 control-label" for="ipAddress">IP Address</label>
+                                <label class="col-sm-2 control-label" for="ipAddress">{{:: 'ip-address' | translate}}</label>
                                 <div class="col-sm-4">
                                     <input class="form-control" type="text" id="ipAddress" name="ipAddress" data-ng-model="query.authIpAddress">
                                 </div>
@@ -91,10 +91,10 @@
                 </th>
             </tr>
             <tr>
-                <th width="100px">Time</th>
-                <th width="180px">Operation Type</th>
-                <th width="180px">Resource Path</th>
-                <th>Details</th>
+                <th width="100px">{{:: 'time' | translate}}</th>
+                <th width="180px">{{:: 'operation-type' | translate}}</th>
+                <th width="180px">{{:: 'resource-path' | translate}}</th>
+                <th>{{:: 'details' | translate}}</th>
             </tr>
             </thead>
             <tfoot>
@@ -113,10 +113,10 @@
                     <td>{{event.resourcePath}}</td>
                     <td>
                         <button type="button" class="btn btn-default btn-xs" data-ng-click="viewAuth(event)">
-                            Auth
+                            {{:: 'auth' | translate}}
                         </button>
                         <button type="button" class="btn btn-default btn-xs" data-ng-click="viewRepresentation(event)" data-ng-show="event.representation">
-                            Representation
+                            {{:: 'representation' | translate}}
                         </button>
                     </td>
                 </tr>

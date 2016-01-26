@@ -15,7 +15,7 @@
 
     <form class="form-horizontal" name="clusteringForm" novalidate kc-read-only="!access.manageClients" data-ng-show="create || registered">
         <div class="form-group">
-            <label class="col-md-2 control-label" for="host">Host</label>
+            <label class="col-md-2 control-label" for="host">{{:: 'host' | translate}}</label>
             <div class="col-sm-6">
                 <input ng-disabled="!create" class="form-control" type="text" id="host" name="host" data-ng-model="node.host" required>
             </div>

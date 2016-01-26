@@ -10,7 +10,7 @@
                         <select class="form-control" id="loginTheme"
                                 ng-model="realm.loginTheme"
                                 ng-options="o.name as o.name for o in serverInfo.themes.login">
-                            <option value="" disabled selected>{{:: 'select-one' | translate}}</option>
+                            <option value="" disabled selected>{{:: 'select-one.placeholder' | translate}}</option>
                         </select>
                     </div>
                 </div>
@@ -23,7 +23,7 @@
                         <select class="form-control" id="accountTheme"
                                 ng-model="realm.accountTheme"
                                 ng-options="o.name as o.name for o in serverInfo.themes.account">
-                            <option value="" disabled selected>{{:: 'select-one' | translate}}</option>
+                            <option value="" disabled selected>{{:: 'select-one.placeholder' | translate}}</option>
                         </select>
                     </div>
                 </div>
@@ -36,7 +36,7 @@
                         <select class="form-control" id="adminTheme"
                                 ng-model="realm.adminTheme"
                                 ng-options="o.name as o.name for o in serverInfo.themes.admin">
-                            <option value="" disabled selected>{{:: 'select-one' | translate}}</option>
+                            <option value="" disabled selected>{{:: 'select-one.placeholder' | translate}}</option>
                         </select>
                     </div>
                 </div>
@@ -49,7 +49,7 @@
                         <select class="form-control" id="emailTheme"
                                 ng-model="realm.emailTheme"
                                 ng-options="o.name as o.name for o in serverInfo.themes.email">
-                            <option value="" disabled selected>{{:: 'select-one' | translate}}</option>
+                            <option value="" disabled selected>{{:: 'select-one.placeholder' | translate}}</option>
                         </select>
                     </div>
                 </div>
@@ -79,7 +79,7 @@
                                 ng-options="o as o for o in realm.supportedLocales"
                                 ng-required="realm.internationalizationEnabled"
                                 ng-disabled="!realm.internationalizationEnabled">
-                            <option value="" disabled selected>{{:: 'select-one' | translate}}</option>
+                            <option value="" disabled selected>{{:: 'select-one.placeholder' | translate}}</option>
                         </select>
                     </div>
                 </div>

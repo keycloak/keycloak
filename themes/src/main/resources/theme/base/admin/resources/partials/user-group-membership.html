@@ -1,6 +1,6 @@
  <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
      <ol class="breadcrumb">
-         <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
+         <li><a href="#/realms/{{realm.realm}}/users">{{:: 'users' | translate}}</a></li>
          <li>{{user.username}}</li>
      </ol>
 
@@ -18,11 +18,11 @@
                              <tr>
                                  <th class="kc-table-actions" colspan="5">
                                      <div class="form-inline">
-                                         <label class="control-label">Group Membership</label>
-                                         <kc-tooltip>Groups user is a member of.  Select a listed group and click the Leave button to leave the group.</kc-tooltip>
+                                         <label class="control-label">{{:: 'group-membership' | translate}}</label>
+                                         <kc-tooltip>{{:: 'group-membership.tooltip' | translate}}</kc-tooltip>
 
                                          <div class="pull-right" data-ng-show="access.manageUsers">
-                                             <button id="leaveGroups" class="btn btn-default" ng-click="leaveGroup()">Leave</button>
+                                             <button id="leaveGroups" class="btn btn-default" ng-click="leaveGroup()">{{:: 'leave' | translate}}</button>
                                          </div>
                                      </div>
                                  </th>
@@ -34,7 +34,7 @@
                                      <select id="groupMembership" class="form-control" size=5
                                                             ng-model="selectedGroup"
                                                             ng-options="r.path for r in groupMemberships">
-                                         <option style="display:none" value="">select a type</option>
+                                         <option style="display:none" value="">{{:: 'select-a-type.placeholder' | translate}}</option>
                                  </select>
 
 
@@ -50,11 +50,11 @@
                                  <th class="kc-table-actions" colspan="5">
 
                                      <div class="form-inline">
-                                         <label class="control-label">Available Groups</label>
-                                         <kc-tooltip>Groups a user can join.  Select a group and click the join button.</kc-tooltip>
+                                         <label class="control-label">{{:: 'available-groups' | translate}}</label>
+                                         <kc-tooltip>{{:: 'membership.available-groups.tooltip' | translate}}</kc-tooltip>
 
                                          <div class="pull-right" data-ng-show="access.manageUsers">
-                                             <button id="joinGroup" class="btn btn-default" ng-click="joinGroup()">Join</button>
+                                             <button id="joinGroup" class="btn btn-default" ng-click="joinGroup()">{{:: 'join' | translate}}</button>
                                          </div>
                                      </div>
                                  </th>

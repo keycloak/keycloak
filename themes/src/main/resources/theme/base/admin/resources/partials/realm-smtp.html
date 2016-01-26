@@ -23,20 +23,20 @@
         <div class="form-group clearfix">
             <label class="col-md-2 control-label" for="smtpSSL">{{:: 'enable-ssl' | translate}}</label>
             <div class="col-md-6">
-                <input ng-model="realm.smtpServer.ssl" name="smtpSSL" id="smtpSSL" onoffswitch onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                <input ng-model="realm.smtpServer.ssl" name="smtpSSL" id="smtpSSL" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
             </div>
         </div>
         <div class="form-group clearfix">
             <label class="col-md-2 control-label" for="smtpStartTLS">{{:: 'enable-start-tls' | translate}}</label>
             <div class="col-md-6">
-                <input ng-model="realm.smtpServer.starttls" name="smtpStartTLS" id="smtpStartTLS" onoffswitch onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                <input ng-model="realm.smtpServer.starttls" name="smtpStartTLS" id="smtpStartTLS" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
             </div>
         </div>
 
         <div class="form-group clearfix">
             <label class="col-md-2 control-label" for="smtpAuth">{{:: 'enable-auth' | translate}}</label>
             <div class="col-md-6">
-                <input ng-model="realm.smtpServer.auth" name="smtpAuth" id="smtpAuth" onoffswitch onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                <input ng-model="realm.smtpServer.auth" name="smtpAuth" id="smtpAuth" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
             </div>
         </div>
         <div class="form-group clearfix" data-ng-show="realm.smtpServer.auth">

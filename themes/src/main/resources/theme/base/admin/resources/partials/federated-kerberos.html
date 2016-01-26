@@ -1,74 +1,74 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/user-federation">User Federation</a></li>
+        <li><a href="#/realms/{{realm.realm}}/user-federation">{{:: 'user-federation' | translate}}</a></li>
         <li data-ng-hide="create">{{instance.displayName|capitalize}}</li>
-        <li data-ng-show="create">Add User Federation Provider</li>
+        <li data-ng-show="create">{{:: 'add-user-federation-provider' | translate}}</li>
     </ol>
 
     <kc-tabs-user-federation></kc-tabs-user-federation>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
         <fieldset>
-            <legend><span class="text">Required Settings</span></legend>
+            <legend><span class="text">{{:: 'required-settings' | translate}}</span></legend>
             <div class="form-group clearfix" data-ng-show="!create">
-                <label class="col-md-2 control-label" for="providerId">Provider ID </label>
+                <label class="col-md-2 control-label" for="providerId">{{:: 'provider-id' | translate}} </label>
                 <div class="col-md-6">
                     <input class="form-control" id="providerId" type="text" ng-model="instance.id" readonly>
                 </div>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="consoleDisplayName">Console display name </label>
+                <label class="col-md-2 control-label" for="consoleDisplayName">{{:: 'console-display-name' | translate}} </label>
                 <div class="col-md-6">
-                    <input class="form-control" id="consoleDisplayName" type="text" ng-model="instance.displayName" placeholder="defaults to id">
+                    <input class="form-control" id="consoleDisplayName" type="text" ng-model="instance.displayName" placeholder="{{:: 'defaults-to-id' | translate}}">
                 </div>
-                <kc-tooltip>Display name of provider when linked in admin console.</kc-tooltip>
+                <kc-tooltip>{{:: 'console-display-name.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="priority">Priority </label>
+                <label class="col-md-2 control-label" for="priority">{{:: 'priority' | translate}} </label>
                 <div class="col-md-6">
                     <input class="form-control" id="priority" type="text" ng-model="instance.priority">
                 </div>
-                <kc-tooltip>Priority of provider when doing a user lookup.  Lowest first.</kc-tooltip>
+                <kc-tooltip>{{:: 'priority.tooltip' | translate}}</kc-tooltip>
             </div>
 
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="kerberosRealm"><span class="required">*</span> Kerberos Realm</label>
+                <label class="col-md-2 control-label" for="kerberosRealm"><span class="required">*</span> {{:: 'kerberos-realm' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="kerberosRealm" type="text" ng-model="instance.config.kerberosRealm" required>
                 </div>
-                <kc-tooltip>Name of kerberos realm. For example FOO.ORG</kc-tooltip>
+                <kc-tooltip>{{:: 'kerberos-realm.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="serverPrincipal"><span class="required">*</span> Server principal</label>
+                <label class="col-md-2 control-label" for="serverPrincipal"><span class="required">*</span> {{:: 'server-principal' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="serverPrincipal" type="text" ng-model="instance.config.serverPrincipal" required>
                 </div>
-                <kc-tooltip>Full name of server principal for HTTP service including server and domain name. For example HTTP/host.foo.org@FOO.ORG</kc-tooltip>
+                <kc-tooltip>{{:: 'server-principal.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="keyTab"><span class="required">*</span> KeyTab</label>
+                <label class="col-md-2 control-label" for="keyTab"><span class="required">*</span> {{:: 'keytab' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="keyTab" type="text" ng-model="instance.config.keyTab" required>
                 </div>
-                <kc-tooltip>Location of Kerberos KeyTab file containing the credentials of server principal. For example /etc/krb5.keytab</kc-tooltip>
+                <kc-tooltip>{{:: 'keytab.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="debug">Debug </label>
+                <label class="col-md-2 control-label" for="debug">{{:: 'debug' | translate}} </label>
                 <div class="col-md-6">
-                    <input ng-model="instance.config.debug" id="debug" onoffswitch />
+                    <input ng-model="instance.config.debug" id="debug" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Enable/disable debug logging to standard output for Krb5LoginModule.</kc-tooltip>
+                <kc-tooltip>{{:: 'debug.tooltip' | translate}}</kc-tooltip>
             </div>
 
             <div class="form-group">
-                <label class="col-md-2 control-label" for="allowPasswordAuthentication">Allow Password Authentication </label>
+                <label class="col-md-2 control-label" for="allowPasswordAuthentication">{{:: 'allow-password-authentication' | translate}} </label>
                 <div class="col-md-6">
-                    <input ng-model="instance.config.allowPasswordAuthentication" id="allowPasswordAuthentication" onoffswitch />
+                    <input ng-model="instance.config.allowPasswordAuthentication" id="allowPasswordAuthentication" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Enable/disable possibility of username/password authentication against Kerberos database</kc-tooltip>
+                <kc-tooltip>{{:: 'allow-password-authentication.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="instance.config.allowPasswordAuthentication">
-                <label class="col-md-2 control-label" for="editMode">Edit mode</label>
+                <label class="col-md-2 control-label" for="editMode">{{:: 'edit-mode' | translate}}</label>
                 <div class="col-md-6">
                     <div>
                         <select class="form-control" id="editMode"
@@ -78,29 +78,29 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>READ_ONLY means that password updates are not allowed and user always authenticates with Kerberos password. UNSYNCED means user can change his password in Keycloak database and this one will be used instead of Kerberos password then</kc-tooltip>
+                <kc-tooltip>{{:: 'edit-mode.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="updateProfileFirstLogin">Update Profile First Login </label>
+                <label class="col-md-2 control-label" for="updateProfileFirstLogin">{{:: 'update-profile-first-login' | translate}} </label>
                 <div class="col-md-6">
-                    <input ng-model="instance.config.updateProfileFirstLogin" id="updateProfileFirstLogin" onoffswitch />
+                    <input ng-model="instance.config.updateProfileFirstLogin" id="updateProfileFirstLogin" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Update profile on first login</kc-tooltip>
+                <kc-tooltip>{{:: 'update-profile-first-login.tooltip' | translate}}</kc-tooltip>
             </div>
 
         </fieldset>
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageUsers">
-                <button kc-save>Save</button>
-                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+                <button kc-save>{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageUsers">
-                <button kc-save  data-ng-disabled="!changed">Save</button>
-                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
     </form>

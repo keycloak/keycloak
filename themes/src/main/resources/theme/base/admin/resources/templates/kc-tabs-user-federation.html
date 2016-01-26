@@ -3,10 +3,10 @@
         {{instance.displayName|capitalize}}
         <i class="pficon pficon-delete clickable" data-ng-show="!create && access.manageUsers" data-ng-click="removeUserFederation()"></i>
     </h1>
-    <h1 data-ng-show="create">Add User Federation Provider</h1>
+    <h1 data-ng-show="create">{{:: 'add-user-federation-provider' | translate}}</h1>
 
     <ul class="nav nav-tabs" data-ng-hide="create">
-        <li ng-class="{active: !path[6]}"><a href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">Settings</a></li>
-        <li ng-class="{active: path[6] == 'mappers'}"><a href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}/mappers">Mappers</a></li>
+        <li ng-class="{active: !path[6]}"><a href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">{{:: 'settings' | translate}}</a></li>
+        <li ng-class="{active: path[6] == 'mappers'}"><a href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}/mappers">{{:: 'mappers' | translate}}</a></li>
     </ul>
 </div>

@@ -13,11 +13,11 @@
                              <tr>
                                  <th class="kc-table-actions" colspan="5">
                                      <div class="form-inline">
-                                         <label class="control-label">Default Groups</label>
-                                         <kc-tooltip>Newly created or registered users will automatically be added to these groups</kc-tooltip>
+                                         <label class="control-label">{{:: 'default-groups' | translate}}</label>
+                                         <kc-tooltip>{{:: 'default-groups.tooltip' | translate}}</kc-tooltip>
 
                                          <div class="pull-right" data-ng-show="access.manageRealm">
-                                             <button id="removeDefaultGroup" class="btn btn-default" ng-click="removeDefaultGroup()">Remove</button>
+                                             <button id="removeDefaultGroup" class="btn btn-default" ng-click="removeDefaultGroup()">{{:: 'remove' | translate}}</button>
                                          </div>
                                      </div>
                                  </th>
@@ -29,7 +29,7 @@
                                      <select id="defaultGroups" class="form-control" size=5
                                                             ng-model="selectedGroup"
                                                             ng-options="r.path for r in defaultGroups">
-                                         <option style="display:none" value="">select a type</option>
+                                         <option style="display:none" value="">{{:: 'select-a-type.placeholder' | translate}}</option>
                                  </select>
 
 
@@ -45,11 +45,11 @@
                                  <th class="kc-table-actions" colspan="5">
 
                                      <div class="form-inline">
-                                         <label class="control-label">Available Groups</label>
-                                         <kc-tooltip>Select a group you want to add as a default.</kc-tooltip>
+                                         <label class="control-label">{{:: 'available-groups' | translate}}</label>
+                                         <kc-tooltip>{{:: 'available-groups.tooltip' | translate}}</kc-tooltip>
 
                                          <div class="pull-right" data-ng-show="access.manageRealm">
-                                             <button id="addDefaultGroup" class="btn btn-default" ng-click="addDefaultGroup()">Add</button>
+                                             <button id="addDefaultGroup" class="btn btn-default" ng-click="addDefaultGroup()">{{:: 'add' | translate}}</button>
                                          </div>
                                      </div>
                                  </th>

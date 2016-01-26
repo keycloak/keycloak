@@ -1,38 +1,38 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
-    <h1>Create Execution Flow</h1>
+    <h1>{{:: 'create-execution-flow' | translate}}</h1>
 
     <kc-tabs-authentication></kc-tabs-authentication>
 
     <form class="form-horizontal" name="clientForm" novalidate kc-read-only="!access.manageRealm">
         <div class="form-group">
-            <label class="col-md-2 control-label" for="alias">Alias </label>
+            <label class="col-md-2 control-label" for="alias">{{:: 'alias' | translate}} </label>
             <div class="col-sm-6">
                 <input class="form-control" type="text" id="alias" name="alias" data-ng-model="flow.alias" autofocus required>
             </div>
-            <kc-tooltip>Specifies display name for the flow.</kc-tooltip>
+            <kc-tooltip>{{:: 'flow.alias.tooltip' | translate}}</kc-tooltip>
         </div>
         <div class="form-group">
-            <label class="col-md-2 control-label" for="description">Description </label>
+            <label class="col-md-2 control-label" for="description">{{:: 'description' | translate}} </label>
 
             <div class="col-md-6">
                 <textarea class="form-control" rows="5" cols="50" id="description" name="description" data-ng-model="flow.description"></textarea>
             </div>
         </div>
         <div class="form-group" data-ng-hide="flow.type == 'client-flow'">
-            <label class="col-md-2 control-label" for="flowType">Flow Type</label>
+            <label class="col-md-2 control-label" for="flowType">{{:: 'flow-type' | translate}}</label>
             <div class="col-sm-6">
                 <div>
                     <select class="form-control" id="flowType"
                             ng-model="flow.type">
-                        <option value="basic-flow">generic</option>
-                        <option value="form-flow">form</option>
+                        <option value="basic-flow">{{:: 'flow.generic.type' | translate}}</option>
+                        <option value="form-flow">{{:: 'flow.form.type' | translate}}</option>
                     </select>
                 </div>
             </div>
-            <kc-tooltip>What kind of form is it</kc-tooltip>
+            <kc-tooltip>{{:: 'flow-type.tooltip' | translate}}</kc-tooltip>
         </div>
         <div class="form-group" data-ng-show="flow.type == 'form-flow'">
-            <label class="col-md-2 control-label" for="provider">Form Provider</label>
+            <label class="col-md-2 control-label" for="provider">{{:: 'form-provider' | translate}}</label>
             <div class="col-sm-6">
                 <div>
                     <select class="form-control" id="provider"
@@ -45,8 +45,8 @@
         </div>
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2">
-                <button kc-save>Save</button>
-                <button type="button" class="btn btn-default" ng-click="cancel()">Cancel</button>
+                <button kc-save>{{:: 'save' | translate}}</button>
+                <button type="button" class="btn btn-default" ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
     </form>

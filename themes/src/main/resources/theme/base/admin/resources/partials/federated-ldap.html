@@ -1,8 +1,8 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/user-federation">User Federation</a></li>
+        <li><a href="#/realms/{{realm.realm}}/user-federation">{{:: 'user-federation' | translate}}</a></li>
         <li data-ng-hide="create">{{instance.displayName|capitalize}}</li>
-        <li data-ng-show="create">Add User Federation Provider</li>
+        <li data-ng-show="create">{{:: 'add-user-federation-provider' | translate}}</li>
     </ol>
 
     <kc-tabs-user-federation></kc-tabs-user-federation>
@@ -10,29 +10,29 @@
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
 
         <fieldset>
-            <legend><span class="text">Required Settings</span></legend>
+            <legend><span class="text">{{:: 'required-settings' | translate}}</span></legend>
             <div class="form-group clearfix" data-ng-show="!create">
-                <label class="col-md-2 control-label" for="providerId">Provider ID </label>
+                <label class="col-md-2 control-label" for="providerId">{{:: 'provider-id' | translate}} </label>
                 <div class="col-md-6">
                     <input class="form-control" id="providerId" type="text" ng-model="instance.id" readonly>
                 </div>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="consoleDisplayName">Console display name </label>
+                <label class="col-md-2 control-label" for="consoleDisplayName">{{:: 'console-display-name' | translate}} </label>
                 <div class="col-md-6">
-                    <input class="form-control" id="consoleDisplayName" type="text" ng-model="instance.displayName" placeholder="defaults to id">
+                    <input class="form-control" id="consoleDisplayName" type="text" ng-model="instance.displayName" placeholder="{{:: 'defaults-to-id' | translate}}">
                 </div>
-                <kc-tooltip>Display name of provider when linked in admin console.</kc-tooltip>
+                <kc-tooltip>{{:: 'console-display-name.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="priority">Priority </label>
+                <label class="col-md-2 control-label" for="priority">{{:: 'priority' | translate}} </label>
                 <div class="col-md-6">
                     <input class="form-control" id="priority" type="text" ng-model="instance.priority">
                 </div>
-                <kc-tooltip>Priority of provider when doing a user lookup.  Lowest first.</kc-tooltip>
+                <kc-tooltip>{{:: 'priority.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="editMode">Edit mode</label>
+                <label class="col-md-2 control-label" for="editMode">{{:: 'edit-mode' | translate}}</label>
                 <div class="col-md-6">
                     <div>
                         <select class="form-control" id="editMode"
@@ -43,17 +43,17 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>READ_ONLY is a read only LDAP store.  WRITABLE means data will be synced back to LDAP on demand.  UNSYNCED means user data will be imported, but not synced back to LDAP.</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.edit-mode.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block">
-                <label class="col-md-2 control-label" for="syncRegistrations">Sync Registrations</label>
+                <label class="col-md-2 control-label" for="syncRegistrations">{{:: 'sync-registrations' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="instance.config.syncRegistrations" name="syncRegistrations" id="syncRegistrations" onoffswitch />
+                    <input ng-model="instance.config.syncRegistrations" name="syncRegistrations" id="syncRegistrations" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Should newly created users be created within LDAP store?  Priority effects which provider is chose to sync the new user.</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.sync-registrations.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="vendor"><span class="required">*</span> Vendor</label>
+                <label class="col-md-2 control-label" for="vendor"><span class="required">*</span> {{:: 'vendor' | translate}}</label>
                 <div class="col-md-6">
                     <div data-ng-show="create">
                         <select class="form-control" id="vendor"
@@ -66,64 +66,55 @@
                         <input class="form-control" id="vendor-ro" type="text" ng-model="vendorName" readonly>
                     </div>
                 </div>
-                <kc-tooltip>LDAP vendor (provider)</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.vendor.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="usernameLDAPAttribute"><span class="required">*</span> Username LDAP attribute</label>
+                <label class="col-md-2 control-label" for="usernameLDAPAttribute"><span class="required">*</span> {{:: 'username-ldap-attribute' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="usernameLDAPAttribute" type="text" ng-model="instance.config.usernameLDAPAttribute" placeholder="LDAP attribute name for username" required>
+                    <input class="form-control" id="usernameLDAPAttribute" type="text" ng-model="instance.config.usernameLDAPAttribute" placeholder="{{:: 'ldap-attribute-name-for-username' | translate}}" required>
                 </div>
-                <kc-tooltip>Name of LDAP attribute, which is mapped as Keycloak username. For many LDAP server vendors it can be 'uid'. For Active directory it can be 'sAMAccountName' or 'cn' .
-                    The attribute should be filled for all LDAP user records you want to import from LDAP to Keycloak.
-                </kc-tooltip>
+                <kc-tooltip>{{:: 'username-ldap-attribute.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="rdnLDAPAttribute"><span class="required">*</span> RDN LDAP attribute</label>
+                <label class="col-md-2 control-label" for="rdnLDAPAttribute"><span class="required">*</span> {{:: 'rdn-ldap-attribute' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="rdnLDAPAttribute" type="text" ng-model="instance.config.rdnLDAPAttribute" placeholder="LDAP attribute name for user RDN" required>
+                    <input class="form-control" id="rdnLDAPAttribute" type="text" ng-model="instance.config.rdnLDAPAttribute" placeholder="{{:: 'ldap-attribute-name-for-user-rdn' | translate}}" required>
                 </div>
-                <kc-tooltip>Name of LDAP attribute, which is used as RDN (top attribute) of typical user DN. Usually it's the same as Username LDAP attribute, however it's not required.
-                    For example for Active directory it's common to use 'cn' as RDN attribute when username attribute might be 'sAMAccountName' .
-                </kc-tooltip>
+                <kc-tooltip>{{:: 'rdn-ldap-attribute.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="uuidLDAPAttribute"><span class="required">*</span> UUID LDAP attribute</label>
+                <label class="col-md-2 control-label" for="uuidLDAPAttribute"><span class="required">*</span> {{:: 'uuid-ldap-attribute' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="uuidLDAPAttribute" type="text" ng-model="instance.config.uuidLDAPAttribute" placeholder="LDAP attribute name for UUID" required>
+                    <input class="form-control" id="uuidLDAPAttribute" type="text" ng-model="instance.config.uuidLDAPAttribute" placeholder="{{:: 'ldap-attribute-name-for-uuid' | translate}}" required>
                 </div>
-                <kc-tooltip>Name of LDAP attribute, which is used as unique object identifier (UUID) for objects in LDAP. For many LDAP server vendors it's 'entryUUID' however some are different. For example for Active directory it should be 'objectGUID' .
-                    If your LDAP server really doesn't support the notion of UUID, you can use any other attribute, which is supposed to be unique among LDAP users in tree. For example 'uid' or 'entryDN' .
-                </kc-tooltip>
+                <kc-tooltip>{{:: 'uuid-ldap-attribute.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="userObjectClasses"><span class="required">*</span> User Object Classes</label>
+                <label class="col-md-2 control-label" for="userObjectClasses"><span class="required">*</span> {{:: 'user-object-classes' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="userObjectClasses" type="text" ng-model="instance.config.userObjectClasses" placeholder="LDAP User Object Classes (div. by comma)" required>
+                    <input class="form-control" id="userObjectClasses" type="text" ng-model="instance.config.userObjectClasses" placeholder="{{:: 'ldap-user-object-classes.placeholder' | translate}}" required>
                 </div>
-                <kc-tooltip>All values of LDAP objectClass attribute for users in LDAP divided by comma. For example: 'inetOrgPerson, organizationalPerson' . Newly created Keycloak users will be written to LDAP
-                    with all those object classes and existing LDAP user records are found just if they contain all those object classes. </kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.user-object-classes.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="ldapConnectionUrl"><span class="required">*</span> Connection URL</label>
+                <label class="col-md-2 control-label" for="ldapConnectionUrl"><span class="required">*</span> {{:: 'connection-url' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="ldapConnectionUrl" type="text" ng-model="instance.config.connectionUrl" placeholder="LDAP connection URL" required>
+                    <input class="form-control" id="ldapConnectionUrl" type="text" ng-model="instance.config.connectionUrl" placeholder="{{:: 'ldap-connection-url' | translate}}" required>
                 </div>
-                <kc-tooltip>Connection URL to your LDAP server</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.connection-url.tooltip' | translate}}</kc-tooltip>
                 <div class="col-sm-4" data-ng-show="access.manageRealm">
-                    <a class="btn btn-primary" data-ng-click="testConnection()">Test connection</a>
+                    <a class="btn btn-primary" data-ng-click="testConnection()">{{:: 'test-connection' | translate}}</a>
                 </div>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="ldapUsersDn"><span class="required">*</span> Users DN</label>
+                <label class="col-md-2 control-label" for="ldapUsersDn"><span class="required">*</span> {{:: 'users-dn' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="ldapUsersDn" type="text" ng-model="instance.config.usersDn" placeholder="LDAP Users DN" required>
+                    <input class="form-control" id="ldapUsersDn" type="text" ng-model="instance.config.usersDn" placeholder="{{:: 'ldap-users-dn' | translate}}" required>
                 </div>
-                <kc-tooltip>Full DN of LDAP tree where your users are. This DN is parent of LDAP users. It could be for example 'ou=users,dc=example,dc=com' assuming
-                    that your typical user will have DN like 'uid=john,ou=users,dc=example,dc=com'
-                </kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.users-dn.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="authType"><span class="required">*</span> Authentication Type</label>
+                <label class="col-md-2 control-label" for="authType"><span class="required">*</span> {{:: 'authentication-type' | translate}}</label>
                 <div class="col-md-6">
                     <div>
                         <select class="form-control" id="authType"
@@ -133,34 +124,34 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>LDAP Authentication type. Right now just 'none' (anonymous LDAP authentication) or 'simple' (Bind credential + Bind password authentication) mechanisms are available</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.authentication-type.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-hide="instance.config.authType == 'none'">
-                <label class="col-md-2 control-label" for="ldapBindDn"><span class="required">*</span> Bind DN</label>
+                <label class="col-md-2 control-label" for="ldapBindDn"><span class="required">*</span> {{:: 'bind-dn' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="ldapBindDn" type="text" ng-model="instance.config.bindDn" placeholder="LDAP Bind DN" data-ng-required="instance.config.authType != 'none'">
+                    <input class="form-control" id="ldapBindDn" type="text" ng-model="instance.config.bindDn" placeholder="{{:: 'ldap-bind-dn' | translate}}" data-ng-required="instance.config.authType != 'none'">
                 </div>
-                <kc-tooltip>DN of LDAP admin, which will be used by Keycloak to access LDAP server</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.bind-dn.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-hide="instance.config.authType == 'none'">
-                <label class="col-md-2 control-label" for="ldapBindCredential"><span class="required">*</span> Bind Credential</label>
+                <label class="col-md-2 control-label" for="ldapBindCredential"><span class="required">*</span> {{:: 'bind-credential' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="ldapBindCredential" type="password" ng-model="instance.config.bindCredential" placeholder="LDAP Bind Credentials" data-ng-required="instance.config.authType != 'none'">
+                    <input class="form-control" id="ldapBindCredential" type="password" ng-model="instance.config.bindCredential" placeholder="{{:: 'ldap-bind-credentials' | translate}}" data-ng-required="instance.config.authType != 'none'">
                 </div>
-                <kc-tooltip>Password of LDAP admin</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.bind-credential.tooltip' | translate}}</kc-tooltip>
                 <div class="col-sm-4" data-ng-show="access.manageRealm">
-                    <a class="btn btn-primary" data-ng-click="testAuthentication()">Test authentication</a>
+                    <a class="btn btn-primary" data-ng-click="testAuthentication()">{{:: 'test-authentication' | translate}}</a>
                 </div>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="customUserSearchFilter">Custom User LDAP Filter</label>
+                <label class="col-md-2 control-label" for="customUserSearchFilter">{{:: 'custom-user-ldap-filter' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="customUserSearchFilter" type="text" ng-model="instance.config.customUserSearchFilter" placeholder="LDAP Filter">
+                    <input class="form-control" id="customUserSearchFilter" type="text" ng-model="instance.config.customUserSearchFilter" placeholder="{{:: 'ldap-filter' | translate}}">
                 </div>
-                <kc-tooltip>Additional LDAP Filter for filtering searched users. Leave this empty if you don't need additional filter. Make sure that it starts with '(' and ends with ')'</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.custom-user-ldap-filter.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="searchScope">Search scope</label>
+                <label class="col-md-2 control-label" for="searchScope">{{:: 'search-scope' | translate}}</label>
                 <div class="col-md-6">
                     <div>
                         <select class="form-control" id="searchScope"
@@ -170,122 +161,122 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>For one level, we search for users just in DNs specified by User DNs. For subtree, we search in whole of their subtree. See LDAP documentation for more details</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.search-scope.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="connectionPooling">Connection pooling</label>
+                <label class="col-md-2 control-label" for="connectionPooling">{{:: 'connection-pooling' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="instance.config.connectionPooling" name="connectionPooling" id="connectionPooling" onoffswitch />
+                    <input ng-model="instance.config.connectionPooling" name="connectionPooling" id="connectionPooling" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Does Keycloak should use connection pooling for accessing LDAP server</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.connection-pooling.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="pagination">Pagination</label>
+                <label class="col-md-2 control-label" for="pagination">{{:: 'pagination' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="instance.config.pagination" name="pagination" id="pagination" onoffswitch />
+                    <input ng-model="instance.config.pagination" name="pagination" id="pagination" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Does the LDAP server support pagination.</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.pagination.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 
         <fieldset>
-            <legend><span class="text">Kerberos integration</span></legend>
+            <legend><span class="text">{{:: 'kerberos-integration' | translate}}</span></legend>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="allowKerberosAuthentication">Allow Kerberos authentication </label>
+                <label class="col-md-2 control-label" for="allowKerberosAuthentication">{{:: 'allow-kerberos-authentication' | translate}} </label>
                 <div class="col-md-6">
-                    <input ng-model="instance.config.allowKerberosAuthentication" id="allowKerberosAuthentication" onoffswitch />
+                    <input ng-model="instance.config.allowKerberosAuthentication" id="allowKerberosAuthentication" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Enable/disable HTTP authentication of users with SPNEGO/Kerberos tokens. The data about authenticated users will be provisioned from this LDAP server</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.allow-kerberos-authentication.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-show="instance.config.allowKerberosAuthentication">
-                <label class="col-md-2 control-label" for="kerberosRealm"><span class="required">*</span> Kerberos Realm</label>
+                <label class="col-md-2 control-label" for="kerberosRealm"><span class="required">*</span> {{:: 'kerberos-realm' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="kerberosRealm" type="text" ng-model="instance.config.kerberosRealm" ng-required="instance.config.allowKerberosAuthentication">
                 </div>
-                <kc-tooltip>Name of kerberos realm. For example FOO.ORG</kc-tooltip>
+                <kc-tooltip>{{:: 'kerberos-realm.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-show="instance.config.allowKerberosAuthentication">
-                <label class="col-md-2 control-label" for="serverPrincipal"><span class="required">*</span> Server principal</label>
+                <label class="col-md-2 control-label" for="serverPrincipal"><span class="required">*</span> {{:: 'server-principal' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="serverPrincipal" type="text" ng-model="instance.config.serverPrincipal" ng-required="instance.config.allowKerberosAuthentication">
                 </div>
-                <kc-tooltip>Full name of server principal for HTTP service including server and domain name. For example HTTP/host.foo.org@FOO.ORG</kc-tooltip>
+                <kc-tooltip>{{:: 'server-principal.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-show="instance.config.allowKerberosAuthentication">
-                <label class="col-md-2 control-label" for="keyTab"><span class="required">*</span> KeyTab</label>
+                <label class="col-md-2 control-label" for="keyTab"><span class="required">*</span> {{:: 'keytab' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="keyTab" type="text" ng-model="instance.config.keyTab" ng-required="instance.config.allowKerberosAuthentication">
                 </div>
-                <kc-tooltip>Location of Kerberos KeyTab file containing the credentials of server principal. For example /etc/krb5.keytab</kc-tooltip>
+                <kc-tooltip>{{:: 'keytab.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="instance.config.allowKerberosAuthentication">
-                <label class="col-md-2 control-label" for="debug">Debug </label>
+                <label class="col-md-2 control-label" for="debug">{{:: 'debug' | translate}} </label>
                 <div class="col-md-6">
-                    <input ng-model="instance.config.debug" id="debug" onoffswitch />
+                    <input ng-model="instance.config.debug" id="debug" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Enable/disable debug logging to standard output for Krb5LoginModule.</kc-tooltip>
+                <kc-tooltip>{{:: 'debug.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="instance.config.allowKerberosAuthentication">
-                <label class="col-md-2 control-label" for="debug">Use Kerberos For Password Authentication </label>
+                <label class="col-md-2 control-label" for="debug">{{:: 'use-kerberos-for-password-authentication' | translate}} </label>
                 <div class="col-md-6">
-                    <input ng-model="instance.config.useKerberosForPasswordAuthentication" id="useKerberosForPasswordAuthentication" onoffswitch />
+                    <input ng-model="instance.config.useKerberosForPasswordAuthentication" id="useKerberosForPasswordAuthentication" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Use Kerberos login module for authenticate username/password against Kerberos server instead of authenticating against LDAP server with Directory Service API</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.use-kerberos-for-password-authentication.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 
         <fieldset>
-            <legend><span class="text">Sync settings</span></legend>
+            <legend><span class="text">{{:: 'sync-settings' | translate}}</span></legend>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="batchSizeForSync">Batch size</label>
+                <label class="col-md-2 control-label" for="batchSizeForSync">{{:: 'batch-size' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="text" ng-model="instance.config.batchSizeForSync" id="batchSizeForSync" />
                 </div>
-                <kc-tooltip>Count of LDAP users to be imported from LDAP to Keycloak within single transaction.</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.batch-size.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="fullSyncEnabled">Periodic full sync</label>
+                <label class="col-md-2 control-label" for="fullSyncEnabled">{{:: 'periodic-full-sync' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="fullSyncEnabled" name="fullSyncEnabled" id="fullSyncEnabled" onoffswitch />
+                    <input ng-model="fullSyncEnabled" name="fullSyncEnabled" id="fullSyncEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Does periodic full synchronization of LDAP users to Keycloak should be enabled or not</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.periodic-full-sync.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-show="fullSyncEnabled">
-                <label class="col-md-2 control-label" for="fullSyncPeriod">Full sync period</label>
+                <label class="col-md-2 control-label" for="fullSyncPeriod">{{:: 'full-sync-period' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="number" ng-model="instance.fullSyncPeriod" id="fullSyncPeriod" />
                 </div>
-                <kc-tooltip>Period for full synchronization in seconds</kc-tooltip>
+                <kc-tooltip>{{:: 'full-sync-period.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="changedSyncEnabled">Periodic changed users sync</label>
+                <label class="col-md-2 control-label" for="changedSyncEnabled">{{:: 'periodic-changed-users-sync' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="changedSyncEnabled" name="changedSyncEnabled" id="changedSyncEnabled" onoffswitch />
+                    <input ng-model="changedSyncEnabled" name="changedSyncEnabled" id="changedSyncEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>Does periodic synchronization of changed or newly created LDAP users to Keycloak should be enabled or not</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.periodic-changed-users-sync.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-show="changedSyncEnabled">
-                <label class="col-md-2 control-label" for="changedSyncPeriod">Changed users sync period</label>
+                <label class="col-md-2 control-label" for="changedSyncPeriod">{{:: 'changed-users-sync-period' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="number" ng-model="instance.changedSyncPeriod" id="changedSyncPeriod" />
                 </div>
-                <kc-tooltip>Period for synchronization of changed or newly created LDAP users in seconds</kc-tooltip>
+                <kc-tooltip>{{:: 'ldap.changed-users-sync-period.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageUsers">
-                <button kc-save>Save</button>
-                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+                <button kc-save>{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageUsers">
-                <button kc-save  data-ng-disabled="!changed">Save</button>
-                <button kc-reset data-ng-disabled="!changed">Cancel</button>
-                <button class="btn btn-primary" data-ng-click="triggerChangedUsersSync()" data-ng-hide="changed">Synchronize changed users</button>
-                <button class="btn btn-primary" data-ng-click="triggerFullSync()" data-ng-hide="changed">Synchronize all users</button>
+                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+                <button class="btn btn-primary" data-ng-click="triggerChangedUsersSync()" data-ng-hide="changed">{{:: 'synchronize-changed-users' | translate}}</button>
+                <button class="btn btn-primary" data-ng-click="triggerFullSync()" data-ng-hide="changed">{{:: 'synchronize-all-users' | translate}}</button>
             </div>
         </div>
     </form>

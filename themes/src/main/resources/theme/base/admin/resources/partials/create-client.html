@@ -45,7 +45,7 @@
                 <kc-tooltip>{{:: 'client-protocol.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="protocol">Client Template</label>
+                <label class="col-md-2 control-label" for="protocol">{{:: 'client-template' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
                         <select class="form-control" id="template"
@@ -55,7 +55,7 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>Client template this client inherits configuration from</kc-tooltip>
+                <kc-tooltip>{{:: 'client-template.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-hide="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="rootUrl">{{:: 'root-url' | translate}} <span class="required">*</span></label>
@@ -65,7 +65,7 @@
                 <kc-tooltip>{{:: 'root-url.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="masterSamlUrl">Client SAML Endpoint <span class="required">*</span></label>
+                <label class="col-md-2 control-label" for="masterSamlUrl">{{:: 'client-saml-endpoint' | translate}} <span class="required">*</span></label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" name="masterSamlUrl" id="masterSamlUrl"
                            data-ng-model="client.adminUrl">

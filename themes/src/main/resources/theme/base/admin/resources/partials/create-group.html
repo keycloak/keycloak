@@ -1,11 +1,11 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <div>
-        <h1>Create Group</h1>
+        <h1>{{:: 'create-group' | translate}}</h1>
     </div>
     <form class="form-horizontal" name="clientForm" novalidate>
         <fieldset class="border-top">
             <div class="form-group">
-                <label class="col-md-2 control-label"for="name">Name <span class="required">*</span></label>
+                <label class="col-md-2 control-label"for="name">{{:: 'name' | translate}} <span class="required">*</span></label>
                 <div class="col-md-6">
                     <input class="form-control" type="text" id="name" name="name" data-ng-model="group.name" autofocus
                            required >
@@ -15,8 +15,8 @@
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2">
-                <button kc-save>Save</button>
-                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+                <button kc-save>{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
     </form>

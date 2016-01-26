@@ -1,6 +1,6 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <ol class="breadcrumb">
-        <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
+        <li><a href="#/realms/{{realm.realm}}/users">{{:: 'users' | translate}}</a></li>
         <li>{{user.username}}</li>
     </ol>
 
@@ -12,16 +12,16 @@
                 <th class="kc-table-actions" colspan="4">
                     <div class="form-inline">
                         <div class="pull-right">
-                            <a class="btn btn-primary" href="#/create/federated-identity/{{realm.realm}}/{{user.id}}">Create</a>
+                            <a class="btn btn-primary" href="#/create/federated-identity/{{realm.realm}}/{{user.id}}">{{:: 'create' | translate}}</a>
                         </div>
                     </div>
                 </th>
             </tr>
             <tr data-ng-hide="federatedIdentities.length == 0">
-                <th>Identity Provider Alias</th>
-                <th>Provider user ID</th>
-                <th>Provider username</th>
-                <th>Action</th>
+                <th>{{:: 'identity-provider-alias' | translate}}</th>
+                <th>{{:: 'provider-user-id' | translate}}</th>
+                <th>{{:: 'provider-username' | translate}}</th>
+                <th>{{:: 'action' | translate}}</th>
             </tr>
         </thead>
         <tbody>
@@ -30,11 +30,11 @@
                 <td>{{identity.userId}}</td>
                 <td>{{identity.userName}}</td>
                 <td class="kc-action-cell">
-                    <button class="btn btn-default btn-block btn-sm" ng-click="removeProviderLink(identity)">Remove</button>
+                    <button class="btn btn-default btn-block btn-sm" ng-click="removeProviderLink(identity)">{{:: 'remove' | translate}}</button>
                 </td>
             </tr>
             <tr data-ng-show="federatedIdentities.length == 0">
-                <td>No identity provider links available</td>
+                <td>{{:: 'no-identity-provider-links-available' | translate}}</td>
             </tr>
         </tbody>
     </table>
