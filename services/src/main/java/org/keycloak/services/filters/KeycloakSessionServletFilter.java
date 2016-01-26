@@ -59,25 +59,10 @@ public class KeycloakSessionServletFilter implements Filter {
 
         try {
             filterChain.doFilter(servletRequest, servletResponse);
-            if (tx.isActive()) {
-                if (tx.getRollbackOnly()) tx.rollback();
-                else tx.commit();
-            }
-        } catch (IOException ex) {
-            if (tx.isActive()) tx.rollback();
-            throw ex;
-        } catch (ServletException ex) {
-            if (tx.isActive()) tx.rollback();
-            throw ex;
-        }
-        catch (RuntimeException ex) {
-            if (tx.isActive()) tx.rollback();
-            throw new RuntimeException("request path: " + request.getRequestURI(), ex);
         } finally {
             session.close();
             ResteasyProviderFactory.clearContextData();
         }
-
     }
 
     @Override
