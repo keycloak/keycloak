@@ -12,7 +12,7 @@ before_script:
   - export MAVEN_SKIP_RC=true
 
 install: 
-  - mvn install -Pdistribution -DskipTests=true -B -V -q
+  - travis_wait mvn install -Pdistribution -DskipTests=true -B -V -q
 
 script:
   - mvn test -B
