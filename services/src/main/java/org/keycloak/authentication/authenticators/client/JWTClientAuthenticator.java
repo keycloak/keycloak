@@ -2,6 +2,7 @@ package org.keycloak.authentication.authenticators.client;
 
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -120,7 +121,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             // Validate other things
             String expectedAudience = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
             if (!token.hasAudience(expectedAudience)) {
-                throw new RuntimeException("Token audience doesn't match domain. Realm audience is '" + expectedAudience + "' but audience from token is '" + token.getAudience() + "'");
+                throw new RuntimeException("Token audience doesn't match domain. Realm audience is '" + expectedAudience + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
             }
 
             if (!token.isActive()) {
