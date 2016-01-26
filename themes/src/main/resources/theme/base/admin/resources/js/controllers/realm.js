@@ -390,6 +390,7 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
 });
 
 module.controller('RealmCacheCtrl', function($scope, realm, RealmClearUserCache, RealmClearRealmCache, Notifications) {
+    $scope.realm = realm;
 
     $scope.clearUserCache = function() {
         RealmClearUserCache.save({ realm: realm.realm}, function () {
