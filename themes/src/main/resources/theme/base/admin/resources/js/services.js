@@ -1204,6 +1204,51 @@ module.factory('TimeUnit', function() {
     return t;
 });
 
+module.factory('TimeUnit2', function() {
+    var t = {};
+
+    t.asUnit = function(time) {
+        var unit = 'Minutes';
+        if (time) {
+            if (time < 60) {
+                time = 60;
+            }
+
+            if (time % 60 == 0) {
+                unit = 'Minutes';
+                time = time / 60;
+            }
+            if (time % 60 == 0) {
+                unit = 'Hours';
+                time = time / 60;
+            }
+            if (time % 24 == 0) {
+                unit = 'Days'
+                time = time / 24;
+            }
+        }
+
+        var v = {
+            unit: unit,
+            time: time,
+            toSeconds: function() {
+                switch (v.unit) {
+                    case 'Minutes':
+                        return v.time * 60;
+                    case 'Hours':
+                        return v.time * 3600;
+                    case 'Days':
+                        return v.time * 86400;
+                }
+            }
+        }
+
+        return v;
+    }
+
+    return t;
+});
+
 
 module.factory('PasswordPolicy', function() {
     var p = {};

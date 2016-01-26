@@ -18,10 +18,9 @@
             <label class="col-md-2 control-label" for="ssoSessionIdleTimeout">{{:: 'sso-session-idle' | translate}}</label>
 
             <div class="col-md-6 time-selector">
-                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.ssoSessionIdleTimeout" id="ssoSessionIdleTimeout"
+                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.ssoSessionIdleTimeout.time" id="ssoSessionIdleTimeout"
                        name="ssoSessionIdleTimeout"/>
-                <select class="form-control" name="ssoSessionIdleTimeoutUnit" data-ng-model="realm.ssoSessionIdleTimeoutUnit">
-                    <option data-ng-selected="!realm.ssoSessionIdleTimeoutUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                <select class="form-control" name="ssoSessionIdleTimeoutUnit" data-ng-model="realm.ssoSessionIdleTimeout.unit">
                     <option value="Minutes">{{:: 'minutes' | translate}}</option>
                     <option value="Hours">{{:: 'hours' | translate}}</option>
                     <option value="Days">{{:: 'days' | translate}}</option>
@@ -36,10 +35,9 @@
 
             <div class="col-md-6 time-selector">
                 <input class="form-control" type="number" required min="1"
-                       max="31536000" data-ng-model="realm.ssoSessionMaxLifespan"
+                       max="31536000" data-ng-model="realm.ssoSessionMaxLifespan.time"
                        id="ssoSessionMaxLifespan" name="ssoSessionMaxLifespan"/>
-                <select class="form-control" name="ssoSessionMaxLifespanUnit" data-ng-model="realm.ssoSessionMaxLifespanUnit">
-                    <option data-ng-selected="!realm.ssoSessionMaxLifespanUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                <select class="form-control" name="ssoSessionMaxLifespanUnit" data-ng-model="realm.ssoSessionMaxLifespan.unit">
                     <option value="Minutes">{{:: 'minutes' | translate}}</option>
                     <option value="Hours">{{:: 'hours' | translate}}</option>
                     <option value="Days">{{:: 'days' | translate}}</option>
@@ -53,10 +51,9 @@
 
             <div class="col-md-6 time-selector">
                 <input class="form-control" type="number" required min="1"
-                       max="31536000" data-ng-model="realm.offlineSessionIdleTimeout"
+                       max="31536000" data-ng-model="realm.offlineSessionIdleTimeout.time"
                        id="offlineSessionIdleTimeout" name="offlineSessionIdleTimeout"/>
-                <select class="form-control" name="offlineSessionIdleTimeoutUnit" data-ng-model="realm.offlineSessionIdleTimeoutUnit">
-                    <option data-ng-selected="!realm.offlineSessionIdleTimeoutUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                <select class="form-control" name="offlineSessionIdleTimeoutUnit" data-ng-model="realm.offlineSessionIdleTimeout.unit">
                     <option value="Minutes">{{:: 'minutes' | translate}}</option>
                     <option value="Hours">{{:: 'hours' | translate}}</option>
                     <option value="Days">{{:: 'days' | translate}}</option>
@@ -70,10 +67,9 @@
 
             <div class="col-md-6 time-selector">
                 <input class="form-control" type="number" required min="1"
-                       max="31536000" data-ng-model="realm.accessTokenLifespan"
+                       max="31536000" data-ng-model="realm.accessTokenLifespan.time"
                        id="accessTokenLifespan" name="accessTokenLifespan"/>
-                <select class="form-control" name="accessTokenLifespanUnit" data-ng-model="realm.accessTokenLifespanUnit">
-                    <option data-ng-selected="!realm.accessTokenLifespanUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                <select class="form-control" name="accessTokenLifespanUnit" data-ng-model="realm.accessTokenLifespan.unit">
                     <option value="Minutes">{{:: 'minutes' | translate}}</option>
                     <option value="Hours">{{:: 'hours' | translate}}</option>
                     <option value="Days">{{:: 'days' | translate}}</option>
@@ -87,10 +83,9 @@
 
             <div class="col-md-6 time-selector">
                 <input class="form-control" type="number" required min="1"
-                       max="31536000" data-ng-model="realm.accessTokenLifespanForImplicitFlow"
+                       max="31536000" data-ng-model="realm.accessTokenLifespanForImplicitFlow.time"
                        id="accessTokenLifespanForImplicitFlow" name="accessTokenLifespanForImplicitFlow"/>
-                <select class="form-control" name="accessTokenLifespanForImplicitFlowUnit" data-ng-model="realm.accessTokenLifespanForImplicitFlowUnit">
-                    <option data-ng-selected="!realm.accessTokenLifespanForImplicitFlowUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                <select class="form-control" name="accessTokenLifespanForImplicitFlowUnit" data-ng-model="realm.accessTokenLifespanForImplicitFlow.unit">
                     <option value="Minutes">{{:: 'minutes' | translate}}</option>
                     <option value="Hours">{{:: 'hours' | translate}}</option>
                     <option value="Days">{{:: 'days' | translate}}</option>
@@ -103,10 +98,9 @@
             <label class="col-md-2 control-label" for="accessCodeLifespan">{{:: 'client-login-timeout' | translate}}</label>
 
             <div class="col-md-6 time-selector">
-                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespan" id="accessCodeLifespan"
+                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespan.time" id="accessCodeLifespan"
                        name="accessCodeLifespan">
-                <select class="form-control" name="accessCodeLifespanUnit" data-ng-model="realm.accessCodeLifespanUnit">
-                    <option data-ng-selected="!realm.accessCodeLifespanUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                <select class="form-control" name="accessCodeLifespanUnit" data-ng-model="realm.accessCodeLifespan.unit">
                     <option value="Minutes">{{:: 'minutes' | translate}}</option>
                     <option value="Hours">{{:: 'hours' | translate}}</option>
                     <option value="Days">{{:: 'days' | translate}}</option>
@@ -119,10 +113,9 @@
             <label class="col-md-2 control-label" for="accessCodeLifespanLogin" class="two-lines">{{:: 'login-timeout' | translate}}</label>
 
             <div class="col-md-6 time-selector">
-                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespanLogin"
+                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespanLogin.time"
                        id="accessCodeLifespanLogin" name="accessCodeLifespanLogin">
-                <select class="form-control" name="accessCodeLifespanLoginUnit" data-ng-model="realm.accessCodeLifespanLoginUnit">
-                    <option data-ng-selected="!realm.accessCodeLifespanLoginUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                <select class="form-control" name="accessCodeLifespanLoginUnit" data-ng-model="realm.accessCodeLifespanLogin.unit">
                     <option value="Minutes">{{:: 'minutes' | translate}}</option>
                     <option value="Hours">{{:: 'hours' | translate}}</option>
                     <option value="Days">{{:: 'days' | translate}}</option>
@@ -135,10 +128,9 @@
             <label class="col-md-2 control-label" for="accessCodeLifespanUserAction" class="two-lines">{{:: 'login-action-timeout' | translate}}</label>
 
             <div class="col-md-6 time-selector">
-                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespanUserAction"
+                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespanUserAction.time"
                        id="accessCodeLifespanUserAction" name="accessCodeLifespanUserAction">
-                <select class="form-control" name="accessCodeLifespanUserActionUnit" data-ng-model="realm.accessCodeLifespanUserActionUnit">
-                    <option data-ng-selected="!realm.accessCodeLifespanUserActionUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                <select class="form-control" name="accessCodeLifespanUserActionUnit" data-ng-model="realm.accessCodeLifespanUserAction.unit">
                     <option value="Minutes">{{:: 'minutes' | translate}}</option>
                     <option value="Hours">{{:: 'hours' | translate}}</option>
                     <option value="Days">{{:: 'days' | translate}}</option>
