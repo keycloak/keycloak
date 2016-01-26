@@ -338,15 +338,55 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
 
     $scope.supportedLocalesOptions = {
         'multiple' : true,
-        'simple_tags' : true,
-        'tags' : ['en', 'de', 'pt-BR', 'it', 'es', 'ca']
+        'simple_tags' : true
     };
 
-    $scope.$watch('realm.supportedLocales', function(oldVal, newVal) {
-        if ($scope.realm.defaultLocale && newVal && newVal.indexOf($scope.realm.defaultLocale) == -1) {
-            $scope.realm.defaultLocale = null;
+    function localeForTheme(type, name) {
+        name = name || 'base';
+        for (var i = 0; i < serverInfo.themes[type].length; i++) {
+            if (serverInfo.themes[type][i].name == name) {
+                return serverInfo.themes[type][i].locales;
+            }
         }
-    }, true);
+    }
+
+    function updateSupported() {
+        if ($scope.realm.internationalizationEnabled) {
+            var accountLocales = localeForTheme('account', $scope.realm.loginTheme);
+            var adminLocales = localeForTheme('admin', $scope.realm.loginTheme);
+            var loginLocales = localeForTheme('login', $scope.realm.loginTheme);
+            var emailLocales = localeForTheme('email', $scope.realm.loginTheme);
+
+            var supportedLocales = [];
+            for (var i = 0; i < accountLocales.length; i++) {
+                var l = accountLocales[i];
+                if (adminLocales.indexOf(l) >= 0 && loginLocales.indexOf(l) >= 0 && emailLocales.indexOf(l) >= 0) {
+                    supportedLocales.push(l);
+                }
+            }
+
+            $scope.supportedLocalesOptions.tags = supportedLocales;
+
+            if (!$scope.realm.supportedLocales) {
+                $scope.realm.supportedLocales = supportedLocales;
+            } else {
+                for (var i = 0; i < $scope.realm.supportedLocales.length; i++) {
+                    if ($scope.realm.supportedLocales.indexOf($scope.realm.supportedLocales[i]) == -1) {
+                        $scope.realm.supportedLocales = supportedLocales;
+                    }
+                }
+            }
+
+            if (!$scope.realm.defaultLocale || supportedLocales.indexOf($scope.realm.defaultLocale) == -1) {
+                $scope.realm.defaultLocale = 'en';
+            }
+        }
+    }
+
+    $scope.$watch('realm.loginTheme', updateSupported);
+    $scope.$watch('realm.accountTheme', updateSupported);
+    $scope.$watch('realm.emailTheme', updateSupported);
+    $scope.$watch('realm.internationalizationEnabled', updateSupported);
 });
 
 module.controller('RealmCacheCtrl', function($scope, realm, RealmClearUserCache, RealmClearRealmCache, Notifications) {
