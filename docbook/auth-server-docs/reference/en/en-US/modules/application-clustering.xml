@@ -28,6 +28,14 @@
         and his browser and hence can't rely on sticky sessions.
     </para>
 
+    <note>
+        <para>
+            To enable distributable (replicated) HTTP Sessions in your application, you may need to do some additional steps. Usually you need to put <![CDATA[<distributable />]]>
+            tag into <literal>WEB-INF/web.xml</literal> file of your application and possibly do some additional steps to configure underlying cluster cache (In case of
+            Wildfly, the implementation of cluster cache is based on Infinispan). These steps are server specific, so consult documentation of your application server for more details.
+        </para>
+    </note>
+
     <section id="stateless-token-store">
         <title>Stateless token store</title>
         <para>
