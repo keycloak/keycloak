@@ -55,8 +55,7 @@
 
         <eap.version>7.0.0.Beta</eap.version>
 
-        <!-- this is EAP 6.4 alpha, publicly available -->
-        <jboss.version>7.5.0.Final-redhat-15</jboss.version>
+        <jboss.version>7.2.0.Final</jboss.version>
 
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <google.zxing.version>3.2.1</google.zxing.version>
@@ -1331,40 +1330,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <!-- Configure the JBoss Early Access Maven repository -->
-        <profile>
-            <id>jboss-earlyaccess-repository</id>
-            <activation>
-                <property>
-                    <name>!no-jboss-ea-repo</name>
-                </property>
-            </activation>
-            <repositories>
-                <repository>
-                    <id>jboss-earlyaccess-repository</id>
-                    <url>http://maven.repository.redhat.com/earlyaccess/all/</url>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>jboss-earlyaccess-plugin-repository</id>
-                    <url>http://maven.repository.redhat.com/earlyaccess/all/</url>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </pluginRepository>
-            </pluginRepositories>
         </profile>
     </profiles>
 </project>

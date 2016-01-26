@@ -85,7 +85,7 @@ public final class KeycloakAdapterConfigService {
         }
 
         String credentialName = credentialNameFromOp(operation);
-        if (!credentialName.contains("")) {
+        if (!credentialName.contains(".")) {
             credentials.get(credentialName).set(model.get("value").asString());
         } else {
             String[] parts = credentialName.split("\\.");

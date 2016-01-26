@@ -32,11 +32,11 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The subsystem parser, which uses stax to read and write to and from xml
@@ -265,7 +265,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             throw new XMLStreamException("KeyStore element must have 'file' or 'resource' attribute set", reader.getLocation());
         }
         if (!addKeyStore.hasDefined(Constants.Model.PASSWORD)) {
-            throw ParseUtils.missingRequired(reader, Constants.XML.PASSWORD);
+            throw ParseUtils.missingRequired(reader, asSet(Constants.XML.PASSWORD));
         }
 
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
@@ -294,10 +294,10 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         }
 
         if (!addKeyStore.hasDefined(Constants.Model.PRIVATE_KEY_ALIAS)) {
-            throw ParseUtils.missingRequired(reader, Constants.XML.PRIVATE_KEY_ALIAS);
+            throw ParseUtils.missingRequired(reader, asSet(Constants.XML.PRIVATE_KEY_ALIAS));
         }
         if (!addKeyStore.hasDefined(Constants.Model.PRIVATE_KEY_PASSWORD)) {
-            throw ParseUtils.missingRequired(reader, Constants.XML.PRIVATE_KEY_PASSWORD);
+            throw ParseUtils.missingRequired(reader, asSet(Constants.XML.PRIVATE_KEY_PASSWORD));
         }
 
         ParseUtils.requireNoContent(reader);
@@ -316,7 +316,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         }
 
         if (!addKeyStore.hasDefined(Constants.Model.CERTIFICATE_ALIAS)) {
-            throw ParseUtils.missingRequired(reader, Constants.XML.CERTIFICATE_ALIAS);
+            throw ParseUtils.missingRequired(reader, asSet(Constants.XML.CERTIFICATE_ALIAS));
         }
 
         ParseUtils.requireNoContent(reader);
@@ -358,7 +358,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         }
 
         if (!policySet) {
-            throw ParseUtils.missingRequired(reader, Constants.XML.PRINCIPAL_NAME_MAPPING_POLICY);
+            throw ParseUtils.missingRequired(reader, asSet(Constants.XML.PRINCIPAL_NAME_MAPPING_POLICY));
         }
         ParseUtils.requireNoContent(reader);
     }
@@ -565,5 +565,14 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             writer.writeAttribute(Constants.XML.PRINCIPAL_NAME_MAPPING_ATTRIBUTE_NAME, value.asString());
         }
         writer.writeEndElement();
+    }
+
+
+    private static Set<String> asSet(String ... values) {
+        HashSet ret = new HashSet();
+        for (String value: values) {
+            ret.add(value);
+        }
+        return ret;
     }
 }

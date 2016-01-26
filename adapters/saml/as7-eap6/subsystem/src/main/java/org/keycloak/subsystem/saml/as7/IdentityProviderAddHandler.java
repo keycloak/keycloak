@@ -17,6 +17,7 @@
 package org.keycloak.subsystem.saml.as7;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ServiceVerificationHandler;
@@ -31,11 +32,17 @@ import java.util.List;
 class IdentityProviderAddHandler extends AbstractAddStepHandler {
 
     IdentityProviderAddHandler() {
-        super(IdentityProviderDefinition.ALL_ATTRIBUTES);
     }
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
         Configuration.INSTANCE.updateModel(operation, model);
+    }
+
+    @Override
+    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
+        for (AttributeDefinition attr : IdentityProviderDefinition.ALL_ATTRIBUTES) {
+            attr.validateAndSet(operation, model);
+        }
     }
 }
