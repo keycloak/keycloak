@@ -502,6 +502,7 @@
                             <password>${keycloak.connectionsJpa.password}</password>
 
                             <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
+                            <databaseClass>${keycloak.connectionsJpa.liquibaseDatabaseClass}</databaseClass>
                         </configuration>
                         <executions>
                             <execution>
