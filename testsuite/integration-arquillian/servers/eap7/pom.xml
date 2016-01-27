@@ -238,5 +238,67 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>ssl</id>
+            <activation>
+                <property>
+                    <name>auth.server.ssl.required</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>configure-adapter-subsystem-security</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
+                                            <includes>
+                                                <include>standalone.xml</include>
+                                            </includes>
+                                            <stylesheet>src/main/xslt/security.xsl</stylesheet>
+                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>2.7</version>
+                        <executions>
+                            <execution>
+                                <id>copy-keystore</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                     <outputDirectory>${keycloak.server.home}/standalone/configuration</outputDirectory>
+                                     <resources>
+                                         <resource>
+                                              <directory>src/main/keystore</directory>
+                                              <includes>
+                                                  <include>keycloak.jks</include>
+                                                  <include>keycloak.truststore</include>
+                                              </includes>
+                                         </resource>
+                                     </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>

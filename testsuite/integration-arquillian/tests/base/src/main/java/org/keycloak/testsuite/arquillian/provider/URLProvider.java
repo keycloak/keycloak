@@ -62,7 +62,8 @@ public class URLProvider extends URLResourceProvider {
                 if (url.getPort() == 8080) {
                     for (Annotation a : qualifiers) {
                         if (OperateOnDeployment.class.isAssignableFrom(a.annotationType())) {
-                            url = new URL(fixedUrl.toExternalForm().replace("8080", System.getProperty("app.server.http.port", null)) + "/" + ((OperateOnDeployment) a).value());
+                            String port = appServerSslRequired ?  System.getProperty("app.server.https.port", "8643"):System.getProperty("app.server.http.port", "8280");
+                            url = new URL(fixedUrl.toExternalForm().replace("8080", port) + "/" + ((OperateOnDeployment) a).value());
                         }
                     }
 
