@@ -109,6 +109,10 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         }
 
         LogFactory.setInstance(new LogWrapper());
+
+        // Adding PostgresPlus support to liquibase
+        DatabaseFactory.getInstance().register(new PostgresPlusDatabase());
+
         Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
         if (defaultSchema != null) {
             database.setDefaultSchemaName(defaultSchema);
