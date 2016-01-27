@@ -2,6 +2,7 @@ package org.keycloak.truststore;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -16,7 +17,7 @@ import java.security.KeyStore;
  */
 public class FileTruststoreProviderFactory implements TruststoreProviderFactory {
 
-    private static final Logger log = Logger.getLogger(FileTruststoreProviderFactory.class);
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, FileTruststoreProviderFactory.class.getName());
 
     private TruststoreProvider provider;
 
@@ -70,7 +71,7 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
 
         provider = new FileTruststoreProvider(truststore, verificationPolicy);
         TruststoreProviderSingleton.set(provider);
-        log.debug("File trustore provider initialized: " + new File(storepath).getAbsolutePath());
+        logger.debug("File trustore provider initialized: " + new File(storepath).getAbsolutePath());
     }
 
     private KeyStore loadStore(String path, char[] password) throws Exception {

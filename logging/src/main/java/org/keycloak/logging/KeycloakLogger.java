@@ -105,6 +105,22 @@ public interface KeycloakLogger extends BasicLogger {
         @LogMessage(level = WARN)
         @Message(id = 13, value = "Rejected attempt to create initial user as user is already created")
         void initialUserAlreadyCreated();
+
+        @LogMessage(level = ERROR)
+        @Message(id = 14, value = "SAML assertion consumer url not set up")
+        void samlAssertionConsumerUrlNotSetUp();
+
+        @LogMessage(level = INFO)
+        @Message(id = 15, value = "No truststore provider found - using default SSLSocketFactory")
+        void noTruststoreProviderFound();
+
+        @LogMessage(level = WARN)
+        @Message(id = 16, value = "failed to load properties")
+        void failedToLoadProperties(@Cause Exception e);
+
+        @LogMessage(level = WARN)
+        @Message(id = 17, value = "failed to load messages")
+        void failedToLoadMessages(@Cause Exception e);
     }
 
     @MessageLogger(projectCode = "KC-REALM", length = 4)
@@ -126,6 +142,33 @@ public interface KeycloakLogger extends BasicLogger {
         @Message(id = 4, value = "Failed to get theme request")
         void failedToGetThemeRequest(@Cause Exception e);
 
+        @LogMessage(level = ERROR)
+        @Message(id = 5, value = "Failed to create theme")
+        void failedToCreateTheme(@Cause Exception e);
+
+        @LogMessage(level = WARN)
+        @Message(id = 6, value = "Failed to load properties")
+        void failedToLoadProperties(@Cause Exception e);
+
+        @LogMessage(level = WARN)
+        @Message(id = 7, value = "Failed to load messages")
+        void failedToLoadMessages(@Cause Exception e);
+
+        @LogMessage(level = ERROR)
+        @Message(id = 8, value = "Failed to process template")
+        void failedToProcessTemplate(@Cause Exception e);
+
+        @LogMessage(level = ERROR)
+        @Message(id = 9, value = "Failed to send verification email")
+        void failedToSendVerificationEmail(@Cause Exception e);
+
+        @LogMessage(level = ERROR)
+        @Message(id = 10, value = "Failed to find %s theme %s, using built-in themes")
+        void failedToFindBuiltInTheme(String type, String name);
+
+        @LogMessage(level = ERROR)
+        @Message(id = 11, value = "%s failed to load theme, type=%s, name=%s")
+        void failedToLoadTheme(@Cause Exception e, String className, String type, String name);
     }
 
     @MessageLogger(projectCode = "KC-USER", length = 4)
@@ -150,6 +193,23 @@ public interface KeycloakLogger extends BasicLogger {
         @LogMessage(level = ERROR)
         @Message(id = 5, value = "Failed to send execute actions email")
         void failedToSendActionsEmail(@Cause Exception e);
+
+        @LogMessage(level = WARN)
+        @Message(id = 6, value = "JSON field path is not configured for mapper %s")
+        void jsonFieldPathNotConfiguredForMapper(String mapper);
+
+        @LogMessage(level = WARN)
+        @Message(id = 7, value = "JSON field path is invalid %s")
+        void jsonFieldPathInvalid(String jsonField);
+
+        @LogMessage(level = ERROR)
+        @Message(id = 8, value = "Attribute is not configured for mapper %s")
+        void attributeNotConfiguredForMapper(String mapperName);
+
+        @LogMessage(level = WARN)
+        @Message(id = 9, value = "There are more values for attribute '%s' of user '%s' . Will display just first value")
+        void moreValuesForAttribute(String attrKey, String userName);
+
     }
 
     @MessageLogger(projectCode = "KC-CLIENT", length = 4)
@@ -166,6 +226,10 @@ public interface KeycloakLogger extends BasicLogger {
         @LogMessage(level = ERROR)
         @Message(id = 3, value = "%s")
         void clientRegistrationException(String message);
+
+        @LogMessage(level = WARN)
+        @Message(id = 4, value = "Truststore is disabled")
+        void trustStoreIsDisabled();
 
     }
 
@@ -223,6 +287,46 @@ public interface KeycloakLogger extends BasicLogger {
         @LogMessage(level = INFO)
         @Message(id = 12, value = "Syncing data for mapper '%s' of type '%s'. Direction: %s")
         void syncingDataForMapper(String modelName, String mapperType, String direction);
+
+        @LogMessage(level = ERROR)
+        @Message(id = 13, value = "Failed to make identity provider oauth callback")
+        void failedToMakeIDPCallback(@Cause Throwable t);
+
+        @LogMessage(level = WARN)
+        @Message(id = 14, value = "Untranslated protocol Error: %s so we return default SAML error")
+        void untranslatedProtocolError(String errorName);
+
+        @LogMessage(level = WARN)
+        @Message(id = 15, value = "LinkedIn profile URL is without second part: %s")
+        void linkedInProfileUrlIsWithoutSecondPart(String profileUrl);
+
+        @LogMessage(level = WARN)
+        @Message(id = 16, value = "LinkedIn profile URL is without path part: %s")
+        void linkedInProfileUrlIsWithoutPath(String profileUrl);
+
+        @LogMessage(level = WARN)
+        @Message(id = 17, value = "LinkedIn profile URL is malformed: %s")
+        void linkedInProfileUrlIsMalformed(String profileUrl);
+
+        @LogMessage(level = WARN)
+        @Message(id = 18, value = "LinkedIn profile URL %s username extraction failed: ")
+        void linkedInProfileUsernameExtractionFailed(@Cause Exception e, String profileUrl);
+
+        @LogMessage(level = WARN)
+        @Message(id = 19, value = "Stackoverflow profile URL is without third part: %s")
+        void stackoverflowProfileUrlIsWithoutThirdPart(String profileUrl);
+
+        @LogMessage(level = WARN)
+        @Message(id = 20, value = "Stackoverflow profile URL is without path part: %s")
+        void stackoverflowProfileUrlIsWithoutPath(String profileUrl);
+
+        @LogMessage(level = WARN)
+        @Message(id = 21, value = "Stackoverflow profile URL is malformed: %s")
+        void stackoverflowProfileUrlIsMalformed(String profileUrl);
+
+        @LogMessage(level = WARN)
+        @Message(id = 22, value = "Stackoverflow profile URL %s username extraction failed: ")
+        void stackoverflowProfileUsernameExtractionFailed(@Cause Exception e, String profileUrl);
 
     }
 
@@ -312,6 +416,19 @@ public interface KeycloakLogger extends BasicLogger {
         @LogMessage(level = ERROR)
         @Message(id = 21, value = "Required action provider was null")
         void actionProviderNull();
+
+        @LogMessage(level = ERROR)
+        @Message(id = 22, value = "Could not get user profile from twitter.")
+        void couldNotGetProfileFromTwitter(@Cause Exception e);
+
+        @LogMessage(level = ERROR)
+        @Message(id = 23, value = "Request validation failed.")
+        void requestValidationFailed(@Cause Exception e);
+
+        @LogMessage(level = ERROR)
+        @Message(id = 24, value = "validation failed.")
+        void validationFailed(@Cause Exception e);
+
     }
 
     @MessageLogger(projectCode = "KC-GROUP", length = 4)
@@ -349,6 +466,66 @@ public interface KeycloakLogger extends BasicLogger {
         @Message(id = 7, value = "Role '%s' not available in realm")
         void roleNotInRealm(String offlineAccessRole);
 
+        @LogMessage(level = ERROR)
+        @Message(id = 8, value = "No valid user session.")
+        void noValidUserSession();
+
+        @LogMessage(level = ERROR)
+        @Message(id = 9, value = "usersession in different state.")
+        void userSessionInDifferentState();
+
+        @LogMessage(level = ERROR)
+        @Message(id = 10, value = "Can't finish SAML logout as there is no logout binding set.  Please configure the logout service url in the admin console for your client applications.")
+        void canNotFinishSAMLLogout();
+
+        @LogMessage(level = WARN)
+        @Message(id = 11, value = "Failed to verify logout request")
+        void failedToVerifyLogout();
+
+        @LogMessage(level = WARN)
+        @Message(id = 12, value = "admin request failed, not validated %s")
+        void adminRequestNotValidated(String action);
+
+        @LogMessage(level = WARN)
+        @Message(id = 13, value = "admin request failed, expired token")
+        void adminRequestExpiredToken();
+
+        @LogMessage(level = WARN)
+        @Message(id = 14, value = "Resource name does not match")
+        void resourceNameDoesNotMatch();
+
+        @LogMessage(level = WARN)
+        @Message(id = 15, value = "Failed backchannel broker logout to: %s")
+        void failedBackchannelBrokerLogout(String url);
+
+        @LogMessage(level = WARN)
+        @Message(id = 16, value = "Failed backchannel broker logout to: %s")
+        void failedBackchannelBrokerLogoutWithCause(@Cause Exception e, String url);
+
+        @LogMessage(level = WARN)
+        @Message(id = 17, value = "failed to do backchannel logout for userSession")
+        void failedToDoBackchannelLogoutForUserSession(@Cause Exception e);
+
+        @LogMessage(level = WARN)
+        @Message(id = 18, value = "Can't do backchannel logout. No SingleLogoutService POST Binding registered for client: %s")
+        void failedToDoBackchannelLogoutNoPostBindingRegistered(String clientId);
+
+        @LogMessage(level = WARN)
+        @Message(id = 19, value = "failed to send saml logout")
+        void failedToSendSamlLogout();
+
+        @LogMessage(level = WARN)
+        @Message(id = 20, value = "failed to send saml logout")
+        void failedToSendSamlLogoutWithCause(@Cause Exception e);
+
+        @LogMessage(level = WARN)
+        @Message(id = 21, value = "Unknown saml response")
+        void unknownSamlResponse();
+
+        @LogMessage(level = WARN)
+        @Message(id = 22, value = "UserSession is not tagged as logging out.")
+        void userSessionIsNotTaggedAsLoggingOut();
+
     }
 
     @MessageLogger(projectCode = "KC-EVENT", length = 4)
@@ -370,6 +547,9 @@ public interface KeycloakLogger extends BasicLogger {
         @Message(id = 4, value = "Failed to send type to %s")
         void failedToSendType(@Cause Throwable t, Object listener);
 
+        @LogMessage(level = ERROR)
+        @Message(id = 5, value = "Failed to send type mail")
+        void failedToSendTypeMail(@Cause Exception e);
     }
 
     @MessageLogger(projectCode = "KC-IMPORT-EXPORT", length = 4)
@@ -450,6 +630,46 @@ public interface KeycloakLogger extends BasicLogger {
         @LogMessage(level = ERROR)
         @Message(id = 19, value = "Error importing roles")
         void roleImportError(@Cause Exception e);
+
+        @LogMessage(level = INFO)
+        @Message(id = 20, value = "Exporting into directory %s")
+        void exportingIntoDir(String dirName);
+
+        @LogMessage(level = INFO)
+        @Message(id = 21, value = "Importing from directory %s")
+        void importingFromDir(String dirName);
+
+        @LogMessage(level = INFO)
+        @Message(id = 22, value = "Exporting model into file %s")
+        void exportingModelIntoFile(String fileName);
+
+        @LogMessage(level = INFO)
+        @Message(id = 23, value = "Exporting realm '%s' into file %s")
+        void exportingRealmIntoFile(String realmName, String fileName);
+
+        @LogMessage(level = INFO)
+        @Message(id = 24, value = "Full importing from file %s")
+        void fullImportingFromFile(String fileName);
+
+        @LogMessage(level = INFO)
+        @Message(id = 25, value = "Realm '%s' already exists. Import skipped")
+        void realmAlreadyExistsSkipped(String realmName);
+
+        @LogMessage(level = INFO)
+        @Message(id = 26, value = "Realm '%s' already exists. Removing it before import")
+        void realmAlreadyExistsRemoving(String realmName);
+
+        @LogMessage(level = INFO)
+        @Message(id = 27, value = "Realm '%s' imported")
+        void realmImported(String realmName);
+
+        @LogMessage(level = INFO)
+        @Message(id = 28, value = "Realm '%s' - data exported")
+        void realmDataExported(String realmName);
+
+        @LogMessage(level = INFO)
+        @Message(id = 29, value = "Users %s-%s exported")
+        void usersExported(Integer pageStart, Integer pageEnd);
     }
 
     @MessageLogger(projectCode = "KC-MIGRATION", length = 4)

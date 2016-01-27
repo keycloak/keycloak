@@ -30,6 +30,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -61,7 +62,7 @@ import static org.keycloak.models.ClientSessionModel.Action.AUTHENTICATE;
 public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2IdentityProviderConfig> implements
         SocialIdentityProvider<OAuth2IdentityProviderConfig> {
 
-    protected static final Logger logger = Logger.getLogger(TwitterIdentityProvider.class);
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, TwitterIdentityProvider.class.getName());
     public TwitterIdentityProvider(OAuth2IdentityProviderConfig config) {
         super(config);
     }
@@ -155,7 +156,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
                 return callback.authenticated(identity);
             } catch (Exception e) {
-                logger.error("Could get user profile from twitter.", e);
+                logger.AUTH.couldNotGetProfileFromTwitter(e);
             }
             EventBuilder event = new EventBuilder(realm, session, clientConnection);
             event.event(EventType.LOGIN);

@@ -58,13 +58,14 @@ import java.io.IOException;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import org.keycloak.logging.KeycloakLogger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class SAMLEndpoint {
-    protected static final Logger logger = Logger.getLogger(SAMLEndpoint.class);
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, SAMLEndpoint.class.getName());
     public static final String SAML_FEDERATED_SESSION_INDEX = "SAML_FEDERATED_SESSION_INDEX";
     public static final String SAML_FEDERATED_SUBJECT = "SAML_FEDERATED_SUBJECT";
     public static final String SAML_FEDERATED_SUBJECT_NAMEFORMAT = "SAML_FEDERATED_SUBJECT_NAMEFORMAT";
@@ -188,7 +189,7 @@ public class SAMLEndpoint {
                 try {
                     verifySignature(GeneralConstants.SAML_REQUEST_KEY, holder);
                 } catch (VerificationException e) {
-                    logger.error("validation failed", e);
+                    logger.AUTH.validationFailed(e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
                     return ErrorPage.error(session, Messages.INVALID_REQUESTER);
@@ -219,7 +220,7 @@ public class SAMLEndpoint {
                     try {
                         AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, false);
                     } catch (Exception e) {
-                        logger.warn("failed to do backchannel logout for userSession", e);
+                        logger.SESSION.failedToDoBackchannelLogoutForUserSession(e);
                     }
                 }
 
@@ -234,7 +235,7 @@ public class SAMLEndpoint {
                         try {
                             AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, false);
                         } catch (Exception e) {
-                            logger.warn("failed to do backchannel logout for userSession", e);
+                            logger.SESSION.failedToDoBackchannelLogoutForUserSession(e);
                         }
                     }
                 }
@@ -349,7 +350,7 @@ public class SAMLEndpoint {
                 try {
                     verifySignature(GeneralConstants.SAML_RESPONSE_KEY, holder);
                 } catch (VerificationException e) {
-                    logger.error("validation failed", e);
+                    logger.AUTH.validationFailed(e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
                     return ErrorPage.error(session, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
@@ -368,20 +369,20 @@ public class SAMLEndpoint {
 
         protected Response handleLogoutResponse(SAMLDocumentHolder holder, StatusResponseType responseType, String relayState) {
             if (relayState == null) {
-                logger.error("no valid user session");
+                logger.SESSION.noValidUserSession();
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 return ErrorPage.error(session, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
             UserSessionModel userSession = session.sessions().getUserSession(realm, relayState);
             if (userSession == null) {
-                logger.error("no valid user session");
+                logger.SESSION.noValidUserSession();
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 return ErrorPage.error(session, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
             if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
-                logger.error("usersession in different state");
+                logger.SESSION.userSessionInDifferentState();
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 return ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE);

@@ -31,6 +31,7 @@ import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -53,7 +54,7 @@ import java.util.regex.Pattern;
  * @author Pedro Igor
  */
 public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityProviderConfig> extends AbstractIdentityProvider<C> {
-    protected static final Logger logger = Logger.getLogger(AbstractOAuth2IdentityProvider.class);
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, AbstractOAuth2IdentityProvider.class.getName());
 
     public static final String OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
     public static final String FEDERATED_ACCESS_TOKEN = "FEDERATED_ACCESS_TOKEN";
@@ -110,7 +111,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     protected String extractTokenFromResponse(String response, String tokenName) {
     	  if(response == null)
     	  	return null;
-    	  
+
         if (response.startsWith("{")) {
             try {
             		JsonNode node = mapper.readTree(response);
@@ -162,8 +163,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     /**
-     * Get JSON property as text. JSON numbers and booleans are converted to text. Empty string is converted to null. 
-     * 
+     * Get JSON property as text. JSON numbers and booleans are converted to text. Empty string is converted to null.
+     *
      * @param jsonNode to get property from
      * @param name of property to get
      * @return string value of the property or null.
@@ -240,7 +241,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     return callback.authenticated(federatedIdentity);
                 }
             } catch (Exception e) {
-                logger.error("Failed to make identity provider oauth callback", e);
+                logger.IDP.failedToMakeIDPCallback(e);
             }
             event.event(EventType.LOGIN);
             event.error(Errors.IDENTITY_PROVIDER_LOGIN_FAILURE);

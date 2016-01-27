@@ -6,6 +6,7 @@ import org.keycloak.exportimport.ImportProvider;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.util.ExportImportSessionTask;
 import org.keycloak.exportimport.util.ImportUtils;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -24,7 +25,7 @@ import java.util.List;
  */
 public class DirImportProvider implements ImportProvider {
 
-    private static final Logger logger = Logger.getLogger(DirImportProvider.class);
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, DirImportProvider.class.getName());
 
     private final File rootDirectory;
 
@@ -38,13 +39,13 @@ public class DirImportProvider implements ImportProvider {
             throw new IllegalStateException("Directory " + this.rootDirectory + " doesn't exists");
         }
 
-        logger.infof("Importing from directory %s", this.rootDirectory.getAbsolutePath());
+        logger.IMPORT_EXPORT.importingFromDir(this.rootDirectory.getAbsolutePath());
     }
 
     public DirImportProvider(File rootDirectory) {
         this.rootDirectory = rootDirectory;
 
-        logger.infof("Importing from directory %s", this.rootDirectory.getAbsolutePath());
+        logger.IMPORT_EXPORT.importingFromDir(this.rootDirectory.getAbsolutePath());
     }
 
     @Override

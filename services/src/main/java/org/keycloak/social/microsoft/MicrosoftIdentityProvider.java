@@ -11,18 +11,19 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.logging.KeycloakLogger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * 
- * Identity provider for Microsoft account. Uses OAuth 2 protocol of Windows Live Services as documented at <a href="https://msdn.microsoft.com/en-us/library/hh243647.aspx">https://msdn.microsoft.com/en-us/library/hh243647.aspx</a>  
- * 
+ *
+ * Identity provider for Microsoft account. Uses OAuth 2 protocol of Windows Live Services as documented at <a href="https://msdn.microsoft.com/en-us/library/hh243647.aspx">https://msdn.microsoft.com/en-us/library/hh243647.aspx</a>
+ *
  * @author Vlastimil Elias (velias at redhat dot com)
  */
 public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider implements SocialIdentityProvider {
 
-    private static final Logger log = Logger.getLogger(MicrosoftIdentityProvider.class);
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, MicrosoftIdentityProvider.class.getName());
 
     public static final String AUTH_URL = "https://login.live.com/oauth20_authorize.srf";
     public static final String TOKEN_URL = "https://login.live.com/oauth20_token.srf";
@@ -40,8 +41,8 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
     protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
         try {
             String URL = PROFILE_URL + "?access_token=" + URLEncoder.encode(accessToken, "UTF-8");
-            if (log.isDebugEnabled()) {
-                log.debug("Microsoft Live user profile request to: " + URL);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Microsoft Live user profile request to: " + URL);
             }
             JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(URL));
 

@@ -2,6 +2,7 @@ package org.keycloak.theme;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.models.KeycloakSession;
 
 import java.io.IOException;
@@ -15,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ExtendingThemeManager implements ThemeProvider {
 
-    private static final Logger log = Logger.getLogger(ExtendingThemeManager.class);
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, ExtendingThemeManager.class.getName());
 
     private final KeycloakSession session;
     private final ConcurrentHashMap<ExtendingThemeManagerFactory.ThemeKey, Theme> themeCache;
@@ -72,7 +73,7 @@ public class ExtendingThemeManager implements ThemeProvider {
                     if (theme == null) {
                         theme = loadTheme("base", type);
                     }
-                    log.errorv("Failed to find {0} theme {1}, using built-in themes", type, name);
+                    logger.REALM.failedToFindBuiltInTheme(type.toString(), name);
                 } else if (themeCache.putIfAbsent(key, theme) != null) {
                     theme = themeCache.get(key);
                 }
@@ -142,7 +143,7 @@ public class ExtendingThemeManager implements ThemeProvider {
                 try {
                     return p.getTheme(name, type);
                 } catch (IOException e) {
-                    log.errorv(e, p.getClass() + " failed to load theme, type={0}, name={1}", type, name);
+                    logger.REALM.failedToLoadTheme(e, p.getClass().getName(), type.toString(), name);
                 }
             }
         }

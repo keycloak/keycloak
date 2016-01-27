@@ -20,13 +20,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.concurrent.TimeUnit;
+import org.keycloak.logging.KeycloakLogger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class DefaultHttpClientFactory implements HttpClientFactory {
 
-    private static final Logger logger = Logger.getLogger(DefaultHttpClientFactory.class);
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, DefaultHttpClientFactory.class.getName());
 
     private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
@@ -112,7 +113,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
                     boolean disableTrustManager = truststoreProvider == null || truststoreProvider.getTruststore() == null;
                     if (disableTrustManager) {
-                        logger.warn("Truststore is disabled");
+                        logger.CLIENT.trustStoreIsDisabled();
                     }
                     HttpClientBuilder.HostnameVerificationPolicy hostnamePolicy = disableTrustManager ? null
                             : HttpClientBuilder.HostnameVerificationPolicy.valueOf(truststoreProvider.getPolicy().name());

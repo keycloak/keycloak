@@ -31,15 +31,16 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.logging.KeycloakLogger;
 
 /**
  * LinkedIn social provider. See https://developer.linkedin.com/docs/oauth2
- * 
+ *
  * @author Vlastimil Elias (velias at redhat dot com)
  */
 public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider implements SocialIdentityProvider {
 
-	private static final Logger log = Logger.getLogger(LinkedInIdentityProvider.class);
+	private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, LinkedInIdentityProvider.class.getName());
 
 	public static final String AUTH_URL = "https://www.linkedin.com/uas/oauth2/authorization";
 	public static final String TOKEN_URL = "https://www.linkedin.com/uas/oauth2/accessToken";
@@ -55,7 +56,7 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider imp
 
 	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
-		log.debug("doGetFederatedIdentity()");
+		logger.debug("doGetFederatedIdentity()");
 		try {
 			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken));
 
@@ -80,7 +81,7 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider imp
 		if (isNotBlank(profileURL)) {
 
 			try {
-				log.debug("go to extract username from profile URL " + profileURL);
+				logger.debug("go to extract username from profile URL " + profileURL);
 				URL u = new URL(profileURL);
 				String path = u.getPath();
 				if (isNotBlank(path) && path.length() > 1) {
@@ -91,15 +92,15 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider imp
 					if (pe.length >= 2) {
 						return URLDecoder.decode(pe[1], "UTF-8");
 					} else {
-						log.warn("LinkedIn profile URL path is without second part: " + profileURL);
+						logger.IDP.linkedInProfileUrlIsWithoutSecondPart(profileURL);
 					}
 				} else {
-					log.warn("LinkedIn profile URL is without path part: " + profileURL);
+					logger.IDP.linkedInProfileUrlIsWithoutPath(profileURL);
 				}
 			} catch (MalformedURLException e) {
-				log.warn("LinkedIn profile URL is malformed: " + profileURL);
+				logger.IDP.linkedInProfileUrlIsMalformed(profileURL);
 			} catch (Exception e) {
-				log.warn("LinkedIn profile URL " + profileURL + " username extraction failed due: " + e.getMessage());
+				logger.IDP.linkedInProfileUsernameExtractionFailed(e, profileURL);
 			}
 		}
 		return null;

@@ -8,6 +8,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.Strategy;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -26,7 +27,7 @@ import java.util.*;
  */
 public class ImportUtils {
 
-    private static final Logger logger = Logger.getLogger(ImportUtils.class);
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, ImportUtils.class.getName());
 
     public static void importRealms(KeycloakSession session, Collection<RealmRepresentation> realms, Strategy strategy) {
         // Import admin realm first
@@ -58,10 +59,10 @@ public class ImportUtils {
 
         if (realm != null) {
             if (strategy == Strategy.IGNORE_EXISTING) {
-                logger.infof("Realm '%s' already exists. Import skipped", realmName);
+                logger.IMPORT_EXPORT.realmAlreadyExistsSkipped(realmName);
                 return;
             } else {
-                logger.infof("Realm '%s' already exists. Removing it before import", realmName);
+                logger.IMPORT_EXPORT.realmAlreadyExistsRemoving(realmName);
                 if (Config.getAdminRealm().equals(realm.getId())) {
                     // Delete all masterAdmin apps due to foreign key constraints
                     for (RealmModel currRealm : model.getRealms()) {
@@ -77,9 +78,9 @@ public class ImportUtils {
         realm = realmManager.importRealm(rep);
 
         if (System.getProperty(ExportImportConfig.ACTION) != null) {
-            logger.infof("Realm '%s' imported", realmName);
+            logger.IMPORT_EXPORT.realmImported(realmName);
         }
-        
+
         return;
     }
 
