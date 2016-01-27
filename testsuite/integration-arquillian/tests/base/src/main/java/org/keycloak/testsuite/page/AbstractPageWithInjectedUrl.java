@@ -18,8 +18,10 @@ public abstract class AbstractPageWithInjectedUrl extends AbstractPage {
         if (System.getProperty("app.server.eap6","false").equals("false")) {
             return null;
         }
-
         try {
+            if(Boolean.parseBoolean(System.getProperty("app.server.ssl.required"))) {
+                return new URL("https://localhost:" + System.getProperty("app.server.https.port", "8543") + "/" + url);
+            };
             return new URL("http://localhost:" + System.getProperty("app.server.http.port", "8180") + "/" + url);
         } catch (MalformedURLException e) {
             e.printStackTrace();

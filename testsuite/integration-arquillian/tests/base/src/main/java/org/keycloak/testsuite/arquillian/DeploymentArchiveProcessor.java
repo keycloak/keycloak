@@ -35,6 +35,8 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
     protected final Logger log = org.jboss.logging.Logger.getLogger(this.getClass());
 
+    private final boolean authServerSslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
+
     public static final String WEBXML_PATH = "/WEB-INF/web.xml";
     public static final String ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak.json";
     public static final String ADAPTER_CONFIG_PATH_TENANT1 = "/WEB-INF/classes/tenant1-keycloak.json";
@@ -74,10 +76,18 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                 log.info("Modyfying saml adapter config in " + archive.getName());
 
                 Document doc = loadXML(archive.get("WEB-INF/keycloak-saml.xml").getAsset().openStream());
-
-                modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.http.port", null));
-                modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.http.port", null));
-                modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.http.port", null));
+                if (authServerSslRequired) {
+                    modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.https.port", null));
+                    modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "http", "https");
+                    modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.https.port", null));
+                    modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "http", "https");
+                    modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.https.port", null));
+                    modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "http", "https");
+                } else {
+                    modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.http.port", null));
+                    modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.http.port", null));
+                    modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.http.port", null));
+                }
 
                 try {
                     archive.add(new StringAsset(IOUtil.documentToString(doc)), adapterConfigPath);
