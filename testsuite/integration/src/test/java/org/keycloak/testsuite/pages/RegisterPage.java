@@ -57,6 +57,10 @@ public class RegisterPage extends AbstractPage {
     @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
 
+    @FindBy(className = "instruction")
+    private WebElement loginInstructionMessage;
+
+
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
         firstNameInput.clear();
         if (firstName != null) {
@@ -129,6 +133,15 @@ public class RegisterPage extends AbstractPage {
 
     public String getError() {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
+    }
+
+    public String getInstruction() {
+        try {
+            return loginInstructionMessage != null ? loginInstructionMessage.getText() : null;
+        } catch (NoSuchElementException e){
+            // OK
+        }
+        return null;
     }
 
     public String getFirstName() {

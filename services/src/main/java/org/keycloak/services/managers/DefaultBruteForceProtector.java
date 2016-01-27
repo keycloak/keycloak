@@ -21,6 +21,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.services.ServicesLogger;
 
@@ -91,43 +92,48 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         logger.debug("failure");
         RealmModel realm = getRealmModel(session, event);
         logFailure(event);
-        UsernameLoginFailureModel user = getUserModel(session, event);
-        if (user == null) {
-            user = session.sessions().addUserLoginFailure(realm, event.username.toLowerCase());
-        }
-        user.setLastIPFailure(event.ip);
-        long currentTime = System.currentTimeMillis();
-        long last = user.getLastFailure();
-        long deltaTime = 0;
-        if (last > 0) {
-            deltaTime = currentTime - last;
-        }
-        user.setLastFailure(currentTime);
-        if (deltaTime > 0) {
-            // if last failure was more than MAX_DELTA clear failures
-            if (deltaTime > (long)realm.getMaxDeltaTimeSeconds() *1000L) {
-                user.clearFailures();
+        UserModel user = session.users().getUserByUsername(event.username.toString(), realm);
+        UsernameLoginFailureModel userLoginFailure = getUserModel(session, event);
+        if (user != null) {
+            if (userLoginFailure == null) {
+                userLoginFailure = session.sessions().addUserLoginFailure(realm, event.username.toLowerCase());
             }
-        }
-        user.incrementFailures();
-        logger.debugv("new num failures: {0}" , user.getNumFailures());
+            userLoginFailure.setLastIPFailure(event.ip);
+            long currentTime = System.currentTimeMillis();
+            long last = userLoginFailure.getLastFailure();
+            long deltaTime = 0;
+            if (last > 0) {
+                deltaTime = currentTime - last;
+            }
+            userLoginFailure.setLastFailure(currentTime);
+            if (deltaTime > 0) {
+                // if last failure was more than MAX_DELTA clear failures
+                if (deltaTime > (long) realm.getMaxDeltaTimeSeconds() * 1000L) {
+                    userLoginFailure.clearFailures();
+                }
+            }
+            userLoginFailure.incrementFailures();
+            logger.debugv("new num failures: {0}", userLoginFailure.getNumFailures());
 
-        int waitSeconds = realm.getWaitIncrementSeconds() * (user.getNumFailures() / realm.getFailureFactor());
-        logger.debugv("waitSeconds: {0}", waitSeconds);
-        logger.debugv("deltaTime: {0}", deltaTime);
-        if (waitSeconds == 0) {
-            if (last > 0 && deltaTime < realm.getQuickLoginCheckMilliSeconds()) {
-                logger.debugv("quick login, set min wait seconds");
-                waitSeconds = realm.getMinimumQuickLoginWaitSeconds();
+            int waitSeconds = realm.getWaitIncrementSeconds() * (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+            logger.debugv("waitSeconds: {0}", waitSeconds);
+            logger.debugv("deltaTime: {0}", deltaTime);
+
+            if (waitSeconds == 0) {
+                if (last > 0 && deltaTime < realm.getQuickLoginCheckMilliSeconds()) {
+                    logger.debugv("quick login, set min wait seconds");
+                    waitSeconds = realm.getMinimumQuickLoginWaitSeconds();
+                }
             }
-        }
-        if (waitSeconds > 0) {
-            waitSeconds = Math.min(realm.getMaxFailureWaitSeconds(), waitSeconds);
-            int notBefore = (int) (currentTime / 1000) + waitSeconds;
-            logger.debugv("set notBefore: {0}", notBefore);
-            user.setFailedLoginNotBefore(notBefore);
+            if (waitSeconds > 0) {
+                waitSeconds = Math.min(realm.getMaxFailureWaitSeconds(), waitSeconds);
+                int notBefore = (int) (currentTime / 1000) + waitSeconds;
+                logger.debugv("set notBefore: {0}", notBefore);
+                userLoginFailure.setFailedLoginNotBefore(notBefore);
+            }
         }
     }
+
 
     protected UsernameLoginFailureModel getUserModel(KeycloakSession session, LoginEvent event) {
         RealmModel realm = getRealmModel(session, event);
