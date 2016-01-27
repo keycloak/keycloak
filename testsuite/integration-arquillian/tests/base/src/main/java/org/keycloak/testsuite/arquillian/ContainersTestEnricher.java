@@ -1,5 +1,9 @@
 package org.keycloak.testsuite.arquillian;
 
+import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
+import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -9,11 +13,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.io.FileUtils;
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
 import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
+import org.jboss.arquillian.container.spi.event.container.AfterStart;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Event;
 import org.jboss.arquillian.core.api.Instance;
@@ -22,7 +28,6 @@ import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.annotation.SuiteScoped;
-import org.jboss.arquillian.container.spi.event.container.AfterStart;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
@@ -31,10 +36,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.annotation.AdapterLibsLocationProperty;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.util.OAuthClient;
-
-import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
-import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  *
@@ -126,7 +127,6 @@ public class ContainersTestEnricher {
             log.info("\n\n### Starting keycloak current version ###\n");
             alreadyStopped = true;
         }
-        
         installAdapters(container);
     }
 
@@ -275,20 +275,25 @@ public class ContainersTestEnricher {
 
     private void installAdapters(Container container) throws InterruptedException, IOException {
         if (!alreadyInstalled && !skipInstallAdapters && isJBossBased(container)) {
-            String jbossCliPath = jbossHomePath + "/bin/jboss-cli.sh";
-            String adapterScriptPathArg = "--file=" + jbossHomePath + "/bin/adapter-install.cli";
-            String samlAdapterScriptPathArg = "--file=" + jbossHomePath + "/bin/adapter-install-saml.cli";
+            File bin = new File(jbossHomePath + "/bin");
+            String command = "java -jar " + jbossHomePath + "/bin/client/jboss-cli-client.jar";
+            String adapterScript = "adapter-install.cli";
+            String samlAdapterScript = "adapter-install-saml.cli";
             String managementPort = container.getContainerConfiguration().getContainerProperties().get("managementPort");
-            String controllerArg = "--controller=localhost:" + managementPort;
 
-            log.info("Installing adapter to app server via cli script");
-            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", adapterScriptPathArg, controllerArg});
-            log.info("Installing saml adapter to app server via cli script");
-            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", samlAdapterScriptPathArg, controllerArg});
+            String controllerArg = " --controller=localhost:" + managementPort;
+            if (new File(bin, adapterScript).exists()) {
+                log.info("Installing adapter to app server via cli script");
+                execCommand(command + " --connect --file=" + adapterScript + controllerArg, bin);
+            }
+            if (new File(bin, samlAdapterScript).exists()) {
+                log.info("Installing saml adapter to app server via cli script");
+                execCommand(command + " --connect --file=" + samlAdapterScript + controllerArg, bin);
+            }
             log.info("Restarting container");
-            execCommand(new String[]{"/bin/sh", jbossCliPath, "--connect", "--command=:reload", controllerArg});
-            pause(5000);
+            execCommand(command + " --connect --command=reload" + controllerArg, bin);
             log.info("Container restarted");
+            pause(5000);
             checkServerLog(jbossHomePath);
             if (container.getName().startsWith("app-server")) {
                 alreadyInstalled = true;
@@ -296,29 +301,35 @@ public class ContainersTestEnricher {
         }
     }
 
-    private void execCommand(String... command) throws IOException, InterruptedException {
-        Process process = Runtime.getRuntime().exec(command);
-
+    private void execCommand(String command, File dir) throws IOException, InterruptedException {
+        Process process = Runtime.getRuntime().exec(command, null, dir);
         if (process.waitFor(10, TimeUnit.SECONDS)) {
             if (process.exitValue() != 0) {
+                getOutput("ERROR", process.getErrorStream());
                 throw new RuntimeException("Adapter installation failed. Process exitValue: " 
-                        + process.exitValue() + "; <error output>\n" + getOutput(process.getErrorStream()) 
-                        + "</error output>");
+                        + process.exitValue());
             }
+            getOutput("OUTPUT", process.getInputStream());
             log.debug("process.isAlive(): " + process.isAlive());
         } else {
-            process.destroyForcibly();
+            if (process.isAlive()) {
+                process.destroyForcibly();
+            }
             throw new RuntimeException("Timeout after 10 seconds.");
         }
     }
 
-    private String getOutput(InputStream is) throws IOException {
+    private void getOutput(String type, InputStream is) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         StringBuilder builder = new StringBuilder();
+        builder.append("<").append(type).append(">");
+        System.out.println(builder);
+        builder = new StringBuilder();
         while (reader.ready()) {
-            builder.append(reader.readLine());
+            System.out.println(reader.readLine());
         }
-        return builder.toString();
+        builder.append("</").append(type).append(">");
+        System.out.println(builder);
     }
 
     private boolean isJBossBased(Container container) {
