@@ -18,35 +18,33 @@
 package org.keycloak.representations.idm;
 
 /**
- * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
- */
-public class AuthenticationExecutionRepresentation extends AbstractAuthenticationExecutionRepresentation {
+* @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+* @version $Revision: 1 $
+*/
+public class AuthenticationExecutionExportRepresentation extends AbstractAuthenticationExecutionRepresentation {
 
-    private String id;
-    private String flowId;
-    private String parentFlow;
+    private String flowAlias;
+    private boolean userSetupAllowed;
 
-    public String getId() {
-        return id;
+
+    public boolean isUserSetupAllowed() {
+        return userSetupAllowed;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setUserSetupAllowed(boolean userSetupAllowed) {
+        this.userSetupAllowed = userSetupAllowed;
     }
 
-    public String getFlowId() {
-        return flowId;
+    /**
+     * If this execution is a flow, this is the flowId pointing to an AuthenticationFlowModel
+     *
+     * @return
+     */
+    public String getFlowAlias() {
+        return flowAlias;
     }
 
-    public void setFlowId(String flowId) {
-        this.flowId = flowId;
-    }
-
-    public String getParentFlow() {
-        return parentFlow;
-    }
-
-    public void setParentFlow(String parentFlow) {
-        this.parentFlow = parentFlow;
+    public void setFlowAlias(String flowId) {
+        this.flowAlias = flowId;
     }
 }

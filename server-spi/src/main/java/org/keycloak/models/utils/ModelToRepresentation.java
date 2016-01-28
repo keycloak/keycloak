@@ -46,7 +46,7 @@ import org.keycloak.models.UserSessionModel;
 
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
-import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -680,12 +680,13 @@ public class ModelToRepresentation {
 
     public static AuthenticationFlowRepresentation  toRepresentation(RealmModel realm, AuthenticationFlowModel model) {
         AuthenticationFlowRepresentation rep = new AuthenticationFlowRepresentation();
+        rep.setId(model.getId());
         rep.setBuiltIn(model.isBuiltIn());
         rep.setTopLevel(model.isTopLevel());
         rep.setProviderId(model.getProviderId());
         rep.setAlias(model.getAlias());
         rep.setDescription(model.getDescription());
-        rep.setAuthenticationExecutions(new LinkedList<AuthenticationExecutionRepresentation>());
+        rep.setAuthenticationExecutions(new LinkedList<AuthenticationExecutionExportRepresentation>());
         for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(model.getId())) {
             rep.getAuthenticationExecutions().add(toRepresentation(realm, execution));
         }
@@ -693,8 +694,8 @@ public class ModelToRepresentation {
 
     }
 
-    public static AuthenticationExecutionRepresentation toRepresentation(RealmModel realm, AuthenticationExecutionModel model) {
-        AuthenticationExecutionRepresentation rep = new AuthenticationExecutionRepresentation();
+    public static AuthenticationExecutionExportRepresentation toRepresentation(RealmModel realm, AuthenticationExecutionModel model) {
+        AuthenticationExecutionExportRepresentation rep = new AuthenticationExecutionExportRepresentation();
         if (model.getAuthenticatorConfig() != null) {
             AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(model.getAuthenticatorConfig());
             rep.setAuthenticatorConfig(config.getAlias());
