@@ -1,5 +1,6 @@
 package org.keycloak.authentication;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
@@ -30,6 +31,7 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.common.util.Time;
+import org.keycloak.services.util.CacheControlUtil;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -575,9 +577,11 @@ public class AuthenticationProcessor {
                         .setConnection(connection)
                         .setEventBuilder(event)
                         .setRealm(realm)
+                        .setBrowserFlow(isBrowserFlow())
                         .setSession(session)
                         .setUriInfo(uriInfo)
                         .setRequest(request);
+                CacheControlUtil.noBackButtonCacheControlHeader();
                 return processor.authenticate();
 
             } else {
@@ -654,6 +658,17 @@ public class AuthenticationProcessor {
         } catch (Exception e) {
             return handleClientAuthException(e);
         }
+    }
+
+
+    public Response redirectToFlow() {
+        String code = generateCode();
+
+        URI redirect = LoginActionsService.loginActionsBaseUrl(getUriInfo())
+                .path(flowPath)
+                .queryParam(OAuth2Constants.CODE, code).build(getRealm().getName());
+        return Response.status(302).location(redirect).build();
+
     }
 
     public static Response redirectToRequiredActions(RealmModel realm, ClientSessionModel clientSession, UriInfo uriInfo) {

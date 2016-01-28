@@ -74,9 +74,10 @@ public abstract class AuthorizationEndpointBase {
      * @param clientSession for current request
      * @param protocol handler for protocol used to initiate login
      * @param isPassive set to true if login should be passive (without login screen shown)
+     * @param redirectToAuthentication if true redirect to flow url.  If initial call to protocol is a POST, you probably want to do this.  This is so we can disable the back button on browser
      * @return response to be returned to the browser
      */
-    protected Response handleBrowserAuthenticationRequest(ClientSessionModel clientSession, LoginProtocol protocol, boolean isPassive) {
+    protected Response handleBrowserAuthenticationRequest(ClientSessionModel clientSession, LoginProtocol protocol, boolean isPassive, boolean redirectToAuthentication) {
 
         List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
         for (IdentityProviderModel identityProvider : identityProviders) {
@@ -115,6 +116,9 @@ public abstract class AuthorizationEndpointBase {
         } else {
             try {
                 RestartLoginCookie.setRestartCookie(realm, clientConnection, uriInfo, clientSession);
+                if (redirectToAuthentication) {
+                    return processor.redirectToFlow();
+                }
                 return processor.authenticate();
             } catch (Exception e) {
                 return processor.handleBrowserException(e);

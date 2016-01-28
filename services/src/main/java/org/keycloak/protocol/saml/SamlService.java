@@ -18,6 +18,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.StreamUtil;
@@ -50,6 +51,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.util.CacheControlUtil;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -66,6 +68,12 @@ public class SamlService extends AuthorizationEndpointBase {
     }
 
     public abstract class BindingProtocol {
+
+        // this is to support back button on browser
+        // if true, we redirect to authenticate URL otherwise back button behavior has bad side effects
+        // and we want to turn it off.
+        protected boolean redirectToAuthentication;
+
         protected Response basicChecks(String samlRequest, String samlResponse) {
             if (!checkSsl()) {
                 event.event(EventType.LOGIN);
@@ -229,7 +237,6 @@ public class SamlService extends AuthorizationEndpointBase {
             clientSession.setAuthMethod(SamlProtocol.LOGIN_PROTOCOL);
             clientSession.setRedirectUri(redirect);
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-            clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
             clientSession.setNote(SamlProtocol.SAML_BINDING, bindingType);
             clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
             clientSession.setNote(SamlProtocol.SAML_REQUEST_ID, requestAbstractType.getID());
@@ -248,7 +255,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 }
             }
 
-            return newBrowserAuthentication(clientSession, requestAbstractType.isIsPassive());
+            return newBrowserAuthentication(clientSession, requestAbstractType.isIsPassive(), redirectToAuthentication);
         }
 
         protected String getBindingType(AuthnRequestType requestAbstractType) {
@@ -449,13 +456,13 @@ public class SamlService extends AuthorizationEndpointBase {
 
     }
 
-    protected Response newBrowserAuthentication(ClientSessionModel clientSession, boolean isPassive) {
+    protected Response newBrowserAuthentication(ClientSessionModel clientSession, boolean isPassive, boolean redirectToAuthentication) {
         SamlProtocol samlProtocol = new SamlProtocol().setEventBuilder(event).setHttpHeaders(headers).setRealm(realm).setSession(session).setUriInfo(uriInfo);
-        return newBrowserAuthentication(clientSession, isPassive, samlProtocol);
+        return newBrowserAuthentication(clientSession, isPassive, redirectToAuthentication, samlProtocol);
     }
 
-    protected Response newBrowserAuthentication(ClientSessionModel clientSession, boolean isPassive, SamlProtocol samlProtocol) {
-        return handleBrowserAuthenticationRequest(clientSession, samlProtocol, isPassive);
+    protected Response newBrowserAuthentication(ClientSessionModel clientSession, boolean isPassive, boolean redirectToAuthentication, SamlProtocol samlProtocol) {
+        return handleBrowserAuthenticationRequest(clientSession, samlProtocol, isPassive, redirectToAuthentication);
     }
 
     /**
@@ -463,21 +470,29 @@ public class SamlService extends AuthorizationEndpointBase {
     @GET
     public Response redirectBinding(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest, @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse, @QueryParam(GeneralConstants.RELAY_STATE) String relayState) {
         logger.debug("SAML GET");
+        CacheControlUtil.noBackButtonCacheControlHeader();
         return new RedirectBindingProtocol().execute(samlRequest, samlResponse, relayState);
     }
 
     /**
      */
     @POST
+    @NoCache
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response postBinding(@FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest, @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse, @FormParam(GeneralConstants.RELAY_STATE) String relayState) {
         logger.debug("SAML POST");
-        return new PostBindingProtocol().execute(samlRequest, samlResponse, relayState);
+        PostBindingProtocol postBindingProtocol = new PostBindingProtocol();
+        // this is to support back button on browser
+        // if true, we redirect to authenticate URL otherwise back button behavior has bad side effects
+        // and we want to turn it off.
+        postBindingProtocol.redirectToAuthentication = true;
+        return postBindingProtocol.execute(samlRequest, samlResponse, relayState);
     }
 
     @GET
     @Path("descriptor")
     @Produces(MediaType.APPLICATION_XML)
+    @NoCache
     public String getDescriptor() throws Exception {
         return getIDPMetadataDescriptor(uriInfo, realm);
 
@@ -499,6 +514,7 @@ public class SamlService extends AuthorizationEndpointBase {
     @Produces(MediaType.TEXT_HTML)
     public Response idpInitiatedSSO(@PathParam("client") String clientUrlName, @QueryParam("RelayState") String relayState) {
         event.event(EventType.LOGIN);
+        CacheControlUtil.noBackButtonCacheControlHeader();
         ClientModel client = null;
         for (ClientModel c : realm.getClients()) {
             String urlName = c.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME);
@@ -537,7 +553,6 @@ public class SamlService extends AuthorizationEndpointBase {
         ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
         clientSession.setAuthMethod(SamlProtocol.LOGIN_PROTOCOL);
         clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-        clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
         clientSession.setNote(SamlProtocol.SAML_BINDING, SamlProtocol.SAML_POST_BINDING);
         clientSession.setNote(SamlProtocol.SAML_IDP_INITIATED_LOGIN, "true");
         clientSession.setRedirectUri(redirect);
@@ -549,11 +564,12 @@ public class SamlService extends AuthorizationEndpointBase {
             clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
         }
 
-        return newBrowserAuthentication(clientSession, false);
+        return newBrowserAuthentication(clientSession, false, false);
 
     }
 
     @POST
+    @NoCache
     @Consumes({"application/soap+xml",MediaType.TEXT_XML})
     public Response soapBinding(InputStream inputStream) {
         SamlEcpProfileService bindingService = new SamlEcpProfileService(realm, event);
