@@ -9,6 +9,12 @@ import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.token.TokenManager;
 
 /**
+ * Provides a Keycloak client. By default, this implementation uses a {@link ResteasyClient RESTEasy client} with the
+ * default {@link ResteasyClientBuilder} settings. To customize the underling client, use a {@link KeycloakBuilder} to
+ * create a Keycloak client.
+ *
+ * @see KeycloakBuilder
+ *
  * @author rodrigo.sasaki@icarros.com.br
  */
 public class Keycloak {
@@ -18,9 +24,9 @@ public class Keycloak {
     private final ResteasyWebTarget target;
     private final ResteasyClient client;
 
-    private Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret){
+    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, ResteasyClient resteasyClient){
         config = new Config(serverUrl, realm, username, password, clientId, clientSecret);
-        client = new ResteasyClientBuilder().build();
+        client = resteasyClient != null ? resteasyClient : new ResteasyClientBuilder().build();
 
         tokenManager = new TokenManager(config, client);
 
@@ -30,11 +36,11 @@ public class Keycloak {
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret){
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret);
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, null);
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId){
-        return new Keycloak(serverUrl, realm, username, password, clientId, null);
+        return new Keycloak(serverUrl, realm, username, password, clientId, null, null);
     }
 
     public RealmsResource realms(){
@@ -49,6 +55,9 @@ public class Keycloak {
         return tokenManager;
     }
 
+    /**
+     * Closes the underlying client. After calling this method, this <code>Keycloak</code> instance cannot be reused.
+     */
     public void close() {
         client.close();
     }
