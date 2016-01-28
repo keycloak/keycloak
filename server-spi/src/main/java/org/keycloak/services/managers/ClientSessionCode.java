@@ -22,8 +22,6 @@ import java.util.UUID;
  */
 public class ClientSessionCode {
 
-    public static final String ACTION_KEY = "action_key";
-
     private static final byte[] HASH_SEPERATOR = "//".getBytes();
 
     private final RealmModel realm;
@@ -211,7 +209,6 @@ public class ClientSessionCode {
 
     public void setAction(String action) {
         clientSession.setAction(action);
-        clientSession.setNote(ACTION_KEY, UUID.randomUUID().toString());
         clientSession.setTimestamp(Time.currentTime());
     }
 
@@ -237,7 +234,7 @@ public class ClientSessionCode {
             mac.init(codeSecretKey);
             mac.update(clientSession.getId().getBytes());
             mac.update(HASH_SEPERATOR);
-            mac.update(clientSession.getNote(ACTION_KEY).getBytes());
+            mac.update(clientSession.getNote(ClientSessionModel.ACTION_KEY).getBytes());
             return Base64Url.encode(mac.doFinal());
         } catch (Exception e) {
             throw new RuntimeException(e);
