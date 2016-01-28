@@ -5,16 +5,16 @@ package org.keycloak.models;
  * @version $Revision: 1 $
  */
 public class ClaimMask {
-    public static final long NAME = 0x01l;
-    public static final long USERNAME = 0x02l;
-    public static final long PROFILE = 0x04l;
-    public static final long PICTURE = 0x08l;
-    public static final long WEBSITE = 0x10l;
-    public static final long EMAIL = 0x20l;
-    public static final long GENDER = 0x40l;
-    public static final long LOCALE = 0x80l;
-    public static final long ADDRESS = 0x100l;
-    public static final long PHONE = 0x200l;
+    public static final long NAME = 0x01L;
+    public static final long USERNAME = 0x02L;
+    public static final long PROFILE = 0x04L;
+    public static final long PICTURE = 0x08L;
+    public static final long WEBSITE = 0x10L;
+    public static final long EMAIL = 0x20L;
+    public static final long GENDER = 0x40L;
+    public static final long LOCALE = 0x80L;
+    public static final long ADDRESS = 0x100L;
+    public static final long PHONE = 0x200L;
 
     public static final long ALL = NAME | USERNAME | PROFILE | PICTURE | WEBSITE | EMAIL | GENDER | LOCALE | ADDRESS | PHONE;
 
