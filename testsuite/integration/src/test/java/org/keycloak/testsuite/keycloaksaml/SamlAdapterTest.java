@@ -55,6 +55,11 @@ public class SamlAdapterTest {
     public SamlAdapterTestStrategy testStrategy = new SamlAdapterTestStrategy("http://localhost:8081/auth", "http://localhost:8081", keycloakRule);
 
     @Test
+    public void testIDE() throws Exception {
+        Thread.sleep(100000000);
+    }
+
+    @Test
     public void testPostBadRealmSignature() {
         testStrategy.testPostBadRealmSignature();
     }
