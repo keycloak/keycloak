@@ -89,7 +89,7 @@ public class SecurityInfoHelper {
         Iterator<Principal> iter = principals.iterator();
         while (iter.hasNext()) {
             Object next = iter.next();
-            if ((next instanceof Group) == false)
+            if (!(next instanceof Group))
                 continue;
             Group grp = (Group) next;
             if (grp.getName().equals(name)) {

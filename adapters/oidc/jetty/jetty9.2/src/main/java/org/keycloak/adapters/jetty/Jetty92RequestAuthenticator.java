@@ -24,7 +24,7 @@ public class Jetty92RequestAuthenticator extends JettyRequestAuthenticator {
         if (session == null) {
             return request.getSession(true).getId();
         }
-        if (deployment.isTurnOffChangeSessionIdOnLogin() == false) return request.changeSessionId();
+        if (!deployment.isTurnOffChangeSessionIdOnLogin()) return request.changeSessionId();
         else return session.getId();
     }
 }

@@ -64,7 +64,7 @@ public class ServletRequestAuthenticator extends AbstractUndertowRequestAuthenti
 
     @Override
     protected String changeHttpSessionId(boolean create) {
-        if (deployment.isTurnOffChangeSessionIdOnLogin() == false) return ChangeSessionId.changeSessionId(exchange, create);
+        if (!deployment.isTurnOffChangeSessionIdOnLogin()) return ChangeSessionId.changeSessionId(exchange, create);
         else return getHttpSessionId(create);
     }
 

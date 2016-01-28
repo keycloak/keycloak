@@ -21,7 +21,7 @@ public class Jetty9SamlSessionStore extends JettySamlSessionStore {
     @Override
     protected String changeSessionId(HttpSession session) {
         Request request = this.request;
-        if (deployment.turnOffChangeSessionIdOnLogin() == false) return request.changeSessionId();
+        if (!deployment.turnOffChangeSessionIdOnLogin()) return request.changeSessionId();
         else return session.getId();
     }
 }

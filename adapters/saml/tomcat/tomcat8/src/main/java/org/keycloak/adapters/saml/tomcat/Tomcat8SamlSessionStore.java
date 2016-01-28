@@ -22,7 +22,7 @@ public class Tomcat8SamlSessionStore extends CatalinaSamlSessionStore {
     @Override
     protected String changeSessionId(Session session) {
         Request request = this.request;
-        if (deployment.turnOffChangeSessionIdOnLogin() == false) return request.changeSessionId();
+        if (!deployment.turnOffChangeSessionIdOnLogin()) return request.changeSessionId();
         else return session.getId();
     }
 }

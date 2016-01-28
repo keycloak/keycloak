@@ -130,7 +130,7 @@ public class StringUtil {
      * @param second
      */
     public static void match(String first, String second) {
-        if (first.equals(second) == false)
+        if (!first.equals(second))
             throw logger.notEqualError(first, second);
     }
 
