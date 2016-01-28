@@ -185,22 +185,16 @@ public class LoginActionsService {
                     invalidAction();
                 }
             }
-            if (isActionActive(actionType)) return false;
+            if (!isActionActive(actionType)) return false;
             return true;
        }
-
-        public boolean verifyAction(String requiredAction, ClientSessionCode.ActionType actionType) {
-            if (isValidAction(requiredAction)) return false;
-            if (isActionActive(actionType)) return false;
-            return true;
-        }
 
         public boolean isValidAction(String requiredAction) {
             if (!clientCode.isValidAction(requiredAction)) {
                 invalidAction();
-                return true;
+                return false;
             }
-            return false;
+            return true;
         }
 
         private void invalidAction() {
@@ -216,12 +210,12 @@ public class LoginActionsService {
                 if (clientCode.getClientSession().getAction().equals(ClientSessionModel.Action.AUTHENTICATE.name())) {
                     AuthenticationProcessor.resetFlow(clientCode.getClientSession());
                     response = processAuthentication(null, clientCode.getClientSession(), Messages.LOGIN_TIMEOUT);
-                    return true;
+                    return false;
                 }
                 response = ErrorPage.error(session, Messages.EXPIRED_CODE);
-                return true;
+                return false;
             }
-            return false;
+            return true;
         }
 
         public boolean verifyCode(String code) {
@@ -282,8 +276,8 @@ public class LoginActionsService {
             if (!verifyCode(code)) {
                 return false;
             }
-            if (isValidAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name())) return false;
-            if (isActionActive(ClientSessionCode.ActionType.USER)) return false;
+            if (!isValidAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name())) return false;
+            if (!isActionActive(ClientSessionCode.ActionType.USER)) return false;
 
             final ClientSessionModel clientSession = clientCode.getClientSession();
 
