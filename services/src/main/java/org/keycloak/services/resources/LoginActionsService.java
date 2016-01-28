@@ -183,6 +183,7 @@ public class LoginActionsService {
                     return false;
                 } else {
                     invalidAction();
+                    return false;
                 }
             }
             if (!isActionActive(actionType)) return false;
