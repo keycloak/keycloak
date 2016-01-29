@@ -32,7 +32,7 @@ public class PasswordPolicy implements Serializable {
         this.policyString = policyString;
         this.policies = new LinkedList<>();
 
-        if (policyString != null && !policyString.isEmpty()) {
+        if (policyString != null && !policyString.trim().isEmpty()) {
             for (String policy : policyString.split(" and ")) {
                 policy = policy.trim();
 
