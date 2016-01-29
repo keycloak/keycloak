@@ -1,11 +1,14 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
-    <h1>{{:: 'partial-import' | translate}}</h1>
+    <h1>
+        <span>{{:: 'partial-import' | translate}}</span>
+        <kc-tooltip>{{:: 'partial-import.tooltip' | translate}}</kc-tooltip>
+    </h1>
 
     <form class="form-horizontal" name="partialImportForm" novalidate>
         <fieldset class="border-top">
             <div class="form-group">
-                <label for="name" class="col-sm-2 control-label">{{:: 'file' | translate}}</label>
+                <label for="name" class="col-sm-2 control-label">{{:: 'exported-json-file' | translate}}</label>
 
                 <div class="col-md-6" data-ng-hide="importing">
                     <label for="import-file" class="btn btn-default">{{:: 'select-file'| translate}} <i class="pficon pficon-import"></i></label>
