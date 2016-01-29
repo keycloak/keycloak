@@ -155,7 +155,7 @@ public abstract class AbstractIdentityProviderTest {
         FederatedIdentityModel federatedIdentityModel = federatedIdentities.iterator().next();
 
         assertEquals(getProviderId(), federatedIdentityModel.getIdentityProvider());
-        assertEquals(federatedUser.getUsername(), federatedIdentityModel.getIdentityProvider() + "." + federatedIdentityModel.getUserName());
+        assertEquals(federatedUser.getUsername(), federatedIdentityModel.getUserName());
 
         driver.navigate().to("http://localhost:8081/test-app/logout");
         driver.navigate().to("http://localhost:8081/test-app");

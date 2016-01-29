@@ -122,7 +122,7 @@ public class PostBrokerFlowTest extends AbstractIdentityProviderTest {
         String totpSecret = totpPage.getTotpSecret();
         totpPage.configure(totp.generateTOTP(totpSecret));
 
-        assertFederatedUser(getProviderId() + ".test-user", "test-user@localhost", "test-user", getProviderId());
+        assertFederatedUser("test-user", "test-user@localhost", "test-user", getProviderId());
 
         driver.navigate().to("http://localhost:8081/test-app/logout");
 
@@ -131,7 +131,7 @@ public class PostBrokerFlowTest extends AbstractIdentityProviderTest {
         loginTotpPage.assertCurrent();
         loginTotpPage.login(totp.generateTOTP(totpSecret));
 
-        assertFederatedUser(getProviderId() + ".test-user", "test-user@localhost", "test-user", getProviderId());
+        assertFederatedUser("test-user", "test-user@localhost", "test-user", getProviderId());
 
         driver.navigate().to("http://localhost:8081/test-app/logout");
 
@@ -141,7 +141,7 @@ public class PostBrokerFlowTest extends AbstractIdentityProviderTest {
         this.session = brokerServerRule.startSession();
 
         loginIDP("test-user");
-        assertFederatedUser(getProviderId() + ".test-user", "test-user@localhost", "test-user", getProviderId());
+        assertFederatedUser("test-user", "test-user@localhost", "test-user", getProviderId());
         driver.navigate().to("http://localhost:8081/test-app/logout");
     }
 
@@ -248,7 +248,7 @@ public class PostBrokerFlowTest extends AbstractIdentityProviderTest {
 
         // assert reauthentication with login page. On login page is link to kc-saml-idp-basic as user has it linked already
         Assert.assertEquals("Log in to " + APP_REALM_ID, this.driver.getTitle());
-        Assert.assertEquals("Authenticate as kc-saml-idp-basic.test-user to link your account with " + getProviderId(), this.loginPage.getSuccessMessage());
+        Assert.assertEquals("Authenticate as test-user to link your account with " + getProviderId(), this.loginPage.getSuccessMessage());
 
         // reauthenticate with SAML broker. OTP authentication is required as well
         this.loginPage.clickSocial("kc-saml-idp-basic");
@@ -267,7 +267,7 @@ public class PostBrokerFlowTest extends AbstractIdentityProviderTest {
         }
 
         // authenticated and redirected to app. User is linked with both identity providers
-        assertFederatedUser("kc-saml-idp-basic.test-user", "test-user@localhost", "test-user", getProviderId(), "kc-saml-idp-basic");
+        assertFederatedUser("test-user", "test-user@localhost", "test-user", getProviderId(), "kc-saml-idp-basic");
     }
 
     private void setPostBrokerFlowForProvider(IdentityProviderModel identityProvider, RealmModel realm, boolean enable) {

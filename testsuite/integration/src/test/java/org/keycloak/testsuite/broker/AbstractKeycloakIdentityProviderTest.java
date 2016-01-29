@@ -138,7 +138,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         FederatedIdentityModel federatedIdentityModel = federatedIdentities.iterator().next();
 
         assertEquals(getProviderId(), federatedIdentityModel.getIdentityProvider());
-        assertEquals(federatedUser.getUsername(), federatedIdentityModel.getIdentityProvider() + "." + federatedIdentityModel.getUserName());
+        assertEquals(federatedUser.getUsername(), federatedIdentityModel.getUserName());
 
         driver.navigate().to("http://localhost:8081/test-app/logout");
         driver.navigate().to("http://localhost:8081/test-app");
@@ -485,7 +485,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         System.out.println("after logout currentUrl: " + currentUrl);
         assertTrue(currentUrl.startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
-        unconfigureUserRetrieveToken(getProviderId() + ".test-user");
+        unconfigureUserRetrieveToken("test-user");
         loginIDP("test-user");
         //authenticateWithIdentityProvider(identityProviderModel, "test-user");
         assertEquals("http://localhost:8081/test-app", driver.getCurrentUrl());
