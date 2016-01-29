@@ -49,7 +49,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClient(newClient);
         assertAlertSuccess();
 
-        setExpectedWebOrigins(newClient);
+        //setExpectedWebOrigins(newClient);
         
         // read & verify
         ClientRepresentation found = findClientByClientId(newClient.getClientId());
@@ -96,7 +96,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClient(newClient);
         assertAlertSuccess();
 
-        setExpectedWebOrigins(newClient);
+        //setExpectedWebOrigins(newClient);
         
         ClientRepresentation found = findClientByClientId(newClient.getClientId());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
@@ -144,10 +144,6 @@ public class ClientSettingsTest extends AbstractClientTest {
         clientsPage.table().createClient();
         createClientPage.form().save();
         assertAlertDanger();
-
-        createClientPage.form().setClientId("test-client");
-        createClientPage.form().save();
-        assertAlertDanger();
     }
 
 //    @Test
@@ -182,4 +178,5 @@ public class ClientSettingsTest extends AbstractClientTest {
         clientsPage.navigateTo();
         pause(120000);
     }
+
 }
