@@ -299,7 +299,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 } else if (context.getUsername() == null) {
                     username = context.getIdpConfig().getAlias() + "." + context.getId();
                 } else {
-                    username = context.getIdpConfig().getAlias() + "." + context.getUsername();
+                    username = context.getUsername();
                 }
             }
             username = username.trim();
