@@ -264,7 +264,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public long getQuickLoginCheckMilliSeconds() {
-        return getAttribute("quickLoginCheckMilliSeconds", 0l);
+        return getAttribute("quickLoginCheckMilliSeconds", 0L);
     }
 
     @Override
