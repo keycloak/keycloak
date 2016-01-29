@@ -165,7 +165,7 @@ public class ServletSamlSessionStore implements SamlSessionStore {
     }
 
     protected String changeSessionId(HttpSession session) {
-        if (deployment.turnOffChangeSessionIdOnLogin() == false) return ChangeSessionId.changeSessionId(exchange, false);
+        if (!deployment.turnOffChangeSessionIdOnLogin()) return ChangeSessionId.changeSessionId(exchange, false);
         else return session.getId();
     }
 

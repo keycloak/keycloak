@@ -191,7 +191,7 @@ public class TransformerUtil {
         public void transform(Source xmlSource, Result outputTarget) throws TransformerException {
             if (!(xmlSource instanceof StAXSource))
                 throw logger.wrongTypeError("xmlSource should be a stax source");
-            if (outputTarget instanceof DOMResult == false)
+            if (!(outputTarget instanceof DOMResult))
                 throw logger.wrongTypeError("outputTarget should be a dom result");
 
             String rootTag = null;
@@ -208,7 +208,7 @@ public class TransformerUtil {
 
             try {
                 XMLEvent xmlEvent = StaxParserUtil.getNextEvent(xmlEventReader);
-                if (xmlEvent instanceof StartElement == false)
+                if (!(xmlEvent instanceof StartElement))
                     throw new TransformerException(ErrorCodes.WRITER_SHOULD_START_ELEMENT);
 
                 StartElement rootElement = (StartElement) xmlEvent;

@@ -167,7 +167,7 @@ public class StatementUtil {
      * @return
      */
     public static AttributeStatementType createAttributeStatementForRoles(List<String> roles, boolean multivalued) {
-        if (multivalued == false) {
+        if (!multivalued) {
             return createAttributeStatement(roles);
         }
         AttributeStatementType attrStatement = new AttributeStatementType();

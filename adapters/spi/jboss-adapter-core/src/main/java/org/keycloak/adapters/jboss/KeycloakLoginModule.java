@@ -30,7 +30,7 @@ public class KeycloakLoginModule extends AbstractServerLoginModule {
     @Override
     public boolean login() throws LoginException {
         log.debug("KeycloakLoginModule.login()");
-        if (super.login() == true) {
+        if (super.login()) {
             log.debug("super.login()==true");
             return true;
         }

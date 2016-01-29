@@ -207,7 +207,7 @@ public final class StringPropertyReplacer
         }
 
         // No properties
-        if (properties == false)
+        if (!properties)
             return string;
 
         // Collect the trailing characters

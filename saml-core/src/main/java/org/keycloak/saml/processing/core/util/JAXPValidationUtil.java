@@ -136,7 +136,7 @@ public class JAXPValidationUtil {
 
         public void error(SAXParseException ex) throws SAXException {
             logException(ex);
-            if (ex.getMessage().contains("null") == false) {
+            if (!ex.getMessage().contains("null")) {
                 throw ex;
             }
         }
