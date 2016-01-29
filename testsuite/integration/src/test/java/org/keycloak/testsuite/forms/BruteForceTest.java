@@ -41,6 +41,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
+import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.rule.GreenMailRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
@@ -102,11 +103,13 @@ public class BruteForceTest {
     protected LoginPage loginPage;
 
     @WebResource
+    private RegisterPage registerPage;
+
+    @WebResource
     protected LoginTotpPage loginTotpPage;
 
     @WebResource
     protected OAuthClient oauth;
-
 
     private TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -340,6 +343,17 @@ public class BruteForceTest {
         loginSuccess();
     }
 
+    @Test
+    public void testNonExistingAccounts() throws Exception {
+
+        loginInvalidPassword("non-existent-user");
+        loginInvalidPassword("non-existent-user");
+        loginInvalidPassword("non-existent-user");
+
+        registerUser("non-existent-user");
+
+    }
+
     public void expectTemporarilyDisabled() throws Exception {
         expectTemporarilyDisabled("test-user@localhost");
     }
@@ -427,6 +441,18 @@ public class BruteForceTest {
         loginPage.assertCurrent();
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        events.clear();
+    }
+
+    public void registerUser(String username){
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("user", "name",  username + "@localhost", username, "password", "password");
+
+        Assert.assertNull(registerPage.getInstruction());
+
         events.clear();
     }
 
