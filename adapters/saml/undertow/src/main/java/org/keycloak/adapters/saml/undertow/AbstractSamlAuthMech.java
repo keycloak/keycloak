@@ -16,6 +16,7 @@
  */
 package org.keycloak.adapters.saml.undertow;
 
+import org.keycloak.adapters.saml.SamlAuthenticator;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.saml.SamlSessionStore;
@@ -104,7 +105,14 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
         }
         SamlSessionStore sessionStore = getTokenStore(exchange, facade, deployment, securityContext);
-        UndertowSamlAuthenticator authenticator = new UndertowSamlAuthenticator(securityContext, facade, deploymentContext.resolveDeployment(facade), sessionStore);
+        SamlAuthenticator authenticator = null;
+        if (exchange.getRequestPath().endsWith("/saml")) {
+            authenticator = new UndertowSamlEndpoint(facade, deploymentContext.resolveDeployment(facade), sessionStore);
+        } else {
+            authenticator = new UndertowSamlAuthenticator(securityContext, facade, deploymentContext.resolveDeployment(facade), sessionStore);
+
+        }
+
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             registerNotifications(securityContext);

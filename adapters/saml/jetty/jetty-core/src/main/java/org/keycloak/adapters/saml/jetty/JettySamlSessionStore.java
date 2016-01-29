@@ -3,12 +3,14 @@ package org.keycloak.adapters.saml.jetty;
 import org.eclipse.jetty.server.Request;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.adapters.saml.SamlUtil;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.jetty.spi.JettyUserSessionManagement;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.dom.saml.v2.protocol.StatusType;
 
 import javax.servlet.http.HttpSession;
@@ -151,7 +153,13 @@ public class JettySamlSessionStore implements SamlSessionStore {
 
     @Override
     public String getRedirectUri() {
-        return (String)request.getSession(true).getAttribute(SAML_REDIRECT_URI);
+        String redirect = (String)request.getSession(true).getAttribute(SAML_REDIRECT_URI);
+        if (redirect == null) {
+            String contextPath = request.getContextPath();
+            String baseUri = KeycloakUriBuilder.fromUri(request.getRequestURL().toString()).replacePath(contextPath).build().toString();
+            return SamlUtil.getRedirectTo(facade, contextPath, baseUri);
+        }
+        return redirect;
     }
 
     @Override

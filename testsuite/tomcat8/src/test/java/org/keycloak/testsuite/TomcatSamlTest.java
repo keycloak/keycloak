@@ -64,6 +64,8 @@ public class TomcatSamlTest {
         URL dir = TomcatSamlTest.class.getResource("/keycloak-saml/testsaml.json");
         File base = new File(dir.getFile()).getParentFile();
         tomcat.addWebapp("/sales-post", new File(base, "simple-post").toString());
+        tomcat.addWebapp("/sales-post2", new File(base, "simple-post2").toString());
+        tomcat.addWebapp("/input-portal", new File(base, "simple-input").toString());
         tomcat.addWebapp("/sales-post-sig", new File(base, "signed-post").toString());
         tomcat.addWebapp("/sales-post-sig-email", new File(base, "signed-post-email").toString());
         tomcat.addWebapp("/sales-post-sig-transient", new File(base, "signed-post-transient").toString());
@@ -90,6 +92,16 @@ public class TomcatSamlTest {
 
     @Rule
     public SamlAdapterTestStrategy testStrategy = new SamlAdapterTestStrategy("http://localhost:8081/auth", "http://localhost:8082", keycloakRule);
+
+    @Test
+    public void testSavedPostRequest() throws Exception {
+        testStrategy.testSavedPostRequest();
+    }
+    @Test
+    public void testPostSimpleLoginLogoutIdpInitiatedRedirectTo() {
+        testStrategy.testPostSimpleLoginLogoutIdpInitiatedRedirectTo();
+    }
+
 
     @Test
     public void testErrorHandling() throws Exception {

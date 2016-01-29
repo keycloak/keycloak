@@ -38,7 +38,7 @@ public class SendUsernameServlet extends HttpServlet {
         OutputStream stream = resp.getOutputStream();
         Principal principal = req.getUserPrincipal();
         stream.write("request-path: ".getBytes());
-        stream.write(req.getPathInfo().getBytes());
+        if (req.getPathInfo() != null) stream.write(req.getPathInfo().getBytes());
         stream.write("\n".getBytes());
         stream.write("principal=".getBytes());
         if (principal == null) {

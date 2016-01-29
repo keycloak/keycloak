@@ -1,12 +1,14 @@
 package org.keycloak.adapters.saml.servlet;
 
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.saml.SamlUtil;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.servlet.FilterSessionStore;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.dom.saml.v2.protocol.StatusType;
 
 import javax.servlet.http.HttpServletRequest;
@@ -145,7 +147,13 @@ public class FilterSamlSessionStore extends FilterSessionStore implements SamlSe
     public String getRedirectUri() {
         HttpSession session = request.getSession(false);
         if (session == null) return null;
-        return (String)session.getAttribute(REDIRECT_URI);
+        String redirect = (String)session.getAttribute(REDIRECT_URI);
+        if (redirect == null) {
+            String contextPath = request.getContextPath();
+            String baseUri = KeycloakUriBuilder.fromUri(request.getRequestURL().toString()).replacePath(contextPath).build().toString();
+            return SamlUtil.getRedirectTo(facade, contextPath, baseUri);
+        }
+        return redirect;
     }
 
 }

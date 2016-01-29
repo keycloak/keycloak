@@ -43,6 +43,14 @@
         them as filter init params instead of context params.
     </para>
     <para>
+        You can define multiple filter mappings if you have various different secure and unsecure url patterns.
+    </para>
+    <warning>
+        <para>
+            You must have a filter mapping for <literal>/saml</literal>
+        </para>
+    </warning>
+    <para>
         To use this filter, include this maven artifact in your WAR poms
     </para>
     <programlisting><![CDATA[

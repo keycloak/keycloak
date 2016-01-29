@@ -112,6 +112,14 @@
                     check adapter config switches.
                 </para>
             </simplesect>
+            <simplesect>
+                <title>SAML SP Client Adapter Changes</title>
+                <para>
+                    Keycloak SAML SP Client Adapter now requires a specific endpoint, <literal>/saml</literal> to be
+                    registered with your IDP.
+                </para>
+            </simplesect>
+
         </section>
         <section>
             <title>Migrating to 1.8.0</title>

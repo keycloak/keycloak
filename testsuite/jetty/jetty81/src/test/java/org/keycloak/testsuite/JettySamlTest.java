@@ -70,6 +70,8 @@ public class JettySamlTest {
         File base = new File(dir.getFile()).getParentFile();
         //list.add(new WebAppContext(new File(base, "customer-portal").toString(), "/customer-portal"));
         list.add(new WebAppContext(new File(base, "simple-post").toString(), "/sales-post"));
+        list.add(new WebAppContext(new File(base, "simple-post2").toString(), "/sales-post2"));
+        list.add(new WebAppContext(new File(base, "simple-input").toString(), "/input-portal"));
         list.add(new WebAppContext(new File(base, "signed-post").toString(), "/sales-post-sig"));
         list.add(new WebAppContext(new File(base, "signed-post-email").toString(), "/sales-post-sig-email"));
         list.add(new WebAppContext(new File(base, "signed-post-transient").toString(), "/sales-post-sig-transient"));
@@ -102,6 +104,16 @@ public class JettySamlTest {
             Thread.sleep(100);
         } catch (Exception e) {}
     }
+
+    @Test
+    public void testSavedPostRequest() throws Exception {
+        testStrategy.testSavedPostRequest();
+    }
+    @Test
+    public void testPostSimpleLoginLogoutIdpInitiatedRedirectTo() {
+        testStrategy.testPostSimpleLoginLogoutIdpInitiatedRedirectTo();
+    }
+
 
     @Test
     public void testErrorHandling() throws Exception {

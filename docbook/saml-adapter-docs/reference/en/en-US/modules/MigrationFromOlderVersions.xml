@@ -1,0 +1,21 @@
+<chapter id="Migration_from_older_versions">
+    <title>Migration from older versions</title>
+
+    <section>
+        <title>Version specific migration</title>
+        <section>
+            <title>Migrating to 1.9.0</title>
+            <simplesect>
+                <title>SAML SP Client Adapter Changes</title>
+                <para>
+                    Keycloak SAML SP Client Adapter now requires a specific endpoint, <literal>/saml</literal> to be
+                    registered with your IDP.  The SamlFilter must also be bound to /saml in addition to any other binding it has.
+                    This had to be done because SAML POST binding would eat the request input stream and this would be really
+                    bad for clients that relied on it.
+                </para>
+            </simplesect>
+
+        </section>
+
+    </section>
+</chapter>

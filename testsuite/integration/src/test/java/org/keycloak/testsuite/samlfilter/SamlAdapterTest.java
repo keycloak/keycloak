@@ -24,6 +24,7 @@ public class SamlAdapterTest {
              ClassLoader classLoader = SamlAdapterTest.class.getClassLoader();
 
             initializeSamlSecuredWar("/keycloak-saml/simple-post", "/sales-post",  "post.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/simple-post2", "/sales-post2",  "post.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/simple-post-passive", "/sales-post-passive", "post-passive.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post", "/sales-post-sig",  "post-sig.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-email", "/sales-post-sig-email",  "post-sig-email.war", classLoader);
@@ -71,6 +72,12 @@ public class SamlAdapterTest {
             SendUsernameServlet.checkRoles = null;
         }
     }
+
+    @Test
+    public void testPostSimpleLoginLogoutIdpInitiatedRedirectTo() {
+        testStrategy.testPostSimpleLoginLogoutIdpInitiatedRedirectTo();
+    }
+
 
     @Test
     public void testMetadataPostSignedLoginLogout() throws Exception {

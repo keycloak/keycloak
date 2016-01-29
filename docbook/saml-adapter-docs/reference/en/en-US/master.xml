@@ -12,6 +12,8 @@
                 <!ENTITY Logout SYSTEM "modules/logout.xml">
                 <!ENTITY ErrorHandling SYSTEM "modules/adapter_error_handling.xml">
                 <!ENTITY DEBUGGING SYSTEM "modules/debugging.xml">
+                <!ENTITY Migrating SYSTEM "modules/MigrationFromOlderVersions.xml">
+                <!ENTITY IDP_REG SYSTEM "modules/idp-registration.xml">
                 ]>
 
 <book>
@@ -51,10 +53,12 @@ This one is short
     &Jetty9Adapter;
     &Jetty8Adapter;
     &FilterAdapter;
+    &IDP_REG;
     &Logout;
     &Assertions;
     &ErrorHandling;
     &DEBUGGING;
+    &Migrating;
 
 
 

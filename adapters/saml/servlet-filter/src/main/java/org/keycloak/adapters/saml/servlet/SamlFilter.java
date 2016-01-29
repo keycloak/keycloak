@@ -23,11 +23,16 @@ import org.keycloak.adapters.saml.SamlAuthenticator;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.saml.SamlSession;
+import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
 import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
+import org.keycloak.adapters.saml.profile.SamlAuthenticationHandler;
+import org.keycloak.adapters.saml.profile.webbrowsersso.BrowserHandler;
+import org.keycloak.adapters.saml.profile.webbrowsersso.SamlEndpoint;
 import org.keycloak.adapters.servlet.ServletHttpFacade;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.InMemorySessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.saml.common.exceptions.ParsingException;
@@ -38,11 +43,16 @@ import org.keycloak.saml.common.exceptions.ParsingException;
  */
 public class SamlFilter implements Filter {
     protected SamlDeploymentContext deploymentContext;
-    protected SessionIdMapper idMapper = new InMemorySessionIdMapper();
+    protected SessionIdMapper idMapper;
     private final static Logger log = Logger.getLogger("" + SamlFilter.class);
 
     @Override
     public void init(final FilterConfig filterConfig) throws ServletException {
+        deploymentContext = (SamlDeploymentContext)filterConfig.getServletContext().getAttribute(SamlDeploymentContext.class.getName());
+        if (deploymentContext != null) {
+            idMapper = (SessionIdMapper)filterConfig.getServletContext().getAttribute(SessionIdMapper.class.getName());
+            return;
+        }
         String configResolverClass = filterConfig.getInitParameter("keycloak.config.resolver");
         if (configResolverClass != null) {
             try {
@@ -92,7 +102,9 @@ public class SamlFilter implements Filter {
             deploymentContext = new SamlDeploymentContext(deployment);
             log.fine("Keycloak is using a per-deployment configuration.");
         }
+        idMapper = new InMemorySessionIdMapper();
         filterConfig.getServletContext().setAttribute(SamlDeploymentContext.class.getName(), deploymentContext);
+        filterConfig.getServletContext().setAttribute(SessionIdMapper.class.getName(), idMapper);
 
     }
 
@@ -108,13 +120,34 @@ public class SamlFilter implements Filter {
             return;
         }
         FilterSamlSessionStore tokenStore = new FilterSamlSessionStore(request, facade, 100000, idMapper);
+        boolean isEndpoint = request.getRequestURI().substring(request.getContextPath().length()).endsWith("/saml");
+        SamlAuthenticator authenticator = null;
+        if (isEndpoint) {
+            authenticator = new SamlAuthenticator(facade, deployment, tokenStore) {
+                @Override
+                protected void completeAuthentication(SamlSession account) {
 
-        SamlAuthenticator authenticator = new SamlAuthenticator(facade, deployment, tokenStore) {
-            @Override
-            protected void completeAuthentication(SamlSession account) {
+                }
 
-            }
-        };
+                @Override
+                protected SamlAuthenticationHandler createBrowserHandler(HttpFacade facade, SamlDeployment deployment, SamlSessionStore sessionStore) {
+                    return new SamlEndpoint(facade, deployment, sessionStore);
+                }
+            };
+
+        } else {
+            authenticator = new SamlAuthenticator(facade, deployment, tokenStore) {
+                @Override
+                protected void completeAuthentication(SamlSession account) {
+
+                }
+
+                @Override
+                protected SamlAuthenticationHandler createBrowserHandler(HttpFacade facade, SamlDeployment deployment, SamlSessionStore sessionStore) {
+                    return new BrowserHandler(facade, deployment, sessionStore);
+                }
+            };
+        }
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             log.fine("AUTHENTICATED");

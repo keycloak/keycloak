@@ -9,9 +9,11 @@ import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.tomcat.CatalinaUserSessionManagement;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusType;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.LinkedList;
@@ -193,7 +195,13 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
 
     @Override
     public String getRedirectUri() {
-        return (String)getSession(true).getAttribute(SAML_REDIRECT_URI);
+        String redirect = (String)getSession(true).getAttribute(SAML_REDIRECT_URI);
+        if (redirect == null) {
+            String contextPath = request.getContextPath();
+            String baseUri = KeycloakUriBuilder.fromUri(request.getRequestURL().toString()).replacePath(contextPath).build().toString();
+            return SamlUtil.getRedirectTo(facade, contextPath, baseUri);
+        }
+        return redirect;
     }
 
     @Override
