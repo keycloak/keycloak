@@ -47,13 +47,13 @@ import static org.junit.Assert.assertEquals;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SamlBindingTest {
+public class SamlPicketlinkSPTest {
 
     @ClassRule
     public static SamlKeycloakRule keycloakRule = new SamlKeycloakRule() {
         @Override
         public void initWars() {
-             ClassLoader classLoader = SamlBindingTest.class.getClassLoader();
+             ClassLoader classLoader = SamlPicketlinkSPTest.class.getClassLoader();
 
             initializeSamlSecuredWar("/saml/simple-post", "/sales-post",  "post.war", classLoader);
             initializeSamlSecuredWar("/saml/signed-post", "/sales-post-sig",  "post-sig.war", classLoader);
@@ -120,14 +120,26 @@ public class SamlBindingTest {
     @WebResource
     protected LoginPage loginPage;
 
-    protected void checkLoggedOut(String mainUrl) {
+    protected void checkLoggedOut(String mainUrl, boolean postBinding) {
         String pageSource = driver.getPageSource();
         System.out.println("*** logout pagesouce ***");
         System.out.println(pageSource);
         System.out.println("driver url: " + driver.getCurrentUrl());
         Assert.assertTrue(pageSource.contains("request-path: /logout.jsp"));
         driver.navigate().to(mainUrl);
+        checkAtLoginPage(postBinding);
+    }
+
+    protected void checkAtLoginPage(boolean postBinding) {
+        if (postBinding) assertAtLoginPagePostBinding();
+        else assertAtLoginPageRedirectBinding();
+    }
+
+    protected void assertAtLoginPageRedirectBinding() {
         Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+    }
+    protected void assertAtLoginPagePostBinding() {
+        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/login-actions/authenticate"));
     }
 
     //@Test
@@ -138,13 +150,13 @@ public class SamlBindingTest {
     @Test
     public void testPostSimpleLoginLogout() {
         driver.navigate().to("http://localhost:8081/sales-post/");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post/");
         System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to("http://localhost:8081/sales-post?GLO=true");
-        checkLoggedOut("http://localhost:8081/sales-post/");
+        checkLoggedOut("http://localhost:8081/sales-post/", true);
     }
 
     @Test
@@ -155,57 +167,57 @@ public class SamlBindingTest {
         System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to("http://localhost:8081/sales-post?GLO=true");
-        checkLoggedOut("http://localhost:8081/sales-post/");
+        checkLoggedOut("http://localhost:8081/sales-post/", true);
     }
 
     @Test
     public void testPostSignedLoginLogout() {
         driver.navigate().to("http://localhost:8081/sales-post-sig/");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post-sig/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to("http://localhost:8081/sales-post-sig?GLO=true");
-        checkLoggedOut("http://localhost:8081/sales-post-sig/");
+        checkLoggedOut("http://localhost:8081/sales-post-sig/", true);
 
     }
 
     @Test
     public void testPostSignedLoginLogoutTransientNameID() {
         driver.navigate().to("http://localhost:8081/sales-post-sig-transient/");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post-sig-transient/");
         System.out.println(driver.getPageSource());
         Assert.assertFalse(driver.getPageSource().contains("bburke"));
         Assert.assertTrue(driver.getPageSource().contains("principal=G-"));
         driver.navigate().to("http://localhost:8081/sales-post-sig-transient?GLO=true");
-        checkLoggedOut("http://localhost:8081/sales-post-sig-transient/");
+        checkLoggedOut("http://localhost:8081/sales-post-sig-transient/", true);
 
     }
     @Test
     public void testPostSignedLoginLogoutPersistentNameID() {
         driver.navigate().to("http://localhost:8081/sales-post-sig-persistent/");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post-sig-persistent/");
         System.out.println(driver.getPageSource());
         Assert.assertFalse(driver.getPageSource().contains("bburke"));
         Assert.assertTrue(driver.getPageSource().contains("principal=G-"));
         driver.navigate().to("http://localhost:8081/sales-post-sig-persistent?GLO=true");
-        checkLoggedOut("http://localhost:8081/sales-post-sig-persistent/");
+        checkLoggedOut("http://localhost:8081/sales-post-sig-persistent/", true);
 
     }
     @Test
     public void testPostSignedLoginLogoutEmailNameID() {
         driver.navigate().to("http://localhost:8081/sales-post-sig-email/");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post-sig-email/");
         System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getPageSource().contains("principal=bburke@redhat.com"));
         driver.navigate().to("http://localhost:8081/sales-post-sig-email?GLO=true");
-        checkLoggedOut("http://localhost:8081/sales-post-sig-email/");
+        checkLoggedOut("http://localhost:8081/sales-post-sig-email/", true);
 
     }
 
@@ -215,7 +227,7 @@ public class SamlBindingTest {
         // at the relay state
         SamlSPFacade.samlResponse = null;
         driver.navigate().to("http://localhost:8081/employee/");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+        assertAtLoginPageRedirectBinding();
         System.out.println(driver.getCurrentUrl());
         loginPage.login("bburke", "password");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/employee/");
@@ -234,7 +246,7 @@ public class SamlBindingTest {
         {
             SamlSPFacade.samlResponse = null;
             driver.navigate().to("http://localhost:8081/employee/");
-            Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+            assertAtLoginPageRedirectBinding();
             System.out.println(driver.getCurrentUrl());
             loginPage.login("bburke", "password");
             Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/employee/");
@@ -351,24 +363,24 @@ public class SamlBindingTest {
     @Test
     public void testRedirectSignedLoginLogout() {
         driver.navigate().to("http://localhost:8081/employee-sig/");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+        assertAtLoginPageRedirectBinding();
         loginPage.login("bburke", "password");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/employee-sig/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to("http://localhost:8081/employee-sig?GLO=true");
-        checkLoggedOut("http://localhost:8081/employee-sig/");
+        checkLoggedOut("http://localhost:8081/employee-sig/", false);
 
     }
 
     @Test
     public void testRedirectSignedLoginLogoutFrontNoSSO() {
         driver.navigate().to("http://localhost:8081/employee-sig-front/");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+        assertAtLoginPageRedirectBinding();
         loginPage.login("bburke", "password");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/employee-sig-front/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to("http://localhost:8081/employee-sig-front?GLO=true");
-        checkLoggedOut("http://localhost:8081/employee-sig-front/");
+        checkLoggedOut("http://localhost:8081/employee-sig-front/", false);
 
     }
 
@@ -377,7 +389,7 @@ public class SamlBindingTest {
         // visit 1st app an logg in
         System.out.println("visit 1st app ");
         driver.navigate().to("http://localhost:8081/employee-sig/");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+        assertAtLoginPageRedirectBinding();
         System.out.println("login to form");
         loginPage.login("bburke", "password");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/employee-sig/");
@@ -398,23 +410,23 @@ public class SamlBindingTest {
         // logout of first app
         System.out.println("GLO");
         driver.navigate().to("http://localhost:8081/employee-sig?GLO=true");
-        checkLoggedOut("http://localhost:8081/employee-sig/");
+        checkLoggedOut("http://localhost:8081/employee-sig/", false);
         driver.navigate().to("http://localhost:8081/employee-sig-front/");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+        assertAtLoginPageRedirectBinding();
         driver.navigate().to("http://localhost:8081/sales-post-sig/");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/demo/protocol/saml"));
+        assertAtLoginPagePostBinding();
 
     }
 
     @Test
     public void testPostEncryptedLoginLogout() {
         driver.navigate().to("http://localhost:8081/sales-post-enc/");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-post-enc/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to("http://localhost:8081/sales-post-enc?GLO=true");
-        checkLoggedOut("http://localhost:8081/sales-post-enc/");
+        checkLoggedOut("http://localhost:8081/sales-post-enc/", true);
 
     }
     @Test
@@ -428,7 +440,7 @@ public class SamlBindingTest {
     @Test
     public void testPostBadRealmSignature() {
         driver.navigate().to("http://localhost:8081/bad-realm-sales-post-sig/");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/bad-realm-sales-post-sig/");
         Assert.assertTrue(driver.getPageSource().contains("null"));
@@ -445,13 +457,13 @@ public class SamlBindingTest {
     public void testMetadataPostSignedLoginLogout() throws Exception {
 
         driver.navigate().to("http://localhost:8081/sales-metadata/");
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/auth/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/sales-metadata/");
         String pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("bburke"));
         driver.navigate().to("http://localhost:8081/sales-metadata?GLO=true");
-        checkLoggedOut("http://localhost:8081/sales-metadata/");
+        checkLoggedOut("http://localhost:8081/sales-metadata/", true);
 
     }
 
@@ -462,7 +474,7 @@ public class SamlBindingTest {
 
             admin.toRepresentation();
 
-            ClientRepresentation clientRep = admin.convertClientDescription(IOUtils.toString(SamlBindingTest.class.getResourceAsStream("/saml/sp-metadata.xml")));
+            ClientRepresentation clientRep = admin.convertClientDescription(IOUtils.toString(SamlPicketlinkSPTest.class.getResourceAsStream("/saml/sp-metadata.xml")));
             Response response = admin.clients().create(clientRep);
 
             assertEquals(201, response.getStatus());

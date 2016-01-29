@@ -17,6 +17,7 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
@@ -61,6 +62,7 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
+import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.util.ObjectUtil;
@@ -694,6 +696,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         processor.setClientSession(clientSession)
                 .setFlowPath(LoginActionsService.AUTHENTICATE_PATH)
                 .setFlowId(flowId)
+                .setBrowserFlow(true)
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
                 .setRealm(realmModel)
@@ -703,6 +706,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         if (errorMessage != null) processor.setForwardedErrorMessage(new FormMessage(null, errorMessage));
 
         try {
+            CacheControlUtil.noBackButtonCacheControlHeader();
             return processor.authenticate();
         } catch (Exception e) {
             return processor.handleBrowserException(e);

@@ -528,7 +528,8 @@ public class AuthenticationManager {
 
             // Skip grant screen if everything was already approved by this user
             if (realmRoles.size() > 0 || resourceRoles.size() > 0 || protocolMappers.size() > 0) {
-                accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT.name());
+                accessCode.setAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name());
+                clientSession.setNote(CURRENT_REQUIRED_ACTION, ClientSessionModel.Action.OAUTH_GRANT.name());
 
                 return session.getProvider(LoginFormsProvider.class)
                         .setClientSessionCode(accessCode.getCode())

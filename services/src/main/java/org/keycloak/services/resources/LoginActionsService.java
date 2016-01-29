@@ -67,6 +67,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.CookieHelper;
 
 import javax.ws.rs.Consumes;
@@ -155,6 +156,7 @@ public class LoginActionsService {
     public LoginActionsService(RealmModel realm, EventBuilder event) {
         this.realm = realm;
         this.event = event;
+        CacheControlUtil.noBackButtonCacheControlHeader();
     }
 
     private boolean checkSsl() {
@@ -175,20 +177,34 @@ public class LoginActionsService {
             if (!verifyCode(code)) {
                 return false;
             }
-            if (!verifyAction(requiredAction, actionType)) {
-                return false;
-            } else {
-                return true;
+            if (!clientCode.isValidAction(requiredAction)) {
+                if (ClientSessionModel.Action.REQUIRED_ACTIONS.name().equals(clientCode.getClientSession().getAction())) {
+                    response = redirectToRequiredActions(code);
+                    return false;
+                } else {
+                    invalidAction();
+                    return false;
+                }
             }
+            if (!isActionActive(actionType)) return false;
+            return true;
+       }
+
+        public boolean isValidAction(String requiredAction) {
+            if (!clientCode.isValidAction(requiredAction)) {
+                invalidAction();
+                return false;
+            }
+            return true;
         }
 
-        public boolean verifyAction(String requiredAction, ClientSessionCode.ActionType actionType) {
-            if (!clientCode.isValidAction(requiredAction)) {
-                event.client(clientCode.getClientSession().getClient());
-                event.error(Errors.INVALID_CODE);
-                response = ErrorPage.error(session, Messages.INVALID_CODE);
-                return false;
-            }
+        private void invalidAction() {
+            event.client(clientCode.getClientSession().getClient());
+            event.error(Errors.INVALID_CODE);
+            response = ErrorPage.error(session, Messages.INVALID_CODE);
+        }
+
+        public boolean isActionActive(ClientSessionCode.ActionType actionType) {
             if (!clientCode.isActionActive(actionType)) {
                 event.client(clientCode.getClientSession().getClient());
                 event.clone().error(Errors.EXPIRED_CODE);
@@ -256,7 +272,47 @@ public class LoginActionsService {
             session.getContext().setClient(client);
             return true;
         }
+
+        public boolean verifyRequiredAction(String code, String executedAction) {
+            if (!verifyCode(code)) {
+                return false;
+            }
+            if (!isValidAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name())) return false;
+            if (!isActionActive(ClientSessionCode.ActionType.USER)) return false;
+
+            final ClientSessionModel clientSession = clientCode.getClientSession();
+
+            final UserSessionModel userSession = clientSession.getUserSession();
+            if (userSession == null) {
+                logger.userSessionNull();
+                event.error(Errors.USER_SESSION_NOT_FOUND);
+                throw new WebApplicationException(ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE));
+            }
+            if (!AuthenticationManager.isSessionValid(realm, userSession)) {
+                AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
+                event.error(Errors.INVALID_CODE);
+                response = ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE);
+                return false;
+            }
+
+            if (executedAction == null && userSession != null) { // do next required action only if user is already authenticated
+                initEvent(clientSession);
+                event.event(EventType.LOGIN);
+                response = AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
+                return false;
+            }
+
+            if (!executedAction.equals(clientSession.getNote(AuthenticationManager.CURRENT_REQUIRED_ACTION))) {
+                logger.debug("required action doesn't match current required action");
+                clientSession.removeNote(AuthenticationManager.CURRENT_REQUIRED_ACTION);
+                response = redirectToRequiredActions(code);
+                return false;
+            }
+            return true;
+
+        }
     }
+
 
     /**
      * protocol independent login page entry point
@@ -361,13 +417,11 @@ public class LoginActionsService {
             ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
             ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-            clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
             //clientSession.setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
             clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
             String redirectUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
             clientSession.setRedirectUri(redirectUri);
             clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-            clientSession.setNote(ClientSessionCode.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
             clientSession.setNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
             clientSession.setNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);
             clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
@@ -589,19 +643,12 @@ public class LoginActionsService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processConsent(final MultivaluedMap<String, String> formData) {
         event.event(EventType.LOGIN);
-
-
-        if (!checkSsl()) {
-            return ErrorPage.error(session, Messages.HTTPS_REQUIRED);
-        }
-
         String code = formData.getFirst("code");
-
-        ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
-        if (accessCode == null || !accessCode.isValid(ClientSessionModel.Action.OAUTH_GRANT.name(), ClientSessionCode.ActionType.LOGIN)) {
-            event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, Messages.INVALID_ACCESS_CODE);
+        Checks checks = new Checks();
+        if (!checks.verifyRequiredAction(code, ClientSessionModel.Action.OAUTH_GRANT.name())) {
+            return checks.response;
         }
+        ClientSessionCode accessCode = checks.clientCode;
         ClientSessionModel clientSession = accessCode.getClientSession();
 
         initEvent(clientSession);
@@ -610,11 +657,6 @@ public class LoginActionsService {
         UserModel user = userSession.getUser();
         ClientModel client = clientSession.getClient();
 
-        if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
-            event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE);
-        }
 
         if (formData.containsKey("cancel")) {
             LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
@@ -810,29 +852,13 @@ public class LoginActionsService {
         event.event(EventType.CUSTOM_REQUIRED_ACTION);
         event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
         Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
+        if (!checks.verifyRequiredAction(code, action)) {
             return checks.response;
         }
         final ClientSessionCode clientCode = checks.clientCode;
         final ClientSessionModel clientSession = clientCode.getClientSession();
 
         final UserSessionModel userSession = clientSession.getUserSession();
-        if (userSession == null) {
-            logger.userSessionNull();
-            event.error(Errors.USER_SESSION_NOT_FOUND);
-            throw new WebApplicationException(ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE));
-        }
-        if (action == null && userSession != null) { // do next required action only if user is already authenticated
-            initEvent(clientSession);
-            event.event(EventType.LOGIN);
-            return AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
-        }
-
-        if (!action.equals(clientSession.getNote(AuthenticationManager.CURRENT_REQUIRED_ACTION))) {
-            logger.debug("required action doesn't match current required action");
-            clientSession.removeNote(AuthenticationManager.CURRENT_REQUIRED_ACTION);
-            redirectToRequiredActions(code);
-        }
 
         RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, action);
         if (factory == null) {

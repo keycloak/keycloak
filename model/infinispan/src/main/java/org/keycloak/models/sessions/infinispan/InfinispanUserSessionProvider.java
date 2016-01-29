@@ -54,9 +54,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setTimestamp(Time.currentTime());
         entity.setClient(client.getId());
 
+
         tx.put(sessionCache, id, entity);
 
-        return wrap(realm, entity, false);
+        ClientSessionAdapter wrap = wrap(realm, entity, false);
+        wrap.setNote(ClientSessionModel.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
+        return wrap;
     }
 
     @Override

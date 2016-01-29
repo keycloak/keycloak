@@ -99,14 +99,26 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
 
 
 
-    protected void checkLoggedOut(String mainUrl) {
+    protected void checkLoggedOut(String mainUrl, boolean postBinding) {
         String pageSource = driver.getPageSource();
         System.out.println("*** logout pagesource ***");
         System.out.println(pageSource);
         System.out.println("driver url: " + driver.getCurrentUrl());
         Assert.assertTrue(pageSource.contains("request-path: /logout.jsp"));
         driver.navigate().to(mainUrl);
+        checkAtLoginPage(postBinding);
+    }
+
+    protected void checkAtLoginPage(boolean postBinding) {
+        if (postBinding) assertAtLoginPagePostBinding();
+        else assertAtLoginPageRedirectBinding();
+    }
+
+    protected void assertAtLoginPageRedirectBinding() {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
+    }
+    protected void assertAtLoginPagePostBinding() {
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/login-actions/authenticate"));
     }
 
     public void testSavedPostRequest() throws Exception {
@@ -116,7 +128,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(APP_SERVER_BASE_URL + "/input-portal"));
         inputPage.execute("hello");
 
-        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke@redhat.com", "password");
         System.out.println("Current url: " + driver.getCurrentUrl());
         Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/input-portal/secured/post");
@@ -170,13 +182,13 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
 
     public void testPostSimpleLoginLogout() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post/");
-        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post/");
         System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post?GLO=true");
-        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post/");
+        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post/", true);
     }
 
     public void testPostPassiveLoginLogout(boolean forbiddenIfNotauthenticated) {
@@ -213,7 +225,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
 
     public void testPostSimpleUnauthorized(CheckAuthError error) {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post/");
-        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("unauthorized", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post/");
         System.out.println(driver.getPageSource());
@@ -227,52 +239,52 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post?GLO=true");
-        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post/");
+        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post/", true);
     }
 
     public void testPostSignedLoginLogout() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig/");
-        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig?GLO=true");
-        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-sig/");
+        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-sig/", true);
 
     }
     public void testPostSignedLoginLogoutTransientNameID() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig-transient/");
-        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig-transient/");
         System.out.println(driver.getPageSource());
         Assert.assertFalse(driver.getPageSource().contains("bburke"));
         Assert.assertTrue(driver.getPageSource().contains("principal=G-"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig-transient?GLO=true");
-        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-sig-transient/");
+        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-sig-transient/", true);
 
     }
     public void testPostSignedLoginLogoutPersistentNameID() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig-persistent/");
-        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig-persistent/");
         System.out.println(driver.getPageSource());
         Assert.assertFalse(driver.getPageSource().contains("bburke"));
         Assert.assertTrue(driver.getPageSource().contains("principal=G-"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig-persistent?GLO=true");
-        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-sig-persistent/");
+        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-sig-persistent/", true);
 
     }
     public void testPostSignedLoginLogoutEmailNameID() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig-email/");
-        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-sig-email/");
         System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getPageSource().contains("principal=bburke@redhat.com"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig-email?GLO=true");
-        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-sig-email/");
+        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-sig-email/", true);
 
     }
 
@@ -281,7 +293,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         // at the relay state
         SamlSPFacade.samlResponse = null;
         driver.navigate().to(APP_SERVER_BASE_URL + "/employee/");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
+        assertAtLoginPageRedirectBinding();
         System.out.println(driver.getCurrentUrl());
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee/");
@@ -304,7 +316,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
             SendUsernameServlet.sentPrincipal = null;
             SendUsernameServlet.checkRoles = null;
             driver.navigate().to(APP_SERVER_BASE_URL + "/employee2/");
-            Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
+            assertAtLoginPagePostBinding();
             List<String> requiredRoles = new LinkedList<>();
             requiredRoles.add("manager");
             requiredRoles.add("user");
@@ -322,14 +334,14 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
             Set<String> groupSet = new HashSet<>();
             assertEquals("level2@redhat.com", principal.getFriendlyAttribute("email"));
             driver.navigate().to(APP_SERVER_BASE_URL + "/employee2/?GLO=true");
-            checkLoggedOut(APP_SERVER_BASE_URL + "/employee2/");
+            checkLoggedOut(APP_SERVER_BASE_URL + "/employee2/", true);
 
         }
         {
             SendUsernameServlet.sentPrincipal = null;
             SendUsernameServlet.checkRoles = null;
             driver.navigate().to(APP_SERVER_BASE_URL + "/employee2/");
-            Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
+            assertAtLoginPagePostBinding();
             List<String> requiredRoles = new LinkedList<>();
             requiredRoles.add("manager");
             requiredRoles.add("employee");
@@ -345,7 +357,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
             assertEquals("617", principal.getAttribute("phone"));
             Assert.assertNull(principal.getFriendlyAttribute("phone"));
             driver.navigate().to(APP_SERVER_BASE_URL + "/employee2/?GLO=true");
-            checkLoggedOut(APP_SERVER_BASE_URL + "/employee2/");
+            checkLoggedOut(APP_SERVER_BASE_URL + "/employee2/", true);
 
         }
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
@@ -374,7 +386,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
             SendUsernameServlet.sentPrincipal = null;
             SendUsernameServlet.checkRoles = null;
             driver.navigate().to(APP_SERVER_BASE_URL + "/employee2/");
-            Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
+            assertAtLoginPagePostBinding();
             List<String> requiredRoles = new LinkedList<>();
             requiredRoles.add("el-jefe");
             requiredRoles.add("user");
@@ -394,23 +406,23 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
 
     public void testRedirectSignedLoginLogout() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/employee-sig/");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
+        assertAtLoginPageRedirectBinding();
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee-sig/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/employee-sig?GLO=true");
-        checkLoggedOut(APP_SERVER_BASE_URL + "/employee-sig/");
+        checkLoggedOut(APP_SERVER_BASE_URL + "/employee-sig/", false);
 
     }
 
     public void testRedirectSignedLoginLogoutFrontNoSSO() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/employee-sig-front/");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
+        assertAtLoginPageRedirectBinding();
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee-sig-front/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/employee-sig-front?GLO=true");
-        checkLoggedOut(APP_SERVER_BASE_URL + "/employee-sig-front/");
+        checkLoggedOut(APP_SERVER_BASE_URL + "/employee-sig-front/", false);
 
     }
 
@@ -418,7 +430,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         // visit 1st app an logg in
         System.out.println("visit 1st app ");
         driver.navigate().to(APP_SERVER_BASE_URL + "/employee-sig/");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
+        assertAtLoginPageRedirectBinding();
         System.out.println("login to form");
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/employee-sig/");
@@ -439,28 +451,29 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         // logout of first app
         System.out.println("GLO");
         driver.navigate().to(APP_SERVER_BASE_URL + "/employee-sig?GLO=true");
-        checkLoggedOut(APP_SERVER_BASE_URL + "/employee-sig/");
+        checkLoggedOut(APP_SERVER_BASE_URL + "/employee-sig/", false);
         driver.navigate().to(APP_SERVER_BASE_URL + "/employee-sig-front/");
         String currentUrl = driver.getCurrentUrl();
         Assert.assertTrue(currentUrl.startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig/");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
+        assertAtLoginPagePostBinding();
 
     }
 
     public void testPostEncryptedLoginLogout() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-enc/");
-        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-enc/");
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-enc?GLO=true");
-        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-enc/");
+        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-enc/", true);
 
     }
     public void testPostBadClientSignature() {
         driver.navigate().to(APP_SERVER_BASE_URL + "/bad-client-sales-post-sig/");
-        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        System.out.println(driver.getCurrentUrl());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(AUTH_SERVER_URL + "/realms/demo/protocol/saml"));
         assertEquals(driver.getTitle(), "We're sorry...");
 
     }
@@ -471,7 +484,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     public void testPostBadRealmSignature() {
         ErrorServlet.authError = null;
         driver.navigate().to(APP_SERVER_BASE_URL + "/bad-realm-sales-post-sig/");
-        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/bad-realm-sales-post-sig/");
         System.out.println(driver.getPageSource());
@@ -484,13 +497,13 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     public void testMetadataPostSignedLoginLogout() throws Exception {
 
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-metadata/");
-        assertEquals(driver.getCurrentUrl(), AUTH_SERVER_URL + "/realms/demo/protocol/saml");
+        assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-metadata/");
         String pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-metadata?GLO=true");
-        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-metadata/");
+        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-metadata/", true);
 
     }
 

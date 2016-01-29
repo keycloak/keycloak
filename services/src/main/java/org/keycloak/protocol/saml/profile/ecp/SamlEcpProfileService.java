@@ -68,8 +68,8 @@ public class SamlEcpProfileService extends SamlService {
     }
 
     @Override
-    protected Response newBrowserAuthentication(ClientSessionModel clientSession, boolean isPassive, SamlProtocol samlProtocol) {
-        return super.newBrowserAuthentication(clientSession, isPassive, createEcpSamlProtocol());
+    protected Response newBrowserAuthentication(ClientSessionModel clientSession, boolean isPassive, boolean redirectToAuthentication, SamlProtocol samlProtocol) {
+        return super.newBrowserAuthentication(clientSession, isPassive, redirectToAuthentication, createEcpSamlProtocol());
     }
 
     private SamlProtocol createEcpSamlProtocol() {

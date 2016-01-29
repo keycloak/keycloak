@@ -7,6 +7,7 @@ import java.util.Set;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface ClientSessionModel {
+    public static final String ACTION_KEY = "action_key";
 
     public String getId();
     public RealmModel getRealm();
