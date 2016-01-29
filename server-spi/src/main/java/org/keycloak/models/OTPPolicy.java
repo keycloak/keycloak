@@ -96,25 +96,25 @@ public class OTPPolicy implements Serializable {
     }
 
     public String getKeyURI(RealmModel realm, UserModel user, String secret) {
+        try {
+            String displayName = realm.getDisplayName() != null && !realm.getDisplayName().isEmpty() ? realm.getDisplayName() : realm.getName();
+            String uri;
 
-      String displayName = realm.getDisplayName();
-      String uri = null;
+            uri = "otpauth://" + type + "/" + URLEncoder.encode(user.getUsername(), "UTF-8") + "?secret=" +
+                    Base32.encode(secret.getBytes()) + "&digits=" + digits + "&algorithm=" + algToKeyUriAlg.get(algorithm);
 
-        if (displayName == null || displayName.isEmpty()) { displayName = realm.getName(); }
-        uri = "otpauth://" + type + "/" + displayName + ":" + user.getUsername() + "?secret=" +
-            Base32.encode(secret.getBytes()) + "&digits=" + digits + "&algorithm=" + algToKeyUriAlg.get(algorithm);
-      try {
-        uri += "&issuer=" + URLEncoder.encode(realm.getName(), "UTF-8");
-      } catch (UnsupportedEncodingException e) {
-        logger.debug("Failed to add issuer parameter to OTP URI becasue UTF-8 is not supported.");
-      }
-      if (type.equals(UserCredentialModel.HOTP)) {
-            uri += "&counter=" + initialCounter;
+            uri += "&issuer=" + URLEncoder.encode(displayName, "UTF-8");
+
+            if (type.equals(UserCredentialModel.HOTP)) {
+                uri += "&counter=" + initialCounter;
+            }
+            if (type.equals(UserCredentialModel.TOTP)) {
+                uri += "&period=" + period;
+            }
+
+            return uri;
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
         }
-        if (type.equals(UserCredentialModel.TOTP)) {
-            uri += "&period=" + period;
-        }
-        return uri;
-
     }
 }
