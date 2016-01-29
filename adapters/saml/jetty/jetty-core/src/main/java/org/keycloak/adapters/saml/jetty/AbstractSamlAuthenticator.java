@@ -13,6 +13,10 @@ import org.eclipse.jetty.server.UserIdentity;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.util.URIUtil;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.saml.SamlSessionStore;
+import org.keycloak.adapters.saml.profile.SamlAuthenticationHandler;
+import org.keycloak.adapters.saml.profile.webbrowsersso.BrowserHandler;
+import org.keycloak.adapters.saml.profile.webbrowsersso.SamlEndpoint;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
@@ -234,16 +238,38 @@ public abstract class AbstractSamlAuthenticator extends LoginAuthenticator {
             log.debug("*** deployment isn't configured return false");
             return Authentication.UNAUTHENTICATED;
         }
-        if (!mandatory)
+        boolean isEndpoint = request.getRequestURI().substring(request.getContextPath().length()).endsWith("/saml");
+        if (!mandatory && !isEndpoint)
             return new DeferredAuthentication(this);
         JettySamlSessionStore tokenStore = getTokenStore(request, facade, deployment);
 
-        SamlAuthenticator authenticator = new SamlAuthenticator(facade, deployment, tokenStore ) {
-            @Override
-            protected void completeAuthentication(SamlSession account) {
+        SamlAuthenticator authenticator = null;
+        if (isEndpoint) {
+            authenticator = new SamlAuthenticator(facade, deployment, tokenStore) {
+                @Override
+                protected void completeAuthentication(SamlSession account) {
 
-            }
-        };
+                }
+
+                @Override
+                protected SamlAuthenticationHandler createBrowserHandler(HttpFacade facade, SamlDeployment deployment, SamlSessionStore sessionStore) {
+                    return new SamlEndpoint(facade, deployment, sessionStore);
+                }
+            };
+
+        } else {
+            authenticator = new SamlAuthenticator(facade, deployment, tokenStore) {
+                @Override
+                protected void completeAuthentication(SamlSession account) {
+
+                }
+
+                @Override
+                protected SamlAuthenticationHandler createBrowserHandler(HttpFacade facade, SamlDeployment deployment, SamlSessionStore sessionStore) {
+                    return new BrowserHandler(facade, deployment, sessionStore);
+                }
+            };
+        }
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             if (facade.isEnded()) {

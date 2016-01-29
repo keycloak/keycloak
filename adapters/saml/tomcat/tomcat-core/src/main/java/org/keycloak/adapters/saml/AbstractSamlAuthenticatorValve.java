@@ -150,10 +150,23 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         log.fine("*********************** SAML ************");
+        if (request.getRequestURI().substring(request.getContextPath().length()).endsWith("/saml")) {
+            CatalinaHttpFacade facade = new CatalinaHttpFacade(response, request);
+            SamlDeployment deployment = deploymentContext.resolveDeployment(facade);
+            if (deployment != null && deployment.isConfigured()) {
+                SamlSessionStore tokenStore = getSessionStore(request, facade, deployment);
+                SamlAuthenticator authenticator = new CatalinaSamlEndpoint(facade, deployment, tokenStore);
+                executeAuthenticator(request, response, facade, deployment, authenticator);
+                return;
+            }
+
+        }
+
         try {
             super.invoke(request, response);
         } finally {
         }
+
     }
 
     protected abstract GenericPrincipalFactory createPrincipalFactory();
@@ -187,7 +200,11 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
         SamlSessionStore tokenStore = getSessionStore(request, facade, deployment);
 
 
-        CatalinaSamlAuthenticator authenticator = new CatalinaSamlAuthenticator(facade, deployment, tokenStore);
+        SamlAuthenticator authenticator = new CatalinaSamlAuthenticator(facade, deployment, tokenStore);
+        return executeAuthenticator(request, response, facade, deployment, authenticator);
+    }
+
+    protected boolean executeAuthenticator(Request request, HttpServletResponse response, CatalinaHttpFacade facade, SamlDeployment deployment, SamlAuthenticator authenticator) {
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             log.fine("AUTHENTICATED");
@@ -209,9 +226,6 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
         AuthChallenge challenge = authenticator.getChallenge();
         if (challenge != null) {
             log.fine("challenge");
-            if (loginConfig == null) {
-                loginConfig = request.getContext().getLoginConfig();
-            }
             challenge.challenge(facade);
         }
         return false;

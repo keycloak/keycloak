@@ -124,7 +124,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     public void testSavedPostRequest() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/input-portal");
-        System.out.println("Current url: " + driver.getCurrentUrl());
+        System.err.println("*********** Current url: " + driver.getCurrentUrl());
         Assert.assertTrue(driver.getCurrentUrl().startsWith(APP_SERVER_BASE_URL + "/input-portal"));
         inputPage.execute("hello");
 
@@ -160,13 +160,13 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         Response response = client.target(APP_SERVER_BASE_URL + "/employee-sig/").request().get();
         response.close();
         SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
-                .destination(APP_SERVER_BASE_URL + "/employee-sig/")
+                .destination(APP_SERVER_BASE_URL + "/employee-sig/saml")
                         .issuer(AUTH_SERVER_URL + "/realms/demo")
                         .status(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
         BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder()
                 .relayState(null);
         Document document = builder.buildDocument();
-        URI uri = binding.redirectBinding(document).generateURI(APP_SERVER_BASE_URL + "/employee-sig/", false);
+        URI uri = binding.redirectBinding(document).generateURI(APP_SERVER_BASE_URL + "/employee-sig/saml", false);
         response = client.target(uri).request().get();
         String errorPage = response.readEntity(String.class);
         response.close();
@@ -195,7 +195,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         // first request on passive app - no login page shown, user not logged in as we are in passive mode.
         // Shown page depends on used authentication mechanism, some may return forbidden error, some return requested page with anonymous user (not logged in)
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-passive/");
-        assertEquals(APP_SERVER_BASE_URL + "/sales-post-passive/", driver.getCurrentUrl());
+        assertEquals(APP_SERVER_BASE_URL + "/sales-post-passive/saml", driver.getCurrentUrl());
         System.out.println(driver.getPageSource());
         if (forbiddenIfNotauthenticated) {
             Assert.assertTrue(driver.getPageSource().contains("HTTP status code: 403"));
@@ -219,7 +219,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
 
         // refresh passive app page, not logged in again as we are in passive mode
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-passive/");
-        assertEquals(APP_SERVER_BASE_URL + "/sales-post-passive/", driver.getCurrentUrl());
+        assertEquals(APP_SERVER_BASE_URL + "/sales-post-passive/saml", driver.getCurrentUrl());
         Assert.assertFalse(driver.getPageSource().contains("bburke"));
     }
 
@@ -235,11 +235,21 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     public void testPostSimpleLoginLogoutIdpInitiated() {
         driver.navigate().to(AUTH_SERVER_URL + "/realms/demo/protocol/saml/clients/sales-post");
         loginPage.login("bburke", "password");
-        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post/");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(APP_SERVER_BASE_URL + "/sales-post"));
         System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post?GLO=true");
         checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post/", true);
+    }
+
+    public void testPostSimpleLoginLogoutIdpInitiatedRedirectTo() {
+        driver.navigate().to(AUTH_SERVER_URL + "/realms/demo/protocol/saml/clients/sales-post2");
+        loginPage.login("bburke", "password");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post2/foo");
+        System.out.println(driver.getPageSource());
+        Assert.assertTrue(driver.getPageSource().contains("bburke"));
+        driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post2?GLO=true");
+        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post2/", true);
     }
 
     public void testPostSignedLoginLogout() {
@@ -486,7 +496,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         driver.navigate().to(APP_SERVER_BASE_URL + "/bad-realm-sales-post-sig/");
         assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
-        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/bad-realm-sales-post-sig/");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/bad-realm-sales-post-sig/saml");
         System.out.println(driver.getPageSource());
         Assert.assertNotNull(ErrorServlet.authError);
         SamlAuthenticationError error = (SamlAuthenticationError)ErrorServlet.authError;

@@ -1,5 +1,7 @@
 package org.keycloak.adapters.saml;
 
+import org.keycloak.adapters.saml.profile.SamlAuthenticationHandler;
+import org.keycloak.adapters.saml.profile.webbrowsersso.BrowserHandler;
 import org.keycloak.adapters.spi.HttpFacade;
 
 /**
@@ -15,4 +17,10 @@ public class CatalinaSamlAuthenticator extends SamlAuthenticator {
     protected void completeAuthentication(SamlSession account) {
         // complete
     }
+
+    @Override
+    protected SamlAuthenticationHandler createBrowserHandler(HttpFacade facade, SamlDeployment deployment, SamlSessionStore sessionStore) {
+        return new BrowserHandler(facade, deployment, sessionStore);
+    }
+
 }

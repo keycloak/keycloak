@@ -26,7 +26,9 @@ import io.undertow.servlet.ServletExtension;
 import io.undertow.servlet.api.AuthMethodConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.LoginConfig;
+import io.undertow.servlet.api.SecurityConstraint;
 import io.undertow.servlet.api.ServletSessionConfig;
+import io.undertow.servlet.api.WebResourceCollection;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.AdapterConstants;
 import org.keycloak.adapters.saml.DefaultSamlDeployment;
@@ -184,9 +186,23 @@ public class SamlServletExtension implements ServletExtension {
         ServletSessionConfig cookieConfig = new ServletSessionConfig();
         cookieConfig.setPath(deploymentInfo.getContextPath());
         deploymentInfo.setServletSessionConfig(cookieConfig);
+        addEndpointConstraint(deploymentInfo);
+
         ChangeSessionId.turnOffChangeSessionIdOnLogin(deploymentInfo);
 
      }
+
+    /**
+     * add security constraint to /saml so that the endpoint can be called and auth mechanism pinged.
+     * @param deploymentInfo
+     */
+    protected void addEndpointConstraint(DeploymentInfo deploymentInfo) {
+        SecurityConstraint constraint = new SecurityConstraint();
+        WebResourceCollection collection = new WebResourceCollection();
+        collection.addUrlPattern("/saml");
+        constraint.addWebResourceCollection(collection);
+        deploymentInfo.addSecurityConstraint(constraint);
+    }
 
     protected ServletSamlAuthMech createAuthMech(DeploymentInfo deploymentInfo, SamlDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement) {
         return new ServletSamlAuthMech(deploymentContext, userSessionManagement, getErrorPage(deploymentInfo));

@@ -38,12 +38,16 @@ public abstract class SamlAuthenticator {
 
     protected abstract void completeAuthentication(SamlSession samlSession);
 
-    private SamlAuthenticationHandler createAuthenticationHandler(HttpFacade facade, SamlDeployment deployment, SamlSessionStore sessionStore) {
+    protected SamlAuthenticationHandler createAuthenticationHandler(HttpFacade facade, SamlDeployment deployment, SamlSessionStore sessionStore) {
         if (EcpAuthenticationHandler.canHandle(facade)) {
             return EcpAuthenticationHandler.create(facade, deployment, sessionStore);
         }
 
         // defaults to the web browser sso profile
+        return createBrowserHandler(facade, deployment, sessionStore);
+    }
+
+    protected SamlAuthenticationHandler createBrowserHandler(HttpFacade facade, SamlDeployment deployment, SamlSessionStore sessionStore) {
         return WebBrowserSsoAuthenticationHandler.create(facade, deployment, sessionStore);
     }
 }

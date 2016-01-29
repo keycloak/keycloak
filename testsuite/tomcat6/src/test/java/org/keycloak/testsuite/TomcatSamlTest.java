@@ -61,6 +61,8 @@ public class TomcatSamlTest {
         System.setProperty("app.server.base.url", "http://localhost:8082");
         System.setProperty("my.host.name", "localhost");
         tomcat.deploySaml("/sales-post", "simple-post");
+        tomcat.deploySaml("/sales-post2", "simple-post2");
+        tomcat.deploySaml("/input-portal", "simple-input");
         tomcat.deploySaml("/sales-post-sig", "signed-post");
         tomcat.deploySaml("/sales-post-sig-email", "signed-post-email");
         tomcat.deploySaml("/sales-post-sig-transient", "signed-post-transient");
@@ -86,6 +88,16 @@ public class TomcatSamlTest {
 
     @Rule
     public SamlAdapterTestStrategy testStrategy = new SamlAdapterTestStrategy("http://localhost:8081/auth", "http://localhost:8082", keycloakRule);
+
+    @Test
+    public void testSavedPostRequest() throws Exception {
+        testStrategy.testSavedPostRequest();
+    }
+    @Test
+    public void testPostSimpleLoginLogoutIdpInitiatedRedirectTo() {
+        testStrategy.testPostSimpleLoginLogoutIdpInitiatedRedirectTo();
+    }
+
 
     @Test
     public void testPostSimpleLoginLogout() {

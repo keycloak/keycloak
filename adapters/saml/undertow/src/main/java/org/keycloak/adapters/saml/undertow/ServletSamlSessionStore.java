@@ -8,19 +8,19 @@ import io.undertow.servlet.handlers.ServletRequestContext;
 import io.undertow.servlet.spec.HttpSessionImpl;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.adapters.saml.SamlUtil;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.undertow.ChangeSessionId;
 import org.keycloak.adapters.undertow.SavedRequest;
+import org.keycloak.adapters.undertow.ServletHttpFacade;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.dom.saml.v2.protocol.StatusType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
 import java.security.Principal;
 import java.util.LinkedList;
 import java.util.List;
@@ -179,7 +179,15 @@ public class ServletSamlSessionStore implements SamlSessionStore {
     public String getRedirectUri() {
         final ServletRequestContext sc = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpSessionImpl session = sc.getCurrentServletContext().getSession(exchange, true);
-        return (String)session.getAttribute(SAML_REDIRECT_URI);
+        String redirect = (String)session.getAttribute(SAML_REDIRECT_URI);
+        if (redirect == null) {
+            ServletHttpFacade facade = new ServletHttpFacade(exchange);
+            HttpServletRequest req = (HttpServletRequest)sc.getServletRequest();
+            String contextPath = req.getContextPath();
+            String baseUri = KeycloakUriBuilder.fromUri(req.getRequestURL().toString()).replacePath(contextPath).build().toString();
+            return SamlUtil.getRedirectTo(facade, contextPath, baseUri);
+        }
+        return redirect;
     }
 
     @Override

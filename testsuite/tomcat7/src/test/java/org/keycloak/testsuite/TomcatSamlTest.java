@@ -78,6 +78,8 @@ public class TomcatSamlTest {
         tomcat.addWebapp("/bad-client-sales-post-sig", new File(base, "bad-client-signed-post").toString());
         tomcat.addWebapp("/bad-realm-sales-post-sig", new File(base, "bad-realm-signed-post").toString());
         tomcat.addWebapp("/sales-post-enc", new File(base, "encrypted-post").toString());
+        tomcat.addWebapp("/sales-post2", new File(base, "simple-post2").toString());
+        tomcat.addWebapp("/input-portal", new File(base, "simple-input").toString());
         SamlAdapterTestStrategy.uploadSP("http://localhost:8081/auth");
 
 
@@ -89,6 +91,14 @@ public class TomcatSamlTest {
     public static void shutdownTomcat() throws Exception {
         tomcat.stop();
         tomcat.destroy();
+    }
+    @Test
+    public void testSavedPostRequest() throws Exception {
+        testStrategy.testSavedPostRequest();
+    }
+    @Test
+    public void testPostSimpleLoginLogoutIdpInitiatedRedirectTo() {
+        testStrategy.testPostSimpleLoginLogoutIdpInitiatedRedirectTo();
     }
 
 

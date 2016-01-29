@@ -25,7 +25,7 @@ public class WebBrowserSsoAuthenticationHandler extends AbstractSamlAuthenticati
         return new WebBrowserSsoAuthenticationHandler(facade, deployment, sessionStore);
     }
 
-    private WebBrowserSsoAuthenticationHandler(HttpFacade facade, SamlDeployment deployment, SamlSessionStore sessionStore) {
+    WebBrowserSsoAuthenticationHandler(HttpFacade facade, SamlDeployment deployment, SamlSessionStore sessionStore) {
         super(facade, deployment, sessionStore);
     }
 

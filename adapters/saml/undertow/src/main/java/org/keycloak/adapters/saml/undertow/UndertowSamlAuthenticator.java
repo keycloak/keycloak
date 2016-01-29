@@ -2,6 +2,9 @@ package org.keycloak.adapters.saml.undertow;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.security.idm.Account;
+import org.keycloak.adapters.saml.profile.SamlAuthenticationHandler;
+import org.keycloak.adapters.saml.profile.webbrowsersso.BrowserHandler;
+import org.keycloak.adapters.saml.profile.webbrowsersso.SamlEndpoint;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.saml.SamlAuthenticator;
 import org.keycloak.adapters.saml.SamlDeployment;
@@ -39,4 +42,10 @@ public class UndertowSamlAuthenticator extends SamlAuthenticator {
         securityContext.authenticationComplete(undertowAccount, "KEYCLOAK-SAML", false);
 
     }
+
+    @Override
+    protected SamlAuthenticationHandler createBrowserHandler(HttpFacade facade, SamlDeployment deployment, SamlSessionStore sessionStore) {
+        return new BrowserHandler(facade, deployment, sessionStore);
+    }
+
 }
