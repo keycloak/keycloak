@@ -116,11 +116,10 @@
         }
 
     ],
-    "applications": [
+    "clients": [
         {
-            "name": "customer-portal",
+            "clientId": "customer-portal",
             "enabled": true,
-            "directAccessGrantsEnabled": true,
             "adminUrl": "/customer-portal",
             "baseUrl": "/customer-portal",
             "redirectUris": [
@@ -129,7 +128,7 @@
             "secret": "password"
         },
         {
-            "name": "customer-cookie-portal",
+            "clientId": "customer-cookie-portal",
             "enabled": true,
             "baseUrl": "/customer-cookie-portal",
             "redirectUris": [
@@ -138,7 +137,7 @@
             "secret": "password"
         },
         {
-            "name": "customer-portal-js",
+            "clientId": "customer-portal-js",
             "enabled": true,
             "publicClient": true,
             "adminUrl": "/customer-portal-js",
@@ -148,7 +147,7 @@
             ]
         },
         {
-            "name": "customer-portal-cli",
+            "clientId": "customer-portal-cli",
             "enabled": true,
             "publicClient": true,
             "redirectUris": [
@@ -157,7 +156,7 @@
             ]
         },
         {
-            "name": "product-portal",
+            "clientId": "product-portal",
             "enabled": true,
             "adminUrl": "/product-portal",
             "baseUrl": "/product-portal",
@@ -167,7 +166,7 @@
             "secret": "password"
         },
         {
-            "name": "secure-portal",
+            "clientId": "secure-portal",
             "enabled": true,
             "adminUrl": "/secure-portal",
             "baseUrl": "/secure-portal",
@@ -180,7 +179,7 @@
             }
         },
         {
-            "name": "session-portal",
+            "clientId": "session-portal",
             "enabled": true,
             "adminUrl": "/session-portal",
             "baseUrl": "/session-portal",
@@ -190,7 +189,7 @@
             "secret": "password"
         },
         {
-            "name": "input-portal",
+            "clientId": "input-portal",
             "enabled": true,
             "adminUrl": "/input-portal",
             "baseUrl": "/input-portal",
@@ -198,11 +197,9 @@
                 "/input-portal/*"
             ],
             "secret": "password"
-        }
-    ],
-    "oauthClients": [
+        },
         {
-            "name": "third-party",
+            "clientId": "third-party",
             "enabled": true,
             "redirectUris": [
                 "/oauth-client/*",
