@@ -35,6 +35,7 @@ import org.keycloak.testsuite.util.Timer;
  *
  * @author Filip Kiss
  * @author tkyjovsk
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class ClientSettingsTest extends AbstractClientTest {
 
@@ -179,4 +180,13 @@ public class ClientSettingsTest extends AbstractClientTest {
         pause(120000);
     }
 
+    @Test
+    public void disabledClient() {
+        newClient = createOidcClientRep(CONFIDENTIAL, "disabled-client");
+        newClient.setEnabled(false);
+        createClient(newClient);
+
+        ClientRepresentation clientRepre = findClientByClientId("disabled-client");
+        assertTrue("Client should be disabled", clientRepre.isEnabled());
+    }
 }
