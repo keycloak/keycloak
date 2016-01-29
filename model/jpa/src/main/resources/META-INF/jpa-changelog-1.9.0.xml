@@ -5,41 +5,41 @@
         <!-- This is needed for MSSQL :( -->
         <!-- 1.5 -->
         <update tableName="REALM">
-            <column name="OTP_POLICY_COUNTER" type="INT" value="0" />
+            <column name="OTP_POLICY_COUNTER" type="INT" valueNumeric="0" />
             <where>OTP_POLICY_COUNTER is NULL</where>
         </update>
         <update tableName="REALM">
-            <column name="OTP_POLICY_WINDOW" type="INT" value="1" />
+            <column name="OTP_POLICY_WINDOW" type="INT" valueNumeric="1" />
             <where>OTP_POLICY_WINDOW is NULL</where>
         </update>
         <update tableName="REALM">
-            <column name="OTP_POLICY_PERIOD" type="INT" value="30" />
+            <column name="OTP_POLICY_PERIOD" type="INT" valueNumeric="30" />
             <where>OTP_POLICY_PERIOD is NULL</where>
         </update>
         <update tableName="REALM">
-            <column name="OTP_POLICY_DIGITS" type="INT" value="6" />
+            <column name="OTP_POLICY_DIGITS" type="INT" valueNumeric="6" />
             <where>OTP_POLICY_DIGITS is NULL</where>
         </update>
         <update tableName="CREDENTIAL">
-            <column name="COUNTER" type="INT" value="0" />
+            <column name="COUNTER" type="INT" valueNumeric="0" />
             <where>COUNTER is NULL</where>
         </update>
         <update tableName="CREDENTIAL">
-            <column name="DIGITS" type="INT" value="6" />
+            <column name="DIGITS" type="INT" valueNumeric="6" />
             <where>DIGITS is NULL</where>
         </update>
         <update tableName="CREDENTIAL">
-            <column name="PERIOD" type="INT" value="30" />
+            <column name="PERIOD" type="INT" valueNumeric="30" />
             <where>PERIOD is NULL</where>
         </update>
         <!-- 1.6 -->
         <update tableName="REALM">
-            <column name="OFFLINE_SESSION_IDLE_TIMEOUT" type="INT" value="2592000" />
+            <column name="OFFLINE_SESSION_IDLE_TIMEOUT" type="INT" valueNumeric="2592000" />
             <where>OFFLINE_SESSION_IDLE_TIMEOUT is NULL</where>
         </update>
         <!-- 1.7 -->
         <update tableName="REALM">
-            <column name="ACCESS_TOKEN_LIFE_IMPLICIT" type="INT" value="900" />
+            <column name="ACCESS_TOKEN_LIFE_IMPLICIT" type="INT" valueNumeric="900" />
             <where>ACCESS_TOKEN_LIFE_IMPLICIT is NULL</where>
         </update>
 
