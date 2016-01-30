@@ -26,26 +26,12 @@
     ],
     "clients": [
         {
-            "clientId": "http://localhost:8080/sales-post/",
-            "enabled": true,
-            "fullScopeAllowed": true,
-            "protocol": "saml",
-            "baseUrl": "http://localhost:8080/sales-post/",
-            "adminUrl": "http://localhost:8080/sales-post/",
-            "redirectUris": [
-                "http://localhost:8080/sales-post/*"
-            ],
-            "attributes": {
-                "saml.authnstatement": "true"
-            }
-        },
-        {
             "clientId": "http://localhost:8080/sales-post-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
             "baseUrl": "http://localhost:8080/sales-post-sig/",
-            "adminUrl": "http://localhost:8080/sales-post-sig/",
+            "adminUrl": "http://localhost:8080/sales-post-sig/saml",
             "redirectUris": [
                 "http://localhost:8080/sales-post-sig/*"
             ],
@@ -64,7 +50,7 @@
             "protocol": "saml",
             "fullScopeAllowed": true,
             "baseUrl": "http://localhost:8080/sales-post-enc/",
-            "adminUrl": "http://localhost:8080/sales-post-enc/",
+            "adminUrl": "http://localhost:8080/sales-post-enc/saml",
             "redirectUris": [
                 "http://localhost:8080/sales-post-enc/*"
             ],
@@ -81,26 +67,12 @@
             }
         },
         {
-            "clientId": "http://localhost:8080/employee/",
-            "enabled": true,
-            "fullScopeAllowed": true,
-            "protocol": "saml",
-            "baseUrl": "http://localhost:8080/employee/",
-            "adminUrl": "http://localhost:8080/employee/",
-            "redirectUris": [
-                "http://localhost:8080/employee/*"
-            ],
-            "attributes": {
-                "saml.authnstatement": "true"
-            }
-        },
-        {
             "clientId": "http://localhost:8080/employee-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
             "baseUrl": "http://localhost:8080/employee-sig/",
-            "adminUrl": "http://localhost:8080/employee-sig/",
+            "adminUrl": "http://localhost:8080/employee-sig/saml",
             "redirectUris": [
                 "http://localhost:8080/employee-sig/*"
             ],
