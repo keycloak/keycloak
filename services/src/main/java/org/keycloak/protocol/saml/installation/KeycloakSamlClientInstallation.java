@@ -26,6 +26,12 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
         SamlClient samlClient = new SamlClient(client);
         StringBuffer buffer = new StringBuffer();
         buffer.append("<keycloak-saml-adapter>\n");
+        baseXml(realm, client, baseUri, samlClient, buffer);
+        buffer.append("</keycloak-saml-adapter>\n");
+        return Response.ok(buffer.toString(), MediaType.TEXT_PLAIN_TYPE).build();
+    }
+
+    public static void baseXml(RealmModel realm, ClientModel client, URI baseUri, SamlClient samlClient, StringBuffer buffer) {
         buffer.append("    <SP entityID=\"").append(client.getClientId()).append("\"\n");
         buffer.append("        sslPolicy=\"").append(realm.getSslRequired().name()).append("\"\n");
         buffer.append("        logoutPage=\"SPECIFY YOUR LOGOUT PAGE!\">\n");
@@ -99,8 +105,6 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
         }
         buffer.append("        </IDP>\n");
         buffer.append("    </SP>\n");
-        buffer.append("</keycloak-saml-adapter>\n");
-        return Response.ok(buffer.toString(), MediaType.TEXT_PLAIN_TYPE).build();
     }
 
     @Override

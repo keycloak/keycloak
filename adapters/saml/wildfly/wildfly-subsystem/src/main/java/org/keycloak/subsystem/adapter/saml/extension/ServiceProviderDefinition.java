@@ -80,7 +80,7 @@ public class ServiceProviderDefinition extends SimpleResourceDefinition {
 
     static final ListAttributeDefinition ROLE_ATTRIBUTES =
             new StringListAttributeDefinition.Builder(Constants.Model.ROLE_ATTRIBUTES)
-                    .setAllowNull(false)
+                    .setAllowNull(true)
                     .build();
 
     static final SimpleAttributeDefinition[] ATTRIBUTES = {SSL_POLICY, NAME_ID_POLICY_FORMAT, LOGOUT_PAGE, FORCE_AUTHENTICATION, IS_PASSIVE, TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN};

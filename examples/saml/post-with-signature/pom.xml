@@ -8,7 +8,7 @@
         <version>1.9.0.CR1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>saml-post-signatures</artifactId>
+    <artifactId>sales-post-sig</artifactId>
 
     <packaging>war</packaging>
 
