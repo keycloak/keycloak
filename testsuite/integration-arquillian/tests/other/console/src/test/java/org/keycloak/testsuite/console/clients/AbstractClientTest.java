@@ -17,6 +17,10 @@ import org.keycloak.testsuite.console.page.clients.Client;
 import org.keycloak.testsuite.console.page.clients.Clients;
 import org.keycloak.testsuite.console.page.clients.CreateClient;
 import org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType;
+import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.By;
+
 import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.*;
 import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_ASSERTION_CONSUMER_URL_POST;
 import static org.keycloak.testsuite.console.page.clients.CreateClientForm.SAMLClientSettingsForm.SAML_ASSERTION_CONSUMER_URL_REDIRECT;
@@ -53,6 +57,8 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
     protected Client clientPage; // note: cannot call navigateTo() unless client id is set
     @Page
     protected CreateClient createClientPage;
+    @Page
+    protected ClientSettings clientSettingsPage;
 
     @Before
     public void beforeClientTest() {
@@ -61,13 +67,17 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
     }
 
     public void createClient(ClientRepresentation client) {
+        WaitUtils.waitUntilElement(By.tagName("body"));
         assertCurrentUrlEquals(clientsPage);
         clientsPage.table().createClient();
         createClientPage.form().setValues(client);
+        createClientPage.form().save();
+
+        clientSettingsPage.form().setValues(client);
         if (SAML.equals(client.getProtocol())) {
             createClientPage.form().samlForm().setValues(client);
         }
-        createClientPage.form().save();
+        clientSettingsPage.form().save();
     }
 
     private static ClientRepresentation createClientRep(String clientId) {
@@ -149,21 +159,25 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         assertEqualsStringAttributes(c1.getClientId(), c2.getClientId());
         assertEqualsStringAttributes(c1.getName(), c2.getName());
         assertEqualsBooleanAttributes(c1.isEnabled(), c2.isEnabled());
-        assertEqualsBooleanAttributes(c1.isConsentRequired(), c2.isConsentRequired());
-        assertEqualsBooleanAttributes(c1.isDirectAccessGrantsEnabled(), c2.isDirectAccessGrantsEnabled());
-        assertEqualsStringAttributes(c1.getProtocol(), c2.getProtocol());
-
-        assertEqualsBooleanAttributes(c1.isBearerOnly(), c2.isBearerOnly());
-        assertEqualsBooleanAttributes(c1.isPublicClient(), c2.isPublicClient());
-        assertEqualsBooleanAttributes(c1.isSurrogateAuthRequired(), c2.isSurrogateAuthRequired());
-
-        assertEqualsBooleanAttributes(c1.isFrontchannelLogout(), c2.isFrontchannelLogout());
-
-        assertEqualsBooleanAttributes(c1.isServiceAccountsEnabled(), c2.isServiceAccountsEnabled());
-        assertEqualsListAttributes(c1.getRedirectUris(), c2.getRedirectUris());
         assertEqualsStringAttributes(c1.getBaseUrl(), c2.getBaseUrl());
-        assertEqualsStringAttributes(c1.getAdminUrl(), c2.getAdminUrl());
-        assertEqualsListAttributes(c1.getWebOrigins(), c2.getWebOrigins());
+        assertEqualsBooleanAttributes(c1.isConsentRequired(), c2.isConsentRequired());
+        assertEqualsStringAttributes(c1.getProtocol(), c2.getProtocol());
+        assertEqualsListAttributes(c1.getRedirectUris(), c2.getRedirectUris());
+
+        if (c1.getProtocol().equals(OIDC)) {
+            assertEqualsBooleanAttributes(c1.isBearerOnly(), c2.isBearerOnly());
+            if (!c1.isBearerOnly()) {
+                assertEqualsBooleanAttributes(c1.isDirectAccessGrantsEnabled(), c2.isDirectAccessGrantsEnabled());
+                assertEqualsBooleanAttributes(c1.isPublicClient(), c2.isPublicClient());
+                assertEqualsListAttributes(c1.getWebOrigins(), c2.getWebOrigins());
+                assertEqualsStringAttributes(c1.getAdminUrl(), c2.getAdminUrl());
+            }
+            assertEqualsBooleanAttributes(c1.isSurrogateAuthRequired(), c2.isSurrogateAuthRequired());
+            assertEqualsBooleanAttributes(c1.isServiceAccountsEnabled(), c2.isServiceAccountsEnabled());
+        }
+        else if (c1.getProtocol().equals(SAML)) {
+            assertEqualsBooleanAttributes(c1.isFrontchannelLogout(), c2.isFrontchannelLogout());
+        }
     }
     
     public void assertClientSamlAttributes(Map<String, String> expected, Map<String, String> actual) {

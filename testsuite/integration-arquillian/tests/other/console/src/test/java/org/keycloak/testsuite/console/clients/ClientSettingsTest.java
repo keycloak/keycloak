@@ -35,6 +35,7 @@ import org.keycloak.testsuite.util.Timer;
  *
  * @author Filip Kiss
  * @author tkyjovsk
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class ClientSettingsTest extends AbstractClientTest {
 
@@ -49,7 +50,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClient(newClient);
         assertAlertSuccess();
 
-        setExpectedWebOrigins(newClient);
+        //setExpectedWebOrigins(newClient);
         
         // read & verify
         ClientRepresentation found = findClientByClientId(newClient.getClientId());
@@ -96,7 +97,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClient(newClient);
         assertAlertSuccess();
 
-        setExpectedWebOrigins(newClient);
+        //setExpectedWebOrigins(newClient);
         
         ClientRepresentation found = findClientByClientId(newClient.getClientId());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
@@ -144,10 +145,6 @@ public class ClientSettingsTest extends AbstractClientTest {
         clientsPage.table().createClient();
         createClientPage.form().save();
         assertAlertDanger();
-
-        createClientPage.form().setClientId("test-client");
-        createClientPage.form().save();
-        assertAlertDanger();
     }
 
 //    @Test
@@ -181,5 +178,15 @@ public class ClientSettingsTest extends AbstractClientTest {
         createClients("test_client_", 100);
         clientsPage.navigateTo();
         pause(120000);
+    }
+
+    @Test
+    public void disabledClient() {
+        newClient = createOidcClientRep(CONFIDENTIAL, "disabled-client");
+        newClient.setEnabled(false);
+        createClient(newClient);
+
+        ClientRepresentation clientRepre = findClientByClientId("disabled-client");
+        assertTrue("Client should be disabled", clientRepre.isEnabled());
     }
 }

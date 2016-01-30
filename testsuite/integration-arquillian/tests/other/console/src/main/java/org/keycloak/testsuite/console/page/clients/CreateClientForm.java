@@ -25,24 +25,6 @@ public class CreateClientForm extends Form {
     @FindBy(id = "clientId")
     private WebElement clientIdInput;
 
-    @FindBy(id = "name")
-    private WebElement nameInput;
-
-    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='enabled']]")
-    private OnOffSwitch enabledSwitch;
-
-    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='consentRequired']]")
-    private OnOffSwitch consentRequiredSwitch;
-
-    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='standardFlowEnabled']]")
-    private OnOffSwitch standardFlowEnabledSwitch;
-
-    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='implicitFlowEnabled']]")
-    private OnOffSwitch implicitFlowEnabledSwitch;
-
-    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='directAccessGrantsEnabled']]")
-    private OnOffSwitch directAccessGrantsEnabledSwitch;
-
     @FindBy(id = "protocol")
     private Select protocolSelect;
     
@@ -53,43 +35,11 @@ public class CreateClientForm extends Form {
         return samlForm;
     }
 
-    @FindBy(id = "accessType")
-    private Select accessTypeSelect;
-    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='serviceAccountsEnabled']]")
-    private OnOffSwitch serviceAccountsEnabledSwitch;
-
-    @FindBy(id = "newRedirectUri")
-    private WebElement newRedirectUriInput;
-    @FindBy(xpath = ".//i[contains(@data-ng-click, 'newRedirectUri')]")
-    private WebElement newRedirectUriSubmit;
-    @FindBy(xpath = ".//input[@ng-model='client.redirectUris[i]']")
-    private List<WebElement> redirectUriInputs;
-    @FindBy(xpath = ".//i[contains(@data-ng-click, 'deleteRedirectUri')]")
-    private List<WebElement> deleteRedirectUriIcons;
-
     public void setValues(ClientRepresentation client) {
         waitUntilElement(clientIdInput).is().present();
 
         setClientId(client.getClientId());
-        setName(client.getName());
-        setEnabled(client.isEnabled());
-        setConsentRequired(client.isConsentRequired());
         setProtocol(client.getProtocol());
-        if (OIDC.equals(client.getProtocol())) {
-            setAccessType(client);
-            if (!client.isBearerOnly()) {
-                setStandardFlowEnabled(client.isStandardFlowEnabled());
-                setDirectAccessGrantsEnabled(client.isDirectAccessGrantsEnabled());
-                if (client.isPublicClient()) {
-                    setImplicitFlowEnabled(client.isImplicitFlowEnabled());
-                } else {//confidential
-                    setServiceAccountsEnabled(client.isServiceAccountsEnabled());
-                }
-                if (client.isStandardFlowEnabled() || client.isImplicitFlowEnabled()) {
-                    setRedirectUris(client.getRedirectUris());
-                }
-            }
-        }
     }
 
     public String getClientId() {
@@ -98,22 +48,6 @@ public class CreateClientForm extends Form {
 
     public void setClientId(String clientId) {
         setInputValue(clientIdInput, clientId);
-    }
-
-    public String getName() {
-        return getInputValue(nameInput);
-    }
-
-    public void setName(String name) {
-        setInputValue(nameInput, name);
-    }
-
-    public boolean isEnabled() {
-        return enabledSwitch.isOn();
-    }
-
-    public void setEnabled(boolean enabled) {
-        enabledSwitch.setOn(enabled);
     }
 
     public enum OidcAccessType {
@@ -131,77 +65,6 @@ public class CreateClientForm extends Form {
             return name;
         }
     }
-    
-    public void setAccessType(ClientRepresentation client) {
-        if (client.isBearerOnly()) {
-            accessTypeSelect.selectByVisibleText(BEARER_ONLY.getName());
-        } else if (client.isPublicClient()) {
-            accessTypeSelect.selectByVisibleText(PUBLIC.getName());
-        } else {
-            accessTypeSelect.selectByVisibleText(CONFIDENTIAL.getName());
-        }
-    }
-
-    public void addRedirectUri(String redirectUri) {
-        newRedirectUriInput.sendKeys(redirectUri);
-        newRedirectUriSubmit.click();
-    }
-
-    public List<String> getRedirectUris() {
-        List<String> values = new ArrayList<>();
-        for (WebElement input : redirectUriInputs) {
-            values.add(getInputValue(input));
-        }
-        return values;
-    }
-
-    public void setRedirectUris(List<String> redirectUris) {
-        Timer.time();
-        while (!deleteRedirectUriIcons.isEmpty()) {
-            deleteRedirectUriIcons.get(0).click();
-            pause(100);
-        }
-        Timer.time("deleteRedirectUris");
-        if (redirectUris != null) {
-            for (String redirectUri : redirectUris) {
-                addRedirectUri(redirectUri);
-                pause(100);
-            }
-        }
-        Timer.time("addRedirectUris");
-    }
-
-    public boolean isConsentRequired() {
-        return consentRequiredSwitch.isOn();
-    }
-
-    public void setConsentRequired(boolean consentRequired) {
-        consentRequiredSwitch.setOn(consentRequired);
-    }
-
-    public boolean isStandardFlowEnabled() {
-        return standardFlowEnabledSwitch.isOn();
-    }
-
-    public void setStandardFlowEnabled(boolean standardFlowEnabled) {
-        standardFlowEnabledSwitch.setOn(standardFlowEnabled);
-    }
-
-    public boolean isImplicitFlowEnabled() {
-        return implicitFlowEnabledSwitch.isOn();
-    }
-
-    public void setImplicitFlowEnabled(boolean implicitFlowEnabled) {
-        implicitFlowEnabledSwitch.setOn(implicitFlowEnabled);
-    }
-
-    public boolean isDirectAccessGrantsEnabled() {
-        return directAccessGrantsEnabledSwitch.isOn();
-    }
-
-    public void setDirectAccessGrantsEnabled(boolean directAccessGrantsEnabled) {
-        directAccessGrantsEnabledSwitch.setOn(directAccessGrantsEnabled);
-    }
 
     public String getProtocol() {
         waitUntilElement(protocolSelect.getFirstSelectedOption()).is().present();
@@ -212,14 +75,6 @@ public class CreateClientForm extends Form {
         Timer.time();
         protocolSelect.selectByVisibleText(protocol);
         Timer.time("clientSettings.setProtocol()");
-    }
-
-    public boolean isServiceAccountsEnabled() {
-        return serviceAccountsEnabledSwitch.isOn();
-    }
-
-    public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
-        serviceAccountsEnabledSwitch.setOn(serviceAccountsEnabled);
     }
 
     public class SAMLClientSettingsForm extends Form {
