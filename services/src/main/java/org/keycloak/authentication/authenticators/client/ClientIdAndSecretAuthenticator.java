@@ -11,6 +11,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
@@ -18,7 +20,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.util.BasicAuthHelper;
 
 /**
@@ -30,7 +32,7 @@ import org.keycloak.util.BasicAuthHelper;
  */
 public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, ClientIdAndSecretAuthenticator.class.getName());
 
     public static final String PROVIDER_ID = "client-secret";
 

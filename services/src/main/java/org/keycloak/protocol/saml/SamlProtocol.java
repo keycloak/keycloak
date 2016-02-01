@@ -30,6 +30,7 @@ import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -65,7 +66,7 @@ import org.w3c.dom.Document;
  * @version $Revision: 1 $
  */
 public class SamlProtocol implements LoginProtocol {
-    protected static final Logger logger = Logger.getLogger(SamlProtocol.class);
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, SamlProtocol.class.getName());
 
     public static final String ATTRIBUTE_TRUE_VALUE = "true";
     public static final String ATTRIBUTE_FALSE_VALUE = "false";
@@ -181,7 +182,7 @@ public class SamlProtocol implements LoginProtocol {
         case PASSIVE_LOGIN_REQUIRED:
             return JBossSAMLURIConstants.STATUS_NO_PASSIVE;
         default:
-            logger.warn("Untranslated protocol Error: " + error.name() + " so we return default SAML error");
+            logger.IDP.untranslatedProtocolError(error.name());
             return JBossSAMLURIConstants.STATUS_REQUEST_DENIED;
         }
     }
@@ -194,7 +195,7 @@ public class SamlProtocol implements LoginProtocol {
         case PASSIVE_LOGIN_REQUIRED:
             return Messages.UNEXPECTED_ERROR_HANDLING_REQUEST;
         default:
-            logger.warn("Untranslated protocol Error: " + error.name() + " so we return default error message");
+            logger.IDP.untranslatedProtocolError(error.name());
             return Messages.UNEXPECTED_ERROR_HANDLING_REQUEST;
         }
     }
@@ -478,7 +479,7 @@ public class SamlProtocol implements LoginProtocol {
         logger.debug("finishLogout");
         String logoutBindingUri = userSession.getNote(SAML_LOGOUT_BINDING_URI);
         if (logoutBindingUri == null) {
-            logger.error("Can't finish SAML logout as there is no logout binding set.  Please configure the logout service url in the admin console for your client applications.");
+            logger.SESSION.canNotFinishSAMLLogout();
             return ErrorPage.error(session, Messages.FAILED_LOGOUT);
 
         }
@@ -524,7 +525,7 @@ public class SamlProtocol implements LoginProtocol {
         SamlClient samlClient = new SamlClient(client);
         String logoutUrl = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
         if (logoutUrl == null) {
-            logger.warnv("Can't do backchannel logout. No SingleLogoutService POST Binding registered for client: {1}", client.getClientId());
+            logger.SESSION.failedToDoBackchannelLogoutNoPostBindingRegistered(client.getClientId());
             return;
         }
         SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(logoutUrl, clientSession, client);
@@ -534,7 +535,7 @@ public class SamlProtocol implements LoginProtocol {
             JaxrsSAML2BindingBuilder binding = createBindingBuilder(samlClient);
             logoutRequestString = binding.postBinding(logoutBuilder.buildDocument()).encoded();
         } catch (Exception e) {
-            logger.warn("failed to send saml logout", e);
+            logger.SESSION.failedToSendSamlLogout();
             return;
         }
 
@@ -570,7 +571,7 @@ public class SamlProtocol implements LoginProtocol {
 
                 }
             } catch (IOException e) {
-                logger.warn("failed to send saml logout", e);
+                logger.SESSION.failedToSendSamlLogoutWithCause(e);
             }
             break;
         }

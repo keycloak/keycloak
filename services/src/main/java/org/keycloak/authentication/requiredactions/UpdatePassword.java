@@ -1,5 +1,7 @@
 package org.keycloak.authentication.requiredactions;
 
+import org.jboss.logging.Logger;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -12,7 +14,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.common.util.Time;
@@ -26,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * @version $Revision: 1 $
  */
 public class UpdatePassword implements RequiredActionProvider, RequiredActionFactory {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, UpdatePassword.class.getName());
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
         int daysToExpirePassword = context.getRealm().getPasswordPolicy().getDaysToExpirePassword();

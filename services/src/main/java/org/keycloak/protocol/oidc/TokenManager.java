@@ -1,5 +1,7 @@
 package org.keycloak.protocol.oidc;
 
+import org.jboss.logging.Logger;
+
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -33,7 +35,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionManager;
@@ -59,7 +61,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class TokenManager {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, TokenManager.class.getName());
 
     public static void applyScope(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
         if (visited.contains(scope)) return;

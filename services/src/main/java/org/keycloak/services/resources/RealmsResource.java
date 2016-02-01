@@ -17,6 +17,7 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
@@ -29,7 +30,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.util.CacheControlUtil;
@@ -48,7 +49,7 @@ import javax.ws.rs.core.*;
  */
 @Path("/realms")
 public class RealmsResource {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, RealmsResource.class.getName());
 
     @Context
     protected KeycloakSession session;

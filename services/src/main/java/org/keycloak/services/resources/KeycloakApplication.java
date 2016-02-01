@@ -20,6 +20,7 @@ package org.keycloak.services.resources;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
@@ -31,7 +32,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.filters.KeycloakTransactionCommitter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
@@ -61,7 +62,7 @@ import java.util.*;
  */
 public class KeycloakApplication extends Application {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, KeycloakApplication.class.getName());
 
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
@@ -152,7 +153,7 @@ public class KeycloakApplication extends Application {
             session.getTransaction().commit();
         } catch (Exception e) {
             session.getTransaction().rollback();
-            logger.migrationFailure(e);
+            logger.MIGRATION.migrationFailure(e);
         } finally {
             session.close();
         }
@@ -180,7 +181,7 @@ public class KeycloakApplication extends Application {
             if (configDir != null) {
                 File f = new File(configDir + File.separator + "keycloak-server.json");
                 if (f.isFile()) {
-                    logger.loadingFrom(f.getAbsolutePath());
+                    logger.CONFIG.loadingFrom(f.getAbsolutePath());
                     node = new ObjectMapper().readTree(f);
                 }
             }
@@ -188,7 +189,7 @@ public class KeycloakApplication extends Application {
             if (node == null) {
                 URL resource = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
                 if (resource != null) {
-                    logger.loadingFrom(resource);
+                    logger.CONFIG.loadingFrom(resource);
                     node = new ObjectMapper().readTree(resource);
                 }
             }
@@ -264,22 +265,22 @@ public class KeycloakApplication extends Application {
             manager.setContextPath(getContextPath());
 
             if (rep.getId() != null && manager.getRealm(rep.getId()) != null) {
-                logger.realmExists(rep.getRealm(), from);
+                logger.IMPORT_EXPORT.realmExists(rep.getRealm(), from);
                 return;
             }
 
             if (manager.getRealmByName(rep.getRealm()) != null) {
-                logger.realmExists(rep.getRealm(), from);
+                logger.IMPORT_EXPORT.realmExists(rep.getRealm(), from);
                 return;
             }
 
             try {
                 RealmModel realm = manager.importRealm(rep);
                 session.getTransaction().commit();
-                logger.importedRealm(realm.getName(), from);
+                logger.IMPORT_EXPORT.importedRealm(realm.getName(), from);
             } catch (Throwable t) {
                 session.getTransaction().rollback();
-                logger.unableToImportRealm(t, rep.getRealm(), from);
+                logger.IMPORT_EXPORT.unableToImportRealm(t, rep.getRealm(), from);
             }
         } finally {
             session.close();
@@ -291,14 +292,14 @@ public class KeycloakApplication extends Application {
         if (configDir != null) {
             File addUserFile = new File(configDir + File.separator + "keycloak-add-user.json");
             if (addUserFile.isFile()) {
-                logger.imprtingUsersFrom(addUserFile);
+                logger.IMPORT_EXPORT.importingUsersFrom(addUserFile);
 
                 List<RealmRepresentation> realms;
                 try {
                     realms = JsonSerialization.readValue(new FileInputStream(addUserFile), new TypeReference<List<RealmRepresentation>>() {
                     });
                 } catch (IOException e) {
-                    logger.failedToLoadUsers(e);
+                    logger.IMPORT_EXPORT.failedToLoadUsers(e);
                     return;
                 }
 
@@ -310,7 +311,7 @@ public class KeycloakApplication extends Application {
 
                             RealmModel realm = session.realms().getRealmByName(realmRep.getRealm());
                             if (realm == null) {
-                                logger.addUserFailedRealmNotFound(userRep.getUsername(), realmRep.getRealm());
+                                logger.IMPORT_EXPORT.addUserFailedRealmNotFound(userRep.getUsername(), realmRep.getRealm());
                             } else {
                                 UserModel user = session.users().addUser(realm, userRep.getUsername());
                                 user.setEnabled(userRep.isEnabled());
@@ -319,12 +320,12 @@ public class KeycloakApplication extends Application {
                             }
 
                             session.getTransaction().commit();
-                            logger.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
+                            logger.IMPORT_EXPORT.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
                         } catch (ModelDuplicateException e) {
-                            logger.addUserFailedUserExists(userRep.getUsername(), realmRep.getRealm());
+                            logger.IMPORT_EXPORT.addUserFailedUserExists(userRep.getUsername(), realmRep.getRealm());
                         } catch (Throwable t) {
                             session.getTransaction().rollback();
-                            logger.addUserFailed(t, userRep.getUsername(), realmRep.getRealm());
+                            logger.IMPORT_EXPORT.addUserFailed(t, userRep.getUsername(), realmRep.getRealm());
                         } finally {
                             session.close();
                         }
@@ -332,7 +333,7 @@ public class KeycloakApplication extends Application {
                 }
 
                 if (!addUserFile.delete()) {
-                    logger.failedToDeleteFile(addUserFile.getAbsolutePath());
+                    logger.IMPORT_EXPORT.failedToDeleteFile(addUserFile.getAbsolutePath());
                 }
             }
         }

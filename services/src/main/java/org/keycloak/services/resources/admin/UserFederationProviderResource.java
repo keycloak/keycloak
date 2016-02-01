@@ -37,6 +37,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.jboss.logging.Logger;
+
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
@@ -61,7 +63,7 @@ import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperTypeRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.timer.TimerProvider;
 
@@ -70,7 +72,7 @@ import org.keycloak.timer.TimerProvider;
  */
 public class UserFederationProviderResource {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, UserFederationProviderResource.class.getName());
 
     private final KeycloakSession session;
     private final RealmModel realm;
@@ -109,7 +111,7 @@ public class UserFederationProviderResource {
         new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
         boolean kerberosCredsAdded = UserFederationProvidersResource.checkKerberosCredential(session, realm, model);
         if (kerberosCredsAdded) {
-            logger.addedKerberosToRealmCredentials();
+            logger.REALM.addedKerberosToRealmCredentials();
         }
 
         adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
@@ -351,7 +353,7 @@ public class UserFederationProviderResource {
         UserFederationProviderFactory providerFactory = (UserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, providerModel.getProviderName());
         UserFederationProvider federationProvider = providerFactory.getInstance(session, providerModel);
 
-        logger.syncingDataForMapper(mapperModel.getName(), mapperModel.getFederationMapperType(), direction);
+        logger.IDP.syncingDataForMapper(mapperModel.getName(), mapperModel.getFederationMapperType(), direction);
 
         UserFederationSyncResult syncResult;
         if ("fedToKeycloak".equals(direction)) {

@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
@@ -53,7 +54,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.timer.TimerProvider;
@@ -91,7 +92,7 @@ import org.keycloak.representations.idm.PartialImportRepresentation;
  * @version $Revision: 1 $
  */
 public class RealmAdminResource {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, RealmAdminResource.class.getName());
     protected RealmAuth auth;
     protected RealmModel realm;
     private TokenManager tokenManager;

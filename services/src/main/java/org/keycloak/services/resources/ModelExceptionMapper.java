@@ -22,11 +22,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
+import org.jboss.logging.Logger;
+
 import org.keycloak.messages.MessagesProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 
 /**
  * @author <a href="mailto:leonardo.zanivan@gmail.com">Leonardo Zanivan</a>
@@ -34,7 +36,7 @@ import org.keycloak.services.ServicesLogger;
 @Provider
 public class ModelExceptionMapper implements ExceptionMapper<ModelException> {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, ModelExceptionMapper.class.getName());
 
     @Context
     private KeycloakSession session;

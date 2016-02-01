@@ -1,6 +1,8 @@
 package org.keycloak.timer.basic;
 
 import org.jboss.logging.Logger;
+
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.timer.TimerProvider;
 
 import java.util.Timer;
@@ -11,7 +13,7 @@ import java.util.TimerTask;
  */
 public class BasicTimerProvider implements TimerProvider {
 
-    private static final Logger logger = Logger.getLogger(BasicTimerProvider.class);
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, BasicTimerProvider.class.getName());
 
     private final Timer timer;
     private final BasicTimerProviderFactory factory;

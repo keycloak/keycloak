@@ -21,6 +21,8 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
+
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
@@ -62,7 +64,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.services.ErrorPage;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -92,7 +94,7 @@ import java.net.URI;
  */
 public class LoginActionsService {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, LoginActionsService.class.getName());
 
     public static final String ACTION_COOKIE = "KEYCLOAK_ACTION";
     public static final String AUTHENTICATE_PATH = "authenticate";
@@ -242,7 +244,7 @@ public class LoginActionsService {
                             return false;
                         }
                     } catch (Exception e) {
-                        logger.failedToParseRestartLoginCookie(e);
+                        logger.AUTH.failedToParseRestartLoginCookie(e);
                     }
                 }
                 event.error(Errors.INVALID_CODE);
@@ -284,7 +286,7 @@ public class LoginActionsService {
 
             final UserSessionModel userSession = clientSession.getUserSession();
             if (userSession == null) {
-                logger.userSessionNull();
+                logger.AUTH.userSessionNull();
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 throw new WebApplicationException(ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE));
             }
@@ -582,7 +584,7 @@ public class LoginActionsService {
         String noteKey = firstBrokerLogin ? AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE : PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT;
         SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(clientSessionn, noteKey);
         if (serializedCtx == null) {
-            logger.notFoundSerializedCtxInClientSession(noteKey);
+            logger.AUTH.notFoundSerializedCtxInClientSession(noteKey);
             throw new WebApplicationException(ErrorPage.error(session, "Not found serialized context in clientSession."));
         }
         BrokeredIdentityContext brokerContext = serializedCtx.deserialize(session, clientSessionn);
@@ -590,12 +592,12 @@ public class LoginActionsService {
 
         String flowId = firstBrokerLogin ? brokerContext.getIdpConfig().getFirstBrokerLoginFlowId() : brokerContext.getIdpConfig().getPostBrokerLoginFlowId();
         if (flowId == null) {
-            logger.flowNotConfigForIDP(identityProviderAlias);
+            logger.AUTH.flowNotConfigForIDP(identityProviderAlias);
             throw new WebApplicationException(ErrorPage.error(session, "Flow not configured for identity provider"));
         }
         AuthenticationFlowModel brokerLoginFlow = realm.getAuthenticationFlowById(flowId);
         if (brokerLoginFlow == null) {
-            logger.flowNotFoundForIDP(flowId, identityProviderAlias);
+            logger.AUTH.flowNotFoundForIDP(flowId, identityProviderAlias);
             throw new WebApplicationException(ErrorPage.error(session, "Flow not found for identity provider"));
         }
 
@@ -705,7 +707,7 @@ public class LoginActionsService {
             ClientSessionCode accessCode = checks.clientCode;
             ClientSessionModel clientSession = accessCode.getClientSession();
             if (!ClientSessionModel.Action.VERIFY_EMAIL.name().equals(clientSession.getNote(AuthenticationManager.CURRENT_REQUIRED_ACTION))) {
-                logger.reqdActionDoesNotMatch();
+                logger.AUTH.reqdActionDoesNotMatch();
                 event.error(Errors.INVALID_CODE);
                 throw new WebApplicationException(ErrorPage.error(session, Messages.STALE_VERIFY_EMAIL_LINK));
             }
@@ -718,7 +720,7 @@ public class LoginActionsService {
             String keyFromSession = clientSession.getNote(Constants.VERIFY_EMAIL_KEY);
             clientSession.removeNote(Constants.VERIFY_EMAIL_KEY);
             if (!key.equals(keyFromSession)) {
-                logger.invalidKeyForEmailVerification();
+                logger.AUTH.invalidKeyForEmailVerification();
                 event.error(Errors.INVALID_USER_CREDENTIALS);
                 throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
             }
@@ -862,7 +864,7 @@ public class LoginActionsService {
 
         RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, action);
         if (factory == null) {
-            logger.actionProviderNull();
+            logger.AUTH.actionProviderNull();
             event.error(Errors.INVALID_CODE);
             throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
         }

@@ -8,6 +8,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -18,13 +19,13 @@ import org.keycloak.provider.ProviderConfigProperty;
  * Abstract class for Social Provider mappers which allow mapping of JSON user profile field into Keycloak user
  * attribute. Concrete mapper classes with own ID and provider mapping must be implemented for each social provider who
  * uses {@link JsonNode} user profile.
- * 
+ *
  * @author Vlastimil Elias (velias at redhat dot com)
  */
 public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityProviderMapper {
 
 
-	protected static final Logger logger = Logger.getLogger(AbstractJsonUserAttributeMapper.class);
+	protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, AbstractJsonUserAttributeMapper.class.getName());
 
 	protected static final Logger LOGGER_DUMP_USER_PROFILE = Logger.getLogger("org.keycloak.social.user_profile_dump");
 
@@ -64,8 +65,8 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 	}
 
 	/**
-	 * Store used profile JsonNode into user context for later use by this mapper. Profile data are dumped into special logger if enabled also to allow investigation of the structure. 
-	 * 
+	 * Store used profile JsonNode into user context for later use by this mapper. Profile data are dumped into special logger if enabled also to allow investigation of the structure.
+	 *
 	 * @param user context to store profile data into
 	 * @param profile to store into context
 	 * @param provider identification of social provider to be used in log dump
@@ -103,7 +104,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 	public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 		String attribute = mapperModel.getConfig().get(CONF_USER_ATTRIBUTE);
 		if (attribute == null || attribute.trim().isEmpty()) {
-			logger.warnf("Attribute is not configured for mapper %s", mapperModel.getName());
+			logger.USER.attributeNotConfiguredForMapper(mapperModel.getName());
 			return;
 		}
 		attribute = attribute.trim();
@@ -123,13 +124,13 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 
 		String jsonField = mapperModel.getConfig().get(CONF_JSON_FIELD);
 		if (jsonField == null || jsonField.trim().isEmpty()) {
-			logger.warnf("JSON field path is not configured for mapper %s", mapperModel.getName());
+			logger.USER.jsonFieldPathNotConfiguredForMapper(mapperModel.getName());
 			return null;
 		}
 		jsonField = jsonField.trim();
 
 		if (jsonField.startsWith(JSON_PATH_DELIMITER) || jsonField.endsWith(JSON_PATH_DELIMITER) || jsonField.startsWith("[")) {
-			logger.warnf("JSON field path is invalid %s", jsonField);
+			logger.USER.jsonFieldPathInvalid(jsonField);
 			return null;
 		}
 

@@ -51,11 +51,13 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
+import org.keycloak.logging.KeycloakLogger;
+
 /**
  * @author Pedro Igor
  */
 public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityProviderConfig> {
-    protected static final Logger logger = Logger.getLogger(SAMLIdentityProvider.class);
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, SAMLIdentityProvider.class.getName());
     public SAMLIdentityProvider(SAMLIdentityProviderConfig config) {
         super(config);
     }
@@ -162,10 +164,10 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                     .param(GeneralConstants.RELAY_STATE, userSession.getId()).asStatus();
             boolean success = status >=200 && status < 400;
             if (!success) {
-                logger.warn("Failed saml backchannel broker logout to: " + singleLogoutServiceUrl);
+                logger.SESSION.failedBackchannelBrokerLogout(singleLogoutServiceUrl);
             }
         } catch (Exception e) {
-            logger.warn("Failed saml backchannel broker logout to: " + singleLogoutServiceUrl, e);
+            logger.SESSION.failedBackchannelBrokerLogoutWithCause(e, singleLogoutServiceUrl);
         }
 
     }

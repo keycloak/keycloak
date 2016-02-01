@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
 
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
@@ -23,7 +24,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UsernameLoginFailureModel;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  * @version $Revision: 1 $
  */
 public class DefaultBruteForceProtector implements Runnable, BruteForceProtector {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, DefaultBruteForceProtector.class.getName());
 
     protected volatile boolean run = true;
     protected int maxDeltaTimeSeconds = 60 * 60 * 12; // 12 hours
@@ -200,7 +201,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                             session.close();
                         }
                     } catch (Exception e) {
-                        logger.failedProcessingType(e);
+                        logger.REALM.failedProcessingType(e);
                     }
                 } catch (InterruptedException e) {
                     break;
@@ -212,7 +213,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     }
 
     protected void logFailure(LoginEvent event) {
-        logger.loginFailure(event.username, event.ip);
+        logger.REALM.loginFailure(event.username, event.ip);
         failures++;
         long delta = 0;
         if (lastFailure > 0) {

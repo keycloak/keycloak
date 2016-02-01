@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -26,7 +28,7 @@ import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.timer.TimerProvider;
 
 
@@ -37,7 +39,7 @@ import java.util.List;
  */
 public class UsersSyncManager {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, UsersSyncManager.class.getName());
 
     /**
      * Check federationProviderModel of all realms and possibly start periodic sync for them
@@ -86,7 +88,7 @@ public class UsersSyncManager {
                     try {
                         syncAllUsers(sessionFactory, realmId, fedProvider);
                     } catch (Throwable t) {
-                        logger.errorDuringFullUserSync(t);
+                        logger.USER.errorDuringFullUserSync(t);
                     }
                 }
 
@@ -104,7 +106,7 @@ public class UsersSyncManager {
                     try {
                         syncChangedUsers(sessionFactory, realmId, fedProvider);
                     } catch (Throwable t) {
-                        logger.errorDuringChangedUserSync(t);
+                        logger.USER.errorDuringChangedUserSync(t);
                     }
                 }
 

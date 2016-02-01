@@ -16,6 +16,7 @@
  */
 package org.keycloak.services;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -25,7 +26,7 @@ import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,7 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, DefaultKeycloakSessionFactory.class.getName());
 
     private Map<Class<? extends Provider>, String> provider = new HashMap<Class<? extends Provider>, String>();
     private Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<Class<? extends Provider>, Map<String, ProviderFactory>>();
@@ -96,7 +97,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
                 factory.init(scope);
 
                 if (spi.isInternal() && !isInternal(factory)) {
-                    logger.spiMayChange(factory.getId(), factory.getClass().getName(), spi.getName());
+                    logger.SESSION.spiMayChange(factory.getId(), factory.getClass().getName(), spi.getName());
                 }
 
                 factories.put(factory.getId(), factory);
@@ -109,7 +110,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
                         factory.init(scope);
 
                         if (spi.isInternal() && !isInternal(factory)) {
-                            logger.spiMayChange(factory.getId(), factory.getClass().getName(), spi.getName());
+                            logger.SESSION.spiMayChange(factory.getId(), factory.getClass().getName(), spi.getName());
                         }
 
                         factories.put(factory.getId(), factory);

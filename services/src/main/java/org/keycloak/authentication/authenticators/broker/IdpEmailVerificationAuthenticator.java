@@ -1,3 +1,19 @@
+/*
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.keycloak.authentication.authenticators.broker;
 
 import java.util.concurrent.TimeUnit;
@@ -5,6 +21,8 @@ import java.util.concurrent.TimeUnit;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+
+import org.jboss.logging.Logger;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -23,7 +41,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 
@@ -32,7 +50,7 @@ import org.keycloak.services.resources.LoginActionsService;
  */
 public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, IdpEmailVerificationAuthenticator.class.getName());
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
@@ -41,7 +59,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         ClientSessionModel clientSession = context.getClientSession();
 
         if (realm.getSmtpConfig().size() == 0) {
-            logger.smtpNotConfigured();
+            logger.IDP.smtpNotConfigured();
             context.attempted();
             return;
         }
@@ -78,7 +96,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         } catch (EmailException e) {
             event.error(Errors.EMAIL_SEND_FAILED);
 
-            logger.confirmBrokerEmailFailed(e);
+            logger.IDP.confirmBrokerEmailFailed(e);
             Response challenge = context.form()
                     .setError(Messages.EMAIL_SENT_ERROR)
                     .createErrorPage();
@@ -118,7 +136,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                 context.setUser(existingUser);
                 context.success();
             } else {
-                logger.keyParamDoesNotMatch();
+                logger.IDP.keyParamDoesNotMatch();
                 Response challengeResponse = context.form()
                         .setError(Messages.INVALID_ACCESS_CODE)
                         .createErrorPage();

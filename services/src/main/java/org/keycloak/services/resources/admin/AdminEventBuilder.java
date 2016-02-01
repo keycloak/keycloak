@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.jboss.logging.Logger;
+
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventStoreProvider;
@@ -30,7 +32,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.common.util.Time;
 
@@ -38,7 +40,7 @@ import javax.ws.rs.core.UriInfo;
 
 public class AdminEventBuilder {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, AdminEventBuilder.class.getName());
 
     private EventStoreProvider store;
     private List<EventListenerProvider> listeners;
@@ -54,7 +56,7 @@ public class AdminEventBuilder {
             if (store != null) {
                 this.store = store;
             } else {
-                logger.noEventStoreProvider();
+                logger.EVENT.noEventStoreProvider();
             }
         }
 
@@ -65,7 +67,7 @@ public class AdminEventBuilder {
                 if (listener != null) {
                     listeners.add(listener);
                 } else {
-                    logger.providerNotFound(id);
+                    logger.EVENT.providerNotFound(id);
                 }
             }
         }
@@ -215,7 +217,7 @@ public class AdminEventBuilder {
             try {
                 store.onEvent(adminEvent, includeRepresentation);
             } catch (Throwable t) {
-                logger.failedToSaveEvent(t);
+                logger.EVENT.failedToSaveEvent(t);
             }
         }
 
@@ -224,7 +226,7 @@ public class AdminEventBuilder {
                 try {
                     l.onEvent(adminEvent, includeRepresentation);
                 } catch (Throwable t) {
-                    logger.failedToSendType(t, l);
+                    logger.EVENT.failedToSendType(t, l);
                 }
             }
         }

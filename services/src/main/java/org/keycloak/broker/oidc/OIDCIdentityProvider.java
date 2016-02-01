@@ -56,11 +56,13 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.security.PublicKey;
 
+import org.keycloak.logging.KeycloakLogger;
+
 /**
  * @author Pedro Igor
  */
 public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> {
-    protected static final Logger logger = Logger.getLogger(OIDCIdentityProvider.class);
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, OIDCIdentityProvider.class.getName());
 
     public static final String OAUTH2_PARAMETER_PROMPT = "prompt";
     public static final String SCOPE_OPENID = "openid";
@@ -112,14 +114,14 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                                        @QueryParam("state") String state) {
             UserSessionModel userSession = session.sessions().getUserSession(realm, state);
             if (userSession == null) {
-                logger.error("no valid user session");
+                logger.SESSION.noValidUserSession();
                 EventBuilder event = new EventBuilder(realm, session, clientConnection);
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 return ErrorPage.error(session, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
             if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
-                logger.error("usersession in different state");
+                logger.SESSION.userSessionInDifferentState();
                 EventBuilder event = new EventBuilder(realm, session, clientConnection);
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
@@ -148,10 +150,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             int status = JsonSimpleHttp.doGet(url).asStatus();
             boolean success = status >=200 && status < 400;
             if (!success) {
-                logger.warn("Failed backchannel broker logout to: " + url);
+                logger.SESSION.failedBackchannelBrokerLogout(url.toString());
             }
         } catch (Exception e) {
-            logger.warn("Failed backchannel broker logout to: " + url, e);
+            logger.SESSION.failedBackchannelBrokerLogoutWithCause(e, url.toString());
         }
     }
 

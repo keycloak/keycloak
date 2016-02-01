@@ -32,6 +32,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.RealmModel;
@@ -61,7 +62,7 @@ import org.keycloak.services.util.CacheControlUtil;
  */
 public class SamlService extends AuthorizationEndpointBase {
 
-    protected static final Logger logger = Logger.getLogger(SamlService.class);
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, SamlService.class.getName());
 
     public SamlService(RealmModel realm, EventBuilder event) {
         super(realm, event);
@@ -108,7 +109,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, false);
             if (authResult == null) {
-                logger.warn("Unknown saml response.");
+                logger.SESSION.unknownSamlResponse();
                 event.event(EventType.LOGOUT);
                 event.error(Errors.INVALID_TOKEN);
                 return ErrorPage.error(session, Messages.INVALID_REQUEST);
@@ -116,8 +117,8 @@ public class SamlService extends AuthorizationEndpointBase {
             // assume this is a logout response
             UserSessionModel userSession = authResult.getSession();
             if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
-                logger.warn("Unknown saml response.");
-                logger.warn("UserSession is not tagged as logging out.");
+                logger.SESSION.unknownSamlResponse();
+                logger.SESSION.userSessionIsNotTaggedAsLoggingOut();
                 event.event(EventType.LOGOUT);
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, Messages.INVALID_REQUEST);
@@ -170,7 +171,7 @@ public class SamlService extends AuthorizationEndpointBase {
             try {
                 verifySignature(documentHolder, client);
             } catch (VerificationException e) {
-                SamlService.logger.error("request validation failed", e);
+                logger.AUTH.requestValidationFailed(e);
                 event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_SIGNATURE);
                 return ErrorPage.error(session, Messages.INVALID_REQUESTER);
@@ -341,7 +342,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     try {
                         authManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);
                     } catch (Exception e) {
-                        logger.warn("Failure with backchannel logout", e);
+                        logger.SESSION.failedToDoBackchannelLogoutForUserSession(e);
                     }
 
                 }
@@ -530,7 +531,7 @@ public class SamlService extends AuthorizationEndpointBase {
             return ErrorPage.error(session, Messages.CLIENT_NOT_FOUND);
         }
         if (client.getManagementUrl() == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE) == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE) == null) {
-            logger.error("SAML assertion consumer url not set up");
+            logger.CONFIG.samlAssertionConsumerUrlNotSetUp();
             event.error(Errors.INVALID_REDIRECT_URI);
             return ErrorPage.error(session, Messages.INVALID_REDIRECT_URI);
         }

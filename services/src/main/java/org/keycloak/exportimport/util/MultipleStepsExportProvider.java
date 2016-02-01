@@ -5,6 +5,7 @@ import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.exportimport.UsersExportStrategy;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -21,7 +22,7 @@ import java.util.List;
  */
 public abstract class MultipleStepsExportProvider implements ExportProvider {
 
-    protected final Logger logger = Logger.getLogger(getClass());
+    protected final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, getClass().getName());
 
     @Override
     public void exportModel(KeycloakSessionFactory factory) throws IOException {
@@ -63,7 +64,7 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
                 RealmModel realm = session.realms().getRealmByName(realmName);
                 RealmRepresentation rep = ExportUtils.exportRealm(session, realm, exportUsersIntoRealmFile);
                 writeRealm(realmName + "-realm.json", rep);
-                logger.info("Realm '" + realmName + "' - data exported");
+                logger.IMPORT_EXPORT.realmDataExported(realmName);
 
                 // Count total number of users
                 if (!exportUsersIntoRealmFile) {
@@ -96,7 +97,7 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
 
                         writeUsers(realmName + "-users-" + (usersHolder.currentPageStart / countPerPage) + ".json", session, realm, usersHolder.users);
 
-                        logger.info("Users " + usersHolder.currentPageStart + "-" + (usersHolder.currentPageEnd -1) + " exported");
+                        logger.IMPORT_EXPORT.usersExported(usersHolder.currentPageStart, usersHolder.currentPageEnd -1);
                     }
 
                 });

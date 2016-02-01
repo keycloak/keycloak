@@ -49,6 +49,7 @@ import org.keycloak.forms.login.freemarker.model.RealmBean;
 import org.keycloak.forms.login.freemarker.model.RegisterBean;
 import org.keycloak.forms.login.freemarker.model.RequiredActionUrlFormatterMethod;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -84,7 +85,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
-    private static final Logger logger = Logger.getLogger(FreeMarkerLoginFormsProvider.class);
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, FreeMarkerLoginFormsProvider.class.getName());
 
     private String accessCode;
     private Response.Status status;
@@ -155,7 +156,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
                     session.getProvider(EmailTemplateProvider.class).setRealm(realm).setUser(user).sendVerifyEmail(link, expiration);
                 } catch (EmailException e) {
-                    logger.error("Failed to send verification email", e);
+                    logger.REALM.failedToSendVerificationEmail(e);
                     return setError(Messages.EMAIL_SENT_ERROR).createErrorPage();
                 }
 
@@ -199,14 +200,14 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         try {
             theme = themeProvider.getTheme(realm.getLoginTheme(), Theme.Type.LOGIN);
         } catch (IOException e) {
-            logger.error("Failed to create theme", e);
+            logger.REALM.failedToCreateTheme(e);
             return Response.serverError().build();
         }
 
         try {
             attributes.put("properties", theme.getProperties());
         } catch (IOException e) {
-            logger.warn("Failed to load properties", e);
+            logger.CONFIG.failedToLoadProperties(e);
         }
 
         Properties messagesBundle;
@@ -215,7 +216,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             messagesBundle = theme.getMessages(locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
-            logger.warn("Failed to load messages", e);
+            logger.CONFIG.failedToLoadMessages(e);
             messagesBundle = new Properties();
         }
 
@@ -319,7 +320,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             }
             return builder.build();
         } catch (FreeMarkerException e) {
-            logger.error("Failed to process template", e);
+            logger.REALM.failedToProcessTemplate(e);
             return Response.serverError().build();
         }
     }
@@ -352,14 +353,14 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         try {
             theme = themeProvider.getTheme(realm.getLoginTheme(), Theme.Type.LOGIN);
         } catch (IOException e) {
-            logger.error("Failed to create theme", e);
+            logger.REALM.failedToCreateTheme(e);
             return Response.serverError().build();
         }
 
         try {
             attributes.put("properties", theme.getProperties());
         } catch (IOException e) {
-            logger.warn("Failed to load properties", e);
+            logger.CONFIG.failedToLoadProperties(e);
         }
         if (client != null) {
             attributes.put("client", new ClientBean(client, baseUri));
@@ -371,7 +372,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             messagesBundle = theme.getMessages(locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
-            logger.warn("Failed to load messages", e);
+            logger.CONFIG.failedToLoadMessages(e);
             messagesBundle = new Properties();
         }
 
@@ -420,7 +421,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             }
             return builder.build();
         } catch (FreeMarkerException e) {
-            logger.error("Failed to process template", e);
+            logger.REALM.failedToProcessTemplate(e);
             return Response.serverError().build();
         }
     }

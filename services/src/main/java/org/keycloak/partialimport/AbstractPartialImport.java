@@ -21,11 +21,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.ws.rs.core.Response;
+
+import org.jboss.logging.Logger;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 
 /**
  * Base PartialImport for most resource types.
@@ -33,7 +36,7 @@ import org.keycloak.services.ServicesLogger;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public abstract class AbstractPartialImport<T> implements PartialImport<T> {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, AbstractPartialImport.class.getName());
 
     protected final Set<T> toOverwrite = new HashSet<>();
     protected final Set<T> toSkip = new HashSet<>();
@@ -99,7 +102,7 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
             try {
                 create(realm, session, resourceRep);
             } catch (Exception e) {
-                logger.overwriteError(e, getName(resourceRep));
+                logger.IMPORT_EXPORT.overwriteError(e, getName(resourceRep));
                 throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
             }
 
@@ -121,7 +124,7 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
                 String modelId = getModelId(realm, session, resourceRep);
                 results.addResult(added(modelId, resourceRep));
             } catch (Exception e) {
-                logger.creationError(e, getName(resourceRep));
+                logger.IMPORT_EXPORT.creationError(e, getName(resourceRep));
                 throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
             }
         }

@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -39,7 +40,7 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.broker.social.SocialIdentityProvider;
 
 import javax.ws.rs.Consumes;
@@ -67,7 +68,7 @@ import java.util.Map;
  */
 public class IdentityProviderResource {
 
-    private static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, IdentityProviderResource.class.getName());
 
     private final RealmAuth auth;
     private final RealmModel realm;

@@ -1,7 +1,26 @@
+/*
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.keycloak.protocol.oidc.endpoints;
+
+import org.jboss.logging.Logger;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -26,7 +45,7 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -51,7 +70,7 @@ import java.util.Map;
  */
 public class TokenEndpoint {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, TokenEndpoint.class.getName());
     private MultivaluedMap<String, String> formParams;
     private ClientModel client;
     private Map<String, String> clientAuthAttributes;
@@ -285,7 +304,7 @@ public class TokenEndpoint {
     private void updateClientSession(ClientSessionModel clientSession) {
 
         if(clientSession == null) {
-            logger.clientSessionNull();
+            logger.SESSION.clientSessionNull();
             return;
         }
 
@@ -303,16 +322,16 @@ public class TokenEndpoint {
 
     private void updateClientSessions(List<ClientSessionModel> clientSessions) {
         if(clientSessions == null) {
-            logger.clientSessionNull();
+            logger.SESSION.clientSessionNull();
             return;
         }
         for (ClientSessionModel clientSession : clientSessions) {
             if(clientSession == null) {
-                logger.clientSessionNull();
+                logger.SESSION.clientSessionNull();
                 continue;
             }
             if(clientSession.getClient() == null) {
-                logger.clientModelNull();
+                logger.SESSION.clientModelNull();
                 continue;
             }
             if(client.getId().equals(clientSession.getClient().getId())) {

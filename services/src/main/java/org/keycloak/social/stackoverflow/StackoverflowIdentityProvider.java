@@ -32,15 +32,16 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.logging.KeycloakLogger;
 
 /**
  * Stackoverflow social provider. See https://api.stackexchange.com/docs/authentication
- * 
+ *
  * @author Vlastimil Elias (velias at redhat dot com)
  */
 public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvider<StackOverflowIdentityProviderConfig> implements SocialIdentityProvider<StackOverflowIdentityProviderConfig> {
 
-	private static final Logger log = Logger.getLogger(StackoverflowIdentityProvider.class);
+	private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, StackoverflowIdentityProvider.class.getName());
 
 	public static final String AUTH_URL = "https://stackexchange.com/oauth";
 	public static final String TOKEN_URL = "https://stackexchange.com/oauth/access_token";
@@ -56,12 +57,12 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 
 	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
-		log.debug("doGetFederatedIdentity()");
+		logger.debug("doGetFederatedIdentity()");
 		try {
 
 			String URL = PROFILE_URL + "&access_token=" + accessToken + "&key=" + getConfig().getKey();
-			if (log.isDebugEnabled()) {
-				log.debug("StackOverflow profile request to: " + URL);
+			if (logger.isDebugEnabled()) {
+				logger.debug("StackOverflow profile request to: " + URL);
 			}
 			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(URL)).get("items").get(0);
 
@@ -87,7 +88,7 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 		if (isNotBlank(profileURL)) {
 
 			try {
-				log.debug("go to extract username from profile URL " + profileURL);
+				logger.debug("go to extract username from profile URL " + profileURL);
 				URL u = new URL(profileURL);
 				String path = u.getPath();
 				if (isNotBlank(path) && path.length() > 1) {
@@ -98,15 +99,15 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 					if (pe.length >= 3) {
 						return URLDecoder.decode(pe[2], "UTF-8");
 					} else {
-						log.warn("Stackoverflow profile URL path is without third part: " + profileURL);
+						logger.IDP.stackoverflowProfileUrlIsWithoutThirdPart(profileURL);
 					}
 				} else {
-					log.warn("Stackoverflow profile URL is without path part: " + profileURL);
+					logger.IDP.stackoverflowProfileUrlIsWithoutPath(profileURL);
 				}
 			} catch (MalformedURLException e) {
-				log.warn("Stackoverflow profile URL is malformed: " + profileURL);
+				logger.IDP.stackoverflowProfileUrlIsMalformed(profileURL);
 			} catch (Exception e) {
-				log.warn("Stackoverflow profile URL " + profileURL + " username extraction failed due: " + e.getMessage());
+				logger.IDP.stackoverflowProfileUsernameExtractionFailed(e, profileURL);
 			}
 		}
 		return null;

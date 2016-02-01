@@ -16,9 +16,11 @@
  */
 package org.keycloak.services;
 
+import org.jboss.logging.Logger;
+
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -28,7 +30,7 @@ import java.util.List;
  */
 public class DefaultKeycloakTransactionManager implements KeycloakTransactionManager {
 
-    public static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    public static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, DefaultKeycloakTransactionManager.class.getName());
 
     private List<KeycloakTransaction> transactions = new LinkedList<KeycloakTransaction>();
     private List<KeycloakTransaction> afterCompletion = new LinkedList<KeycloakTransaction>();
@@ -91,7 +93,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
                 try {
                     tx.rollback();
                 } catch (RuntimeException e) {
-                    logger.exceptionDuringRollback(e);
+                    logger.CONFIG.exceptionDuringRollback(e);
                 }
             }
         }

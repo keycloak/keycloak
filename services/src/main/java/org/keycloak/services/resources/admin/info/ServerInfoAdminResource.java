@@ -20,6 +20,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;

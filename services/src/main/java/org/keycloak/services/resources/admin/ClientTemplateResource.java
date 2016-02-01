@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
@@ -27,7 +28,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.services.resources.KeycloakApplication;
 
 import javax.ws.rs.Consumes;
@@ -49,7 +50,7 @@ import javax.ws.rs.core.UriInfo;
  * @version $Revision: 1 $
  */
 public class ClientTemplateResource {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, ClientTemplateResource.class.getName());
     protected RealmModel realm;
     private RealmAuth auth;
     private AdminEventBuilder adminEvent;

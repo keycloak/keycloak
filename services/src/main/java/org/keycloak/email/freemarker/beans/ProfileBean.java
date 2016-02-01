@@ -22,6 +22,8 @@
 package org.keycloak.email.freemarker.beans;
 
 import org.jboss.logging.Logger;
+
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.models.UserModel;
 
 import java.util.HashMap;
@@ -34,7 +36,7 @@ import java.util.Map;
  */
 public class ProfileBean {
 
-    private static final Logger logger = Logger.getLogger(ProfileBean.class);
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, ProfileBean.class.getName());
 
     private UserModel user;
     private final Map<String, String> attributes = new HashMap<>();
@@ -50,7 +52,7 @@ public class ProfileBean {
                 }
 
                 if (attrValue != null && attrValue.size() > 1) {
-                    logger.warnf("There are more values for attribute '%s' of user '%s' . Will display just first value", attr.getKey(), user.getUsername());
+                    logger.USER.moreValuesForAttribute(attr.getKey(), user.getUsername());
                 }
             }
         }

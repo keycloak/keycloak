@@ -47,6 +47,7 @@ import org.keycloak.forms.account.freemarker.model.ReferrerBean;
 import org.keycloak.forms.account.freemarker.model.SessionsBean;
 import org.keycloak.forms.account.freemarker.model.TotpBean;
 import org.keycloak.forms.account.freemarker.model.UrlBean;
+import org.keycloak.logging.KeycloakLogger;
 import org.keycloak.events.Event;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
@@ -70,7 +71,7 @@ import org.keycloak.models.utils.FormMessage;
  */
 public class FreeMarkerAccountProvider implements AccountProvider {
 
-    private static final Logger logger = Logger.getLogger(FreeMarkerAccountProvider.class);
+    private static final KeycloakLogger logger = Logger.getMessageLogger(KeycloakLogger.class, FreeMarkerAccountProvider.class.getName());
 
     private UserModel user;
     private MultivaluedMap<String, String> profileFormData;
@@ -118,14 +119,14 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         try {
             theme = themeProvider.getTheme(realm.getAccountTheme(), Theme.Type.ACCOUNT);
         } catch (IOException e) {
-            logger.error("Failed to create theme", e);
+            logger.REALM.failedToCreateTheme(e);
             return Response.serverError().build();
         }
 
         try {
             attributes.put("properties", theme.getProperties());
         } catch (IOException e) {
-            logger.warn("Failed to load properties", e);
+            logger.REALM.failedToLoadProperties(e);
         }
 
         Locale locale = session.getContext().resolveLocale(user);
@@ -134,7 +135,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             messagesBundle = theme.getMessages(locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
-            logger.warn("Failed to load messages", e);
+            logger.REALM.failedToLoadMessages(e);
             messagesBundle = new Properties();
         }
 
@@ -213,7 +214,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             BrowserSecurityHeaderSetup.headers(builder, realm);
             return builder.build();
         } catch (FreeMarkerException e) {
-            logger.error("Failed to process template", e);
+            logger.REALM.failedToProcessTemplate(e);
             return Response.serverError().build();
         }
     }
