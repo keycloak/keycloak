@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -88,14 +89,18 @@ public class GroupResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void updateGroup(GroupRepresentation rep) {
+        this.auth.requireManage();
         updateGroup(rep, group);
+        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
 
 
     }
 
     @DELETE
     public void deleteGroup() {
+        this.auth.requireManage();
         realm.removeGroup(group);
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
 
@@ -111,6 +116,7 @@ public class GroupResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addChild(GroupRepresentation rep) {
+        this.auth.requireManage();
         Response.ResponseBuilder builder = Response.status(204);
         GroupModel child = null;
         if (rep.getId() != null) {
@@ -118,6 +124,7 @@ public class GroupResource {
             if (child == null) {
                 throw new NotFoundException("Could not find child by id");
             }
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(rep).success();
         } else {
             child = realm.createGroup(rep.getName());
             updateGroup(rep, child);
@@ -125,6 +132,7 @@ public class GroupResource {
                                            .path(uriInfo.getMatchedURIs().get(1))
                                            .path(child.getId()).build();
             builder.status(201).location(uri);
+            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
 
         }
         realm.moveGroup(child, group);
