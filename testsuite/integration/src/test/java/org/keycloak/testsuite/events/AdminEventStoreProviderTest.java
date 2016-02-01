@@ -68,7 +68,7 @@ public class AdminEventStoreProviderTest {
         Assert.assertEquals(1, eventStore.createAdminQuery().authUser("userId").operation(OperationType.ACTION).getResultList().size());
 
         Assert.assertEquals(2, eventStore.createAdminQuery().maxResults(2).getResultList().size());
-        Assert.assertEquals(1, eventStore.createAdminQuery().firstResult(5).getResultList().size());
+        Assert.assertEquals(1, eventStore.createAdminQuery().firstResult(5).maxResults(5).getResultList().size());
 
         Assert.assertEquals(newest, eventStore.createAdminQuery().maxResults(1).getResultList().get(0).getTime());
         Assert.assertEquals(oldest, eventStore.createAdminQuery().firstResult(5).maxResults(1).getResultList().get(0).getTime());

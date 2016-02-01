@@ -7,6 +7,7 @@ import liquibase.changelog.DatabaseChangeLog;
 import liquibase.changelog.RanChangeSet;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
+import liquibase.database.core.DB2Database;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.logging.LogFactory;
 import liquibase.logging.LogLevel;
@@ -29,6 +30,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     private static final Logger logger = Logger.getLogger(LiquibaseJpaUpdaterProvider.class);
 
     private static final String CHANGELOG = "META-INF/jpa-changelog-master.xml";
+    private static final String DB2_CHANGELOG = "META-INF/db2-jpa-changelog-master.xml";
 
     @Override
     public String getCurrentVersionSql(String defaultSchema) {
@@ -117,7 +119,10 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         if (defaultSchema != null) {
             database.setDefaultSchemaName(defaultSchema);
         }
-        return new Liquibase(CHANGELOG, new ClassLoaderResourceAccessor(getClass().getClassLoader()), database);
+
+        String changelog = (database instanceof DB2Database) ? DB2_CHANGELOG : CHANGELOG;
+        logger.debugf("Using changelog file: %s", changelog);
+        return new Liquibase(changelog, new ClassLoaderResourceAccessor(getClass().getClassLoader()), database);
     }
 
     @Override
