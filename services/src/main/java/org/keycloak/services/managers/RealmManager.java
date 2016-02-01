@@ -472,7 +472,7 @@ public class RealmManager implements RealmImporter {
     private boolean hasClient(RealmRepresentation rep, String clientId) {
         if (rep.getClients() != null) {
             for (ClientRepresentation clientRep : rep.getClients()) {
-                if (clientRep.getClientId().equals(clientId)) {
+                if (clientRep.getClientId() != null && clientRep.getClientId().equals(clientId)) {
                     return true;
                 }
             }

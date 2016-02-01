@@ -2,7 +2,9 @@ package org.keycloak.testsuite.model;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -10,6 +12,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,6 +21,9 @@ import java.util.Set;
  */
 public class CompositeRolesModelTest extends AbstractModelTest {
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     @Before
     @Override
     public void before() throws Exception {
@@ -25,7 +31,19 @@ public class CompositeRolesModelTest extends AbstractModelTest {
         RealmManager manager = realmManager;
         RealmRepresentation rep = AbstractModelTest.loadJson("model/testcomposites.json");
         rep.setId("TestComposites");
-        RealmModel realm = manager.importRealm(rep);
+        manager.importRealm(rep);
+    }
+
+    @Test
+    public void testNoClientID() throws IOException {
+
+        RealmManager manager = realmManager;
+        RealmRepresentation rep = AbstractModelTest.loadJson("model/testrealm-noclient-id.json");
+        rep.setId("TestNoClientID");
+        expectedException.expect(RuntimeException.class);
+        expectedException.expectMessage("Unknown client specified in client scope mappings");
+        manager.importRealm(rep);
+
     }
 
     @Test

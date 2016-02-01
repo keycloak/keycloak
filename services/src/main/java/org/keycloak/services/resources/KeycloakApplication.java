@@ -258,28 +258,33 @@ public class KeycloakApplication extends Application {
 
     public void importRealm(RealmRepresentation rep, String from) {
         KeycloakSession session = sessionFactory.create();
+        boolean exists = false;
         try {
             session.getTransaction().begin();
-            RealmManager manager = new RealmManager(session);
-            manager.setContextPath(getContextPath());
-
-            if (rep.getId() != null && manager.getRealm(rep.getId()) != null) {
-                logger.realmExists(rep.getRealm(), from);
-                return;
-            }
-
-            if (manager.getRealmByName(rep.getRealm()) != null) {
-                logger.realmExists(rep.getRealm(), from);
-                return;
-            }
 
             try {
-                RealmModel realm = manager.importRealm(rep);
+                RealmManager manager = new RealmManager(session);
+                manager.setContextPath(getContextPath());
+
+                if (rep.getId() != null && manager.getRealm(rep.getId()) != null) {
+                    logger.realmExists(rep.getRealm(), from);
+                    exists = true;
+                }
+
+                if (manager.getRealmByName(rep.getRealm()) != null) {
+                    logger.realmExists(rep.getRealm(), from);
+                    exists = true;
+                }
+                if (!exists) {
+                    RealmModel realm = manager.importRealm(rep);
+                    logger.importedRealm(realm.getName(), from);
+                }
                 session.getTransaction().commit();
-                logger.importedRealm(realm.getName(), from);
             } catch (Throwable t) {
                 session.getTransaction().rollback();
-                logger.unableToImportRealm(t, rep.getRealm(), from);
+                if (!exists) {
+                    logger.unableToImportRealm(t, rep.getRealm(), from);
+                }
             }
         } finally {
             session.close();
@@ -321,6 +326,7 @@ public class KeycloakApplication extends Application {
                             session.getTransaction().commit();
                             logger.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
                         } catch (ModelDuplicateException e) {
+                            session.getTransaction().rollback();
                             logger.addUserFailedUserExists(userRep.getUsername(), realmRep.getRealm());
                         } catch (Throwable t) {
                             session.getTransaction().rollback();

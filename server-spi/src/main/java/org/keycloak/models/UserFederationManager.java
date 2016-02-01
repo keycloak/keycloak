@@ -1,6 +1,7 @@
 package org.keycloak.models;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -104,19 +105,19 @@ public class UserFederationManager implements UserProvider {
 
     }
 
-    protected void deleteInvalidUser(RealmModel realm, UserModel user) {
-        KeycloakSession tx = session.getKeycloakSessionFactory().create();
-        try {
-            tx.getTransaction().begin();
-            RealmModel realmModel = tx.realms().getRealm(realm.getId());
-            if (realmModel == null) return;
-            UserModel deletedUser = tx.userStorage().getUserById(user.getId(), realmModel);
-            tx.userStorage().removeUser(realmModel, deletedUser);
-            logger.debugf("Removed invalid user '%s'", user.getUsername());
-            tx.getTransaction().commit();
-        } finally {
-            tx.close();
-        }
+    protected void deleteInvalidUser(final RealmModel realm, final UserModel user) {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+
+            @Override
+            public void run(KeycloakSession session) {
+                RealmModel realmModel = session.realms().getRealm(realm.getId());
+                if (realmModel == null) return;
+                UserModel deletedUser = session.userStorage().getUserById(user.getId(), realmModel);
+                session.userStorage().removeUser(realmModel, deletedUser);
+                logger.debugf("Removed invalid user '%s'", user.getUsername());
+            }
+
+        });
     }
 
 
