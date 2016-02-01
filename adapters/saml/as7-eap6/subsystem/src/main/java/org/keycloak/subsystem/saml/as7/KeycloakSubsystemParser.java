@@ -555,14 +555,18 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
     }
 
     void writePrincipalNameMapping(XMLExtendedStreamWriter writer, ModelNode model) throws XMLStreamException {
-        writer.writeStartElement(Constants.XML.PRINCIPAL_NAME_MAPPING);
-        ModelNode value = model.get(Constants.Model.PRINCIPAL_NAME_MAPPING_POLICY);
-        if (value.isDefined()) {
-            writer.writeAttribute(Constants.XML.PRINCIPAL_NAME_MAPPING_POLICY, value.asString());
+
+        ModelNode policy = model.get(Constants.Model.PRINCIPAL_NAME_MAPPING_POLICY);
+        ModelNode mappingAttribute = model.get(Constants.Model.PRINCIPAL_NAME_MAPPING_ATTRIBUTE_NAME);
+        if (!policy.isDefined() && !mappingAttribute.isDefined()) {
+            return;
         }
-        value = model.get(Constants.Model.PRINCIPAL_NAME_MAPPING_ATTRIBUTE_NAME);
-        if (value.isDefined()) {
-            writer.writeAttribute(Constants.XML.PRINCIPAL_NAME_MAPPING_ATTRIBUTE_NAME, value.asString());
+        writer.writeStartElement(Constants.XML.PRINCIPAL_NAME_MAPPING);
+        if (policy.isDefined()) {
+            writer.writeAttribute(Constants.XML.PRINCIPAL_NAME_MAPPING_POLICY, policy.asString());
+        }
+        if (mappingAttribute.isDefined()) {
+            writer.writeAttribute(Constants.XML.PRINCIPAL_NAME_MAPPING_ATTRIBUTE_NAME, mappingAttribute.asString());
         }
         writer.writeEndElement();
     }
