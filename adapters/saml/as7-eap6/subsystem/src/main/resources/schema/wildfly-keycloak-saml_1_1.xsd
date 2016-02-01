@@ -61,9 +61,19 @@
                 <xs:documentation>URI to a logout page</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="forceAuthentication" type="xs:boolean" use="required">
+        <xs:attribute name="forceAuthentication" type="xs:boolean" use="optional">
             <xs:annotation>
                 <xs:documentation>Redirected unauthenticated request to a login page</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="isPassive" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>If user isn't logged in just return with an error.  Used to check if a user is already logged in or not</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="turnOffChangeSessionIdOnLogin" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>The session id is changed by default on a successful login.  Change this to true if you want to turn this off</xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
@@ -78,7 +88,7 @@
                 <xs:documentation>The entity ID for SAML service provider</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="signaturesRequired" type="xs:boolean" use="required">
+        <xs:attribute name="signaturesRequired" type="xs:boolean" use="optional">
             <xs:annotation>
                 <xs:documentation>Require signatures for single-sign-on and single-logout</xs:documentation>
             </xs:annotation>
