@@ -51,7 +51,7 @@
                 <xs:documentation>The ssl policy</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="nameIDPolicyFormat" type="xs:string" use="required">
+        <xs:attribute name="nameIDPolicyFormat" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>Name ID policy format URN</xs:documentation>
             </xs:annotation>
@@ -61,7 +61,7 @@
                 <xs:documentation>URI to a logout page</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="forceAuthentication" type="xs:boolean" use="required">
+        <xs:attribute name="forceAuthentication" type="xs:boolean" use="optional">
             <xs:annotation>
                 <xs:documentation>Redirected unauthenticated request to a login page</xs:documentation>
             </xs:annotation>
@@ -78,7 +78,7 @@
                 <xs:documentation>The entity ID for SAML service provider</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="signaturesRequired" type="xs:boolean" use="required">
+        <xs:attribute name="signaturesRequired" type="xs:boolean" use="optional">
             <xs:annotation>
                 <xs:documentation>Require signatures for single-sign-on and single-logout</xs:documentation>
             </xs:annotation>

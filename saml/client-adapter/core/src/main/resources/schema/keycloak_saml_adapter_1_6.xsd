@@ -86,7 +86,7 @@
             <xs:element name="Keys" type="keys-type" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="entityID" type="xs:string" use="required"/>
-        <xs:attribute name="signaturesRequired" type="xs:boolean" use="required"/>
+        <xs:attribute name="signaturesRequired" type="xs:boolean" use="optional"/>
         <xs:attribute name="signatureAlgorithm" type="xs:string" use="optional"/>
         <xs:attribute name="signatureCanonicalizationMethod" type="xs:string" use="optional"/>
         <xs:attribute name="encryption" type="xs:boolean" use="optional"/>

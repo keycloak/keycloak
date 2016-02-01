@@ -150,12 +150,12 @@
         <module>broker</module>
         <module>social</module>
         <module>forms</module>
-        <module>examples</module>
-        <module>testsuite</module>
         <module>timer</module>
         <module>export-import</module>
         <module>util</module>
         <module>wildfly</module>
+        <module>testsuite</module>
+        <module>examples</module>
     </modules>
 
     <dependencyManagement>
