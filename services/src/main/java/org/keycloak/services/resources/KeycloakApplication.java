@@ -326,6 +326,7 @@ public class KeycloakApplication extends Application {
                             session.getTransaction().commit();
                             logger.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
                         } catch (ModelDuplicateException e) {
+                            session.getTransaction().rollback();
                             logger.addUserFailedUserExists(userRep.getUsername(), realmRep.getRealm());
                         } catch (Throwable t) {
                             session.getTransaction().rollback();
