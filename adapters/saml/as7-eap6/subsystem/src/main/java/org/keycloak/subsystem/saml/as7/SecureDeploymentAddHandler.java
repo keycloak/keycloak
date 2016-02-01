@@ -39,4 +39,8 @@ class SecureDeploymentAddHandler extends AbstractAddStepHandler {
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
         Configuration.INSTANCE.updateModel(operation, model);
     }
+
+    @Override
+    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
+    }
 }

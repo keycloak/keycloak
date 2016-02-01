@@ -18,6 +18,7 @@ package org.keycloak.subsystem.saml.as7;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
@@ -57,5 +58,9 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
 
     private DeploymentUnitProcessor chooseConfigDeploymentProcessor() {
         return new KeycloakAdapterConfigDeploymentProcessor();
+    }
+
+    @Override
+    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
     }
 }
