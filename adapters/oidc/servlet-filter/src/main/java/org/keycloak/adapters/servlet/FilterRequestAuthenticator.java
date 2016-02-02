@@ -10,6 +10,7 @@ import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.spi.KeycloakAccount;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -68,13 +69,33 @@ public class FilterRequestAuthenticator extends RequestAuthenticator {
     }
 
     @Override
-    protected void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal, String method) {
-        RefreshableKeycloakSecurityContext securityContext = principal.getKeycloakSecurityContext();
-        Set<String> roles = AdapterUtils.getRolesFromSecurityContext(securityContext);
+    protected void completeBearerAuthentication(final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal, String method) {
+        final RefreshableKeycloakSecurityContext securityContext = principal.getKeycloakSecurityContext();
+        final Set<String> roles = AdapterUtils.getRolesFromSecurityContext(securityContext);
         if (log.isLoggable(Level.FINE)) {
             log.fine("Completing bearer authentication. Bearer roles: " + roles);
         }
         request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
+        OidcKeycloakAccount account = new OidcKeycloakAccount() {
+
+            @Override
+            public Principal getPrincipal() {
+                return principal;
+            }
+
+            @Override
+            public Set<String> getRoles() {
+                return roles;
+            }
+
+            @Override
+            public KeycloakSecurityContext getKeycloakSecurityContext() {
+                return securityContext;
+            }
+
+        };
+        // need this here to obtain UserPrincipal
+        request.setAttribute(KeycloakAccount.class.getName(), account);
     }
 
     @Override

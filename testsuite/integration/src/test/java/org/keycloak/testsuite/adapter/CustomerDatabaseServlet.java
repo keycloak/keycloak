@@ -1,11 +1,14 @@
 package org.keycloak.testsuite.adapter;
 
+import org.junit.Assert;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.security.Principal;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -18,6 +21,8 @@ public class CustomerDatabaseServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("text/html");
         PrintWriter pw = resp.getWriter();
+        Principal principal = req.getUserPrincipal();
+        Assert.assertNotNull(principal);
         pw.printf("<html><head><title>%s</title></head><body>", "Customer Portal");
         pw.println("Stian Thorgersen");
         pw.println("Bill Burke");
