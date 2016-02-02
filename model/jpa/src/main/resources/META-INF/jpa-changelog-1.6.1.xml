@@ -64,6 +64,23 @@
         <addPrimaryKey columnNames="CLIENT_SESSION_ID, OFFLINE_FLAG" constraintName="CONSTRAINT_OFFL_CL_SES_PK2" tableName="OFFLINE_CLIENT_SESSION"/>
     </changeSet>
 
+    <!-- KEYCLOAK-2404 - just for the update from 1.6.0 BUT not 1.6.1 or newer -->
+    <changeSet author="mposolda@redhat.com" id="1.6.1_from16-pre">
+
+        <preConditions onFail="MARK_RAN" onFailMessage="Skipped 1.6.1_from16-pre changeSet and marked as ran">
+            <and>
+                <changeSetExecuted id="1.6.0" author="mposolda@redhat.com" changeLogFile="META-INF/jpa-changelog-1.6.0.xml" />
+                <not>
+                    <changeSetExecuted id="1.6.1" author="mposolda@redhat.com" changeLogFile="META-INF/jpa-changelog-1.6.1.xml"/>
+                </not>
+            </and>
+        </preConditions>
+
+        <delete tableName="OFFLINE_CLIENT_SESSION"/>
+        <delete tableName="OFFLINE_USER_SESSION"/>
+    
+    </changeSet>
+
     <!-- Just for the update from 1.6.0 -->
     <changeSet author="mposolda@redhat.com" id="1.6.1_from16">
 
