@@ -7,7 +7,7 @@
     <table class="table table-striped table-bordered">
         <thead>
         <tr>
-            <th class="kc-table-actions" colspan="5">
+            <th class="kc-table-actions" colspan="6">
                 <div class="form-inline">
                     <div class="form-group">
                         <div class="input-group">
@@ -29,7 +29,7 @@
             <th>{{:: 'client-id' | translate}}</th>
             <th>{{:: 'enabled' | translate}}</th>
             <th>{{:: 'base-url' | translate}}</th>
-            <th colspan="2">{{:: 'actions' | translate}}</th>
+            <th colspan="3">{{:: 'actions' | translate}}</th>
         </tr>
         </thead>
         <tbody>
@@ -42,6 +42,9 @@
             </td>
             <td class="kc-action-cell">
                 <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}">{{:: 'edit' | translate}}</button>
+            </td>
+            <td class="kc-action-cell">
+                <button class="btn btn-default btn-block btn-sm" data-ng-click="exportClient(client)">{{:: 'export' | translate}}</button>
             </td>
             <td class="kc-action-cell">
                 <button class="btn btn-default btn-block btn-sm" data-ng-click="removeClient(client)">{{:: 'delete' | translate}}</button>

@@ -160,7 +160,12 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
             @Override
             public void warning(String message) {
-                LiquibaseJpaUpdaterProvider.logger.warn(message);
+                // Ignore this warning as cascaded drops doesn't work anyway with all DBs, which we need to support
+                if ("Database does not support drop with cascade".equals(message)) {
+                    LiquibaseJpaUpdaterProvider.logger.debug(message);
+                } else {
+                    LiquibaseJpaUpdaterProvider.logger.warn(message);
+                }
             }
 
             @Override

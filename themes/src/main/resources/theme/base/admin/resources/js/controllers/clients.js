@@ -18,10 +18,22 @@ module.controller('ClientTabCtrl', function(Dialog, $scope, Current, Notificatio
     };
 });
 
-module.controller('ClientRoleListCtrl', function($scope, $location, realm, client, roles) {
+module.controller('ClientRoleListCtrl', function($scope, $location, realm, client, roles, $route, RoleById, Notifications, Dialog) {
     $scope.realm = realm;
     $scope.roles = roles;
     $scope.client = client;
+
+    $scope.removeRole = function(role) {
+        Dialog.confirmDelete(role.name, 'role', function() {
+            RoleById.remove({
+                realm: realm.realm,
+                role: role.id
+            }, function () {
+                $route.reload();
+                Notifications.success("The role has been deleted.");
+            });
+        });
+    };
 
     $scope.$watch(function() {
         return $location.path();
@@ -683,6 +695,10 @@ module.controller('ClientListCtrl', function($scope, realm, clients, Client, ser
             });
         });
     };
+
+    $scope.exportClient = function(client) {
+        saveAs(new Blob([angular.toJson(client, 4)], { type: 'application/json' }), client.clientId + '.json');
+    }
 });
 
 module.controller('ClientInstallationCtrl', function($scope, realm, client, serverInfo, ClientInstallation,$http, $routeParams) {
