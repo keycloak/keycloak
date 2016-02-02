@@ -186,7 +186,8 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
         if (this.isBearerTokenRequest(request)) {
             SecurityContextHolder.clearContext();
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Unable to authenticate bearer token");
+            log.warn("Unable to authenticate bearer token for request: {}", request.getRequestURI());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unable to authenticate bearer token");
             return;
         }
 
