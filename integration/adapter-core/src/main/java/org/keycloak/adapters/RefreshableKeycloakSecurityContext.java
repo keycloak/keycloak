@@ -98,7 +98,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             log.error("Refresh token failure", e);
             return false;
         } catch (ServerRequest.HttpFailure httpFailure) {
-            log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
+            log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError(), httpFailure);
             return false;
         }
         if (log.isTraceEnabled()) {
@@ -110,7 +110,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
-            log.error("failed verification of token");
+            log.error("failed verification of token", e);
         }
         if (response.getNotBeforePolicy() > deployment.getNotBefore()) {
             deployment.setNotBefore(response.getNotBeforePolicy());
