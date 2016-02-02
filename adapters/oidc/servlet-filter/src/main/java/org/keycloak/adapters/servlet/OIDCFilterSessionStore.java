@@ -35,7 +35,10 @@ public class OIDCFilterSessionStore extends FilterSessionStore implements Adapte
 
     public HttpServletRequestWrapper buildWrapper() {
         HttpSession session = request.getSession();
-        KeycloakAccount account = (KeycloakAccount)session.getAttribute((KeycloakAccount.class.getName()));
+        KeycloakAccount account = (KeycloakAccount)session.getAttribute(KeycloakAccount.class.getName());
+        if (account == null) {
+            account = (KeycloakAccount)request.getAttribute(KeycloakAccount.class.getName());
+        }
         return buildWrapper(session, account);
     }
 
