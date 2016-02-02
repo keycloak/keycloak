@@ -181,7 +181,7 @@ public class KeycloakAuthenticationProcessingFilterTest {
         AuthenticationException exception = new BadCredentialsException("OOPS");
         this.setAuthHeader(request);
         filter.unsuccessfulAuthentication(request, response, exception);
-        verify(response).sendError(eq(HttpServletResponse.SC_FORBIDDEN), anyString());
+        verify(response).sendError(eq(HttpServletResponse.SC_UNAUTHORIZED), anyString());
         verify(failureHandler, never()).onAuthenticationFailure(any(HttpServletRequest.class), any(HttpServletResponse.class),
                 any(AuthenticationException.class));
     }
