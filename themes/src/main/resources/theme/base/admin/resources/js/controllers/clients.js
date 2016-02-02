@@ -683,6 +683,10 @@ module.controller('ClientListCtrl', function($scope, realm, clients, Client, ser
             });
         });
     };
+
+    $scope.exportClient = function(client) {
+        saveAs(new Blob([angular.toJson(client, 4)], { type: 'application/json' }), client.clientId + '.json');
+    }
 });
 
 module.controller('ClientInstallationCtrl', function($scope, realm, client, serverInfo, ClientInstallation,$http, $routeParams) {
