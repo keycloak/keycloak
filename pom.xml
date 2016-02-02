@@ -49,8 +49,8 @@
         <dom4j.version>1.6.1</dom4j.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <slf4j.version>1.7.7</slf4j.version>
-        <wildfly.version>10.0.0.CR5</wildfly.version>
-        <wildfly.core.version>2.0.5.Final</wildfly.core.version>
+        <wildfly.version>10.0.0.Final</wildfly.version>
+        <wildfly.core.version>2.0.10.Final</wildfly.core.version>
         <wildfly.build-tools.version>1.1.0.Final</wildfly.build-tools.version>
 
         <eap.version>7.0.0.Beta</eap.version>
