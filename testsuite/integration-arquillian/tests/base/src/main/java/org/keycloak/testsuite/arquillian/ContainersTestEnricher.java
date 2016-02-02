@@ -290,11 +290,13 @@ public class ContainersTestEnricher {
                 log.info("Installing saml adapter to app server via cli script");
                 execCommand(command + " --connect --file=" + samlAdapterScript + controllerArg, bin);
             }
-            log.info("Restarting container");
-            execCommand(command + " --connect --command=reload" + controllerArg, bin);
-            log.info("Container restarted");
-            pause(5000);
-            checkServerLog(jbossHomePath);
+            if (new File(bin, adapterScript).exists() || new File(bin, samlAdapterScript).exists()) {
+                log.info("Restarting container");
+                execCommand(command + " --connect --command=reload" + controllerArg, bin);
+                log.info("Container restarted");
+                pause(5000);
+                checkServerLog(jbossHomePath);
+            }
             if (container.getName().startsWith("app-server")) {
                 alreadyInstalled = true;
             }

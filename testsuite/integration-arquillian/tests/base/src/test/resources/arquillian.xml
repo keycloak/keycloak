@@ -130,10 +130,7 @@
             <property name="jbossHome">${keycloak.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
             <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
-            
-            <!--<property name="managementPort">${auth.server.management.port}</property>-->
-            <property name="managementPort">${auth.server.management.port.jmx}</property>
-            <property name="managementProtocol">remote</property>
+            <property name="managementPort">${auth.server.management.port}</property>
         </configuration>
     </container>
     

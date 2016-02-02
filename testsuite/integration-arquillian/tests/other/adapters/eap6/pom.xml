@@ -17,29 +17,6 @@
         <version.adapter.dist>${project.version}</version.adapter.dist>
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-arquillian-container-managed</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-dist</artifactId>
-            <version>${jboss.version}</version>
-            <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-eap6-adapter-dist</artifactId>
-            <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
-            <type>zip</type>
-        </dependency>
-    </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -89,7 +66,7 @@
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
-                                    <version>${project.version}</version>
+                                    <version>${version.adapter.dist}</version>
                                     <type>zip</type>
                                     <outputDirectory>${adapter.libs.eap6}</outputDirectory>
                                 </artifactItem>
