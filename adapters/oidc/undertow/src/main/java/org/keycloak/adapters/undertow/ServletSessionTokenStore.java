@@ -48,7 +48,13 @@ public class ServletSessionTokenStore implements AdapterTokenStore {
             log.debug("session was null, returning null");
             return false;
         }
-        KeycloakUndertowAccount account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
+        KeycloakUndertowAccount account = null;
+        try {
+            account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
+        } catch (IllegalStateException e) {
+            log.debug("session was invalidated.  Return false.");
+            return false;
+        }
         if (account == null) {
             log.debug("Account was not in session, returning null");
             return false;
@@ -68,8 +74,12 @@ public class ServletSessionTokenStore implements AdapterTokenStore {
             return true;
         } else {
             log.debug("Refresh failed. Account was not active. Returning null and invalidating Http session");
-            session.setAttribute(KeycloakUndertowAccount.class.getName(), null);
-            session.invalidate();
+            try {
+                session.setAttribute(KeycloakUndertowAccount.class.getName(), null);
+                session.invalidate();
+            } catch (Exception e) {
+                log.debug("Failed to invalidate session, might already be invalidated");
+            }
             return false;
         }
     }
