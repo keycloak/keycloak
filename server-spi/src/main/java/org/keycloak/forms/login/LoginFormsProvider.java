@@ -109,6 +109,8 @@ public interface LoginFormsProvider extends Provider {
 
     public LoginFormsProvider setSuccess(String message, Object ... parameters);
 
+    public LoginFormsProvider setInfo(String message, Object ... parameters);
+
     public LoginFormsProvider setUser(UserModel user);
 
     public LoginFormsProvider setResponseHeader(String headerName, String headerValue);

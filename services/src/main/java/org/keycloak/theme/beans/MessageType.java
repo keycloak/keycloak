@@ -23,6 +23,6 @@ package org.keycloak.theme.beans;
  */
 public enum MessageType {
 
-    SUCCESS, WARNING, ERROR
+    SUCCESS, WARNING, INFO, ERROR
 
 }

@@ -570,6 +570,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
+    public FreeMarkerLoginFormsProvider setInfo(String message, Object... parameters) {
+        setMessage(MessageType.INFO, message, parameters);
+        return this;
+    }
+
+    @Override
     public FreeMarkerLoginFormsProvider setUser(UserModel user) {
         this.user = user;
         return this;

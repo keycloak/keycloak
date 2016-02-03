@@ -67,6 +67,6 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
         return context.form()
                 .setFormData(formData)
                 .setAttribute(LoginFormsProvider.USERNAME_EDIT_DISABLED, true)
-                .setSuccess(Messages.FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE, existingUser.getUsername(), serializedCtx.getIdentityProviderId());
+                .setInfo(Messages.FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE, existingUser.getUsername(), serializedCtx.getIdentityProviderId());
     }
 }
