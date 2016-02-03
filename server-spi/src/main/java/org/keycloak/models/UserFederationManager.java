@@ -2,6 +2,7 @@ package org.keycloak.models;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.managers.UserManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -113,7 +114,7 @@ public class UserFederationManager implements UserProvider {
                 RealmModel realmModel = session.realms().getRealm(realm.getId());
                 if (realmModel == null) return;
                 UserModel deletedUser = session.userStorage().getUserById(user.getId(), realmModel);
-                session.userStorage().removeUser(realmModel, deletedUser);
+                new UserManager(session).removeUser(realmModel, deletedUser, session.userStorage());
                 logger.debugf("Removed invalid user '%s'", user.getUsername());
             }
 

@@ -3,6 +3,7 @@ package org.keycloak.services.managers;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 
@@ -18,6 +19,10 @@ public class UserManager {
     }
 
     public boolean removeUser(RealmModel realm, UserModel user) {
+        return removeUser(realm, user, session.users());
+    }
+
+    public boolean removeUser(RealmModel realm, UserModel user, UserProvider userProvider) {
         UserSessionProvider sessions = session.sessions();
         if (sessions != null) {
             sessions.onUserRemoved(realm, user);
@@ -28,7 +33,7 @@ public class UserManager {
             sessionsPersister.onUserRemoved(realm, user);
         }
 
-        if (session.users().removeUser(realm, user)) {
+        if (userProvider.removeUser(realm, user)) {
             return true;
         }
         return false;

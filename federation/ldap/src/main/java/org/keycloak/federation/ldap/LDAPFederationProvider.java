@@ -26,6 +26,7 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.services.managers.UserManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -465,7 +466,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
                     logger.warnf("User with username [%s] aready exists and is linked to provider [%s] but is not valid. Stale LDAP_ID on local user is: %s",
                             username,  model.getDisplayName(), user.getFirstAttribute(LDAPConstants.LDAP_ID));
                     logger.warn("Will re-create user");
-                    session.userStorage().removeUser(realm, user);
+                    new UserManager(session).removeUser(realm, user, session.userStorage());
                 }
             }
         }
