@@ -95,19 +95,6 @@
 
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-overlay-eap6</artifactId>
-                                    <type>zip</type>
-                                    <destFileName>keycloak-overlay-eap6-${project.version}.zip</destFileName>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-overlay-eap6</artifactId>
-                                    <type>tar.gz</type>
-                                    <destFileName>keycloak-overlay-eap6-${project.version}.tar.gz</destFileName>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-proxy-dist</artifactId>
                                     <type>zip</type>
                                     <destFileName>keycloak-proxy-${project.version}.zip</destFileName>
