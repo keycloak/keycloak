@@ -150,8 +150,12 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public void onUserRemoved(RealmModel realm, UserModel user) {
-        int num = em.createNamedQuery("deleteClientSessionsByUser").setParameter("userId", user.getId()).executeUpdate();
-        num = em.createNamedQuery("deleteUserSessionsByUser").setParameter("userId", user.getId()).executeUpdate();
+        onUserRemoved(realm, user.getId());
+    }
+
+    private void onUserRemoved(RealmModel realm, String userId) {
+        int num = em.createNamedQuery("deleteClientSessionsByUser").setParameter("userId", userId).executeUpdate();
+        num = em.createNamedQuery("deleteUserSessionsByUser").setParameter("userId", userId).executeUpdate();
     }
 
     @Override
@@ -184,7 +188,16 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         List<UserSessionModel> result = new ArrayList<>();
         List<String> userSessionIds = new ArrayList<>();
         for (PersistentUserSessionEntity entity : results) {
-            result.add(toAdapter(entity));
+            RealmModel realm = session.realms().getRealm(entity.getRealmId());
+            UserModel user = session.users().getUserById(entity.getUserId(), realm);
+
+            // Case when user was deleted in the meantime
+            if (user == null) {
+                onUserRemoved(realm, entity.getUserId());
+                return loadUserSessions(firstResult, maxResults, offline);
+            }
+
+            result.add(toAdapter(realm, user, entity));
             userSessionIds.add(entity.getUserSessionId());
         }
 
@@ -217,10 +230,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         return result;
     }
 
-    private PersistentUserSessionAdapter toAdapter(PersistentUserSessionEntity entity) {
-        RealmModel realm = session.realms().getRealm(entity.getRealmId());
-        UserModel user = session.users().getUserById(entity.getUserId(), realm);
-
+    private PersistentUserSessionAdapter toAdapter(RealmModel realm, UserModel user, PersistentUserSessionEntity entity) {
         PersistentUserSessionModel model = new PersistentUserSessionModel();
         model.setUserSessionId(entity.getUserSessionId());
         model.setLastSessionRefresh(entity.getLastSessionRefresh());

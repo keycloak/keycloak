@@ -191,8 +191,12 @@ public class MongoUserSessionPersisterProvider implements UserSessionPersisterPr
 
     @Override
     public void onUserRemoved(RealmModel realm, UserModel user) {
+        onUserRemoved(realm, user.getId());
+    }
+
+    private void onUserRemoved(RealmModel realm, String userId) {
         DBObject query = new QueryBuilder()
-                .and("userId").is(user.getId())
+                .and("userId").is(userId)
                 .get();
         getMongoStore().removeEntities(MongoOnlineUserSessionEntity.class, query, false, invocationContext);
         getMongoStore().removeEntities(MongoOfflineUserSessionEntity.class, query, false, invocationContext);
@@ -263,16 +267,22 @@ public class MongoUserSessionPersisterProvider implements UserSessionPersisterPr
 
         List<UserSessionModel> results = new LinkedList<>();
         for (MongoUserSessionEntity entity : entities) {
-            PersistentUserSessionAdapter userSession = toAdapter(entity);
+            RealmModel realm = session.realms().getRealm(entity.getRealmId());
+            UserModel user = session.users().getUserById(entity.getUserId(), realm);
+
+            // Case when user was deleted in the meantime
+            if (user == null) {
+                onUserRemoved(realm, entity.getUserId());
+                return loadUserSessions(firstResult, maxResults, offline);
+            }
+
+            PersistentUserSessionAdapter userSession = toAdapter(realm, user, entity);
             results.add(userSession);
         }
         return results;
     }
 
-    private PersistentUserSessionAdapter toAdapter(PersistentUserSessionEntity entity) {
-        RealmModel realm = session.realms().getRealm(entity.getRealmId());
-        UserModel user = session.users().getUserById(entity.getUserId(), realm);
-
+    private PersistentUserSessionAdapter toAdapter(RealmModel realm, UserModel user, PersistentUserSessionEntity entity) {
         PersistentUserSessionModel model = new PersistentUserSessionModel();
         model.setUserSessionId(entity.getId());
         model.setLastSessionRefresh(entity.getLastSessionRefresh());

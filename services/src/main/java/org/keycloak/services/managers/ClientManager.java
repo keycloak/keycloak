@@ -104,7 +104,7 @@ public class ClientManager {
 
             UserModel serviceAccountUser = realmManager.getSession().users().getUserByServiceAccountClient(client);
             if (serviceAccountUser != null) {
-                realmManager.getSession().users().removeUser(realm, serviceAccountUser);
+                new UserManager(realmManager.getSession()).removeUser(realm, serviceAccountUser);
             }
 
             return true;

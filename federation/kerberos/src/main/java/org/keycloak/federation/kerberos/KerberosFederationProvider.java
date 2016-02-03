@@ -22,6 +22,7 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.services.managers.UserManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -242,7 +243,7 @@ public class KerberosFederationProvider implements UserFederationProvider {
                     logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getDisplayName() +
                             "] but kerberos principal is not correct. Kerberos principal on user is: " + user.getFirstAttribute(KERBEROS_PRINCIPAL));
                     logger.warn("Will re-create user");
-                    session.userStorage().removeUser(realm, user);
+                    new UserManager(session).removeUser(realm, user, session.userStorage());
                 }
             }
         }
