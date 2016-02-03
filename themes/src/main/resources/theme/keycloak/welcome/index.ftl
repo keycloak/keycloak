@@ -23,9 +23,12 @@
 
 <html>
 <head>
-    <title>Welcome to Keycloak</title>
+    <title>Red Hat Single Sign-On</title>
     <link rel="shortcut icon" href="welcome-content/favicon.ico" type="image/x-icon">
     <link rel="StyleSheet" href="welcome-content/keycloak.css" type="text/css">
+    <!-- proper charset -->
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE8" />
     <style>
         label {
             display: inline-block;
@@ -51,12 +54,29 @@
 </head>
 
 <body>
-<div class="wrapper">
-    <div class="content">
-        <div class="logo">
-                <img src="welcome-content/keycloak_logo.png" alt="Keycloak" border="0" />
-        </div>
-        <h1>Welcome to Keycloak</h1>
+
+<div id="container" style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px;">
+  
+  <!-- header -->
+  <div class="header-panel">
+    <div class="header-line">&nbsp;</div>
+    <div class="header-top">
+      <div class="prod-title">
+        <img class="prod-img" alt="Red Hat&reg; Single Sign-On" src="welcome-content/brand.svg"/>
+      </div>   
+    </div>
+    <div class="header-bottom">&nbsp;</div>
+  </div>
+  
+  
+  <!-- main content -->
+  <div id="content">
+
+    <div class="section">
+
+      <h1>Welcome to Red Hat Single Sign-On</h1>
+
+      <h3>Your Red Hat Single Sign-On is running.</h3>
 
         <#if successMessage?has_content>
             <p>${successMessage}</p>
@@ -94,13 +114,19 @@
             </form>
         </#if>
 
-        <p><a href="http://www.keycloak.org/docs">Documentation</a> | <a href="admin/">Administration Console</a> </p>
+      <p>
+        <a href="admin/">Administration Console</a> | 
+        <a href="http://www.keycloak.org/docs">Documentation</a>
+      </p>
 
-        <p><a href="http://www.keycloak.org">Keycloak Project</a> |
-            <a href="https://lists.jboss.org/mailman/listinfo/keycloak-user">Mailing List</a> |
-            <a href="https://issues.jboss.org/browse/KEYCLOAK">Report an issue</a></p>
-        <p class="logos"><a href="http://www.jboss.org"><img src="welcome-content/jboss_community.png" alt="JBoss and JBoss Community" width="254" height="31" border="0"></a></p>
     </div>
+
+  </div>
+
+
+  <div id="footer">&nbsp;</div>
+
 </div>
-</body>
+
+</body >
 </html>

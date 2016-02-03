@@ -1,8 +1,3 @@
-.login-pf body {
-    background: #0f0f0f url("../img/keycloak-bg.png") top left no-repeat;
-    background-size: 100% auto;
-}
-
 .alert-error {
     background-color: #ffffff;
     border-color: #cc0000;
@@ -72,15 +67,26 @@ a#kc-current-locale-link::after {
 }
 
 #kc-logo {
-    width: 100%;
+    float: right;
+    margin-right: 64px;
+    margin-left: auto;
+    display: block;
+    position: relative;
+    text-align: center;
 }
 
 #kc-logo-wrapper {
-    background-image: url("../img/keycloak-logo.png");
+    background-image: url("../lib/rcue/img/logo.svg");
     background-repeat: no-repeat;
-
-    height: 37px;
-    width: 154px;
+    border: 0px none;
+    vertical-align: middle;
+    color: #0099D3;
+    text-decoration: none;
+    background-color: transparent;
+    width: 137px;
+    height: 44px;
+    margin-top: 50px;
+    margin-bottom: 50px;
 }
 
 #kc-header {
@@ -244,12 +250,6 @@ ol#kc-totp-settings li:first-of-type {
         width: 100%;
     }
 
-    #kc-logo-wrapper {
-        position: absolute;
-        top: 50px;
-        right: 50px;
-    }
-
     .login-pf .container {
         padding-right: 80px;
     }
@@ -264,11 +264,13 @@ ol#kc-totp-settings li:first-of-type {
 }
 
 @media (max-width: 767px) {
+    #kc-logo {
+        float: none;
+        margin: auto;
+    }
 
     #kc-logo-wrapper {
-        background-position: center;
-        width: 100%;
-        margin: 20px 0;
+        margin: 20px auto 20px auto;
     }
 
     #kc-header {

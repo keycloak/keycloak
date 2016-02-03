@@ -19,12 +19,14 @@ header .navbar {
 }
 
 .navbar-title {
-    background-image: url('../img/logo.png');
+    background-image: url('../img/brand.svg');
     height: 25px;
     background-repeat: no-repeat;
-    width: 103px;
+    width: 172px;
     margin: 3px 10px 5px;
     text-indent: -99999px;
+    position: relative;
+    top: 8px;
 }
 
 .navbar-pf .navbar-utility {

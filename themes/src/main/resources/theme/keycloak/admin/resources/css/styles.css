@@ -304,15 +304,24 @@ th.w-40 {
   border-top: none!important;
 }
 
+.navbar-pf .navbar-header {
+  height: 56px;
+}
+
 .navbar-pf .navbar-brand {
   padding: 0;
-  height: 56px;
-  line-height: 56px;
+  height: 14px;
+  line-height: 14px;
   background-position: center center;
-  background-image: url('../img/keyclok-logo.svg');
-  background-size: 148px 36px;
+  background-image: url('../img/brand.svg');
+  background-size: 172px 10px;
   background-repeat: no-repeat;
-  width: 148px;
+  width: 176px;
+  position: relative;
+  top: 50%;
+  -webkit-transform: translateY(-50%);
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
 }
 
 .navbar-pf .navbar-utility > li > a{
