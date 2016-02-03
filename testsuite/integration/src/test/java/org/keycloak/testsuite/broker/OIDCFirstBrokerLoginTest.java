@@ -116,7 +116,7 @@ public class OIDCFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
         // assert reauthentication with login page. On login page is link to kc-saml-idp-basic as user has it linked already
         Assert.assertEquals("Log in to " + APP_REALM_ID, this.driver.getTitle());
-        Assert.assertEquals("Authenticate as pedroigor to link your account with " + getProviderId(), this.loginPage.getSuccessMessage());
+        Assert.assertEquals("Authenticate as pedroigor to link your account with " + getProviderId(), this.loginPage.getInfoMessage());
 
         try {
             this.loginPage.findSocialButton(getProviderId());

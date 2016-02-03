@@ -64,7 +64,11 @@ public class LoginPage extends AbstractPage {
     private WebElement loginWarningMessage;
 
     @FindBy(className = "alert-success")
-    private WebElement emailSuccessMessage;
+    private WebElement loginSuccessMessage;
+
+
+    @FindBy(className = "alert-info")
+    private WebElement loginInfoMessage;
 
 
     @FindBy(id = "kc-current-locale-link")
@@ -124,7 +128,10 @@ public class LoginPage extends AbstractPage {
     }
 
     public String getSuccessMessage() {
-        return emailSuccessMessage != null ? emailSuccessMessage.getText() : null;
+        return loginSuccessMessage != null ? loginSuccessMessage.getText() : null;
+    }
+    public String getInfoMessage() {
+        return loginInfoMessage != null ? loginInfoMessage.getText() : null;
     }
 
 
