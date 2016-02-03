@@ -260,15 +260,15 @@ public class HttpClientBuilder {
                 theContext.init(null, new TrustManager[]{new PassthroughTrustManager()},
                         new SecureRandom());
                 verifier = new AllowAllHostnameVerifier();
-                sslsf = new SSLSocketFactory(theContext, verifier);
+                sslsf = new SniSSLSocketFactory(theContext, verifier);
             } else if (theContext != null) {
-                sslsf = new SSLSocketFactory(theContext, verifier);
+                sslsf = new SniSSLSocketFactory(theContext, verifier);
             } else if (clientKeyStore != null || truststore != null) {
-                sslsf = new SSLSocketFactory(SSLSocketFactory.TLS, clientKeyStore, clientPrivateKeyPassword, truststore, null, verifier);
+                sslsf = new SniSSLSocketFactory(SSLSocketFactory.TLS, clientKeyStore, clientPrivateKeyPassword, truststore, null, verifier);
             } else {
                 final SSLContext tlsContext = SSLContext.getInstance(SSLSocketFactory.TLS);
                 tlsContext.init(null, null, null);
-                sslsf = new SSLSocketFactory(tlsContext, verifier);
+                sslsf = new SniSSLSocketFactory(tlsContext, verifier);
             }
             SchemeRegistry registry = new SchemeRegistry();
             registry.register(
