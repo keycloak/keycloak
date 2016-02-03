@@ -117,6 +117,12 @@
                 <module>console</module>
             </modules>
         </profile>
+        <profile>
+            <id>mod_auth_mellon</id>
+            <modules>
+                <module>mod_auth_mellon</module>
+            </modules>
+        </profile>
     </profiles>
 
 </project>
