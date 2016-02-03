@@ -46,11 +46,20 @@
     </filter>
     <filter-mapping>
         <filter-name>Keycloak Filter</filter-name>
-        <url-pattern>/*</url-pattern>
+        <url-pattern>/keycloak/*</url-pattern>
+        <url-pattern>/protected/*</url-pattern>
     </filter-mapping>
 </web-app>
 ]]>
     </programlisting>
+    <para>
+        If you notice above, there are two url-patterns.  <literal>/protected/*</literal> are just the files we want protected.
+        <literal>/keycloak/*</literal> url-pattern will handle callback from the keycloak server.
+        Note that you should configure your client in the Keycloak Admin Console
+        with an Admin URL that points to a secured section covered by the filter's url-pattern.
+        The Admin URL will make callbacks to the Admin URL to do things like backchannel logout.  So, the Admin URL in this example should
+        be <literal>http[s]://hostname/{context-root}/keycloak</literal>.  There is an example of this in the distribution.
+    </para>
     <para>
         The Keycloak filter has the same configuration parameters available as the other adapters except you must define
         them as filter init params instead of context params.

@@ -123,7 +123,7 @@
         {
             "clientId": "customer-portal-filter",
             "enabled": true,
-            "adminUrl": "/customer-portal-filter",
+            "adminUrl": "/customer-portal-filter/keycloak",
             "baseUrl": "/customer-portal-filter",
             "redirectUris": [
                 "/customer-portal-filter/*"

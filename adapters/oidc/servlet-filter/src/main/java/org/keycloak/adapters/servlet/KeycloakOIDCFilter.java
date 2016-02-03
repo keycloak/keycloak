@@ -102,6 +102,8 @@ public class KeycloakOIDCFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+        log.fine("Keycloak OIDC Filter");
+        //System.err.println("Keycloak OIDC Filter: " + ((HttpServletRequest)req).getRequestURL().toString());
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
         OIDCServletHttpFacade facade = new OIDCServletHttpFacade(request, response);
@@ -122,7 +124,10 @@ public class KeycloakOIDCFilter implements Filter {
 
             @Override
             public void logoutHttpSessions(List<String> ids) {
+                log.fine("**************** logoutHttpSessions");
+                //System.err.println("**************** logoutHttpSessions");
                 for (String id : ids) {
+                    log.finest("removed idMapper: " + id);
                     idMapper.removeSession(id);
                 }
 
@@ -130,6 +135,7 @@ public class KeycloakOIDCFilter implements Filter {
         }, deploymentContext, facade);
 
         if (preActions.handleRequest()) {
+            //System.err.println("**************** preActions.handleRequest happened!");
             return;
         }
 

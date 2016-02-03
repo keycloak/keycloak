@@ -243,7 +243,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             String credName = credential.getName();
             String credValue = credential.getValue().get(CredentialDefinition.VALUE.getName()).asString();
 
-            if (credName.contains("")) {
+            if (credName.indexOf('.') > -1) {
                 String[] parts = credName.split("\\.");
                 String provider = parts[0];
                 String propKey = parts[1];
