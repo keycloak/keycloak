@@ -29,9 +29,9 @@
     <packaging>pom</packaging>
     <name>Servers</name>
 
-    <modules>
-        <module>migration</module>
-    </modules>
+    <!--<modules>-->
+        <!--<module>migration</module>-->
+    <!--</modules>-->
     
     <profiles>
         <profile>
