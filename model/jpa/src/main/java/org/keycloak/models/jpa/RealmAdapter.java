@@ -744,6 +744,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ClientModel addClient(String id, String clientId) {
+        if (clientId == null) {
+            clientId = id;
+        }
         ClientEntity entity = new ClientEntity();
         entity.setId(id);
         entity.setClientId(clientId);
