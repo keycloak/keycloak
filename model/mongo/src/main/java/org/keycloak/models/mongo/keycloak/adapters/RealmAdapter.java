@@ -853,6 +853,11 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         clientEntity.setStandardFlowEnabled(true);
         getMongoStore().insertEntity(clientEntity, invocationContext);
 
+        if (clientId == null) {
+            clientEntity.setClientId(clientEntity.getId());
+            getMongoStore().updateEntity(clientEntity, invocationContext);
+        }
+
         final ClientModel model = new ClientAdapter(session, this, clientEntity, invocationContext);
         session.getKeycloakSessionFactory().publish(new ClientCreationEvent() {
             @Override

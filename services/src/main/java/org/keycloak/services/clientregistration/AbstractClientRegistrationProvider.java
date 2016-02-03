@@ -51,9 +51,6 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         try {
             ClientModel clientModel = RepresentationToModel.createClient(session, session.getContext().getRealm(), client, true);
-            if (client.getClientId() == null) {
-                clientModel.setClientId(clientModel.getId());
-            }
 
             client = ModelToRepresentation.toRepresentation(clientModel);
 
