@@ -38,12 +38,6 @@
                 <app.server.eap7.home>${containers.home}/jboss-eap-7.0</app.server.eap7.home>
                 <adapter.libs.eap7>${containers.home}/keycloak-eap7-adapter-dist</adapter.libs.eap7>
             </properties>
-<!--            <dependencies>
-                <dependency>
-                    <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-arquillian-container-managed</artifactId>
-                </dependency>
-            </dependencies>-->
             <build>
                 <plugins>
                     <plugin>

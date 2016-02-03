@@ -283,6 +283,12 @@
             </modules>
         </profile>
         <profile>
+            <id>app-server-eap7</id>
+            <modules>
+                <module>eap7</module>
+            </modules>
+        </profile>
+        <profile>
             <id>app-server-wildfly</id>
             <modules>
                 <module>wildfly</module>
