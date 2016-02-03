@@ -82,6 +82,15 @@
         <section>
             <title>Migrating to 1.9.0</title>
             <simplesect>
+                <title>Adapter Subsystems only bring in dependencies if keycloak is on</title>
+                <para>
+                    Previously, if you had installed our saml or oidc keycloak subsystem adapters into Wildfly or JBoss EAP, we would
+                    automatically include Keycloak client jars into EVERY application irregardless if you were using Keycloak or not.
+                    These libraries are now only added to your deployment if you have keycloak authentication turned on for that adapter
+                    (via the subsystem, or auth-method in web.xml
+                </para>
+            </simplesect>
+            <simplesect>
                 <title>Deprecated OpenID Connect endpoints</title>
                 <para>
                     In 1.2 we deprecated a number of endpoints that where not consistent with the OpenID Connect

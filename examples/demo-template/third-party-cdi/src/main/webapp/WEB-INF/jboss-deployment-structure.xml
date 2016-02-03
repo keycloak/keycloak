@@ -5,6 +5,10 @@
                  Apache Http Client or the HttpClientBuilder that comes with the adapter core -->
             <module name="org.apache.httpcomponents"/>
             <module name="org.keycloak.keycloak-servlet-oauth-client"/>
+            <module name="org.keycloak.keycloak-adapter-spi"/>
+            <module name="org.keycloak.keycloak-adapter-core"/>
+            <module name="org.keycloak.keycloak-common"/>
+            <module name="org.keycloak.keycloak-core"/>
         </dependencies>
     </deployment>
 </jboss-deployment-structure>

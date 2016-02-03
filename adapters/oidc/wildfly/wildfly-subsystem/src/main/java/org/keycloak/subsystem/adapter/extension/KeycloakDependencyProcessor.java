@@ -24,6 +24,9 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
+import org.jboss.as.web.common.WarMetaData;
+import org.jboss.metadata.web.jboss.JBossWebMetaData;
+import org.jboss.metadata.web.spec.LoginConfigMetaData;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
@@ -43,7 +46,18 @@ public abstract class KeycloakDependencyProcessor implements DeploymentUnitProce
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
 
-        // Next phase, need to detect if this is a Keycloak deployment.  If not, don't add the modules.
+        String deploymentName = deploymentUnit.getName();
+        if (!KeycloakAdapterConfigService.getInstance().isSecureDeployment(deploymentName)) {
+            WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
+            JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
+            if (webMetaData == null) {
+                return;
+            }
+            LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
+            if (loginConfig == null) return;
+            if (loginConfig.getAuthMethod() == null) return;
+            if (!loginConfig.getAuthMethod().equals("KEYCLOAK")) return;
+        }
 
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = Module.getBootModuleLoader();

@@ -121,6 +121,16 @@
             "secret": "password"
         },
         {
+            "clientId": "customer-portal-filter",
+            "enabled": true,
+            "adminUrl": "/customer-portal-filter",
+            "baseUrl": "/customer-portal-filter",
+            "redirectUris": [
+                "/customer-portal-filter/*"
+            ],
+            "secret": "password"
+        },
+        {
             "clientId": "customer-portal-js",
             "enabled": true,
             "publicClient": true,
@@ -216,6 +226,10 @@
             },
             {
                 "client": "customer-portal",
+                "roles": ["realm-admin"]
+            },
+            {
+                "client": "customer-portal-filter",
                 "roles": ["realm-admin"]
             }
         ]
