@@ -307,6 +307,7 @@ public class ExportUtils {
         credRep.setCounter(userCred.getCounter());
         credRep.setAlgorithm(userCred.getAlgorithm());
         credRep.setDigits(userCred.getDigits());
+        credRep.setCreatedDate(userCred.getCreatedDate());
         return credRep;
     }
 

@@ -1271,6 +1271,7 @@ public class RepresentationToModel {
             if (cred.getPeriod() == null && UserCredentialModel.TOTP.equals(cred.getType())) {
                 hashedCred.setPeriod(30);
             }
+            hashedCred.setCreatedDate(cred.getCreatedDate());
             user.updateCredentialDirectly(hashedCred);
         }
     }
