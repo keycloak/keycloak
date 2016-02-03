@@ -11,6 +11,7 @@ The following examples requires Wildfly 8.0.0, JBoss EAP 6.x, or JBoss AS 7.1.1.
 There are multiple WAR projects.  These will all run on the same WildFly instance, but pretend each one is running on a different
 machine on the network or Internet.
 * **customer-app** A WAR application that does remote login using OAuth2 browser redirects with the auth server
+* **customer-app-filter** A WAR application secured by the Keycloak Servlet Filter Adapter.  Useful for EE platforms that don't have an adapter.
 * **customer-app-js** A pure HTML/Javascript application that does remote login using OAuth2 browser redirects with the auth server
 * **customer-app-cli** A pure CLI application that does remote login using OAuth2 browser redirects with the auth server
 * **product-app** A WAR application that does remote login using OAuth2 browser redirects with the auth server

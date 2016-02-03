@@ -27,6 +27,7 @@
     <modules>
         <!-- <module>server</module> -->
         <module>customer-app</module>
+        <module>customer-app-filter</module>
         <module>customer-app-cli</module>
         <module>customer-app-js</module>
         <module>product-app</module>

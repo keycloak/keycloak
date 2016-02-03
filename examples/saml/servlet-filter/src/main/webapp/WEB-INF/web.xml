@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0">
+
+    <module-name>saml-servlet-filter</module-name>
+    <filter>
+        <filter-name>Keycloak Filter</filter-name>
+        <filter-class>org.keycloak.adapters.saml.servlet.SamlFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>Keycloak Filter</filter-name>
+        <url-pattern>/saml</url-pattern>  <!-- you have to have this as this is the saml endpoint -->
+        <url-pattern>/protected/*</url-pattern> <!-- this is for the content you want to protect -->
+    </filter-mapping>
+</web-app>
