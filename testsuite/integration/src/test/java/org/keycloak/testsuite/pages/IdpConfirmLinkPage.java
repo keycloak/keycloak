@@ -31,7 +31,7 @@ public class IdpConfirmLinkPage extends AbstractPage {
     @FindBy(id = "linkAccount")
     private WebElement linkAccountButton;
 
-    @FindBy(className = "instruction")
+    @FindBy(className = "alert-error")
     private WebElement message;
 
     @Override

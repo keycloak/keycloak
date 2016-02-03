@@ -265,7 +265,7 @@ public class PostBrokerFlowTest extends AbstractIdentityProviderTest {
 
         // assert reauthentication with login page. On login page is link to kc-saml-idp-basic as user has it linked already
         Assert.assertEquals("Log in to " + APP_REALM_ID, this.driver.getTitle());
-        Assert.assertEquals("Authenticate as test-user to link your account with " + getProviderId(), this.loginPage.getSuccessMessage());
+        Assert.assertEquals("Authenticate as test-user to link your account with " + getProviderId(), this.loginPage.getInfoMessage());
 
         // reauthenticate with SAML broker. OTP authentication is required as well
         this.loginPage.clickSocial("kc-saml-idp-basic");

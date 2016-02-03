@@ -321,7 +321,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractIdentityProvi
         Assert.assertEquals("pedroigor", this.loginPage.getUsername());
         Assert.assertFalse(this.loginPage.isUsernameInputEnabled());
 
-        Assert.assertEquals("Authenticate as pedroigor to link your account with " + getProviderId(), this.loginPage.getSuccessMessage());
+        Assert.assertEquals("Authenticate as pedroigor to link your account with " + getProviderId(), this.loginPage.getInfoMessage());
 
         try {
             this.loginPage.findSocialButton(getProviderId());
