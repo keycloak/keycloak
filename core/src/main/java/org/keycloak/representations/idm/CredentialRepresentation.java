@@ -27,6 +27,7 @@ public class CredentialRepresentation {
     private String algorithm;
     private Integer digits;
     private Integer period;
+    private Long createdDate;
 
     // only used when updating a credential.  Might set required action
     protected Boolean temporary;
@@ -117,5 +118,13 @@ public class CredentialRepresentation {
 
     public void setPeriod(Integer period) {
         this.period = period;
+    }
+
+    public Long getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Long createdDate) {
+        this.createdDate = createdDate;
     }
 }
