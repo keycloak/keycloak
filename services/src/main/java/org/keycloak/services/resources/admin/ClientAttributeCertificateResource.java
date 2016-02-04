@@ -22,6 +22,7 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.NotAcceptableException;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.common.util.StreamUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -175,10 +176,19 @@ public class ClientAttributeCertificateResource {
 
     private CertificateRepresentation getCertFromRequest(UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
         auth.requireManage();
+        CertificateRepresentation info = new CertificateRepresentation();
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
-        List<InputPart> inputParts = uploadForm.get("file");
-
         String keystoreFormat = uploadForm.get("keystoreFormat").get(0).getBodyAsString();
+        List<InputPart> inputParts = uploadForm.get("file");
+        if (keystoreFormat.equals("Certificate PEM")) {
+            String pem = StreamUtil.readString(inputParts.get(0).getBody(InputStream.class, null));
+            info.setCertificate(pem);
+            return info;
+
+        }
+
+
+
         String keyAlias = uploadForm.get("keyAlias").get(0).getBodyAsString();
         List<InputPart> keyPasswordPart = uploadForm.get("keyPassword");
         char[] keyPassword = keyPasswordPart != null ? keyPasswordPart.get(0).getBodyAsString().toCharArray() : null;
@@ -202,7 +212,6 @@ public class ClientAttributeCertificateResource {
             throw new RuntimeException(e);
         }
 
-        CertificateRepresentation info = new CertificateRepresentation();
         if (privateKey != null) {
             String privateKeyPem = KeycloakModelUtils.getPemFromKey(privateKey);
             info.setPrivateKey(privateKeyPem);
