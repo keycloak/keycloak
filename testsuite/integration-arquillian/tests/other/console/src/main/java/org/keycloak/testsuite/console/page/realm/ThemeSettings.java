@@ -17,6 +17,7 @@
  */
 package org.keycloak.testsuite.console.page.realm;
 
+import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
@@ -46,6 +47,9 @@ public class ThemeSettings extends RealmSettings {
     @FindBy(css = "#emailTheme")
     private Select emailThemeSelect;
 
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='internationalizationEnabled']]")
+    private OnOffSwitch internatEnabledSwitch;
+
     public void changeLoginTheme(String themeName) {
         waitUntilElement(By.id("loginTheme")).is().present();
         loginThemeSelect.selectByVisibleText(themeName);
@@ -61,6 +65,14 @@ public class ThemeSettings extends RealmSettings {
 
     public void changeEmailTheme(String themeName) {
         emailThemeSelect.selectByVisibleText(themeName);
+    }
+
+    public void setInternatEnabled(boolean value) {
+        internatEnabledSwitch.setOn(value);
+    }
+
+    public boolean isInternatEnabled() {
+        return internatEnabledSwitch.isOn();
     }
 
     public void saveTheme() {

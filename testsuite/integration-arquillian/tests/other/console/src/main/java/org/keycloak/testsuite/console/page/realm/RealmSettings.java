@@ -10,7 +10,7 @@ import org.openqa.selenium.support.FindBy;
  */
 public class RealmSettings extends AdminConsoleRealm {
 
-    @FindBy(xpath = "//div[@data-ng-controller='RealmTabCtrl']/ul")
+    @FindBy(className = "nav-tabs")
     private RealmTabs realmTabs;
 
     public RealmTabs tabs() {
