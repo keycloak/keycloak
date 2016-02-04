@@ -64,11 +64,11 @@
             <para>
                 To add Keycloak to existing standalone.xml server config run:
 <programlisting>
-bin/jboss-cli.sh --file=keycloak-install.cli
+bin/jboss-cli.sh --file=bin/keycloak-install.cli
 </programlisting>
                 To add Keycloak to existing standalone-ha.xml server config run:
 <programlisting>
-    bin/jboss-cli.sh --file=keycloak-install.cli
+bin/jboss-cli.sh --file=bin/keycloak-install-ha.cli
 </programlisting>
                 If you want to add Keycloak to a different server config edit keycloak-install.cli or keycloak-install-ha.cli
                 and change the name of the server config.
@@ -243,6 +243,11 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
                                     <entry>auto</entry>
                                 </row>
                                 <row>
+                                    <entry>PostgresPlus 9.4</entry>
+                                    <entry>edb-jdbc17-4.0</entry>
+                                    <entry>auto</entry>
+                                </row>
+                                <row>
                                     <entry>Oracle 11g R1</entry>
                                     <entry>Oracle JDBC Driver v11.1.0.7</entry>
                                     <entry>auto</entry>
@@ -253,8 +258,8 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
                                     <entry>org.hibernate.dialect.SQLServer2008Dialect</entry>
                                 </row>
                                 <row>
-                                    <entry>Sybase ASE 15.7</entry>
-                                    <entry>JDBC(TM)/7.07 ESD #5 (Build 26792)/P/EBF20686</entry>
+                                    <entry>IBM DB2 10.5</entry>
+                                    <entry>JDBC 4.0 Driver (db2jcc4.jar) 4.19.26</entry>
                                     <entry>auto</entry>
                                 </row>
                             </tbody>
