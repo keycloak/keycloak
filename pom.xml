@@ -37,7 +37,7 @@
     <properties>
         <product.name>RH-SSO</product.name>
         <product.name-html>\u003Cstrong\u003ERed Hat\u003C\u002Fstrong\u003E\u003Csup\u003E\u00AE\u003C\u002Fsup\u003E Single Sign On</product.name-html>
-        <product.version>7.0</product.version>
+        <product.version>7.0.0.ER4-redhat-1</product.version>
         <product.build-time>${timestamp}</product.build-time>
 
         <apacheds.version>2.0.0-M17</apacheds.version>
@@ -173,7 +173,6 @@
         <module>integration</module>
         <module>adapters</module>
         <module>examples</module>
-        <module>testsuite</module>
     </modules>
 
     <dependencyManagement>
