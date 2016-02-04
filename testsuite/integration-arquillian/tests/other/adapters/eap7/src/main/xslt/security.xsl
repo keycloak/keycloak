@@ -14,7 +14,6 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xalan="http://xml.apache.org/xalan"
                 xmlns:j="urn:jboss:domain:4.0"
@@ -36,7 +35,7 @@
             <security-realm name="UndertowRealm">
                 <server-identities>
                     <ssl>
-                        <keystore path="keycloak.jks" relative-to="jboss.server.config.dir" keystore-password="secret"/>
+                        <keystore path="adapter.jks" relative-to="jboss.server.config.dir" keystore-password="secret"/>
                     </ssl>
                 </server-identities>
             </security-realm>
