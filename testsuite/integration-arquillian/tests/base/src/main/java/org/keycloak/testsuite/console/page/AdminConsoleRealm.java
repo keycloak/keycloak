@@ -59,9 +59,9 @@ public class AdminConsoleRealm extends AdminConsoleRealmsRoot {
         return configureMenu;
     }
 
-    public RealmResource realmResource() {
-        return realmsResource().realm(getConsoleRealm());
-    }
+//    public RealmResource realmResource() {
+//        return realmsResource().realm(getConsoleRealm());
+//    }
 
     public class ConfigureMenu {
 

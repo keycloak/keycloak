@@ -17,7 +17,6 @@
  */
 package org.keycloak.testsuite.console;
 
-import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;

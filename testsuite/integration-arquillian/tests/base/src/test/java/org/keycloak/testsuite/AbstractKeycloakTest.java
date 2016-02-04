@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite;
 
 import org.keycloak.testsuite.arquillian.TestContext;
@@ -33,9 +32,12 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RealmsResource;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.auth.page.WelcomePage;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -66,11 +68,9 @@ public abstract class AbstractKeycloakTest {
 
     @ArquillianResource
     protected TestContext testContext;
-    
-    @ArquillianResource
+
     protected Keycloak adminClient;
 
-    @ArquillianResource
     protected OAuthClient oauthClient;
 
     protected List<RealmRepresentation> testRealmReps;
@@ -100,6 +100,11 @@ public abstract class AbstractKeycloakTest {
 
     @Before
     public void beforeAbstractKeycloakTest() {
+        adminClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+        oauthClient = new OAuthClient(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
+
+        
         adminUser = createAdminUserRepresentation();
 
         setDefaultPageUriParameters();
@@ -194,6 +199,10 @@ public abstract class AbstractKeycloakTest {
 
     public void removeRealm(RealmRepresentation realm) {
         adminClient.realms().realm(realm.getRealm()).remove();
+    }
+    
+    public RealmsResource realmsResouce() {
+        return adminClient.realms();
     }
 
 }

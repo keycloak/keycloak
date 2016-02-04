@@ -33,6 +33,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
+import org.keycloak.testsuite.arquillian.SuiteContext;
 
 public class URLProvider extends URLResourceProvider {
 
@@ -43,6 +44,8 @@ public class URLProvider extends URLResourceProvider {
 
     private final boolean appServerSslRequired = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
 
+    @Inject
+    Instance<SuiteContext> suiteContext;
     @Inject
     Instance<TestContext> testContext;
 
@@ -97,10 +100,10 @@ public class URLProvider extends URLResourceProvider {
         // inject context roots if annotation present
         for (Annotation a : qualifiers) {
             if (AuthServerContext.class.isAssignableFrom(a.annotationType())) {
-                return testContext.get().getAuthServerContextRoot();
+                return suiteContext.get().getAuthServerInfo().getContextRoot();
             }
             if (AppServerContext.class.isAssignableFrom(a.annotationType())) {
-                return testContext.get().getAppServerContextRoot();
+                return testContext.get().getAppServerInfo().getContextRoot();
             }
         }
 

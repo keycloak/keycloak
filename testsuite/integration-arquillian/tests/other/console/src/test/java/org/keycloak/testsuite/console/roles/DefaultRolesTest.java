@@ -4,6 +4,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
@@ -31,7 +32,7 @@ public class DefaultRolesTest extends AbstractRolesTest {
     public void beforeDefaultRolesTest() {
         // create a role via admin client
         defaultRoleRep = new RoleRepresentation("default-role", "", false);
-        rolesPage.rolesResource().create(defaultRoleRep);
+        rolesResource().create(defaultRoleRep);
 
         defaultRolesPage.navigateTo();
         // navigate to default roles page
@@ -56,6 +57,10 @@ public class DefaultRolesTest extends AbstractRolesTest {
 
         userPage.tabs().roleMappings();
         assertTrue(userRolesPage.form().isAssignedRole(defaultRoleName));
+    }
+
+    public RolesResource rolesResource() {
+        return testRealmResource().roles();
     }
 
 }

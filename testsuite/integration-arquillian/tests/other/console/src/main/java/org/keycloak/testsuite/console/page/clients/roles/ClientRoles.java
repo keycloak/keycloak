@@ -22,9 +22,5 @@ public class ClientRoles extends Client {
     public RolesTable roles() {
         return table;
     }
-    
-    public RolesResource rolesResource() {
-        return clientResource().roles();
-    }
 
 }

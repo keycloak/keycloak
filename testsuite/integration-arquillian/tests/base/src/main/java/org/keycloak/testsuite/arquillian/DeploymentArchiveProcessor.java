@@ -37,8 +37,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAdapterLibsLocationProperty;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.hasAppServerContainerAnnotation;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isRelative;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isTomcatAppServer;
 
-import static org.keycloak.testsuite.arquillian.ContainersTestEnricher.*;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.*;
 import static org.keycloak.testsuite.util.IOUtil.*;
 
 ;
@@ -122,7 +126,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                         adapterConfig.setAuthServerUrl("/auth");
 //                ac.setRealmKey(null); // TODO verify if realm key is required for relative scneario
                     } else {
-                        adapterConfig.setAuthServerUrl(getAuthServerContextRootFromSystemProperty() + "/auth");
+                        adapterConfig.setAuthServerUrl(getAuthServerContextRoot() + "/auth");
                         adapterConfig.setRealmKey(REALM_KEY);
                     }
                     

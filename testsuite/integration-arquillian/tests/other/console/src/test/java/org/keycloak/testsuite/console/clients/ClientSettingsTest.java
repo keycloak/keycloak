@@ -153,11 +153,11 @@ public class ClientSettingsTest extends AbstractClientTest {
         c.setPublicClient(true);
         c.setBearerOnly(true);
 
-        Response r = clientsPage.clientsResource().create(c);
+        Response r = clientsResource().create(c);
         r.close();
         clientSettingsPage.setId(getCreatedId(r));
 
-        c = clientSettingsPage.clientResource().toRepresentation();
+        c = clientResource(clientSettingsPage.getId()).toRepresentation();
         assertTrue(c.isBearerOnly());
         assertTrue(c.isPublicClient());
     }

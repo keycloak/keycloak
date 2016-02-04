@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.arquillian;
 
-import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -25,27 +25,19 @@ import java.net.URL;
  */
 public final class TestContext {
 
-    private URL authServerContextRoot;
-    private URL appServerContextRoot;
+    private final SuiteContext suiteContext;
+
+    private final Class testClass;
+
+    private ContainerInfo appServerInfo;
+    private final List<ContainerInfo> appServerBackendsInfo = new ArrayList<>();
 
     private boolean adminLoggedIn;
 
-    public TestContext() {
+    public TestContext(SuiteContext suiteContext, Class testClass) {
+        this.suiteContext = suiteContext;
+        this.testClass = testClass;
         this.adminLoggedIn = false;
-    }
-
-    public TestContext(URL authServerContextRoot, URL appServerContextRoot) {
-        this();
-        this.authServerContextRoot = authServerContextRoot;
-        this.appServerContextRoot = appServerContextRoot;
-    }
-
-    public URL getAuthServerContextRoot() {
-        return authServerContextRoot;
-    }
-
-    public URL getAppServerContextRoot() {
-        return appServerContextRoot;
     }
 
     public boolean isAdminLoggedIn() {
@@ -56,12 +48,44 @@ public final class TestContext {
         this.adminLoggedIn = adminLoggedIn;
     }
 
-    public void setAuthServerContextRoot(URL authServerContextRoot) {
-        this.authServerContextRoot = authServerContextRoot;
+    public ContainerInfo getAppServerInfo() {
+        return appServerInfo;
     }
 
-    public void setAppServerContextRoot(URL appServerContextRoot) {
-        this.appServerContextRoot = appServerContextRoot;
+    public void setAppServerInfo(ContainerInfo appServerInfo) {
+        this.appServerInfo = appServerInfo;
+    }
+
+    public List<ContainerInfo> getAppServerBackendsInfo() {
+        return appServerBackendsInfo;
+    }
+
+    public Class getTestClass() {
+        return testClass;
+    }
+
+    public boolean isAdapterTest() {
+        return appServerInfo != null;
+    }
+
+    public boolean isRelativeAdapterTest() {
+        return isAdapterTest()
+                && appServerInfo.getQualifier().equals(
+                        suiteContext.getAuthServerInfo().getQualifier()); // app server == auth server
+    }
+
+    public boolean isClusteredAdapterTest() {
+        return isAdapterTest() && !appServerBackendsInfo.isEmpty();
+    }
+
+    public SuiteContext getSuiteContext() {
+        return suiteContext;
+    }
+
+    @Override
+    public String toString() {
+        return "TEST CONTEXT: " + getTestClass().getCanonicalName() + "\n"
+                + (isAdapterTest() ? "App server container: " + getAppServerInfo() + "\n" : "");
     }
 
 }
