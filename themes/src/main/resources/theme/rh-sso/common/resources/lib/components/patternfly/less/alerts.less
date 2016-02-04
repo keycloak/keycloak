@@ -1,0 +1,29 @@
+//
+// Alerts
+// --------------------------------------------------
+
+.alert {
+  border-width: 2px;
+  padding-left: 34px;
+  position: relative;
+  .alert-link {
+    color: @link-color;
+    &:hover {
+      color: @link-hover-color;
+    }
+  }
+  > .pficon {
+    font-size: 20px;
+    position: absolute;
+    left: 7px;
+    top: 7px;
+  }
+  .pficon-info {
+    color: #72767b;
+  }
+}
+
+.alert-dismissable .close {
+  right: -16px;
+  top: 1px;
+}

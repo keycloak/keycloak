@@ -43,7 +43,7 @@
     },
 
     "theme": {
-        "default": "keycloak",
+        "default": "rh-sso",
         "staticMaxAge": "${keycloak.theme.staticMaxAge:2592000}",
         "cacheTemplates": "${keycloak.theme.cacheTemplates:true}",
         "cacheThemes": "${keycloak.theme.cacheThemes:true}",

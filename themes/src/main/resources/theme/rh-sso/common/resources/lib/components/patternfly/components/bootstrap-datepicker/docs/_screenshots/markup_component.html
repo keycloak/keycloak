@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="script/common.css">
+        <script src="script/common.js"></script>
+        <script>
+            function setup(){
+                $('input').datepicker({
+                    format: 'mm-dd-yyyy'
+                });
+            };
+        </script>
+    </head>
+    <body data-capture=".date, .datepicker">
+        <div class="input-append date">
+            <input type="text" value="12-02-2012">
+            <span class="add-on"><i class="icon-th"></i></span>
+        </div>
+    </body>
+</html>

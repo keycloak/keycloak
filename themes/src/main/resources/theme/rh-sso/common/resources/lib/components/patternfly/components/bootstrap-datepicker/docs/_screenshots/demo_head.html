@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="script/common.css">
+        <script src="script/common.js"></script>
+        <script>
+            function setup(){
+                $('.popup > input').datepicker();
+                $('.popup > input').data('datepicker').picker.find('td:nth(15)').trigger('hover');
+                $('.component > div').datepicker({
+                    format: 'mm-dd-yyyy'
+                });
+                $('.inline').datepicker();
+            };
+        </script>
+    </head>
+    <body data-capture=".popup, .component, .inline > div, .datepicker">
+        <div class="row">
+            <div class="span4 popup">
+                <input type="text" value="08/03/2013" class="form-control">
+            </div>
+            <div class="span4 component">
+                <div class="input-append date">
+                    <input type="text" value="10-05-2003" readonly>
+                    <span class="add-on"><i class="icon-th"></i></span>
+                </div>
+            </div>
+            <div class="span4 inline" data-date="01/03/2004"></div>
+        </div>
+    </body>
+</html>
