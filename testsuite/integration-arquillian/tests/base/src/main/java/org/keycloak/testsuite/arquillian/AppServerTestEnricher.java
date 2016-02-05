@@ -106,7 +106,7 @@ public class AppServerTestEnricher {
     }
 
     public void installAdapterLibs(@Observes BeforeDeploy event) {
-        log.info("BEFORE DEPLOY");
+        log.debug("BEFORE DEPLOY - INSTALL ADAPTER LIBS");
         if (testContext.isAdapterTest()) {
             // install adapter libs on JBoss-based container via CLI
             if (testContext.getAppServerInfo().isJBossBased()) {
