@@ -181,5 +181,12 @@
         </configuration>
     </container>
     
+    <!--
+    
+     APP SERVER CONTAINERS ARE ADDED BY XSL TRANSFORMATIONS IN ADAPTER TEST SUBMODULES 
+     The configuration of various application containers had to be split into multiple 
+     maven submodules: tests/other/adapters, which are activated on demand by profiles.
+     
+    -->
 
 </arquillian>
