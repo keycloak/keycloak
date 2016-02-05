@@ -207,7 +207,7 @@
                                             </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak</groupId>
-                                                <artifactId>saml-post-signatures</artifactId>
+                                                <artifactId>sales-post-sig</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
