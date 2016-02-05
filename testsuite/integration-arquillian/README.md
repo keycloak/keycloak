@@ -52,13 +52,24 @@ The `AbstractKeycloakTest` has an initialized instance of AdminClient. Subclasse
 
 ## UI Testing
 
-PageObjects can be injected to tests by `@Page` annotation.
+### Page Objects
 
-The base class for all page objects is `AbstractPage`.
+Page Objects are used by tests to access and operate on UI. 
+They can be injected using annotation `@Page` provided by the *Arquillian Graphene* extension.
+
+The base class for all page objects used throughout this Arquillian testsuite is `AbstractPage`, and it's subclass `AbstractPageWithInjectedUrl`.
+
+For the page objects for the *adapter test apps* the URLs are injected automatically by Arquillian depending on actual URL of the deployed app/example.
+
+For the pages under the `/auth` context the URL is only injected to the `AuthServerContextRoot` page object, 
+and the URL hierarchy is modeled by the class inheritance hierarchy (subclasses/extending of `AuthServerContextRoot`).
+
+
+### Browsers
 
 The default browser for UI testing is `phantomjs` which is used for fast "headless" testing.
 Other browsers can be selected with the `-Dbrowser` property, for example `firefox`.
-See *Arquillian Graphene* documentation for more details.
+See Arquillian Graphene documentation for more details.
 
 
 ## Test Modules
