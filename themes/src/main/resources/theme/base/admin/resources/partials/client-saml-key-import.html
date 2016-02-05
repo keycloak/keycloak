@@ -23,14 +23,14 @@
                 </div>
                 <kc-tooltip>{{:: 'archive-format.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group">
+            <div class="form-group" data-ng-hide="hideKeystoreSettings()">
                 <label class="col-md-2 control-label" for="uploadKeyAlias">{{:: 'key-alias' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="text" id="uploadKeyAlias" name="uploadKeyAlias" data-ng-model="uploadKeyAlias" autofocus required>
                 </div>
                 <kc-tooltip>{{:: 'key-alias.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group">
+            <div class="form-group" data-ng-hide="hideKeystoreSettings()">
                 <label class="col-md-2 control-label" for="uploadStorePassword">{{:: 'store-password' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="password" id="uploadStorePassword" name="uploadStorePassword" data-ng-model="uploadStorePassword" autofocus required>

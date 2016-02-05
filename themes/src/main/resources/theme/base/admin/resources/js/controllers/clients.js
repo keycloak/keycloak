@@ -360,8 +360,13 @@ module.controller('ClientCertificateImportCtrl', function($scope, $location, $ht
 
     $scope.keyFormats = [
         "JKS",
-        "PKCS12"
+        "PKCS12",
+        "Certificate PEM"
     ];
+
+    $scope.hideKeystoreSettings = function() {
+        return $scope.uploadKeyFormat == 'Certificate PEM';
+    }
 
     $scope.uploadKeyFormat = $scope.keyFormats[0];
 
