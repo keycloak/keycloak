@@ -29,7 +29,8 @@
     </filter>
     <filter-mapping>
         <filter-name>Keycloak Filter</filter-name>
-        <url-pattern>/customers/*</url-pattern>
+        <url-pattern>/keycloak/*</url-pattern> <!-- this is so keycloak server can send events like backchannel logout -->
+        <url-pattern>/customers/*</url-pattern> <!-- this secures things -->
     </filter-mapping>
 
 </web-app>

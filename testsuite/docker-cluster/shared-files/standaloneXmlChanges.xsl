@@ -20,9 +20,9 @@
 <xsl:stylesheet version="2.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xalan="http://xml.apache.org/xalan"
-                xmlns:ds="urn:jboss:domain:datasources:3.0"
+                xmlns:ds="urn:jboss:domain:datasources:4.0"
                 xmlns:logging="urn:jboss:domain:logging:3.0"
-                xmlns:ispn="urn:jboss:domain:infinispan:3.0"
+                xmlns:ispn="urn:jboss:domain:infinispan:4.0"
                 xmlns:mcluster="urn:jboss:domain:modcluster:2.0"
                 xmlns:server="urn:jboss:domain:3.0"
                 exclude-result-prefixes='ds logging ispn mcluster xalan server'
@@ -69,6 +69,7 @@
             <ispn:invalidation-cache name="realms" mode="SYNC"/>
             <ispn:invalidation-cache name="users" mode="SYNC"/>
             <ispn:distributed-cache name="sessions" mode="SYNC" owners="2"/>
+            <ispn:distributed-cache name="offlineSessions" mode="SYNC" owners="2"/>
             <ispn:distributed-cache name="loginFailures" mode="SYNC" owners="2"/>
         </ispn:cache-container>
     </xsl:template>

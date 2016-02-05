@@ -64,9 +64,13 @@
     </para>
     <warning>
         <para>
-            You must have a filter mapping for <literal>/saml</literal>
+            You must have a filter mapping that covers <literal>/saml</literal>.  This mapping covers all server callbacks.
         </para>
     </warning>
+    <para>
+        When registering SPs with an IDP, you must register <literal>http[s]://hostname/{context-root}/saml</literal> as
+        your Assert Consumer Service URL and Single Logout Service URL.
+    </para>
     <para>
         To use this filter, include this maven artifact in your WAR poms
     </para>

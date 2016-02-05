@@ -885,7 +885,10 @@
                         });
 
                         ref.addEventListener('loaderror', function(event) {
-                            if (event.url.indexOf('http://localhost') != 0) {
+                            if (event.url.indexOf('http://localhost') == 0) {
+                                callback = parseCallback(event.url);
+                                ref.close();
+                            } else {
                                 error = true;
                                 ref.close();
                             }
@@ -917,7 +920,9 @@
                         });
 
                         ref.addEventListener('loaderror', function(event) {
-                            if (event.url.indexOf('http://localhost') != 0) {
+                            if (event.url.indexOf('http://localhost') == 0) {
+                                ref.close();
+                            } else {
                                 error = true;
                                 ref.close();
                             }

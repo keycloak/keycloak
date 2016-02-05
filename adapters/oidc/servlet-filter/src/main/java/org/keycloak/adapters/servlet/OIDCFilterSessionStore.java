@@ -112,6 +112,8 @@ public class OIDCFilterSessionStore extends FilterSessionStore implements Adapte
         }
 
         if (idMapper != null && !idMapper.hasSession(httpSession.getId())) {
+            log.fine("idMapper does not have session: " + httpSession.getId());
+            //System.err.println("idMapper does not have session: " + httpSession.getId());
             cleanSession(httpSession);
             return false;
         }
