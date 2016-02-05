@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jboss.arquillian.container.spi.Container;
+import java.util.Set;
 import static org.keycloak.testsuite.util.MailServerConfiguration.*;
 
 /**
@@ -29,7 +29,7 @@ import static org.keycloak.testsuite.util.MailServerConfiguration.*;
  */
 public final class SuiteContext {
 
-    private final List<Container> arquillianContainers;
+    private final Set<ContainerInfo> container;
 
     private ContainerInfo authServerInfo;
     private final List<ContainerInfo> authServerBackendsInfo = new ArrayList<>();
@@ -39,8 +39,8 @@ public final class SuiteContext {
     private boolean adminPasswordUpdated;
     private final Map<String, String> smtpServer = new HashMap<>();
 
-    public SuiteContext(List<Container> arquillianContainers) {
-        this.arquillianContainers = arquillianContainers;
+    public SuiteContext(Set<ContainerInfo> arquillianContainers) {
+        this.container = arquillianContainers;
         this.adminPasswordUpdated = false;
         smtpServer.put("from", FROM);
         smtpServer.put("host", HOST);
@@ -87,8 +87,8 @@ public final class SuiteContext {
         return migratedAuthServerInfo != null;
     }
 
-    public List<Container> getArquillianContainers() {
-        return arquillianContainers;
+    public Set<ContainerInfo> getContainers() {
+        return container;
     }
 
     @Override

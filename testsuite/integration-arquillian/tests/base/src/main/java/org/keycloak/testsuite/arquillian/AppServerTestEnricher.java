@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import org.jboss.arquillian.container.spi.Container;
+import org.jboss.arquillian.container.spi.event.container.BeforeDeploy;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
@@ -34,16 +34,15 @@ public class AppServerTestEnricher {
     private InstanceProducer<TestContext> testContextProducer;
     private TestContext testContext;
 
-    @Inject
-    private Instance<ContainerController> containerController;
-
     public static String getAppServerQualifier(Class testClass) {
         Class<? extends AuthServerTestEnricher> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AppServerContainer.class);
 
         String appServerQ = (annotatedClass == null ? null
                 : annotatedClass.getAnnotation(AppServerContainer.class).value());
 
-        return appServerQ;
+        return appServerQ == null || appServerQ.isEmpty()
+                ? getAuthServerQualifier() // app server == auth server
+                : appServerQ;
     }
 
     public static String getAppServerContextRoot() {
@@ -60,12 +59,26 @@ public class AppServerTestEnricher {
                 : "http://localhost:" + (httpPort + clusterPortOffset);
     }
 
-    private ContainerInfo initializeAppServerInfo(Container appServerContainer) {
-        return initializeAppServerInfo(appServerContainer, 0);
+    public void updateTestContextWithAppServerInfo(@Observes(precedence = 1) BeforeClass event) {
+        testContext = testContextProducer.get();
+        String appServerQualifier = getAppServerQualifier(testContext.getTestClass());
+        for (ContainerInfo container : testContext.getSuiteContext().getContainers()) {
+            if (container.getQualifier().equals(appServerQualifier)) {
+                testContext.setAppServerInfo(updateWithAppServerInfo(container));
+            }
+        }
+        // validate app server
+        if (appServerQualifier != null && testContext.getAppServerInfo() == null) {
+            throw new RuntimeException(String.format("No app server container matching '%s' was activated. Check if defined and enabled in arquillian.xml.", appServerQualifier));
+        }
+        log.info("\n\n" + testContext);
     }
 
-    private ContainerInfo initializeAppServerInfo(Container appServerContainer, int clusterPortOffset) {
-        ContainerInfo appServerInfo = new ContainerInfo(appServerContainer);
+    private ContainerInfo updateWithAppServerInfo(ContainerInfo appServerInfo) {
+        return updateWithAppServerInfo(appServerInfo, 0);
+    }
+
+    private ContainerInfo updateWithAppServerInfo(ContainerInfo appServerInfo, int clusterPortOffset) {
         try {
 
             String appServerContextRootStr = isRelative(testContext.getTestClass())
@@ -80,67 +93,74 @@ public class AppServerTestEnricher {
         return appServerInfo;
     }
 
-    public void updateTestContextWithAppServerInfo(@Observes BeforeClass event) {
-        testContext = testContextProducer.get();
-        String appServerQualifier = getAppServerQualifier(testContext.getTestClass());
-        for (Container container : testContext.getSuiteContext().getArquillianContainers()) {
-            if (container.getContainerConfiguration().getContainerName().equals(appServerQualifier)) {
-                testContext.setAppServerInfo(initializeAppServerInfo(container));
-            }
-        }
-        // validate app server
-        if (appServerQualifier != null && testContext.getAppServerInfo() == null) {
-            throw new RuntimeException(String.format("No app server container matching '%s' was activated. Check if defined and enabled in arquillian.xml.", appServerQualifier));
-        }
-        log.info("\n\n" + testContext);
-    }
+    @Inject
+    private Instance<ContainerController> containerConrollerInstance;
 
     public void startAppServer(@Observes(precedence = -1) BeforeClass event) throws MalformedURLException, InterruptedException, IOException {
-        ContainerController controller = containerController.get();
         if (testContext.isAdapterTest()) {
-            String appServerQualifier = testContext.getAppServerInfo().getQualifier();
-            if (!controller.isStarted(appServerQualifier)) {
-                controller.start(appServerQualifier);
+            ContainerController controller = containerConrollerInstance.get();
+            if (!controller.isStarted(testContext.getAppServerInfo().getQualifier())) {
+                controller.start(testContext.getAppServerInfo().getQualifier());
             }
-            log.info("\n\n\nAPP SERVER STARTED\n\n\n");
+        }
+    }
+
+    public void installAdapterLibs(@Observes BeforeDeploy event) {
+        log.info("BEFORE DEPLOY");
+        if (testContext.isAdapterTest()) {
             // install adapter libs on JBoss-based container via CLI
-//            if (testContext.getAppServerInfo().isJBossBased()) {
-                installAdapterLibsUsingJBossCLIClient(testContext.getAppServerInfo());
-//            }
+            if (testContext.getAppServerInfo().isJBossBased()) {
+                try {
+                    installAdapterLibsUsingJBossCLIClient(testContext.getAppServerInfo());
+                } catch (InterruptedException | IOException ex) {
+                    throw new RuntimeException("Failed to install adapter libs.", ex);
+                }
+            }
         }
     }
 
     private void installAdapterLibsUsingJBossCLIClient(ContainerInfo appServerInfo) throws InterruptedException, IOException {
-        
-        log.info("Installing adapter via CLI client");
-        
-        if (!appServerInfo.isJBossBased()) {
-            throw new IllegalArgumentException("App server must be JBoss-based to run jboss-cli-client.");
-        }
+        if (!appServerInfo.isAdapterLibsInstalled()) {
 
-        String jbossHomePath = appServerInfo.getProperties().get("jbossHome");
+            if (!appServerInfo.isJBossBased()) {
+                throw new IllegalArgumentException("App server must be JBoss-based to run jboss-cli-client.");
+            }
 
-        File bin = new File(jbossHomePath + "/bin");
-        String command = "java -jar " + jbossHomePath + "/bin/client/jboss-cli-client.jar";
-        String adapterScript = "adapter-install.cli";
-        String samlAdapterScript = "adapter-install-saml.cli";
-        String managementPort = appServerInfo.getProperties().get("managementPort");
+            String jbossHomePath = appServerInfo.getProperties().get("jbossHome");
 
-        String controllerArg = " --controller=localhost:" + managementPort;
-        if (new File(bin, adapterScript).exists()) {
-            log.info("Installing adapter to app server via cli script");
-            execCommand(command + " --connect --file=" + adapterScript + controllerArg, bin);
-        }
-        if (new File(bin, samlAdapterScript).exists()) {
-            log.info("Installing saml adapter to app server via cli script");
-            execCommand(command + " --connect --file=" + samlAdapterScript + controllerArg, bin);
-        }
-        if (new File(bin, adapterScript).exists() || new File(bin, samlAdapterScript).exists()) {
-            log.info("Restarting container");
-            execCommand(command + " --connect --command=reload" + controllerArg, bin);
-            log.info("Container restarted");
-            pause(5000);
-            LogChecker.checkJBossServerLog(jbossHomePath);
+            File bin = new File(jbossHomePath + "/bin");
+            
+            File clientJar = new File(jbossHomePath + "/bin/client/jboss-cli-client.jar");
+            if (!clientJar.exists()) {
+                clientJar = new File(jbossHomePath + "/bin/client/jboss-client.jar"); // AS7
+            }
+            if (!clientJar.exists()) {
+                throw new IOException("JBoss CLI client JAR not found.");
+            }
+            
+            String command = "java -jar " + clientJar.getAbsolutePath();
+            String adapterScript = "adapter-install.cli";
+            String samlAdapterScript = "adapter-install-saml.cli";
+            String managementPort = appServerInfo.getProperties().get("managementPort");
+
+            String controllerArg = " --controller=localhost:" + managementPort;
+            if (new File(bin, adapterScript).exists()) {
+                log.info("Installing adapter to app server via cli script");
+                execCommand(command + " --connect --file=" + adapterScript + controllerArg, bin);
+            }
+            if (new File(bin, samlAdapterScript).exists()) {
+                log.info("Installing saml adapter to app server via cli script");
+                execCommand(command + " --connect --file=" + samlAdapterScript + controllerArg, bin);
+            }
+            if (new File(bin, adapterScript).exists() || new File(bin, samlAdapterScript).exists()) {
+                log.info("Restarting container");
+                execCommand(command + " --connect --command=reload" + controllerArg, bin);
+                log.info("Container restarted");
+                pause(5000);
+                LogChecker.checkJBossServerLog(jbossHomePath);
+            }
+
+            appServerInfo.setAdapterLibsInstalled(true);
         }
     }
 

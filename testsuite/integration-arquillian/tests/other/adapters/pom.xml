@@ -287,13 +287,6 @@
         </profile>
         
         <profile>
-            <id>auth-server-wildfly</id>
-            <modules>
-                <module>wildfly-relative</module>
-            </modules>
-        </profile>
-        
-        <profile>
             <id>app-server-eap6</id>
             <modules>
                 <module>eap6</module>
@@ -309,6 +302,12 @@
             <id>app-server-wildfly</id>
             <modules>
                 <module>wildfly</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>app-server-wildfly-relative</id>
+            <modules>
+                <module>wildfly-relative</module>
             </modules>
         </profile>
         <profile>
