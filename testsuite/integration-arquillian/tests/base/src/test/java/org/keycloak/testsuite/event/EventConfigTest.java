@@ -39,6 +39,7 @@ public class EventConfigTest extends AbstractEventTest {
         assertFalse(configRep.isAdminEventsDetailsEnabled());
         assertFalse(configRep.isAdminEventsEnabled());
         assertFalse(configRep.isEventsEnabled());
+        configRep.setEnabledEventTypes(Collections.EMPTY_LIST); // resets to all types
 
         List<String> eventListeners = configRep.getEventsListeners();
         assertEquals(1, eventListeners.size());
