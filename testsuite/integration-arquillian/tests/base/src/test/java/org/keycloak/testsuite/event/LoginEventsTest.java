@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.event;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
@@ -42,7 +41,6 @@ public class LoginEventsTest extends AbstractEventTest {
     @Before
     public void init() {
         configRep.setEventsEnabled(true);
-        configRep.setEnabledEventTypes(Collections.EMPTY_LIST); // resets to all types
         saveConfig();
         testRealmResource().clearEvents();
     }

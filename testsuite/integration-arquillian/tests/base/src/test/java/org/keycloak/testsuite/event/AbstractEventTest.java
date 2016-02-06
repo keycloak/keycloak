@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.event;
 
+import java.util.Collections;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
@@ -37,6 +38,7 @@ public abstract class AbstractEventTest extends AbstractAuthTest {
         configRep.setAdminEventsDetailsEnabled(false);
         configRep.setAdminEventsEnabled(false);
         configRep.setEventsEnabled(false);
+        configRep.setEnabledEventTypes(Collections.EMPTY_LIST); // resets to all types
         saveConfig();
     }
 
