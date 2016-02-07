@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
-  ~ and other contributors as indicated by the @author tags.
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
 
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -254,16 +254,16 @@
                                     <goal>copy-resources</goal>
                                 </goals>
                                 <configuration>
-                                     <outputDirectory>${keycloak.server.home}/standalone/configuration</outputDirectory>
-                                     <resources>
-                                         <resource>
-                                              <directory>src/main/keystore</directory>
-                                              <includes>
-                                                  <include>keycloak.jks</include>
-                                                  <include>keycloak.truststore</include>
-                                              </includes>
-                                         </resource>
-                                     </resources>
+                                    <outputDirectory>${keycloak.server.home}/standalone/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/keystore</directory>
+                                            <includes>
+                                                <include>keycloak.jks</include>
+                                                <include>keycloak.truststore</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
                                 </configuration>
                             </execution>
                         </executions>
@@ -412,5 +412,50 @@
                 </plugins>
             </build>
         </profile>        
+        
+        <profile>
+            <id>auth-server-wildfly-cluster</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>configure-wildfly-datasource</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <!-- point KeycloakDS datasource to H2 running on TCP port -->
+                                        <transformationSet>
+                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
+                                            <includes>
+                                                <include>standalone-ha.xml</include>
+                                            </includes>
+                                            <stylesheet>src/main/xslt/datasource-jdbc-url.xsl</stylesheet>
+                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>pool.name</name>
+                                                    <value>KeycloakDS</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>jdbc.url</name>
+                                                    <value>jdbc:h2:tcp://${jboss.bind.address:localhost}:9092/mem:keycloak;DB_CLOSE_DELAY=-1</value>
+                                                </parameter>
+                                            </parameters>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
     </profiles>
 </project>
