@@ -398,6 +398,7 @@
                 <dependency>
                     <groupId>com.h2database</groupId>
                     <artifactId>h2</artifactId>
+                    <scope>compile</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.hibernate</groupId>
@@ -450,6 +451,7 @@
                 <adapter.test.props/>
                 <keycloak.home>${containers.home}/keycloak-${project.version}</keycloak.home>
                 <jboss.server.config.dir>${keycloak.home}/standalone/configuration</jboss.server.config.dir>
+                <h2.version>1.3.173</h2.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -476,7 +478,7 @@
                 </pluginManagement>
             </build>
         </profile>
-        
+
         <profile>
             <id>auth-server-eap7</id>
             <properties>

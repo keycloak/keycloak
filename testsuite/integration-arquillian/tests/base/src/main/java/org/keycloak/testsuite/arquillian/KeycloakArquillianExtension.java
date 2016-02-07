@@ -26,6 +26,7 @@ import org.jboss.arquillian.core.spi.LoadableExtension;
 import org.jboss.arquillian.graphene.location.CustomizableURLResourceProvider;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
+import org.keycloak.testsuite.arquillian.h2.H2TestEnricher;
 import org.keycloak.testsuite.arquillian.migration.MigrationTestExecutionDecider;
 import org.keycloak.testsuite.arquillian.undertow.CustomUndertowContainer;
 
@@ -48,7 +49,8 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
                 .service(ApplicationArchiveProcessor.class, DeploymentArchiveProcessor.class)
                 .observer(AuthServerTestEnricher.class)
-                .observer(AppServerTestEnricher.class);
+                .observer(AppServerTestEnricher.class)
+                .observer(H2TestEnricher.class);
 
         builder
                 .service(DeployableContainer.class, CustomUndertowContainer.class);
