@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
-  ~ and other contributors as indicated by the @author tags.
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
 
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -65,9 +65,6 @@
         <arquillian-wildfly-container.version>8.2.0.Final</arquillian-wildfly-container.version>
         <version.shrinkwrap.resolvers>2.1.1</version.shrinkwrap.resolvers>
         
-        <skip.unpack.server>true</skip.unpack.server>
-        <skip.unpack.migrated.server>true</skip.unpack.migrated.server>
-        <skip.install.adapters>true</skip.install.adapters>
     </properties>
 
     <dependencyManagement>
@@ -122,7 +119,6 @@
                             <auth.server.ssl.required>${auth.server.ssl.required}</auth.server.ssl.required>
                             <startup.timeout.sec>${startup.timeout.sec}</startup.timeout.sec>
                             <jboss.server.config.dir>${jboss.server.config.dir}</jboss.server.config.dir>
-                            <skip.install.adapters>${skip.install.adapters}</skip.install.adapters>
                         </systemPropertyVariables>
                         <properties>
                             <property>
@@ -132,52 +128,6 @@
                         </properties>
                         <failIfNoTests>false</failIfNoTests>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>unpack-migrated-server</id>
-                            <phase>generate-test-resources</phase>
-                            <goals>
-                                <goal>unpack</goal>
-                            </goals>
-                            <configuration>
-                                <skip>${skip.unpack.migrated.server}</skip>
-                                <artifactItems>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>${migrated.server.artifactId}</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>zip</type>
-                                    </artifactItem>
-                                </artifactItems>
-                                <outputDirectory>${containers.home}</outputDirectory>
-                                <overWriteIfNewer>true</overWriteIfNewer>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>unpack-server</id>
-                            <phase>generate-test-resources</phase>
-                            <goals>
-                                <goal>unpack</goal>
-                            </goals>
-                            <configuration>
-                                <skip>${skip.unpack.server}</skip>
-                                <artifactItems>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>${server.artifactId}</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>zip</type>
-                                    </artifactItem>
-                                </artifactItems>
-                                <outputDirectory>${containers.home}</outputDirectory>
-                                <overWriteIfNewer>true</overWriteIfNewer>
-                            </configuration>
-                        </execution>
-                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -444,8 +394,6 @@
         <profile>
             <id>auth-server-wildfly</id>
             <properties>
-                <skip.unpack.server>false</skip.unpack.server>
-                <server.artifactId>integration-arquillian-server-wildfly</server.artifactId>
                 <auth.server.container>auth-server-wildfly</auth.server.container>
                 <startup.timeout.sec>300</startup.timeout.sec>
                 <adapter.test.props/>
@@ -474,6 +422,31 @@
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-auth-server-wildfly</id>
+                                    <phase>generate-test-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-server-wildfly</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <outputDirectory>${containers.home}</outputDirectory>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
                     </plugins>
                 </pluginManagement>
             </build>
@@ -482,8 +455,6 @@
         <profile>
             <id>auth-server-eap7</id>
             <properties>
-                <skip.unpack.server>false</skip.unpack.server>
-                <server.artifactId>integration-arquillian-server-eap7</server.artifactId>
                 <auth.server.container>auth-server-eap7</auth.server.container>
                 <startup.timeout.sec>300</startup.timeout.sec>
                 <adapter.test.props/>
@@ -530,6 +501,31 @@
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-auth-server-eap</id>
+                                    <phase>generate-test-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-server-eap7</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <outputDirectory>${containers.home}</outputDirectory>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
                     </plugins>
                 </pluginManagement>
             </build>
@@ -538,11 +534,81 @@
         <!-- Profiles for migration tests-->
         
         <profile>
+            <id>migration</id>
+            <activation>
+                <property>
+                    <name>migrated.auth.server.version</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-properties</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>migrated.auth.server.version</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>unpack-migrated-auth-server-wildfly</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.testsuite</groupId>
+                                            <artifactId>${migrated.auth.server.artifactId}</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>zip</type>
+                                        </artifactItem>
+                                    </artifactItems>
+                                    <outputDirectory>${containers.home}</outputDirectory>
+                                    <overWriteIfNewer>true</overWriteIfNewer>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>        
+        
+        <profile>
             <id>migration-kc16</id>
+            <activation>
+                <property>
+                    <name>migrated.auth.server.version</name>
+                    <value>1.6.1.Final</value>
+                </property>
+            </activation>
             <properties>
-                <skip.unpack.migrated.server>false</skip.unpack.migrated.server>
-                <server.version>1.6.1.Final</server.version>
-                <migrated.server.artifactId>integration-arquillian-server-wildfly-kc16</migrated.server.artifactId>
+                <migrated.auth.server.artifactId>integration-arquillian-server-wildfly-kc16</migrated.auth.server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
@@ -552,11 +618,9 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
-                                    <migration>true</migration>
-                                    <migration.kc16>true</migration.kc16>
-                                    <keycloak.migration.home>${containers.home}/keycloak-${server.version}</keycloak.migration.home>
+                                    <auth.server.wildfly.kc16>true</auth.server.wildfly.kc16>
+                                    <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
                                     <keycloak.migration.file>src/test/resources/migration-test/migration-realm-16.json</keycloak.migration.file>
-                                    <version>${server.version}</version>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -567,10 +631,14 @@
         
         <profile>
             <id>migration-kc15</id>
+            <activation>
+                <property>
+                    <name>migrated.auth.server.version</name>
+                    <value>1.5.1.Final</value>
+                </property>
+            </activation>
             <properties>
-                <skip.unpack.migrated.server>false</skip.unpack.migrated.server>
-                <server.version>1.5.1.Final</server.version>
-                <migrated.server.artifactId>integration-arquillian-server-wildfly-kc15</migrated.server.artifactId>
+                <migrated.auth.server.artifactId>integration-arquillian-server-wildfly-kc15</migrated.auth.server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
@@ -580,11 +648,9 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
-                                    <migration>true</migration>
-                                    <migration.kc15>true</migration.kc15>
-                                    <keycloak.migration.home>${containers.home}/keycloak-${server.version}</keycloak.migration.home>
+                                    <auth.server.wildfly.kc15>true</auth.server.wildfly.kc15>
+                                    <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
                                     <keycloak.migration.file>src/test/resources/migration-test/migration-realm-15.json</keycloak.migration.file>
-                                    <version>${server.version}</version>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -595,10 +661,14 @@
         
         <profile>
             <id>migration-kc14</id>
+            <activation>
+                <property>
+                    <name>migrated.auth.server.version</name>
+                    <value>1.4.0.Final</value>
+                </property>
+            </activation>
             <properties>
-                <skip.unpack.migrated.server>false</skip.unpack.migrated.server>
-                <server.version>1.4.0.Final</server.version>
-                <migrated.server.artifactId>integration-arquillian-server-wildfly-kc14</migrated.server.artifactId>
+                <migrated.auth.server.artifactId>integration-arquillian-server-wildfly-kc14</migrated.auth.server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
@@ -608,9 +678,8 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
-                                    <migration>true</migration>
-                                    <migration.kc14>true</migration.kc14>
-                                    <keycloak.migration.home>${containers.home}/keycloak-${server.version}</keycloak.migration.home>
+                                    <auth.server.wildfly.kc14>true</auth.server.wildfly.kc14>
+                                    <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -621,10 +690,14 @@
         
         <profile>
             <id>migration-kc13</id>
+            <activation>
+                <property>
+                    <name>migrated.auth.server.version</name>
+                    <value>1.3.1.Final</value>
+                </property>
+            </activation>
             <properties>
-                <skip.unpack.migrated.server>false</skip.unpack.migrated.server>
-                <server.version>1.3.1.Final</server.version>
-                <migrated.server.artifactId>integration-arquillian-server-wildfly-kc13</migrated.server.artifactId>
+                <migrated.auth.server.artifactId>integration-arquillian-server-wildfly-kc13</migrated.auth.server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
@@ -634,9 +707,8 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
-                                    <migration>true</migration>
-                                    <migration.kc13>true</migration.kc13>
-                                    <keycloak.migration.home>${containers.home}/keycloak-${server.version}</keycloak.migration.home>
+                                    <auth.server.wildfly.kc13>true</auth.server.wildfly.kc13>
+                                    <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -647,10 +719,14 @@
         
         <profile>
             <id>migration-kc12</id>
+            <activation>
+                <property>
+                    <name>migrated.auth.server.version</name>
+                    <value>1.2.0.Final</value>
+                </property>
+            </activation>
             <properties>
-                <skip.unpack.migrated.server>false</skip.unpack.migrated.server>
-                <server.version>1.2.0.Final</server.version>
-                <migrated.server.artifactId>integration-arquillian-server-wildfly-kc12</migrated.server.artifactId>
+                <migrated.auth.server.artifactId>integration-arquillian-server-wildfly-kc12</migrated.auth.server.artifactId>
             </properties>
             <build>
                 <pluginManagement>
@@ -660,9 +736,8 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
-                                    <migration>true</migration>
-                                    <migration.kc12>true</migration.kc12>
-                                    <keycloak.migration.home>${containers.home}/keycloak-${server.version}</keycloak.migration.home>
+                                    <auth.server.wildfly.kc12>true</auth.server.wildfly.kc12>
+                                    <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>

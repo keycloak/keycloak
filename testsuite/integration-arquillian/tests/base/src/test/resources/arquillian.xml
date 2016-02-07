@@ -110,9 +110,9 @@
 
     <!-- PREVIOUS VERSIONS OF KEYCLOAK FOR MIGRATION TESTS -->
     
-    <container qualifier="migrated-auth-server-wildfly_kc16" mode="manual" >
+    <container qualifier="auth-server-wildfly-kc16" mode="manual" >
         <configuration>
-            <property name="enabled">${migration.kc16}</property>
+            <property name="enabled">${auth.server.wildfly.kc16}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">
@@ -129,9 +129,9 @@
         </configuration>
     </container>
     
-    <container qualifier="migrated-auth-server-wildfly_kc15" mode="manual" >
+    <container qualifier="auth-server-wildfly-kc15" mode="manual" >
         <configuration>
-            <property name="enabled">${migration.kc15}</property>
+            <property name="enabled">${auth.server.wildfly.kc15}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">
@@ -148,9 +148,9 @@
         </configuration>
     </container>
     
-    <container qualifier="migrated-auth-server-wildfly_kc14" mode="manual" >
+    <container qualifier="auth-server-wildfly-kc14" mode="manual" >
         <configuration>
-            <property name="enabled">${migration.kc14}</property>
+            <property name="enabled">${auth.server.wildfly.kc14}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
@@ -159,9 +159,9 @@
         </configuration>
     </container>
     
-    <container qualifier="migrated-auth-server-wildfly_kc13" mode="manual" >
+    <container qualifier="auth-server-wildfly-kc13" mode="manual" >
         <configuration>
-            <property name="enabled">${migration.kc13}</property>
+            <property name="enabled">${auth.server.wildfly.kc13}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
@@ -170,9 +170,9 @@
         </configuration>
     </container>
     
-    <container qualifier="migrated-auth-server-wildfly_kc12" mode="manual" >
+    <container qualifier="auth-server-wildfly-kc12" mode="manual" >
         <configuration>
-            <property name="enabled">${migration.kc12}</property>
+            <property name="enabled">${auth.server.wildfly.kc12}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
