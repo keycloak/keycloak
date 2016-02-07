@@ -8,6 +8,8 @@ import java.util.Map;
 import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import static org.keycloak.testsuite.auth.page.login.OIDCLogin.OIDC;
@@ -50,7 +52,7 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
 
     public final String TEST_CLIENT_ID = "test-client";
     public final String TEST_REDIRECT_URIS = "http://example.test/app/*";
-    
+
     @Page
     protected Clients clientsPage;
     @Page
@@ -87,12 +89,12 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         client.setConsentRequired(false);
         return client;
     }
-    
+
     public static ClientRepresentation createOidcClientRep(OidcAccessType accessType, String clientId, String... redirectUris) {
         ClientRepresentation client = createClientRep(clientId);
-       
+
         client.setProtocol(OIDC);
-        
+
         switch (accessType) {
             case BEARER_ONLY:
                 client.setBearerOnly(true);
@@ -116,24 +118,24 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         }
         return client;
     }
-    
+
     public static ClientRepresentation createSamlClientRep(String clinetId) {
         ClientRepresentation client = createClientRep(clinetId);
-        
+
         client.setProtocol(SAML);
-        
+
         client.setFrontchannelLogout(true);
         client.setAttributes(getSAMLAttributes());
-        
+
         return client;
     }
-    
+
     private static void setRedirectUris(ClientRepresentation client, String... redirectUris) {
         List<String> redirectUrisList = new ArrayList<>();
         redirectUrisList.addAll(Arrays.asList(redirectUris));
         client.setRedirectUris(redirectUrisList);
     }
-    
+
     protected static void setExpectedWebOrigins(ClientRepresentation client) {
         List<String> webOrigins = new ArrayList<>();
         for (String redirectUri : client.getRedirectUris()) {
@@ -143,7 +145,7 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         }
         client.setWebOrigins(webOrigins);
     }
-    
+
     public ClientRepresentation findClientByClientId(String clientId) {
         ClientRepresentation found = null;
         for (ClientRepresentation clientRepresentation : testRealmResource().clients().findAll()) {
@@ -154,7 +156,7 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         }
         return found;
     }
-    
+
     public void assertClientSettingsEqual(ClientRepresentation c1, ClientRepresentation c2) {
         assertEqualsStringAttributes(c1.getClientId(), c2.getClientId());
         assertEqualsStringAttributes(c1.getName(), c2.getName());
@@ -174,38 +176,37 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
             }
             assertEqualsBooleanAttributes(c1.isSurrogateAuthRequired(), c2.isSurrogateAuthRequired());
             assertEqualsBooleanAttributes(c1.isServiceAccountsEnabled(), c2.isServiceAccountsEnabled());
-        }
-        else if (c1.getProtocol().equals(SAML)) {
+        } else if (c1.getProtocol().equals(SAML)) {
             assertEqualsBooleanAttributes(c1.isFrontchannelLogout(), c2.isFrontchannelLogout());
         }
     }
-    
+
     public void assertClientSamlAttributes(Map<String, String> expected, Map<String, String> actual) {
         for (String key : expected.keySet()) {
             assertEquals("Expected attribute " + key, expected.get(key), actual.get(key));
         }
     }
-    
+
     protected static Map<String, String> getSAMLAttributes() {
         Map<String, String> attributes = new HashMap<>();
         attributes.put(SAML_ASSERTION_SIGNATURE, "true");
         attributes.put(SAML_AUTHNSTATEMENT, "false");
-	attributes.put(SAML_CLIENT_SIGNATURE,	"true");
-	attributes.put(SAML_ENCRYPT, "true");
-	attributes.put(SAML_FORCE_POST_BINDING, "true");
-	attributes.put(SAML_MULTIVALUED_ROLES, "false");
-	attributes.put(SAML_SERVER_SIGNATURE,	"true");
-	attributes.put(SAML_SIGNATURE_ALGORITHM, "RSA_SHA512");
-	attributes.put(SAML_ASSERTION_CONSUMER_URL_POST, "http://example0.test");
-	attributes.put(SAML_ASSERTION_CONSUMER_URL_REDIRECT, "http://example1.test");
-	attributes.put(SAML_FORCE_NAME_ID_FORMAT, "true");
-	attributes.put(SAML_NAME_ID_FORMAT, "email");
-	attributes.put(SAML_SIGNATURE_CANONICALIZATION_METHOD, "http://www.w3.org/2001/10/xml-exc-c14n#WithComments");
-	attributes.put(SAML_SINGLE_LOGOUT_SERVICE_URL_POST, "http://example2.test");
-	attributes.put(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT, "http://example3.test");
+        attributes.put(SAML_CLIENT_SIGNATURE, "true");
+        attributes.put(SAML_ENCRYPT, "true");
+        attributes.put(SAML_FORCE_POST_BINDING, "true");
+        attributes.put(SAML_MULTIVALUED_ROLES, "false");
+        attributes.put(SAML_SERVER_SIGNATURE, "true");
+        attributes.put(SAML_SIGNATURE_ALGORITHM, "RSA_SHA512");
+        attributes.put(SAML_ASSERTION_CONSUMER_URL_POST, "http://example0.test");
+        attributes.put(SAML_ASSERTION_CONSUMER_URL_REDIRECT, "http://example1.test");
+        attributes.put(SAML_FORCE_NAME_ID_FORMAT, "true");
+        attributes.put(SAML_NAME_ID_FORMAT, "email");
+        attributes.put(SAML_SIGNATURE_CANONICALIZATION_METHOD, "http://www.w3.org/2001/10/xml-exc-c14n#WithComments");
+        attributes.put(SAML_SINGLE_LOGOUT_SERVICE_URL_POST, "http://example2.test");
+        attributes.put(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT, "http://example3.test");
         return attributes;
     }
-    
+
     public ProtocolMapperRepresentation findClientMapperByName(String clientId, String mapperName) {
         ProtocolMapperRepresentation found = null;
         for (ProtocolMapperRepresentation mapper : testRealmResource().clients().get(clientId).getProtocolMappers().getMappers()) {
@@ -215,4 +216,13 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         }
         return found;
     }
+
+    public ClientsResource clientsResource() {
+        return testRealmResource().clients();
+    }
+
+    public ClientResource clientResource(String id) {
+        return clientsResource().get(id);
+    }
+
 }

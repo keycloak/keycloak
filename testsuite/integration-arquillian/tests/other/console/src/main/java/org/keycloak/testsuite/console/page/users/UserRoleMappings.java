@@ -20,9 +20,5 @@ public class UserRoleMappings extends User {
     public UserRoleMappingsForm form() {
         return form;
     }
-    
-    public RoleMappingResource roleMappingResource() {
-        return userResource().roles();
-    }
 
 }

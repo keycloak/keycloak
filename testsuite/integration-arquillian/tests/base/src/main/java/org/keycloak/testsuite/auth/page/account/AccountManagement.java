@@ -101,9 +101,9 @@ public class AccountManagement extends AuthRealm {
         save.click();
     }
 
-    public RealmResource realmResource() {
-        return keycloak().realm(getAuthRealm());
-    }
+//    public RealmResource realmResource() {
+//        return keycloak().realm(getAuthRealm());
+//    }
 
     public void waitForAccountLinkPresent() {
         waitUntilElement(accountLink, "account link should be present").is().present();

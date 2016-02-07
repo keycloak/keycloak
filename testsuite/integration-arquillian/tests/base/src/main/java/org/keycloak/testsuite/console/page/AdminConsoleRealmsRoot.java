@@ -59,8 +59,8 @@ public class AdminConsoleRealmsRoot extends AdminConsole {
     @FindBy(css = "realm-selector")
     protected RealmSelector realmSelector;
 
-    public RealmsResource realmsResource() {
-        return keycloak.realms();
-    }
+//    public RealmsResource realmsResource() {
+//        return keycloak.realms();
+//    }
 
 }

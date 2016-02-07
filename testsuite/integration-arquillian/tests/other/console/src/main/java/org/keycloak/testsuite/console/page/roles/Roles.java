@@ -35,8 +35,4 @@ public class Roles extends AdminConsoleRealm {
 
     }
 
-    public RolesResource rolesResource() {
-        return realmResource().roles();
-    }
-
 }

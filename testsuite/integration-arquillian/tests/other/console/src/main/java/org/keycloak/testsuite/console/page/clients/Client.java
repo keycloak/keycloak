@@ -108,8 +108,6 @@ public class Client extends Clients {
 
     }
 
-    public ClientResource clientResource() {
-        return clientsResource().get(getId());
-    }
+
 
 }

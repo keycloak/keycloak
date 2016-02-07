@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.client;
 
 import org.junit.Before;
@@ -87,7 +86,7 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
         AdapterConfig config = reg.getAdapterConfig(client.getClientId());
         assertNotNull(config);
 
-        assertEquals(testContext.getAuthServerContextRoot() + "/auth", config.getAuthServerUrl());
+        assertEquals(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", config.getAuthServerUrl());
         assertEquals("test", config.getRealm());
 
         assertEquals(1, config.getCredentials().size());

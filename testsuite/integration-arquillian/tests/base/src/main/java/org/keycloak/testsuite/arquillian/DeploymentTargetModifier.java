@@ -23,7 +23,7 @@ import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
 import org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.logging.Logger;
-import static org.keycloak.testsuite.arquillian.ContainersTestEnricher.*;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifier;
 
 /**
  * Changes target container for all Arquillian deployments based on value of

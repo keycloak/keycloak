@@ -92,8 +92,4 @@ public class IdentityProviderSettings extends AdminConsoleRealm {
         return rows;
     }
     
-    public IdentityProvidersResource identityProviders() {
-        return realmResource().identityProviders();
-    }
-    
 }

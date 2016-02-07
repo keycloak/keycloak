@@ -37,8 +37,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAdapterLibsLocationProperty;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.hasAppServerContainerAnnotation;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isRelative;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isTomcatAppServer;
 
-import static org.keycloak.testsuite.arquillian.ContainersTestEnricher.*;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.*;
 import static org.keycloak.testsuite.util.IOUtil.*;
 
 ;
@@ -66,7 +70,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         log.info("Processing archive " + archive.getName());
 //        if (isAdapterTest(testClass)) {
         modifyAdapterConfigs(archive, testClass);
-        attachKeycloakLibs(archive, testClass);
+        attachAdapterLibs(archive, testClass);
         modifyWebXml(archive, testClass);
 //        } else {
 //            log.info(testClass.getJavaClass().getSimpleName() + " is not an AdapterTest");
@@ -89,21 +93,21 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     protected void modifyAdapterConfig(Archive<?> archive, String adapterConfigPath, boolean relative) {
         if (archive.contains(adapterConfigPath)) {
             log.info("Modifying adapter config " + adapterConfigPath + " in " + archive.getName());
-            if (adapterConfigPath.equals(SAML_ADAPTER_CONFIG_PATH)) {
+            if (adapterConfigPath.equals(SAML_ADAPTER_CONFIG_PATH)) { // SAML adapter config
                 log.info("Modyfying saml adapter config in " + archive.getName());
 
                 Document doc = loadXML(archive.get("WEB-INF/keycloak-saml.xml").getAsset().openStream());
                 if (authServerSslRequired) {
-                    modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.https.port", null));
+                    modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.https.port"));
                     modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "http", "https");
-                    modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.https.port", null));
+                    modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.https.port"));
                     modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "http", "https");
-                    modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.https.port", null));
+                    modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.https.port"));
                     modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "http", "https");
                 } else {
-                    modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.http.port", null));
-                    modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.http.port", null));
-                    modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.http.port", null));
+                    modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.http.port"));
+                    modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.http.port"));
+                    modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.http.port"));
                 }
 
                 try {
@@ -112,7 +116,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     log.error("Can't transform document to String");
                     throw new RuntimeException(e);
                 }
-            } else {
+            } else { // OIDC adapter config
                 try {
                     BaseAdapterConfig adapterConfig = loadJson(archive.get(adapterConfigPath)
                             .getAsset().openStream(), BaseAdapterConfig.class);
@@ -122,7 +126,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                         adapterConfig.setAuthServerUrl("/auth");
 //                ac.setRealmKey(null); // TODO verify if realm key is required for relative scneario
                     } else {
-                        adapterConfig.setAuthServerUrl(getAuthServerContextRootFromSystemProperty() + "/auth");
+                        adapterConfig.setAuthServerUrl(getAuthServerContextRoot() + "/auth");
                         adapterConfig.setRealmKey(REALM_KEY);
                     }
                     
@@ -140,7 +144,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         }
     }
 
-    protected void attachKeycloakLibs(Archive<?> archive, TestClass testClass) {
+    protected void attachAdapterLibs(Archive<?> archive, TestClass testClass) {
         AdapterLibsMode adapterType = AdapterLibsMode.getByType(System.getProperty("adapter.libs.mode",
                 AdapterLibsMode.PROVIDED.getType()));
         log.info("Adapter type: " + adapterType);
