@@ -22,21 +22,23 @@ import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
+ * @author tkyjovsk (refactoring)
  */
 public class MigrationTestExecutionDecider implements TestExecutionDecider {
 
+    public static final String MIGRATED_AUTH_SERVER_VERSION_PROPERTY = "migrated.auth.server.version";
+
     @Override
     public ExecutionDecision decide(Method method) {
-        
-        boolean migrationTest = "true".equals(System.getProperty("migration", "false"));
+
+        String migratedAuthServerVersion = System.getProperty(MIGRATED_AUTH_SERVER_VERSION_PROPERTY);
+        boolean migrationTest = migratedAuthServerVersion != null;
         Migration migrationAnnotation = method.getAnnotation(Migration.class);
-        
+
         if (migrationTest && migrationAnnotation != null) {
             String versionFrom = migrationAnnotation.versionFrom();
-            String version = System.getProperty("version");
-            
 
-            if (version.equals(versionFrom)) {
+            if (migratedAuthServerVersion.equals(versionFrom)) {
                 return ExecutionDecision.execute();
             } else {
                 return ExecutionDecision.dontExecute(method.getName() + "doesn't fit with migration version.");
