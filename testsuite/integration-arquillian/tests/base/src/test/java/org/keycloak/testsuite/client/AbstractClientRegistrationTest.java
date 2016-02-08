@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.client;
 
 import org.junit.After;
@@ -46,7 +45,7 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
 
     @Before
     public void before() throws Exception {
-        reg = ClientRegistration.create().url(testContext.getAuthServerContextRoot() + "/auth", "test").build();
+        reg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "test").build();
     }
 
     @After

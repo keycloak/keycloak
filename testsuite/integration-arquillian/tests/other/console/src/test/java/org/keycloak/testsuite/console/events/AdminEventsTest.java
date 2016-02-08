@@ -18,6 +18,7 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import org.keycloak.admin.client.resource.ClientsResource;
 import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.CONFIDENTIAL;
 
 
@@ -50,12 +51,12 @@ public class AdminEventsTest extends AbstractConsoleTest {
     @Test
     public void clientsAdminEventsTest() {
         newClient = AbstractClientTest.createOidcClientRep(CONFIDENTIAL, "test_client", "http://example.test/test_client/*");
-        Response response = clientsPage.clientsResource().create(newClient);
+        Response response = clientsResource().create(newClient);
         String id = ApiUtil.getCreatedId(response);
         response.close();
         newClient.setClientId("test_client2");
-        clientsPage.clientsResource().get(id).update(newClient);
-        clientsPage.clientsResource().get(id).remove();
+        clientsResource().get(id).update(newClient);
+        clientsResource().get(id).remove();
 
         adminEventsPage.navigateTo();
         adminEventsPage.table().filter();
@@ -84,5 +85,9 @@ public class AdminEventsTest extends AbstractConsoleTest {
         assertEquals(1, resultList.size());
         resultList.get(0).findElement(By.xpath("//td[text()='DELETE']"));
         resultList.get(0).findElement(By.xpath("//td[text()='clients/" + id + "']"));
+    }
+    
+    public ClientsResource clientsResource() {
+        return testRealmResource().clients();
     }
 }

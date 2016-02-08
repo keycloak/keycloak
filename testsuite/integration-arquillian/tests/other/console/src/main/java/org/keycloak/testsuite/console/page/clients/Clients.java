@@ -126,8 +126,4 @@ public class Clients extends AdminConsoleRealm {
         }
     }
 
-    public ClientsResource clientsResource() {
-        return realmResource().clients();
-    }
-
 }

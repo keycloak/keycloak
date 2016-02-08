@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.console.page.users;
 
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.testsuite.console.page.fragment.Breadcrumb;
 import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
 import org.openqa.selenium.WebElement;
@@ -76,8 +75,4 @@ public class User extends Users {
 
     }
     
-    public UserResource userResource() {
-        return usersResource().get(getId());
-    }
-
 }

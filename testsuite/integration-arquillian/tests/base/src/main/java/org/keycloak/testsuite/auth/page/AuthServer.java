@@ -41,11 +41,11 @@ public class AuthServer extends AuthServerContextRoot {
         return uri.getScheme() + "://" + uri.getAuthority() + "/auth";
     }
 
-    @ArquillianResource
-    protected Keycloak keycloak;
-
-    public Keycloak keycloak() {
-        return keycloak;
-    }
+//    @ArquillianResource
+//    protected Keycloak keycloak;
+//
+//    public Keycloak keycloak() {
+//        return keycloak;
+//    }
 
 }

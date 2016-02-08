@@ -25,7 +25,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
-import org.keycloak.testsuite.arquillian.ContainersTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 import java.io.IOException;
@@ -78,7 +77,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
     public abstract void addAdapterTestRealms(List<RealmRepresentation> testRealms);
 
     public boolean isRelative() {
-        return ContainersTestEnricher.isRelative(this.getClass());
+        return testContext.isRelativeAdapterTest();
     }
 
     protected void modifyClientRedirectUris(RealmRepresentation realm, String regex, String replacement) {

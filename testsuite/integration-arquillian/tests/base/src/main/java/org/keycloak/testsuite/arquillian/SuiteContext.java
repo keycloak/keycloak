@@ -14,11 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.arquillian;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import static org.keycloak.testsuite.util.MailServerConfiguration.*;
 
 /**
@@ -27,10 +29,18 @@ import static org.keycloak.testsuite.util.MailServerConfiguration.*;
  */
 public final class SuiteContext {
 
+    private final Set<ContainerInfo> container;
+
+    private ContainerInfo authServerInfo;
+    private final List<ContainerInfo> authServerBackendsInfo = new ArrayList<>();
+
+    private ContainerInfo migratedAuthServerInfo;
+
     private boolean adminPasswordUpdated;
     private final Map<String, String> smtpServer = new HashMap<>();
-    
-    public SuiteContext() {
+
+    public SuiteContext(Set<ContainerInfo> arquillianContainers) {
+        this.container = arquillianContainers;
         this.adminPasswordUpdated = false;
         smtpServer.put("from", FROM);
         smtpServer.put("host", HOST);
@@ -48,4 +58,44 @@ public final class SuiteContext {
     public Map<String, String> getSmtpServer() {
         return smtpServer;
     }
+
+    public ContainerInfo getAuthServerInfo() {
+        return authServerInfo;
+    }
+
+    public void setAuthServerInfo(ContainerInfo authServerInfo) {
+        this.authServerInfo = authServerInfo;
+    }
+
+    public List<ContainerInfo> getAuthServerBackendsInfo() {
+        return authServerBackendsInfo;
+    }
+
+    public ContainerInfo getMigratedAuthServerInfo() {
+        return migratedAuthServerInfo;
+    }
+
+    public void setMigratedAuthServerInfo(ContainerInfo migratedAuthServerInfo) {
+        this.migratedAuthServerInfo = migratedAuthServerInfo;
+    }
+
+    public boolean isAuthServerCluster() {
+        return !authServerBackendsInfo.isEmpty();
+    }
+
+    public boolean isAuthServerMigrationEnabled() {
+        return migratedAuthServerInfo != null;
+    }
+
+    public Set<ContainerInfo> getContainers() {
+        return container;
+    }
+
+    @Override
+    public String toString() {
+        return "SUITE CONTEXT:\n"
+                + "Auth server: " + authServerInfo.getQualifier() + "\n"
+                +(isAuthServerCluster() ? "Auth server cluster: " + getAuthServerBackendsInfo().size() + " nodes+\n" : "");
+    }
+
 }
