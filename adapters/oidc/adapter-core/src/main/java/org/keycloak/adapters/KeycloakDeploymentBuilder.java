@@ -98,7 +98,7 @@ public class KeycloakDeploymentBuilder {
         if (realmKeyPem == null && adapterConfig.isBearerOnly() && adapterConfig.getAuthServerUrl() == null) {
             throw new IllegalArgumentException("For bearer auth, you must set the realm-public-key or auth-server-url");
         }
-        if (realmKeyPem == null || !deployment.isBearerOnly() || deployment.isRegisterNodeAtStartup() || deployment.getRegisterNodePeriod() != -1) {
+        if (realmKeyPem == null || !deployment.isBearerOnly() || deployment.isEnableBasicAuth() || deployment.isRegisterNodeAtStartup() || deployment.getRegisterNodePeriod() != -1) {
             deployment.setClient(new HttpClientBuilder().build(adapterConfig));
         }
         if (adapterConfig.getAuthServerUrl() == null && (!deployment.isBearerOnly() || realmKeyPem == null)) {
