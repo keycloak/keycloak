@@ -27,22 +27,22 @@ import java.util.Map;
  */
 public class ClientTemplateEntity extends AbstractIdentifiableEntity {
 
-    private String name;
-    private String description;
-    private String realmId;
-    private String protocol;
-    private boolean fullScopeAllowed;
-    private boolean bearerOnly;
-    private boolean consentRequired;
-    private boolean standardFlowEnabled;
-    private boolean implicitFlowEnabled;
-    private boolean directAccessGrantsEnabled;
-    private boolean serviceAccountsEnabled;
-    private boolean publicClient;
-    private boolean frontchannelLogout;
-    private List<String> scopeIds = new ArrayList<>();
-    private List<ProtocolMapperEntity> protocolMappers = new ArrayList<>();
-    private Map<String, String> attributes = new HashMap<>();
+    protected String name;
+    protected String description;
+    protected String realmId;
+    protected String protocol;
+    protected boolean fullScopeAllowed;
+    protected boolean bearerOnly;
+    protected boolean consentRequired;
+    protected boolean standardFlowEnabled;
+    protected boolean implicitFlowEnabled;
+    protected boolean directAccessGrantsEnabled;
+    protected boolean serviceAccountsEnabled;
+    protected boolean publicClient;
+    protected boolean frontchannelLogout;
+    protected List<String> scopeIds = new ArrayList<>();
+    protected List<ProtocolMapperEntity> protocolMappers = new ArrayList<>();
+    protected Map<String, String> attributes = new HashMap<>();
 
     public String getName() {
         return name;

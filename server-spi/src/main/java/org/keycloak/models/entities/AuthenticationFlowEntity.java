@@ -24,23 +24,14 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class AuthenticationFlowEntity {
-    protected String id;
+public class AuthenticationFlowEntity  extends AbstractIdentifiableEntity {
     protected String alias;
     protected String description;
     protected String providerId;
-    private boolean topLevel;
-    private boolean builtIn;
+    protected boolean topLevel;
+    protected boolean builtIn;
 
     List<AuthenticationExecutionEntity> executions = new ArrayList<AuthenticationExecutionEntity>();
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
     public String getAlias() {
         return alias;
     }

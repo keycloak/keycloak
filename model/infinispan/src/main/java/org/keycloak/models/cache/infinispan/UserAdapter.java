@@ -404,4 +404,21 @@ public class UserAdapter implements UserModel {
         return updated.revokeConsentForClient(clientId);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof UserModel)) return false;
+
+        UserModel that = (UserModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
+
+
+
+
 }

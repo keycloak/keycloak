@@ -221,4 +221,23 @@ public class ClientTemplateEntity {
     public void setBearerOnly(boolean bearerOnly) {
         this.bearerOnly = bearerOnly;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof ClientTemplateEntity)) return false;
+
+        ClientTemplateEntity that = (ClientTemplateEntity) o;
+
+        if (!id.equals(that.getId())) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
 }

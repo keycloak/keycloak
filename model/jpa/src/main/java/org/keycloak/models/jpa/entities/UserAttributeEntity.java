@@ -91,4 +91,23 @@ public class UserAttributeEntity {
         this.user = user;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof UserAttributeEntity)) return false;
+
+        UserAttributeEntity that = (UserAttributeEntity) o;
+
+        if (!id.equals(that.getId())) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+
 }

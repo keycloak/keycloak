@@ -20,29 +20,20 @@ package org.keycloak.models.entities;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class CredentialEntity {
+public class CredentialEntity extends AbstractIdentifiableEntity {
 
-    private String id;
-    private String type;
-    private String value;
-    private String device;
-    private byte[] salt;
-    private int hashIterations;
-    private Long createdDate;
-    private UserEntity user;
-    private int counter;
-    private String algorithm;
-    private int digits;
-    private int period;
+    protected String type;
+    protected String value;
+    protected String device;
+    protected byte[] salt;
+    protected int hashIterations;
+    protected Long createdDate;
+    protected UserEntity user;
+    protected int counter;
+    protected String algorithm;
+    protected int digits;
+    protected int period;
 
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getType() {
         return type;

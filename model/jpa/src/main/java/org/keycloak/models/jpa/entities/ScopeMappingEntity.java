@@ -113,4 +113,26 @@ public class ScopeMappingEntity {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof ScopeMappingEntity)) return false;
+
+        ScopeMappingEntity key = (ScopeMappingEntity) o;
+
+        if (client != null ? !client.getId().equals(key.client != null ? key.client.getId() : null) : key.client != null) return false;
+        if (role != null ? !role.getId().equals(key.role != null ? key.role.getId() : null) : key.role != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = client != null ? client.getId().hashCode() : 0;
+        result = 31 * result + (role != null ? role.getId().hashCode() : 0);
+        return result;
+    }
+
+
 }

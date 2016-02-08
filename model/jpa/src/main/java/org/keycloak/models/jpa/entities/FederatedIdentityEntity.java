@@ -157,4 +157,27 @@ public class FederatedIdentityEntity {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof FederatedIdentityEntity)) return false;
+
+        FederatedIdentityEntity key = (FederatedIdentityEntity) o;
+
+        if (identityProvider != null ? !identityProvider.equals(key.identityProvider) : key.identityProvider != null)
+            return false;
+        if (user != null ? !user.getId().equals(key.user != null ? key.user.getId() : null) : key.user != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = user != null ? user.getId().hashCode() : 0;
+        result = 31 * result + (identityProvider != null ? identityProvider.hashCode() : 0);
+        return result;
+    }
+
+
 }

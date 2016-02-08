@@ -23,8 +23,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserFederationProviderEntity {
-    protected String id;
+public class UserFederationProviderEntity extends AbstractIdentifiableEntity {
     protected String providerName;
     protected Map<String, String> config;
     protected int priority;
@@ -33,14 +32,6 @@ public class UserFederationProviderEntity {
     private int changedSyncPeriod;
     private int lastSync;
 
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getProviderName() {
         return providerName;

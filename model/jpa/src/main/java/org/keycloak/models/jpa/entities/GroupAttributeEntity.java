@@ -84,4 +84,23 @@ public class GroupAttributeEntity {
     public void setGroup(GroupEntity group) {
         this.group = group;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof GroupAttributeEntity)) return false;
+
+        GroupAttributeEntity that = (GroupAttributeEntity) o;
+
+        if (!id.equals(that.getId())) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
 }

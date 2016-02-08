@@ -22,22 +22,13 @@ import java.util.List;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PersistentUserSessionEntity {
+public class PersistentUserSessionEntity extends AbstractIdentifiableEntity {
 
-    private String id;
     private String realmId;
     private String userId;
     private int lastSessionRefresh;
     private String data;
     private List<PersistentClientSessionEntity> clientSessions;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getRealmId() {
         return realmId;

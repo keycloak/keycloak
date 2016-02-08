@@ -86,4 +86,23 @@ public class AuthenticatorConfigEntity {
     public void setConfig(Map<String, String> config) {
         this.config = config;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof AuthenticatorConfigEntity)) return false;
+
+        AuthenticatorConfigEntity that = (AuthenticatorConfigEntity) o;
+
+        if (!id.equals(that.getId())) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
 }

@@ -23,22 +23,13 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RequiredActionProviderEntity {
-    protected String id;
+public class RequiredActionProviderEntity extends AbstractIdentifiableEntity {
     protected String alias;
     protected String name;
     protected String providerId;
     protected boolean enabled;
     protected boolean defaultAction;
     private Map<String, String> config;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getAlias() {
         return alias;

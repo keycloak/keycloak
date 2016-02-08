@@ -133,4 +133,21 @@ public class IdentityProviderEntity {
     public void setTrustEmail(boolean trustEmail) {
         this.trustEmail = trustEmail;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof IdentityProviderEntity)) return false;
+
+        IdentityProviderEntity that = (IdentityProviderEntity) o;
+
+        if (!internalId.equals(that.internalId)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return internalId.hashCode();
+    }
 }

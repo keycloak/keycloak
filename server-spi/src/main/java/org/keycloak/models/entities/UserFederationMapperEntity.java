@@ -22,21 +22,12 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserFederationMapperEntity {
+public class UserFederationMapperEntity extends AbstractIdentifiableEntity {
 
-    protected String id;
     protected String name;
     protected String federationProviderId;
     protected String federationMapperType;
     protected Map<String, String> config;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getName() {
         return name;

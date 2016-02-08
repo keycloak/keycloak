@@ -110,4 +110,26 @@ public class UserRequiredActionEntity {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof UserRequiredActionEntity)) return false;
+
+        UserRequiredActionEntity key = (UserRequiredActionEntity) o;
+
+        if (action != key.action) return false;
+        if (user != null ? !user.getId().equals(key.user != null ? key.user.getId() : null) : key.user != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = user != null ? user.getId().hashCode() : 0;
+        result = 31 * result + (action != null ? action.hashCode() : 0);
+        return result;
+    }
+
+
 }
