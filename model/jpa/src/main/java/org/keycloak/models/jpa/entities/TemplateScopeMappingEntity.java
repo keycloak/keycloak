@@ -113,4 +113,26 @@ public class TemplateScopeMappingEntity {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof TemplateScopeMappingEntity)) return false;
+
+        TemplateScopeMappingEntity key = (TemplateScopeMappingEntity) o;
+
+        if (template != null ? !template.getId().equals(key.template != null ? key.template.getId() : null) : key.template != null) return false;
+        if (role != null ? !role.getId().equals(key.role != null ? key.role.getId() : null) : key.role != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = template != null ? template.getId().hashCode() : 0;
+        result = 31 * result + (role != null ? role.getId().hashCode() : 0);
+        return result;
+    }
+
+
 }

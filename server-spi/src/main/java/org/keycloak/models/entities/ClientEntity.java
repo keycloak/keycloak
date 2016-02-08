@@ -27,48 +27,48 @@ import java.util.Map;
  */
 public class ClientEntity extends AbstractIdentifiableEntity {
 
-    private String clientId;
-    private String name;
-    private String description;
-    private String realmId;
-    private boolean enabled;
-    private String clientAuthenticatorType;
-    private String secret;
-    private String registrationToken;
-    private String protocol;
-    private int notBefore;
-    private boolean publicClient;
-    private boolean fullScopeAllowed;
-    private boolean frontchannelLogout;
+    protected String clientId;
+    protected String name;
+    protected String description;
+    protected String realmId;
+    protected boolean enabled;
+    protected String clientAuthenticatorType;
+    protected String secret;
+    protected String registrationToken;
+    protected String protocol;
+    protected int notBefore;
+    protected boolean publicClient;
+    protected boolean fullScopeAllowed;
+    protected boolean frontchannelLogout;
 
-    private boolean surrogateAuthRequired;
-    private String managementUrl;
-    private String rootUrl;
-    private String baseUrl;
-    private boolean bearerOnly;
-    private boolean consentRequired;
-    private boolean standardFlowEnabled;
-    private boolean implicitFlowEnabled;
-    private boolean directAccessGrantsEnabled;
-    private boolean serviceAccountsEnabled;
-    private int nodeReRegistrationTimeout;
+    protected boolean surrogateAuthRequired;
+    protected String managementUrl;
+    protected String rootUrl;
+    protected String baseUrl;
+    protected boolean bearerOnly;
+    protected boolean consentRequired;
+    protected boolean standardFlowEnabled;
+    protected boolean implicitFlowEnabled;
+    protected boolean directAccessGrantsEnabled;
+    protected boolean serviceAccountsEnabled;
+    protected int nodeReRegistrationTimeout;
 
     // We are using names of defaultRoles (not ids)
-    private List<String> defaultRoles = new ArrayList<String>();
+    protected List<String> defaultRoles = new ArrayList<String>();
 
-    private Map<String, Integer> registeredNodes;
+    protected Map<String, Integer> registeredNodes;
 
-    private Map<String, String> attributes = new HashMap<String, String>();
+    protected Map<String, String> attributes = new HashMap<String, String>();
 
-    private List<String> webOrigins = new ArrayList<String>();
-    private List<String> redirectUris = new ArrayList<String>();
-    private List<String> scopeIds = new ArrayList<String>();
-    private List<ClientIdentityProviderMappingEntity> identityProviders = new ArrayList<ClientIdentityProviderMappingEntity>();
-    private List<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
-    private String clientTemplate;
-    private boolean useTemplateConfig;
-    private boolean useTemplateScope;
-    private boolean useTemplateMappers;
+    protected List<String> webOrigins = new ArrayList<String>();
+    protected List<String> redirectUris = new ArrayList<String>();
+    protected List<String> scopeIds = new ArrayList<String>();
+    protected List<ClientIdentityProviderMappingEntity> identityProviders = new ArrayList<ClientIdentityProviderMappingEntity>();
+    protected List<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
+    protected String clientTemplate;
+    protected boolean useTemplateConfig;
+    protected boolean useTemplateScope;
+    protected boolean useTemplateMappers;
 
     public String getClientId() {
         return clientId;

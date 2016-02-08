@@ -167,4 +167,23 @@ public class CredentialEntity {
     public void setPeriod(int period) {
         this.period = period;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof CredentialEntity)) return false;
+
+        CredentialEntity that = (CredentialEntity) o;
+
+        if (!id.equals(that.getId())) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
 }

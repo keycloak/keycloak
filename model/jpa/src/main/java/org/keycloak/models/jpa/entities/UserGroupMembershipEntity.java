@@ -116,4 +116,26 @@ public class UserGroupMembershipEntity {
             return result;
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof UserGroupMembershipEntity)) return false;
+
+        UserGroupMembershipEntity key = (UserGroupMembershipEntity) o;
+
+        if (!groupId.equals(key.groupId)) return false;
+        if (!user.equals(key.user)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = user.hashCode();
+        result = 31 * result + groupId.hashCode();
+        return result;
+    }
+
 }

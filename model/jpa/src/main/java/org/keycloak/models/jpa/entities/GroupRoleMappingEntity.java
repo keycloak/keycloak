@@ -114,4 +114,26 @@ public class GroupRoleMappingEntity {
             return result;
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof GroupRoleMappingEntity)) return false;
+
+        GroupRoleMappingEntity key = (GroupRoleMappingEntity) o;
+
+        if (!roleId.equals(key.roleId)) return false;
+        if (!group.equals(key.group)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = group.hashCode();
+        result = 31 * result + roleId.hashCode();
+        return result;
+    }
+
 }

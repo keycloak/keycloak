@@ -24,7 +24,7 @@ package org.keycloak.models.entities;
  */
 public class AbstractIdentifiableEntity {
 
-    private String id;
+    protected String id;
 
     public String getId() {
         return id;

@@ -769,5 +769,24 @@ public class RealmEntity {
     public void setClientTemplates(Collection<ClientTemplateEntity> clientTemplates) {
         this.clientTemplates = clientTemplates;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof RealmEntity)) return false;
+
+        RealmEntity that = (RealmEntity) o;
+
+        if (!id.equals(that.getId())) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
 }
 

@@ -118,7 +118,8 @@ public class ClientIdentityProviderMappingEntity {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null) return false;
+        if (!(o instanceof ClientIdentityProviderMappingEntity)) return false;
 
         ClientIdentityProviderMappingEntity key = (ClientIdentityProviderMappingEntity) o;
 
@@ -135,4 +136,6 @@ public class ClientIdentityProviderMappingEntity {
         result = 31 * result + (identityProvider != null ? identityProvider.hashCode() : 0);
         return result;
     }
+
+
 }

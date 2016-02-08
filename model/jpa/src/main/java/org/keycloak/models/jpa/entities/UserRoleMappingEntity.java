@@ -117,4 +117,26 @@ public class UserRoleMappingEntity  {
             return result;
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof UserRoleMappingEntity)) return false;
+
+        UserRoleMappingEntity key = (UserRoleMappingEntity) o;
+
+        if (!roleId.equals(key.roleId)) return false;
+        if (!user.equals(key.user)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = user.hashCode();
+        result = 31 * result + roleId.hashCode();
+        return result;
+    }
+
 }

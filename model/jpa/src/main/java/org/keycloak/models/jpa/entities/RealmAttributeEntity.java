@@ -119,4 +119,26 @@ public class RealmAttributeEntity {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof RealmAttributeEntity)) return false;
+
+        RealmAttributeEntity key = (RealmAttributeEntity) o;
+
+        if (name != null ? !name.equals(key.name) : key.name != null) return false;
+        if (realm != null ? !realm.getId().equals(key.realm != null ? key.realm.getId() : null) : key.realm != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = realm != null ? realm.getId().hashCode() : 0;
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        return result;
+    }
+
+
 }

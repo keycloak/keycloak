@@ -19,18 +19,9 @@ package org.keycloak.models.entities;
 /**
  * @author pedroigor
  */
-public class ClientIdentityProviderMappingEntity {
+public class ClientIdentityProviderMappingEntity extends AbstractIdentifiableEntity {
 
-    private String id;
-    private boolean retrieveToken;
-
-    public String getId() {
-        return this.id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
+    protected boolean retrieveToken;
 
     public boolean isRetrieveToken() {
         return this.retrieveToken;

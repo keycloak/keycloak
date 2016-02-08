@@ -142,4 +142,23 @@ public class AuthenticationExecutionEntity {
     public void setAuthenticatorConfig(String authenticatorConfig) {
         this.authenticatorConfig = authenticatorConfig;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof AuthenticationExecutionEntity)) return false;
+
+        AuthenticationExecutionEntity that = (AuthenticationExecutionEntity) o;
+
+        if (!id.equals(that.getId())) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
 }

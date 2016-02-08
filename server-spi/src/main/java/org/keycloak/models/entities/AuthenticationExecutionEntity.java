@@ -24,24 +24,15 @@ import org.keycloak.models.AuthenticationExecutionModel;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class AuthenticationExecutionEntity {
-    protected String id;
+public class AuthenticationExecutionEntity extends AbstractIdentifiableEntity {
     protected String authenticator;
-    private String authenticatorConfig;
+    protected String authenticatorConfig;
     protected String flowId;
     protected AuthenticationExecutionModel.Requirement requirement;
     protected int priority;
-    private boolean userSetupAllowed;
-    private boolean authenticatorFlow;
-    private String parentFlow;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
+    protected boolean userSetupAllowed;
+    protected boolean authenticatorFlow;
+    protected String parentFlow;
 
     public String getAuthenticator() {
         return authenticator;

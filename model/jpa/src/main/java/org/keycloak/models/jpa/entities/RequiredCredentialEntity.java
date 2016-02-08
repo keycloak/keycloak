@@ -134,4 +134,26 @@ public class RequiredCredentialEntity {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (!(o instanceof RequiredCredentialEntity)) return false;
+
+        RequiredCredentialEntity key = (RequiredCredentialEntity) o;
+
+        if (realm != null ? !realm.getId().equals(key.realm != null ? key.realm.getId() : null) : key.realm != null) return false;
+        if (type != null ? !type.equals(key.type) : key.type != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = realm != null ? realm.getId().hashCode() : 0;
+        result = 31 * result + (type != null ? type.hashCode() : 0);
+        return result;
+    }
+
+
 }
