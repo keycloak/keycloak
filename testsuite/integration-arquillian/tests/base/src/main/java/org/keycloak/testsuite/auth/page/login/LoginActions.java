@@ -40,11 +40,11 @@ public class LoginActions extends AuthRealm {
     @FindBy(css = "div[id='kc-form-options'] span a")
     private WebElement backToLoginForm;
 
-    @FindBy(xpath = "//span[@class='kc-feedback-text' and text()]")
+    @FindBy(xpath = "//span[@class='kc-feedback-text' and string-length(text())>1]")
     private WebElement feedbackText;
     
     public String getFeedbackText() {
-        waitUntilElement(feedbackText, "Feedback message should be present").is().present();
+        waitUntilElement(feedbackText, "Feedback message should be present").is().visible();
         return feedbackText.getText();
     }
     

@@ -72,7 +72,7 @@ public class RegistrationTest extends AbstractAccountManagementTest {
     public void assertMessageAttributeMissing(String attributeName) {
         String feedbackTest = testRealmRegistrationPage.getFeedbackText();
         String contains = "Please specify " + attributeName + ".";
-        assertTrue("'" + contains + "' doesn't contain '" + feedbackTest + "'", feedbackTest.contains(contains));
+        assertTrue("'" + feedbackTest + "' doesn't contain '" + contains + "'", feedbackTest.contains(contains));
     }
 
     @Test
