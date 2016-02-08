@@ -25,19 +25,19 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         },
 
         get viewRealm() {
-            return getAccess('view-realm') || this.manageRealm;
+            return getAccess('view-realm') || getAccess('manage-realm') || this.manageRealm;
         },
 
         get viewClients() {
-            return getAccess('view-clients') || this.manageClients;
+            return getAccess('view-clients') || getAccess('manage-clients') || this.manageClients;
         },
 
         get viewUsers() {
-            return getAccess('view-users') || this.manageClients;
+            return getAccess('view-users') || getAccess('manage-users') || this.manageClients;
         },
 
         get viewEvents() {
-            return getAccess('view-events') || this.manageClients;
+            return getAccess('view-events') || getAccess('manage-events') || this.manageClients;
         },
 
         get manageRealm() {
