@@ -45,8 +45,11 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -75,6 +78,7 @@ import javax.ws.rs.core.UriInfo;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -82,7 +86,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.PatternSyntaxException;
 import org.keycloak.partialimport.PartialImportManager;
-import org.keycloak.representations.idm.PartialImportRepresentation;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -428,6 +431,7 @@ public class RealmAdminResource {
      *
      * Returns all events, or filters them based on URL query parameters listed here
      *
+     * @param types The types of events to return
      * @param client App or oauth client name
      * @param user User id
      * @param ipAddress IP address
@@ -441,7 +445,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Event> getEvents(@QueryParam("client") String client,
+    public List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
             @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
             @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults) {
@@ -454,8 +458,7 @@ public class RealmAdminResource {
             query.client(client);
         }
 
-        List<String> types = uriInfo.getQueryParameters().get("type");
-        if (types != null) {
+        if (types != null & !types.isEmpty()) {
             EventType[] t = new EventType[types.size()];
             for (int i = 0; i < t.length; i++) {
                 t[i] = EventType.valueOf(types.get(i));
@@ -499,7 +502,15 @@ public class RealmAdminResource {
             query.maxResults(maxResults);
         }
 
-        return query.getResultList();
+        return toEventListRep(query.getResultList());
+    }
+
+    private List<EventRepresentation> toEventListRep(List<Event> events) {
+        List<EventRepresentation> reps = new ArrayList<>();
+        for (Event event : events) {
+            reps.add(ModelToRepresentation.toRepresentation(event));
+        }
+        return reps;
     }
 
     /**
@@ -507,6 +518,7 @@ public class RealmAdminResource {
      *
      * Returns all admin events, or filters events based on URL query parameters listed here
      *
+     * @param operationTypes
      * @param authRealm
      * @param authClient
      * @param authUser user id
@@ -514,7 +526,6 @@ public class RealmAdminResource {
      * @param resourcePath
      * @param dateTo
      * @param dateFrom
-     * @param resourcePath
      * @param firstResult
      * @param maxResults
      * @return
@@ -523,7 +534,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<AdminEvent> getEvents(@QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
+    public List<AdminEventRepresentation> getEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
             @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
             @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
             @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
@@ -553,8 +564,7 @@ public class RealmAdminResource {
             query.resourcePath(resourcePath);
         }
 
-        List<String> operationTypes = uriInfo.getQueryParameters().get("operationTypes");
-        if (operationTypes != null) {
+        if (operationTypes != null && !operationTypes.isEmpty()) {
             OperationType[] t = new OperationType[operationTypes.size()];
             for (int i = 0; i < t.length; i++) {
                 t[i] = OperationType.valueOf(operationTypes.get(i));
@@ -591,7 +601,16 @@ public class RealmAdminResource {
             query.maxResults(maxResults);
         }
 
-        return query.getResultList();
+        return toAdminEventRep(query.getResultList());
+    }
+
+    private List<AdminEventRepresentation> toAdminEventRep(List<AdminEvent> events) {
+        List<AdminEventRepresentation> reps = new ArrayList<>();
+        for (AdminEvent event : events) {
+            reps.add(ModelToRepresentation.toRepresentation(event));
+        }
+
+        return reps;
     }
 
     /**

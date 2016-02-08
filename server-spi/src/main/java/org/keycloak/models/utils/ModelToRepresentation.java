@@ -17,6 +17,9 @@
 
 package org.keycloak.models.utils;
 
+import org.keycloak.events.Event;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -41,12 +44,15 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
@@ -164,6 +170,43 @@ public class ModelToRepresentation {
             attrs.putAll(user.getAttributes());
             rep.setAttributes(attrs);
         }
+        return rep;
+    }
+
+    public static EventRepresentation toRepresentation(Event event) {
+        EventRepresentation rep = new EventRepresentation();
+        rep.setTime(event.getTime());
+        rep.setType(event.getType().toString());
+        rep.setRealmId(event.getRealmId());
+        rep.setClientId(event.getClientId());
+        rep.setUserId(event.getUserId());
+        rep.setSessionId(event.getSessionId());
+        rep.setError(event.getError());
+        rep.setDetails(event.getDetails());
+        return rep;
+    }
+
+    public static AdminEventRepresentation toRepresentation(AdminEvent adminEvent) {
+        AdminEventRepresentation rep = new AdminEventRepresentation();
+        rep.setTime(adminEvent.getTime());
+        rep.setRealmId(adminEvent.getRealmId());
+        if (adminEvent.getAuthDetails() != null) {
+            rep.setAuthDetails(toRepresentation(adminEvent.getAuthDetails()));
+        }
+        rep.setOperationType(adminEvent.getOperationType().toString());
+        rep.setResourcePath(adminEvent.getResourcePath());
+        rep.setRepresentation(adminEvent.getRepresentation());
+        rep.setError(adminEvent.getError());
+
+        return rep;
+    }
+
+    public static AuthDetailsRepresentation toRepresentation(AuthDetails authDetails) {
+        AuthDetailsRepresentation rep = new AuthDetailsRepresentation();
+        rep.setRealmId(authDetails.getRealmId());
+        rep.setClientId(authDetails.getClientId());
+        rep.setUserId(authDetails.getUserId());
+        rep.setIpAddress(authDetails.getIpAddress());
         return rep;
     }
 
@@ -383,15 +426,15 @@ public class ModelToRepresentation {
         if (realm.getEventsListeners() != null) {
             rep.setEventsListeners(new LinkedList<>(realm.getEventsListeners()));
         }
-        
+
         if(realm.getEnabledEventTypes() != null) {
             rep.setEnabledEventTypes(new LinkedList<>(realm.getEnabledEventTypes()));
         }
-        
+
         rep.setAdminEventsEnabled(realm.isAdminEventsEnabled());
-        
+
         rep.setAdminEventsDetailsEnabled(realm.isAdminEventsDetailsEnabled());
-        
+
         return rep;
     }
 
