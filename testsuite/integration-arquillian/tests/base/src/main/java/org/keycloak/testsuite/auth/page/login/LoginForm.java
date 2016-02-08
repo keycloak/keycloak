@@ -42,7 +42,7 @@ public class LoginForm extends Form {
 //    @FindBy(name = "cancel")
 //    private WebElement cancelButton;
 
-    @FindBy(linkText = "Register")
+    @FindBy(xpath = "//div[@id='kc-registration']/span/a")
     private WebElement registerLink;
     @FindBy(linkText = "Forgot Password?")
     private WebElement forgottenPassword;
