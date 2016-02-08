@@ -451,6 +451,101 @@
                 </pluginManagement>
             </build>
         </profile>
+        
+        
+        <profile>
+            <id>auth-server-wildfly-cluster</id>
+            <properties>
+                <auth.server.container>auth-server-wildfly-cluster</auth.server.container>
+                <startup.timeout.sec>300</startup.timeout.sec>
+                <adapter.test.props/>
+                <h2.version>1.3.173</h2.version>
+
+                <keycloak.balancer.home>${containers.home}/balancer/wildfly-${project.version}</keycloak.balancer.home>
+                <keycloak.backend1.home>${containers.home}/node1/keycloak-${project.version}</keycloak.backend1.home>
+                <keycloak.backend2.home>${containers.home}/node2/keycloak-${project.version}</keycloak.backend2.home>
+
+                <keycloak.home>${keycloak.backend1.home}</keycloak.home>
+                <jboss.server.config.dir>${keycloak.home}/standalone/configuration</jboss.server.config.dir>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                </dependency>
+            </dependencies>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <auth.server.wildfly.cluster>true</auth.server.wildfly.cluster>
+                                    <auth.server.undertow>false</auth.server.undertow>
+                                    <adapter.test.props>${adapter.test.props}</adapter.test.props>
+                                    
+                                    <keycloak.balancer.home>${keycloak.balancer.home}</keycloak.balancer.home>
+                                    <keycloak.backend1.home>${keycloak.backend1.home}</keycloak.backend1.home>
+                                    <keycloak.backend2.home>${keycloak.backend2.home}</keycloak.backend2.home>
+
+                                    <!--100-->
+                                    <auth.server.backend1.port.offset>101</auth.server.backend1.port.offset>
+                                    <auth.server.backend2.port.offset>102</auth.server.backend2.port.offset>
+                                    <!--8180-->
+                                    <auth.server.backend1.http.port>8181</auth.server.backend1.http.port>
+                                    <auth.server.backend2.http.port>8181</auth.server.backend2.http.port>
+                                    <!--8543-->
+                                    <auth.server.backend1.https.port>8544</auth.server.backend1.https.port>
+                                    <auth.server.backend2.https.port>8545</auth.server.backend2.https.port>
+                                    <!--10090-->
+                                    <auth.server.backend1.management.port>10091</auth.server.backend1.management.port>
+                                    <auth.server.backend2.management.port>10092</auth.server.backend2.management.port>
+                                    <!--10099-->
+                                    <auth.server.backend1.management.port.jmx>10100</auth.server.backend1.management.port.jmx>
+                                    <auth.server.backend2.management.port.jmx>10101</auth.server.backend2.management.port.jmx>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-auth-server-wildfly</id>
+                                    <phase>generate-test-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-server-wildfly</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                                <classifier>balancer</classifier>
+                                                <outputDirectory>${containers.home}</outputDirectory>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-server-wildfly</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                                <classifier>backend</classifier>
+                                                <outputDirectory>${containers.home}</outputDirectory>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
 
         <profile>
             <id>auth-server-eap7</id>
