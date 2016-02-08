@@ -53,7 +53,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     private void getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerApplicationInvalidation(getId());
+            cacheSession.registerClientTemplateInvalidation(getId());
             updated = cacheSession.getDelegate().getClientTemplateById(getId(), cachedRealm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
