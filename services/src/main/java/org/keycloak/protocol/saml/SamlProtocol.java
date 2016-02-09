@@ -281,22 +281,50 @@ public class SamlProtocol implements LoginProtocol {
             // "G-" stands for "generated" Add this for the slight possibility of collisions.
             return "G-" + UUID.randomUUID().toString();
         } else if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get())) {
-            // generate a persistent user id specifically for each client.
-            UserModel user = userSession.getUser();
-            String name = SAML_PERSISTENT_NAME_ID_FOR + "." + clientSession.getClient().getClientId();
-            String samlPersistentId = user.getFirstAttribute(name);
-            if (samlPersistentId != null)
-                return samlPersistentId;
-            // "G-" stands for "generated"
-            samlPersistentId = "G-" + UUID.randomUUID().toString();
-            user.setSingleAttribute(name, samlPersistentId);
-            return samlPersistentId;
+            return getPersistentNameId(clientSession, userSession);
         } else if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get())) {
             // TODO: Support for persistent NameID (pseudo-random identifier persisted in user object)
             return userSession.getUser().getUsername();
         } else {
             return userSession.getUser().getUsername();
         }
+    }
+
+    /**
+     * Attempts to retrieve the persistent type NameId as follows:
+     *
+     * <ol>
+     *     <li>saml.persistent.name.id.for.$clientId user attribute</li>
+     *     <li>saml.persistent.name.id.for.* user attribute</li>
+     *     <li>G-$randomUuid</li>
+     * </ol>
+     *
+     * If a randomUuid is generated, an attribute for the given saml.persistent.name.id.for.$clientId will be generated,
+     * otherwise no state change will occur with respect to the user's attributes.
+     *
+     * @return the user's persistent NameId
+     */
+    protected String getPersistentNameId(final ClientSessionModel clientSession, final UserSessionModel userSession) {
+        // attempt to retrieve the UserID for the client-specific attribute
+        final UserModel user = userSession.getUser();
+        final String clientNameId = String.format("%s.%s", SAML_PERSISTENT_NAME_ID_FOR,
+                clientSession.getClient().getClientId());
+        String samlPersistentNameId = user.getFirstAttribute(clientNameId);
+        if (samlPersistentNameId != null) {
+            return samlPersistentNameId;
+        }
+
+        // check for a wildcard attribute
+        final String wildcardNameId = String.format("%s.*", SAML_PERSISTENT_NAME_ID_FOR);
+        samlPersistentNameId = user.getFirstAttribute(wildcardNameId);
+        if (samlPersistentNameId != null) {
+            return samlPersistentNameId;
+        }
+
+        // default to generated.  "G-" stands for "generated"
+        samlPersistentNameId = "G-" + UUID.randomUUID().toString();
+        user.setSingleAttribute(clientNameId, samlPersistentNameId);
+        return samlPersistentNameId;
     }
 
     @Override
