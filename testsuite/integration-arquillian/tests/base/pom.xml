@@ -35,7 +35,10 @@
         <exclude.console>-</exclude.console>
         <exclude.account>-</exclude.account>
         <exclude.client>-</exclude.client>
-        <exclude.migration>-</exclude.migration>
+        <!--exclude migration tests by default, enabled by 'migration' profile in tests/pom.xml-->
+        <exclude.migration>**/migration/**/*Test.java</exclude.migration>
+        <!--exclude cluster tests by default, enabled by 'auth-server-*-cluster' profiles in tests/pom.xml-->
+        <exclude.cluster>**/cluster/**/*Test.java</exclude.cluster>
     </properties>
     
     <dependencies>
@@ -107,30 +110,5 @@
         </plugins>
 
     </build>
-    
-    <profiles>    
-        <profile>
-            <id>no-account</id>
-            <properties>
-                <!-- Exclude all account management tests. -->
-                <exclude.account>**/account/**/*Test.java</exclude.account>
-            </properties>
-        </profile>
-        <profile>
-            <id>no-client</id>
-            <properties>
-                <!-- Exclude all client tests. -->
-                <exclude.client>**/client/**/*Test.java</exclude.client>
-            </properties>
-        </profile>
-        <profile>
-            <id>adapters-only</id>
-            <properties>
-                <exclude.account>**/account/**/*Test.java</exclude.account>
-                <exclude.client>**/client/**/*Test.java</exclude.client>
-                <exclude.migration>**/migration/**/*Test.java</exclude.migration>
-            </properties>
-        </profile>
-    </profiles>
     
 </project>
