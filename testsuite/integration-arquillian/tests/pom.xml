@@ -159,7 +159,27 @@
     </build>
 
     <profiles>
-        
+
+        <profile>
+            <id>no-account</id>
+            <properties>
+                <exclude.account>**/account/**/*Test.java</exclude.account>
+            </properties>
+        </profile>
+        <profile>
+            <id>no-client</id>
+            <properties>
+                <exclude.client>**/client/**/*Test.java</exclude.client>
+            </properties>
+        </profile>
+        <profile>
+            <id>no-base</id>
+            <properties>
+                <exclude.account>**/account/**/*Test.java</exclude.account>
+                <exclude.client>**/client/**/*Test.java</exclude.client>
+            </properties>
+        </profile>
+                
         <profile>
             <id>common-test-dependencies</id>
             <activation>
@@ -348,6 +368,7 @@
                 <dependency>
                     <groupId>com.h2database</groupId>
                     <artifactId>h2</artifactId>
+                    <scope>compile</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.hibernate</groupId>
@@ -398,6 +419,7 @@
                 <adapter.test.props/>
                 <keycloak.home>${containers.home}/keycloak-${project.version}</keycloak.home>
                 <jboss.server.config.dir>${keycloak.home}/standalone/configuration</jboss.server.config.dir>
+                <h2.version>1.3.173</h2.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -450,6 +472,111 @@
             </build>
         </profile>
         
+        
+        <profile>
+            <id>auth-server-wildfly-cluster</id>
+            <properties>
+                <!--disable exclusion pattern for cluster test which is enabled by default in base/pom.xml-->
+                <exclude.cluster>-</exclude.cluster>
+                
+                <auth.server.container>auth-server-wildfly-cluster</auth.server.container>
+                <startup.timeout.sec>300</startup.timeout.sec>
+                <adapter.test.props/>
+                <h2.version>1.3.173</h2.version>
+
+                <keycloak.balancer.home>${containers.home}/balancer/wildfly-balancer-${project.version}</keycloak.balancer.home>
+                <keycloak.backend1.home>${containers.home}/node1/keycloak-${project.version}</keycloak.backend1.home>
+                <keycloak.backend2.home>${containers.home}/node2/keycloak-${project.version}</keycloak.backend2.home>
+
+                <keycloak.home>${keycloak.backend1.home}</keycloak.home>
+                <jboss.server.config.dir>${keycloak.home}/standalone/configuration</jboss.server.config.dir>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                </dependency>
+            </dependencies>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <run.h2>true</run.h2>
+                                    
+                                    <auth.server.wildfly.cluster>true</auth.server.wildfly.cluster>
+                                    <auth.server.undertow>false</auth.server.undertow>
+                                    <adapter.test.props>${adapter.test.props}</adapter.test.props>
+                                    
+                                    <keycloak.balancer.home>${keycloak.balancer.home}</keycloak.balancer.home>
+                                    <keycloak.backend1.home>${keycloak.backend1.home}</keycloak.backend1.home>
+                                    <keycloak.backend2.home>${keycloak.backend2.home}</keycloak.backend2.home>
+
+                                    <!--100-->
+                                    <auth.server.backend1.port.offset>101</auth.server.backend1.port.offset>
+                                    <auth.server.backend2.port.offset>102</auth.server.backend2.port.offset>
+                                    <!--8180-->
+                                    <auth.server.backend1.http.port>8181</auth.server.backend1.http.port>
+                                    <auth.server.backend2.http.port>8182</auth.server.backend2.http.port>
+                                    <!--8543-->
+                                    <auth.server.backend1.https.port>8544</auth.server.backend1.https.port>
+                                    <auth.server.backend2.https.port>8545</auth.server.backend2.https.port>
+                                    <!--10090-->
+                                    <auth.server.backend1.management.port>10091</auth.server.backend1.management.port>
+                                    <auth.server.backend2.management.port>10092</auth.server.backend2.management.port>
+                                    <!--10099-->
+                                    <auth.server.backend1.management.port.jmx>10100</auth.server.backend1.management.port.jmx>
+                                    <auth.server.backend2.management.port.jmx>10101</auth.server.backend2.management.port.jmx>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-auth-server-wildfly</id>
+                                    <phase>generate-test-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-server-wildfly-balancer</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                                <outputDirectory>${containers.home}/balancer</outputDirectory>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-server-wildfly</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                                <outputDirectory>${containers.home}/node1</outputDirectory>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-server-wildfly</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                                <outputDirectory>${containers.home}/node2</outputDirectory>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
         <profile>
             <id>auth-server-eap7</id>
             <properties>
@@ -538,6 +665,10 @@
                     <name>migrated.auth.server.version</name>
                 </property>
             </activation>
+            <properties>
+                <!--diable exclusion pattern for migration tests, which is enabled by default in the base/pom.xml-->
+                <exclude.migration>-</exclude.migration>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -743,7 +874,7 @@
                 </pluginManagement>
             </build>
         </profile>
-        
+                
     </profiles>
     
 </project>

@@ -93,9 +93,13 @@ public final class SuiteContext {
 
     @Override
     public String toString() {
+        String containers = "Auth server: " + (isAuthServerCluster() ? "\nFrontend: " : "")
+                + authServerInfo.getQualifier() + "\n";
+        for (ContainerInfo bInfo : getAuthServerBackendsInfo()) {
+            containers += "Backend: " + bInfo + "\n";
+        }
         return "SUITE CONTEXT:\n"
-                + "Auth server: " + authServerInfo.getQualifier() + "\n"
-                +(isAuthServerCluster() ? "Auth server cluster: " + getAuthServerBackendsInfo().size() + " nodes+\n" : "");
+                + containers;
     }
 
 }

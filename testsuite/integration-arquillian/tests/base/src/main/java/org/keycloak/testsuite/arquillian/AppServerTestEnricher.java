@@ -40,9 +40,10 @@ public class AppServerTestEnricher {
         String appServerQ = (annotatedClass == null ? null
                 : annotatedClass.getAnnotation(AppServerContainer.class).value());
 
-        return appServerQ == null || appServerQ.isEmpty()
-                ? getAuthServerQualifier() // app server == auth server
-                : appServerQ;
+        return annotatedClass == null ? null // no @AppServerContainer annotation --> no adapter test
+                : (appServerQ == null || appServerQ.isEmpty() // @AppServerContainer annotation present but qualifier not set --> relative adapter test
+                        ? getAuthServerQualifier() // app server == auth server
+                        : appServerQ);
     }
 
     public static String getAppServerContextRoot() {
@@ -129,7 +130,7 @@ public class AppServerTestEnricher {
             String jbossHomePath = appServerInfo.getProperties().get("jbossHome");
 
             File bin = new File(jbossHomePath + "/bin");
-            
+
             File clientJar = new File(jbossHomePath + "/bin/client/jboss-cli-client.jar");
             if (!clientJar.exists()) {
                 clientJar = new File(jbossHomePath + "/bin/client/jboss-client.jar"); // AS7
@@ -137,7 +138,7 @@ public class AppServerTestEnricher {
             if (!clientJar.exists()) {
                 throw new IOException("JBoss CLI client JAR not found.");
             }
-            
+
             String command = "java -jar " + clientJar.getAbsolutePath();
             String adapterScript = "adapter-install.cli";
             String samlAdapterScript = "adapter-install-saml.cli";
