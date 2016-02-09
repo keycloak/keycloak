@@ -145,8 +145,9 @@ public class RealmEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<UserFederationMapperEntity> userFederationMappers = new ArrayList<UserFederationMapperEntity>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="REALM_CLIENT", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="CLIENT_ID") })
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy="realm")
+    //@OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    //@JoinTable(name="REALM_CLIENT", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="CLIENT_ID") })
     Collection<ClientEntity> clients = new ArrayList<>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)

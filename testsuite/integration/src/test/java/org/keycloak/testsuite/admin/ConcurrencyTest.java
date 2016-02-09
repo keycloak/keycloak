@@ -44,8 +44,8 @@ public class ConcurrencyTest extends AbstractClientTest {
 
     private static final Logger log = Logger.getLogger(ConcurrencyTest.class);
 
-    private static final int DEFAULT_THREADS = 3;
-    private static final int DEFAULT_ITERATIONS = 10;
+    private static final int DEFAULT_THREADS = 5;
+    private static final int DEFAULT_ITERATIONS = 30;
 
     // If enabled only one request is allowed at the time. Useful for checking that test is working.
     private static final boolean SYNCHRONIZED = false;

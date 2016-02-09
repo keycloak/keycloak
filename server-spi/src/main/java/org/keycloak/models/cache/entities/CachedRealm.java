@@ -53,90 +53,90 @@ import java.util.Set;
  */
 public class CachedRealm implements Serializable {
 
-    private String id;
-    private String name;
-    private String displayName;
-    private String displayNameHtml;
-    private boolean enabled;
-    private SslRequired sslRequired;
-    private boolean registrationAllowed;
-    private boolean registrationEmailAsUsername;
-    private boolean rememberMe;
-    private boolean verifyEmail;
-    private boolean resetPasswordAllowed;
-    private boolean identityFederationEnabled;
-    private boolean editUsernameAllowed;
+    protected String id;
+    protected String name;
+    protected String displayName;
+    protected String displayNameHtml;
+    protected boolean enabled;
+    protected SslRequired sslRequired;
+    protected boolean registrationAllowed;
+    protected boolean registrationEmailAsUsername;
+    protected boolean rememberMe;
+    protected boolean verifyEmail;
+    protected boolean resetPasswordAllowed;
+    protected boolean identityFederationEnabled;
+    protected boolean editUsernameAllowed;
     //--- brute force settings
-    private boolean bruteForceProtected;
-    private int maxFailureWaitSeconds;
-    private int minimumQuickLoginWaitSeconds;
-    private int waitIncrementSeconds;
-    private long quickLoginCheckMilliSeconds;
-    private int maxDeltaTimeSeconds;
-    private int failureFactor;
+    protected boolean bruteForceProtected;
+    protected int maxFailureWaitSeconds;
+    protected int minimumQuickLoginWaitSeconds;
+    protected int waitIncrementSeconds;
+    protected long quickLoginCheckMilliSeconds;
+    protected int maxDeltaTimeSeconds;
+    protected int failureFactor;
     //--- end brute force settings
 
-    private boolean revokeRefreshToken;
-    private int ssoSessionIdleTimeout;
-    private int ssoSessionMaxLifespan;
-    private int offlineSessionIdleTimeout;
-    private int accessTokenLifespan;
-    private int accessTokenLifespanForImplicitFlow;
-    private int accessCodeLifespan;
-    private int accessCodeLifespanUserAction;
-    private int accessCodeLifespanLogin;
-    private int notBefore;
-    private PasswordPolicy passwordPolicy;
-    private OTPPolicy otpPolicy;
+    protected boolean revokeRefreshToken;
+    protected int ssoSessionIdleTimeout;
+    protected int ssoSessionMaxLifespan;
+    protected int offlineSessionIdleTimeout;
+    protected int accessTokenLifespan;
+    protected int accessTokenLifespanForImplicitFlow;
+    protected int accessCodeLifespan;
+    protected int accessCodeLifespanUserAction;
+    protected int accessCodeLifespanLogin;
+    protected int notBefore;
+    protected PasswordPolicy passwordPolicy;
+    protected OTPPolicy otpPolicy;
 
-    private String publicKeyPem;
-    private String privateKeyPem;
-    private String certificatePem;
-    private String codeSecret;
+    protected String publicKeyPem;
+    protected String privateKeyPem;
+    protected String certificatePem;
+    protected String codeSecret;
 
-    private String loginTheme;
-    private String accountTheme;
-    private String adminTheme;
-    private String emailTheme;
-    private String masterAdminClient;
+    protected String loginTheme;
+    protected String accountTheme;
+    protected String adminTheme;
+    protected String emailTheme;
+    protected String masterAdminClient;
 
-    private List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
-    private List<UserFederationProviderModel> userFederationProviders = new ArrayList<UserFederationProviderModel>();
-    private MultivaluedHashMap<String, UserFederationMapperModel> userFederationMappers = new MultivaluedHashMap<String, UserFederationMapperModel>();
-    private List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
+    protected List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
+    protected List<UserFederationProviderModel> userFederationProviders = new ArrayList<UserFederationProviderModel>();
+    protected MultivaluedHashMap<String, UserFederationMapperModel> userFederationMappers = new MultivaluedHashMap<String, UserFederationMapperModel>();
+    protected List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
 
-    private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
-    private Map<String, String> smtpConfig = new HashMap<String, String>();
-    private Map<String, AuthenticationFlowModel> authenticationFlows = new HashMap<>();
-    private Map<String, AuthenticatorConfigModel> authenticatorConfigs = new HashMap<>();
-    private Map<String, RequiredActionProviderModel> requiredActionProviders = new HashMap<>();
-    private Map<String, RequiredActionProviderModel> requiredActionProvidersByAlias = new HashMap<>();
-    private MultivaluedHashMap<String, AuthenticationExecutionModel> authenticationExecutions = new MultivaluedHashMap<>();
-    private Map<String, AuthenticationExecutionModel> executionsById = new HashMap<>();
+    protected Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
+    protected Map<String, String> smtpConfig = new HashMap<String, String>();
+    protected Map<String, AuthenticationFlowModel> authenticationFlows = new HashMap<>();
+    protected Map<String, AuthenticatorConfigModel> authenticatorConfigs = new HashMap<>();
+    protected Map<String, RequiredActionProviderModel> requiredActionProviders = new HashMap<>();
+    protected Map<String, RequiredActionProviderModel> requiredActionProvidersByAlias = new HashMap<>();
+    protected MultivaluedHashMap<String, AuthenticationExecutionModel> authenticationExecutions = new MultivaluedHashMap<>();
+    protected Map<String, AuthenticationExecutionModel> executionsById = new HashMap<>();
 
-    private AuthenticationFlowModel browserFlow;
-    private AuthenticationFlowModel registrationFlow;
-    private AuthenticationFlowModel directGrantFlow;
-    private AuthenticationFlowModel resetCredentialsFlow;
-    private AuthenticationFlowModel clientAuthenticationFlow;
+    protected AuthenticationFlowModel browserFlow;
+    protected AuthenticationFlowModel registrationFlow;
+    protected AuthenticationFlowModel directGrantFlow;
+    protected AuthenticationFlowModel resetCredentialsFlow;
+    protected AuthenticationFlowModel clientAuthenticationFlow;
 
-    private boolean eventsEnabled;
-    private long eventsExpiration;
-    private Set<String> eventsListeners = new HashSet<String>();
-    private Set<String> enabledEventTypes = new HashSet<String>();
+    protected boolean eventsEnabled;
+    protected long eventsExpiration;
+    protected Set<String> eventsListeners = new HashSet<String>();
+    protected Set<String> enabledEventTypes = new HashSet<String>();
     protected boolean adminEventsEnabled;
     protected Set<String> adminEnabledEventOperations = new HashSet<String>();
     protected boolean adminEventsDetailsEnabled;
-    private List<String> defaultRoles = new LinkedList<String>();
-    private List<String> defaultGroups = new LinkedList<String>();
-    private Set<String> groups = new HashSet<String>();
-    private Map<String, String> realmRoles = new HashMap<String, String>();
-    private Map<String, String> clients = new HashMap<String, String>();
-    private List<String> clientTemplates= new LinkedList<>();
-    private boolean internationalizationEnabled;
-    private Set<String> supportedLocales = new HashSet<String>();
-    private String defaultLocale;
-    private MultivaluedHashMap<String, IdentityProviderMapperModel> identityProviderMappers = new MultivaluedHashMap<>();
+    protected List<String> defaultRoles = new LinkedList<String>();
+    protected List<String> defaultGroups = new LinkedList<String>();
+    protected Set<String> groups = new HashSet<String>();
+    protected Map<String, String> realmRoles = new HashMap<String, String>();
+    protected Map<String, String> clients = new HashMap<String, String>();
+    protected List<String> clientTemplates= new LinkedList<>();
+    protected boolean internationalizationEnabled;
+    protected Set<String> supportedLocales = new HashSet<String>();
+    protected String defaultLocale;
+    protected MultivaluedHashMap<String, IdentityProviderMapperModel> identityProviderMappers = new MultivaluedHashMap<>();
 
     public CachedRealm() {
     }
@@ -221,23 +221,11 @@ public class CachedRealm implements Serializable {
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
-        for (RoleModel role : model.getRoles()) {
-            realmRoles.put(role.getName(), role.getId());
-            CachedRole cachedRole = new CachedRealmRole(role, model);
-            cache.addCachedRole(cachedRole);
-        }
+        cacheRealmRoles(cache, model);
 
-        for (ClientModel client : model.getClients()) {
-            clients.put(client.getClientId(), client.getId());
-            CachedClient cachedClient = new CachedClient(cache, delegate, model, client);
-            cache.addCachedClient(cachedClient);
-        }
+        cacheClients(cache, delegate, model);
 
-        for (ClientTemplateModel template : model.getClientTemplates()) {
-            clientTemplates.add(template.getId());
-            CachedClientTemplate cachedClient = new CachedClientTemplate(cache, delegate, model, template);
-            cache.addCachedClientTemplate(cachedClient);
-        }
+        cacheClientTemplates(cache, delegate, model);
 
         internationalizationEnabled = model.isInternationalizationEnabled();
         supportedLocales.addAll(model.getSupportedLocales());
@@ -271,6 +259,30 @@ public class CachedRealm implements Serializable {
         resetCredentialsFlow = model.getResetCredentialsFlow();
         clientAuthenticationFlow = model.getClientAuthenticationFlow();
 
+    }
+
+    protected void cacheClientTemplates(RealmCache cache, RealmProvider delegate, RealmModel model) {
+        for (ClientTemplateModel template : model.getClientTemplates()) {
+            clientTemplates.add(template.getId());
+            CachedClientTemplate cachedClient = new CachedClientTemplate(cache, delegate, model, template);
+            cache.addCachedClientTemplate(cachedClient);
+        }
+    }
+
+    protected void cacheClients(RealmCache cache, RealmProvider delegate, RealmModel model) {
+        for (ClientModel client : model.getClients()) {
+            clients.put(client.getClientId(), client.getId());
+            CachedClient cachedClient = new CachedClient(cache, delegate, model, client);
+            cache.addCachedClient(cachedClient);
+        }
+    }
+
+    protected void cacheRealmRoles(RealmCache cache, RealmModel model) {
+        for (RoleModel role : model.getRoles()) {
+            realmRoles.put(role.getName(), role.getId());
+            CachedRole cachedRole = new CachedRealmRole(role, model);
+            cache.addCachedRole(cachedRole);
+        }
     }
 
 

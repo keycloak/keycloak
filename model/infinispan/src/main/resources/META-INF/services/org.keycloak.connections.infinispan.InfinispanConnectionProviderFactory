@@ -16,3 +16,4 @@
 #
 
 org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory
+org.keycloak.models.cache.infinispan.counter.RevisionedConnectionProviderFactory

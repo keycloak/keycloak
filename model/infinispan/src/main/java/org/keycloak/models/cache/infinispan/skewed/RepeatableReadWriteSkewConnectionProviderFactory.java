@@ -15,16 +15,22 @@
  * limitations under the License.
  */
 
-package org.keycloak.connections.infinispan;
+package org.keycloak.models.cache.infinispan.skewed;
 
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.VersioningScheme;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
+import org.infinispan.util.concurrent.IsolationLevel;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -33,15 +39,15 @@ import javax.naming.InitialContext;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultInfinispanConnectionProviderFactory implements InfinispanConnectionProviderFactory {
+public class RepeatableReadWriteSkewConnectionProviderFactory implements InfinispanConnectionProviderFactory {
 
-    protected static final Logger logger = Logger.getLogger(DefaultInfinispanConnectionProviderFactory.class);
+    protected static final Logger logger = Logger.getLogger(RepeatableReadWriteSkewConnectionProviderFactory.class);
 
-    protected Config.Scope config;
+    private Config.Scope config;
 
-    protected EmbeddedCacheManager cacheManager;
+    private EmbeddedCacheManager cacheManager;
 
-    protected boolean containerManaged;
+    private boolean containerManaged;
 
     @Override
     public InfinispanConnectionProvider create(KeycloakSession session) {
@@ -60,7 +66,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     @Override
     public String getId() {
-        return "default";
+        return "versioned";
     }
 
     @Override
@@ -73,7 +79,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     }
 
-    protected void lazyInit() {
+    private void lazyInit() {
         if (cacheManager == null) {
             synchronized (this) {
                 if (cacheManager == null) {
@@ -88,7 +94,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
     }
 
-    protected void initContainerManaged(String cacheContainerLookup) {
+    private void initContainerManaged(String cacheContainerLookup) {
         try {
             cacheManager = (EmbeddedCacheManager) new InitialContext().lookup(cacheContainerLookup);
             containerManaged = true;
@@ -99,7 +105,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
     }
 
-    protected void initEmbedded() {
+    private void initEmbedded() {
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
 
         boolean clustered = config.getBoolean("clustered", false);
@@ -120,10 +126,18 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         if (clustered) {
             invalidationConfigBuilder.clustering().cacheMode(async ? CacheMode.INVALIDATION_ASYNC : CacheMode.INVALIDATION_SYNC);
         }
-        Configuration invalidationCacheConfiguration = invalidationConfigBuilder.build();
 
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME, invalidationCacheConfiguration);
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_CACHE_NAME, invalidationCacheConfiguration);
+        invalidationConfigBuilder.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+        invalidationConfigBuilder.locking().isolationLevel(IsolationLevel.REPEATABLE_READ).writeSkewCheck(true).versioning().enable().scheme(VersioningScheme.SIMPLE);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME, invalidationConfigBuilder.build());
+
+        ConfigurationBuilder userConfigBuilder = new ConfigurationBuilder();
+        if (clustered) {
+            userConfigBuilder.clustering().cacheMode(async ? CacheMode.INVALIDATION_ASYNC : CacheMode.INVALIDATION_SYNC);
+        }
+        Configuration userCacheConfiguration = userConfigBuilder.build();
+
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_CACHE_NAME, userCacheConfiguration);
 
         ConfigurationBuilder sessionConfigBuilder = new ConfigurationBuilder();
         if (clustered) {
