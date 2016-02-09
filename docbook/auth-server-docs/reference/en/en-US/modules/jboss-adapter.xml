@@ -27,7 +27,7 @@
     <section id="jboss-adapter-installation">
         <title>Adapter Installation</title>
     <para>
-        Adapters are no longer included with the appliance or war distribution.Each adapter is a separate download on
+        Adapters are no longer included with the appliance or war distribution. Each adapter is a separate download on
         the Keycloak download site.  They are also available as a maven artifact.
     </para>
     <para>
@@ -73,6 +73,13 @@ $ cd $JBOSS_HOME/bin
 $ jboss-cli.sh -c --file=adapter-install.cli
 </programlisting>
         The script will add the extension, subsystem, and optional security-domain as described below.
+    </para>
+    <para>
+        For more recent versions of WildFly there's also a offline CLI script that can be used to install the adapter while the server is not running:
+<programlisting>
+$ cd $JBOSS_HOME/bin
+$ jboss-cli.sh -c --file=adapter-install-offline.cli
+</programlisting>
     </para>
     <para>
 <programlisting><![CDATA[

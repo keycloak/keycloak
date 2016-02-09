@@ -98,7 +98,7 @@ public abstract class AuthorizationEndpointBase {
 
         List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
         for (IdentityProviderModel identityProvider : identityProviders) {
-            if (identityProvider.isAuthenticateByDefault()) {
+            if (identityProvider.isEnabled() && identityProvider.isAuthenticateByDefault()) {
                 // TODO if we are isPassive we should propagate this flag to default identity provider also if possible
                 return buildRedirectToIdentityProvider(identityProvider.getAlias(), new ClientSessionCode(realm, clientSession).getCode());
             }

@@ -41,6 +41,14 @@
             </modules>
         </profile>
         <profile>
+            <id>auth-server-wildfly-cluster</id>
+            <modules>
+                <module>wildfly</module>
+                <module>wildfly-balancer</module>
+            </modules>
+        </profile>
+        
+        <profile>
             <id>auth-server-eap7</id>
             <modules>
                 <module>eap7</module>

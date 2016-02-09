@@ -110,7 +110,10 @@ public class AuthServerTestEnricher {
 
             boolean authServerCluster = authServerQualifier.endsWith("-cluster");
 
-            String authServerType = authServerQualifier.replaceAll("^auth-server-", "").replaceAll("-cluster$", "");
+            String authServerType = authServerQualifier.replaceAll("auth-server-", "").replaceAll("-cluster", "");
+
+            log.info("authServerType:" + authServerType);
+
             String authServerFrontend = authServerCluster
                     ? "auth-server-" + authServerType + "-balancer" // in cluster mode the load-balancer container serves as auth server frontend
                     : authServerQualifier; // single-node mode
@@ -133,7 +136,7 @@ public class AuthServerTestEnricher {
             if (suiteContext.getAuthServerInfo() == null) {
                 throw new RuntimeException(String.format("No auth server activated. A container matching '%s' needs to be enabled in arquillian.xml.", authServerFrontend));
             }
-            if (authServerCluster && !suiteContext.getAuthServerBackendsInfo().isEmpty()) {
+            if (authServerCluster && suiteContext.getAuthServerBackendsInfo().isEmpty()) {
                 throw new RuntimeException(String.format("No cluster backend nodes activated. Containers matching '%sN' need to be enabled in arquillian.xml.", authServerBackend));
             }
 

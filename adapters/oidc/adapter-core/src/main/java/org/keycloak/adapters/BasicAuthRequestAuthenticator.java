@@ -85,42 +85,38 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
     
     private AccessTokenResponse getToken(String username, String password) throws Exception {
     	AccessTokenResponse tokenResponse=null;
-    	HttpClient client = new HttpClientBuilder().disableTrustManager().build();
+    	HttpClient client = deployment.getClient();
 
-    	try {
-    	    HttpPost post = new HttpPost(
-    	            KeycloakUriBuilder.fromUri(deployment.getAuthServerBaseUrl())
-    	            .path(ServiceUrlConstants.TOKEN_PATH).build(deployment.getRealm()));
-    	    java.util.List <NameValuePair> formparams = new java.util.ArrayList <NameValuePair>();
-    	    formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
-    	    formparams.add(new BasicNameValuePair("username", username));
-    	    formparams.add(new BasicNameValuePair("password", password));
+        HttpPost post = new HttpPost(
+                KeycloakUriBuilder.fromUri(deployment.getAuthServerBaseUrl())
+                .path(ServiceUrlConstants.TOKEN_PATH).build(deployment.getRealm()));
+        java.util.List <NameValuePair> formparams = new java.util.ArrayList <NameValuePair>();
+        formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
+        formparams.add(new BasicNameValuePair("username", username));
+        formparams.add(new BasicNameValuePair("password", password));
 
-			ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
+        ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
 
-    	    UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
-    	    post.setEntity(form);
+        UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+        post.setEntity(form);
 
-    	    HttpResponse response = client.execute(post);
-    	    int status = response.getStatusLine().getStatusCode();
-    	    HttpEntity entity = response.getEntity();
-    	    if (status != 200) {
-    	        throw new java.io.IOException("Bad status: " + status);
-    	    }
-    	    if (entity == null) {
-    	        throw new java.io.IOException("No Entity");
-    	    }
-    	    java.io.InputStream is = entity.getContent();
-    	    try {
-    	        tokenResponse = JsonSerialization.readValue(is, AccessTokenResponse.class);
-    	    } finally {
-    	        try {
-    	            is.close();
-    	        } catch (java.io.IOException ignored) { }
-    	    }
-    	} finally {
-    	    client.getConnectionManager().shutdown();
-    	}
+        HttpResponse response = client.execute(post);
+        int status = response.getStatusLine().getStatusCode();
+        HttpEntity entity = response.getEntity();
+        if (status != 200) {
+            throw new java.io.IOException("Bad status: " + status);
+        }
+        if (entity == null) {
+            throw new java.io.IOException("No Entity");
+        }
+        java.io.InputStream is = entity.getContent();
+        try {
+            tokenResponse = JsonSerialization.readValue(is, AccessTokenResponse.class);
+        } finally {
+            try {
+                is.close();
+            } catch (java.io.IOException ignored) { }
+        }
     	
     	return (tokenResponse);
     }

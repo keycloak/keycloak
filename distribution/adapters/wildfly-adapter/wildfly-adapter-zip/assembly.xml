@@ -50,5 +50,9 @@
              <source>../../shared-cli/adapter-install.cli</source>
              <outputDirectory>bin</outputDirectory>
         </file>
+        <file>
+             <source>cli/adapter-install-offline.cli</source>
+             <outputDirectory>bin</outputDirectory>
+        </file>
     </files>
 </assembly>
