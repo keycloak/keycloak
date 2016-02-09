@@ -44,6 +44,7 @@
             <id>auth-server-wildfly-cluster</id>
             <modules>
                 <module>wildfly</module>
+                <module>wildfly-balancer</module>
             </modules>
         </profile>
         
