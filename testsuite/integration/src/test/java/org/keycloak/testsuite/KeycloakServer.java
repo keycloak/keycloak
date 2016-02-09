@@ -33,6 +33,7 @@ import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.testsuite.util.cli.InfinispanCLI;
 import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.DispatcherType;
