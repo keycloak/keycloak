@@ -56,7 +56,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.servlet</groupId>
-            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+            <artifactId>jboss-servlet-api_3.1_spec</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.ws.rs</groupId>
@@ -158,7 +158,7 @@
         </dependency>
         <dependency>
             <groupId>org.hibernate.javax.persistence</groupId>
-            <artifactId>${hibernate.javax.persistence.artifactId}</artifactId>
+            <artifactId>hibernate-jpa-2.1-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
