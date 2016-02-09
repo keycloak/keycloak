@@ -78,6 +78,7 @@
                         <exclude>${exclude.account}</exclude>
                         <exclude>${exclude.client}</exclude>
                         <exclude>${exclude.migration}</exclude>
+                        <exclude>${exclude.cluster}</exclude>
                     </excludes>
                 </configuration>
             </plugin>
