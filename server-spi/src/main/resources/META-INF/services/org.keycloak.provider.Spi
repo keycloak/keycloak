@@ -29,6 +29,7 @@ org.keycloak.events.EventStoreSpi
 org.keycloak.exportimport.ExportSpi
 org.keycloak.exportimport.ImportSpi
 org.keycloak.timer.TimerSpi
+org.keycloak.scripting.ScriptingSpi
 org.keycloak.services.managers.BruteForceProtectorSpi
 org.keycloak.services.resource.RealmResourceSPI
 org.keycloak.protocol.ClientInstallationSpi
@@ -52,5 +53,4 @@ org.keycloak.authentication.RequiredActionSpi
 org.keycloak.authentication.FormAuthenticatorSpi
 org.keycloak.authentication.FormActionSpi
 org.keycloak.cluster.ClusterSpi
-
 

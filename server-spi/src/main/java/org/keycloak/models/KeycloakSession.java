@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.scripting.ScriptingProvider;
 
 import java.util.Set;
 
@@ -76,4 +77,9 @@ public interface KeycloakSession {
      *  Keycloak user storage.  Non-federated, but possibly cache (if it is on) view of users.
      */
     UserProvider userStorage();
+
+    /**
+     * Keycloak scripting support.
+     */
+    ScriptingProvider scripting();
 }

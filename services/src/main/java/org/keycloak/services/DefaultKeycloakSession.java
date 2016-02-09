@@ -21,6 +21,7 @@ import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.scripting.ScriptingProvider;
 
 import java.util.*;
 
@@ -35,6 +36,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final DefaultKeycloakTransactionManager transactionManager;
     private RealmProvider model;
     private UserProvider userModel;
+    private ScriptingProvider scriptingProvider;
     private UserSessionProvider sessionProvider;
     private UserFederationManager federationManager;
     private KeycloakContext context;
@@ -168,4 +170,13 @@ public class DefaultKeycloakSession implements KeycloakSession {
         }
     }
 
+    @Override
+    public ScriptingProvider scripting() {
+
+        if (scriptingProvider == null) {
+            scriptingProvider = getProvider(ScriptingProvider.class);
+        }
+
+        return scriptingProvider;
+    }
 }

@@ -36,6 +36,10 @@
     <script src="${resourceUrl}/lib/angular/select2.js" type="text/javascript"></script>
     <script src="${resourceUrl}/lib/fileupload/angular-file-upload.min.js"></script>
     <script src="${resourceUrl}/lib/filesaver/FileSaver.js"></script>
+    <script src="${resourceUrl}/lib/ui-ace/src-min-noconflict/ace.js"></script>
+    <script src="${resourceUrl}/lib/ui-ace/src-min-noconflict/theme-github.js"></script>
+    <script src="${resourceUrl}/lib/ui-ace/src-min-noconflict/mode-javascript.js"></script>
+    <script src="${resourceUrl}/lib/ui-ace/ui-ace.min.js"></script>
 
     <script src="${authUrl}/js/${resourceVersion}/keycloak.js" type="text/javascript"></script>
 

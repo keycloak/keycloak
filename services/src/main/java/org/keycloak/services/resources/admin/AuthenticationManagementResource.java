@@ -483,6 +483,15 @@ public class AuthenticationManagementResource {
                     rep.getRequirementChoices().add(choice.name());
                 }
                 rep.setId(execution.getId());
+
+                if (factory.isConfigurable()) {
+                    AuthenticatorConfigModel authenticatorConfig = realm.getAuthenticatorConfigById(execution.getAuthenticatorConfig());
+
+                    if (authenticatorConfig != null) {
+                        rep.setAlias(authenticatorConfig.getAlias());
+                    }
+                }
+
                 rep.setRequirement(execution.getRequirement().name());
                 rep.setProviderId(execution.getAuthenticator());
                 rep.setAuthenticationConfig(execution.getAuthenticatorConfig());
