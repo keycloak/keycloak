@@ -28,13 +28,13 @@ public class TwoNodeClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    public void testRealm() {
-        testRealm(TEST, false);
+    public void testRealmCRUDWithoutFailover() {
+        testRealm(TEST + "_wofo", false);
     }
 
     @Test
-    public void testRealmWithFailover() {
-        testRealm(TEST + "_fo", true);
+    public void testRealmCRUDWithFailover() {
+        testRealm(TEST + "_wfo", true);
     }
 
     public void testRealm(String realm, boolean containerFailover) {
@@ -43,9 +43,7 @@ public class TwoNodeClusterTest extends AbstractClusterTest {
         testRealm.setEnabled(true);
 
         // CREATE on node1
-        log.info("Creating test realm via node1.");
         backend1AdminClient().realms().create(testRealm);
-        log.info("Test realm created.");
 
         // check if created on node1
         RealmRepresentation testRealmOnBackend1 = backend1AdminClient().realms().realm(realm).toRepresentation();
@@ -60,29 +58,31 @@ public class TwoNodeClusterTest extends AbstractClusterTest {
         assertEquals(testRealmOnBackend1.getRealm(), testRealmOnBackend2.getRealm());
 
         failback();
+        pause(1000);
 
         // UPDATE on node2
-        testRealmOnBackend2.setRealm(realm + "_updated");
+        String realmUpdated = realm + "_updated";
+        testRealmOnBackend2.setRealm(realmUpdated);
         backend2AdminClient().realms().realm(realm).update(testRealmOnBackend2);
         if (containerFailover) {
             stopBackend2();
         }
         // check if updated on node1
-        testRealmOnBackend1 = backend1AdminClient().realms().realm(realm).toRepresentation();
+        testRealmOnBackend1 = backend1AdminClient().realms().realm(realmUpdated).toRepresentation();
         assertEquals(testRealmOnBackend1.getId(), testRealmOnBackend2.getId());
         assertEquals(testRealmOnBackend1.getRealm(), testRealmOnBackend2.getRealm());
 
         failback();
 
         // DELETE on node1
-        backend1AdminClient().realms().realm(realm).remove();
+        backend1AdminClient().realms().realm(realmUpdated).remove();
         if (containerFailover) {
             stopBackend1();
         }
         // check if deleted on node2
         boolean testRealmOnBackend2Exists = false;
         for (RealmRepresentation realmOnBackend2 : backend2AdminClient().realms().findAll()) {
-            if (realm.equals(realmOnBackend2.getRealm())
+            if (realmUpdated.equals(realmOnBackend2.getRealm())
                     || testRealmOnBackend1.getId().equals(realmOnBackend2.getId())) {
                 testRealmOnBackend2Exists = true;
                 break;
@@ -91,12 +91,19 @@ public class TwoNodeClusterTest extends AbstractClusterTest {
         assertFalse(testRealmOnBackend2Exists);
     }
 
+    protected void listRealms(int i) {
+        log.info(String.format("Node %s: AccessTokenString: %s", i + 1, backendAdminClients.get(i).tokenManager().getAccessTokenString()));
+        for (RealmRepresentation r : backendAdminClients.get(i).realms().findAll()) {
+            log.info(String.format("Node %s: Realm: %s, Id: %s", i + 1, r.getRealm(), r.getId()));
+        }
+    }
+
     protected ContainerInfo backend1Info() {
-        return backendInfo(0);
+        return backendNode(0);
     }
 
     protected ContainerInfo backend2Info() {
-        return backendInfo(1);
+        return backendNode(1);
     }
 
     protected Keycloak backend1AdminClient() {
@@ -121,11 +128,11 @@ public class TwoNodeClusterTest extends AbstractClusterTest {
     }
 
     protected void stopBackend1() {
-        stopBackendNode(0);
+        killBackendNode(0);
     }
 
     protected void stopBackend2() {
-        stopBackendNode(1);
+        killBackendNode(1);
     }
 
 }

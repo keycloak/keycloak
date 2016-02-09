@@ -35,25 +35,31 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
             controller.start(backendNode.getQualifier());
             assertTrue(controller.isStarted(backendNode.getQualifier()));
 
-            log.info("Initializing admin client for: '" + backendNode.getContextRoot() + "/auth'");
-            backendAdminClients.add(Keycloak.getInstance(backendNode.getContextRoot() + "/auth",
-                    MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID));
+            backendAdminClients.add(createAdminClientFor(backendNode));
         }
     }
+    
+    protected Keycloak createAdminClientFor(ContainerInfo backendNode) {
+        log.info("Initializing admin client for " + backendNode.getContextRoot() + "/auth");
+        return Keycloak.getInstance(backendNode.getContextRoot() + "/auth",
+                    MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+    }
 
-    protected ContainerInfo backendInfo(int i) {
+    protected ContainerInfo backendNode(int i) {
         return suiteContext.getAuthServerBackendsInfo().get(i);
     }
 
     protected void startBackendNode(int i) {
-        String container = backendInfo(i).getQualifier();
+        String container = backendNode(i).getQualifier();
         if (!controller.isStarted(container)) {
             controller.start(container);
+            backendAdminClients.set(i, createAdminClientFor(backendNode(i)));
         }
     }
 
-    protected void stopBackendNode(int i) {
-        controller.kill(backendInfo(i).getQualifier());
+    protected void killBackendNode(int i) {
+        backendAdminClients.get(i).close();
+        controller.kill(backendNode(i).getQualifier());
     }
 
 }
