@@ -211,11 +211,12 @@ public class RevisionedCacheRealmProvider implements CacheRealmProvider {
             logger.tracev("by id cache hit: {0}", cached.getName());
         }
         if (cached == null) {
-            Long loaded = cache.getCurrentRevision(id);
+            Long loaded = UpdateCounter.current();
             RealmModel model = getDelegate().getRealm(id);
             if (model == null) return null;
             if (realmInvalidations.contains(id)) return model;
             cached = new RevisionedCachedRealm(loaded, cache, this, model);
+            logger.tracev("try caching realm: {0} {1}", cached.getName(), loaded);
             cache.addCachedRealm(cached);
         } else if (realmInvalidations.contains(id)) {
             return getDelegate().getRealm(id);
@@ -234,10 +235,12 @@ public class RevisionedCacheRealmProvider implements CacheRealmProvider {
             logger.tracev("by name cache hit: {0}", cached.getName());
         }
         if (cached == null) {
+            Long loaded = UpdateCounter.current();
             RealmModel model = getDelegate().getRealmByName(name);
             if (model == null) return null;
             if (realmInvalidations.contains(model.getId())) return model;
-            cached = new RevisionedCachedRealm(null, cache, this, model);
+            cached = new RevisionedCachedRealm(loaded, cache, this, model);
+            logger.tracev("try caching realm: {0}", cached.getName());
             cache.addCachedRealm(cached);
         } else if (realmInvalidations.contains(cached.getId())) {
             return getDelegate().getRealmByName(name);
@@ -299,7 +302,7 @@ public class RevisionedCacheRealmProvider implements CacheRealmProvider {
         }
 
         if (cached == null) {
-            Long loaded = cache.getCurrentRevision(id);
+            Long loaded = UpdateCounter.current();
             RoleModel model = getDelegate().getRoleById(id, realm);
             if (model == null) return null;
             if (roleInvalidations.contains(id)) return model;
@@ -328,7 +331,7 @@ public class RevisionedCacheRealmProvider implements CacheRealmProvider {
         }
 
         if (cached == null) {
-            Long loaded = cache.getCurrentRevision(id);
+            Long loaded = UpdateCounter.current();
             GroupModel model = getDelegate().getGroupById(id, realm);
             if (model == null) return null;
             if (groupInvalidations.contains(id)) return model;
@@ -356,7 +359,7 @@ public class RevisionedCacheRealmProvider implements CacheRealmProvider {
         }
 
         if (cached == null) {
-            Long loaded = cache.getCurrentRevision(id);
+            Long loaded = UpdateCounter.current();
             ClientModel model = getDelegate().getClientById(id, realm);
             if (model == null) return null;
             if (appInvalidations.contains(id)) return model;
@@ -379,7 +382,7 @@ public class RevisionedCacheRealmProvider implements CacheRealmProvider {
         }
 
         if (cached == null) {
-            Long loaded = cache.getCurrentRevision(id);
+            Long loaded = UpdateCounter.current();
             ClientTemplateModel model = getDelegate().getClientTemplateById(id, realm);
             if (model == null) return null;
             if (clientTemplateInvalidations.contains(id)) return model;

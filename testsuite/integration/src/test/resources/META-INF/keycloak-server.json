@@ -32,13 +32,6 @@
         }
     },
 
-    "realmCache": {
-        "provider": "infinispan-revisioned",
-        "infinispan-locking" : {
-            "enabled": true
-        }
-    },
-
     "timer": {
         "provider": "basic"
     },
@@ -85,8 +78,15 @@
         }
     },
 
+    "realmCache": {
+        "provider": "infinispan-locking",
+        "infinispan-locking" : {
+            "enabled": true
+        }
+    },
+
     "connectionsInfinispan": {
-        "provider": "revisioned",
+        "provider": "locking",
         "locking": {
             "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
             "async": "${keycloak.connectionsInfinispan.async:true}",

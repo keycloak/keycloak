@@ -51,11 +51,6 @@ public class RevisionedRealmCache implements RealmCache {
         return cache;
     }
 
-    public Long getCurrentRevision(String id) {
-        //return revisions.get(id);
-        return UpdateCounter.current();
-    }
-
     private <T> T get(String id, Class<T> type) {
         Revisioned o = (Revisioned)cache.get(id);
         if (o == null) {
@@ -83,12 +78,12 @@ public class RevisionedRealmCache implements RealmCache {
     protected void addRevisioned(String id, Revisioned object) {
         Long rev = revisions.get(id);
         if (rev == null) {
+           logger.tracev("rev was null in addRevisioned, adding one");
             rev = UpdateCounter.next();
             revisions.put(id, rev);
+            return;
         }
-        if (rev.equals(object.getRevision())) {
-            cache.putForExternalRead(id, object);
-        }
+        cache.putForExternalRead(id, object);
     }
 
 
