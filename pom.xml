@@ -55,8 +55,7 @@
         <dom4j.version>1.6.1</dom4j.version>
         <github.relaxng.version>2011.1</github.relaxng.version>
         <h2.version>1.3.173</h2.version>
-        <!--<hibernate.entitymanager.version>5.0.7.Final</hibernate.entitymanager.version>--> <!-- WILDFLY VERSION -->
-        <hibernate.entitymanager.version>4.3.10.Final</hibernate.entitymanager.version>
+        <hibernate.entitymanager.version>5.0.7.Final</hibernate.entitymanager.version>
         <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
         <infinispan.version>8.1.0.Final</infinispan.version>
         <jackson.version>2.5.4</jackson.version>
