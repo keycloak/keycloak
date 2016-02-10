@@ -17,11 +17,11 @@
 
 package org.keycloak.services.clientregistration;
 
-import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.ErrorResponseException;
 
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
