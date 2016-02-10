@@ -21,6 +21,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -113,13 +114,15 @@ public abstract class AbstractSecuredLocalService {
                 throw new BadRequestException("state not specified");
             }
 
-            URI uri = getBaseRedirectUri();
-            URI redirectUri = path != null ? uri.resolve(path) : uri;
+            KeycloakUriBuilder redirect = KeycloakUriBuilder.fromUri(getBaseRedirectUri());
+            if (path != null) {
+                redirect.path(path);
+            }
             if (referrer != null) {
-                redirectUri = redirectUri.resolve("?referrer=" + referrer);
+                redirect.queryParam("referrer", referrer);
             }
 
-            return Response.status(302).location(redirectUri).build();
+            return Response.status(302).location(redirect.build()).build();
         } finally {
         }
     }
