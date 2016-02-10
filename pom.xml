@@ -65,6 +65,8 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>1.0.4.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>
         <log4j.version>1.2.16</log4j.version>
         <resteasy.version>3.0.14.Final</resteasy.version>
+        <!-- KEEP Servlet 3.0!!! We need to keep some adapters like Filter backwards compatible -->
+        <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.31.version>1.0.0.Final</servlet.api.31.version>
         <slf4j.version>1.7.7</slf4j.version>
         <sun.istack.version>2.21</sun.istack.version>
@@ -300,6 +302,12 @@
                 <groupId>com.fasterxml.jackson.jaxrs</groupId>
                 <artifactId>jackson-jaxrs-base</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <!-- KEEP Servlet 3.0!  Some adapters need to remain backward compatible and can't let stuff creep in -->
+            <dependency>
+                <groupId>org.jboss.spec.javax.servlet</groupId>
+                <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+                <version>${servlet.api.30.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.servlet</groupId>
