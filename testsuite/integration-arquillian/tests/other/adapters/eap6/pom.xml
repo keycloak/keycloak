@@ -69,7 +69,7 @@
                                 <artifactItem>
                                     <groupId>org.jboss.as</groupId>
                                     <artifactId>jboss-as-dist</artifactId>
-                                    <version>${jboss.version}</version>
+                                    <version>${jboss.as.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${containers.home}</outputDirectory>
                                 </artifactItem>

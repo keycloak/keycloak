@@ -58,7 +58,7 @@ public class AccountPasswordPage extends AbstractAccountPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().contains("Account Management") && driver.getCurrentUrl().endsWith("/account/password");
+        return driver.getTitle().contains("Account Management") && driver.getCurrentUrl().split("\\?")[0].endsWith("/account/password");
     }
 
     public void open() {

@@ -13,17 +13,28 @@ other options are: `auth-server-wildfly` and `auth-server-eap7`. The values corr
 **Note 1:** For the non-default options it's necessary to build a corresponding server module prior to running any of the test modules.
 This can be done by building the server module directly (from `servers/wildfly`/`servers/eap7`), 
 or by activating `auth-server-wildfly`/`auth-server-eap7` profile when building from the top level module.
-(The profiles will also set the proper value of the `auth.server.container` property.)
 
 **Note 2:** Most server-side configurations are done during the build of the server module
 and included in the output artifact - which is then consumed by the test modules( if a corresponding profile is activated).
 To reflect a change in server config in the test (e.g. a datasource) it's necessary to rebuild the server module after each change.
 
-### Migration
+#### Migration
 
-Migration tests can be enabled by setting `-Dmigrated.auth.server.container` property or activating a corresponding profile.
-When enabled, the `AuthServerTestEnricher` class will start/stop the selected *migrated* instance 
-even **before** the *current* auth server instance is started.
+Migration tests can be enabled by setting `-Dmigrated.auth.server.version` property. Supported versions can be found at the bottom of `tests/pom.xml`.
+When enabled, the `AuthServerTestEnricher` class will start and stop the selected migrated instance 
+*before* the current auth server instance is started.
+
+#### Cluster Setup
+
+Cluster setup can be enabled with profile `auth-server-wildfly-cluster`.
+(It is also necessary to build the server modules with this profile before running the test. See *Notes 1 and 2* above.)
+
+Clustering tests require MULTICAST to be enabled on machine's `loopback` network interface.
+This can be done by running the following commands under root privileges:
+```
+route add -net 224.0.0.0 netmask 240.0.0.0 dev lo
+ifconfig lo multicast
+```
 
 ### App Servers
 

@@ -64,25 +64,25 @@
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-naming</artifactId>
-            <version>${jboss.version}</version>
+            <version>${jboss.as.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-server</artifactId>
-            <version>${jboss.version}</version>
+            <version>${jboss.as.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-ee</artifactId>
-            <version>${jboss.version}</version>
+            <version>${jboss.as.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-web</artifactId>
-            <version>${jboss.version}</version>
+            <version>${jboss.as.version}</version>
         </dependency>
 
         <dependency>
