@@ -131,7 +131,7 @@ public class RealmsResource {
         return service;
     }
 
-    @Path("{realm}/clients")
+    @Path("{realm}/clients-registrations")
     public ClientRegistrationService getClientsService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
         EventBuilder event = new EventBuilder(realm, session, clientConnection);

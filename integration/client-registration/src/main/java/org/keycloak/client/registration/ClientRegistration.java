@@ -177,7 +177,7 @@ public class ClientRegistration {
         }
 
         public ClientRegistrationBuilder url(String authUrl, String realm) {
-            url = HttpUtil.getUrl(authUrl, "realms", realm, "clients");
+            url = HttpUtil.getUrl(authUrl, "realms", realm, "clients-registrations");
             return this;
         }
 
