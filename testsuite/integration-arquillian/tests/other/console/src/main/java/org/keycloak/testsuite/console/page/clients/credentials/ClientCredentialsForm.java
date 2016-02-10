@@ -25,6 +25,7 @@ import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
+import static org.keycloak.testsuite.util.WaitUtils.*;
 
 /**
  *
@@ -34,15 +35,15 @@ public class ClientCredentialsForm extends Form {
 
     @FindBy(id = "clientAuthenticatorType")
     private Select clientAuthenticatorType;
-    
-    @FindBy(xpath = "//button[text()='Regenerate Secret']")
-    private WebElement regenerateSecretButton;
 
-    @FindBy(xpath = "//button[text()='Generate new keys and certificate']")
-    private WebElement generateNewKeysAndCert;
+    @FindBy(xpath = "//button[@data-ng-click='changePassword()']")
+    private WebElement regenerateSecretButton; // Regenerate Secret
+
+    @FindBy(xpath = "//button[@data-ng-click='generateSigningKey()']")
+    private WebElement generateNewKeysAndCert; // Generate new keys and certificate
     
-    @FindBy(xpath = "//button[text()='Regenerate registration access token']")
-    private WebElement regenerateRegistrationAccessTokenButton;
+    @FindBy(xpath = "//button[@data-ng-click='regenerateRegistrationAccessToken()']")
+    private WebElement regenerateRegistrationAccessTokenButton; // Regenerate registration access token
     
     public void selectClientIdAndSecret() {
         clientAuthenticatorType.selectByVisibleText("Client Id and Secret");
@@ -53,14 +54,17 @@ public class ClientCredentialsForm extends Form {
     }
 
     public void regenerateSecret() {
+        waitUntilElement(regenerateSecretButton).is().visible();
         regenerateSecretButton.click();
     }
 
     public void regenerateRegistrationAccessToken() {
+        waitUntilElement(regenerateRegistrationAccessTokenButton).is().visible();
         regenerateRegistrationAccessTokenButton.click();
     }
 
     public void generateNewKeysAndCert() {
+        waitUntilElement(generateNewKeysAndCert).is().visible();
         generateNewKeysAndCert.click();
     }
 }
