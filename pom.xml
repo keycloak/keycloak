@@ -45,10 +45,9 @@
         <org.apache.james.apache-mime4j.version>0.6</org.apache.james.apache-mime4j.version>
         <bouncycastle.crypto.version>1.52</bouncycastle.crypto.version>
         <jackson.version>2.5.4</jackson.version>
-        <apache.httpcomponents.version>4.3.6</apache.httpcomponents.version>
-        <apache.httpcomponents.httpcore.version>4.3.3</apache.httpcomponents.httpcore.version>
+        <apache.httpcomponents.version>4.5</apache.httpcomponents.version>
+        <apache.httpcomponents.httpcore.version>4.4.1</apache.httpcomponents.httpcore.version>
         <resteasy.version>3.0.14.Final</resteasy.version>
-        <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
         <undertow.version>1.3.10.Final</undertow.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
         <mongo.driver.version>3.2.0</mongo.driver.version>
