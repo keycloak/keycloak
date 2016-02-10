@@ -774,4 +774,27 @@ public class AccountTest {
         Assert.assertEquals(0, thirdPartyEntry.getProtocolMappersGranted().size());
     }
 
+    @Test
+    public void loginToSpecificPage() {
+        changePasswordPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        Assert.assertTrue(changePasswordPage.isCurrent());
+
+        events.clear();
+    }
+
+    @Test
+    public void loginToSpecificPageWithReferrer() {
+        driver.navigate().to(changePasswordPage.getPath() + "?referrer=account");
+        System.out.println(driver.getCurrentUrl());
+
+        loginPage.login("test-user@localhost", "password");
+        System.out.println(driver.getCurrentUrl());
+
+        Assert.assertTrue(changePasswordPage.isCurrent());
+
+        events.clear();
+    }
+
 }
