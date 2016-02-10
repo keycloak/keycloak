@@ -221,7 +221,7 @@ public class RepeatableReadWriteSkewRealmCacheProvider implements CacheRealmProv
                     cache.endBatch(true);
                     logger.trace("returning new cached realm");
                 } catch (Exception exception) {
-                    logger.info("failed to add to cache", exception);
+                    logger.trace("failed to add to cache", exception);
                     return model;
                 }
             } else if (realmInvalidations.contains(id)) {
@@ -256,7 +256,7 @@ public class RepeatableReadWriteSkewRealmCacheProvider implements CacheRealmProv
                     cache.endBatch(true);
                     logger.trace("returning new cached realm: " + cached.getName());
                 } catch (Exception exception) {
-                    logger.info("failed to add to cache", exception);
+                    logger.trace("failed to add to cache", exception);
                     return model;
                 }
             } else if (realmInvalidations.contains(cached.getId())) {
@@ -340,7 +340,7 @@ public class RepeatableReadWriteSkewRealmCacheProvider implements CacheRealmProv
                     batchEnded = true;
                     cache.endBatch(true);
                 } catch (Exception exception) {
-                    logger.info("failed to add to cache", exception);
+                    logger.trace("failed to add to cache", exception);
                     return model;
                 }
 
@@ -378,7 +378,7 @@ public class RepeatableReadWriteSkewRealmCacheProvider implements CacheRealmProv
                     batchEnded = true;
                     cache.endBatch(true);
                 } catch (Exception exception) {
-                    logger.info("failed to add to cache", exception);
+                    logger.trace("failed to add to cache", exception);
                     return model;
                 }
 
@@ -416,7 +416,7 @@ public class RepeatableReadWriteSkewRealmCacheProvider implements CacheRealmProv
                     batchEnded = true;
                     cache.endBatch(true);
                 } catch (Exception exception) {
-                    logger.info("failed to add to cache", exception);
+                    logger.trace("failed to add to cache", exception);
                     return model;
                 }
             } else if (appInvalidations.contains(id)) {
@@ -452,7 +452,7 @@ public class RepeatableReadWriteSkewRealmCacheProvider implements CacheRealmProv
                     batchEnded = true;
                     cache.endBatch(true);
                 } catch (Exception exception) {
-                    logger.info("failed to add to cache", exception);
+                    logger.trace("failed to add to cache", exception);
                     return model;
                 }
             } else if (clientTemplateInvalidations.contains(id)) {

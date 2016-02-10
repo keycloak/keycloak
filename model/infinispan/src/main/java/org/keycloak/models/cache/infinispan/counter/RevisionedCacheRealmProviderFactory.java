@@ -36,8 +36,6 @@ import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CacheRealmProviderFactory;
 import org.keycloak.models.cache.entities.CachedClient;
 import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.models.cache.infinispan.DefaultCacheRealmProvider;
-import org.keycloak.models.cache.infinispan.InfinispanRealmCache;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -64,7 +62,7 @@ public class RevisionedCacheRealmProviderFactory implements CacheRealmProviderFa
             synchronized (this) {
                 if (realmCache == null) {
                     Cache<String, Object> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
-                    Cache<String, Long> counterCache = session.getProvider(InfinispanConnectionProvider.class).getCache(RevisionedConnectionProviderFactory.COUNTER_CACHE_NAME);
+                    Cache<String, Long> counterCache = session.getProvider(InfinispanConnectionProvider.class).getCache(RevisionedConnectionProviderFactory.VERSION_CACHE_NAME);
                     cache.addListener(new CacheListener());
                     realmCache = new RevisionedRealmCache(cache, counterCache, realmLookup);
                 }

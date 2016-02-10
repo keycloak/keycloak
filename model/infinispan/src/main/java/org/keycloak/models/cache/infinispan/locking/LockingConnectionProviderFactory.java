@@ -28,7 +28,7 @@ import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFa
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class LockingConnectionProviderFactory extends DefaultInfinispanConnectionProviderFactory {
-    public static final String COUNTER_CACHE_NAME = "COUNTER_CACHE";
+    public static final String VERSION_CACHE_NAME = "realmVersions";
 
     protected static final Logger logger = Logger.getLogger(LockingConnectionProviderFactory.class);
 
@@ -46,7 +46,7 @@ public class LockingConnectionProviderFactory extends DefaultInfinispanConnectio
         counterConfigBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
         Configuration counterCacheConfiguration = counterConfigBuilder.build();
 
-        cacheManager.defineConfiguration(COUNTER_CACHE_NAME, counterCacheConfiguration);
+        cacheManager.defineConfiguration(VERSION_CACHE_NAME, counterCacheConfiguration);
     }
 
 }

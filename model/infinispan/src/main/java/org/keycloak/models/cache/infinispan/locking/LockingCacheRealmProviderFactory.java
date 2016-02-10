@@ -62,7 +62,7 @@ public class LockingCacheRealmProviderFactory implements CacheRealmProviderFacto
             synchronized (this) {
                 if (realmCache == null) {
                     Cache<String, Object> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
-                    Cache<String, Long> counterCache = session.getProvider(InfinispanConnectionProvider.class).getCache(LockingConnectionProviderFactory.COUNTER_CACHE_NAME);
+                    Cache<String, Long> counterCache = session.getProvider(InfinispanConnectionProvider.class).getCache(LockingConnectionProviderFactory.VERSION_CACHE_NAME);
                     cache.addListener(new CacheListener());
                     realmCache = new LockingRealmCache(cache, counterCache, realmLookup);
                 }

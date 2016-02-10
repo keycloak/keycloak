@@ -113,7 +113,7 @@ public class RepeatableReadWriteSkewRealmCache implements RealmCache {
                 }
             }
         } catch (Exception e) {
-            logger.info("Failed to commit invalidate");
+            logger.trace("Failed to commit invalidate");
         }
         return rtn;
     }

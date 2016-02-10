@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -53,6 +55,7 @@ public class ClientEntity {
 
     @Id
     @Column(name="ID", length = 36)
+    @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     private String id;
     @Column(name = "NAME")
     private String name;
@@ -151,8 +154,8 @@ public class ClientEntity {
     @Column(name="NODE_REREG_TIMEOUT")
     private int nodeReRegistrationTimeout;
 
-    //@OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, mappedBy = "client")
-    //Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, mappedBy = "client")
+    Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="CLIENT_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
@@ -348,7 +351,6 @@ public class ClientEntity {
         this.managementUrl = managementUrl;
     }
 
-    /*
     public Collection<RoleEntity> getRoles() {
         return roles;
     }
@@ -356,7 +358,6 @@ public class ClientEntity {
     public void setRoles(Collection<RoleEntity> roles) {
         this.roles = roles;
     }
-    */
 
     public Collection<RoleEntity> getDefaultRoles() {
         return defaultRoles;

@@ -26,19 +26,15 @@
         "provider": "${keycloak.userSessionPersister.provider:jpa}"
     },
 
-    "userSessions": {
-        "provider" : "${keycloak.userSessions.provider:infinispan}"
-    },
-
-    "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:infinispan}"
-    },
-
     "userCache": {
         "provider": "${keycloak.user.cache.provider:infinispan}",
         "mem": {
             "maxSize": 20000
         }
+    },
+
+    "userSessions": {
+        "provider" : "${keycloak.userSessions.provider:infinispan}"
     },
 
     "timer": {
@@ -98,6 +94,23 @@
             "connectionsPerHost": "${keycloak.connectionsMongo.connectionsPerHost:100}"
         }
     },
+
+    "realmCache": {
+        "provider": "infinispan-locking",
+        "infinispan-locking" : {
+            "enabled": true
+        }
+    },
+
+    "connectionsInfinispan": {
+        "provider": "locking",
+        "locking": {
+            "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
+            "async": "${keycloak.connectionsInfinispan.async:true}",
+            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:2}"
+        }
+    },
+
 
     "truststore": {
         "file": {

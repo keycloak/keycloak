@@ -633,7 +633,7 @@ public class ClientAdapter implements ClientModel {
         roleEntity.setClient(entity);
         roleEntity.setClientRole(true);
         roleEntity.setRealmId(realm.getId());
-        //entity.getRoles().add(roleEntity);
+        entity.getRoles().add(roleEntity);
         em.persist(roleEntity);
         em.flush();
         return new RoleAdapter(realm, em, roleEntity);
@@ -650,7 +650,7 @@ public class ClientAdapter implements ClientModel {
         RoleEntity role = RoleAdapter.toRoleEntity(roleModel, em);
         if (!role.isClientRole()) return false;
 
-        //entity.getRoles().remove(role);
+        entity.getRoles().remove(role);
         entity.getDefaultRoles().remove(role);
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", role).executeUpdate();
@@ -673,7 +673,6 @@ public class ClientAdapter implements ClientModel {
         for (RoleEntity entity : roles) {
             list.add(new RoleAdapter(realm, em, entity));
         }
-        return list;
         */
         TypedQuery<RoleEntity> query = em.createNamedQuery("getClientRoles", RoleEntity.class);
         query.setParameter("client", entity);

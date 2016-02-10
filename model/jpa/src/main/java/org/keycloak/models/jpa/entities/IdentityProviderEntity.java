@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -44,6 +46,7 @@ public class IdentityProviderEntity {
 
     @Id
     @Column(name="INTERNAL_ID", length = 36)
+    @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     protected String internalId;
 
     @ManyToOne(fetch = FetchType.LAZY)

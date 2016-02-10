@@ -42,13 +42,12 @@ import static org.junit.Assert.*;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Ignore
 public class ConcurrencyTest extends AbstractClientTest {
 
     private static final Logger log = Logger.getLogger(ConcurrencyTest.class);
 
-    private static final int DEFAULT_THREADS = 10;
-    private static final int DEFAULT_ITERATIONS = 100;
+    private static final int DEFAULT_THREADS = 1;
+    private static final int DEFAULT_ITERATIONS = 5;
 
     // If enabled only one request is allowed at the time. Useful for checking that test is working.
     private static final boolean SYNCHRONIZED = false;
@@ -146,6 +145,8 @@ public class ConcurrencyTest extends AbstractClientTest {
         final String clientId = ApiUtil.getCreatedId(response);
         response.close();
 
+        System.out.println("*********************************************");
+
         run(new KeycloakRunnable() {
             @Override
             public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
@@ -160,6 +161,7 @@ public class ConcurrencyTest extends AbstractClientTest {
         });
         long end = System.currentTimeMillis() - start;
         System.out.println("createClientRole took " + end);
+        System.out.println("*********************************************");
 
     }
 

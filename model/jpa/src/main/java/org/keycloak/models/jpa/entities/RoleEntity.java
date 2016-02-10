@@ -17,6 +17,11 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
+
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -37,6 +42,8 @@ import java.util.Collection;
  * @version $Revision: 1 $
  */
 @Entity
+//@DynamicInsert
+//@DynamicUpdate
 @Table(name="KEYCLOAK_ROLE", uniqueConstraints = {
         @UniqueConstraint(columnNames = { "NAME", "CLIENT_REALM_CONSTRAINT" })
 })
@@ -49,6 +56,7 @@ import java.util.Collection;
 public class RoleEntity {
     @Id
     @Column(name="ID", length = 36)
+    @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     private String id;
 
     @Column(name = "NAME")
