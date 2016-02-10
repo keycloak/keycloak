@@ -46,10 +46,8 @@
         <wildfly.version>10.0.0.Final</wildfly.version>
 
         <aesh.version>0.66.4</aesh.version>
-        <!--<apache.httpcomponents.version>4.5</apache.httpcomponents.version>-->
-        <apache.httpcomponents.version>4.3.6</apache.httpcomponents.version>
-        <!--<apache.httpcomponents.httpcore.version>4.4.1</apache.httpcomponents.httpcore.version> &lt;!&ndash; WILDFLY VERSION &ndash;&gt;-->
-        <apache.httpcomponents.httpcore.version>4.3.3</apache.httpcomponents.httpcore.version>
+        <apache.httpcomponents.version>4.5</apache.httpcomponents.version>
+        <apache.httpcomponents.httpcore.version>4.4.1</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <bouncycastle.version>1.52</bouncycastle.version>
         <dom4j.version>1.6.1</dom4j.version>

@@ -284,7 +284,7 @@ public abstract class AbstractKerberosTest {
         SpnegoAuthenticator.bypassChallengeJavascript = true;
         driver.navigate().to(KERBEROS_APP_URL);
         String kcLoginPageLocation = driver.getCurrentUrl();
-        String location = "http://localhost:8081/auth/realms/test/protocol/openid-connect/auth?response_type=code&client_id=kerberos-app&redirect_uri=http%3A%2F%2Flocalhost%3A8081%2Fkerberos-portal&state=0%2F88a96ddd-84fe-4e77-8a46-02394d7b3a7d&login=true";
+
         // Request for SPNEGO login sent with Resteasy client
         spnegoSchemeFactory.setCredentials(username, password);
         Response response = client.target(kcLoginPageLocation).request().get();

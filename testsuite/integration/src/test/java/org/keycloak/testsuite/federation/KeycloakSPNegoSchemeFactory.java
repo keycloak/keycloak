@@ -22,6 +22,7 @@ import java.security.PrivilegedExceptionAction;
 import javax.security.auth.Subject;
 
 import org.apache.http.auth.AuthScheme;
+import org.apache.http.auth.Credentials;
 import org.apache.http.impl.auth.SPNegoScheme;
 import org.apache.http.impl.auth.SPNegoSchemeFactory;
 import org.apache.http.params.HttpParams;
@@ -72,7 +73,7 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
 
 
         @Override
-        protected byte[] generateGSSToken(byte[] input, Oid oid, String authServer) throws GSSException {
+        protected byte[] generateGSSToken(byte[] input, Oid oid, String authServer, Credentials credentials) throws GSSException {
             KerberosUsernamePasswordAuthenticator authenticator = new KerberosUsernamePasswordAuthenticator(kerberosConfig);
             try {
                 Subject clientSubject = authenticator.authenticateSubject(username, password);
