@@ -41,6 +41,7 @@ import java.util.Collection;
         @UniqueConstraint(columnNames = { "NAME", "CLIENT_REALM_CONSTRAINT" })
 })
 @NamedQueries({
+        @NamedQuery(name="getClientRoles", query="select role from RoleEntity role where role.client = :client"),
         @NamedQuery(name="getClientRoleByName", query="select role from RoleEntity role where role.name = :name and role.client = :client"),
         @NamedQuery(name="getRealmRoleByName", query="select role from RoleEntity role where role.clientRole = false and role.name = :name and role.realm = :realm")
 })

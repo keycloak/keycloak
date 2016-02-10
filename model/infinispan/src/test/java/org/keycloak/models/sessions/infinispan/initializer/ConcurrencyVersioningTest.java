@@ -14,6 +14,7 @@ import org.infinispan.transaction.TransactionProtocol;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.infinispan.util.concurrent.IsolationLevel;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 
@@ -30,6 +31,7 @@ import java.util.concurrent.Executors;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Ignore
 public class ConcurrencyVersioningTest {
 
     public static abstract class AbstractThread implements Runnable {

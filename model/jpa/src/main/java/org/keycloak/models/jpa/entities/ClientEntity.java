@@ -28,6 +28,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -44,6 +46,9 @@ import java.util.Set;
  */
 @Entity
 @Table(name="CLIENT", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "CLIENT_ID"})})
+@NamedQueries({
+        @NamedQuery(name="getClientsByRealm", query="select client from ClientEntity client where client.realm = :realm"),
+})
 public class ClientEntity {
 
     @Id
@@ -146,8 +151,8 @@ public class ClientEntity {
     @Column(name="NODE_REREG_TIMEOUT")
     private int nodeReRegistrationTimeout;
 
-    @OneToMany(fetch = FetchType.EAGER, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
-    Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
+    //@OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, mappedBy = "client")
+    //Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="CLIENT_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
@@ -343,6 +348,7 @@ public class ClientEntity {
         this.managementUrl = managementUrl;
     }
 
+    /*
     public Collection<RoleEntity> getRoles() {
         return roles;
     }
@@ -350,6 +356,7 @@ public class ClientEntity {
     public void setRoles(Collection<RoleEntity> roles) {
         this.roles = roles;
     }
+    */
 
     public Collection<RoleEntity> getDefaultRoles() {
         return defaultRoles;

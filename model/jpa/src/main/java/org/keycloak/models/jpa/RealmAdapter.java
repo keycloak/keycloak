@@ -729,12 +729,14 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<ClientModel> getClients() {
-        List<ClientModel> list = new ArrayList<ClientModel>();
-        if (realm.getClients() == null) return list;
-        for (ClientEntity entity : realm.getClients()) {
+        List<ClientModel> list = new LinkedList<>();
+        TypedQuery<ClientEntity> query = em.createNamedQuery("getClientsByRealm", ClientEntity.class);
+        query.setParameter("realm", realm);
+        List<ClientEntity> clients = query.getResultList();
+        for (ClientEntity entity : clients) {
             list.add(new ClientAdapter(this, em, session, entity));
         }
-        return list;
+      return list;
     }
 
     @Override
@@ -753,7 +755,7 @@ public class RealmAdapter implements RealmModel {
         entity.setEnabled(true);
         entity.setStandardFlowEnabled(true);
         entity.setRealm(realm);
-        realm.getClients().add(entity);
+        //realm.getClients().add(entity);
         em.persist(entity);
         em.flush();
         final ClientModel resource = new ClientAdapter(this, em, session, entity);
@@ -779,6 +781,7 @@ public class RealmAdapter implements RealmModel {
             client.removeRole(role);
         }
 
+        /*
         ClientEntity clientEntity = null;
         Iterator<ClientEntity> it = realm.getClients().iterator();
         while (it.hasNext()) {
@@ -794,11 +797,11 @@ public class RealmAdapter implements RealmModel {
                 clientEntity = a;
             }
         }
-        if (client == null) {
-            return false;
-        }
-        em.remove(clientEntity);
+        */
+        ClientEntity clientEntity = em.find(ClientEntity.class, id);
+        if (clientEntity == null) return false;
         em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", clientEntity).executeUpdate();
+        em.remove(clientEntity);
         em.flush();
 
         return true;

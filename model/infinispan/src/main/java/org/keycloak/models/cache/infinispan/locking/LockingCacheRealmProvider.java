@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.cache.infinispan.counter;
+package org.keycloak.models.cache.infinispan.locking;
 
 import org.jboss.logging.Logger;
 import org.keycloak.migration.MigrationModel;
@@ -28,13 +28,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.RealmCache;
 import org.keycloak.models.cache.entities.CachedClient;
-import org.keycloak.models.cache.entities.CachedClientRole;
 import org.keycloak.models.cache.entities.CachedClientTemplate;
 import org.keycloak.models.cache.entities.CachedGroup;
 import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.models.cache.entities.CachedRealmRole;
 import org.keycloak.models.cache.entities.CachedRole;
 import org.keycloak.models.cache.infinispan.ClientAdapter;
 import org.keycloak.models.cache.infinispan.ClientTemplateAdapter;
@@ -48,6 +45,7 @@ import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedGro
 import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedRealm;
 import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedRealmRole;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -60,9 +58,9 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RevisionedCacheRealmProvider implements CacheRealmProvider {
-    protected static final Logger logger = Logger.getLogger(RevisionedCacheRealmProvider.class);
-    protected RevisionedRealmCache cache;
+public class LockingCacheRealmProvider implements CacheRealmProvider {
+    protected static final Logger logger = Logger.getLogger(LockingCacheRealmProvider.class);
+    protected LockingRealmCache cache;
     protected KeycloakSession session;
     protected RealmProvider delegate;
     protected boolean transactionActive;
@@ -81,11 +79,12 @@ public class RevisionedCacheRealmProvider implements CacheRealmProvider {
 
     protected boolean clearAll;
 
-    public RevisionedCacheRealmProvider(RevisionedRealmCache cache, KeycloakSession session) {
+    public LockingCacheRealmProvider(LockingRealmCache cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
 
-        session.getTransaction().enlistAfterCompletion(getTransaction());
+        session.getTransaction().enlistPrepare(getPrepareTransaction());
+        session.getTransaction().enlistAfterCompletion(getAfterTransaction());
     }
 
     @Override
@@ -149,7 +148,7 @@ public class RevisionedCacheRealmProvider implements CacheRealmProvider {
         }
     }
 
-    private KeycloakTransaction getTransaction() {
+    private KeycloakTransaction getPrepareTransaction() {
         return new KeycloakTransaction() {
             @Override
             public void begin() {
@@ -159,18 +158,84 @@ public class RevisionedCacheRealmProvider implements CacheRealmProvider {
             @Override
             public void commit() {
                 if (delegate == null) return;
-                if (clearAll) {
-                    cache.clear();
+                List<String> invalidates = new LinkedList<>();
+                for (String id : realmInvalidations) {
+                    invalidates.add(id);
                 }
-                runInvalidations();
-                transactionActive = false;
+                for (String id : roleInvalidations) {
+                    invalidates.add(id);
+                }
+                for (String id : groupInvalidations) {
+                    invalidates.add(id);
+                }
+                for (String id : appInvalidations) {
+                    invalidates.add(id);
+                }
+                for (String id : clientTemplateInvalidations) {
+                    invalidates.add(id);
+                }
+
+                Collections.sort(invalidates); // lock ordering
+                cache.getRevisions().startBatch();
+                for (String id : invalidates) {
+                    cache.getRevisions().getAdvancedCache().lock(id);
+                }
+
             }
 
             @Override
             public void rollback() {
                 setRollbackOnly = true;
-                runInvalidations();
                 transactionActive = false;
+            }
+
+            @Override
+            public void setRollbackOnly() {
+                setRollbackOnly = true;
+            }
+
+            @Override
+            public boolean getRollbackOnly() {
+                return setRollbackOnly;
+            }
+
+            @Override
+            public boolean isActive() {
+                return transactionActive;
+            }
+        };
+    }
+
+    private KeycloakTransaction getAfterTransaction() {
+        return new KeycloakTransaction() {
+            @Override
+            public void begin() {
+                transactionActive = true;
+            }
+
+            @Override
+            public void commit() {
+                try {
+                    if (delegate == null) return;
+                    if (clearAll) {
+                        cache.clear();
+                    }
+                    runInvalidations();
+                    transactionActive = false;
+                } finally {
+                    cache.endRevisionBatch();
+                }
+            }
+
+            @Override
+            public void rollback() {
+                try {
+                    setRollbackOnly = true;
+                    runInvalidations();
+                    transactionActive = false;
+                } finally {
+                    cache.endRevisionBatch();
+                }
             }
 
             @Override
@@ -351,7 +416,7 @@ public class RevisionedCacheRealmProvider implements CacheRealmProvider {
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
         }
-        if (cached != null) {
+        if (cached != null && cached.getClientId().equals("client")) {
             logger.tracev("client by id cache hit: {0}", cached.getClientId());
         }
 

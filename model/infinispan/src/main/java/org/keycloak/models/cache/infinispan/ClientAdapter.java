@@ -546,7 +546,9 @@ public class ClientAdapter implements ClientModel {
     public RoleModel getRole(String name) {
         if (updated != null) return updated.getRole(name);
         String id = cached.getRoles().get(name);
-        if (id == null) return null;
+        if (id == null) {
+            return null;
+        }
         return cacheSession.getRoleById(id, cachedRealm);
     }
 

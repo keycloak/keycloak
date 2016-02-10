@@ -124,9 +124,18 @@ public class JpaRealmProvider implements RealmProvider {
                 .setParameter("realm", realm).executeUpdate();
         num = em.createNamedQuery("deleteGroupsByRealm")
                 .setParameter("realm", realm).executeUpdate();
+
+        TypedQuery<ClientEntity> query = em.createNamedQuery("getClientsByRealm", ClientEntity.class);
+        query.setParameter("realm", realm);
+        List<ClientEntity> clients = query.getResultList();
+        for (ClientEntity a : clients) {
+            adapter.removeClient(a.getId());
+        }
+        /*
         for (ClientEntity a : new LinkedList<>(realm.getClients())) {
             adapter.removeClient(a.getId());
         }
+        */
         for (ClientTemplateEntity a : new LinkedList<>(realm.getClientTemplates())) {
             adapter.removeClientTemplate(a.getId());
         }
