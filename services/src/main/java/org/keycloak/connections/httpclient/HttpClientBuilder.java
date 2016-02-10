@@ -92,10 +92,12 @@ public class HttpClientBuilder {
     protected boolean disableTrustManager;
     protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.WILDCARD;
     protected SSLContext sslContext;
-    protected int connectionPoolSize = 100;
-    protected int maxPooledPerRoute = 0;
+    protected int connectionPoolSize = 200;
+    protected int maxPooledPerRoute = 100;
     protected long connectionTTL = -1;
     protected TimeUnit connectionTTLUnit = TimeUnit.MILLISECONDS;
+    protected long maxConnectionIdleTime = -1;
+    protected TimeUnit maxConnectionIdleTimeUnit = TimeUnit.MILLISECONDS;
     protected HostnameVerifier verifier = null;
     protected long socketTimeout = -1;
     protected TimeUnit socketTimeoutUnits = TimeUnit.MILLISECONDS;
@@ -135,6 +137,12 @@ public class HttpClientBuilder {
     public HttpClientBuilder connectionTTL(long ttl, TimeUnit unit) {
         this.connectionTTL = ttl;
         this.connectionTTLUnit = unit;
+        return this;
+    }
+
+    public HttpClientBuilder maxConnectionIdleTime(long maxConnectionIdleTime, TimeUnit unit) {
+        this.maxConnectionIdleTime = maxConnectionIdleTime;
+        this.maxConnectionIdleTimeUnit = unit;
         return this;
     }
 
@@ -272,7 +280,14 @@ public class HttpClientBuilder {
                     .setDefaultRequestConfig(requestConfig)
                     .setSSLSocketFactory(sslsf)
                     .setMaxConnTotal(connectionPoolSize)
-                    .setMaxConnPerRoute(maxPooledPerRoute);
+                    .setMaxConnPerRoute(maxPooledPerRoute)
+                    .setConnectionTimeToLive(connectionTTL, connectionTTLUnit);
+
+            if (maxConnectionIdleTime > 0) {
+                // Will start background cleaner thread
+                builder.evictIdleConnections(maxConnectionIdleTime, maxConnectionIdleTimeUnit);
+            }
+
             if (disableCookies) builder.disableCookieManagement();
             return builder.build();
         } catch (Exception e) {
