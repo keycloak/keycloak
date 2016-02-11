@@ -48,7 +48,7 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
 
 
     public KeycloakSPNegoSchemeFactory(CommonKerberosConfig kerberosConfig) {
-        super(true);
+        super(true, false);
         this.kerberosConfig = kerberosConfig;
     }
 
@@ -61,14 +61,14 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
 
     @Override
     public AuthScheme newInstance(HttpParams params) {
-        return new KeycloakSPNegoScheme(isStripPort());
+        return new KeycloakSPNegoScheme(isStripPort(), isUseCanonicalHostname());
     }
 
 
     public class KeycloakSPNegoScheme extends SPNegoScheme {
 
-        public KeycloakSPNegoScheme(boolean stripPort) {
-            super(stripPort);
+        public KeycloakSPNegoScheme(boolean stripPort, boolean useCanonicalHostname) {
+            super(stripPort, useCanonicalHostname);
         }
 
 
