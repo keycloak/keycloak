@@ -217,7 +217,7 @@ Transpile TypeScript to JavaScript before running the application.
 $ npm run tsc
 ```
 
-[http://localhost:8080/angular-product](http://localhost:8080/angular-product)
+[http://localhost:8080/angular2-product](http://localhost:8080/angular2-product)
 
 If you are already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
