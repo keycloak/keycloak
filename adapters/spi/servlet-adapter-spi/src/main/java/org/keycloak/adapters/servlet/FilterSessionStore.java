@@ -23,7 +23,6 @@ import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.common.util.Encode;
 import org.keycloak.common.util.MultivaluedHashMap;
 
-import javax.servlet.ReadListener;
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -174,54 +173,11 @@ public class FilterSessionStore implements AdapterSessionStore {
                 public ServletInputStream getInputStream() throws IOException {
 
                     if (needRequestRestore && body != null) {
+                        final ByteArrayInputStream is = new ByteArrayInputStream(body);
                         return new ServletInputStream() {
-                            private int lastIndex = 0;
-                            private ReadListener readListener = null;
-
-                            @Override
-                            public boolean isFinished() {
-                                return lastIndex == body.length;
-                            }
-
-                            @Override
-                            public boolean isReady() {
-                                return true;
-                            }
-
-                            @Override
-                            public void setReadListener(ReadListener readListener) {
-                                this.readListener = readListener;
-                                if (!isFinished()) {
-                                    try {
-                                        readListener.onDataAvailable();
-                                    } catch (IOException e) {
-                                        readListener.onError(e);
-                                    }
-                                } else {
-                                    try {
-                                        readListener.onAllDataRead();
-                                    } catch (IOException e) {
-                                        readListener.onError(e);
-                                    }
-                                }
-                            }
-
                             @Override
                             public int read() throws IOException {
-                                int i = -1;
-                                if (!isFinished()) {
-                                    i = body[lastIndex];
-                                    lastIndex++;
-                                    if (isFinished() && readListener != null) {
-                                        try {
-                                            readListener.onAllDataRead();
-                                        } catch (IOException e) {
-                                            readListener.onError(e);
-                                            throw e;
-                                        }
-                                    }
-                                }
-                                return i;
+                                return is.read();
                             }
                         };
                     }

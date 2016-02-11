@@ -65,7 +65,6 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>1.0.4.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>
         <log4j.version>1.2.16</log4j.version>
         <resteasy.version>3.0.14.Final</resteasy.version>
-        <servlet.api.31.version>1.0.0.Final</servlet.api.31.version>
         <slf4j.version>1.7.7</slf4j.version>
         <sun.istack.version>2.21</sun.istack.version>
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
@@ -88,6 +87,7 @@
         <osgi.version>4.2.0</osgi.version>
         <pax.web.version>3.1.2</pax.web.version>
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
+        <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <twitter4j.version>4.0.4</twitter4j.version>
 
         <!-- Test -->
@@ -303,8 +303,8 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.servlet</groupId>
-                <artifactId>jboss-servlet-api_3.1_spec</artifactId>
-                <version>${servlet.api.31.version}</version>
+                <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+                <version>${servlet.api.30.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.picketlink</groupId>
