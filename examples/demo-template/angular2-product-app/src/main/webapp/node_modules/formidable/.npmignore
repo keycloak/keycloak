@@ -1,7 +1,0 @@
-/test
-/tool
-/example
-/benchmark
-*.upload
-*.un~
-*.http

@@ -1,1 +1,0 @@
-cmd_Release/obj.target/bufferutil.node := g++ -shared -pthread -rdynamic -m64  -Wl,-soname=bufferutil.node -o Release/obj.target/bufferutil.node -Wl,--start-group Release/obj.target/bufferutil/src/bufferutil.o -Wl,--end-group 

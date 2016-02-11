@@ -1,2 +1,0 @@
-weinre build 2.0.0-pre-I0Z7U9OV by Patrick Mueller
-git: 6c1543bc63e75850d29f0bd08a4b5bd1894d972f update for release 2.0.0-pre-HZO3BMNG
