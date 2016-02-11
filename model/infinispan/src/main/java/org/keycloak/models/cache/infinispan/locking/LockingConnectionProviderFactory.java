@@ -20,6 +20,7 @@ package org.keycloak.models.cache.infinispan.locking;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.transaction.LockingMode;
+import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
@@ -41,7 +42,8 @@ public class LockingConnectionProviderFactory extends DefaultInfinispanConnectio
     protected void initEmbedded() {
         super.initEmbedded();
         ConfigurationBuilder counterConfigBuilder = new ConfigurationBuilder();
-        counterConfigBuilder.invocationBatching().enable();
+        counterConfigBuilder//.invocationBatching().enable()
+                .transaction().transactionMode(TransactionMode.TRANSACTIONAL);
         counterConfigBuilder.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
         counterConfigBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
         Configuration counterCacheConfiguration = counterConfigBuilder.build();
