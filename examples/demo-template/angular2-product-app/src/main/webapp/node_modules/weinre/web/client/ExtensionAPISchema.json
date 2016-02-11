@@ -1,0 +1,513 @@
+[
+  {
+    "namespace": "experimental.webInspector.inspectedWindow",
+    "description": "Provides access to the window being inspected.",
+    "functions": [
+      {
+        "name": "eval",
+        "type": "function",
+        "description": "Evaluates a JavaScript expression in the context of inspected page (NOTE: the expression must evaluate to a JSON-compliant object, otherwise the exception is thrown)",
+        "parameters": [
+          {
+            "name": "expression",
+            "type": "string",
+            "description": "An expression to evaluate."
+          },
+          {
+            "name": "callback",
+            "type": "function",
+            "description": "A function called when evaluation completes.",
+            "parameters": [
+              {
+                "name": "result",
+                "type": "object",
+                "description": "The result of evaluation"
+              },
+              {
+                "name": "isException",
+                "type": "boolean",
+                "description": "Set if an exception was caught while evaluating the expression"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "events": [
+      {
+        "name": "onDOMContentLoaded",
+        "type": "function",
+        "description": "Fired after DOMContentLoaded event on inspected page is fired."
+      },
+      {
+        "name": "onLoaded",
+        "type": "function",
+        "description": "Fired after load event on inspected page is fired."
+      },
+      {
+        "name": "onNavigated",
+        "type": "function",
+        "description": "Fired when navigation occurs in the window being inspected."
+      }
+    ]
+  },
+  {
+    "namespace": "experimental.webInspector.panels",
+    "types": [
+      {
+        "id": "PanelWithSidebars",
+        "type": "object",
+        "isInstanceOf": "Panel",
+        "description": "A panel within Web Inspector UI that has sidebars.",
+        "functions": [
+          {
+            "name": "createSidebarPane",
+            "type": "function",
+            "description": "Creates a pane within panel's sidebar.",
+            "parameters": [
+              {
+                "name": "title",
+                "type": "string",
+                "description": "A text that is displayed in sidebar caption."
+              },
+              {
+                "name": "url",
+                "type": "string",
+                "description": "An URL of the page that represents the sidebar."
+              },
+              {
+                "name": "callback",
+                "type": "function",
+                "description": "A callback invoked when sidebar is created",
+                "parameters": [
+                  {
+                    "name": "result",
+                    "description": "An ExtensionSidebarPane object for created sidebar pane",
+                    "$ref": "ExtensionSidebarPane"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "createWatchExpressionSidebarPane",
+            "type": "function",
+            "description": "Creates a pane with an object property tree (similar to a watch sidebar pane).",
+            "parameters": [
+              {
+                "name": "title",
+                "type": "string",
+                "description": "A text that is displayed in sidebar caption."
+              },
+              {
+                "name": "callback",
+                "type": "function",
+                "description": "A callback invoked when sidebar is created",
+                "parameters": [
+                  {
+                    "name": "result",
+                    "description": "A WatchExpressionSidebarPane object for created sidebar pane",
+                    "$ref": "WatchExpressionSidebarPane"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ElementsPanel",
+        "type": "object",
+        "isInstanceOf": "PanelWithSidebars",
+        "description": "Represents Elements panel",
+        "events": [
+          {
+            "name": "onSelectionChanged",
+            "description": "Fired when an objects is selected in the panel."
+          }
+        ]
+      },
+      {
+        "id": "ExtensionPanel",
+        "type": "object",
+        "isInstanceOf": "Panel",
+        "description": "Represents a panel created by extension",
+        "events": [
+          {
+            "name": "onSearch",
+            "description": "Fired upon a search action (start of a new search, search result navigation or search being canceled).",
+            "parameters": [
+              {
+                "name": "action",
+                "type": "string",
+                "description": "Type of search action being performed."
+              },
+              {
+                "name": "queryString",
+                "type": "string",
+                "optional": true,
+                "description": "Query string (only for 'performSearch')"
+              }
+            ]
+          }
+       	]
+      },
+      {
+        "id": "ExtensionSidebarPane",
+        "type": "object",
+        "description": "A sidebar created by the extension.",
+        "functions": [
+          {
+            "name": "setHeight",
+            "type": "function",
+            "description": "Sets the height of the sidebar.",
+            "parameters": [
+              {
+                "name": "height",
+                "type": "string",
+                "description": "A CSS-like size specification, e.g. '10px' or '12pt'"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "WatchExpressionSidebarPane",
+        "type": "object",
+        "description": "A sidebar created by the extension.",
+        "functions": [
+          {
+            "name": "setHeight",
+            "type": "function",
+            "description": "Sets the height of the sidebar.",
+            "parameters": [
+              {
+                "name": "height",
+                "type": "string",
+                "description": "A CSS-like size specification, e.g. '10px' or '12pt'"
+              }
+            ]
+          },
+          {
+            "name": "setExpression",
+            "type": "function",
+            "description": "Sets an expression that is evaluated within the inspected page. The result is displayed in the sidebar pane.",
+            "parameters": [
+              {
+                "name": "expression",
+                "type": "string",
+                "description": "An expression to be evaluated in context of the inspected page. JavaScript objects and DOM nodes are displayed in an expandable tree similar to the console/watch."
+              },
+              {
+                "name": "rootTitle",
+                "type": "string",
+                "optional": true,
+                "description": "An optional title for the root of the expression tree."
+              }
+            ]
+          },
+          {
+            "name": "setObject",
+            "type": "function",
+            "description": "Sets a JSON-compliant object to be displayed in the sidebar pane.",
+            "parameters": [
+              {
+                "name": "jsonObject",
+                "type": "string",
+                "description": "An object to be displayed in context of the inspected page. Evaluated in the context of the caller (API client)."
+              },
+              {
+                "name": "rootTitle",
+                "type": "string",
+                "optional": true,
+                "description": "An optional title for the root of the expression tree."
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "properties": {
+      "scripts": {
+        "$ref": "ScriptsPanel",
+        "description": "Scripts panel"
+      }
+    },
+    "functions": [
+      {
+        "name": "create",
+        "type": "function",
+        "description": "Creates an extension panel.",
+        "parameters": [
+          {
+            "name": "title",
+            "type": "string",
+            "description": "Title that is displayed under the extension icon in the toolbar."
+          },
+          {
+            "name": "iconURL",
+            "type": "string",
+            "description": "An URL of the toolbar icon."
+          },
+          {
+            "name": "pageURL",
+            "type": "string",
+            "description": "An URL of the page that represents this panel."
+          }
+        ],
+        "returns" : {
+          "$ref": "ExtensionPanel",
+          "description": "A panel that was created."
+        }
+      }
+    ]
+  },
+  {
+    "namespace": "experimental.webInspector.resources",
+    "types": [
+      {
+        "id": "Resource",
+        "type": "object",
+        "description": "Represents a resource (document, script, image etc). See HAR Specification for reference.",
+        "functions": [
+          {
+            "name": "getContent",
+            "type": "function",
+            "description": "Returns resource content.",
+            "parameters": [
+              {
+                "name": "callback",
+                "type": "function",
+                "description": "A function that is called upon request completion.",
+                "parameters": [
+                  {
+                    "name": "content",
+                    "type": "string",
+                    "description": "Resource content (potentially encoded)."
+                  },
+                  {
+                    "name": "encoding",
+                    "type": "string",
+                    "description": "Empty if content is not encoded, encoding name otherwise. Currently, only base64 supported."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "functions": [
+      {
+        "name": "getHAR",
+        "type": "function",
+        "description": "Returns HAR archive that contains all known resource objects.",
+        "parameters": [
+          {
+            "name": "callback",
+            "type": "function",
+            "description": "A function that is called upon request completion.",
+            "parameters": [
+              {
+                "name": "har",
+                "type": "object",
+                "description": "A HAR archieve. See HAR specification for details."
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "events": [
+      {
+        "name": "onFinished",
+        "type": "function",
+        "description": "Fired when a resource request is finished and all resource data are available.",
+        "parameters": [
+          { "name": "resource", "$ref": "Resource" }
+        ]
+      }
+    ]
+  },
+  {
+    "namespace": "experimental.webInspector.audits",
+    "functions": [
+      {
+        "name": "addCategory",
+        "type": "function",
+        "description": "Adds an audit category.",
+        "parameters": [
+          { "name": "displayName", "type": "string", "description": "A display name for the category" },
+          { "name": "resultCount", "type": "number", "description": "The expected number of audit results in the category." }
+        ],
+        "returns": {
+          "$ref": "AuditCategory"
+        }
+      }
+    ],
+    "types": [
+      {
+        "id": "AuditCategory",
+        "type": "object",
+        "description": "A set of audit rules",
+        "events": [
+          {
+            "name": "onAuditStarted",
+            "type": "function",
+            "description": "Fired when the audit is started, if the category is enabled -- the extension is expected to begin executing audit rules.",
+            "parameters": [
+              { "name": "results", "$ref": "AuditResults" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "FormattedValue",
+        "type": "object",
+        "description": "A value returned from one of the formatters (an URL, code snippet etc), to be passed to createResult or addChild"
+      },
+      {
+        "id": "AuditResults",
+        "type": "object",
+        "description": "A collection of audit results for current run of the audit category",
+        "functions": [
+          {
+            "name": "addResult",
+            "type": "function",
+            "parameters": [
+              {
+                "name": "displayName",
+                "type": "string",
+                "description": "A concise, high-level description of audit rule result"
+              },
+              {
+                "name": "description",
+                "type": "string",
+                "description": "A detailed description of what the displayName means"
+              },
+              {
+                "name": "severity",
+                "$ref": "AuditResultSeverety"
+              },
+              {
+                "name": "details",
+                "$ref": "AuditResultNode",
+                "optional": true,
+                "description": "A subtree that appears under added result that may provide additional details on the violations found"
+              }
+            ]
+          },
+          {
+            "name": "createResult",
+            "type": "function",
+            "description": "Creates a result node that may be user as details parameters to addResult",
+            "parameters": [
+              {
+                "name": "content ...",
+                "choices": [
+                  { "type": "string" },
+                  { "$ref": "FormattedValue" }
+                ],
+                "description": "Either string or formatted values returned by one of AuditResult formatters (url, snippet etc)"
+              }
+            ],
+            "returns": {
+              "$ref": "AuditResultNode"
+            }
+          },
+          {
+            "name": "done",
+            "type": "function",
+            "description": "Signals the WebInspector Audits panel that the run of this category is over. Normally the run completes automatically when a number of added top-level results is equal to that declared when AuditCategory was created."
+          },
+          {
+            "name": "url",
+            "type": "function",
+            "description": "Render passed value as an URL in the Audits panel",
+            "parameters": [
+              { "name": "href", "type": "string", "description": "An URL that will appear as href value on resulting link" },
+              { "name": "displayText", "type": "string", "description": "A text that will appear to user", "optional": true }
+            ],
+            "returns": { "$ref": "FormattedValue" }
+          },
+          {
+            "name": "snippet",
+            "type": "function",
+            "description": "Render passed text as a code snippet in the Audits panel",
+            "parameters": [
+              { "name": "text", "type": "string", "description": "Snippet text" }
+            ],
+            "returns": { "$ref": "FormattedValue" }
+          }
+        ],
+        "properties": {
+          "Severity": {
+            "$ref": "AuditResultSeverity",
+            "description": "A class that contains possible values for audit result severities."
+          },
+          "text": {
+            "type": "string",
+            "description": "The contents of the node."
+          },
+          "children": {
+            "optional": true,
+            "type": "array",
+            "items": { "$ref": "AuditResultNode" },
+            "description": "Children of this node."
+          },
+          "expanded": {
+            "optional": "true",
+            "type": "boolean",
+            "description": "Whether the node is expanded by default."
+          }
+        }
+      },
+      {
+        "id": "AuditResultNode",
+        "type": "object",
+        "description": "A node in the audit result trees. Displays some content and optionally has children node",
+        "functions": [
+          {
+            "name": "addChild",
+            "description": "Adds another child node to this node",
+            "parameters": [
+              {
+                "name": "content ...",
+                "choices": [
+                  { "type": "string" },
+                  { "$ref": "FormattedValue" }
+                ],
+                "description": "Either string or formatted values returned by one of AuditResult formatters (url, snippet etc)"
+              }
+            ],
+            "returns": {
+              "$ref": "AuditResultNode"
+            }
+          }
+        ],
+        "properties": {
+          "expanded": {
+            "type": "boolean",
+            "description": "If set, the subtree will always be expanded"
+          }
+        }
+      },
+      {
+        "id": "AuditResultSeverity",
+        "type": "object",
+        "properties": {
+          "Info": {
+            "type": "string"
+          },
+          "Warning": {
+            "type": "string"
+          },
+          "Severe": {
+            "type": "string"
+          }
+        }
+      }
+    ]
+  }
+]
+

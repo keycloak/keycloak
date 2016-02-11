@@ -1,0 +1,39 @@
+---
+git:
+  depth: 1
+language: node_js
+node_js:
+  - '0.10'
+  - '0.11'
+  - '0.12'
+  - 'iojs'
+  - 'stable'
+env:
+  global:
+    - SAUCE_LABS=false PARSER=false OPTIONS=""
+  matrix:
+    - PARSER="traceur"
+    - PARSER="babel"
+    - PARSER="typescript"
+matrix:
+  include:
+    - node_js: "0.10"
+      env: SAUCE_LABS=true PARSER="traceur"
+    - node_js: "0.10"
+      env: SAUCE_LABS=true PARSER="babel"
+    - node_js: "0.10"
+      env: SAUCE_LABS=true PARSER="typescript"
+    #- node_js: "0.10"
+   #   env: SAUCE_LABS=true PARSER="traceur" OPTIONS="--ie8"
+before_install:
+  - export CHROME_BIN=chromium-browser
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - npm update -g
+  - npm install -g karma-cli grunt-cli
+before_script:
+  - grunt
+script:
+  - npm run test:node
+  - npm run test:browser-$PARSER
+  - "[ $SAUCE_LABS == false ] || npm run test:browser-$PARSER -- --saucelabs $OPTIONS"

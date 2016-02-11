@@ -1,0 +1,498 @@
+/*
+    pesticide v1.0.0 . @mrmrs . MIT
+*/
+body {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+article {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+nav {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+aside {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+section {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+header {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+footer {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+h1 {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+h2 {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+h3 {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+h4 {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+h5 {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+h6 {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+main {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+address {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+div {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+p {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+hr {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+pre {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+blockquote {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+ol {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+ul {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+li {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+dl {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+dt {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+dd {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+figure {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+figcaption {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+table {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+caption {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+thead {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+tbody {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+tfoot {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+tr {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+th {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+td {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+col {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+colgroup {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+button {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+datalist {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+fieldset {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+form {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+input {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+keygen {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+label {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+legend {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+meter {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+optgroup {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+option {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+output {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+progress {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+select {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+textarea {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+details {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+summary {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+command {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+menu {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+del {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+ins {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+img {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+iframe {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+embed {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+object {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+param {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+video {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+audio {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+source {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+canvas {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+track {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+map {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+area {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+a {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+em {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+strong {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+i {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+b {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+u {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+s {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+small {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+abbr {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+q {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+cite {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+dfn {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+sub {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+sup {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+time {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+code {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+kbd {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+samp {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+var {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+mark {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+bdi {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+bdo {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+ruby {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+rt {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+rp {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+span {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+br {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}
+wbr {
+  -webkit-box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  box-shadow: 0 0 1rem rgba(0,0,0,0.6);
+  background-color: rgba(255,255,255,0.25);
+}

@@ -1,0 +1,200 @@
+.popover {
+    position: absolute;
+    -webkit-border-image: url(Images/popoverBackground.png) 25 25 25 25;
+    border-width: 25px;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.popover .content {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    pointer-events: auto;
+    overflow: auto;
+}
+
+.popover .arrow {
+    position: absolute;
+    background-image: url(Images/popoverArrows.png);
+    width: 19px;
+    height: 19px;
+    margin-left: 15px;
+    margin-top: -25px;
+    top: 0;
+    left: 0;
+}
+
+.popover.top-left-arrow .arrow {
+    /* The default is top-left, no styles needed. */
+}
+
+.popover.top-right-arrow .arrow {
+    right: 25px;
+    left: auto;
+}
+
+.popover.bottom-left-arrow .arrow {
+    top: auto;
+    bottom: 0;
+    margin-top: 0;
+    margin-bottom: -25px;
+    background-position: 0 -19px;
+}
+
+.popover.bottom-right-arrow .arrow {
+    right: 15px;
+    left: auto;
+    top: auto;
+    bottom: 0;
+    margin-top: 0;
+    margin-bottom: -25px;
+    background-position: 0 -19px;
+}
+
+.popover.left-top-arrow .arrow {
+    top: 0;
+    margin-top: 15px;
+    margin-left: -25px;
+    background-position: 0 -38px;
+}
+
+.popover.left-bottom-arrow .arrow {
+    top: auto;
+    bottom: 0;
+    margin-bottom: 15px;
+    margin-left: -25px;
+    background-position: 0 -38px;
+}
+
+.popover.right-top-arrow .arrow {
+    right: 0;
+    left: auto;
+    top: 0;
+    margin-top: 15px;
+    margin-right: -25px;
+    background-position: 0 -57px;
+}
+
+.popover.right-bottom-arrow .arrow {
+    right: 0;
+    left: auto;
+    top: auto;
+    bottom: 0;
+    margin-bottom: 15px;
+    margin-right: -25px;
+    background-position: 0 -57px;
+}
+
+.popover ::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+}
+
+.popover ::-webkit-scrollbar-corner {
+    display: none;
+}
+
+.popover ::-webkit-resizer {
+    display: none;
+}
+
+/* Horizontal Scrollbar Styles */
+
+.popover ::-webkit-scrollbar:horizontal:corner-present {
+    border-right-width: 0;
+}
+
+.popover ::-webkit-scrollbar-thumb:horizontal {
+    -webkit-border-image: url(Images/thumbHoriz.png) 0 11 0 11;
+    border-color: transparent;
+    border-width: 0 11px;
+    min-width: 20px;
+}
+
+.popover ::-webkit-scrollbar-thumb:horizontal:hover {
+    -webkit-border-image: url(Images/thumbHoverHoriz.png) 0 11 0 11;
+}
+
+.popover ::-webkit-scrollbar-thumb:horizontal:active {
+    -webkit-border-image: url(Images/thumbActiveHoriz.png) 0 11 0 11;
+}
+
+.popover ::-webkit-scrollbar-track-piece:horizontal:start {
+    margin-left: 5px;
+}
+
+.popover ::-webkit-scrollbar-track-piece:horizontal:end {
+    margin-right: 5px;
+}
+
+.popover ::-webkit-scrollbar-track-piece:horizontal:end:corner-present {
+    margin-right: 4px;
+}
+
+.popover ::-webkit-scrollbar-track-piece:horizontal:decrement {
+    -webkit-border-image: url(Images/trackHoriz.png) 0 11 0 11;
+    border-color: transparent;
+    border-width: 0 0 0 11px;
+}
+
+.popover ::-webkit-scrollbar-track-piece:horizontal:increment {
+    -webkit-border-image: url(Images/trackHoriz.png) 0 11 0 11;
+    border-color: transparent;
+    border-width: 0 11px 0 0;
+}
+
+/* Vertical Scrollbar Styles */
+
+
+.popover ::-webkit-scrollbar:vertical:corner-present {
+    border-bottom-width: 0;
+}
+
+.popover ::-webkit-scrollbar-thumb:vertical {
+    -webkit-border-image: url(Images/thumbVert.png) 11 0 11 0;
+    border-color: transparent;
+    border-width: 11px 0;
+    min-height: 20px;
+}
+
+.popover ::-webkit-scrollbar-thumb:vertical:hover {
+    -webkit-border-image: url(Images/thumbHoverVert.png) 11 0 11 0;
+}
+
+.popover ::-webkit-scrollbar-thumb:vertical:active {
+    -webkit-border-image: url(Images/thumbActiveVert.png) 11 0 11 0;
+}
+
+
+.popover ::-webkit-scrollbar-track-piece:vertical:start {
+    margin-top: 5px;
+}
+
+.popover ::-webkit-scrollbar-track-piece:vertical:end {
+    margin-bottom: 5px;
+}
+
+.popover ::-webkit-scrollbar-track-piece:vertical:end:corner-present {
+    margin-bottom: 4px;
+}
+
+.popover ::-webkit-scrollbar-track-piece:vertical:decrement {
+    -webkit-border-image: url(Images/trackVert.png) 11 0 11 0;
+    border-color: transparent;
+    border-width: 11px 0 0 0;
+}
+
+.popover ::-webkit-scrollbar-track-piece:vertical:increment {
+    -webkit-border-image: url(Images/trackVert.png) 11 0 11 0;
+    border-color: transparent;
+    border-width: 0 0 11px 0;
+}
+
+/* Forced Scrollbar Mode Styles */
+
+.popover ::-webkit-scrollbar-button {
+    display: none;
+}

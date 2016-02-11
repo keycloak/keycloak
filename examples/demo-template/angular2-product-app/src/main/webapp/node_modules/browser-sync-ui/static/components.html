@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Browser Sync - Control Panel</title>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="css/core.min.css"/>
+    
+</head>
+<body>
+    <main>
+        <link rel="stylesheet" href="css/components.css" />
+        <span style="color: red">Crossbow WARNING:</span> Include not found: ../../public/img/icons/svg/symbols.svg
+
+        <div class="tube">
+            <h1>Browsersync UI Components</h1>
+            <p>Also, you can view static representations of each section:</p>
+            <ul bs-list="inline" class="">
+                <li>
+                    <a href="/server-info.html" >Overview</a> <span bs-sep>|</span>
+                </li>
+                <li>
+                    <a href="/sync-options.html" >Sync Options</a> <span bs-sep>|</span>
+                </li>
+                <li>
+                    <a href="/history.html" >History</a> <span bs-sep>|</span>
+                </li>
+                <li>
+                    <a href="/plugins.html" >Plugins</a> <span bs-sep>|</span>
+                </li>
+                <li>
+                    <a href="/remote-debug.html" >Remote Debug</a> <span bs-sep>|</span>
+                </li>
+                <li>
+                    <a href="/network-throttle.html" >Network Throttle</a> <span bs-sep>|</span>
+                </li>
+                <li>
+                    <a href="/help.html" >Help / About</a> 
+                </li>
+            </ul>
+            <hr/>
+        </div>
+
+        <div class="tube">
+            <h1>Typography</h1>
+            <h1>Heading 1</h1>
+
+            <h2>Heading 2</h2>
+
+            <h3>Heading 3</h3>
+
+            <p class="lede">Lede paragraph. Lorem ipsum dolor sit amet.</p>
+
+            <p>Paragraph. Lorem ipsum dolor sit amet, consectetur adipisicing elit. Libero esse molestias, itaque, quia sed laudantium laboriosam amet aliquam ipsam, laborum asperiores quod obcaecati, maiores fugiat nihil cum minus provident vitae.</p>
+
+            <p class="small">Small paragraph. Lorem ipsum dolor sit amet.</p>
+
+            <p><a href="#links">Link</a> <span bs-sep>|</span> <a href="#">Another link</a></p>
+
+            <p>Inline tags. Lorem <strong>strong</strong> ipsum <code>code</code> dolar <mark>mark</mark> si <em>em</em>.</p>
+
+            <hr>
+
+            <ul>
+                <li>Lorem ipsum dolor sit amet.</li>
+                <li>Ratione dolore veritatis voluptas consequuntur!</li>
+                <li>Odit quis, pariatur ipsum vel.
+                    <ul>
+                        <li>Lorem ipsum dolor sit amet.</li>
+                        <li>Ratione dolore veritatis voluptas consequuntur!</li>
+                        <li>Odit quis, pariatur ipsum vel.</li>
+                        <li>Suscipit laudantium, quam debitis tempore.</li>
+                        <li>Nobis vero nesciunt suscipit porro.</li>
+                    </ul>
+                </li>
+                <li>Suscipit laudantium, quam debitis tempore.</li>
+                <li>Nobis vero nesciunt suscipit porro.</li>
+            </ul>
+
+            <ol>
+                <li>Lorem ipsum dolor sit amet.</li>
+                <li>Ratione dolore veritatis voluptas consequuntur!</li>
+                <li>Odit quis, pariatur ipsum vel.
+                    <ol>
+                        <li>Lorem ipsum dolor sit amet.</li>
+                        <li>Ratione dolore veritatis voluptas consequuntur!</li>
+                        <li>Odit quis, pariatur ipsum vel.</li>
+                        <li>Suscipit laudantium, quam debitis tempore.</li>
+                        <li>Nobis vero nesciunt suscipit porro.</li>
+                    </ol>
+                </li>
+                <li>Suscipit laudantium, quam debitis tempore.</li>
+                <li>Nobis vero nesciunt suscipit porro.</li>
+            </ol>
+
+            <dl>
+                <dt>Lorem ipsum dolor sit amet.</dt>
+                <dd>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Repellendus, hic.</dd>
+                <dt>Lorem ipsum dolor sit amet.</dt>
+                <dd>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Repellendus, hic.</dd>
+                <dt>Lorem ipsum dolor sit amet.</dt>
+                <dd>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Repellendus, hic.</dd>
+            </dl>
+
+            <hr>
+
+            <table>
+                <caption>The Very Best Eggnog</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Ingredients</th>
+                        <th scope="col">Serves 12</th>
+                        <th scope="col">Serves 24</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-title="Ingredient">Milk</td>
+                        <td data-title="For 12">1 quart</td>
+                        <td data-title="For 24">2 quart</td>
+                    </tr>
+                    <tr>
+                        <td data-title="Ingredient">Cloves</td>
+                        <td data-title="For 12">5</td>
+                        <td data-title="For 24">10</td>
+                    </tr>
+                    <tr>
+                        <td data-title="Ingredient">Egg Yolks</td>
+                        <td data-title="For 12">12</td>
+                        <td data-title="For 24">24</td>
+                    </tr>
+                    <tr>
+                        <td data-title="Ingredient">Cups Sugar</td>
+                        <td data-title="For 12">1 ½ cups</td>
+                        <td data-title="For 24">3 cups</td>
+                    </tr>
+                    <tr>
+                        <td data-title="Ingredient">Dark Rum</td>
+                        <td data-title="For 12">1 ½ cups</td>
+                        <td data-title="For 24">3 cups</td>
+                    </tr>
+                    <tr>
+                        <td data-title="Ingredient">Freshly grated nutmeg to taste</td>
+                        <td data-title="For 12"></td>
+                        <td data-title="For 24"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            </div>
+        <hr/>
+        <div class="tube">
+            <h1>Buttons</h1>
+            <p>Default button styles</p>
+            <p>
+                <button bs-button>Button</button>
+                <button bs-button="size-small">Button Small</button>
+                <button bs-button="size-small" disabled>Button Small</button>
+            </p>
+            <p>Subtle button styles</p>
+            <p>
+                <button bs-button="subtle">Button</button>
+                <button bs-button="size-small subtle">Button Small</button>
+                <button bs-button="size-small subtle" disabled>Button Small</button>
+            </p>
+            <p>Alternative Subtle button styles</p>
+            <p>
+                <button bs-button="subtle-alt">Button</button>
+                <button bs-button="size-small subtle-alt">Button Small</button>
+                <button bs-button="size-small subtle-alt" disabled>Button Small</button>
+            </p>
+            <hr/>
+            <p>Default buttons with icons</p>
+            <div>
+                <button bs-button="icon-left"><svg bs-svg-icon><use xlink:href="#svg-square-add"></use></svg> Icon Left</button>
+                <button bs-button="icon-right"><svg bs-svg-icon><use xlink:href="#svg-globe"></use></svg> Icon Right</button>
+                <button bs-button="icon"><svg bs-svg-icon><use xlink:href="#svg-target"></use></svg></button>
+                <button bs-button="icon" disabled><svg bs-svg-icon><use xlink:href="#svg-target"></use></svg></button>
+            </div>
+            <div>
+                <button bs-button="size-small icon-left"><svg bs-svg-icon><use xlink:href="#svg-square-add"></use></svg> Icon Left</button>
+                <button bs-button="size-small icon-right"><svg bs-svg-icon><use xlink:href="#svg-bug"></use></svg> Icon Right</button>
+                <button bs-button="size-small icon"><svg bs-svg-icon><use xlink:href="#svg-target"></use></svg></button>
+                <button bs-button="size-small icon" disabled><svg bs-svg-icon><use xlink:href="#svg-target"></use></svg></button>
+            </div>
+            <br/>
+            <p>Subtle buttons with icons</p>
+            <div>
+                <button bs-button="subtle icon-left"><svg bs-svg-icon><use xlink:href="#svg-square-add"></use></svg> Icon Left</button>
+                <button bs-button="subtle icon-right"><svg bs-svg-icon><use xlink:href="#svg-bug"></use></svg> Icon Right</button>
+                <button bs-button="subtle icon"><svg bs-svg-icon><use xlink:href="#svg-target"></use></svg></button>
+                <button bs-button="subtle icon" disabled><svg bs-svg-icon><use xlink:href="#svg-help"></use></svg></button>
+            </div>
+            <div>
+                <button bs-button="size-small subtle icon-left"><svg bs-svg-icon><use xlink:href="#svg-square-add"></use></svg> Icon Left</button>
+                <button bs-button="size-small subtle icon-right"><svg bs-svg-icon><use xlink:href="#svg-bug"></use></svg> Icon Right</button>
+                <button bs-button="size-small subtle icon"><svg bs-svg-icon><use xlink:href="#svg-target"></use></svg></button>
+                <button bs-button="size-small subtle icon" disabled><svg bs-svg-icon><use xlink:href="#svg-help"></use></svg></button>
+            </div>
+            <br/>
+            <p>Alternative Subtle button styles with icons</p>
+            <div>
+                <button bs-button="size-small subtle-alt icon-left"><svg bs-svg-icon><use xlink:href="#svg-globe"></use></svg> Icon Left</button>
+                <button bs-button="size-small subtle-alt icon-right"><svg bs-svg-icon><use xlink:href="#svg-bug"></use></svg> Icon Right</button>
+                <button bs-button="size-small subtle-alt icon"><svg bs-svg-icon><use xlink:href="#svg-target"></use></svg></button>
+                <button bs-button="size-small subtle-alt icon" disabled><svg bs-svg-icon><use xlink:href="#svg-help"></use></svg></button>
+            </div>
+
+            </div>
+        <hr/>
+        <div class="tube">
+            <h1>Button bars</h1>
+            <div bs-button-group>
+                <button bs-button="icon-left"><svg bs-svg-icon><use xlink:href="#svg-globe"></use></svg> Website</button>
+                <button bs-button="icon-left"><svg bs-svg-icon><use xlink:href="#svg-twitter"></use></svg> Twitter</button>
+                <button bs-button="icon-right"><svg bs-svg-icon><use xlink:href="#svg-github"></use></svg> Github</button>
+                <button bs-button="icon" disabled><svg bs-svg-icon><use xlink:href="#svg-target"></use></svg></button>
+            </div>
+            <div bs-button-group>
+                <button bs-button="icon"><svg bs-svg-icon><use xlink:href="#svg-globe"></use></svg></button>
+                <button bs-button="icon"><svg bs-svg-icon><use xlink:href="#svg-twitter"></use></svg></button>
+                <button bs-button="icon"><svg bs-svg-icon><use xlink:href="#svg-github"></use></svg></button>
+                <button bs-button="icon"><svg bs-svg-icon><use xlink:href="#svg-target"></use></svg></button>
+            </div>
+            <div bs-button-group>
+                <button bs-button="">Button</button>
+                <button bs-button="icon"><svg bs-svg-icon><use xlink:href="#svg-globe"></use></svg></button>
+                <button bs-button="icon-left"><svg bs-svg-icon><use xlink:href="#svg-globe"></use></svg> Button Small</button>
+                <button bs-button disabled>n/a</button>
+                <button bs-button="icon-right"><svg bs-svg-icon><use xlink:href="#svg-globe"></use></svg> Button Small</button>
+            </div>
+            <div bs-button-group>
+                <button bs-button="subtle-alt">Button</button>
+                <button bs-button="subtle-alt icon"><svg bs-svg-icon><use xlink:href="#svg-globe"></use></svg></button>
+                <button bs-button="subtle-alt icon-left"><svg bs-svg-icon><use xlink:href="#svg-globe"></use></svg> Button Small</button>
+                <button bs-button="subtle-alt" disabled>n/a</button>
+                <button bs-button="subtle-alt icon-right"><svg bs-svg-icon><use xlink:href="#svg-globe"></use></svg> Button Small</button>
+            </div>
+            <div bs-button-group>
+                <button bs-button="size-small subtle-alt">Button</button>
+                <button bs-button="size-small subtle-alt icon"><svg bs-svg-icon><use xlink:href="#svg-globe"></use></svg></button>
+                <button bs-button="size-small subtle-alt icon-left"><svg bs-svg-icon><use xlink:href="#svg-globe"></use></svg> Button Small</button>
+                <button bs-button="size-small subtle-alt" disabled>n/a</button>
+                <button bs-button="size-small subtle-alt icon-right"><svg bs-svg-icon><use xlink:href="#svg-globe"></use></svg> Button Small</button>
+            </div>
+            </div>
+        <hr/>
+        <div class="tube">
+            <h1>Form inputs</h1>
+            <div bs-input="text">
+                <label for="grid-size" bs-input-label>Grid Size</label>
+                <input id="grid-size" type="text" size="16px" value="16px" placeholder=""/>
+            </div>
+            <br/>
+            <div bs-input="text">
+                <label for="some-input" bs-input-label>Some input</label>
+                <input id="some-input" type="text" size="" value="" placeholder="EG: #main"/>
+            </div>
+            <br/>
+            <p bs-label-heading>Form label</p>
+
+            <div bs-input="text">
+                <label for="overlay-01" bs-input-label>Input + Button</label>
+                <div bs-input-group>
+                    <input bs-stack id="overlay-01" type="text" size="10" value="" placeholder="EG: #main"/>rs
+                    <button bs-button="subtle-alt icon"><svg bs-svg-icon><use xlink:href="#svg-circle-plus"></use></svg></button>
+                </div>
+            </div>
+
+            <div bs-input="text">
+                <label for="new-restriction" bs-input-label>New Restriction</label>
+                <input bs-stack id="new-restriction" type="text" size="" value="" ng-model="ctrl.restriction" placeholder="eg: #main">
+                <div bs-state-wrapper ng-class="[ctrl.state.classname]">
+                    <button type="submit" id="add-restriction" bs-button="size-small subtle-alt icon-left" ng-disabled="ctrl.state.waiting">
+                        <svg bs-svg-icon="" icon="circle-plus"><use xlink:href="#svg-circle-plus"></use></svg>Add</button>
+                    <div bs-state-icons>
+                        <svg bs-svg-icon icon="circle-ok" bs-state="success inline"><use xlink:href="#svg-circle-ok"></use></svg>
+                        <svg bs-svg-icon icon="circle-minus" bs-state="waiting inline" bs-anim="spin"><use xlink:href="#svg-circle-minus"></use></svg>
+                    </div>
+                </div>
+            </div>
+
+
+
+            </div>
+        <hr/>
+            <div class="tube">
+                <h1>Lists</h1>
+            </div>
+            <div class="tube">
+            <h2>Simple list</h2>
+            <ul bs-list>
+                <li>Item 1</li>
+                <li>Item 2</li>
+                <li>Item 3</li>
+                <li>Item 4</li>
+                <li>Item 5</li>
+            </ul>
+            <br/>
+            <h2>Bordered list</h2>
+            <ul bs-list="bordered">
+                <li>/gallery/new-item</li>
+                <li><a href="#">https://github.com/shakyShane/browser-sync/pull/400</a></li>
+                <li>Item 3</li>
+                <li>Item 4</li>
+                <li>Item 5</li>
+            </ul>
+            <br/>
+            <h2>Bordered list with controls</h2>
+            </div>
+
+            <ul bs-list="bordered inline-controls">
+                <li>
+                    <p>https://github.com/Browsersync/UI/</p>
+                    <div bs-button-group>
+                        <button href="#" bs-button="subtle-alt icon">
+                          <svg bs-svg-icon><use xlink:href="#svg-syncall"></use></svg>
+                        </button>
+                        <button href="#" bs-button="subtle-alt icon">
+                            <svg bs-svg-icon><use xlink:href="#svg-bin"></use></svg>
+                        </button>
+                    </div>
+                </li>
+                <li>
+                    <p>https://github.com/Browsersync/UI/issues</p>
+                    <div bs-button-group>
+                        <button href="#" bs-button="subtle-alt icon">
+                          <svg bs-svg-icon><use xlink:href="#svg-syncall"></use></svg>
+                        </button>
+                        <button href="#" bs-button="subtle-alt icon">
+                            <svg bs-svg-icon><use xlink:href="#svg-bin"></use></svg>
+                        </button>
+                    </div>
+                </li>
+                <li>
+                    <p>https://twitter.com/browsersync</p>
+                    <div bs-button-group>
+                        <button href="#" bs-button="subtle-alt icon">
+                          <svg bs-svg-icon><use xlink:href="#svg-syncall"></use></svg>
+                        </button>
+                        <button href="#" bs-button="subtle-alt icon">
+                            <svg bs-svg-icon><use xlink:href="#svg-bin"></use></svg>
+                        </button>
+                    </div>
+                </li>
+                <li>
+                    <p>http://browsersync.io</p>
+                    <div bs-button-group>
+                        <button href="#" bs-button="subtle-alt icon">
+                          <svg bs-svg-icon><use xlink:href="#svg-syncall"></use></svg>
+                        </button>
+                        <button href="#" bs-button="subtle-alt icon">
+                            <svg bs-svg-icon><use xlink:href="#svg-bin"></use></svg>
+                        </button>
+                    </div>
+                </li>
+                <li>
+                    <p>http://stackoverflow.com/questions/tagged/browser-sync</p>
+                    <div bs-button-group>
+                        <button href="#" bs-button="subtle-alt icon">
+                          <svg bs-svg-icon><use xlink:href="#svg-syncall"></use></svg>
+                        </button>
+                        <button href="#" bs-button="subtle-alt icon">
+                            <svg bs-svg-icon><use xlink:href="#svg-bin"></use></svg>
+                        </button>
+                    </div>
+                </li>
+                <li>
+                    <p>http://www.browsersync.io/docs/options/#option-snippetOptions</p>
+                    <div bs-button-group>
+                        <button href="#" bs-button="subtle-alt icon">
+                          <svg bs-svg-icon><use xlink:href="#svg-syncall"></use></svg>
+                        </button>
+                        <button href="#" bs-button="subtle-alt icon">
+                            <svg bs-svg-icon><use xlink:href="#svg-bin"></use></svg>
+                        </button>
+                    </div>
+                </li>
+                <li>
+                    <p>https://github.com/shakyShane/browser-sync/blob/master/CONTRIBUTING.md</p>
+                    <div bs-button-group>
+                        <button href="#" bs-button="subtle-alt icon">
+                          <svg bs-svg-icon><use xlink:href="#svg-syncall"></use></svg>
+                        </button>
+                        <button href="#" bs-button="subtle-alt icon">
+                            <svg bs-svg-icon><use xlink:href="#svg-bin"></use></svg>
+                        </button>
+                    </div>
+                </li>
+                <li>
+                    <p>http://www.browsersync.io/docs/options/#option</p>
+                    <div bs-button-group>
+                        <button href="#" bs-button="subtle-alt icon">
+                          <svg bs-svg-icon><use xlink:href="#svg-syncall"></use></svg>
+                        </button>
+                        <button href="#" bs-button="subtle-alt icon">
+                            <svg bs-svg-icon><use xlink:href="#svg-bin"></use></svg>
+                        </button>
+                    </div>
+                </li>
+                <li>
+                    <p>http://www.wearejh.com</p>
+                    <div bs-button-group>
+                        <button href="#" bs-button="subtle-alt icon">
+                          <svg bs-svg-icon><use xlink:href="#svg-syncall"></use></svg>
+                        </button>
+                        <button href="#" bs-button="subtle-alt icon">
+                            <svg bs-svg-icon><use xlink:href="#svg-bin"></use></svg>
+                        </button>
+                    </div>
+                </li>
+            </ul>
+        <div class="tube">
+            <h1>Headings</h1>
+            <div bs-panel="controls outline">
+                <h1 bs-heading>
+                    <svg bs-svg-icon><use xlink:href="#svg-cog"></use></svg>
+                    Server Info
+                </h1>
+            </div>
+            </div>
+        <hr/>
+            <div class="tube">
+                <h1>Panels</h1>
+            </div>
+            <div class="tube">
+                <p>Page heading</p>
+            <div bs-panel="controls outline">
+                <h1 bs-heading>
+                    <svg bs-svg-icon><use xlink:href="#svg-cog"></use></svg>
+                    Overview
+                </h1>
+            </div>
+            <hr/>
+                <div bs-panel="controls outline">
+                    <h1 bs-heading>
+                        <svg bs-svg-icon><use xlink:href="#svg-syncall"></use></svg>
+                        Sync all
+                    </h1>
+                </div>
+                <div bs-button-row>
+                    <button bs-button="inline icon-left success" ng-click="setMany(true)">
+                        <svg bs-svg-icon><use xlink:href="#svg-circle-ok"></use></svg>
+                        Enable All
+                    </button>
+                    <button bs-button="icon-left inline" ng-click="setMany(false)">
+                        <svg bs-svg-icon><use xlink:href="#svg-circle-delete"></use></svg>
+                        Disable all
+                    </button>
+                </div>
+            </div>
+
+            <div bs-panel="controls outline">
+                <h1 bs-heading>
+                    <svg bs-svg-icon><use xlink:href="#svg-cog"></use></svg>
+                    Overview
+                </h1>
+            </div>
+            <hr/>
+
+
+            <div class="tube">
+                <h1>Header</h1>
+            </div>
+            <header bs-header role="banner">
+                <div bs-header-row="brand">
+                    <span class="icon icon-word">
+                        <svg>
+                            <use xlink:href="#svg-logo-word"></use>
+                        </svg>
+                    </span>
+                    <a href="https://www.npmjs.com/package/browser-sync" bs-link="version" target="_blank">v{{app.options.version}}</a>
+                    <span bs-toggle="nav" ng-click="app.toggleMenu('shane')" ng-class="{'active': app.ui.sectionMenu}">
+                        <svg>
+                            <use xlink:href="#svg-list"></use>
+                        </svg>
+                        <svg bs-state="alt">
+                            <use xlink:href="#svg-circle-delete"></use>
+                        </svg>
+                    </span>
+                </div>
+                <aside bs-controls="top">
+                    <div bs-flex="top">
+                        <a href="#" bs-control title="Reload all Browsers" ng-click="app.reloadAll()">
+                            <svg bs-svg-icon><use xlink:href="#svg-repeat"></use></svg>
+                            Reload all
+                        </a>
+                        <a href="{{app.options.port | localRootUrl:app.options.scheme}}" target="_blank" bs-control title="Open a new tab" ng-if="app.options" ng-show="app.options.mode !== 'snippet'" class="ng-scope">
+                            <svg bs-svg-icon><use xlink:href="#svg-newtab"></use></svg>
+                            New Tab
+                        </a>
+                        <a href="#" bs-control title="Reset the scroll position of all browsers to 0" ng-click="app.scrollAllTo(0)">
+                            <svg bs-svg-icon><use xlink:href="#svg-square-up"></use></svg>
+                            Scroll Top
+                        </a>
+                        <a href="#" bs-control title="Reset all Browsers to Homepage" ng-click="app.sendAllTo('/')" ng-show="app.options.mode !== 'snippet'">
+                            <svg bs-svg-icon><use xlink:href="#svg-home"></use></svg>
+                            Reset All
+                        </a>
+                    </div>
+                </aside>
+            </header>
+
+            <div class="tube">
+                <h1>Switches</h1>
+            </div>
+            <section bs-panel="switch" ng-class="{'disabled': !active}">
+                <div bs-panel-content>
+                    <div bs-panel-icon>
+                        <div class="switch">
+                            <input id="switch-1"
+                                   ng-model="item[prop]"
+                                   ng-change="toggle(item)"
+                                   class="cmn-toggle cmn-toggle-round"
+                                   type="checkbox"
+                                   checked="">
+                            <label for="switch-1"></label>
+                        </div>
+                    </div>
+                    <div>
+                        <p bs-text="lede">Css Grid Overlay</p>
+                        <p>Some other content</p>
+                    </div>
+                </div>
+                <div bs-panel-content>
+                    <div bs-inputs bs-grid="wide-4 desk-2">
+                        <div bs-grid-item>
+                            <div bs-input="text">
+                                <label for="grid-size" bs-input-label>Grid Size</label>
+                                <input id="grid-size" type="text" size="16px" value="16px" placeholder=""/>
+                            </div>
+                        </div>
+                        <div bs-grid-item>
+                            <div bs-input="text">
+                                <label for="grid-colour" bs-input-label>Grid Colour</label>
+                                <input id="grid-colour" type="text" size="rgba(0, 0, 0, 0.2)" value="rgba(0, 0, 0, 0.2)" placeholder=""/>
+                            </div>
+                        </div>
+                        <div bs-grid-item>
+                            <div bs-input="text">
+                                <label for="grid-selector" bs-input-label>Grid Selector</label>
+                                <input id="grid-selector" type="text" size="body" value="body" placeholder=""/>
+                            </div>
+                        </div>
+                    </div>
+                    <div bs-inputs bs-grid="wide-4 desk-2">
+                        <div bs-grid-item>
+                            <div bs-input="text">
+                                <label for="offset-top" bs-input-label>Offset Top</label>
+                                <input id="offset-top" type="text" size="0" value="0" placeholder=""/>
+                            </div>
+                        </div>
+                        <div bs-grid-item>
+                            <div bs-input="text">
+                                <label for="offset-bottom" bs-input-label>Offset Bottom</label>
+                                <input id="offset-bottom" type="text" size="0" value="0" placeholder=""/>
+                            </div>
+                        </div>
+                    </div>
+                    <div bs-inputs bs-grid="wide-4 desk-2">
+                        <div bs-grid-item>
+                            <div bs-input="inline">
+                                <input type="checkbox" id="vertical-axis" checked>
+                                <label for="vertical-axis" bs-input-label>Vertical Axis</label>
+                            </div>
+                        </div>
+                        <div bs-grid-item>
+                            <div bs-input="inline">
+                                <input type="checkbox" id="horizontal-axis" checked>
+                                <label for="horizontal-axis" bs-input-label>Horizontal Axis</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+    </main>
+</body>
+</html>

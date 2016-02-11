@@ -1,0 +1,13 @@
+built
+doc
+scripts
+src
+tests
+internal
+tslint.json
+Jakefile.js
+.editorconfig
+.gitattributes
+.settings/
+.travis.yml
+.vscode/

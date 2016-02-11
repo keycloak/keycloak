@@ -1,0 +1,10 @@
+Example
+=======
+
+$ foxy http://wordpress.dev
+
+
+Example with custom port
+========================
+
+$ foxy http://wordpress.dev --port 8000

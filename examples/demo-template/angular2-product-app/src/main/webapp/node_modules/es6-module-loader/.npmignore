@@ -1,0 +1,6 @@
+node_modules
+bower_components
+tmp
+coverage
+.DS_Store
+*.sw?

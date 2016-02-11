@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Browsersync</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/core.min.css"/>
+    <link href="favicon.ico" rel="shortcut icon" type="image/ico">
+</head>
+<body ng-app="BrowserSync">
+
+    %svg%
+
+    <disconnect-elem></disconnect-elem>
+    <notify-elem></notify-elem>
+
+    <main ng-controller="MainController as app">
+
+        %header%
+
+        <section bs-container>
+
+            <section bs-sidebar>
+                <div class="loader" ng-class="{ready:true}">Loading...</div>
+                <nav bs-section-nav ng-class="{'active': app.ui.sectionMenu, ready: true}">
+                    <ul bs-list="stacked">
+                        <li ng-class="{'active': item.active}" ng-repeat="(key, item) in app.ui.menu | orderObjectBy: 'order'">
+                            <button bs-button ng-class="{'active': item.active}" ng-click="app.setActiveSection(item)">
+                                <icon icon="{{item.icon}}"></icon>
+                                {{item.title | ucfirst}}
+                            </button>
+                        </li>
+                        <li bs-action="menu-close" bs-visible="palm">
+                            <button bs-button="nav" ng-click="app.toggleMenu()"><icon icon="circle-delete"></icon> CLOSE</button>
+                        </li>
+                    </ul>
+                </nav>
+                <div bs-visible="not-palm">
+                    %footer%
+                </div>
+            </section>
+
+            <section bs-content>
+
+                %pageMarkup%
+                %templates%
+
+                <div ng-view></div>
+
+                <div bs-visible="palm">
+                    %footer%
+                </div>
+
+            </section>
+        </section>
+    </main>
+
+    <!--
+        app.js contains:
+
+        Socket.io,
+        BrowserSync connector,
+        Angular,
+        Angular Touch,
+        Angular Sanitize,
+        BrowserSync UI app code
+        BrowserSync UI Page Configuration
+        BrowserSync UI Plugin scripts
+
+    -->
+
+    <script src="/js/vendor/socket.js"></script>
+    <script src="/js/app.min.js"></script>
+    <script src="/js/pages-config.js"></script>
+    <script src="/lib/client-js.js"></script>
+
+</body>
+</html>

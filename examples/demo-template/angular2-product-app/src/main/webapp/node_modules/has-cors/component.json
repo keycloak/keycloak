@@ -1,0 +1,16 @@
+{
+  "name": "has-cors",
+  "repo": "component/has-cors",
+  "description": "Detects support for Cross-Origin Resource Sharing",
+  "version": "1.0.3",
+  "keywords": [],
+  "dependencies": {
+    "component/global": "2.0.1"
+  },
+  "development": {},
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": [
+    "index.js"
+  ]
+}

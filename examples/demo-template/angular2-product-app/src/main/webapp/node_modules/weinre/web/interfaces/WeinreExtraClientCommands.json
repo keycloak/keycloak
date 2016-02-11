@@ -1,0 +1,28 @@
+{
+   "interfaces": [
+      {
+         "name": "WeinreExtraClientCommands", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "databaseRecords", 
+                     "out": true
+                  }
+               ], 
+               "name": "getDatabases", 
+               "parameters": []
+            }
+         ]
+      }
+   ], 
+   "name": "weinre"
+}

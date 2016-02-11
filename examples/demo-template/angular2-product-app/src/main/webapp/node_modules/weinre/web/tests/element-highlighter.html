@@ -1,0 +1,98 @@
+<!--
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+
+<html>
+
+<head>
+<title>weinre.web/tests/element-highlighter.html</title>
+<script>try {window.WeinreServerId = location.hash.split("#")[1]} catch(e) {window.WeinreServerId = "anonymous"}</script>
+<script src="/target/target-script.js"></script>
+</head>
+
+<body>
+
+<style>
+.red  { background-color: red }
+
+.m0   { margin:          0px; }
+.b0   { border:          0px solid gray; }
+.p0   { padding:         0px; }
+
+.m1   { margin:         20px; }
+.b1   { border:         20px solid gray; }
+.p1   { padding:        20px; }
+
+.m-1l { margin-left:   -20px; }
+.m-1r { margin-right:  -20px; }
+.m-1t { margin-top:    -20px; }
+.m-1b { margin-bottom: -20px; }
+
+</style>
+
+<h1> top-level </h1>
+<div class="red m0 b0 p0" style="width:50px; height:50px;">x</div>
+<div class="red m0 b0 p1" style="width:50px; height:50px;">x</div>
+<div class="red m0 b1 p0" style="width:50px; height:50px;">x</div>
+<div class="red m0 b1 p1" style="width:50px; height:50px;">x</div>
+<div class="red m1 b0 p0" style="width:50px; height:50px;">x</div>
+<div class="red m1 b0 p1" style="width:50px; height:50px;">x</div>
+<div class="red m1 b1 p0" style="width:50px; height:50px;">x</div>
+<div class="red m1 b1 p1" style="width:50px; height:50px;">x</div>
+
+<h1> 2nd-level, single margin </h1>
+
+<div class="m1">
+<div class="red m0 b0 p0" style="width:50px; height:50px;">x</div>
+<div class="red m0 b0 p1" style="width:50px; height:50px;">x</div>
+<div class="red m0 b1 p0" style="width:50px; height:50px;">x</div>
+<div class="red m0 b1 p1" style="width:50px; height:50px;">x</div>
+<div class="red m1 b0 p0" style="width:50px; height:50px;">x</div>
+<div class="red m1 b0 p1" style="width:50px; height:50px;">x</div>
+<div class="red m1 b1 p0" style="width:50px; height:50px;">x</div>
+<div class="red m1 b1 p1" style="width:50px; height:50px;">x</div>
+</div>
+
+<h1> 2nd-level, double margin </h1>
+
+<div class="m1"><div class="m1">
+<div class="red m0 b0 p0" style="width:50px; height:50px;">x</div>
+<div class="red m0 b0 p1" style="width:50px; height:50px;">x</div>
+<div class="red m0 b1 p0" style="width:50px; height:50px;">x</div>
+<div class="red m0 b1 p1" style="width:50px; height:50px;">x</div>
+<div class="red m1 b0 p0" style="width:50px; height:50px;">x</div>
+<div class="red m1 b0 p1" style="width:50px; height:50px;">x</div>
+<div class="red m1 b1 p0" style="width:50px; height:50px;">x</div>
+<div class="red m1 b1 p1" style="width:50px; height:50px;">x</div>
+</div></div>
+
+<h1> 2nd-level, double margin, negatives </h1>
+
+<div class="m1"><div class="m1">
+<div class="red m1 m-1l b0 p0" style="width:50px; height:50px;">x</div>
+<div class="red m1 m-1r b0 p1" style="width:50px; height:50px;">x</div>
+<div class="red m1 m-1t b1 p0" style="width:50px; height:50px;">x</div>
+<div class="red m1 m-1b b1 p1" style="width:50px; height:50px;">x</div>
+<div class="red m1 m-1b b0 p0" style="width:50px; height:50px;">x</div>
+<div class="red m1 m-1t b0 p1" style="width:50px; height:50px;">x</div>
+<div class="red m1 m-1r b1 p0" style="width:50px; height:50px;">x</div>
+<div class="red m1 m-1l b1 p1" style="width:50px; height:50px;">x</div>
+</div></div>
+
+</body>
+</html>

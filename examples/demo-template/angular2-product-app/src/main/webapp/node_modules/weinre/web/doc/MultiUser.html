@@ -1,0 +1,196 @@
+<!doctype html>
+
+<!--
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+
+<html>
+<head>
+<title>weinre - Muli-User</title>
+<link rel="stylesheet" href="css/main.css" type="text/css">
+<link rel="shortcut icon" href="images/weinre-icon-64x64.png" />
+</head>
+
+<body>
+
+<div class="ribbon">clone weinre at
+<a href="https://git-wip-us.apache.org/repos/asf?p=cordova-weinre.git">apache</a>
+</div>
+
+<!-- ======================================================================= -->
+<h1 class="page-title">weinre - Muli-User</h1>
+
+<div class="toc">
+  <a href="Home.html">Home</a>
+- <a href="UserInterface.html">User Interface</a>
+- <a href="Installing.html">Installing</a>
+- <a href="Running.html">Running</a>
+- <a href="MultiUser.html">Multi-User</a>
+- <a href="Security.html">Security</a>
+- <a href="Building.html">Building</a>
+- <a href="ChangeLog.html">ChangeLog</a>
+- <a href="License.html">License</a>
+<p>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
+
+<!--
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+
+<p><span class="weinre">weinre</span> was originally designed so that each user
+that wanted to use <span class="weinre">weinre</span> would run their own
+<span class="weinre">weinre</span> server.  The system has since been enhanced
+to support muliple users using the same server.
+
+<!-- ======================================================== -->
+<h2>Your debug id</h2>
+
+<p>To use a multi-user server, you'll need to select an id for yourself.  This
+id will be used in the client and target URLs of <span class="weinre">weinre</span>
+to scope your clients and targets from the clients and targets of other users.
+
+<p>There is no password, just an id.  There is no real security here.
+The id is a secret shared between your
+debug target and client, but it is sent in the clear when your target and
+client connect to the server.  If someone else knows your <b>id</b>, they can
+connect to clients or targets you are running with that <b>id</b>.
+
+<p>So don't give your <b>id</b> to anyone else that you don't want to share
+with.
+
+<p>To keep your <b>id</b>'s familar but non-guessable, you might use a string
+consisting of your typical userid, followed by a dash, followed by another
+string not likely to be guessed by other people.
+
+<p>If you are paranoid, you can change your <b>id</b> every time you start
+a debug session, of course.
+
+<!-- ======================================================== -->
+<h2>Using your id with the client</h2>
+
+<p>Typically when start a <span class="weinre">weinre</span> client session
+by visiting a URL like
+
+<pre>
+http://some.server.xyz/client/
+</pre>
+
+<p>To start
+a client with a particular id, append the hash character (<code>#</code>) and
+the id you want to use the URL.  For instance, to connect with the id
+<code>itsReallyMe</code>, launch the client with the URL
+
+<pre>
+http://some.server.xyz/client/#itsReallyMe
+</pre>
+
+<p>The id which is used will be displayed
+in the connected clients list for each connected client.
+
+<!-- ======================================================== -->
+<h2>Using your id with the target</h2>
+
+<p>As with the server, append the hash character (<code>#</code>) to the
+URL of the script being injected into your web page.  If you had previously
+used a &lt;script src&gt; element of:
+
+<pre>
+&lt;script src="http://some.server.xyz/target/target-script-min.js"&gt;&lt;/script&gt;
+</pre>
+
+<p>use this script element to connect with id <code>itsReallyMe</code>
+
+<pre>
+&lt;script src="http://some.server.xyz/target/target-script-min.js#itsReallyMe"&gt;&lt;/script&gt;
+</pre>
+
+<!-- ======================================================== -->
+<h2>Notes</h2>
+
+<ul class="spaced">
+
+<li>The <span class="weinre">weinre</span> server always runs in multi-user
+mode.  If you don't otherwise specify an <b>id</b>, the value of
+<code>anonymous</code> will be used for the <b>id</b>.
+
+<li>The <b>id</b> is passed in the HTTP body of a POST request during the
+initial connection of the target and client to the server, and is not sent
+thereafter.  Thus, it should remain out of view in server logs and the like,
+though it will be visible for anyone who has access to the contents of
+HTTP request bodies.
+
+<li>There is no programmatic interface in <span class="weinre">weinre</span>
+to list <b>id</b>'s in current use, for security reasons.  From the Remote panel
+of weinre, each connected client and target have their channel and id's listed,
+if you can't remember what id you used with the client.
+
+</ul>
+
+<!--
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+
+<div class="toc">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<p>
+  <a href="Home.html">Home</a>
+- <a href="UserInterface.html">User Interface</a>
+- <a href="Installing.html">Installing</a>
+- <a href="Running.html">Running</a>
+- <a href="MultiUser.html">Multi-User</a>
+- <a href="Security.html">Security</a>
+- <a href="Building.html">Building</a>
+- <a href="ChangeLog.html">ChangeLog</a>
+- <a href="License.html">License</a>
+
+<br><img src="images/weinre-icon-128x128.png">
+</div>
+
+</body>
+</html>

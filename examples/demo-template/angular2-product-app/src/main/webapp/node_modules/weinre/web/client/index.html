@@ -1,0 +1,211 @@
+<!--
+Copyright (C) 2006, 2007, 2008 Apple Inc.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1.  Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+2.  Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+3.  Neither the name of Apple Computer, Inc. ("Apple") nor the names of
+    its contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY APPLE AND ITS CONTRIBUTORS "AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL APPLE OR ITS CONTRIBUTORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<!-- ========== weinre additions: starting ========== -->
+<meta http-equiv="X-UA-Compatible" content="chrome=1">
+<link rel="shortcut icon" href="../images/weinre-icon-64x64.png">
+<title>weinre</title>
+<script type="text/javascript" src="weinre/browser-support-check.js"></script>
+<script type="text/javascript" src="weinre/hacks.js"></script>
+<script type="text/javascript" src="../modjewel.js"></script>
+<script type="text/javascript">modjewel.require("modjewel").warnOnRecursiveRequire(true)</script>
+<script type="text/javascript" src="../weinre/common/Binding.amd.js"></script>
+<script type="text/javascript" src="../weinre/common/Callback.amd.js"></script>
+<script type="text/javascript" src="../weinre/common/Debug.amd.js"></script>
+<script type="text/javascript" src="../weinre/common/EventListeners.amd.js"></script>
+<script type="text/javascript" src="../weinre/common/Ex.amd.js"></script>
+<script type="text/javascript" src="../weinre/common/HookLib.amd.js"></script>
+<script type="text/javascript" src="../weinre/common/IDGenerator.amd.js"></script>
+<script type="text/javascript" src="../weinre/common/IDLTools.amd.js"></script>
+<script type="text/javascript" src="../weinre/common/MessageDispatcher.amd.js"></script>
+<script type="text/javascript" src="../weinre/common/MethodNamer.amd.js"></script>
+<script type="text/javascript" src="../weinre/common/StackTrace.amd.js"></script>
+<script type="text/javascript" src="../weinre/common/WebSocketXhr.amd.js"></script>
+<script type="text/javascript" src="../weinre/common/Weinre.amd.js"></script>
+<script type="text/javascript" src="../weinre/client/Client.amd.js"></script>
+<script type="text/javascript" src="../weinre/client/ConnectorList.amd.js"></script>
+<script type="text/javascript" src="../weinre/client/DOMTemplates.amd.js"></script>
+<script type="text/javascript" src="../weinre/client/ExtensionRegistryImpl.amd.js"></script>
+<script type="text/javascript" src="../weinre/client/InspectorBackendImpl.amd.js"></script>
+<script type="text/javascript" src="../weinre/client/InspectorFrontendHostImpl.amd.js"></script>
+<script type="text/javascript" src="../weinre/client/RemotePanel.amd.js"></script>
+<script type="text/javascript" src="../weinre/client/WeinreClientEventsImpl.amd.js"></script>
+<script type="text/javascript" src="../weinre/client/WeinreExtraTargetEventsImpl.amd.js"></script>
+<!-- ========== weinre additions: done ========== -->
+    <link rel="stylesheet" type="text/css" href="audits.css">
+    <link rel="stylesheet" type="text/css" href="goToLineDialog.css">
+    <link rel="stylesheet" type="text/css" href="heapProfiler.css">
+    <link rel="stylesheet" type="text/css" href="inspector.css">
+    <link rel="stylesheet" type="text/css" href="inspectorSyntaxHighlight.css">
+    <link rel="stylesheet" type="text/css" href="networkPanel.css">
+    <link rel="stylesheet" type="text/css" href="helpScreen.css">
+    <link rel="stylesheet" type="text/css" href="popover.css">
+    <link rel="stylesheet" type="text/css" href="textViewer.css">
+    <script type="text/javascript" src="utilities.js"></script>
+    <script type="text/javascript" src="treeoutline.js"></script>
+    <script type="text/javascript" src="inspector.js"></script>
+    <script type="text/javascript" src="InspectorBackendStub.js"></script>
+    <script type="text/javascript" src="InspectorFrontendHostStub.js"></script>
+    <script type="text/javascript" src="ExtensionRegistryStub.js"></script>
+    <script type="text/javascript" src="Object.js"></script>
+    <script type="text/javascript" src="Settings.js"></script>
+    <script type="text/javascript" src="CSSStyleModel.js"></script>
+    <script type="text/javascript" src="Checkbox.js"></script>
+    <script type="text/javascript" src="ContextMenu.js"></script>
+    <script type="text/javascript" src="KeyboardShortcut.js"></script>
+    <script type="text/javascript" src="TextPrompt.js"></script>
+    <script type="text/javascript" src="Popover.js"></script>
+    <script type="text/javascript" src="TabbedPane.js"></script>
+    <script type="text/javascript" src="Placard.js"></script>
+    <script type="text/javascript" src="PleaseWaitMessage.js"></script>
+    <script type="text/javascript" src="View.js"></script>
+    <script type="text/javascript" src="Drawer.js"></script>
+    <script type="text/javascript" src="ConsoleView.js"></script>
+    <script type="text/javascript" src="Panel.js"></script>
+    <script type="text/javascript" src="TimelineGrid.js"></script>    
+    <script type="text/javascript" src="Resource.js"></script>
+    <script type="text/javascript" src="NetworkManager.js"></script>
+    <script type="text/javascript" src="ResourceTreeModel.js"></script>
+    <script type="text/javascript" src="ResourceCategory.js"></script>
+    <script type="text/javascript" src="Database.js"></script>
+    <script type="text/javascript" src="DOMStorage.js"></script>
+    <script type="text/javascript" src="DOMStorageItemsView.js"></script>
+    <script type="text/javascript" src="DataGrid.js"></script>
+    <script type="text/javascript" src="ShowMoreDataGridNode.js"></script>
+    <script type="text/javascript" src="CookiesTable.js"></script>
+    <script type="text/javascript" src="CookieItemsView.js"></script>
+    <script type="text/javascript" src="ApplicationCacheItemsView.js"></script>
+    <script type="text/javascript" src="Script.js"></script>
+    <script type="text/javascript" src="Breakpoint.js"></script>
+    <script type="text/javascript" src="BreakpointManager.js"></script>
+    <script type="text/javascript" src="SidebarPane.js"></script>
+    <script type="text/javascript" src="ElementsTreeOutline.js"></script>
+    <script type="text/javascript" src="SidebarTreeElement.js"></script>
+    <script type="text/javascript" src="Section.js"></script>
+    <script type="text/javascript" src="PropertiesSection.js"></script>
+    <script type="text/javascript" src="RemoteObject.js"></script>
+    <script type="text/javascript" src="ObjectPropertiesSection.js"></script>
+    <script type="text/javascript" src="BreakpointsSidebarPane.js"></script>
+    <script type="text/javascript" src="CallStackSidebarPane.js"></script>
+    <script type="text/javascript" src="ScopeChainSidebarPane.js"></script>
+    <script type="text/javascript" src="WatchExpressionsSidebarPane.js"></script>
+    <script type="text/javascript" src="WorkersSidebarPane.js"></script>
+    <script type="text/javascript" src="MetricsSidebarPane.js"></script>
+    <script type="text/javascript" src="PropertiesSidebarPane.js"></script>
+    <script type="text/javascript" src="EventListenersSidebarPane.js"></script>
+    <script type="text/javascript" src="Color.js"></script>
+    <script type="text/javascript" src="CSSCompletions.js"></script>
+    <script type="text/javascript" src="CSSKeywordCompletions.js"></script>
+    <script type="text/javascript" src="StylesSidebarPane.js"></script>
+    <script type="text/javascript" src="PanelEnablerView.js"></script>
+    <script type="text/javascript" src="WelcomeView.js"></script>
+    <script type="text/javascript" src="StatusBarButton.js"></script>
+    <script type="text/javascript" src="SummaryBar.js"></script>
+    <script type="text/javascript" src="ElementsPanel.js"></script>
+    <script type="text/javascript" src="NetworkPanel.js"></script>
+    <script type="text/javascript" src="InjectedFakeWorker.js"></script>
+    <script type="text/javascript" src="SourceFrame.js"></script>
+    <script type="text/javascript" src="SourceFrameContent.js"></script>
+    <script type="text/javascript" src="ResourceView.js"></script>
+    <script type="text/javascript" src="ScriptsPanel.js"></script>
+    <script type="text/javascript" src="ResourcesPanel.js"></script>
+    <script type="text/javascript" src="ProfilesPanel.js"></script>
+    <script type="text/javascript" src="ConsolePanel.js"></script>
+    <script type="text/javascript" src="ExtensionAPI.js"></script>
+    <script type="text/javascript" src="ExtensionAuditCategory.js"></script>
+    <script type="text/javascript" src="ExtensionCommon.js"></script>
+    <script type="text/javascript" src="ExtensionServer.js"></script>
+    <script type="text/javascript" src="ExtensionPanel.js"></script>
+    <script type="text/javascript" src="AuditsPanel.js"></script>
+    <script type="text/javascript" src="AuditResultView.js"></script>
+    <script type="text/javascript" src="AuditLauncherView.js"></script>
+    <script type="text/javascript" src="AuditRules.js"></script>
+    <script type="text/javascript" src="AuditCategories.js"></script>
+    <script type="text/javascript" src="AuditFormatters.js"></script>
+    <script type="text/javascript" src="ResourceHeadersView.js"></script>
+    <script type="text/javascript" src="ResourceCookiesView.js"></script>
+    <script type="text/javascript" src="ResourceTimingView.js"></script>
+    <script type="text/javascript" src="NetworkItemView.js"></script>
+    <script type="text/javascript" src="ScriptFormatter.js"></script>
+    <script type="text/javascript" src="DOMSyntaxHighlighter.js"></script>
+    <script type="text/javascript" src="TextEditorModel.js"></script>
+    <script type="text/javascript" src="TextEditorHighlighter.js"></script>
+    <script type="text/javascript" src="TextViewer.js"></script>
+    <script type="text/javascript" src="SourceTokenizer.js"></script>
+    <script type="text/javascript" src="SourceCSSTokenizer.js"></script>
+    <script type="text/javascript" src="SourceHTMLTokenizer.js"></script>
+    <script type="text/javascript" src="SourceJavaScriptTokenizer.js"></script>
+    <script type="text/javascript" src="FontView.js"></script>
+    <script type="text/javascript" src="ImageView.js"></script>
+    <script type="text/javascript" src="DatabaseTableView.js"></script>
+    <script type="text/javascript" src="DatabaseQueryView.js"></script>
+    <script type="text/javascript" src="ProfileDataGridTree.js"></script>
+    <script type="text/javascript" src="BottomUpProfileDataGridTree.js"></script>
+    <script type="text/javascript" src="TopDownProfileDataGridTree.js"></script>
+    <script type="text/javascript" src="ProfileView.js"></script>
+    <script type="text/javascript" src="HeapSnapshot.js"></script>
+    <script type="text/javascript" src="HeapSnapshotView.js"></script>
+    <script type="text/javascript" src="DetailedHeapshotView.js"></script>
+    <script type="text/javascript" src="DebuggerModel.js"></script>
+    <script type="text/javascript" src="DOMAgent.js"></script>
+    <script type="text/javascript" src="TimelineAgent.js"></script>
+    <script type="text/javascript" src="TimelinePanel.js"></script>
+    <script type="text/javascript" src="TimelineOverviewPane.js"></script>
+    <script type="text/javascript" src="TestController.js"></script>
+    <script type="text/javascript" src="HelpScreen.js"></script>
+    <script type="text/javascript" src="GoToLineDialog.js"></script>
+    <script type="text/javascript" src="ShortcutsHelp.js"></script>
+    <script type="text/javascript" src="HAREntry.js"></script>
+    <script type="text/javascript" src="CookieParser.js"></script>
+<!-- ========== weinre additions: starting ========== -->
+<link rel="stylesheet" type="text/css" href="weinre/client.css">
+<script type="text/javascript" src="../interfaces/all-json-idls-min.js"></script>
+<script type="text/javascript">modjewel.require("weinre/client/Client").main()</script>
+<!-- ========== weinre additions: done ========== -->
+</head>
+<body class="detached">
+    <div id="toolbar">
+        <div class="toolbar-item close-left"><button id="close-button-left"></button></div>
+        <div class="toolbar-item flexable-space"></div>
+        <div class="toolbar-item hidden" id="search-results-matches"></div>
+        <div class="toolbar-item"><input id="search" type="search" incremental results="0"><div id="search-toolbar-label" class="toolbar-label"></div></div>
+        <div class="toolbar-item close-right"><button id="close-button-right"></button></div>
+    </div>
+    <div id="main">
+        <div id="main-panels" spellcheck="false"></div>
+        <div id="main-status-bar" class="status-bar"><div id="anchored-status-bar-items"><button id="dock-status-bar-item" class="status-bar-item"><div class="glyph"></div><div class="glyph shadow"></div></button><button id="console-status-bar-item" class="status-bar-item"><div class="glyph"></div><div class="glyph shadow"></div></button><div id="counters"><div id="error-warning-count" class="hidden"></div></div></div></div>
+    </div>
+    <div id="drawer">
+        <div id="console-view"><div id="console-messages" class="monospace"><div id="console-prompt" spellcheck="false"><br></div></div></div>
+        <div id="drawer-status-bar" class="status-bar"><div id="other-drawer-status-bar-items"><button id="clear-console-status-bar-item" class="status-bar-item clear-status-bar-item"><div class="glyph"></div><div class="glyph shadow"></div></button><div id="console-filter" class="scope-bar status-bar-item"></div></div></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,175 @@
+{
+   "interfaces": [
+      {
+         "name": "WeinreClientCommands", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "clientId", 
+                     "out": true
+                  }
+               ], 
+               "name": "registerClient", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "targets", 
+                     "out": true
+                  }
+               ], 
+               "name": "getTargets", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "clients", 
+                     "out": true
+                  }
+               ], 
+               "name": "getClients", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "connectTarget", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "clientId"
+                  }, 
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "targetId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "disconnectTarget", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "clientId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "string", 
+                        "rank": 1
+                     }, 
+                     "name": "extensions", 
+                     "out": true
+                  }
+               ], 
+               "name": "getExtensions", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "logDebug", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "message"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "logInfo", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "message"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "logWarning", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "message"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "logError", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "message"
+                  }
+               ]
+            }
+         ]
+      }
+   ], 
+   "name": "weinre"
+}

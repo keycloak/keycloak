@@ -1,0 +1,7 @@
+{
+  "Hello": "Avast ye mateys!",
+  "%d cat": {
+    "one": "%d land catfish",
+    "other": "%d land catfishes"
+  }
+}

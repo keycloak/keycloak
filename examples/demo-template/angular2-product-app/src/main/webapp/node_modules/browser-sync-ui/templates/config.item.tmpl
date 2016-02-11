@@ -1,0 +1,10 @@
+.when('%path%', {
+    templateUrl:  '%template%',
+    controller:   '%controller%',
+    controllerAs: 'ctrl',
+    resolve: {
+        options: ['Options', function(opts) {
+            return opts.all();
+        }]
+    }
+})

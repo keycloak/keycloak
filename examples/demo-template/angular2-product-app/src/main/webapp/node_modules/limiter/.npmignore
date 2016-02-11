@@ -1,0 +1,4 @@
+build
+.lock-wscript
+.DS_Store
+node_modules

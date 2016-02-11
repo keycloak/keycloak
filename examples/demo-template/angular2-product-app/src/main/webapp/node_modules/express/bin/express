@@ -1,0 +1,423 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var fs = require('fs')
+  , os = require('os')
+  , exec = require('child_process').exec
+  , mkdirp = require('mkdirp');
+
+/**
+ * Package information.
+ */
+
+var pkg = JSON.parse(fs.readFileSync(__dirname + '/../package.json'));
+
+/**
+ * Framework version.
+ */
+
+var version = pkg.version;
+
+/**
+ * Add session support.
+ */
+
+var sessions = false;
+
+/**
+ * CSS engine to utilize.
+ */
+
+var cssEngine;
+
+/**
+ * End-of-line code.
+ */
+
+var eol = os.platform
+  ? ('win32' == os.platform() ? '\r\n' : '\n')
+  : '\n';
+
+/**
+ * Template engine to utilize.
+ */
+
+var templateEngine = 'jade';
+
+/**
+ * Usage documentation.
+ */
+
+var usage = ''
+  + '\n'
+  + '  Usage: express [options] [path]\n'
+  + '\n'
+  + '  Options:\n'
+  + '    -s, --sessions           add session support\n'
+  + '    -t, --template <engine>  add template <engine> support (jade|ejs). default=jade\n'
+  + '    -c, --css <engine>       add stylesheet <engine> support (stylus). default=plain css\n'
+  + '    -v, --version            output framework version\n'
+  + '    -h, --help               output help information\n'
+  ;
+
+/**
+ * Routes index template.
+ */
+
+var index = [
+    ''
+  , '/*'
+  , ' * GET home page.'
+  , ' */'
+  , ''
+  , 'exports.index = function(req, res){'
+  , '  res.render(\'index\', { title: \'Express\' })'
+  , '};'
+].join(eol);
+
+/**
+ * Jade layout template.
+ */
+
+var jadeLayout = [
+    '!!!'
+  , 'html'
+  , '  head'
+  , '    title= title'
+  , '    link(rel=\'stylesheet\', href=\'/stylesheets/style.css\')'
+  , '  body!= body'
+].join(eol);
+
+/**
+ * Jade index template.
+ */
+
+var jadeIndex = [
+    'h1= title'
+  , 'p Welcome to #{title}'
+].join(eol);
+
+/**
+ * EJS layout template.
+ */
+
+var ejsLayout = [
+    '<!DOCTYPE html>'
+  , '<html>'
+  , '  <head>'
+  , '    <title><%= title %></title>'
+  , '    <link rel=\'stylesheet\' href=\'/stylesheets/style.css\' />'
+  , '  </head>'
+  , '  <body>'
+  , '    <%- body %>'
+  , '  </body>'
+  , '</html>'
+].join(eol);
+
+/**
+ * EJS index template.
+ */
+
+var ejsIndex = [
+    '<h1><%= title %></h1>'
+  , '<p>Welcome to <%= title %></p>'
+  ].join(eol);
+
+/**
+ * Default css template.
+ */
+
+var css = [
+    'body {'
+  , '  padding: 50px;'
+  , '  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;'
+  , '}'
+  , ''
+  , 'a {'
+  , '  color: #00B7FF;'
+  , '}'
+].join(eol);
+
+/**
+ * Default stylus template.
+ */
+
+var stylus = [
+    'body'
+  , '  padding: 50px'
+  , '  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif'
+  , 'a'
+  , '  color: #00B7FF'
+].join(eol);
+
+/**
+ * App template.
+ */
+
+var app = [
+    ''
+  , '/**'
+  , ' * Module dependencies.'
+  , ' */'
+  , ''
+  , 'var express = require(\'express\')'
+  , '  , routes = require(\'./routes\');'
+  , ''
+  , 'var app = module.exports = express.createServer();'
+  , ''
+  , '// Configuration'
+  , ''
+  , 'app.configure(function(){'
+  , '  app.set(\'views\', __dirname + \'/views\');'
+  , '  app.set(\'view engine\', \':TEMPLATE\');'
+  , '  app.use(express.bodyParser());'
+  , '  app.use(express.methodOverride());{sess}{css}'
+  , '  app.use(app.router);'
+  , '  app.use(express.static(__dirname + \'/public\'));'
+  , '});'
+  , ''
+  , 'app.configure(\'development\', function(){'
+  , '  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));'
+  , '});'
+  , ''
+  , 'app.configure(\'production\', function(){'
+  , '  app.use(express.errorHandler());'
+  , '});'
+  , ''
+  , '// Routes'
+  , ''
+  , 'app.get(\'/\', routes.index);'
+  , ''
+  , 'app.listen(3000, function(){'
+  , '  console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);'
+  , '});'
+  , ''
+].join(eol);
+
+// Parse arguments
+
+var args = process.argv.slice(2)
+  , path = '.';
+
+while (args.length) {
+  var arg = args.shift();
+  switch (arg) {
+    case '-h':
+    case '--help':
+      abort(usage);
+      break;
+    case '-v':
+    case '--version':
+      abort(version);
+      break;
+    case '-s':
+    case '--session':
+    case '--sessions':
+      sessions = true;
+      break;
+    case '-c':
+    case '--css':
+      args.length
+        ? (cssEngine = args.shift())
+        : abort('--css requires an argument');
+      break;
+    case '-t':
+    case '--template':
+      args.length
+        ? (templateEngine = args.shift())
+        : abort('--template requires an argument');
+      break;
+    default:
+        path = arg;
+  }
+}
+
+// Generate application
+
+(function createApplication(path) {
+  emptyDirectory(path, function(empty){
+    if (empty) {
+      createApplicationAt(path);
+    } else {
+      confirm('destination is not empty, continue? ', function(ok){
+        if (ok) {
+          process.stdin.destroy();
+          createApplicationAt(path);
+        } else {
+          abort('aborting');
+        }
+      });
+    }
+  });
+})(path);
+
+/**
+ * Create application at the given directory `path`.
+ *
+ * @param {String} path
+ */
+
+function createApplicationAt(path) {
+  console.log();
+  process.on('exit', function(){
+    console.log();
+    console.log('   dont forget to install dependencies:');
+    console.log('   $ cd %s && npm install', path);
+    console.log();
+  });
+
+  mkdir(path, function(){
+    mkdir(path + '/public');
+    mkdir(path + '/public/javascripts');
+    mkdir(path + '/public/images');
+    mkdir(path + '/public/stylesheets', function(){
+      switch (cssEngine) {
+        case 'stylus':
+          write(path + '/public/stylesheets/style.styl', stylus);
+          break;
+        default:
+          write(path + '/public/stylesheets/style.css', css);
+      }
+    });
+
+    mkdir(path + '/routes', function(){
+      write(path + '/routes/index.js', index);
+    });
+
+    mkdir(path + '/views', function(){
+      switch (templateEngine) {
+        case 'ejs':
+          write(path + '/views/layout.ejs', ejsLayout);
+          write(path + '/views/index.ejs', ejsIndex);
+          break;
+        case 'jade':
+          write(path + '/views/layout.jade', jadeLayout);
+          write(path + '/views/index.jade', jadeIndex);
+          break;
+      }
+    });
+
+    // CSS Engine support
+    switch (cssEngine) {
+      case 'stylus':
+        app = app.replace('{css}', eol + '  app.use(require(\'stylus\').middleware({ src: __dirname + \'/public\' }));');
+        break;
+      default:
+        app = app.replace('{css}', '');
+    }
+
+    // Session support
+    app = app.replace('{sess}', sessions
+      ? eol + '  app.use(express.cookieParser());' + eol + '  app.use(express.session({ secret: \'your secret here\' }));'
+      : '');
+
+    // Template support
+    app = app.replace(':TEMPLATE', templateEngine);
+
+    // package.json
+    var json = '{' + eol;
+    json += '    "name": "application-name"' + eol;
+    json += '  , "version": "0.0.1"' + eol;
+    json += '  , "private": true' + eol;
+    json += '  , "dependencies": {' + eol;
+    json += '      "express": "' + version + '"' + eol;
+    if (cssEngine) json += '    , "' + cssEngine + '": ">= 0.0.1"' + eol;
+    if (templateEngine) json += '    , "' + templateEngine + '": ">= 0.0.1"' + eol;
+    json += '  }' + eol;
+    json += '}';
+
+
+    write(path + '/package.json', json);
+    write(path + '/app.js', app);
+  });
+}
+
+/**
+ * Check if the given directory `path` is empty.
+ *
+ * @param {String} path
+ * @param {Function} fn
+ */
+
+function emptyDirectory(path, fn) {
+  fs.readdir(path, function(err, files){
+    if (err && 'ENOENT' != err.code) throw err;
+    fn(!files || !files.length);
+  });
+}
+
+/**
+ * echo str > path.
+ *
+ * @param {String} path
+ * @param {String} str
+ */
+
+function write(path, str) {
+  fs.writeFile(path, str);
+  console.log('   \x1b[36mcreate\x1b[0m : ' + path);
+}
+
+/**
+ * Prompt confirmation with the given `msg`.
+ *
+ * @param {String} msg
+ * @param {Function} fn
+ */
+
+function confirm(msg, fn) {
+  prompt(msg, function(val){
+    fn(/^ *y(es)?/i.test(val));
+  });
+}
+
+/**
+ * Prompt input with the given `msg` and callback `fn`.
+ *
+ * @param {String} msg
+ * @param {Function} fn
+ */
+
+function prompt(msg, fn) {
+  // prompt
+  if (' ' == msg[msg.length - 1]) {
+    process.stdout.write(msg);
+  } else {
+    console.log(msg);
+  }
+
+  // stdin
+  process.stdin.setEncoding('ascii');
+  process.stdin.once('data', function(data){
+    fn(data);
+  }).resume();
+}
+
+/**
+ * Mkdir -p.
+ *
+ * @param {String} path
+ * @param {Function} fn
+ */
+
+function mkdir(path, fn) {
+  mkdirp(path, 0755, function(err){
+    if (err) throw err;
+    console.log('   \033[36mcreate\033[0m : ' + path);
+    fn && fn();
+  });
+}
+
+/**
+ * Exit with the given `str`.
+ *
+ * @param {String} str
+ */
+
+function abort(str) {
+  console.error(str);
+  process.exit(1);
+}

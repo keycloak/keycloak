@@ -1,0 +1,3915 @@
+{
+   "interfaces": [
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "Inspector", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "addScriptToEvaluateOnLoad", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "scriptSource"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "removeAllScriptsToEvaluateOnLoad", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "reloadPage", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "ignoreCache"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "populateScriptObjects", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "openInInspectedWindow", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "url"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "newState", 
+                     "out": true
+                  }
+               ], 
+               "name": "setSearchingForNode", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "enabled"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "didEvaluateForTestInFrontend", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "testCallId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "jsonResult"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "highlightDOMNode", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "hideDOMNodeHighlight", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "highlightFrame", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "frameId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "hideFrameHighlight", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "setUserAgentOverride", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "userAgent"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "cookies", 
+                     "out": true
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "cookiesString", 
+                     "out": true
+                  }
+               ], 
+               "name": "getCookies", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "deleteCookie", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "cookieName"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "domain"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "startTimelineProfiler", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "stopTimelineProfiler", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "enableDebugger", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "disableDebugger", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "enableProfiler", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "disableProfiler", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "startProfiling", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "stopProfiling", 
+               "parameters": []
+            }
+         ]
+      }, 
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "Runtime", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "result", 
+                     "out": true
+                  }
+               ], 
+               "name": "evaluate", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "expression"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "objectGroup"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "includeCommandLineAPI"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "result", 
+                     "out": true
+                  }
+               ], 
+               "name": "getCompletions", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "expression"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "includeCommandLineAPI"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "result", 
+                     "out": true
+                  }
+               ], 
+               "name": "getProperties", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "objectId"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "ignoreHasOwnProperty"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "abbreviate"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "result", 
+                     "out": true
+                  }
+               ], 
+               "name": "setPropertyValue", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "objectId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "propertyName"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "expression"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "releaseWrapperObjectGroup", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "injectedScriptId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "objectGroup"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "InjectedScript", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "result", 
+                     "out": true
+                  }
+               ], 
+               "name": "evaluateOnSelf", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "functionBody"
+                  }, 
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "argumentsArray"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "Console", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "newState", 
+                     "out": true
+                  }
+               ], 
+               "name": "setConsoleMessagesEnabled", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "enabled"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "clearConsoleMessages", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "setMonitoringXHREnabled", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "enabled"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "Network", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "resources", 
+                     "out": true
+                  }
+               ], 
+               "name": "cachedResources", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "success", 
+                     "out": true
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "content", 
+                     "out": true
+                  }
+               ], 
+               "name": "resourceContent", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "frameId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "url"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "base64Encode"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "setExtraHeaders", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "headers"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "Database", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "tableNames", 
+                     "out": true
+                  }
+               ], 
+               "name": "getDatabaseTableNames", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "databaseId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "success", 
+                     "out": true
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "transactionId", 
+                     "out": true
+                  }
+               ], 
+               "name": "executeSQL", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "databaseId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "query"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "DOMStorage", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "entries", 
+                     "out": true
+                  }
+               ], 
+               "name": "getDOMStorageEntries", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "storageId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "success", 
+                     "out": true
+                  }
+               ], 
+               "name": "setDOMStorageItem", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "storageId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "key"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "value"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "success", 
+                     "out": true
+                  }
+               ], 
+               "name": "removeDOMStorageItem", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "storageId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "key"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "ApplicationCache", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "applicationCaches", 
+                     "out": true
+                  }
+               ], 
+               "name": "getApplicationCaches", 
+               "parameters": []
+            }
+         ]
+      }, 
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "DOM", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "getChildNodes", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "success", 
+                     "out": true
+                  }
+               ], 
+               "name": "setAttribute", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "elementId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "name"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "value"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "success", 
+                     "out": true
+                  }
+               ], 
+               "name": "removeAttribute", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "elementId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "name"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "success", 
+                     "out": true
+                  }
+               ], 
+               "name": "setTextNodeValue", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "value"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "outNodeId", 
+                     "out": true
+                  }, 
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "listenersArray", 
+                     "out": true
+                  }
+               ], 
+               "name": "getEventListenersForNode", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "copyNode", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "outNodeId", 
+                     "out": true
+                  }
+               ], 
+               "name": "removeNode", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "outNodeId", 
+                     "out": true
+                  }
+               ], 
+               "name": "changeTagName", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "newTagName"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "outerHTML", 
+                     "out": true
+                  }
+               ], 
+               "name": "getOuterHTML", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "outNodeId", 
+                     "out": true
+                  }
+               ], 
+               "name": "setOuterHTML", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "outerHTML"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "addInspectedNode", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "performSearch", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "query"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "runSynchronously"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "searchCanceled", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId", 
+                     "out": true
+                  }
+               ], 
+               "name": "pushNodeByPathToFrontend", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "path"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "result", 
+                     "out": true
+                  }
+               ], 
+               "name": "resolveNode", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "result", 
+                     "out": true
+                  }
+               ], 
+               "name": "getNodeProperties", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }, 
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "propertiesArray"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "result", 
+                     "out": true
+                  }
+               ], 
+               "name": "getNodePrototypes", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "result", 
+                     "out": true
+                  }
+               ], 
+               "name": "pushNodeToFrontend", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "objectId"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "CSS", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "styles", 
+                     "out": true
+                  }
+               ], 
+               "name": "getStylesForNode", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "style", 
+                     "out": true
+                  }
+               ], 
+               "name": "getComputedStyleForNode", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "style", 
+                     "out": true
+                  }
+               ], 
+               "name": "getInlineStyleForNode", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "styleSheetIds", 
+                     "out": true
+                  }
+               ], 
+               "name": "getAllStyles", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "styleSheet", 
+                     "out": true
+                  }
+               ], 
+               "name": "getStyleSheet", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "styleSheetId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "url", 
+                     "out": true
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "text", 
+                     "out": true
+                  }
+               ], 
+               "name": "getStyleSheetText", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "styleSheetId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "success", 
+                     "out": true
+                  }
+               ], 
+               "name": "setStyleSheetText", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "styleSheetId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "text"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "style", 
+                     "out": true
+                  }
+               ], 
+               "name": "setPropertyText", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "styleId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "propertyIndex"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "text"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "overwrite"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "style", 
+                     "out": true
+                  }
+               ], 
+               "name": "toggleProperty", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "styleId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "propertyIndex"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "disable"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "rule", 
+                     "out": true
+                  }
+               ], 
+               "name": "setRuleSelector", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "ruleId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "selector"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "rule", 
+                     "out": true
+                  }
+               ], 
+               "name": "addRule", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "contextNodeId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "selector"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "cssProperties", 
+                     "out": true
+                  }
+               ], 
+               "name": "getSupportedCSSProperties", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "result", 
+                     "out": true
+                  }
+               ], 
+               "name": "querySelectorAll", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "documentId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "selector"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "Timeline", 
+         "methods": []
+      }, 
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "Debugger", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "activateBreakpoints", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "deactivateBreakpoints", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "breakpointId", 
+                     "out": true
+                  }, 
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "locations", 
+                     "out": true
+                  }
+               ], 
+               "name": "setJavaScriptBreakpoint", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "url"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "lineNumber"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "columnNumber"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "condition"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "enabled"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "breakpointId", 
+                     "out": true
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "actualLineNumber", 
+                     "out": true
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "actualColumnNumber", 
+                     "out": true
+                  }
+               ], 
+               "name": "setJavaScriptBreakpointBySourceId", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "sourceId"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "lineNumber"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "columnNumber"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "condition"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "enabled"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "removeJavaScriptBreakpoint", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "breakpointId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "continueToLocation", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "sourceId"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "lineNumber"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "columnNumber"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "stepOver", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "stepInto", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "stepOut", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "pause", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "resume", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "success", 
+                     "out": true
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "result", 
+                     "out": true
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "newCallFrames", 
+                     "out": true
+                  }
+               ], 
+               "name": "editScriptSource", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "sourceID"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "newContent"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "scriptSource", 
+                     "out": true
+                  }
+               ], 
+               "name": "getScriptSource", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "sourceID"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "newState", 
+                     "out": true
+                  }
+               ], 
+               "name": "setPauseOnExceptionsState", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "pauseOnExceptionsState"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "result", 
+                     "out": true
+                  }
+               ], 
+               "name": "evaluateOnCallFrame", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "callFrameId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "expression"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "objectGroup"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "includeCommandLineAPI"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "result", 
+                     "out": true
+                  }
+               ], 
+               "name": "getCompletionsOnCallFrame", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "callFrameId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "expression"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "includeCommandLineAPI"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "BrowserDebugger", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "setAllBrowserBreakpoints", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "breakpoints"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "setDOMBreakpoint", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "type"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "removeDOMBreakpoint", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "type"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "setEventListenerBreakpoint", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "eventName"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "removeEventListenerBreakpoint", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "eventName"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "setXHRBreakpoint", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "url"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "removeXHRBreakpoint", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "url"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "Profiler", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "headers", 
+                     "out": true
+                  }
+               ], 
+               "name": "getProfileHeaders", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "profile", 
+                     "out": true
+                  }
+               ], 
+               "name": "getProfile", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "type"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "uid"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "removeProfile", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "type"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "uid"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "clearProfiles", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "takeHeapSnapshot", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "detailed"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "name": "InspectorNotify", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "frontendReused", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "addNodesToSearchResult", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "nodeIds"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "bringToFront", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "disconnectFromBackend", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "inspectedURLChanged", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "url"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "domContentEventFired", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "double", 
+                        "name": "float"
+                     }, 
+                     "name": "time"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "loadEventFired", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "double", 
+                        "name": "float"
+                     }, 
+                     "name": "time"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "reset", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "showPanel", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "panel"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "evaluateForTestInFrontend", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "testCallId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "script"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "updateFocusedNode", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "name": "ConsoleNotify", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "addConsoleMessage", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "messageObj"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "updateConsoleMessageExpiredCount", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "count"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "updateConsoleMessageRepeatCount", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "count"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "consoleMessagesCleared", 
+               "parameters": []
+            }
+         ]
+      }, 
+      {
+         "name": "NetworkNotify", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "frameDetachedFromParent", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "frameId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "identifierForInitialRequest", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "identifier"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "url"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "loader"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "callStack"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "willSendRequest", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "identifier"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "double", 
+                        "name": "float"
+                     }, 
+                     "name": "time"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "request"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "redirectResponse"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "markResourceAsCached", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "identifier"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "didReceiveResponse", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "identifier"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "double", 
+                        "name": "float"
+                     }, 
+                     "name": "time"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "resourceType"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "response"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "didReceiveContentLength", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "identifier"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "double", 
+                        "name": "float"
+                     }, 
+                     "name": "time"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "lengthReceived"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "didFinishLoading", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "identifier"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "double", 
+                        "name": "float"
+                     }, 
+                     "name": "finishTime"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "didFailLoading", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "identifier"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "double", 
+                        "name": "float"
+                     }, 
+                     "name": "time"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "localizedDescription"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "didLoadResourceFromMemoryCache", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "double", 
+                        "name": "float"
+                     }, 
+                     "name": "time"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "resource"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "setInitialContent", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "identifier"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "sourceString"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "type"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "didCommitLoadForFrame", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "frame"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "loader"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "didCreateWebSocket", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "identifier"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "requestURL"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "willSendWebSocketHandshakeRequest", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "identifier"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "double", 
+                        "name": "float"
+                     }, 
+                     "name": "time"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "request"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "didReceiveWebSocketHandshakeResponse", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "identifier"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "double", 
+                        "name": "float"
+                     }, 
+                     "name": "time"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "response"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "didCloseWebSocket", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "identifier"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "double", 
+                        "name": "float"
+                     }, 
+                     "name": "time"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "name": "DatabaseNotify", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "addDatabase", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "database"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "selectDatabase", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "databaseId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "sqlTransactionSucceeded", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "transactionId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "columnNames"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "values"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "sqlTransactionFailed", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "transactionId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "sqlError"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "name": "DOMStorageNotify", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "addDOMStorage", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "storage"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "updateDOMStorage", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "storageId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "selectDOMStorage", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "storageId"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "name": "ApplicationCacheNotify", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "updateApplicationCacheStatus", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "status"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "updateNetworkState", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "isNowOnline"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "name": "DOMNotify", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "setDocument", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Value", 
+                        "name": "any"
+                     }, 
+                     "name": "root"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "attributesUpdated", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "id"
+                  }, 
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "attributes"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "characterDataModified", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "id"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "newValue"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "setChildNodes", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "parentId"
+                  }, 
+                  {
+                     "type": {
+                        "name": "any", 
+                        "rank": 1
+                     }, 
+                     "name": "nodes"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "setDetachedRoot", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "root"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "childNodeCountUpdated", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "id"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "newValue"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "childNodeInserted", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "parentId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "prevId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "node"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "childNodeRemoved", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "parentId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "id"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "name": "TimelineNotify", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "timelineProfilerWasStarted", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "timelineProfilerWasStopped", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "addRecordToTimeline", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "record"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "name": "DebuggerNotify", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "debuggerWasEnabled", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "debuggerWasDisabled", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "parsedScriptSource", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "sourceID"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "url"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "lineOffset"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "columnOffset"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "length"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "scriptWorldType"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "failedToParseScriptSource", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "url"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "data"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "firstLine"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "errorLine"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "errorMessage"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "breakpointResolved", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "breakpointId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "sourceId"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "lineNumber"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "columnNumber"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "pausedScript", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "details"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "resumedScript", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "didCreateWorker", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "id"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "url"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "isShared"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "didDestroyWorker", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "id"
+                  }
+               ]
+            }
+         ]
+      }, 
+      {
+         "name": "ProfilerNotify", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "profilerWasEnabled", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "profilerWasDisabled", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "addProfileHeader", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "header"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "addHeapSnapshotChunk", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "uid"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "String", 
+                        "name": "string"
+                     }, 
+                     "name": "chunk"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "finishHeapSnapshot", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "uid"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "setRecordingProfile", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "isProfiling"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "resetProfiles", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "notify": true
+               }, 
+               "name": "reportHeapSnapshotProgress", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "done"
+                  }, 
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "total"
+                  }
+               ]
+            }
+         ]
+      }
+   ], 
+   "name": "core"
+}

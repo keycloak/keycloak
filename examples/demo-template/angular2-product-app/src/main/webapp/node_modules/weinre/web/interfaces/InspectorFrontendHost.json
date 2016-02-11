@@ -1,0 +1,230 @@
+{
+   "interfaces": [
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "InspectorFrontendHost", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "loaded", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "closeWindow", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "disconnectFromBackend", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "bringToFront", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "inspectedURLChanged", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "DOMString", 
+                        "name": "string"
+                     }, 
+                     "name": "newURL"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "requestAttachWindow", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "requestDetachWindow", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "setAttachedWindowHeight", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "height"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "moveWindowBy", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "float"
+                     }, 
+                     "name": "x"
+                  }, 
+                  {
+                     "type": {
+                        "name": "float"
+                     }, 
+                     "name": "y"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "setExtensionAPI", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "DOMString", 
+                        "name": "string"
+                     }, 
+                     "name": "script"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "originalName": "DOMString", 
+                  "name": "string"
+               }, 
+               "callbackParameters": [], 
+               "name": "localizedStringsURL", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "originalName": "DOMString", 
+                  "name": "string"
+               }, 
+               "callbackParameters": [], 
+               "name": "hiddenPanels", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "copyText", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "DOMString", 
+                        "name": "string"
+                     }, 
+                     "name": "text"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "originalName": "DOMString", 
+                  "name": "string"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "Custom": true
+               }, 
+               "name": "platform", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "originalName": "DOMString", 
+                  "name": "string"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "Custom": true
+               }, 
+               "name": "port", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "Custom": true
+               }, 
+               "name": "showContextMenu", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "MouseEvent", 
+                        "name": "any"
+                     }, 
+                     "name": "event"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "DOMObject", 
+                        "name": "any"
+                     }, 
+                     "name": "items"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "sendMessageToBackend", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "DOMString", 
+                        "name": "string"
+                     }, 
+                     "name": "message"
+                  }
+               ]
+            }
+         ]
+      }
+   ], 
+   "name": "core"
+}

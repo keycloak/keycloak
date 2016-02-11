@@ -1,0 +1,74 @@
+{
+   "interfaces": [
+      {
+         "name": "WeinreTargetEvents", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "connectionCreated", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "clientId"
+                  }, 
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "targetId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "connectionDestroyed", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "clientId"
+                  }, 
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "targetId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "sendCallback", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "callbackId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "result"
+                  }
+               ]
+            }
+         ]
+      }
+   ], 
+   "name": "weinre"
+}

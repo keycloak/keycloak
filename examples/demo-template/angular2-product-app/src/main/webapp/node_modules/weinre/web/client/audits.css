@@ -1,0 +1,281 @@
+/*
+ * Copyright (C) 2008 Apple Inc.  All rights reserved.
+ * Copyright (C) 2009 Google Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+.audits-sidebar-tree-item .icon {
+    content: url(Images/resourcesTimeGraphIcon.png);
+}
+
+.audit-result-sidebar-tree-item .icon {
+    content: url(Images/resourceDocumentIcon.png);
+}
+
+#audit-views {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 200px;
+    bottom: 0;
+    overflow: auto;
+}
+
+.audit-launcher-view {
+    z-index: 1000;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: white;
+    font-size: 13px;
+    overflow-x: hidden;
+    overflow-y: overlay;
+    display: none;
+}
+
+.audit-launcher-view.visible {
+    display: block;
+}
+
+.audit-launcher-view .audit-launcher-view-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0 0 0 16px;
+    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+}
+
+.audit-launcher-view h1 {
+    color: rgb(110, 116, 128);
+    font-size: 16px;
+    line-height: 20px;
+    font-weight: normal;
+    padding-top: 15px;
+}
+
+.audit-launcher-view h1.no-audits {
+    text-align: center;
+    font-style: italic;
+    position: relative;
+    left: -8px;
+}
+
+.audit-launcher-view div.button-container {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    width: 100%;
+    padding: 16px 0;
+}
+.audit-launcher-view .flexible-space {
+    -webkit-box-flex: 1;
+}
+
+.audit-launcher-view div.audit-categories-container {
+    position: relative;
+    top: 11px;
+    left: 0;
+    width: 100%;
+    overflow-y: auto;
+}
+
+.audit-launcher-view button {
+    color: rgb(6, 6, 6);
+    background-color: transparent;
+    border: 1px solid rgb(165, 165, 165);
+    background-color: rgb(237, 237, 237);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(rgb(252, 252, 252)), to(rgb(223, 223, 223)));
+    -webkit-border-radius: 12px;
+    -webkit-appearance: none;
+}
+
+.audit-launcher-view button {
+    font-size: 13px;
+    padding: 3px 20px;
+    height: 24px;
+    margin: 0 5px 0 0;
+}
+
+.audit-launcher-view button:active {
+    background-color: rgb(215, 215, 215);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(rgb(194, 194, 194)), to(rgb(239, 239, 239)));
+}
+
+body.inactive .audit-launcher-view button, .audit-launcher-view button:disabled {
+    color: rgb(130, 130, 130);
+    border-color: rgb(212, 212, 212);
+    background-color: rgb(239, 239, 239);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(rgb(250, 250, 250)), to(rgb(235, 235, 235)));
+}
+
+.audit-launcher-view label {
+    position: relative;
+    display: block;
+    text-align: left;
+    word-break: break-word;
+    padding: 0 0 5px 0;
+}
+
+.audit-launcher-view label.disabled {
+    color: rgb(130, 130, 130);
+}
+
+.audit-launcher-view input[type="checkbox"] {
+    margin-left: 0;
+}
+
+.audit-launcher-view input[type="radio"] {
+    height: 17px;
+    width: 17px;
+    border: 1px solid rgb(165, 165, 165);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(rgb(252, 252, 252)), to(rgb(223, 223, 223)));
+    -webkit-border-radius: 8px;
+    -webkit-appearance: none;
+    vertical-align: middle;
+    margin: 0 5px 5px 0;
+}
+
+.audit-launcher-view input[type="radio"]:active:not(:disabled) {
+    background-image: -webkit-gradient(linear, left top, left bottom, from(rgb(194, 194, 194)), to(rgb(239, 239, 239)));
+}
+
+.audit-launcher-view input[type="radio"]:checked:not(:disabled), .audit-launcher-view input[type="radio"]:checked:disabled {
+    background: url(Images/radioDot.png) center no-repeat,
+                -webkit-gradient(linear, left top, left bottom, from(rgb(252, 252, 252)), to(rgb(223, 223, 223)));
+}
+
+.audit-launcher-view .resource-progress > img {
+    content: url(Images/spinner.gif);
+    vertical-align: text-top;
+    margin: 0 4px 0 8px;
+}
+
+.audit-result-view {
+    overflow: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+}
+
+.audit-result-view.visible {
+    display: block;
+}
+
+.audit-result-view .severity-severe {
+    content: url(Images/errorRedDot.png);
+}
+
+.audit-result-view .severity-warning {
+    content: url(Images/warningOrangeDot.png);
+}
+
+.audit-result-view .severity-info {
+    content: url(Images/successGreenDot.png);
+}
+
+.audit-result-tree li.parent::before {
+    content: url(Images/treeRightTriangleBlack.png);
+    float: left;
+    width: 8px;
+    height: 8px;
+    margin-top: 1px;
+    padding-right: 2px;
+}
+
+.audit-result-tree {
+    font-size: 11px;
+    line-height: 14px;
+    -webkit-user-select: text;
+}
+
+.audit-result-tree > ol {
+    position: relative;
+    padding: 2px 6px !important;
+    margin: 0;
+    color: rgb(84, 84, 84);
+    cursor: default;
+    min-width: 100%;
+}
+
+.audit-result-tree, .audit-result-tree ol {
+    list-style-type: none;
+    -webkit-padding-start: 12px;
+    margin: 0;
+}
+
+.audit-result-tree li {
+    padding: 0 0 0 14px;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    word-wrap: break-word;
+    text-indent: -2px;
+}
+
+.audit-result-tree li.parent {
+    text-indent: -12px
+}
+
+.audit-result-tree li.parent::before {
+    content: url(Images/treeRightTriangleBlack.png);
+    float: left;
+    width: 8px;
+    height: 8px;
+    margin-top: 0;
+    padding-right: 2px;
+}
+
+.audit-result-tree li.parent.expanded::before {
+    content: url(Images/treeDownTriangleBlack.png);
+}
+
+.audit-result-tree ol.children {
+    display: none;
+}
+
+.audit-result-tree ol.children.expanded {
+    display: block;
+}
+
+.audit-result {
+    font-weight: bold;
+    color: black;
+}
+
+.audit-result img {
+    float: left;
+    margin-left: -40px;
+    margin-top: -1px;
+}

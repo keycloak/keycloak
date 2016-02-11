@@ -1,0 +1,6 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/webkit/inspector">
+    <file>InspectorBackendStub.js</file>
+</qresource>
+</RCC>
+

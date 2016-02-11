@@ -1,0 +1,10 @@
+.*
+build.js
+index.html
+component.json
+bower.json
+index.js
+benchmark
+page
+test
+vendor

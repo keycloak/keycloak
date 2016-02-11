@@ -1,0 +1,33 @@
+{bold:Usage:}
+{gray:---------}
+
+    {gray:$} browser-sync <command> [options]
+
+{bold:Commands:}
+{gray:---------}
+
+    {bold:init}    Creates a default config file
+    {bold:start}   Start Browser Sync
+    {bold:reload}  Send a reload event over HTTP protocol
+
+{bold:`start` Options:}
+{gray:--------}
+
+%startflags%
+
+{bold:`reload` Options:}
+{gray:--------}
+
+%reloadflags%
+
+{cyan:Server Example:}
+{gray:---------------}
+Use current directory as root & watch CSS files
+
+    {gray:$} browser-sync start --server --files="css/*.css"
+
+{cyan:Proxy Example:}
+{gray:---------------}
+Proxy `localhost:8080` & watch CSS/HTML files
+
+    {gray:$} browser-sync start --proxy="localhost:8080" --files="*.html, css/*.css"

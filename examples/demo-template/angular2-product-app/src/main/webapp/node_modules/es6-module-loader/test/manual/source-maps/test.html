@@ -1,0 +1,13 @@
+<!doctype html>
+  <html>
+
+  <body>
+    <h1>Source Map Stack Trace Test</h1>
+    <script src="../../../node_modules/traceur/bin/traceur.js"></script>
+    <script src="../../../dist/es6-module-loader.src.js"></script>
+    <script>
+      System.import('test').then(function(module) {
+        console.log(module.make().stack)
+      })
+    </script>
+  </body>

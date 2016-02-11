@@ -1,0 +1,26 @@
+{
+  "curly": true,
+  "eqeqeq": true,
+  "immed": true,
+  "laxbreak": false,
+  "latedef": "nofunc",
+  "newcap": true,
+  "noarg": true,
+  "plusplus": true,
+  "sub": true,
+  "undef": true,
+  "quotmark": "double",
+  "unused": true,
+  "indent": 4,
+  "eqnull": true,
+  "node": true,
+  "strict": true,
+  "mocha": true,
+  "jasmine": true,
+  "globals": {
+    "browser": false,
+    "by": false,
+    "element": false,
+    "protractor": false
+  }
+}

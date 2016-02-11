@@ -1,0 +1,336 @@
+<!doctype html>
+
+<!--
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+
+<html>
+<head>
+<title>weinre - User Interface</title>
+<link rel="stylesheet" href="css/main.css" type="text/css">
+<link rel="shortcut icon" href="images/weinre-icon-64x64.png" />
+</head>
+
+<body>
+
+<div class="ribbon">clone weinre at
+<a href="https://git-wip-us.apache.org/repos/asf?p=cordova-weinre.git">apache</a>
+</div>
+
+<!-- ======================================================================= -->
+<h1 class="page-title">weinre - User Interface</h1>
+
+<div class="toc">
+  <a href="Home.html">Home</a>
+- <a href="UserInterface.html">User Interface</a>
+- <a href="Installing.html">Installing</a>
+- <a href="Running.html">Running</a>
+- <a href="MultiUser.html">Multi-User</a>
+- <a href="Security.html">Security</a>
+- <a href="Building.html">Building</a>
+- <a href="ChangeLog.html">ChangeLog</a>
+- <a href="License.html">License</a>
+<p>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
+
+<!--
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+
+<p>This page describes the user interface provided by <span class="weinre">weinre</span>.
+
+<!-- ======================================================================= -->
+<h2>the server home page</h2>
+
+<p><img src="images/server-home.png">
+
+<p>The server home page is accessed at the root URL of the server, in this case
+<tt>http://localhost:8081/</tt>.
+
+<table><tr><td><img src="images/circled-a.png">
+<td>This link will launch the
+<span class="weinre">weinre</span> client page, which is the debugger itself.
+Clicking this link will take you to the Remote panel, described below.
+</table>
+
+<p><table><tr><td><img src="images/circled-b.png">
+<td>This is the URL of the script that you add to your
+web page to allow it to be debugged by the client.
+</table>
+
+<p>Additional links shown in this image are for this documentation, and some demo
+pages.
+
+<p>Further down on the page, not shown in the image, are:
+
+<ul>
+<li>The text of the <tt>&lt;script src=&gt;</tt> element you can copy and paste into your
+web page.
+<li>The source for a bookmarklet, to inject the debug code into any web
+page displayed in your browser.
+<li>Version numbers of <span class="weinre">weinre</span> and it's components.
+</ul>
+
+<!-- ======================================================================= -->
+<h2>the Remote panel</h2>
+
+<p><img src="images/panel-remote.png">
+
+<p>The Remote panel is the initial panel of <span class="weinre">weinre</span>,
+and displays some status regarding the server.
+
+<table><tr><td><img src="images/circled-a.png">
+<td>The top portion of all of the
+<span class="weinre">weinre</span> panels shows the panel switcher.  To switch
+to a different panel, click on the panel's button.  The current panel is displayed with
+a highlight, as shown above for the Remote panel.
+</table>
+
+<p><table><tr><td><img src="images/circled-b.png">
+<td>The Targets section of this page lists targets that are currently connected
+to the server.  A target is a web page that you are debugging.
+In this case, there is one target connected the server.  Information
+about each target is displayed in the list, including host name / ip address, and
+the URL the target is displaying.
+</table>
+
+<p><table><tr><td><img src="images/circled-c.png">
+<td>The Clients section of this page lists the clients that are currently connected
+to the server.  A client is this user interface. Typically, there is just one - the client you are displaying
+at the time.
+</table>
+
+<p><table><tr><td><img src="images/circled-d.png">
+<td>The Server Properties section of this page displays the values of various server
+properties currently in effect.  Shown here are the hosts that are bound to the
+server - which host names / ip addresses that the server will respond to.
+</table>
+
+<p>The colors of the entries in the Targets and Clients list indicates their
+status.  Blue means the Target or Client is connected to the server, but not
+yet connected to a peer.  Green means the Target or Client is connected to a
+peer, and you can start debugging.  Red means the Target or Client has
+disconnected from the server, and will eventually fade away and be removed
+from the list.
+
+<p>In case there are multiple targets connected, you can switch which one you
+are debugging by clicking on the item.
+
+<!-- ======================================================================= -->
+<h2>the Elements panel</h2>
+
+<p><img src="images/panel-elements.png">
+
+<p>The Elements panel displays your HTML DOM in a tree fashion, and properties
+associated with selected elements.
+
+<table><tr><td><img src="images/circled-a.png">
+<td>The elements themselves may be expanded/collapsed via the disclosure buttons.
+Elements and text can be edited by double-clicking the item to be edited.
+Elements can also be deleted by selecting the element and then pressing the
+delete button.
+</table>
+
+<p><table><tr><td><img src="images/circled-b.png">
+<td>The sidebar area displays information about the selected element.  In this case,
+the Styles sidebar is expanded, showing relevant CSS rules.  Some sidebars allow
+editing of the contents.  The Styles sidebar in particular allows you to add, edit
+and remove properties and values by double clicking on them.
+</table>
+
+<!-- ======================================================================= -->
+<h2>the Resources panel</h2>
+
+<p><img src="images/panel-resources.png">
+
+<p>The Resources panel shows WebSQL databases, and data stored in Local Storage
+and Session Storage.
+
+<table><tr><td><img src="images/circled-a.png">
+<td>The left hand side of the Resources panel is the navigator. Expanding
+the Databases entry will show all the Web SQL databases currently in use.
+Expanding a particular database will show all the tables in that database.
+
+</table>
+
+<p><table><tr><td><img src="images/circled-b.png">
+<td>The right hand side is the editor/viewer for whatever is selected in the
+navigator pane.
+When a database is selected, a prompt will appear in the editor/viewer area
+where you can enter SQL statements to be executed.  The results are displayed
+inline.  When a table is selected, all the rows from the table will be displayed.
+When a Local Storage or Session Storage entry is selected, all the relevant keys
+and values will be displayed.  The keys and values in the Local Storage and
+Session Storage tables can be edited by double-clicking.
+</table>
+
+<p><table><tr><td><img src="images/circled-c.png">
+<td>The reload button will refresh the data from the target.
+</table>
+
+<!-- ======================================================================= -->
+<h2>the Network panel</h2>
+
+<p><img src="images/panel-network.png">
+
+<p>The Network panel shows you information regarding XHR requests that you've
+made.
+
+<table><tr><td><img src="images/circled-a.png">
+<td>Each XHR will be shown in a separate row in the table.  Clicking the
+path name of the XHR request will show additional information for that
+request in the right side of the panel.
+To display the table again, click the (x)
+button in the left top corner of the information pane (not shown in the
+image above).
+</table>
+
+<p><table><tr><td><img src="images/circled-b.png">
+<td>The "dots and lines" button can be used to change the table layout to
+show less information in a more compact format.
+</table>
+
+<p><table><tr><td><img src="images/circled-c.png">
+<td>The "not" button will clear the entries from the table.
+</table>
+
+<!-- ======================================================================= -->
+<h2>the Timeline panel</h2>
+
+<p><img src="images/panel-timeline.png">
+
+<p>The Timeline panel is used to show events that are occurring in the target.
+Currently only two types of events are shown: timers/intervals, and user-specified
+events.  Use <tt>console.markTimeline("A Label")</tt> to add a user-specified
+event to the timeline with the specified label.
+
+<p>Note that timing events are not collected unless you enable the "record"
+button (see below).
+
+<table><tr><td><img src="images/circled-a.png">
+<td>The left hand pane of the Timeline panel shows the events that have occurred.
+Hovering over an entry will show additional detail about the event.
+</table>
+
+<p><table><tr><td><img src="images/circled-b.png">
+<td>The right hand pane of the Timeline panel shows the events as they occurred
+in time.  Some events have other events associated with them, which will be shown
+when the disclosure triangle is expanded.  The top-most time line of the right
+panel can have it's right and left hand edges moved to show a particular time
+range in more detail.
+</table>
+
+<p><table><tr><td><img src="images/circled-c.png">
+<td>The "dots and lines" button can be used to show and hide events that last
+less than a fixed time (currently 15ms).
+</table>
+
+<p><table><tr><td><img src="images/circled-d.png">
+<td>The "record" button is used to start or stop event collection.  When
+<span class="weinre">weinre</span> starts, the record button is off (black).
+When you click the record button to start collecting events, it will turn
+red.
+</table>
+
+<p><table><tr><td><img src="images/circled-e.png">
+<td>The "not" button will clear the current timing entries.
+</table>
+
+
+<!-- ======================================================================= -->
+<h2>the Console panel</h2>
+
+<p><img src="images/panel-console.png">
+
+<p>The Console panel is used to execute arbitrary JavaScript expressions/statements.  It
+also shows the output from various <tt>console</tt> methods, like
+<tt>console.log()</tt>.
+
+<p>In the example above, the JavaScript statements entered by the user are in
+blue, the output of the statements is just below it, and messages generated by
+<tt>console.log()</tt> are in black.
+
+<table><tr><td><img src="images/circled-a.png">
+<td>The "not" button will clear the console.
+</table>
+
+<p><img src="images/panel-remote-console.png">
+
+<p>The Console can also be embedded in every panel, by clicking the "console"
+button.
+
+<table><tr><td><img src="images/circled-a.png">
+<td>The "console" button will embed the console in the bottom half of the
+other panels, or hide it if it's currently embedded in the other panels.
+</table>
+
+
+
+<!--
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+
+<div class="toc">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<p>
+  <a href="Home.html">Home</a>
+- <a href="UserInterface.html">User Interface</a>
+- <a href="Installing.html">Installing</a>
+- <a href="Running.html">Running</a>
+- <a href="MultiUser.html">Multi-User</a>
+- <a href="Security.html">Security</a>
+- <a href="Building.html">Building</a>
+- <a href="ChangeLog.html">ChangeLog</a>
+- <a href="License.html">License</a>
+
+<br><img src="images/weinre-icon-128x128.png">
+</div>
+
+</body>
+</html>

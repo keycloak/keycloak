@@ -1,0 +1,22 @@
+// Source:
+// https://github.com/gaearon/react-transform-hmr/tree/f22f9a938ed295e0c5ebe756d73fdae4c3a6fdef
+{
+  "env": {
+    // only enable it when process.env.NODE_ENV is 'development' or undefined
+    "development": {
+      "plugins": ["react-transform"],
+      "extra": {
+        // must be defined and be an array
+        "react-transform": [{
+          "target": "react-transform-hmr",
+          // if you use React Native, pass "react-native" instead:
+          "imports": ["react"],
+          // this is important for Webpack HMR:
+          "locals": ["module"]
+        }]
+        // note: you can put more transforms into array
+        // this is just one of them!
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+window.___browserSync___ = {};
+___browserSync___.io = window.io;
+window.io = window.___browserSync___oldSocketIo;
+window.___browserSync___oldSocketIo=undefined;
+___browserSync___.socketConfig = %config%;
+___browserSync___.socket = ___browserSync___.io(%url%, ___browserSync___.socketConfig);

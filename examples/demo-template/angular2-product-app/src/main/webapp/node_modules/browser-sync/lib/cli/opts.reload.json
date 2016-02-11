@@ -1,0 +1,5 @@
+{
+    "files": "File paths to reload",
+    "port":  "Target a running instance by port number",
+    "url":   "Provide the full the url to the running Browsersync instance"
+}

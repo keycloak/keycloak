@@ -1,0 +1,1 @@
+cmd_Release/obj.target/validation.node := g++ -shared -pthread -rdynamic -m64  -Wl,-soname=validation.node -o Release/obj.target/validation.node -Wl,--start-group Release/obj.target/validation/src/validation.o -Wl,--end-group 

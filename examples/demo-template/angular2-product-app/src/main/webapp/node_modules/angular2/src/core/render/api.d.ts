@@ -1,0 +1,59 @@
+import { ViewEncapsulation } from 'angular2/src/core/metadata/view';
+import { Injector } from 'angular2/src/core/di/injector';
+export declare class RenderComponentType {
+    id: string;
+    encapsulation: ViewEncapsulation;
+    styles: Array<string | any[]>;
+    constructor(id: string, encapsulation: ViewEncapsulation, styles: Array<string | any[]>);
+}
+export declare class RenderDebugInfo {
+    injector: Injector;
+    component: any;
+    providerTokens: any[];
+    locals: Map<string, any>;
+    constructor(injector: Injector, component: any, providerTokens: any[], locals: Map<string, any>);
+}
+export interface ParentRenderer {
+    renderComponent(componentType: RenderComponentType): Renderer;
+}
+export declare abstract class Renderer implements ParentRenderer {
+    abstract renderComponent(componentType: RenderComponentType): Renderer;
+    abstract selectRootElement(selector: string): any;
+    abstract createElement(parentElement: any, name: string): any;
+    abstract createViewRoot(hostElement: any): any;
+    abstract createTemplateAnchor(parentElement: any): any;
+    abstract createText(parentElement: any, value: string): any;
+    abstract projectNodes(parentElement: any, nodes: any[]): any;
+    abstract attachViewAfter(node: any, viewRootNodes: any[]): any;
+    abstract detachView(viewRootNodes: any[]): any;
+    abstract destroyView(hostElement: any, viewAllNodes: any[]): any;
+    abstract listen(renderElement: any, name: string, callback: Function): Function;
+    abstract listenGlobal(target: string, name: string, callback: Function): Function;
+    abstract setElementProperty(renderElement: any, propertyName: string, propertyValue: any): any;
+    abstract setElementAttribute(renderElement: any, attributeName: string, attributeValue: string): any;
+    /**
+     * Used only in debug mode to serialize property changes to comment nodes,
+     * such as <template> placeholders.
+     */
+    abstract setBindingDebugInfo(renderElement: any, propertyName: string, propertyValue: string): any;
+    abstract setElementDebugInfo(renderElement: any, info: RenderDebugInfo): any;
+    abstract setElementClass(renderElement: any, className: string, isAdd: boolean): any;
+    abstract setElementStyle(renderElement: any, styleName: string, styleValue: string): any;
+    abstract invokeElementMethod(renderElement: any, methodName: string, args: any[]): any;
+    abstract setText(renderNode: any, text: string): any;
+}
+/**
+ * Injectable service that provides a low-level interface for modifying the UI.
+ *
+ * Use this service to bypass Angular's templating and make custom UI changes that can't be
+ * expressed declaratively. For example if you need to set a property or an attribute whose name is
+ * not statically known, use {@link #setElementProperty} or {@link #setElementAttribute}
+ * respectively.
+ *
+ * If you are implementing a custom renderer, you must implement this interface.
+ *
+ * The default Renderer implementation is `DomRenderer`. Also available is `WebWorkerRenderer`.
+ */
+export declare abstract class RootRenderer implements ParentRenderer {
+    abstract renderComponent(componentType: RenderComponentType): Renderer;
+}

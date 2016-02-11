@@ -1,0 +1,14 @@
+{
+  "name": "bs-recipes-html-injection",
+  "version": "1.0.0",
+  "description": "HTML/CSS injection example",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "bs-html-injector": "^2.0.3",
+    "browser-sync": "^2.1.6"
+  }
+}

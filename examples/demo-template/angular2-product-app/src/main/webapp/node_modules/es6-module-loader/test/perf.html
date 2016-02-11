@@ -1,0 +1,89 @@
+<!doctype html>
+  <script>
+    // delete window.Promise;
+  </script>
+  <script src="../dist/es6-module-loader.js"></script>
+  <script>
+    /* PARAMETERS */
+    var TREE_DEPTH = 10;
+    var NUM_MODULES = 1000;
+
+    /*
+      TREE LOOKS LIKE - 
+
+                           MODULE NUM_MODULES
+                                   |
+                                   |
+      -------------------------------------  ... -----
+      |                            |                 |
+    MODULE 0              MODULE TREE_DEPTH         ...
+      |                            |
+    MODULE 1              MODULE TREE_DEPTH + 1
+     ...                         ...
+ MODULE TREE_DEPTH - 1   MODULE TREE_DEPTH * 2 - 1
+
+THAT IS -
+  DEPTH   =  TREE_DEPTH
+  BREADTH =  FLOOR(NUM_MODULES / TREE_DEPTH)
+
+    */
+
+    /*
+      
+      PERF RESULTS
+      ------------
+
+      WITH 1000 modules,
+
+      TREE_DEPTH    FULL LOAD TIME PER MODULE (including evaluation and defining)
+          1          0.25ms
+          10         0.27ms
+          50         0.30ms
+         100         0.35ms
+         500         0.90ms
+        1000         1.90ms
+
+    */
+
+
+    System.set('module0', System.newModule({}));
+    System.instantiate = function(load) {
+      var num = parseInt(load.name.substr(6));
+
+      var deps = [];
+
+      // the last module depends on all of them
+      if (num == NUM_MODULES) {
+        for (var i = 0; i < NUM_MODULES; i += TREE_DEPTH)
+          deps.push('module' + i);
+      }
+      else if (num % TREE_DEPTH != TREE_DEPTH - 1)
+        deps = ['module' + (num + 1)];
+
+      return {
+        deps: deps,
+        execute: function() {
+          eval(load.source);
+          return System.newModule({});
+        }
+      };
+    }
+
+    function start() {
+      document.body.innerHTML = '';
+      var startTime = +Date.now();
+
+      for (var i = 1; i <= NUM_MODULES; i++)
+        System.define('module' + i, "function q() {} var p = 5;\n // non-trivial code");
+      
+      System.import('module' + NUM_MODULES).then(function() {
+        document.body.innerHTML = ((Date.now() - startTime) / NUM_MODULES) + 'ms per module';
+      }).catch(function(e) {
+        setTimeout(function() {
+          throw e;
+        })
+      });
+    }
+  </script>
+  <body onclick="start()" style="height:100%">
+    <p>Click to start</p>

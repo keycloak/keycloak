@@ -1,0 +1,16 @@
+{
+	"name": "utf8",
+	"version": "2.0.0",
+	"description": "A well-tested UTF-8 encoder/decoder written in JavaScript.",
+	"repo": "mathiasbynens/utf8.js",
+	"license": "MIT/GPL",
+	"scripts": [
+		"utf8.js"
+	],
+	"keywords": [
+		"charset",
+		"encoding",
+		"unicode",
+		"utf8"
+	]
+}

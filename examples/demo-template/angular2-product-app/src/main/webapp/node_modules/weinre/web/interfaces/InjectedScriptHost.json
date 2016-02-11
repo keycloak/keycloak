@@ -1,0 +1,229 @@
+{
+   "interfaces": [
+      {
+         "extendedAttributes": {
+            "Conditional": "INSPECTOR"
+         }, 
+         "name": "InjectedScriptHost", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "clearConsoleMessages", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "copyText", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "DOMString", 
+                        "name": "string"
+                     }, 
+                     "name": "text"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "originalName": "DOMObject", 
+                  "name": "any"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "Custom": true
+               }, 
+               "name": "nodeForId", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "nodeId"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "int"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "Custom": true
+               }, 
+               "name": "pushNodePathToFrontend", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "DOMObject", 
+                        "name": "any"
+                     }, 
+                     "name": "node"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "withChildren"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "selectInUI"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "originalName": "long", 
+                  "name": "int"
+               }, 
+               "callbackParameters": [], 
+               "name": "inspectedNode", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "unsigned", 
+                        "name": "int"
+                     }, 
+                     "name": "num"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "originalName": "DOMObject", 
+                  "name": "any"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "Custom": true
+               }, 
+               "name": "internalConstructorName", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "DOMObject", 
+                        "name": "any"
+                     }, 
+                     "name": "object"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "originalName": "DOMObject", 
+                  "name": "any"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "Custom": true
+               }, 
+               "name": "currentCallFrame", 
+               "parameters": []
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "Custom": true
+               }, 
+               "name": "selectDatabase", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "DOMObject", 
+                        "name": "any"
+                     }, 
+                     "name": "database"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "extendedAttributes": {
+                  "Custom": true
+               }, 
+               "name": "selectDOMStorage", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "DOMObject", 
+                        "name": "any"
+                     }, 
+                     "name": "storage"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "didCreateWorker", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "id"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "DOMString", 
+                        "name": "string"
+                     }, 
+                     "name": "url"
+                  }, 
+                  {
+                     "type": {
+                        "name": "boolean"
+                     }, 
+                     "name": "isFakeWorker"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "didDestroyWorker", 
+               "parameters": [
+                  {
+                     "type": {
+                        "originalName": "long", 
+                        "name": "int"
+                     }, 
+                     "name": "id"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "originalName": "long", 
+                  "name": "int"
+               }, 
+               "callbackParameters": [], 
+               "name": "nextWorkerId", 
+               "parameters": []
+            }
+         ]
+      }
+   ], 
+   "name": "core"
+}

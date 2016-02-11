@@ -1,0 +1,115 @@
+{
+   "interfaces": [
+      {
+         "name": "WeinreTargetCommands", 
+         "methods": [
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "targetId", 
+                     "out": true
+                  }
+               ], 
+               "name": "registerTarget", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "int"
+                     }, 
+                     "name": "url"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "sendClientCallback", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "callbackId"
+                  }, 
+                  {
+                     "type": {
+                        "originalName": "Object", 
+                        "name": "any"
+                     }, 
+                     "name": "args"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "logDebug", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "message"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "logInfo", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "message"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "logWarning", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "message"
+                  }
+               ]
+            }, 
+            {
+               "returns": {
+                  "name": "void"
+               }, 
+               "callbackParameters": [], 
+               "name": "logError", 
+               "parameters": [
+                  {
+                     "type": {
+                        "name": "string"
+                     }, 
+                     "name": "message"
+                  }
+               ]
+            }
+         ]
+      }
+   ], 
+   "name": "weinre"
+}

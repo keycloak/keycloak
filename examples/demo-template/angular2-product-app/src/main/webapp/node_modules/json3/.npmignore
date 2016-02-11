@@ -1,0 +1,11 @@
+bower.json
+component.json
+build.js
+index.html
+index.js
+.jshintrc
+
+benchmark
+page
+test
+vendor
