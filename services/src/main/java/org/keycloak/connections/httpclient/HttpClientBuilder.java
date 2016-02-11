@@ -92,11 +92,11 @@ public class HttpClientBuilder {
     protected boolean disableTrustManager;
     protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.WILDCARD;
     protected SSLContext sslContext;
-    protected int connectionPoolSize = 200;
-    protected int maxPooledPerRoute = 100;
+    protected int connectionPoolSize = 128;
+    protected int maxPooledPerRoute = 64;
     protected long connectionTTL = -1;
     protected TimeUnit connectionTTLUnit = TimeUnit.MILLISECONDS;
-    protected long maxConnectionIdleTime = -1;
+    protected long maxConnectionIdleTime = 900000;
     protected TimeUnit maxConnectionIdleTimeUnit = TimeUnit.MILLISECONDS;
     protected HostnameVerifier verifier = null;
     protected long socketTimeout = -1;
