@@ -60,5 +60,21 @@
             <where>ACCESS_TOKEN_LIFE_IMPLICIT is NULL</where>
         </update>
 
+        <dropUniqueConstraint tableName="REALM_CLIENT" constraintName="UK_M6QGA3RFME47335JY8JXYXH3I"  />
+        <dropForeignKeyConstraint baseTableName="REALM_CLIENT" constraintName="FK_93S3P0DIUXAWWQQSA528UBY2Q"/>
+        <dropForeignKeyConstraint baseTableName="REALM_CLIENT" constraintName="FK_M6QGA3RFME47335JY8JXYXH3I"/>
+        <dropTable tableName="REALM_CLIENT" cascadeConstraints="true"/>
+        <dropForeignKeyConstraint baseTableName="REALM_CLIENT_TEMPLATE" constraintName="FK_RLM_CLI_TMPLT_RLM" />
+        <dropForeignKeyConstraint baseTableName="REALM_CLIENT_TEMPLATE" constraintName="FK_RLM_CLI_TMPLT_CLI"/>
+        <dropTable tableName="REALM_CLIENT_TEMPLATE" cascadeConstraints="true"/>
+
+        <dropUniqueConstraint tableName="FED_PROVIDERS" constraintName="UK_DCCIRJLIPU1478VQC89DID88C" />
+        <dropForeignKeyConstraint baseTableName="FED_PROVIDERS" constraintName="FK_213LYQ09FKXQ8K8NY8DY3737T"/>
+        <dropForeignKeyConstraint baseTableName="FED_PROVIDERS" constraintName="FK_DCCIRJLIPU1478VQC89DID88C"/>
+        <dropTable tableName="FED_PROVIDERS" cascadeConstraints="true"/>
+
+
+
+
     </changeSet>
 </databaseChangeLog>

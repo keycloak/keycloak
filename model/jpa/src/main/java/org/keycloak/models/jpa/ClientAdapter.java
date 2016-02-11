@@ -633,8 +633,8 @@ public class ClientAdapter implements ClientModel {
         roleEntity.setClient(entity);
         roleEntity.setClientRole(true);
         roleEntity.setRealmId(realm.getId());
-        em.persist(roleEntity);
         entity.getRoles().add(roleEntity);
+        em.persist(roleEntity);
         em.flush();
         return new RoleAdapter(realm, em, roleEntity);
     }
@@ -667,12 +667,21 @@ public class ClientAdapter implements ClientModel {
     @Override
     public Set<RoleModel> getRoles() {
         Set<RoleModel> list = new HashSet<RoleModel>();
+        /*
         Collection<RoleEntity> roles = entity.getRoles();
         if (roles == null) return list;
         for (RoleEntity entity : roles) {
             list.add(new RoleAdapter(realm, em, entity));
         }
+        */
+        TypedQuery<RoleEntity> query = em.createNamedQuery("getClientRoles", RoleEntity.class);
+        query.setParameter("client", entity);
+        List<RoleEntity> roles = query.getResultList();
+        for (RoleEntity roleEntity : roles) {
+             list.add(new RoleAdapter(realm, em, roleEntity));
+        }
         return list;
+
     }
 
     @Override
