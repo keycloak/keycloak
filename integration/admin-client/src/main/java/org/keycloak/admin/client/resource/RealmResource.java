@@ -142,4 +142,8 @@ public interface RealmResource {
     @Path("clients-initial-access")
     ClientInitialAccessResource clientInitialAccess();
 
+    @Path("authentication")
+    @Consumes(MediaType.APPLICATION_JSON)
+    AuthenticationManagementResource flows();
+
 }
