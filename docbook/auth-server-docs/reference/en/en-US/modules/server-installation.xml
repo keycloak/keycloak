@@ -396,7 +396,7 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
                         <term>connection-pool-size</term>
                         <listitem>
                             <para>
-                                How many connections can be in the pool (200 by default).
+                                How many connections can be in the pool (128 by default).
                             </para>
                         </listitem>
                     </varlistentry>
@@ -404,7 +404,7 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
                         <term>max-pooled-per-route</term>
                         <listitem>
                             <para>
-                                How many connections can be pooled per host (100 by default).
+                                How many connections can be pooled per host (64 by default).
                             </para>
                         </listitem>
                     </varlistentry>
@@ -412,7 +412,7 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
                         <term>connection-ttl-millis</term>
                         <listitem>
                             <para>
-                                Maximum connection time to live in milliseconds
+                                Maximum connection time to live in milliseconds. Not set by default.
                             </para>
                         </listitem>
                     </varlistentry>
@@ -420,7 +420,8 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
                         <term>max-connection-idle-time-millis</term>
                         <listitem>
                             <para>
-                                Maximum time the connection might stay idle in the connection pool. Will start background cleaner thread if set (by default it's not set)
+                                Maximum time the connection might stay idle in the connection pool (900 seconds by default). Will start background cleaner thread of Apache HTTP client.
+                                Set to -1 to disable this checking and the background thread.
                             </para>
                         </listitem>
                     </varlistentry>
