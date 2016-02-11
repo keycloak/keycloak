@@ -755,7 +755,7 @@ public class RealmAdapter implements RealmModel {
         entity.setEnabled(true);
         entity.setStandardFlowEnabled(true);
         entity.setRealm(realm);
-        //realm.getClients().add(entity);
+        realm.getClients().add(entity);
         em.persist(entity);
         em.flush();
         final ClientModel resource = new ClientAdapter(this, em, session, entity);
@@ -781,7 +781,6 @@ public class RealmAdapter implements RealmModel {
             client.removeRole(role);
         }
 
-        /*
         ClientEntity clientEntity = null;
         Iterator<ClientEntity> it = realm.getClients().iterator();
         while (it.hasNext()) {
@@ -797,8 +796,6 @@ public class RealmAdapter implements RealmModel {
                 clientEntity = a;
             }
         }
-        */
-        ClientEntity clientEntity = em.find(ClientEntity.class, id);
         if (clientEntity == null) return false;
         em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", clientEntity).executeUpdate();
         em.remove(clientEntity);
@@ -1020,6 +1017,7 @@ public class RealmAdapter implements RealmModel {
             entity.setFullSyncPeriod(model.getFullSyncPeriod());
             entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
             entity.setLastSync(model.getLastSync());
+            entity.setRealm(realm);
             em.persist(entity);
             realm.getUserFederationProviders().add(entity);
 

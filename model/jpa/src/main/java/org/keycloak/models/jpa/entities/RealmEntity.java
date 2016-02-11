@@ -141,20 +141,16 @@ public class RealmEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="FED_PROVIDERS", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name = "USERFEDERATIONPROVIDERS_ID") })
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<UserFederationMapperEntity> userFederationMappers = new ArrayList<UserFederationMapperEntity>();
 
-    //@OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy="realm")
-    //@OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    //@JoinTable(name="REALM_CLIENT", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="CLIENT_ID") })
-    //Collection<ClientEntity> clients = new ArrayList<>();
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy="realm")
+    Collection<ClientEntity> clients = new ArrayList<>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="REALM_CLIENT_TEMPLATE", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="CLIENT_TEMPLATE_ID") })
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<ClientTemplateEntity> clientTemplates = new ArrayList<>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, mappedBy = "realm")
@@ -425,7 +421,6 @@ public class RealmEntity {
     public void setRequiredCredentials(Collection<RequiredCredentialEntity> requiredCredentials) {
         this.requiredCredentials = requiredCredentials;
     }
-    /*
     public Collection<ClientEntity> getClients() {
         return clients;
     }
@@ -433,7 +428,6 @@ public class RealmEntity {
     public void setClients(Collection<ClientEntity> clients) {
         this.clients = clients;
     }
-    */
 
     public Collection<RoleEntity> getRoles() {
         return roles;

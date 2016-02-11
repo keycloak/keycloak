@@ -42,7 +42,7 @@ public class LockingConnectionProviderFactory extends DefaultInfinispanConnectio
     protected void initEmbedded() {
         super.initEmbedded();
         ConfigurationBuilder counterConfigBuilder = new ConfigurationBuilder();
-        counterConfigBuilder//.invocationBatching().enable()
+        counterConfigBuilder.invocationBatching().enable()
                 .transaction().transactionMode(TransactionMode.TRANSACTIONAL);
         counterConfigBuilder.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
         counterConfigBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
