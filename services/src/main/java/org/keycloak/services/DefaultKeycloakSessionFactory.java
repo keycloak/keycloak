@@ -69,8 +69,9 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
 
         ProviderManager pm = new ProviderManager(getClass().getClassLoader(), Config.scope().getArray("providers"));
 
-        ServiceLoader<Spi> load = ServiceLoader.load(Spi.class, getClass().getClassLoader());
-        loadSPIs(pm, load);
+        // Load the SPI classes through the provider manager, so both Keycloak internal SPI's and
+        // the ones defined in deployed modules will be found.
+        loadSPIs(pm, pm.loadSpis());
         for ( Map<String, ProviderFactory> factories : factoriesMap.values()) {
             for (ProviderFactory factory : factories.values()) {
                 factory.postInit(this);
@@ -78,8 +79,8 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
         }
     }
 
-    protected void loadSPIs(ProviderManager pm, ServiceLoader<Spi> load) {
-        for (Spi spi : load) {
+    protected void loadSPIs(ProviderManager pm, List<Spi> spis) {
+        for (Spi spi : spis) {
             Map<String, ProviderFactory> factories = new HashMap<String, ProviderFactory>();
             factoriesMap.put(spi.getProviderClass(), factories);
 

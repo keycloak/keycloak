@@ -139,7 +139,17 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
         String changelog = (database instanceof DB2Database) ? DB2_CHANGELOG : CHANGELOG;
         logger.debugf("Using changelog file: %s", changelog);
-        return new Liquibase(changelog, new ClassLoaderResourceAccessor(getClass().getClassLoader()), database);
+        return new Liquibase(getChangelogLocation(), new ClassLoaderResourceAccessor(getClass().getClassLoader()), database);
+    }
+
+    /**
+     * Get the changelog file location, that should be used as input for Liquibase.
+     * This logic is split into a separate protected method, to allow for easy extends + override when customizing.
+     * 
+     * @return the liquibase changelog location
+     */
+    protected String getChangelogLocation() {
+        return CHANGELOG;
     }
 
     @Override

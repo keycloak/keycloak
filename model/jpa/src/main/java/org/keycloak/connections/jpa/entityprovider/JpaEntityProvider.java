@@ -15,28 +15,25 @@
  * limitations under the License.
  */
 
-package org.keycloak.provider;
+package org.keycloak.connections.jpa.entityprovider;
 
 import java.util.List;
 
+import org.keycloak.provider.Provider;
+
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:erik.mulder@docdatapayments.com">Erik Mulder</a>
+ * 
+ * A JPA Entity Provider can supply extra JPA entities that the Keycloak system should include in it's entity manager. The
+ * entities should be provided as a list of Class objects.
  */
-public interface ProviderLoader {
+public interface JpaEntityProvider extends Provider {
 
     /**
-     * Load the SPI definitions themselves.
-     *
-     * @return a list of Spi definition objects
+     * Return the entities that should be added to the entity manager.
+     * 
+     * @return list of class objects
      */
-    List<Spi> loadSpis();
-
-    /**
-     * Load all provider factories of a specific SPI.
-     *
-     * @param spi the Spi definition
-     * @return a list of provider factories
-     */
-    List<ProviderFactory> load(Spi spi);
+	List<Class<?>> getEntities();
 
 }

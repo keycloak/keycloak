@@ -16,6 +16,31 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.PatternSyntaxException;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
@@ -42,6 +67,7 @@ import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.partialimport.PartialImportManager;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -52,40 +78,16 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.UsersSyncManager;
-import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.admin.spi.RealmAdminResourceProvider;
+import org.keycloak.services.resources.admin.spi.RealmAdminResourceProviderFactory;
 import org.keycloak.timer.TimerProvider;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.PatternSyntaxException;
-import org.keycloak.partialimport.PartialImportManager;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -773,4 +775,28 @@ public class RealmAdminResource {
         }
     }
 
+    /**
+     * Extension point where an SPI can provide a custom implementation for a certain admin REST path.
+     *
+     * @param path the (unmapped) path name
+     * @return the rest resource or null if no implementation found
+     */
+    @Path("{unmapped_path}")
+    public Object resolveUnknowPath(@PathParam("unmapped_path") String path) {
+        List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(RealmAdminResourceProvider.class);
+
+        for (ProviderFactory factory : factories) {
+            RealmAdminResourceProviderFactory realmAdminResourceFactory = (RealmAdminResourceProviderFactory) factory;
+            RealmAdminResourceProvider provider = realmAdminResourceFactory.create(session, auth.getAuth());
+            Object resource = provider.getResource(path);
+
+            // If the provider returns a non-null resource, use that one.
+            if (resource != null) {
+                return resource;
+            }
+        }
+
+        // No provider supplied a resource, so no resource available.
+        return null;
+    }
 }

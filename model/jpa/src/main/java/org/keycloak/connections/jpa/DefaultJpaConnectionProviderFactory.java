@@ -22,19 +22,26 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.naming.InitialContext;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import javax.sql.DataSource;
 
 import org.hibernate.ejb.AvailableSettings;
+import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
+import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
+import org.hibernate.jpa.boot.spi.Bootstrap;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
+import org.keycloak.connections.jpa.entityprovider.ProvidedEntitiesClassLoader;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
@@ -181,7 +188,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 	                    }
 	
 	                    logger.trace("Creating EntityManagerFactory");
-	                    emf = Persistence.createEntityManagerFactory(unitName, properties);
+                        emf = createEntityManagerFactory(session, unitName, properties);
 	                    logger.trace("EntityManagerFactory created");
 
                     } finally {
@@ -199,6 +206,60 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         }
     }
     
+    /**
+     * Create the entity manager factory. Typically, this would be done with:
+     * 
+     * <pre>
+     * Persistence.createEntityManagerFactory(unitName, properties)
+     * </pre>
+     * 
+     * But since we'd like to add extra entities to the entity manager besides the ones in the persistence.xml, we'll split this
+     * process into separate steps. See comments in the code for details.
+     * 
+     * @param session the keycloak session
+     * @param unitName the name of the persistence unit
+     * @param properties entity manager properties
+     * @return the created entity manager factory
+     */
+    private EntityManagerFactory createEntityManagerFactory(KeycloakSession session, String unitName,
+            Map<String, Object> properties) {
+        // Let Hibernate find all the available persistence units on the classpath.
+        List<ParsedPersistenceXmlDescriptor> persistenceUnits = PersistenceXmlParser.locatePersistenceUnits(properties);
+        for (ParsedPersistenceXmlDescriptor persistenceUnit : persistenceUnits) {
+            // We should find a match on the persistence unit name.
+            if (persistenceUnit.getName().equals(unitName)) {
+                List<Class<?>> providedEntities = getProvidedEntities(session);
+                for (Class<?> entityClass : providedEntities) {
+                    // Add all extra entity classes to the persistence unit.
+                    persistenceUnit.addClasses(entityClass.getName());
+                }
+                // Now build the entity manager factory, supplying a custom classloader, so Hibernate will be able
+                // to find and load the extra provided entities.
+                return Bootstrap.getEntityManagerFactoryBuilder(persistenceUnit, properties,
+                        new ProvidedEntitiesClassLoader(providedEntities)).build();
+            }
+        }
+        // Should never happen in normal Keycloak deployment or runtime since persistence.xml is part of the same project.
+        throw new IllegalStateException("Keycloak persistence unit '" + unitName + "' not found on classpath.");
+    }
+
+    /**
+     * Get a list of all provided entities by looping over all configured entity providers.
+     * 
+     * @param session the keycloak session
+     * @return a list of all provided entities (can be an empty list)
+     */
+    private List<Class<?>> getProvidedEntities(KeycloakSession session) {
+        List<Class<?>> providedEntityClasses = new ArrayList<>();
+        // Get all configured entity providers.
+        Set<JpaEntityProvider> entityProviders = session.getAllProviders(JpaEntityProvider.class);
+        // For every provider, add all entity classes to the list.
+        for (JpaEntityProvider entityProvider : entityProviders) {
+            providedEntityClasses.addAll(entityProvider.getEntities());
+        }
+        return providedEntityClasses;
+    }
+
     protected void prepareOperationalInfo(Connection connection) {
   		try {
   			operationalInfo = new LinkedHashMap<>();
