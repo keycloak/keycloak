@@ -32,7 +32,7 @@
     <dependencies>
     </dependencies>
     <build>
-        <finalName>keycloak-examples-${project.version}</finalName>
+        <finalName>${product.name}-${product.version}-examples</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

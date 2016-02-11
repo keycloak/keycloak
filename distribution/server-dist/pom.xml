@@ -38,7 +38,7 @@
     </dependencies>
 
     <build>
-        <finalName>keycloak-${project.version}</finalName>
+        <finalName>${product.name}-${product.version}</finalName>
 
         <plugins>
             <plugin>

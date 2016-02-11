@@ -33,6 +33,7 @@
     <dependencies>
     </dependencies>
     <build>
+        <finalName>${product.name}-${product.version}-js-adapter</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

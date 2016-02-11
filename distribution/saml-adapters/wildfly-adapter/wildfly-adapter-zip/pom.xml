@@ -39,6 +39,7 @@
     </dependencies>
 
     <build>
+        <finalName>${product.name}-${product.version}-saml-eap7-adapter</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

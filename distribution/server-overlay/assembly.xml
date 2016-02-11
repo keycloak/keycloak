@@ -27,7 +27,7 @@
 
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/modules/system/layers/base</directory>
+            <directory>${project.build.directory}/unpacked/${product.name}-${product.version}/modules/system/layers/base</directory>
             <outputDirectory>modules/system/layers/base</outputDirectory>
             <includes>
                 <include>com/google/zxing/**</include>
@@ -41,18 +41,18 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/content</directory>
+            <directory>${project.build.directory}/unpacked/${product.name}-${product.version}/content</directory>
             <outputDirectory></outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/themes</directory>
+            <directory>${project.build.directory}/unpacked/${product.name}-${product.version}/standalone/configuration/themes</directory>
             <outputDirectory>standalone/configuration/themes</outputDirectory>
             <includes>
                 <include>**/**</include>
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/providers</directory>
+            <directory>${project.build.directory}/unpacked/${product.name}-${product.version}/standalone/configuration/providers</directory>
             <outputDirectory>standalone/configuration/providers</outputDirectory>
             <includes>
                 <include>**/**</include>
@@ -76,16 +76,16 @@
 
     <files>
         <file>
-            <source>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/keycloak-server.json</source>
+            <source>${project.build.directory}/unpacked/${product.name}-${product.version}/standalone/configuration/keycloak-server.json</source>
             <outputDirectory>standalone/configuration</outputDirectory>
         </file>
         <file>
-            <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user.sh</source>
+            <source>${project.build.directory}/unpacked/${product.name}-${product.version}/bin/add-user.sh</source>
             <outputDirectory>bin</outputDirectory>
             <destName>add-user-keycloak.sh</destName>
         </file>
         <file>
-            <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user.bat</source>
+            <source>${project.build.directory}/unpacked/${product.name}-${product.version}/bin/add-user.bat</source>
             <outputDirectory>bin</outputDirectory>
             <destName>add-user-keycloak.bat</destName>
         </file>

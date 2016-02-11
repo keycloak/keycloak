@@ -38,7 +38,7 @@
     </dependencies>
 
     <build>
-        <finalName>keycloak-overlay-${project.version}</finalName>
+        <finalName>${product.name}-${product.version}-server-overlay</finalName>
 
         <plugins>
             <plugin>

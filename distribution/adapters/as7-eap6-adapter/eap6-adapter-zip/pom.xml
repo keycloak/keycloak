@@ -42,6 +42,7 @@
         </dependency>
     </dependencies>
     <build>
+        <finalName>${product.name}-${product.version}-eap6-adapter</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
