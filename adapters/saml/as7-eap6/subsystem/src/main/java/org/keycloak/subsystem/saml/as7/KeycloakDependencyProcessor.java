@@ -48,6 +48,9 @@ public abstract class KeycloakDependencyProcessor implements DeploymentUnitProce
         String deploymentName = deploymentUnit.getName();
         if (Configuration.INSTANCE.getSecureDeployment(deploymentName) == null) {
             WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
+            if (warMetaData == null) {
+                return;
+            }
             JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
             if (webMetaData == null) {
                 return;
