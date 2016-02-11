@@ -101,7 +101,7 @@ public class RealmsResource {
 
     @Path("{realm}/protocol/{protocol}")
     public Object getProtocol(final @PathParam("realm") String name,
-                                            final @PathParam("protocol") String protocol) {
+                              final @PathParam("protocol") String protocol) {
         RealmModel realm = init(name);
 
         LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
@@ -239,7 +239,7 @@ public class RealmsResource {
     @Path("{realm}/.well-known/{provider}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getWellKnown(final @PathParam("realm") String name,
-                              final @PathParam("provider") String providerName) {
+                                 final @PathParam("provider") String providerName) {
         init(name);
 
         WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, providerName);
