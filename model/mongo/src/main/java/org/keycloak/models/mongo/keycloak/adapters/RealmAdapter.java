@@ -645,14 +645,14 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
                 .get();
         List<MongoRoleEntity> roles = getMongoStore().loadEntities(MongoRoleEntity.class, query, invocationContext);
 
-        Set<RoleModel> result = new HashSet<RoleModel>();
 
-        if (roles == null) return result;
+        if (roles == null) return Collections.EMPTY_SET;
+        Set<RoleModel> result = new HashSet<RoleModel>();
         for (MongoRoleEntity role : roles) {
             result.add(new RoleAdapter(session, this, role, this, invocationContext));
         }
 
-        return result;
+        return Collections.unmodifiableSet(result);
     }
 
     @Override
@@ -709,6 +709,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
                 .and("realmId").is(getId())
                 .get();
         List<MongoGroupEntity> groups = getMongoStore().loadEntities(MongoGroupEntity.class, query, invocationContext);
+        if (groups == null) return Collections.EMPTY_LIST;
 
         List<GroupModel> result = new LinkedList<>();
 
@@ -717,20 +718,20 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             result.add(model.getGroupById(group.getId(), this));
         }
 
-        return result;
+        return Collections.unmodifiableList(result);
     }
 
     @Override
     public List<GroupModel> getTopLevelGroups() {
-        List<GroupModel> all = getGroups();
-        Iterator<GroupModel> it = all.iterator();
-        while (it.hasNext()) {
-            GroupModel group = it.next();
-            if (group.getParentId() != null) {
-                it.remove();
+        List<GroupModel> base = getGroups();
+        if (base.isEmpty()) return base;
+        List<GroupModel> copy = new LinkedList<>();
+        for (GroupModel group : base) {
+            if (group.getParent() == null) {
+                copy.add(group);
             }
         }
-        return all;
+        return Collections.unmodifiableList(copy);
     }
 
     @Override
@@ -750,7 +751,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public List<String> getDefaultRoles() {
-        return realm.getDefaultRoles();
+        return Collections.unmodifiableList(realm.getDefaultRoles());
     }
 
     @Override
@@ -781,11 +782,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public List<GroupModel> getDefaultGroups() {
+        List<String> entities = realm.getDefaultGroups();
+        if (entities == null || entities.isEmpty()) return Collections.EMPTY_LIST;
         List<GroupModel> defaultGroups = new LinkedList<>();
-        for (String id : realm.getDefaultGroups()) {
+        for (String id : entities) {
             defaultGroups.add(session.realms().getGroupById(id, this));
         }
-        return defaultGroups;
+        return Collections.unmodifiableList(defaultGroups);
     }
 
     @Override
@@ -812,11 +815,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public Map<String, ClientModel> getClientNameMap() {
+        List<ClientModel> clients = getClients();
+        if (clients.isEmpty()) return Collections.EMPTY_MAP;
         Map<String, ClientModel> resourceMap = new HashMap<String, ClientModel>();
-        for (ClientModel resource : getClients()) {
+        for (ClientModel resource : clients) {
             resourceMap.put(resource.getClientId(), resource);
         }
-        return resourceMap;
+        return Collections.unmodifiableMap(resourceMap);
     }
 
     @Override
@@ -826,11 +831,12 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
                 .get();
         List<MongoClientEntity> clientEntities = getMongoStore().loadEntities(MongoClientEntity.class, query, invocationContext);
 
+        if (clientEntities.isEmpty()) return Collections.EMPTY_LIST;
         List<ClientModel> result = new ArrayList<ClientModel>();
         for (MongoClientEntity clientEntity : clientEntities) {
             result.add(new ClientAdapter(session, this, clientEntity, invocationContext));
         }
-        return result;
+        return Collections.unmodifiableList(result);
     }
 
     @Override
@@ -922,8 +928,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     protected List<RequiredCredentialModel> convertRequiredCredentialEntities(Collection<RequiredCredentialEntity> credEntities) {
-
-        List<RequiredCredentialModel> result = new ArrayList<RequiredCredentialModel>();
+        if (credEntities == null || credEntities.isEmpty()) return Collections.EMPTY_LIST;
+        List<RequiredCredentialModel> result = new LinkedList<>();
         for (RequiredCredentialEntity entity : credEntities) {
             RequiredCredentialModel model = new RequiredCredentialModel();
             model.setFormLabel(entity.getFormLabel());
@@ -933,7 +939,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
             result.add(model);
         }
-        return result;
+        return Collections.unmodifiableList(result);
     }
 
     protected void updateRealm() {
@@ -950,7 +956,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public Map<String, String> getBrowserSecurityHeaders() {
-        return realm.getBrowserSecurityHeaders();
+        return Collections.unmodifiableMap(realm.getBrowserSecurityHeaders());
     }
 
     @Override
@@ -961,7 +967,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public Map<String, String> getSmtpConfig() {
-        return realm.getSmtpConfig();
+        return Collections.unmodifiableMap(realm.getSmtpConfig());
     }
 
     @Override
@@ -973,15 +979,20 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public List<IdentityProviderModel> getIdentityProviders() {
+        List<IdentityProviderEntity> entities = realm.getIdentityProviders();
+        if (entities.isEmpty()) return Collections.EMPTY_LIST;
         List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
 
-        for (IdentityProviderEntity entity: realm.getIdentityProviders()) {
+        for (IdentityProviderEntity entity: entities) {
             IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
             identityProviderModel.setProviderId(entity.getProviderId());
             identityProviderModel.setAlias(entity.getAlias());
             identityProviderModel.setInternalId(entity.getInternalId());
-            identityProviderModel.setConfig(entity.getConfig());
+            Map<String, String> config = entity.getConfig();
+            Map<String, String> copy = new HashMap<>();
+            copy.putAll(config);
+            identityProviderModel.setConfig(copy);
             identityProviderModel.setEnabled(entity.isEnabled());
             identityProviderModel.setTrustEmail(entity.isTrustEmail());
             identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
@@ -993,7 +1004,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             identityProviders.add(identityProviderModel);
         }
 
-        return identityProviders;
+        return Collections.unmodifiableList(identityProviders);
     }
 
     @Override
@@ -1132,6 +1143,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public List<UserFederationProviderModel> getUserFederationProviders() {
         List<UserFederationProviderEntity> entities = realm.getUserFederationProviders();
+        if (entities.isEmpty()) return Collections.EMPTY_LIST;
         List<UserFederationProviderEntity> copy = new LinkedList<UserFederationProviderEntity>();
         for (UserFederationProviderEntity entity : entities) {
             copy.add(entity);
@@ -1151,7 +1163,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
                     entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
         }
 
-        return result;
+        return Collections.unmodifiableList(result);
     }
 
     @Override
@@ -1257,7 +1269,11 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public Set<String> getEventsListeners() {
-        return new HashSet<String>(realm.getEventsListeners());
+        List<String> eventsListeners = realm.getEventsListeners();
+        if (eventsListeners.isEmpty()) return Collections.EMPTY_SET;
+        Set<String> copy = new HashSet<>();
+        copy.addAll(eventsListeners);
+        return Collections.unmodifiableSet(copy);
     }
 
     @Override
@@ -1272,7 +1288,11 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public Set<String> getEnabledEventTypes() {
-        return new HashSet<String>(realm.getEnabledEventTypes());
+        List<String> enabledEventTypes = realm.getEnabledEventTypes();
+        if (enabledEventTypes.isEmpty()) return Collections.EMPTY_SET;
+        Set<String> copy = new HashSet<>();
+        copy.addAll(enabledEventTypes);
+        return Collections.unmodifiableSet(copy);
     }
 
     @Override
@@ -1364,7 +1384,11 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public Set<String> getSupportedLocales() {
-        return new HashSet<String>(realm.getSupportedLocales());
+        List<String> supportedLocales = realm.getSupportedLocales();
+        if (supportedLocales == null || supportedLocales.isEmpty()) return Collections.EMPTY_SET;
+        Set<String> copy = new HashSet<>();
+        copy.addAll(supportedLocales);
+        return Collections.unmodifiableSet(copy);
     }
 
     @Override
@@ -1390,12 +1414,14 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public Set<IdentityProviderMapperModel> getIdentityProviderMappers() {
+        List<IdentityProviderMapperEntity> entities = getMongoEntity().getIdentityProviderMappers();
+        if (entities.isEmpty()) return Collections.EMPTY_SET;
         Set<IdentityProviderMapperModel> mappings = new HashSet<IdentityProviderMapperModel>();
-        for (IdentityProviderMapperEntity entity : getMongoEntity().getIdentityProviderMappers()) {
+        for (IdentityProviderMapperEntity entity : entities) {
             IdentityProviderMapperModel mapping = entityToModel(entity);
             mappings.add(mapping);
         }
-        return mappings;
+        return Collections.unmodifiableSet(mappings);
     }
 
     @Override
@@ -1568,12 +1594,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
         List<AuthenticationFlowEntity> flows = getMongoEntity().getAuthenticationFlows();
+        if (flows.isEmpty()) return Collections.EMPTY_LIST;
         List<AuthenticationFlowModel> models = new LinkedList<>();
         for (AuthenticationFlowEntity entity : flows) {
             AuthenticationFlowModel model = entityToModel(entity);
             models.add(model);
         }
-        return models;
+        return Collections.unmodifiableList(models);
     }
 
     @Override
@@ -1662,7 +1689,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             executions.add(model);
         }
         Collections.sort(executions, AuthenticationExecutionModel.ExecutionComparator.SINGLETON);
-        return executions;
+        return Collections.unmodifiableList(executions);
     }
 
     public AuthenticationExecutionModel entityToModel(AuthenticationExecutionEntity entity) {
@@ -1752,11 +1779,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public List<AuthenticatorConfigModel> getAuthenticatorConfigs() {
+        List<AuthenticatorConfigEntity> entities = getMongoEntity().getAuthenticatorConfigs();
+        if (entities.isEmpty()) return Collections.EMPTY_LIST;
         List<AuthenticatorConfigModel> authenticators = new LinkedList<>();
-        for (AuthenticatorConfigEntity entity : getMongoEntity().getAuthenticatorConfigs()) {
+        for (AuthenticatorConfigEntity entity : entities) {
             authenticators.add(entityToModel(entity));
         }
-        return authenticators;
+        return Collections.unmodifiableList(authenticators);
     }
 
     @Override
@@ -1898,11 +1927,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public List<RequiredActionProviderModel> getRequiredActionProviders() {
+        List<RequiredActionProviderEntity> entities = realm.getRequiredActionProviders();
+        if (entities.isEmpty()) return Collections.EMPTY_LIST;
         List<RequiredActionProviderModel> actions = new LinkedList<>();
-        for (RequiredActionProviderEntity entity : realm.getRequiredActionProviders()) {
+        for (RequiredActionProviderEntity entity : entities) {
             actions.add(entityToModel(entity));
         }
-        return actions;
+        return Collections.unmodifiableList(actions);
     }
 
     public RequiredActionProviderEntity getRequiredActionProviderEntity(String id) {
@@ -1930,12 +1961,14 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public Set<UserFederationMapperModel> getUserFederationMappers() {
+        List<UserFederationMapperEntity> entities = getMongoEntity().getUserFederationMappers();
+        if (entities.isEmpty()) return Collections.EMPTY_SET;
         Set<UserFederationMapperModel> mappers = new HashSet<UserFederationMapperModel>();
-        for (UserFederationMapperEntity entity : getMongoEntity().getUserFederationMappers()) {
+        for (UserFederationMapperEntity entity : entities) {
             UserFederationMapperModel mapper = entityToModel(entity);
             mappers.add(mapper);
         }
-        return mappers;
+        return Collections.unmodifiableSet(mappers);
     }
 
     @Override
@@ -2053,12 +2086,12 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
                 .and("realmId").is(getId())
                 .get();
         List<MongoClientTemplateEntity> clientEntities = getMongoStore().loadEntities(MongoClientTemplateEntity.class, query, invocationContext);
-
+        if (clientEntities.isEmpty()) return Collections.EMPTY_LIST;
         List<ClientTemplateModel> result = new LinkedList<>();
         for (MongoClientTemplateEntity clientEntity : clientEntities) {
             result.add(new ClientTemplateAdapter(session, this, clientEntity, invocationContext));
         }
-        return result;
+        return Collections.unmodifiableList(result);
     }
 
     @Override

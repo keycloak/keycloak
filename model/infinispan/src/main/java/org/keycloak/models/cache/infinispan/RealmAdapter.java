@@ -502,11 +502,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
-
-        List<RequiredCredentialModel> copy = new LinkedList<RequiredCredentialModel>();
-        if (updated != null) copy.addAll(updated.getRequiredCredentials());
-        else copy.addAll(cached.getRequiredCredentials());
-        return copy;
+        if (updated != null) return updated.getRequiredCredentials();
+        return cached.getRequiredCredentials();
     }
 
     @Override
@@ -548,11 +545,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<GroupModel> getDefaultGroups() {
+        if (updated != null) return updated.getDefaultGroups();
+
         List<GroupModel> defaultGroups = new LinkedList<>();
         for (String id : cached.getDefaultGroups()) {
             defaultGroups.add(cacheSession.getGroupById(id, this));
         }
-        return defaultGroups;
+        return Collections.unmodifiableList(defaultGroups);
 
     }
 
@@ -599,13 +598,13 @@ public class RealmAdapter implements RealmModel {
             }
             map.put(model.getClientId(), model);
         }
-        return map;
+        return Collections.unmodifiableMap(map);
     }
 
     @Override
     public List<ClientModel> getClients() {
         if (updated != null) return updated.getClients();
-        List<ClientModel> apps = new LinkedList<ClientModel>();
+        List<ClientModel> apps = new LinkedList<>();
         for (String id : cached.getClients().values()) {
             ClientModel model = cacheSession.getClientById(id, this);
             if (model == null) {
@@ -613,7 +612,7 @@ public class RealmAdapter implements RealmModel {
             }
             apps.add(model);
         }
-        return apps;
+        return Collections.unmodifiableList(apps);
 
     }
 
@@ -691,6 +690,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public IdentityProviderModel getIdentityProviderByAlias(String alias) {
+        if (updated != null) return updated.getIdentityProviderByAlias(alias);
         for (IdentityProviderModel identityProviderModel : getIdentityProviders()) {
             if (identityProviderModel.getAlias().equals(alias)) {
                 return identityProviderModel;
@@ -941,7 +941,7 @@ public class RealmAdapter implements RealmModel {
             if (roleById == null) continue;
             roles.add(roleById);
         }
-        return roles;
+        return Collections.unmodifiableSet(roles);
     }
 
     @Override
@@ -1003,13 +1003,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public Set<IdentityProviderMapperModel> getIdentityProviderMappers() {
         if (updated != null) return updated.getIdentityProviderMappers();
-        Set<IdentityProviderMapperModel> mappings = new HashSet<>();
-        for (List<IdentityProviderMapperModel> models : cached.getIdentityProviderMappers().values()) {
-            for (IdentityProviderMapperModel model : models) {
-                mappings.add(model);
-            }
-        }
-        return mappings;
+        return cached.getIdentityProviderMapperSet();
     }
 
     @Override
@@ -1020,7 +1014,7 @@ public class RealmAdapter implements RealmModel {
         for (IdentityProviderMapperModel entity : list) {
             mappings.add(entity);
         }
-        return mappings;
+        return Collections.unmodifiableSet(mappings);
     }
 
     @Override
@@ -1066,13 +1060,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public Set<UserFederationMapperModel> getUserFederationMappers() {
         if (updated != null) return updated.getUserFederationMappers();
-        Set<UserFederationMapperModel> mappers = new HashSet<UserFederationMapperModel>();
-        for (List<UserFederationMapperModel> models : cached.getUserFederationMappers().values()) {
-            for (UserFederationMapperModel model : models) {
-                mappers.add(model);
-            }
-        }
-        return mappers;
+        return cached.getUserFederationMapperSet();
     }
 
     @Override
@@ -1083,7 +1071,7 @@ public class RealmAdapter implements RealmModel {
         for (UserFederationMapperModel entity : list) {
             mappers.add(entity);
         }
-        return mappers;
+        return Collections.unmodifiableSet(mappers);
     }
 
     @Override
@@ -1192,9 +1180,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
         if (updated != null) return updated.getAuthenticationFlows();
-        List<AuthenticationFlowModel> models = new ArrayList<>();
-        models.addAll(cached.getAuthenticationFlows().values());
-        return models;
+        return cached.getAuthenticationFlowList();
     }
 
     @Override
@@ -1281,7 +1267,7 @@ public class RealmAdapter implements RealmModel {
         if (updated != null) return updated.getAuthenticatorConfigs();
         List<AuthenticatorConfigModel> models = new ArrayList<>();
         models.addAll(cached.getAuthenticatorConfigs().values());
-        return models;
+        return Collections.unmodifiableList(models);
     }
 
     @Override
@@ -1313,9 +1299,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<RequiredActionProviderModel> getRequiredActionProviders() {
         if (updated != null) return updated.getRequiredActionProviders();
-        List<RequiredActionProviderModel> models = new ArrayList<>();
-        models.addAll(cached.getRequiredActionProviders().values());
-        return models;
+        return cached.getRequiredActionProviderList();
     }
 
     @Override
@@ -1366,20 +1350,20 @@ public class RealmAdapter implements RealmModel {
             if (group == null) continue;
             list.add(group);
         }
-        return list;
+        return Collections.unmodifiableList(list);
     }
 
     @Override
     public List<GroupModel> getTopLevelGroups() {
-        List<GroupModel> all = getGroups();
-        Iterator<GroupModel> it = all.iterator();
-        while (it.hasNext()) {
-            GroupModel group = it.next();
-            if (group.getParent() != null) {
-                it.remove();
+        List<GroupModel> base = getGroups();
+        if (base.isEmpty()) return base;
+        List<GroupModel> copy = new LinkedList<>();
+        for (GroupModel group : base) {
+            if (group.getParent() == null) {
+                copy.add(group);
             }
         }
-        return all;
+        return Collections.unmodifiableList(copy);
     }
 
     @Override
@@ -1416,15 +1400,17 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<ClientTemplateModel> getClientTemplates() {
         if (updated != null) return updated.getClientTemplates();
+        List<String> clientTemplates = cached.getClientTemplates();
+        if (clientTemplates.isEmpty()) return Collections.EMPTY_LIST;
         List<ClientTemplateModel> apps = new LinkedList<ClientTemplateModel>();
-        for (String id : cached.getClientTemplates()) {
+        for (String id : clientTemplates) {
             ClientTemplateModel model = cacheSession.getClientTemplateById(id, this);
             if (model == null) {
                 throw new IllegalStateException("Cached clientemplate not found: " + id);
             }
             apps.add(model);
         }
-        return apps;
+        return Collections.unmodifiableList(apps);
 
     }
 

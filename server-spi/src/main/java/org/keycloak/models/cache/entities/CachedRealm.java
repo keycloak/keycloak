@@ -44,6 +44,7 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -107,16 +108,19 @@ public class CachedRealm implements Serializable {
     protected String emailTheme;
     protected String masterAdminClient;
 
-    protected List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
-    protected List<UserFederationProviderModel> userFederationProviders = new ArrayList<UserFederationProviderModel>();
+    protected List<RequiredCredentialModel> requiredCredentials;
+    protected List<UserFederationProviderModel> userFederationProviders;
     protected MultivaluedHashMap<String, UserFederationMapperModel> userFederationMappers = new MultivaluedHashMap<String, UserFederationMapperModel>();
-    protected List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
+    protected Set<UserFederationMapperModel> userFederationMapperSet;
+    protected List<IdentityProviderModel> identityProviders;
 
-    protected Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
-    protected Map<String, String> smtpConfig = new HashMap<String, String>();
+    protected Map<String, String> browserSecurityHeaders;
+    protected Map<String, String> smtpConfig;
     protected Map<String, AuthenticationFlowModel> authenticationFlows = new HashMap<>();
+    protected List<AuthenticationFlowModel> authenticationFlowList;
     protected Map<String, AuthenticatorConfigModel> authenticatorConfigs = new HashMap<>();
     protected Map<String, RequiredActionProviderModel> requiredActionProviders = new HashMap<>();
+    protected List<RequiredActionProviderModel> requiredActionProviderList;
     protected Map<String, RequiredActionProviderModel> requiredActionProvidersByAlias = new HashMap<>();
     protected MultivaluedHashMap<String, AuthenticationExecutionModel> authenticationExecutions = new MultivaluedHashMap<>();
     protected Map<String, AuthenticationExecutionModel> executionsById = new HashMap<>();
@@ -129,21 +133,27 @@ public class CachedRealm implements Serializable {
 
     protected boolean eventsEnabled;
     protected long eventsExpiration;
-    protected Set<String> eventsListeners = new HashSet<String>();
-    protected Set<String> enabledEventTypes = new HashSet<String>();
+    protected Set<String> eventsListeners;
+    protected Set<String> enabledEventTypes;
     protected boolean adminEventsEnabled;
     protected Set<String> adminEnabledEventOperations = new HashSet<String>();
     protected boolean adminEventsDetailsEnabled;
-    protected List<String> defaultRoles = new LinkedList<String>();
+    protected List<String> defaultRoles;
+
+    public Set<IdentityProviderMapperModel> getIdentityProviderMapperSet() {
+        return identityProviderMapperSet;
+    }
+
     protected List<String> defaultGroups = new LinkedList<String>();
     protected Set<String> groups = new HashSet<String>();
     protected Map<String, String> realmRoles = new HashMap<String, String>();
     protected Map<String, String> clients = new HashMap<String, String>();
     protected List<String> clientTemplates= new LinkedList<>();
     protected boolean internationalizationEnabled;
-    protected Set<String> supportedLocales = new HashSet<String>();
+    protected Set<String> supportedLocales;
     protected String defaultLocale;
     protected MultivaluedHashMap<String, IdentityProviderMapperModel> identityProviderMappers = new MultivaluedHashMap<>();
+    protected Set<IdentityProviderMapperModel> identityProviderMapperSet;
 
     public CachedRealm() {
     }
@@ -200,8 +210,9 @@ public class CachedRealm implements Serializable {
 
         requiredCredentials = model.getRequiredCredentials();
         userFederationProviders = model.getUserFederationProviders();
-        for (UserFederationMapperModel mapper : model.getUserFederationMappers()) {
-            userFederationMappers.add(mapper.getFederationProviderId(), mapper);
+        userFederationMapperSet = model.getUserFederationMappers();
+        for (UserFederationMapperModel mapper : userFederationMapperSet) {
+            this.userFederationMappers.add(mapper.getFederationProviderId(), mapper);
         }
 
         this.identityProviders = new ArrayList<>();
@@ -209,6 +220,7 @@ public class CachedRealm implements Serializable {
         for (IdentityProviderModel identityProviderModel : model.getIdentityProviders()) {
             this.identityProviders.add(new IdentityProviderModel(identityProviderModel));
         }
+        this.identityProviders = Collections.unmodifiableList(this.identityProviders);
 
         for (IdentityProviderMapperModel mapper : model.getIdentityProviderMappers()) {
             identityProviderMappers.add(mapper.getIdentityProviderAlias(), mapper);
@@ -216,18 +228,18 @@ public class CachedRealm implements Serializable {
 
 
 
-        smtpConfig.putAll(model.getSmtpConfig());
-        browserSecurityHeaders.putAll(model.getBrowserSecurityHeaders());
+        smtpConfig = model.getSmtpConfig();
+        browserSecurityHeaders = model.getBrowserSecurityHeaders();
 
         eventsEnabled = model.isEventsEnabled();
         eventsExpiration = model.getEventsExpiration();
-        eventsListeners.addAll(model.getEventsListeners());
-        enabledEventTypes.addAll(model.getEnabledEventTypes());
+        eventsListeners = model.getEventsListeners();
+        enabledEventTypes = model.getEnabledEventTypes();
         
         adminEventsEnabled = model.isAdminEventsEnabled();
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
         
-        defaultRoles.addAll(model.getDefaultRoles());
+        defaultRoles = model.getDefaultRoles();
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
@@ -238,10 +250,11 @@ public class CachedRealm implements Serializable {
         cacheClientTemplates(cache, delegate, model);
 
         internationalizationEnabled = model.isInternationalizationEnabled();
-        supportedLocales.addAll(model.getSupportedLocales());
+        supportedLocales = model.getSupportedLocales();
         defaultLocale = model.getDefaultLocale();
-        for (AuthenticationFlowModel flow : model.getAuthenticationFlows()) {
-            authenticationFlows.put(flow.getId(), flow);
+        authenticationFlowList = model.getAuthenticationFlows();
+        for (AuthenticationFlowModel flow : authenticationFlowList) {
+            this.authenticationFlows.put(flow.getId(), flow);
             authenticationExecutions.put(flow.getId(), new LinkedList<AuthenticationExecutionModel>());
             for (AuthenticationExecutionModel execution : model.getAuthenticationExecutions(flow.getId())) {
                 authenticationExecutions.add(flow.getId(), execution);
@@ -254,8 +267,9 @@ public class CachedRealm implements Serializable {
         for (AuthenticatorConfigModel authenticator : model.getAuthenticatorConfigs()) {
             authenticatorConfigs.put(authenticator.getId(), authenticator);
         }
-        for (RequiredActionProviderModel action : model.getRequiredActionProviders()) {
-            requiredActionProviders.put(action.getId(), action);
+        requiredActionProviderList = model.getRequiredActionProviders();
+        for (RequiredActionProviderModel action : requiredActionProviderList) {
+            this.requiredActionProviders.put(action.getId(), action);
             requiredActionProvidersByAlias.put(action.getAlias(), action);
         }
 
@@ -605,5 +619,17 @@ public class CachedRealm implements Serializable {
 
     public X509Certificate getCertificate() {
         return certificate;
+    }
+
+    public Set<UserFederationMapperModel> getUserFederationMapperSet() {
+        return userFederationMapperSet;
+    }
+
+    public List<AuthenticationFlowModel> getAuthenticationFlowList() {
+        return authenticationFlowList;
+    }
+
+    public List<RequiredActionProviderModel> getRequiredActionProviderList() {
+        return requiredActionProviderList;
     }
 }
