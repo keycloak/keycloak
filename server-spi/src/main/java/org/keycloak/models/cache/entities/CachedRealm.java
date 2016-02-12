@@ -39,6 +39,10 @@ import org.keycloak.models.cache.RealmCache;
 import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.io.Serializable;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -89,8 +93,11 @@ public class CachedRealm implements Serializable {
     protected PasswordPolicy passwordPolicy;
     protected OTPPolicy otpPolicy;
 
+    protected transient PublicKey publicKey;
     protected String publicKeyPem;
+    protected transient PrivateKey privateKey;
     protected String privateKeyPem;
+    protected transient X509Certificate certificate;
     protected String certificatePem;
     protected String codeSecret;
 
@@ -179,8 +186,11 @@ public class CachedRealm implements Serializable {
         otpPolicy = model.getOTPPolicy();
 
         publicKeyPem = model.getPublicKeyPem();
+        publicKey = model.getPublicKey();
         privateKeyPem = model.getPrivateKeyPem();
+        privateKey = model.getPrivateKey();
         certificatePem = model.getCertificatePem();
+        certificate = model.getCertificate();
         codeSecret = model.getCodeSecret();
 
         loginTheme = model.getLoginTheme();
@@ -265,7 +275,7 @@ public class CachedRealm implements Serializable {
         for (ClientTemplateModel template : model.getClientTemplates()) {
             clientTemplates.add(template.getId());
             CachedClientTemplate cachedClient = new CachedClientTemplate(cache, delegate, model, template);
-            cache.addCachedClientTemplate(cachedClient);
+            cache.addClientTemplate(cachedClient);
         }
     }
 
@@ -273,7 +283,7 @@ public class CachedRealm implements Serializable {
         for (ClientModel client : model.getClients()) {
             clients.put(client.getClientId(), client.getId());
             CachedClient cachedClient = new CachedClient(cache, delegate, model, client);
-            cache.addCachedClient(cachedClient);
+            cache.addClient(cachedClient);
         }
     }
 
@@ -281,7 +291,7 @@ public class CachedRealm implements Serializable {
         for (RoleModel role : model.getRoles()) {
             realmRoles.put(role.getName(), role.getId());
             CachedRole cachedRole = new CachedRealmRole(role, model);
-            cache.addCachedRole(cachedRole);
+            cache.addRole(cachedRole);
         }
     }
 
@@ -583,5 +593,17 @@ public class CachedRealm implements Serializable {
 
     public List<String> getClientTemplates() {
         return clientTemplates;
+    }
+
+    public PublicKey getPublicKey() {
+        return publicKey;
+    }
+
+    public PrivateKey getPrivateKey() {
+        return privateKey;
+    }
+
+    public X509Certificate getCertificate() {
+        return certificate;
     }
 }

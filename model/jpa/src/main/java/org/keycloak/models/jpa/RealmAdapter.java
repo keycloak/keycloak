@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa;
 
+import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -65,6 +66,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class RealmAdapter implements RealmModel {
+    protected static final Logger logger = Logger.getLogger(RealmAdapter.class);
     protected RealmEntity realm;
     protected EntityManager em;
     protected volatile transient PublicKey publicKey;
@@ -774,34 +776,7 @@ public class RealmAdapter implements RealmModel {
         if (id == null) return false;
         ClientModel client = getClientById(id);
         if (client == null) return false;
-
-        session.users().preRemove(this, client);
-
-        for (RoleModel role : client.getRoles()) {
-            client.removeRole(role);
-        }
-
-        ClientEntity clientEntity = null;
-        Iterator<ClientEntity> it = realm.getClients().iterator();
-        while (it.hasNext()) {
-            ClientEntity ae = it.next();
-            if (ae.getId().equals(id)) {
-                clientEntity = ae;
-                it.remove();
-                break;
-            }
-        }
-        for (ClientEntity a : realm.getClients()) {
-            if (a.getId().equals(id)) {
-                clientEntity = a;
-            }
-        }
-        if (clientEntity == null) return false;
-        em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", clientEntity).executeUpdate();
-        em.remove(clientEntity);
-        em.flush();
-
-        return true;
+        return session.realms().removeClient(id, this);
     }
 
     @Override
@@ -811,7 +786,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ClientModel getClientByClientId(String clientId) {
-        return getClientNameMap().get(clientId);
+        return session.realms().getClientByClientId(clientId, this);
     }
 
     private static final String BROWSER_HEADER_PREFIX = "_browser_header.";

@@ -1,11 +1,11 @@
-package org.keycloak.models.cache.infinispan.counter.entities;
+package org.keycloak.models.cache.infinispan.locking.entities;
 
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.cache.RealmCache;
 import org.keycloak.models.cache.entities.CachedClientTemplate;
-import org.keycloak.models.cache.infinispan.counter.Revisioned;
+import org.keycloak.models.cache.infinispan.locking.Revisioned;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

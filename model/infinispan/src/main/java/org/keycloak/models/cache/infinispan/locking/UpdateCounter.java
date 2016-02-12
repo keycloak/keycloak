@@ -1,4 +1,4 @@
-package org.keycloak.models.cache.infinispan.counter;
+package org.keycloak.models.cache.infinispan.locking;
 
 import java.util.concurrent.atomic.AtomicLong;
 

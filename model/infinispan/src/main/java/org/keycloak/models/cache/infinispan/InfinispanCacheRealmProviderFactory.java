@@ -138,11 +138,11 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
                 realmLookup.remove(realm.getName());
 
                 for (String r : realm.getRealmRoles().values()) {
-                    realmCache.evictCachedRoleById(r);
+                    realmCache.evictRoleById(r);
                 }
 
                 for (String c : realm.getClients().values()) {
-                    realmCache.evictCachedApplicationById(c);
+                    realmCache.evictClientById(c);
                 }
 
                 log.tracev("Realm removed realm={0}", realm.getName());
@@ -150,7 +150,7 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
                 CachedClient client = (CachedClient) object;
 
                 for (String r : client.getRoles().values()) {
-                    realmCache.evictCachedRoleById(r);
+                    realmCache.evictRoleById(r);
                 }
 
                 log.tracev("Client removed client={0}", client.getId());

@@ -807,12 +807,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ClientModel getClientByClientId(String clientId) {
-        DBObject query = new QueryBuilder()
-                .and("realmId").is(getId())
-                .and("clientId").is(clientId)
-                .get();
-        MongoClientEntity appEntity = getMongoStore().loadSingleEntity(MongoClientEntity.class, query, invocationContext);
-        return appEntity == null ? null : new ClientAdapter(session, this, appEntity, invocationContext);
+        return session.realms().getClientByClientId(clientId, this);
     }
 
     @Override
@@ -873,10 +868,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         if (id == null) return false;
         ClientModel client = getClientById(id);
         if (client == null) return false;
-
-        session.users().preRemove(this, client);
-
-        return getMongoStore().removeEntity(MongoClientEntity.class, id, invocationContext);
+        return session.realms().removeClient(id, this);
     }
 
     @Override

@@ -163,6 +163,28 @@ public class MongoRealmProvider implements RealmProvider {
     }
 
     @Override
+    public boolean removeClient(String id, RealmModel realm) {
+        if (id == null) return false;
+        ClientModel client = getClientById(id, realm);
+        if (client == null) return false;
+
+        session.users().preRemove(realm, client);
+
+        return getMongoStore().removeEntity(MongoClientEntity.class, id, invocationContext);
+    }
+
+    @Override
+    public ClientModel getClientByClientId(String clientId, RealmModel realm) {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .and("clientId").is(clientId)
+                .get();
+        MongoClientEntity appEntity = getMongoStore().loadSingleEntity(MongoClientEntity.class, query, invocationContext);
+        return appEntity == null ? null : new ClientAdapter(session, realm, appEntity, invocationContext);
+
+    }
+
+    @Override
     public ClientTemplateModel getClientTemplateById(String id, RealmModel realm) {
         MongoClientTemplateEntity appData = getMongoStore().loadEntity(MongoClientTemplateEntity.class, id, invocationContext);
 

@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa;
 
+import org.jboss.logging.Logger;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
@@ -43,6 +44,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class JpaRealmProvider implements RealmProvider {
+    protected static final Logger logger = Logger.getLogger(JpaRealmProvider.class);
     private final KeycloakSession session;
     protected EntityManager em;
 
@@ -115,7 +117,6 @@ public class JpaRealmProvider implements RealmProvider {
         if (realm == null) {
             return false;
         }
-
         RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
         int num = em.createNamedQuery("deleteGroupRoleMappingsByRealm")
@@ -144,6 +145,11 @@ public class JpaRealmProvider implements RealmProvider {
 
         em.flush();
         em.clear();
+        realm = em.find(RealmEntity.class, id);
+        if (realm != null) {
+            logger.error("WTF is the realm still there after a removal????????");
+        }
+
         return true;
     }
 
@@ -174,6 +180,42 @@ public class JpaRealmProvider implements RealmProvider {
         // Check if application belongs to this realm
         if (app == null || !realm.getId().equals(app.getRealm().getId())) return null;
         return new ClientAdapter(realm, em, session, app);
+    }
+
+    @Override
+    public ClientModel getClientByClientId(String clientId, RealmModel realm) {
+        TypedQuery<ClientEntity> query = em.createNamedQuery("findClientByClientId", ClientEntity.class);
+        query.setParameter("clientId", clientId);
+        query.setParameter("realm", realm.getId());
+        List<ClientEntity> results = query.getResultList();
+        if (results.isEmpty()) return null;
+        ClientEntity entity = results.get(0);
+        return new ClientAdapter(realm, em, session, entity);
+    }
+
+    @Override
+    public boolean removeClient(String id, RealmModel realm) {
+        ClientModel client = getClientById(id, realm);
+        if (client == null) return false;
+
+        session.users().preRemove(realm, client);
+
+        for (RoleModel role : client.getRoles()) {
+            client.removeRole(role);
+        }
+
+
+        ClientEntity clientEntity = ((ClientAdapter)client).getEntity();
+        em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", clientEntity).executeUpdate();
+        em.flush();
+        em.remove(clientEntity);  // i have no idea why, but this needs to come before deleteScopeMapping
+        try {
+            em.flush();
+        } catch (RuntimeException e) {
+            logger.errorv("Unable to delete client entity: {0} from realm {1}", client.getClientId(), realm.getName());
+            throw e;
+        }
+        return true;
     }
 
     @Override

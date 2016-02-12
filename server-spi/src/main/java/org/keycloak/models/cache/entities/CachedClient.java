@@ -127,7 +127,7 @@ public class CachedClient implements Serializable {
     protected void cacheRoles(RealmCache cache, RealmModel realm, ClientModel model) {
         for (RoleModel role : model.getRoles()) {
             roles.put(role.getName(), role.getId());
-            cache.addCachedRole(new CachedClientRole(id, role, realm));
+            cache.addRole(new CachedClientRole(id, role, realm));
         }
     }
 

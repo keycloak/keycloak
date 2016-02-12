@@ -1,4 +1,4 @@
-package org.keycloak.models.cache.infinispan.counter.entities;
+package org.keycloak.models.cache.infinispan.locking.entities;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
@@ -6,12 +6,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.RealmCache;
-import org.keycloak.models.cache.entities.CachedClient;
-import org.keycloak.models.cache.entities.CachedClientTemplate;
 import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.models.cache.entities.CachedRealmRole;
-import org.keycloak.models.cache.entities.CachedRole;
-import org.keycloak.models.cache.infinispan.counter.Revisioned;
+import org.keycloak.models.cache.infinispan.locking.Revisioned;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

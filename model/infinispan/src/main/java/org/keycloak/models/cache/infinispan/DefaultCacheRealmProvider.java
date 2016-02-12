@@ -120,7 +120,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
 
     protected void runInvalidations() {
         for (String id : realmInvalidations) {
-            cache.invalidateCachedRealmById(id);
+            cache.invalidateRealmById(id);
         }
         for (String id : roleInvalidations) {
             cache.invalidateRoleById(id);
@@ -129,10 +129,10 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
             cache.invalidateGroupById(id);
         }
         for (String id : appInvalidations) {
-            cache.invalidateCachedApplicationById(id);
+            cache.invalidateClientById(id);
         }
         for (String id : clientTemplateInvalidations) {
-            cache.invalidateCachedClientTemplateById(id);
+            cache.invalidateClientTemplateById(id);
         }
     }
 
@@ -193,13 +193,13 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public RealmModel getRealm(String id) {
-        CachedRealm cached = cache.getCachedRealm(id);
+        CachedRealm cached = cache.getRealm(id);
         if (cached == null) {
             RealmModel model = getDelegate().getRealm(id);
             if (model == null) return null;
             if (realmInvalidations.contains(id)) return model;
             cached = new CachedRealm(cache, this, model);
-            cache.addCachedRealm(cached);
+            cache.addRealm(cached);
         } else if (realmInvalidations.contains(id)) {
             return getDelegate().getRealm(id);
         } else if (managedRealms.containsKey(id)) {
@@ -212,13 +212,13 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public RealmModel getRealmByName(String name) {
-        CachedRealm cached = cache.getCachedRealmByName(name);
+        CachedRealm cached = cache.getRealmByName(name);
         if (cached == null) {
             RealmModel model = getDelegate().getRealmByName(name);
             if (model == null) return null;
             if (realmInvalidations.contains(model.getId())) return model;
             cached = new CachedRealm(cache, this, model);
-            cache.addCachedRealm(cached);
+            cache.addRealm(cached);
         } else if (realmInvalidations.contains(cached.getId())) {
             return getDelegate().getRealmByName(name);
         } else if (managedRealms.containsKey(cached.getId())) {
@@ -245,7 +245,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public boolean removeRealm(String id) {
-        cache.invalidateCachedRealmById(id);
+        cache.invalidateRealmById(id);
 
         RealmModel realm = getDelegate().getRealm(id);
         Set<RoleModel> realmRoles = null;
@@ -287,7 +287,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
             } else {
                 cached = new CachedRealmRole(model, realm);
             }
-            cache.addCachedRole(cached);
+            cache.addRole(cached);
 
         } else if (roleInvalidations.contains(id)) {
             return getDelegate().getRoleById(id, realm);
@@ -311,7 +311,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
             if (model == null) return null;
             if (groupInvalidations.contains(id)) return model;
             cached = new CachedGroup(realm, model);
-            cache.addCachedGroup(cached);
+            cache.addGroup(cached);
 
         } else if (groupInvalidations.contains(id)) {
             return getDelegate().getGroupById(id, realm);
@@ -325,7 +325,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public ClientModel getClientById(String id, RealmModel realm) {
-        CachedClient cached = cache.getApplication(id);
+        CachedClient cached = cache.getClient(id);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
         }
@@ -335,7 +335,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
             if (model == null) return null;
             if (appInvalidations.contains(id)) return model;
             cached = new CachedClient(cache, getDelegate(), realm, model);
-            cache.addCachedClient(cached);
+            cache.addClient(cached);
         } else if (appInvalidations.contains(id)) {
             return getDelegate().getClientById(id, realm);
         } else if (managedApplications.containsKey(id)) {
@@ -345,6 +345,31 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
         managedApplications.put(id, adapter);
         return adapter;
     }
+
+    @Override
+    public ClientModel getClientByClientId(String clientId, RealmModel realm) {
+        return getDelegate().getClientByClientId(clientId, realm);
+    }
+
+    @Override
+    public boolean removeClient(String id, RealmModel realm) {
+        ClientModel client = getClientById(id, realm);
+        if (client == null) return false;
+        registerApplicationInvalidation(id);
+        registerRealmInvalidation(realm.getId());
+        cache.invalidateClientById(id);
+        cache.invalidateRealmById(realm.getId());
+
+
+
+        Set<RoleModel> roles = client.getRoles();
+        for (RoleModel role : roles) {
+            registerRoleInvalidation(role.getId());
+        }
+        return getDelegate().removeClient(id, realm);
+    }
+
+
     @Override
     public ClientTemplateModel getClientTemplateById(String id, RealmModel realm) {
         CachedClientTemplate cached = cache.getClientTemplate(id);
@@ -357,7 +382,7 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
             if (model == null) return null;
             if (clientTemplateInvalidations.contains(id)) return model;
             cached = new CachedClientTemplate(cache, getDelegate(), realm, model);
-            cache.addCachedClientTemplate(cached);
+            cache.addClientTemplate(cached);
         } else if (clientTemplateInvalidations.contains(id)) {
             return getDelegate().getClientTemplateById(id, realm);
         } else if (managedClientTemplates.containsKey(id)) {

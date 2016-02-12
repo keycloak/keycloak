@@ -19,16 +19,15 @@ package org.keycloak.models.cache.infinispan.locking;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.RealmCache;
 import org.keycloak.models.cache.entities.CachedClient;
 import org.keycloak.models.cache.entities.CachedClientTemplate;
 import org.keycloak.models.cache.entities.CachedGroup;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
-import org.keycloak.models.cache.infinispan.counter.Revisioned;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -39,17 +38,12 @@ public class LockingRealmCache implements RealmCache {
 
     protected final Cache<String, Long> revisions;
     protected final Cache<String, Object> cache;
-    final AtomicLong realmCounter = new AtomicLong();
-    final AtomicLong clientCounter = new AtomicLong();
-    final AtomicLong clientTemplateCounter = new AtomicLong();
-    final AtomicLong roleCounter = new AtomicLong();
-    final AtomicLong groupCounter = new AtomicLong();
 
-    protected final ConcurrentHashMap<String, String> realmLookup;
+    protected final ConcurrentHashMap<String, String> realmLookup = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<String, String> clientLookup = new ConcurrentHashMap<>();
 
-    public LockingRealmCache(Cache<String, Object> cache, Cache<String, Long> revisions, ConcurrentHashMap<String, String> realmLookup) {
+    public LockingRealmCache(Cache<String, Object> cache, Cache<String, Long> revisions) {
         this.cache = cache;
-        this.realmLookup = realmLookup;
         this.revisions = revisions;
     }
 
@@ -61,8 +55,16 @@ public class LockingRealmCache implements RealmCache {
         return revisions;
     }
 
-    public void startRevisionBatch() {
-        revisions.startBatch();
+    public ConcurrentHashMap<String, String> getRealmLookup() {
+        return realmLookup;
+    }
+
+    public ConcurrentHashMap<String, String> getClientLookup() {
+        return clientLookup;
+    }
+
+    public Long getCurrentRevision(String id) {
+        return revisions.get(id);
     }
 
     public void endRevisionBatch() {
@@ -91,33 +93,39 @@ public class LockingRealmCache implements RealmCache {
         return o != null && type.isInstance(o) ? type.cast(o) : null;
     }
 
-    protected Object invalidateObject(String id, AtomicLong counter) {
+    protected Object invalidateObject(String id) {
         Object removed = cache.remove(id);
-        revisions.put(id, counter.incrementAndGet());
+        revisions.put(id, UpdateCounter.next());
         return removed;
     }
 
-    protected void addRevisioned(String id, Revisioned object, AtomicLong counter) {
+    protected void addRevisioned(String id, Revisioned object) {
         //startRevisionBatch();
         try {
             //revisions.getAdvancedCache().lock(id);
             Long rev = revisions.get(id);
             if (rev == null) {
-                rev = counter.incrementAndGet();
+                rev = UpdateCounter.current();
                 revisions.put(id, rev);
-                return;
             }
             revisions.startBatch();
-            revisions.getAdvancedCache().lock(id);
+            if (!revisions.getAdvancedCache().lock(id)) {
+                logger.trace("Could not obtain version lock");
+            }
             rev = revisions.get(id);
             if (rev == null) {
-                rev = counter.incrementAndGet();
-                revisions.put(id, rev);
                 return;
             }
             if (rev.equals(object.getRevision())) {
                 cache.putForExternalRead(id, object);
+                return;
             }
+            if (rev > object.getRevision()) { // revision is ahead, don't cache
+                return;
+            }
+            // revisions cache has a lower value than the object.revision, so update revision and add it to cache
+            revisions.put(id, object.getRevision());
+            cache.putForExternalRead(id, object);
         } finally {
             endRevisionBatch();
         }
@@ -127,71 +135,82 @@ public class LockingRealmCache implements RealmCache {
 
 
 
-    public Long getCurrentRevision(String id) {
-        return revisions.get(id);
-    }
     @Override
     public void clear() {
         cache.clear();
     }
 
     @Override
-    public CachedRealm getCachedRealm(String id) {
+    public CachedRealm getRealm(String id) {
         return get(id, CachedRealm.class);
     }
 
     @Override
-    public void invalidateCachedRealm(CachedRealm realm) {
+    public void invalidateRealm(CachedRealm realm) {
         logger.tracev("Invalidating realm {0}", realm.getId());
-        invalidateObject(realm.getId(), realmCounter);
+        invalidateObject(realm.getId());
         realmLookup.remove(realm.getName());
     }
 
     @Override
-    public void invalidateCachedRealmById(String id) {
-        CachedRealm cached = (CachedRealm) invalidateObject(id, realmCounter);
+    public void invalidateRealmById(String id) {
+        CachedRealm cached = (CachedRealm) invalidateObject(id);
         if (cached != null) realmLookup.remove(cached.getName());
     }
 
     @Override
-    public void addCachedRealm(CachedRealm realm) {
+    public void addRealm(CachedRealm realm) {
         logger.tracev("Adding realm {0}", realm.getId());
-        addRevisioned(realm.getId(), (Revisioned) realm, realmCounter);
+        addRevisioned(realm.getId(), (Revisioned) realm);
         realmLookup.put(realm.getName(), realm.getId());
     }
 
 
     @Override
-    public CachedRealm getCachedRealmByName(String name) {
+    public CachedRealm getRealmByName(String name) {
         String id = realmLookup.get(name);
-        return id != null ? getCachedRealm(id) : null;
+        return id != null ? getRealm(id) : null;
     }
 
     @Override
-    public CachedClient getApplication(String id) {
+    public CachedClient getClient(String id) {
         return get(id, CachedClient.class);
     }
 
+    public CachedClient getClientByClientId(RealmModel realm, String clientId) {
+        String id = clientLookup.get(realm.getId() + "." + clientId);
+        return id != null ? getClient(id) : null;
+    }
+
     @Override
-    public void invalidateApplication(CachedClient app) {
+    public void invalidateClient(CachedClient app) {
         logger.tracev("Removing application {0}", app.getId());
-        invalidateObject(app.getId(), clientCounter);
+        invalidateObject(app.getId());
+        clientLookup.remove(getClientIdKey(app));
     }
 
     @Override
-    public void addCachedClient(CachedClient app) {
+    public void addClient(CachedClient app) {
         logger.tracev("Adding application {0}", app.getId());
-        addRevisioned(app.getId(), (Revisioned) app, clientCounter);
+        addRevisioned(app.getId(), (Revisioned) app);
+        clientLookup.put(getClientIdKey(app), app.getId());
     }
 
     @Override
-    public void invalidateCachedApplicationById(String id) {
-        CachedClient client = (CachedClient)invalidateObject(id, clientCounter);
-        if (client != null) logger.tracev("Removing application {0}", client.getClientId());
+    public void invalidateClientById(String id) {
+        CachedClient client = (CachedClient)invalidateObject(id);
+        if (client != null) {
+            logger.tracev("Removing application {0}", client.getClientId());
+            clientLookup.remove(getClientIdKey(client));
+        }
+    }
+
+    protected String getClientIdKey(CachedClient client) {
+        return client.getRealm() + "." + client.getClientId();
     }
 
     @Override
-    public void evictCachedApplicationById(String id) {
+    public void evictClientById(String id) {
         logger.tracev("Evicting application {0}", id);
         cache.evict(id);
     }
@@ -204,26 +223,19 @@ public class LockingRealmCache implements RealmCache {
     @Override
     public void invalidateGroup(CachedGroup role) {
         logger.tracev("Removing group {0}", role.getId());
-        invalidateObject(role.getId(), groupCounter);
+        invalidateObject(role.getId());
     }
 
     @Override
-    public void addCachedGroup(CachedGroup role) {
+    public void addGroup(CachedGroup role) {
         logger.tracev("Adding group {0}", role.getId());
-        addRevisioned(role.getId(), (Revisioned) role, groupCounter);
-    }
-
-    @Override
-    public void invalidateCachedGroupById(String id) {
-        logger.tracev("Removing group {0}", id);
-        invalidateObject(id, groupCounter);
-
+        addRevisioned(role.getId(), (Revisioned) role);
     }
 
     @Override
     public void invalidateGroupById(String id) {
         logger.tracev("Removing group {0}", id);
-        invalidateObject(id, groupCounter);
+        invalidateObject(id);
     }
 
     @Override
@@ -234,31 +246,25 @@ public class LockingRealmCache implements RealmCache {
     @Override
     public void invalidateRole(CachedRole role) {
         logger.tracev("Removing role {0}", role.getId());
-        invalidateObject(role.getId(), roleCounter);
+        invalidateObject(role.getId());
     }
 
     @Override
     public void invalidateRoleById(String id) {
         logger.tracev("Removing role {0}", id);
-        invalidateObject(id, roleCounter);
+        invalidateObject(id);
     }
 
     @Override
-    public void evictCachedRoleById(String id) {
+    public void evictRoleById(String id) {
         logger.tracev("Evicting role {0}", id);
         cache.evict(id);
     }
 
     @Override
-    public void addCachedRole(CachedRole role) {
+    public void addRole(CachedRole role) {
         logger.tracev("Adding role {0}", role.getId());
-        addRevisioned(role.getId(), (Revisioned) role, roleCounter);
-    }
-
-    @Override
-    public void invalidateCachedRoleById(String id) {
-        logger.tracev("Removing role {0}", id);
-        invalidateObject(id, roleCounter);
+        addRevisioned(role.getId(), (Revisioned) role);
     }
 
     @Override
@@ -269,23 +275,23 @@ public class LockingRealmCache implements RealmCache {
     @Override
     public void invalidateClientTemplate(CachedClientTemplate app) {
         logger.tracev("Removing client template {0}", app.getId());
-        invalidateObject(app.getId(), clientTemplateCounter);
+        invalidateObject(app.getId());
     }
 
     @Override
-    public void addCachedClientTemplate(CachedClientTemplate app) {
+    public void addClientTemplate(CachedClientTemplate app) {
         logger.tracev("Adding client template {0}", app.getId());
-        addRevisioned(app.getId(), (Revisioned) app, clientTemplateCounter);
+        addRevisioned(app.getId(), (Revisioned) app);
     }
 
     @Override
-    public void invalidateCachedClientTemplateById(String id) {
+    public void invalidateClientTemplateById(String id) {
         logger.tracev("Removing client template {0}", id);
-        invalidateObject(id, clientTemplateCounter);
+        invalidateObject(id);
     }
 
     @Override
-    public void evictCachedClientTemplateById(String id) {
+    public void evictClientTemplateById(String id) {
         logger.tracev("Evicting client template {0}", id);
         cache.evict(id);
     }

@@ -38,12 +38,12 @@ import org.keycloak.models.cache.infinispan.ClientTemplateAdapter;
 import org.keycloak.models.cache.infinispan.GroupAdapter;
 import org.keycloak.models.cache.infinispan.RealmAdapter;
 import org.keycloak.models.cache.infinispan.RoleAdapter;
-import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedClient;
-import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedClientRole;
-import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedClientTemplate;
-import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedGroup;
-import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedRealm;
-import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedRealmRole;
+import org.keycloak.models.cache.infinispan.locking.entities.RevisionedCachedClient;
+import org.keycloak.models.cache.infinispan.locking.entities.RevisionedCachedClientRole;
+import org.keycloak.models.cache.infinispan.locking.entities.RevisionedCachedClientTemplate;
+import org.keycloak.models.cache.infinispan.locking.entities.RevisionedCachedGroup;
+import org.keycloak.models.cache.infinispan.locking.entities.RevisionedCachedRealm;
+import org.keycloak.models.cache.infinispan.locking.entities.RevisionedCachedRealmRole;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -105,6 +105,10 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
         return delegate;
     }
 
+    public LockingRealmCache getCache() {
+        return cache;
+    }
+
     @Override
     public void registerRealmInvalidation(String id) {
         realmInvalidations.add(id);
@@ -132,7 +136,7 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
 
     protected void runInvalidations() {
         for (String id : realmInvalidations) {
-            cache.invalidateCachedRealmById(id);
+            cache.invalidateRealmById(id);
         }
         for (String id : roleInvalidations) {
             cache.invalidateRoleById(id);
@@ -141,10 +145,10 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
             cache.invalidateGroupById(id);
         }
         for (String id : appInvalidations) {
-            cache.invalidateCachedApplicationById(id);
+            cache.invalidateClientById(id);
         }
         for (String id : clientTemplateInvalidations) {
-            cache.invalidateCachedClientTemplateById(id);
+            cache.invalidateClientTemplateById(id);
         }
     }
 
@@ -271,17 +275,18 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public RealmModel getRealm(String id) {
-        CachedRealm cached = cache.getCachedRealm(id);
+        CachedRealm cached = cache.getRealm(id);
         if (cached != null) {
             logger.tracev("by id cache hit: {0}", cached.getName());
         }
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
+            if (loaded == null) loaded = UpdateCounter.current();
             RealmModel model = getDelegate().getRealm(id);
             if (model == null) return null;
             if (realmInvalidations.contains(id)) return model;
             cached = new RevisionedCachedRealm(loaded, cache, this, model);
-            cache.addCachedRealm(cached);
+            cache.addRealm(cached);
         } else if (realmInvalidations.contains(id)) {
             return getDelegate().getRealm(id);
         } else if (managedRealms.containsKey(id)) {
@@ -294,16 +299,17 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public RealmModel getRealmByName(String name) {
-        CachedRealm cached = cache.getCachedRealmByName(name);
+        CachedRealm cached = cache.getRealmByName(name);
         if (cached != null) {
             logger.tracev("by name cache hit: {0}", cached.getName());
         }
         if (cached == null) {
+            Long loaded = UpdateCounter.current();
             RealmModel model = getDelegate().getRealmByName(name);
             if (model == null) return null;
             if (realmInvalidations.contains(model.getId())) return model;
-            cached = new RevisionedCachedRealm(null, cache, this, model);
-            cache.addCachedRealm(cached);
+            cached = new RevisionedCachedRealm(loaded, cache, this, model);
+            cache.addRealm(cached);
         } else if (realmInvalidations.contains(cached.getId())) {
             return getDelegate().getRealmByName(name);
         } else if (managedRealms.containsKey(cached.getId())) {
@@ -330,7 +336,7 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public boolean removeRealm(String id) {
-        cache.invalidateCachedRealmById(id);
+        cache.invalidateRealmById(id);
 
         RealmModel realm = getDelegate().getRealm(id);
         Set<RoleModel> realmRoles = null;
@@ -352,6 +358,25 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
     }
 
     @Override
+    public boolean removeClient(String id, RealmModel realm) {
+        ClientModel client = getClientById(id, realm);
+        if (client == null) return false;
+
+        registerApplicationInvalidation(id);
+        registerRealmInvalidation(realm.getId());
+        cache.invalidateClientById(id);
+        cache.invalidateRealmById(realm.getId());
+
+
+
+        Set<RoleModel> roles = client.getRoles();
+        for (RoleModel role : roles) {
+            registerRoleInvalidation(role.getId());
+        }
+        return getDelegate().removeClient(id, realm);
+    }
+
+    @Override
     public void close() {
         if (delegate != null) delegate.close();
     }
@@ -365,6 +390,7 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
+            if (loaded == null) loaded = UpdateCounter.current();
             RoleModel model = getDelegate().getRoleById(id, realm);
             if (model == null) return null;
             if (roleInvalidations.contains(id)) return model;
@@ -373,7 +399,7 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
             } else {
                 cached = new RevisionedCachedRealmRole(loaded, model, realm);
             }
-            cache.addCachedRole(cached);
+            cache.addRole(cached);
 
         } else if (roleInvalidations.contains(id)) {
             return getDelegate().getRoleById(id, realm);
@@ -394,11 +420,12 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
+            if (loaded == null) loaded = UpdateCounter.current();
             GroupModel model = getDelegate().getGroupById(id, realm);
             if (model == null) return null;
             if (groupInvalidations.contains(id)) return model;
             cached = new RevisionedCachedGroup(loaded, realm, model);
-            cache.addCachedGroup(cached);
+            cache.addGroup(cached);
 
         } else if (groupInvalidations.contains(id)) {
             return getDelegate().getGroupById(id, realm);
@@ -412,21 +439,23 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public ClientModel getClientById(String id, RealmModel realm) {
-        CachedClient cached = cache.getApplication(id);
+        CachedClient cached = cache.getClient(id);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
         }
-        if (cached != null && cached.getClientId().equals("client")) {
+        if (cached != null) {
             logger.tracev("client by id cache hit: {0}", cached.getClientId());
         }
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
+            if (loaded == null) loaded = UpdateCounter.current();
             ClientModel model = getDelegate().getClientById(id, realm);
             if (model == null) return null;
             if (appInvalidations.contains(id)) return model;
             cached = new RevisionedCachedClient(loaded, cache, getDelegate(), realm, model);
-            cache.addCachedClient(cached);
+            logger.tracev("adding client by id cache miss: {0}", cached.getClientId());
+            cache.addClient(cached);
         } else if (appInvalidations.contains(id)) {
             return getDelegate().getClientById(id, realm);
         } else if (managedApplications.containsKey(id)) {
@@ -436,6 +465,36 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
         managedApplications.put(id, adapter);
         return adapter;
     }
+
+    @Override
+    public ClientModel getClientByClientId(String clientId, RealmModel realm) {
+        CachedClient cached = cache.getClientByClientId(realm, clientId);
+        if (cached != null && !cached.getRealm().equals(realm.getId())) {
+            cached = null;
+        }
+        if (cached != null) {
+            logger.tracev("client by name cache hit: {0}", cached.getClientId());
+        }
+
+        if (cached == null) {
+            Long loaded = UpdateCounter.current();
+            if (loaded == null) loaded = UpdateCounter.current();
+            ClientModel model = getDelegate().getClientByClientId(clientId, realm);
+            if (model == null) return null;
+            if (appInvalidations.contains(model.getId())) return model;
+            cached = new RevisionedCachedClient(loaded, cache, getDelegate(), realm, model);
+            logger.tracev("adding client by name cache miss: {0}", cached.getClientId());
+            cache.addClient(cached);
+        } else if (appInvalidations.contains(cached.getId())) {
+            return getDelegate().getClientById(cached.getId(), realm);
+        } else if (managedApplications.containsKey(cached.getId())) {
+            return managedApplications.get(cached.getId());
+        }
+        ClientAdapter adapter = new ClientAdapter(realm, cached, this, cache);
+        managedApplications.put(cached.getId(), adapter);
+        return adapter;
+    }
+
     @Override
     public ClientTemplateModel getClientTemplateById(String id, RealmModel realm) {
         CachedClientTemplate cached = cache.getClientTemplate(id);
@@ -445,11 +504,12 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
+            if (loaded == null) loaded = UpdateCounter.current();
             ClientTemplateModel model = getDelegate().getClientTemplateById(id, realm);
             if (model == null) return null;
             if (clientTemplateInvalidations.contains(id)) return model;
             cached = new RevisionedCachedClientTemplate(loaded, cache, getDelegate(), realm, model);
-            cache.addCachedClientTemplate(cached);
+            cache.addClientTemplate(cached);
         } else if (clientTemplateInvalidations.contains(id)) {
             return getDelegate().getClientTemplateById(id, realm);
         } else if (managedClientTemplates.containsKey(id)) {
