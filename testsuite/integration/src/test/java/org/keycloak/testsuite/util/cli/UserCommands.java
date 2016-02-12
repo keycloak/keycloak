@@ -18,14 +18,19 @@
 package org.keycloak.testsuite.util.cli;
 
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -34,24 +39,59 @@ public class UserCommands {
 
     public static class Create extends AbstractCommand {
 
+        private String usernamePrefix;
+        private String password;
+        private String realmName;
+        private String roleNames;
+
         @Override
         public String getName() {
             return "createUsers";
         }
 
+        private class StateHolder {
+            int firstInThisBatch;
+            int countInThisBatch;
+            int remaining;
+        };
+
         @Override
         protected void doRunCommand(KeycloakSession session) {
-            String usernamePrefix = getArg(0);
-            String password = getArg(1);
-            String realmName = getArg(2);
+            usernamePrefix = getArg(0);
+            password = getArg(1);
+            realmName = getArg(2);
             int first = getIntArg(3);
             int count = getIntArg(4);
-            String roleNames = getArg(5);
+            int batchCount = getIntArg(5);
+            roleNames = getArg(6);
 
+            final StateHolder state = new StateHolder();
+            state.firstInThisBatch = first;
+            state.remaining = count;
+            state.countInThisBatch = Math.min(batchCount, state.remaining);
+            while (state.remaining > 0) {
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+
+                    @Override
+                    public void run(KeycloakSession session) {
+                        createUsersInBatch(session, state.firstInThisBatch, state.countInThisBatch);
+                    }
+                });
+
+                // update state
+                state.firstInThisBatch = state.firstInThisBatch + state.countInThisBatch;
+                state.remaining = state.remaining - state.countInThisBatch;
+                state.countInThisBatch = Math.min(batchCount, state.remaining);
+            }
+
+            log.infof("Command finished. All users from %s to %s created", usernamePrefix + first, usernamePrefix + (first + count - 1));
+        }
+
+        private void createUsersInBatch(KeycloakSession session, int first, int count) {
             RealmModel realm = session.realms().getRealmByName(realmName);
             if (realm == null) {
                 log.errorf("Unknown realm: %s", realmName);
-                return;
+                throw new HandledException();
             }
 
             Set<RoleModel> roles = findRoles(realm, roleNames);
@@ -74,8 +114,11 @@ public class UserCommands {
 
         @Override
         public String printUsage() {
-            return super.printUsage() + " <username-prefix> <password> <realm-name> <starting-user-offset> <count> <realm-roles-list>. \nRoles list is divided by comma (client roles not yet supported)>\n" +
-                    "Example usage: " + super.printUsage() + " test test demo 0 20 user,admin";
+            return super.printUsage() + " <username-prefix> <password> <realm-name> <starting-user-offset> <total-count> <batch-size> <realm-roles-list>. " +
+                    "\n'total-count' refers to total count of newly created users. 'batch-size' refers to number of created users in each transaction. 'starting-user-offset' refers to starting username offset." +
+                    "\nFor example if 'starting-user-offset' is 15 and total-count is 10 and username-prefix is 'test', it will create users test15, test16, test17, ... , test24" +
+                    "\nRoles list is divided by comma (client roles are referenced with format <client-id>/<role-name> )>\n" +
+                    "Example usage: " + super.printUsage() + " test test demo 0 500 100 user,admin";
         }
 
         private Set<RoleModel> findRoles(RealmModel realm, String rolesList) {
@@ -200,8 +243,23 @@ public class UserCommands {
             if (user == null) {
                 log.infof("User '%s' doesn't exist in realm '%s'", username, realmName);
             } else {
-                log.infof("User: ID: '%s', username: '%s', mail: '%s'", user.getId(), user.getUsername(), user.getEmail());
+                List<String> roleMappings = getRoleMappings(session, realm, user);
+                log.infof("User: ID: '%s', username: '%s', mail: '%s', roles: '%s'", user.getId(), user.getUsername(), user.getEmail(), roleMappings.toString());
             }
+        }
+
+        private List<String> getRoleMappings(KeycloakSession session, RealmModel realm, UserModel user) {
+            Set<RoleModel> roles = user.getRoleMappings();
+            List<String> result = new LinkedList<>();
+            for (RoleModel role : roles) {
+                if (role.getContainer() instanceof RealmModel) {
+                    result.add(role.getName());
+                } else {
+                    ClientModel client = (ClientModel) role.getContainer();
+                    result.add(client.getClientId() + "/" + role.getName());
+                }
+            }
+            return result;
         }
 
         @Override
