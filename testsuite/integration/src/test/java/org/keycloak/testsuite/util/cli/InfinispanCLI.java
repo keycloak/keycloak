@@ -100,10 +100,9 @@ public class InfinispanCLI {
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         String line;
+        System.out.print("$ ");
         try {
             while ((line = reader.readLine()) != null) {
-                log.info("Command: " + line);
-
                 String[] splits = line.split(" ");
                 String commandName = splits[0];
                 Class<? extends AbstractCommand> commandClass = commands.get(commandName);
@@ -128,6 +127,8 @@ public class InfinispanCLI {
                         log.error(ex);
                     }
                 }
+
+                System.out.print("$ ");
             }
         } finally {
             log.info("Exit infinispan CLI");
