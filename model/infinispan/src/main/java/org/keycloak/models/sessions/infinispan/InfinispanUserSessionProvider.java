@@ -24,6 +24,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.*;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.*;
+import org.keycloak.models.sessions.infinispan.initializer.TimeAwareInitializerState;
 import org.keycloak.models.sessions.infinispan.stream.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmInfoUtil;
@@ -408,6 +409,19 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         loginFailureCache.remove(new LoginFailureKey(realm.getId(), user.getUsername()));
         loginFailureCache.remove(new LoginFailureKey(realm.getId(), user.getEmail()));
+    }
+
+    @Override
+    public int getClusterStartupTime() {
+        TimeAwareInitializerState state = (TimeAwareInitializerState) offlineSessionCache.get(InfinispanUserSessionProviderFactory.SESSION_INITIALIZER_STATE_KEY);
+        int startTime;
+        if (state == null) {
+            log.warn("Cluster startup time not yet available. Fallback to local startup time");
+            startTime = (int)(session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
+        } else {
+            startTime = state.getClusterStartupTime();
+        }
+        return startTime;
     }
 
     @Override

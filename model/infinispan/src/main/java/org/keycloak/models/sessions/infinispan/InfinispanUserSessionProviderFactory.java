@@ -34,6 +34,9 @@ import org.keycloak.provider.ProviderEventListener;
 
 public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory {
 
+    private static final String STATE_KEY_PREFIX = "initializerState";
+    public static final String SESSION_INITIALIZER_STATE_KEY = STATE_KEY_PREFIX + "::offlineUserSessions";
+
     private static final Logger log = Logger.getLogger(InfinispanUserSessionProviderFactory.class);
 
     private Config.Scope config;
@@ -84,7 +87,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
                 Cache<String, SessionEntity> cache = connections.getCache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME);
 
-                InfinispanUserSessionInitializer initializer = new InfinispanUserSessionInitializer(sessionFactory, cache, new OfflineUserSessionLoader(), maxErrors, sessionsPerSegment, "offlineUserSessions");
+                InfinispanUserSessionInitializer initializer = new InfinispanUserSessionInitializer(sessionFactory, cache, new OfflineUserSessionLoader(), maxErrors, sessionsPerSegment, SESSION_INITIALIZER_STATE_KEY);
                 initializer.initCache();
                 initializer.loadPersistentSessions();
             }

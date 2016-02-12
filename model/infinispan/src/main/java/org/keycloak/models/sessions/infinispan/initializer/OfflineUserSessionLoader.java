@@ -33,14 +33,13 @@ public class OfflineUserSessionLoader implements SessionLoader {
     private static final Logger log = Logger.getLogger(OfflineUserSessionLoader.class);
 
     @Override
-    public void init(KeycloakSession session) {
+    public void init(KeycloakSession session, int clusterStartupTime) {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-        int startTime = (int)(session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
 
-        log.debugf("Clearing detached sessions from persistent storage and updating timestamps to %d", startTime);
+        log.debugf("Clearing detached sessions from persistent storage and updating timestamps to %d", clusterStartupTime);
 
         persister.clearDetachedUserSessions();
-        persister.updateAllTimestamps(startTime);
+        persister.updateAllTimestamps(clusterStartupTime);
     }
 
     @Override

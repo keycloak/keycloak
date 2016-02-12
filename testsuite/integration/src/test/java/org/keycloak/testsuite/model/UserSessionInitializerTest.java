@@ -83,7 +83,7 @@ public class UserSessionInitializerTest {
 
         // Create and persist offline sessions
         int started = Time.currentTime();
-        int serverStartTime = (int)(session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
+        int serverStartTime = session.sessions().getClusterStartupTime();
 
         for (UserSessionModel origSession : origSessions) {
             UserSessionModel userSession = session.sessions().getUserSession(realm, origSession.getId());
