@@ -352,6 +352,25 @@ public class DefaultCacheRealmProvider implements CacheRealmProvider {
     }
 
     @Override
+    public boolean removeClient(String id, RealmModel realm) {
+        ClientModel client = getClientById(id, realm);
+        if (client == null) return false;
+        registerApplicationInvalidation(id);
+        registerRealmInvalidation(realm.getId());
+        cache.invalidateClientById(id);
+        cache.invalidateRealmById(realm.getId());
+
+
+
+        Set<RoleModel> roles = client.getRoles();
+        for (RoleModel role : roles) {
+            registerRoleInvalidation(role.getId());
+        }
+        return getDelegate().removeClient(id, realm);
+    }
+
+
+    @Override
     public ClientTemplateModel getClientTemplateById(String id, RealmModel realm) {
         CachedClientTemplate cached = cache.getClientTemplate(id);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {

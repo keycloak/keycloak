@@ -19,6 +19,7 @@ package org.keycloak.models.cache.infinispan.locking;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.RealmCache;
 import org.keycloak.models.cache.entities.CachedClient;
 import org.keycloak.models.cache.entities.CachedClientTemplate;
@@ -176,8 +177,8 @@ public class LockingRealmCache implements RealmCache {
         return get(id, CachedClient.class);
     }
 
-    public CachedClient getClientByClientId(String clientId) {
-        String id = clientLookup.get(clientId);
+    public CachedClient getClientByClientId(RealmModel realm, String clientId) {
+        String id = clientLookup.get(realm.getId() + "." + clientId);
         return id != null ? getClient(id) : null;
     }
 
@@ -185,14 +186,14 @@ public class LockingRealmCache implements RealmCache {
     public void invalidateClient(CachedClient app) {
         logger.tracev("Removing application {0}", app.getId());
         invalidateObject(app.getId());
-        clientLookup.remove(app.getClientId());
+        clientLookup.remove(getClientIdKey(app));
     }
 
     @Override
     public void addClient(CachedClient app) {
         logger.tracev("Adding application {0}", app.getId());
         addRevisioned(app.getId(), (Revisioned) app);
-        clientLookup.put(app.getClientId(), app.getId());
+        clientLookup.put(getClientIdKey(app), app.getId());
     }
 
     @Override
@@ -200,8 +201,12 @@ public class LockingRealmCache implements RealmCache {
         CachedClient client = (CachedClient)invalidateObject(id);
         if (client != null) {
             logger.tracev("Removing application {0}", client.getClientId());
-            clientLookup.remove(client.getClientId());
+            clientLookup.remove(getClientIdKey(client));
         }
+    }
+
+    protected String getClientIdKey(CachedClient client) {
+        return client.getRealm() + "." + client.getClientId();
     }
 
     @Override

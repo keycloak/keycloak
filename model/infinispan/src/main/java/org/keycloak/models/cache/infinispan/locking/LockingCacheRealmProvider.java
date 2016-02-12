@@ -105,6 +105,10 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
         return delegate;
     }
 
+    public LockingRealmCache getCache() {
+        return cache;
+    }
+
     @Override
     public void registerRealmInvalidation(String id) {
         realmInvalidations.add(id);
@@ -354,6 +358,25 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
     }
 
     @Override
+    public boolean removeClient(String id, RealmModel realm) {
+        ClientModel client = getClientById(id, realm);
+        if (client == null) return false;
+
+        registerApplicationInvalidation(id);
+        registerRealmInvalidation(realm.getId());
+        cache.invalidateClientById(id);
+        cache.invalidateRealmById(realm.getId());
+
+
+
+        Set<RoleModel> roles = client.getRoles();
+        for (RoleModel role : roles) {
+            registerRoleInvalidation(role.getId());
+        }
+        return getDelegate().removeClient(id, realm);
+    }
+
+    @Override
     public void close() {
         if (delegate != null) delegate.close();
     }
@@ -445,7 +468,7 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public ClientModel getClientByClientId(String clientId, RealmModel realm) {
-        CachedClient cached = cache.getClientByClientId(clientId);
+        CachedClient cached = cache.getClientByClientId(realm, clientId);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
         }

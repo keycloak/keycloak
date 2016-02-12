@@ -191,7 +191,7 @@ public class RealmEntity {
     @Column(name="ADMIN_EVENTS_DETAILS_ENABLED")
     protected boolean adminEventsDetailsEnabled;
     
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="MASTER_ADMIN_CLIENT")
     protected ClientEntity masterAdminClient;
 

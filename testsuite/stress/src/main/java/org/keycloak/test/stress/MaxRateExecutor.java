@@ -11,7 +11,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Executes all test threads until completion.
+ * Executes a test N number of times.  This is done multiple times over an ever expanding amount of threads to determine
+ * when the computer is saturated and you can't eek out any more concurrent requests.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $

@@ -211,10 +211,11 @@ public class RealmManager implements RealmImporter {
     public boolean removeRealm(RealmModel realm) {
         List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
 
+        ClientModel masterAdminClient = realm.getMasterAdminClient();
         boolean removed = model.removeRealm(realm.getId());
         if (removed) {
-            if (realm.getMasterAdminClient() != null) {
-                new ClientManager(this).removeClient(getKeycloakAdminstrationRealm(), realm.getMasterAdminClient());
+            if (masterAdminClient != null) {
+                new ClientManager(this).removeClient(getKeycloakAdminstrationRealm(), masterAdminClient);
             }
 
             UserSessionProvider sessions = session.sessions();

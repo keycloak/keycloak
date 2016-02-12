@@ -146,6 +146,8 @@ public class LockingCacheRealmProviderFactory implements CacheRealmProviderFacto
             } else if (object instanceof CachedClient) {
                 CachedClient client = (CachedClient) object;
 
+                realmCache.getClientLookup().remove(client.getRealm() + "." + client.getClientId());
+
                 for (String r : client.getRoles().values()) {
                     realmCache.evictRoleById(r);
                 }

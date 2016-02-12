@@ -163,6 +163,17 @@ public class MongoRealmProvider implements RealmProvider {
     }
 
     @Override
+    public boolean removeClient(String id, RealmModel realm) {
+        if (id == null) return false;
+        ClientModel client = getClientById(id, realm);
+        if (client == null) return false;
+
+        session.users().preRemove(realm, client);
+
+        return getMongoStore().removeEntity(MongoClientEntity.class, id, invocationContext);
+    }
+
+    @Override
     public ClientModel getClientByClientId(String clientId, RealmModel realm) {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(realm.getId())

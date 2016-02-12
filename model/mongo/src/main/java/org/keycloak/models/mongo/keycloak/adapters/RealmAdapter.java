@@ -868,10 +868,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         if (id == null) return false;
         ClientModel client = getClientById(id);
         if (client == null) return false;
-
-        session.users().preRemove(this, client);
-
-        return getMongoStore().removeEntity(MongoClientEntity.class, id, invocationContext);
+        return session.realms().removeClient(id, this);
     }
 
     @Override
