@@ -23,7 +23,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.auth.page.login.SAMLLogin;
+import org.keycloak.testsuite.auth.page.login.SAMLPostLogin;
+import org.keycloak.testsuite.auth.page.login.SAMLRedirectLogin;
 import org.openqa.selenium.Cookie;
 
 import java.text.MessageFormat;
@@ -47,7 +48,10 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     protected OIDCLogin testRealmLoginPage;
 
     @Page
-    protected SAMLLogin testRealmSAMLLoginPage;
+    protected SAMLPostLogin testRealmSAMLPostLoginPage;
+
+    @Page
+    protected SAMLRedirectLogin testRealmSAMLRedirectLoginPage;
 
     protected UserRepresentation testUser;
 

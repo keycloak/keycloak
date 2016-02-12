@@ -29,7 +29,7 @@ import java.net.URL;
  * @author mhajas
  */
 public class SAMLPostSigExample extends AbstractPageWithInjectedUrl {
-    public static final String DEPLOYMENT_NAME = "saml-post-signatures";
+    public static final String DEPLOYMENT_NAME = "sales-post-sig";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)

@@ -24,9 +24,9 @@
                 protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol http://schemas.xmlsoap.org/ws/2003/07/secext">
             <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient
             </NameIDFormat>
-            <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="http://localhost:8080/sales-metadata/"/>
+            <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="http://localhost:8080/sales-metadata/"/>
             <AssertionConsumerService
-                    Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="http://localhost:8080/sales-metadata/"
+                    Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="http://localhost:8080/sales-metadata/"
                     index="1" isDefault="true" />
             <KeyDescriptor use="signing">
                 <dsig:KeyInfo xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">

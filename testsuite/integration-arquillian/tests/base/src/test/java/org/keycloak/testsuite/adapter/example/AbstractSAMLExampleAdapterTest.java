@@ -60,7 +60,8 @@ public abstract class AbstractSAMLExampleAdapterTest extends AbstractExampleAdap
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealmPage.setAuthRealm(SAMLDEMO);
-        testRealmSAMLLoginPage.setAuthRealm(SAMLDEMO);
+        testRealmSAMLRedirectLoginPage.setAuthRealm(SAMLDEMO);
+        testRealmSAMLPostLoginPage.setAuthRealm(SAMLDEMO);
     }
 
     @Deployment(name = SAMLPostSigExample.DEPLOYMENT_NAME)
@@ -81,41 +82,41 @@ public abstract class AbstractSAMLExampleAdapterTest extends AbstractExampleAdap
     @Test
     public void samlPostWithSignatureExampleTest() {
         samlPostSigExamplePage.navigateTo();
-        testRealmSAMLLoginPage.form().login(bburkeUser);
+        testRealmSAMLPostLoginPage.form().login(bburkeUser);
 
         assertTrue(driver.getPageSource().contains("Welcome to the Sales Tool, " + bburkeUser.getUsername()));
 
         samlPostSigExamplePage.logout();
 
         samlPostSigExamplePage.navigateTo();
-        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLLoginPage);
+        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
     }
 
     @Test
     public void samlPostWithEncryptionExampleTest() {
         samlPostEncExamplePage.navigateTo();
 
-        testRealmSAMLLoginPage.form().login(bburkeUser);
+        testRealmSAMLPostLoginPage.form().login(bburkeUser);
 
         assertTrue(driver.getPageSource().contains("Welcome to the Sales Tool, " + bburkeUser.getUsername()));
 
         samlPostEncExamplePage.logout();
 
         samlPostEncExamplePage.navigateTo();
-        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLLoginPage);
+        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
     }
 
     @Test
     public void samlRedirectWithSignatureExampleTest() {
         samlRedirectSigExamplePage.navigateTo();
 
-        testRealmSAMLLoginPage.form().login(bburkeUser);
+        testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
 
         assertTrue(driver.getPageSource().contains("Welcome to the Employee Tool,"));
 
         samlRedirectSigExamplePage.logout();
 
         samlRedirectSigExamplePage.navigateTo();
-        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLLoginPage);
+        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
     }
 }
