@@ -24,7 +24,7 @@ import java.net.URL;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class FrameworkTest {
+public class LoginLogoutTest {
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
@@ -57,6 +57,19 @@ public class FrameworkTest {
         long time = executor.execute();
         System.out.println("Took: " + time );
     }
+
+    /*
+**************************
+*   Bill's Best Result   *
+**************************
+Threads: 13
+Total Time: 1018
+Successes: 400
+Iterations: 400
+Average time: 32.8075
+Rate: 0.030480835174883793
+     */
+
     @Test
     public void testRate() throws Exception {
         System.out.println("*************************");
