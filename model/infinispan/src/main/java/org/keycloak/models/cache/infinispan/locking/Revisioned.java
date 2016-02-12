@@ -1,4 +1,4 @@
-package org.keycloak.models.cache.infinispan.counter;
+package org.keycloak.models.cache.infinispan.locking;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

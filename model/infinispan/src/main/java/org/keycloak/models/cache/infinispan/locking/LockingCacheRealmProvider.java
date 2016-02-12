@@ -38,12 +38,12 @@ import org.keycloak.models.cache.infinispan.ClientTemplateAdapter;
 import org.keycloak.models.cache.infinispan.GroupAdapter;
 import org.keycloak.models.cache.infinispan.RealmAdapter;
 import org.keycloak.models.cache.infinispan.RoleAdapter;
-import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedClient;
-import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedClientRole;
-import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedClientTemplate;
-import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedGroup;
-import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedRealm;
-import org.keycloak.models.cache.infinispan.counter.entities.RevisionedCachedRealmRole;
+import org.keycloak.models.cache.infinispan.locking.entities.RevisionedCachedClient;
+import org.keycloak.models.cache.infinispan.locking.entities.RevisionedCachedClientRole;
+import org.keycloak.models.cache.infinispan.locking.entities.RevisionedCachedClientTemplate;
+import org.keycloak.models.cache.infinispan.locking.entities.RevisionedCachedGroup;
+import org.keycloak.models.cache.infinispan.locking.entities.RevisionedCachedRealm;
+import org.keycloak.models.cache.infinispan.locking.entities.RevisionedCachedRealmRole;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -277,6 +277,7 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
         }
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
+            if (loaded == null) loaded = UpdateCounter.current();
             RealmModel model = getDelegate().getRealm(id);
             if (model == null) return null;
             if (realmInvalidations.contains(id)) return model;
@@ -299,10 +300,11 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
             logger.tracev("by name cache hit: {0}", cached.getName());
         }
         if (cached == null) {
+            Long loaded = UpdateCounter.current();
             RealmModel model = getDelegate().getRealmByName(name);
             if (model == null) return null;
             if (realmInvalidations.contains(model.getId())) return model;
-            cached = new RevisionedCachedRealm(null, cache, this, model);
+            cached = new RevisionedCachedRealm(loaded, cache, this, model);
             cache.addCachedRealm(cached);
         } else if (realmInvalidations.contains(cached.getId())) {
             return getDelegate().getRealmByName(name);
@@ -365,6 +367,7 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
+            if (loaded == null) loaded = UpdateCounter.current();
             RoleModel model = getDelegate().getRoleById(id, realm);
             if (model == null) return null;
             if (roleInvalidations.contains(id)) return model;
@@ -394,6 +397,7 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
+            if (loaded == null) loaded = UpdateCounter.current();
             GroupModel model = getDelegate().getGroupById(id, realm);
             if (model == null) return null;
             if (groupInvalidations.contains(id)) return model;
@@ -422,6 +426,7 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
+            if (loaded == null) loaded = UpdateCounter.current();
             ClientModel model = getDelegate().getClientById(id, realm);
             if (model == null) return null;
             if (appInvalidations.contains(id)) return model;
@@ -445,6 +450,7 @@ public class LockingCacheRealmProvider implements CacheRealmProvider {
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
+            if (loaded == null) loaded = UpdateCounter.current();
             ClientTemplateModel model = getDelegate().getClientTemplateById(id, realm);
             if (model == null) return null;
             if (clientTemplateInvalidations.contains(id)) return model;

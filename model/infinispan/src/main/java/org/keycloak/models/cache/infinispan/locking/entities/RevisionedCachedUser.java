@@ -1,9 +1,9 @@
-package org.keycloak.models.cache.infinispan.counter.entities;
+package org.keycloak.models.cache.infinispan.locking.entities;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.entities.CachedUser;
-import org.keycloak.models.cache.infinispan.counter.Revisioned;
+import org.keycloak.models.cache.infinispan.locking.Revisioned;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
