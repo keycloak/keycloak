@@ -35,6 +35,7 @@ import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
 import org.infinispan.remoting.transport.Transport;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -51,8 +52,6 @@ public class InfinispanUserSessionInitializer {
 
     private static final Logger log = Logger.getLogger(InfinispanUserSessionInitializer.class);
 
-    private static final String STATE_KEY_PREFIX = "initializerState";
-
     private final KeycloakSessionFactory sessionFactory;
     private final Cache<String, SessionEntity> cache;
     private final SessionLoader sessionLoader;
@@ -60,21 +59,18 @@ public class InfinispanUserSessionInitializer {
     private final int sessionsPerSegment;
     private final String stateKey;
 
-    private volatile CountDownLatch latch = new CountDownLatch(1);
 
-
-    public InfinispanUserSessionInitializer(KeycloakSessionFactory sessionFactory, Cache<String, SessionEntity> cache, SessionLoader sessionLoader, int maxErrors, int sessionsPerSegment, String stateKeySuffix) {
+    public InfinispanUserSessionInitializer(KeycloakSessionFactory sessionFactory, Cache<String, SessionEntity> cache, SessionLoader sessionLoader, int maxErrors, int sessionsPerSegment, String stateKey) {
         this.sessionFactory = sessionFactory;
         this.cache = cache;
         this.sessionLoader = sessionLoader;
         this.maxErrors = maxErrors;
         this.sessionsPerSegment = sessionsPerSegment;
-        this.stateKey = STATE_KEY_PREFIX + "::" + stateKeySuffix;
+        this.stateKey = stateKey;
     }
 
     public void initCache() {
         this.cache.getAdvancedCache().getComponentRegistry().registerComponent(sessionFactory, KeycloakSessionFactory.class);
-        cache.getCacheManager().addListener(new ViewChangeListener());
     }
 
 
@@ -86,7 +82,7 @@ public class InfinispanUserSessionInitializer {
         while (!isFinished()) {
             if (!isCoordinator()) {
                 try {
-                    latch.await(500, TimeUnit.MILLISECONDS);
+                    Thread.sleep(1000);
                 } catch (InterruptedException ie) {
                     log.error("Interrupted", ie);
                 }
@@ -104,8 +100,10 @@ public class InfinispanUserSessionInitializer {
 
 
     private InitializerState getOrCreateInitializerState() {
-        InitializerState state = (InitializerState) cache.get(stateKey);
+        TimeAwareInitializerState state = (TimeAwareInitializerState) cache.get(stateKey);
         if (state == null) {
+            int startTime = (int)(sessionFactory.getServerStartupTimestamp() / 1000);
+
             final int[] count = new int[1];
 
             // Rather use separate transactions for update and counting
@@ -113,7 +111,7 @@ public class InfinispanUserSessionInitializer {
             KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
                 @Override
                 public void run(KeycloakSession session) {
-                    sessionLoader.init(session);
+                    sessionLoader.init(session, startTime);
                 }
 
             });
@@ -126,8 +124,9 @@ public class InfinispanUserSessionInitializer {
 
             });
 
-            state = new InitializerState();
+            state = new TimeAwareInitializerState();
             state.init(count[0], sessionsPerSegment);
+            state.setClusterStartupTime(startTime);
             saveStateToCache(state);
         }
         return state;
@@ -250,24 +249,6 @@ public class InfinispanUserSessionInitializer {
             }
         }
     }
-
-
-    @Listener
-    public class ViewChangeListener {
-
-        @ViewChanged
-        public void viewChanged(ViewChangedEvent event) {
-            boolean isCoordinator = isCoordinator();
-            log.debug("View Changed: is coordinator: " + isCoordinator);
-
-            if (isCoordinator) {
-                latch.countDown();
-                latch = new CountDownLatch(1);
-            }
-        }
-
-    }
-
 
     public static class WorkerResult implements Serializable {
 

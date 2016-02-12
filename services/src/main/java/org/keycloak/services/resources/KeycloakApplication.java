@@ -91,7 +91,6 @@ public class KeycloakApplication extends Application {
         singletons.add(new ObjectMapperResolver(Boolean.parseBoolean(System.getProperty("keycloak.jsonPrettyPrint", "false"))));
 
         migrateModel();
-        sessionFactory.publish(new PostMigrationEvent());
 
         boolean bootstrapAdminUser = false;
 
@@ -137,6 +136,8 @@ public class KeycloakApplication extends Application {
         } finally {
             session.close();
         }
+
+        sessionFactory.publish(new PostMigrationEvent());
 
         singletons.add(new WelcomeResource(bootstrapAdminUser));
 
