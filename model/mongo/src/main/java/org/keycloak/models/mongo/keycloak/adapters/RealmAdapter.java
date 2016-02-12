@@ -807,12 +807,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ClientModel getClientByClientId(String clientId) {
-        DBObject query = new QueryBuilder()
-                .and("realmId").is(getId())
-                .and("clientId").is(clientId)
-                .get();
-        MongoClientEntity appEntity = getMongoStore().loadSingleEntity(MongoClientEntity.class, query, invocationContext);
-        return appEntity == null ? null : new ClientAdapter(session, this, appEntity, invocationContext);
+        return session.realms().getClientByClientId(clientId, this);
     }
 
     @Override

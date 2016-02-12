@@ -88,8 +88,9 @@ Rate: 0.030480835174883793
             }
         };
         MaxRateExecutor executor = new MaxRateExecutor();
-        executor.best(factory, 4);
+        executor.best(factory, 10);
         executor.printResults();
+        executor.printSummary();
     }
 
 }

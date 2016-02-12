@@ -27,7 +27,6 @@ import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -39,11 +38,11 @@ public class LockingRealmCache implements RealmCache {
     protected final Cache<String, Long> revisions;
     protected final Cache<String, Object> cache;
 
-    protected final ConcurrentHashMap<String, String> realmLookup;
+    protected final ConcurrentHashMap<String, String> realmLookup = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<String, String> clientLookup = new ConcurrentHashMap<>();
 
-    public LockingRealmCache(Cache<String, Object> cache, Cache<String, Long> revisions, ConcurrentHashMap<String, String> realmLookup) {
+    public LockingRealmCache(Cache<String, Object> cache, Cache<String, Long> revisions) {
         this.cache = cache;
-        this.realmLookup = realmLookup;
         this.revisions = revisions;
     }
 
@@ -53,6 +52,14 @@ public class LockingRealmCache implements RealmCache {
 
     public Cache<String, Long> getRevisions() {
         return revisions;
+    }
+
+    public ConcurrentHashMap<String, String> getRealmLookup() {
+        return realmLookup;
+    }
+
+    public ConcurrentHashMap<String, String> getClientLookup() {
+        return clientLookup;
     }
 
     public Long getCurrentRevision(String id) {
@@ -133,25 +140,25 @@ public class LockingRealmCache implements RealmCache {
     }
 
     @Override
-    public CachedRealm getCachedRealm(String id) {
+    public CachedRealm getRealm(String id) {
         return get(id, CachedRealm.class);
     }
 
     @Override
-    public void invalidateCachedRealm(CachedRealm realm) {
+    public void invalidateRealm(CachedRealm realm) {
         logger.tracev("Invalidating realm {0}", realm.getId());
         invalidateObject(realm.getId());
         realmLookup.remove(realm.getName());
     }
 
     @Override
-    public void invalidateCachedRealmById(String id) {
+    public void invalidateRealmById(String id) {
         CachedRealm cached = (CachedRealm) invalidateObject(id);
         if (cached != null) realmLookup.remove(cached.getName());
     }
 
     @Override
-    public void addCachedRealm(CachedRealm realm) {
+    public void addRealm(CachedRealm realm) {
         logger.tracev("Adding realm {0}", realm.getId());
         addRevisioned(realm.getId(), (Revisioned) realm);
         realmLookup.put(realm.getName(), realm.getId());
@@ -159,36 +166,46 @@ public class LockingRealmCache implements RealmCache {
 
 
     @Override
-    public CachedRealm getCachedRealmByName(String name) {
+    public CachedRealm getRealmByName(String name) {
         String id = realmLookup.get(name);
-        return id != null ? getCachedRealm(id) : null;
+        return id != null ? getRealm(id) : null;
     }
 
     @Override
-    public CachedClient getApplication(String id) {
+    public CachedClient getClient(String id) {
         return get(id, CachedClient.class);
     }
 
+    public CachedClient getClientByClientId(String clientId) {
+        String id = clientLookup.get(clientId);
+        return id != null ? getClient(id) : null;
+    }
+
     @Override
-    public void invalidateApplication(CachedClient app) {
+    public void invalidateClient(CachedClient app) {
         logger.tracev("Removing application {0}", app.getId());
         invalidateObject(app.getId());
+        clientLookup.remove(app.getClientId());
     }
 
     @Override
-    public void addCachedClient(CachedClient app) {
+    public void addClient(CachedClient app) {
         logger.tracev("Adding application {0}", app.getId());
         addRevisioned(app.getId(), (Revisioned) app);
+        clientLookup.put(app.getClientId(), app.getId());
     }
 
     @Override
-    public void invalidateCachedApplicationById(String id) {
+    public void invalidateClientById(String id) {
         CachedClient client = (CachedClient)invalidateObject(id);
-        if (client != null) logger.tracev("Removing application {0}", client.getClientId());
+        if (client != null) {
+            logger.tracev("Removing application {0}", client.getClientId());
+            clientLookup.remove(client.getClientId());
+        }
     }
 
     @Override
-    public void evictCachedApplicationById(String id) {
+    public void evictClientById(String id) {
         logger.tracev("Evicting application {0}", id);
         cache.evict(id);
     }
@@ -205,16 +222,9 @@ public class LockingRealmCache implements RealmCache {
     }
 
     @Override
-    public void addCachedGroup(CachedGroup role) {
+    public void addGroup(CachedGroup role) {
         logger.tracev("Adding group {0}", role.getId());
         addRevisioned(role.getId(), (Revisioned) role);
-    }
-
-    @Override
-    public void invalidateCachedGroupById(String id) {
-        logger.tracev("Removing group {0}", id);
-        invalidateObject(id);
-
     }
 
     @Override
@@ -241,21 +251,15 @@ public class LockingRealmCache implements RealmCache {
     }
 
     @Override
-    public void evictCachedRoleById(String id) {
+    public void evictRoleById(String id) {
         logger.tracev("Evicting role {0}", id);
         cache.evict(id);
     }
 
     @Override
-    public void addCachedRole(CachedRole role) {
+    public void addRole(CachedRole role) {
         logger.tracev("Adding role {0}", role.getId());
         addRevisioned(role.getId(), (Revisioned) role);
-    }
-
-    @Override
-    public void invalidateCachedRoleById(String id) {
-        logger.tracev("Removing role {0}", id);
-        invalidateObject(id);
     }
 
     @Override
@@ -270,19 +274,19 @@ public class LockingRealmCache implements RealmCache {
     }
 
     @Override
-    public void addCachedClientTemplate(CachedClientTemplate app) {
+    public void addClientTemplate(CachedClientTemplate app) {
         logger.tracev("Adding client template {0}", app.getId());
         addRevisioned(app.getId(), (Revisioned) app);
     }
 
     @Override
-    public void invalidateCachedClientTemplateById(String id) {
+    public void invalidateClientTemplateById(String id) {
         logger.tracev("Removing client template {0}", id);
         invalidateObject(id);
     }
 
     @Override
-    public void evictCachedClientTemplateById(String id) {
+    public void evictClientTemplateById(String id) {
         logger.tracev("Evicting client template {0}", id);
         cache.evict(id);
     }

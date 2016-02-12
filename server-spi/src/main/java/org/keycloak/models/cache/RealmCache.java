@@ -30,35 +30,33 @@ import org.keycloak.models.cache.entities.CachedRole;
 public interface RealmCache {
     void clear();
 
-    CachedRealm getCachedRealm(String id);
+    CachedRealm getRealm(String id);
 
-    void invalidateCachedRealm(CachedRealm realm);
+    void invalidateRealm(CachedRealm realm);
 
-    void addCachedRealm(CachedRealm realm);
+    void addRealm(CachedRealm realm);
 
-    CachedRealm getCachedRealmByName(String name);
+    CachedRealm getRealmByName(String name);
 
-    void invalidateCachedRealmById(String id);
+    void invalidateRealmById(String id);
 
-    CachedClient getApplication(String id);
+    CachedClient getClient(String id);
 
-    void invalidateApplication(CachedClient app);
+    void invalidateClient(CachedClient app);
 
-    void evictCachedApplicationById(String id);
+    void evictClientById(String id);
 
-    void addCachedClient(CachedClient app);
+    void addClient(CachedClient app);
 
-    void invalidateCachedApplicationById(String id);
+    void invalidateClientById(String id);
 
     CachedRole getRole(String id);
 
     void invalidateRole(CachedRole role);
 
-    void evictCachedRoleById(String id);
+    void evictRoleById(String id);
 
-    void addCachedRole(CachedRole role);
-
-    void invalidateCachedRoleById(String id);
+    void addRole(CachedRole role);
 
     void invalidateRoleById(String id);
 
@@ -66,9 +64,7 @@ public interface RealmCache {
 
     void invalidateGroup(CachedGroup role);
 
-    void addCachedGroup(CachedGroup role);
-
-    void invalidateCachedGroupById(String id);
+    void addGroup(CachedGroup role);
 
     void invalidateGroupById(String id);
 
@@ -76,10 +72,10 @@ public interface RealmCache {
 
     void invalidateClientTemplate(CachedClientTemplate app);
 
-    void evictCachedClientTemplateById(String id);
+    void evictClientTemplateById(String id);
 
-    void addCachedClientTemplate(CachedClientTemplate app);
+    void addClientTemplate(CachedClientTemplate app);
 
-    void invalidateCachedClientTemplateById(String id);
+    void invalidateClientTemplateById(String id);
 
 }

@@ -35,8 +35,11 @@ public interface RealmProvider extends Provider {
     RealmModel getRealm(String id);
     RealmModel getRealmByName(String name);
 
-    RoleModel getRoleById(String id, RealmModel realm);
     ClientModel getClientById(String id, RealmModel realm);
+    ClientModel getClientByClientId(String clientId, RealmModel realm);
+
+
+    RoleModel getRoleById(String id, RealmModel realm);
     ClientTemplateModel getClientTemplateById(String id, RealmModel realm);
     GroupModel getGroupById(String id, RealmModel realm);
 

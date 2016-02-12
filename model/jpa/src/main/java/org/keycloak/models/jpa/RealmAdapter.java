@@ -811,7 +811,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ClientModel getClientByClientId(String clientId) {
-        return getClientNameMap().get(clientId);
+        return session.realms().getClientByClientId(clientId, this);
     }
 
     private static final String BROWSER_HEADER_PREFIX = "_browser_header.";

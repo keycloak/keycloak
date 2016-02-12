@@ -88,9 +88,9 @@ public class MaxRateExecutor {
             StressTest stressTest = future.get();
             if (i < jobs - threads - 5) completionService.submit(stressTest);
         }
+        long end = System.currentTimeMillis() - start;
         executor.shutdown();
         executor.awaitTermination(10, TimeUnit.SECONDS);
-        long end = System.currentTimeMillis() - start;
         RateResult rate = new RateResult(result, threads, end);
         return rate;
     }
@@ -116,10 +116,10 @@ public class MaxRateExecutor {
     public void printResult(RateResult result) {
         System.out.println("Threads: " + result.getThreads());
         System.out.println("Total Time: " + result.getTime());
+        System.out.println("Rate: " + ((double)result.getResult().getIterations()) / ((double)result.getTime()));
         System.out.println("Successes: " + result.getResult().getSuccess());
         System.out.println("Iterations: " + result.getResult().getIterations());
-        System.out.println("Average time: " + result.getResult().getAverageTime());
-        System.out.println("Rate: " + result.getResult().getRate());
+        System.out.println("Average time per iteration: " + result.getResult().getAverageTime());
 
     }
 
@@ -127,7 +127,7 @@ public class MaxRateExecutor {
 
         for (RateResult result : allResults) {
             System.out.println("*******************");
-            printSummary();
+            printSummary(result);
         }
     }
     public void printSummary(RateResult result) {

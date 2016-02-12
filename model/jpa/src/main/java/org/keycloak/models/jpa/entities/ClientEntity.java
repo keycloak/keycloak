@@ -50,6 +50,8 @@ import java.util.Set;
 @Table(name="CLIENT", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "CLIENT_ID"})})
 @NamedQueries({
         @NamedQuery(name="getClientsByRealm", query="select client from ClientEntity client where client.realm = :realm"),
+        @NamedQuery(name="findClientIdByClientId", query="select client.id from ClientEntity client where client.clientId = :clientId and client.realm.id = :realm"),
+        @NamedQuery(name="findClientByClientId", query="select client from ClientEntity client where client.clientId = :clientId and client.realm.id = :realm"),
 })
 public class ClientEntity {
 

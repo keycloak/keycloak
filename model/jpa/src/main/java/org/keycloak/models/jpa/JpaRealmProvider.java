@@ -177,6 +177,17 @@ public class JpaRealmProvider implements RealmProvider {
     }
 
     @Override
+    public ClientModel getClientByClientId(String clientId, RealmModel realm) {
+        TypedQuery<ClientEntity> query = em.createNamedQuery("findClientByClientId", ClientEntity.class);
+        query.setParameter("clientId", clientId);
+        query.setParameter("realm", realm.getId());
+        List<ClientEntity> results = query.getResultList();
+        if (results.isEmpty()) return null;
+        ClientEntity entity = results.get(0);
+        return new ClientAdapter(realm, em, session, entity);
+    }
+
+    @Override
     public ClientTemplateModel getClientTemplateById(String id, RealmModel realm) {
         ClientTemplateEntity app = em.find(ClientTemplateEntity.class, id);
 

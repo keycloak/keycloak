@@ -37,8 +37,6 @@ import org.keycloak.models.cache.CacheRealmProviderFactory;
 import org.keycloak.models.cache.entities.CachedClient;
 import org.keycloak.models.cache.entities.CachedRealm;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -48,8 +46,6 @@ public class LockingCacheRealmProviderFactory implements CacheRealmProviderFacto
     private static final Logger log = Logger.getLogger(LockingCacheRealmProviderFactory.class);
 
     protected volatile LockingRealmCache realmCache;
-
-    protected final ConcurrentHashMap<String, String> realmLookup = new ConcurrentHashMap<>();
 
     @Override
     public CacheRealmProvider create(KeycloakSession session) {
@@ -64,7 +60,7 @@ public class LockingCacheRealmProviderFactory implements CacheRealmProviderFacto
                     Cache<String, Object> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
                     Cache<String, Long> counterCache = session.getProvider(InfinispanConnectionProvider.class).getCache(LockingConnectionProviderFactory.VERSION_CACHE_NAME);
                     cache.addListener(new CacheListener());
-                    realmCache = new LockingRealmCache(cache, counterCache, realmLookup);
+                    realmCache = new LockingRealmCache(cache, counterCache);
                 }
             }
         }
@@ -98,7 +94,7 @@ public class LockingCacheRealmProviderFactory implements CacheRealmProviderFacto
                 if (object != null) {
                     if (object instanceof CachedRealm) {
                         CachedRealm realm = (CachedRealm) object;
-                        realmLookup.put(realm.getName(), realm.getId());
+                        realmCache.getRealmLookup().put(realm.getName(), realm.getId());
                         log.tracev("Realm added realm={0}", realm.getName());
                     }
                 }
@@ -136,14 +132,14 @@ public class LockingCacheRealmProviderFactory implements CacheRealmProviderFacto
             if (object instanceof CachedRealm) {
                 CachedRealm realm = (CachedRealm) object;
 
-                realmLookup.remove(realm.getName());
+                realmCache.getRealmLookup().remove(realm.getName());
 
                 for (String r : realm.getRealmRoles().values()) {
-                    realmCache.evictCachedRoleById(r);
+                    realmCache.evictRoleById(r);
                 }
 
                 for (String c : realm.getClients().values()) {
-                    realmCache.evictCachedApplicationById(c);
+                    realmCache.evictClientById(c);
                 }
 
                 log.tracev("Realm removed realm={0}", realm.getName());
@@ -151,7 +147,7 @@ public class LockingCacheRealmProviderFactory implements CacheRealmProviderFacto
                 CachedClient client = (CachedClient) object;
 
                 for (String r : client.getRoles().values()) {
-                    realmCache.evictCachedRoleById(r);
+                    realmCache.evictRoleById(r);
                 }
 
                 log.tracev("Client removed client={0}", client.getId());

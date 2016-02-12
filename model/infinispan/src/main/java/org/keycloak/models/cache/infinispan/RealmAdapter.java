@@ -415,6 +415,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public PublicKey getPublicKey() {
+        if (updated != null) return updated.getPublicKey();
+        if (publicKey != null) return publicKey;
+        publicKey = cached.getPublicKey();
         if (publicKey != null) return publicKey;
         publicKey = KeycloakModelUtils.getPublicKey(getPublicKeyPem());
         return publicKey;
@@ -429,6 +432,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public X509Certificate getCertificate() {
+        if (updated != null) return updated.getCertificate();
+        if (certificate != null) return certificate;
+        certificate = cached.getCertificate();
         if (certificate != null) return certificate;
         certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
         return certificate;
@@ -456,7 +462,14 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public PrivateKey getPrivateKey() {
-        if (privateKey != null) return privateKey;
+        if (updated != null) return updated.getPrivateKey();
+        if (privateKey != null) {
+            return privateKey;
+        }
+        privateKey = cached.getPrivateKey();
+        if (privateKey != null) {
+            return privateKey;
+        }
         privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
         return privateKey;
     }
@@ -635,10 +648,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ClientModel getClientByClientId(String clientId) {
-        if (updated != null) return updated.getClientByClientId(clientId);
-        String id = cached.getClients().get(clientId);
-        if (id == null) return null;
-        return getClientById(id);
+        return cacheSession.getClientByClientId(clientId, this);
     }
 
     @Override
