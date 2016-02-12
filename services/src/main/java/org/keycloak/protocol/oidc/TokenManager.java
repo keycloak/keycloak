@@ -193,9 +193,9 @@ public class TokenManager {
         int currentTime = Time.currentTime();
 
         if (realm.isRevokeRefreshToken()) {
-            int serverStartupTime = (int)(session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
+            int clusterStartupTime = session.sessions().getClusterStartupTime();
 
-            if (refreshToken.getIssuedAt() < validation.clientSession.getTimestamp() && (serverStartupTime != validation.clientSession.getTimestamp())) {
+            if (refreshToken.getIssuedAt() < validation.clientSession.getTimestamp() && (clusterStartupTime != validation.clientSession.getTimestamp())) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
             }
 

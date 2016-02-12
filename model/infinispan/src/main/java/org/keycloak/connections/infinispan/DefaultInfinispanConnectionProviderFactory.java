@@ -37,11 +37,11 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     protected static final Logger logger = Logger.getLogger(DefaultInfinispanConnectionProviderFactory.class);
 
-    private Config.Scope config;
+    protected Config.Scope config;
 
-    private EmbeddedCacheManager cacheManager;
+    protected EmbeddedCacheManager cacheManager;
 
-    private boolean containerManaged;
+    protected boolean containerManaged;
 
     @Override
     public InfinispanConnectionProvider create(KeycloakSession session) {
@@ -73,7 +73,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     }
 
-    private void lazyInit() {
+    protected void lazyInit() {
         if (cacheManager == null) {
             synchronized (this) {
                 if (cacheManager == null) {
@@ -88,7 +88,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
     }
 
-    private void initContainerManaged(String cacheContainerLookup) {
+    protected void initContainerManaged(String cacheContainerLookup) {
         try {
             cacheManager = (EmbeddedCacheManager) new InitialContext().lookup(cacheContainerLookup);
             containerManaged = true;
@@ -99,7 +99,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
     }
 
-    private void initEmbedded() {
+    protected void initEmbedded() {
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
 
         boolean clustered = config.getBoolean("clustered", false);

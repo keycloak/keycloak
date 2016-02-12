@@ -202,7 +202,28 @@ An Angular JS example using Keycloak to secure it.
 If you are already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
 
-Step 9: Pure HTML5/Javascript Example
+Step 10: Angular2 JS Example
+----------------------------------
+An Angular2 JS example using Keycloak to secure it. Angular2 is in beta version yet.
+
+To install angular2
+```
+$ cd keycloak/examples/demo-template/angular2-product-app/src/main/webapp/
+$ npm install
+```
+
+Transpile TypeScript to JavaScript before running the application.
+```
+$ npm run tsc
+```
+
+[http://localhost:8080/angular2-product](http://localhost:8080/angular2-product)
+
+If you are already logged in, you will not be asked for a username and password, but you will be redirected to
+an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
+
+
+Step 11: Pure HTML5/Javascript Example
 ----------------------------------
 An pure HTML5/Javascript example using Keycloak to secure it.
 
@@ -211,7 +232,7 @@ An pure HTML5/Javascript example using Keycloak to secure it.
 If you are already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
 
-Step 10: Service Account Example
+Step 12: Service Account Example
 ================================
 An example for retrieve service account dedicated to the Client Application itself (not to any user). 
 
@@ -222,7 +243,7 @@ Client authentication is done with OAuth2 Client Credentials Grant in out-of-bou
 The example also shows different methods of client authentication. There is ProductSAClientSecretServlet using traditional authentication with clientId and client_secret, 
 but there is also ProductSAClientSignedJWTServlet using client authentication with JWT signed by client private key.  
 
-Step 11: Offline Access Example
+Step 13: Offline Access Example
 ===============================
 An example for retrieve offline token, which is then saved to the database and can be used by application anytime later. Offline token
 is valid even if user is already logged out from SSO. Server restart also won't invalidate offline token. Offline token can be revoked by the user in 

@@ -82,6 +82,9 @@ public interface UserSessionProvider extends Provider {
     void removeClientInitialAccessModel(RealmModel realm, String id);
     List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm);
 
+    // Will use startup time of this server in non-cluster environment
+    int getClusterStartupTime();
+
     void close();
 
 }

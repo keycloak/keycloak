@@ -119,8 +119,10 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 if (httpClient == null) {
                     long socketTimeout = config.getLong("socket-timeout-millis", -1L);
                     long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
-                    int maxPooledPerRoute = config.getInt("max-pooled-per-route", 0);
-                    int connectionPoolSize = config.getInt("connection-pool-size", 200);
+                    int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
+                    int connectionPoolSize = config.getInt("connection-pool-size", 128);
+                    long connectionTTL = config.getLong("connection-ttl-millis", -1L);
+                    long maxConnectionIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
                     boolean disableCookies = config.getBoolean("disable-cookies", true);
                     String clientKeystore = config.get("client-keystore");
                     String clientKeystorePassword = config.get("client-keystore-password");
@@ -139,6 +141,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
                             .maxPooledPerRoute(maxPooledPerRoute)
                             .connectionPoolSize(connectionPoolSize)
+                            .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
+                            .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
                             .disableCookies(disableCookies);
 
                     if (disableTrustManager) {

@@ -84,23 +84,6 @@ public class RealmsResource {
         return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getBrokerService");
     }
 
-    @Path("{realm}/login-status-iframe.html")
-    @Deprecated
-    public Object getLoginStatusIframe(final @PathParam("realm") String name,
-                                       @QueryParam("client_id") String client_id,
-                                       @QueryParam("origin") String origin) {
-        RealmModel realm = init(name);
-
-        EventBuilder event = new EventBuilder(realm, session, clientConnection);
-
-        LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
-        OIDCLoginProtocolService endpoint = (OIDCLoginProtocolService)factory.createProtocolEndpoint(realm, event);
-
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint.getLoginStatusIframe();
-
-    }
-
     @Path("{realm}/protocol/{protocol}")
     public Object getProtocol(final @PathParam("realm") String name,
                                             final @PathParam("protocol") String protocol) {
@@ -115,13 +98,6 @@ public class RealmsResource {
         return endpoint;
     }
 
-    @Path("{realm}/tokens")
-    @Deprecated
-    public Object getTokenService(final @PathParam("realm") String name) {
-        // for backward compatibility.
-        return getProtocol(name, "openid-connect");
-    }
-
     @Path("{realm}/login-actions")
     public LoginActionsService getLoginActionsService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
@@ -131,7 +107,7 @@ public class RealmsResource {
         return service;
     }
 
-    @Path("{realm}/clients")
+    @Path("{realm}/clients-registrations")
     public ClientRegistrationService getClientsService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
         EventBuilder event = new EventBuilder(realm, session, clientConnection);

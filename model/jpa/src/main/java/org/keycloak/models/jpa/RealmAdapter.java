@@ -729,12 +729,14 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<ClientModel> getClients() {
-        List<ClientModel> list = new ArrayList<ClientModel>();
-        if (realm.getClients() == null) return list;
-        for (ClientEntity entity : realm.getClients()) {
+        List<ClientModel> list = new LinkedList<>();
+        TypedQuery<ClientEntity> query = em.createNamedQuery("getClientsByRealm", ClientEntity.class);
+        query.setParameter("realm", realm);
+        List<ClientEntity> clients = query.getResultList();
+        for (ClientEntity entity : clients) {
             list.add(new ClientAdapter(this, em, session, entity));
         }
-        return list;
+      return list;
     }
 
     @Override
@@ -794,11 +796,9 @@ public class RealmAdapter implements RealmModel {
                 clientEntity = a;
             }
         }
-        if (client == null) {
-            return false;
-        }
-        em.remove(clientEntity);
+        if (clientEntity == null) return false;
         em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", clientEntity).executeUpdate();
+        em.remove(clientEntity);
         em.flush();
 
         return true;
@@ -1017,6 +1017,7 @@ public class RealmAdapter implements RealmModel {
             entity.setFullSyncPeriod(model.getFullSyncPeriod());
             entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
             entity.setLastSync(model.getLastSync());
+            entity.setRealm(realm);
             em.persist(entity);
             realm.getUserFederationProviders().add(entity);
 

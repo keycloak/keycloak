@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.admin;
 
 import org.jboss.logging.Logger;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -30,6 +31,8 @@ import javax.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -39,19 +42,55 @@ import static org.junit.Assert.*;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Ignore
 public class ConcurrencyTest extends AbstractClientTest {
 
     private static final Logger log = Logger.getLogger(ConcurrencyTest.class);
 
-    private static final int DEFAULT_THREADS = 3;
-    private static final int DEFAULT_ITERATIONS = 10;
+    private static final int DEFAULT_THREADS = 1;
+    private static final int DEFAULT_ITERATIONS = 5;
 
     // If enabled only one request is allowed at the time. Useful for checking that test is working.
     private static final boolean SYNCHRONIZED = false;
 
+    boolean passedCreateClient = false;
+    boolean passedCreateRole = false;
+
+    //@Test
+    public void testAllConcurrently() throws Throwable {
+        Thread client = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    createClient();
+                    passedCreateClient = true;
+                } catch (Throwable throwable) {
+                    throw new RuntimeException(throwable);
+                }
+            }
+        });
+        Thread role = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    createRole();
+                    passedCreateRole = true;
+                } catch (Throwable throwable) {
+                    throw new RuntimeException(throwable);
+                }
+            }
+        });
+
+        client.start();
+        role.start();
+        client.join();
+        role.join();
+        Assert.assertTrue(passedCreateClient);
+        Assert.assertTrue(passedCreateRole);
+    }
+
     @Test
     public void createClient() throws Throwable {
+        long start = System.currentTimeMillis();
         run(new KeycloakRunnable() {
             @Override
             public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
@@ -75,10 +114,14 @@ public class ConcurrencyTest extends AbstractClientTest {
                 }
             }
         });
+        long end = System.currentTimeMillis() - start;
+        System.out.println("createClient took " + end);
+
     }
 
     @Test
     public void createRole() throws Throwable {
+        long start = System.currentTimeMillis();
         run(new KeycloakRunnable() {
             @Override
             public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
@@ -88,15 +131,21 @@ public class ConcurrencyTest extends AbstractClientTest {
                 assertNotNull(realm.roles().get(name).toRepresentation());
             }
         });
+        long end = System.currentTimeMillis() - start;
+        System.out.println("createRole took " + end);
+
     }
 
     @Test
     public void createClientRole() throws Throwable {
+        long start = System.currentTimeMillis();
         ClientRepresentation c = new ClientRepresentation();
         c.setClientId("client");
         Response response = realm.clients().create(c);
         final String clientId = ApiUtil.getCreatedId(response);
         response.close();
+
+        System.out.println("*********************************************");
 
         run(new KeycloakRunnable() {
             @Override
@@ -110,6 +159,10 @@ public class ConcurrencyTest extends AbstractClientTest {
                 assertNotNull(client.roles().get(name).toRepresentation());
             }
         });
+        long end = System.currentTimeMillis() - start;
+        System.out.println("createClientRole took " + end);
+        System.out.println("*********************************************");
+
     }
 
     private void run(final KeycloakRunnable runnable) throws Throwable {

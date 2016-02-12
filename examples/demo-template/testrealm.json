@@ -148,6 +148,15 @@
                 "/angular-product/*"
             ]
         },
+		{
+            "clientId": "angular2-product",
+            "enabled": true,
+            "publicClient": true,
+            "baseUrl": "/angular2-product/index.html",
+            "redirectUris": [
+                "/angular2-product/*"
+            ]
+        },
         {
             "clientId": "customer-portal-cli",
             "enabled": true,

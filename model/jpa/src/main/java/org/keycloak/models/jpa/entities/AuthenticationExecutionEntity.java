@@ -19,6 +19,8 @@ package org.keycloak.models.jpa.entities;
 
 import org.keycloak.models.AuthenticationExecutionModel;
 
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -43,6 +45,7 @@ import javax.persistence.Table;
 public class AuthenticationExecutionEntity {
     @Id
     @Column(name="ID", length = 36)
+    @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     protected String id;
 
     @ManyToOne(fetch = FetchType.LAZY)

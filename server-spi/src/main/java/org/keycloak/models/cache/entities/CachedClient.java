@@ -39,43 +39,43 @@ import java.util.TreeMap;
  */
 public class CachedClient implements Serializable {
 
-    private String id;
-    private String clientId;
-    private String name;
-    private String description;
-    private String realm;
-    private Set<String> redirectUris = new HashSet<String>();
-    private boolean enabled;
-    private String clientAuthenticatorType;
-    private String secret;
-    private String registrationToken;
-    private String protocol;
-    private Map<String, String> attributes = new HashMap<String, String>();
-    private boolean publicClient;
-    private boolean fullScopeAllowed;
-    private boolean frontchannelLogout;
-    private int notBefore;
-    private Set<String> scope = new HashSet<String>();
-    private Set<String> webOrigins = new HashSet<String>();
-    private Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
-    private boolean surrogateAuthRequired;
-    private String managementUrl;
-    private String rootUrl;
-    private String baseUrl;
-    private List<String> defaultRoles = new LinkedList<String>();
-    private boolean bearerOnly;
-    private boolean consentRequired;
-    private boolean standardFlowEnabled;
-    private boolean implicitFlowEnabled;
-    private boolean directAccessGrantsEnabled;
-    private boolean serviceAccountsEnabled;
-    private Map<String, String> roles = new HashMap<String, String>();
-    private int nodeReRegistrationTimeout;
-    private Map<String, Integer> registeredNodes;
-    private String clientTemplate;
-    private boolean useTemplateScope;
-    private boolean useTemplateConfig;
-    private boolean useTemplateMappers;
+    protected String id;
+    protected String clientId;
+    protected String name;
+    protected String description;
+    protected String realm;
+    protected Set<String> redirectUris = new HashSet<String>();
+    protected boolean enabled;
+    protected String clientAuthenticatorType;
+    protected String secret;
+    protected String registrationToken;
+    protected String protocol;
+    protected Map<String, String> attributes = new HashMap<String, String>();
+    protected boolean publicClient;
+    protected boolean fullScopeAllowed;
+    protected boolean frontchannelLogout;
+    protected int notBefore;
+    protected Set<String> scope = new HashSet<String>();
+    protected Set<String> webOrigins = new HashSet<String>();
+    protected Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
+    protected boolean surrogateAuthRequired;
+    protected String managementUrl;
+    protected String rootUrl;
+    protected String baseUrl;
+    protected List<String> defaultRoles = new LinkedList<String>();
+    protected boolean bearerOnly;
+    protected boolean consentRequired;
+    protected boolean standardFlowEnabled;
+    protected boolean implicitFlowEnabled;
+    protected boolean directAccessGrantsEnabled;
+    protected boolean serviceAccountsEnabled;
+    protected Map<String, String> roles = new HashMap<String, String>();
+    protected int nodeReRegistrationTimeout;
+    protected Map<String, Integer> registeredNodes;
+    protected String clientTemplate;
+    protected boolean useTemplateScope;
+    protected boolean useTemplateConfig;
+    protected boolean useTemplateMappers;
 
     public CachedClient(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientModel model) {
         id = model.getId();
@@ -112,10 +112,7 @@ public class CachedClient implements Serializable {
         implicitFlowEnabled = model.isImplicitFlowEnabled();
         directAccessGrantsEnabled = model.isDirectAccessGrantsEnabled();
         serviceAccountsEnabled = model.isServiceAccountsEnabled();
-        for (RoleModel role : model.getRoles()) {
-            roles.put(role.getName(), role.getId());
-            cache.addCachedRole(new CachedClientRole(id, role, realm));
-        }
+        cacheRoles(cache, realm, model);
 
         nodeReRegistrationTimeout = model.getNodeReRegistrationTimeout();
         registeredNodes = new TreeMap<String, Integer>(model.getRegisteredNodes());
@@ -126,6 +123,14 @@ public class CachedClient implements Serializable {
         useTemplateMappers = model.useTemplateMappers();
         useTemplateScope = model.useTemplateScope();
     }
+
+    protected void cacheRoles(RealmCache cache, RealmModel realm, ClientModel model) {
+        for (RoleModel role : model.getRoles()) {
+            roles.put(role.getName(), role.getId());
+            cache.addCachedRole(new CachedClientRole(id, role, realm));
+        }
+    }
+
     public String getId() {
         return id;
     }
