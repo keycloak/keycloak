@@ -29,6 +29,7 @@ public class InternationalizationTest extends AbstractRealmTest {
         tabs().themes();
         themeSettingsPage.setInternatEnabled(true);
         themeSettingsPage.saveTheme();
+        assertAlertSuccess();
         realmSettingsPage.setAdminRealm(AuthRealm.TEST);
         accountPage.setAuthRealm(testRealmPage);
         deleteAllCookiesForTestRealm();
