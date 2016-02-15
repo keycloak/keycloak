@@ -69,7 +69,8 @@ public class InfinispanCLI {
             UserCommands.Create.class,
             UserCommands.Remove.class,
             UserCommands.Count.class,
-            UserCommands.GetUser.class
+            UserCommands.GetUser.class,
+            SyncDummyFederationProviderCommand.class
     };
 
     private final KeycloakSessionFactory sessionFactory;
