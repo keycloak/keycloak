@@ -2,6 +2,7 @@ package org.keycloak.testsuite.cluster;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jboss.arquillian.container.test.api.ContainerController;
@@ -10,6 +11,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
@@ -38,7 +40,7 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
         if (currentFailNodeIndex >= getClusterSize()) {
             currentFailNodeIndex = 0;
         }
-        logCurrentState();
+        logFailoverSetup();
     }
 
     protected ContainerInfo getCurrentFailNode() {
@@ -51,7 +53,8 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
         return survivors;
     }
 
-    protected void logCurrentState() {
+    protected void logFailoverSetup() {
+        log.info("Current failover setup");
         boolean started = controller.isStarted(getCurrentFailNode().getQualifier());
         log.info("Fail node: " + getCurrentFailNode() + (started ? "" : " (stopped)"));
         for (ContainerInfo survivor : getCurrentSurvivorNodes()) {
@@ -72,6 +75,10 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
         }
     }
 
+    protected ContainerInfo frontendNode() {
+        return suiteContext.getAuthServerInfo();
+    }
+    
     protected ContainerInfo backendNode(int i) {
         return suiteContext.getAuthServerBackendsInfo().get(i);
     }
@@ -101,15 +108,22 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
         controller.kill(node.getQualifier());
     }
 
-    protected Keycloak getAdminClientFor(ContainerInfo backendNode) {
-        return backendAdminClients.get(backendNode);
+    protected Keycloak getAdminClientFor(ContainerInfo node) {
+        return node.equals(suiteContext.getAuthServerInfo())
+                ? adminClient // frontend client
+                : backendAdminClients.get(node);
     }
 
     @Before
     public void beforeClusterTest() {
         failback();
-        logCurrentState();
+        logFailoverSetup();
         pause(3000);
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        // no test realms will be created by the default 
     }
 
 }
