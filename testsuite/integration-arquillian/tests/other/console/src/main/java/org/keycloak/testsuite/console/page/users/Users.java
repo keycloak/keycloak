@@ -74,7 +74,10 @@ public class Users extends AdminConsoleRealm {
 
         public void clickUser(String username) {
             waitUntilElement(body()).is().present();
-            body().findElement(linkText(username)).click();
+            WebElement link = body().findElement(
+                    By.xpath(".//tr/td[./following::td[text()='" + username + "']]/a")
+            );
+            link.click();
         }
 
         public void editUser(String username) {
