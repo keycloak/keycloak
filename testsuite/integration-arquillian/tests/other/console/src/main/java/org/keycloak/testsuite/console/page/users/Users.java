@@ -43,8 +43,8 @@ public class Users extends AdminConsoleRealm {
     }
 
     public static final String VIEW_ALL_USERS = "View all users";
-    public static final String UNLOCK_USERS = "Unlock Users";
-    public static final String ADD_USER = "Add User";
+    public static final String UNLOCK_USERS = "Unlock users";
+    public static final String ADD_USER = "Add user";
 
     public static final String EDIT = "Edit";
     public static final String IMPERSONATE = "Impersonate";
