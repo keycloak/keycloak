@@ -8,7 +8,7 @@ import org.keycloak.testsuite.arquillian.ContainerInfo;
  *
  * @author tkyjovsk
  */
-public abstract class AbstractInvalidationClusterTestWithTestRealm<T> extends AbstractInvalidationClusterTest<T> {
+public abstract class AbstractInvalidationClusterTestWithTestRealm<T, TR> extends AbstractInvalidationClusterTest<T, TR> {
 
     protected String testRealmName = null;
     

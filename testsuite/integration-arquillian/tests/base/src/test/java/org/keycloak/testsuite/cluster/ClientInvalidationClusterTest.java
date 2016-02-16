@@ -2,8 +2,10 @@ package org.keycloak.testsuite.cluster;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+import org.apache.commons.lang.RandomStringUtils;
 import static org.junit.Assert.assertNull;
 import org.junit.Before;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -13,7 +15,7 @@ import org.keycloak.testsuite.arquillian.ContainerInfo;
  *
  * @author tkyjovsk
  */
-public class ClientInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<ClientRepresentation> {
+public class ClientInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<ClientRepresentation, ClientResource> {
 
     @Before
     public void setExcludedComparisonFields() {
@@ -23,7 +25,7 @@ public class ClientInvalidationClusterTest extends AbstractInvalidationClusterTe
     @Override
     protected ClientRepresentation createTestEntityRepresentation() {
         ClientRepresentation client = new ClientRepresentation();
-        String s = randomString(5);
+        String s = RandomStringUtils.randomAlphabetic(5);
         client.setClientId("client_" + s);
         client.setName("name_" + s);
         return client;
@@ -33,6 +35,16 @@ public class ClientInvalidationClusterTest extends AbstractInvalidationClusterTe
         return getAdminClientFor(node).realm(testRealmName).clients();
     }
 
+    @Override
+    protected ClientResource entityResource(ClientRepresentation client, ContainerInfo node) {
+        return entityResource(client.getId(), node);
+    }
+
+    @Override
+    protected ClientResource entityResource(String id, ContainerInfo node) {
+        return clients(node).get(id);
+    }
+    
     @Override
     protected ClientRepresentation createEntity(ClientRepresentation client, ContainerInfo node) {
         Response response = clients(node).create(client);
@@ -46,22 +58,22 @@ public class ClientInvalidationClusterTest extends AbstractInvalidationClusterTe
     protected ClientRepresentation readEntity(ClientRepresentation client, ContainerInfo node) {
         ClientRepresentation u = null;
         try {
-            u = clients(node).get(client.getId()).toRepresentation();
+            u = entityResource(client, node).toRepresentation();
         } catch (NotFoundException nfe) {
-            // exoected when client doesn't exist
+            // expected when client doesn't exist
         }
         return u;
     }
 
     @Override
     protected ClientRepresentation updateEntity(ClientRepresentation client, ContainerInfo node) {
-        clients(node).get(client.getId()).update(client);
+        entityResource(client, node).update(client);
         return readEntity(client, node);
     }
 
     @Override
     protected void deleteEntity(ClientRepresentation client, ContainerInfo node) {
-        clients(node).get(client.getId()).remove();
+        entityResource(client, node).remove();
         assertNull(readEntity(client, node));
     }
 
@@ -70,12 +82,12 @@ public class ClientInvalidationClusterTest extends AbstractInvalidationClusterTe
 
         // clientId
         client.setClientId(client.getClientId() + "_updated");
-        client = updateEntity(client, getCurrentFailNode());
+        client = updateEntityOnCurrentFailNode(client, "clientId");
         verifyEntityUpdateDuringFailover(client, backendFailover);
 
         // name
         client.setName(client.getName() + "_updated");
-        client = updateEntity(client, getCurrentFailNode());
+        client = updateEntityOnCurrentFailNode(client, "name");
         verifyEntityUpdateDuringFailover(client, backendFailover);
 
         return client;

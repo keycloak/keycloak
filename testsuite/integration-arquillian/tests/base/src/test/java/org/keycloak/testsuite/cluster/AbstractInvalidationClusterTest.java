@@ -1,9 +1,8 @@
 package org.keycloak.testsuite.cluster;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
@@ -16,18 +15,14 @@ import org.keycloak.testsuite.arquillian.ContainerInfo;
 /**
  *
  * @author tkyjovsk
+ * @param <T> entity representation
+ * @param <TR> entity resource
  */
-public abstract class AbstractInvalidationClusterTest<T> extends AbstractClusterTest {
-
-    private final SecureRandom random = new SecureRandom();
-
-    protected String randomString(int length) {
-        return new BigInteger(130, random).toString(length);
-    }
+public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClusterTest {
 
     protected RealmRepresentation createTestRealmRepresentation() {
         RealmRepresentation testRealm = new RealmRepresentation();
-        testRealm.setRealm("test_" + randomString(5));
+        testRealm.setRealm("test_" + RandomStringUtils.randomAlphabetic(5));
         testRealm.setEnabled(true);
         return testRealm;
     }
@@ -72,6 +67,10 @@ public abstract class AbstractInvalidationClusterTest<T> extends AbstractCluster
         assertEntityOnSurvivorNodesIsDeleted(testEntity);
     }
 
+    protected abstract TR entityResource(T testEntity, ContainerInfo node);
+
+    protected abstract TR entityResource(String idOrName, ContainerInfo node);
+    
     protected abstract T createEntity(T testEntity, ContainerInfo node);
 
     protected abstract T readEntity(T entity, ContainerInfo node);
@@ -80,20 +79,36 @@ public abstract class AbstractInvalidationClusterTest<T> extends AbstractCluster
 
     protected abstract void deleteEntity(T testEntity, ContainerInfo node);
 
-    protected T createEntityOnCurrentFailNode(T testEntity) {
-        return createEntity(testEntity, getCurrentFailNode());
+    protected TR entityResourceOnCurrentFailNode(T testEntity) {
+        return entityResource(testEntity, getCurrentFailNode());
+    }
+
+    protected String getEntityType(T entity) {
+        return entity.getClass().getSimpleName().replace("Representation", "");
+    }
+
+    protected T createEntityOnCurrentFailNode(T entity) {
+        log.info("Creating " + getEntityType(entity) + " on " + getCurrentFailNode());
+        return createEntity(entity, getCurrentFailNode());
     }
 
     protected T readEntityOnCurrentFailNode(T entity) {
+        log.debug("Reading " + getEntityType(entity) + " on " + getCurrentFailNode());
         return readEntity(entity, getCurrentFailNode());
     }
 
     protected T updateEntityOnCurrentFailNode(T entity) {
+        return updateEntityOnCurrentFailNode(entity, "");
+    }
+
+    protected T updateEntityOnCurrentFailNode(T entity, String updateType) {
+        log.info("Updating " + getEntityType(entity) + " " + updateType + " on " + getCurrentFailNode());
         return updateEntity(entity, getCurrentFailNode());
     }
 
-    protected void deleteEntityOnCurrentFailNode(T testEntity) {
-        deleteEntity(testEntity, getCurrentFailNode());
+    protected void deleteEntityOnCurrentFailNode(T entity) {
+        log.info("Creating " + getEntityType(entity) + " on " + getCurrentFailNode());
+        deleteEntity(entity, getCurrentFailNode());
     }
 
     protected abstract T testEntityUpdates(T testEntity, boolean backendFailover);
@@ -116,15 +131,17 @@ public abstract class AbstractInvalidationClusterTest<T> extends AbstractCluster
         for (ContainerInfo survivorNode : getCurrentSurvivorNodes()) {
             T testEntityOnSurvivorNode = readEntity(testEntityOnFailNode, survivorNode);
             if (EqualsBuilder.reflectionEquals(testEntityOnSurvivorNode, testEntityOnFailNode, excludedComparisonFields)) {
-                log.info("Verification on survivor " + survivorNode + " PASSED");
+                log.info(String.format("Verification of %s on survivor %s PASSED", getEntityType(testEntityOnFailNode), survivorNode));
             } else {
                 entityDiffers = true;
-                log.error("Verification on survivor " + survivorNode + " FAILED");
+                log.error(String.format("Verification of %s on survivor %s FAILED", getEntityType(testEntityOnFailNode), survivorNode));
                 String tf = ReflectionToStringBuilder.reflectionToString(testEntityOnFailNode, ToStringStyle.SHORT_PREFIX_STYLE);
                 String ts = ReflectionToStringBuilder.reflectionToString(testEntityOnSurvivorNode, ToStringStyle.SHORT_PREFIX_STYLE);
-                log.error("\nEntity on fail node: \n\n" + tf + "\n"
-                        + "\nEntity on survivor node: \n" + ts + "\n"
-                        + "\nDifference: \n" + StringUtils.difference(tf, ts) + "\n");
+                log.error(String.format(
+                        "\nEntity on fail node: \n%s\n"
+                        + "\nEntity on survivor node: \n%s\n"
+                        + "\nDifference: \n%s\n",
+                        tf, ts, StringUtils.difference(tf, ts)));
             }
         }
         assertFalse(entityDiffers);
@@ -136,10 +153,10 @@ public abstract class AbstractInvalidationClusterTest<T> extends AbstractCluster
         for (ContainerInfo survivorNode : getCurrentSurvivorNodes()) {
             T testEntityOnSurvivorNode = readEntity(testEntityOnFailNode, survivorNode);
             if (testEntityOnSurvivorNode == null) {
-                log.info("Verification of deletion on survivor " + survivorNode + " PASSED");
+                log.info(String.format("Verification of %s deletion on survivor %s PASSED", getEntityType(testEntityOnFailNode), survivorNode));
             } else {
                 entityExists = true;
-                log.error("Verification of deletion on survivor " + survivorNode + " FAILED");
+                log.error(String.format("Verification of %s deletion on survivor %s FAILED", getEntityType(testEntityOnFailNode), survivorNode));
             }
         }
         assertFalse(entityExists);

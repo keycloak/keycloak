@@ -78,7 +78,7 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     protected ContainerInfo frontendNode() {
         return suiteContext.getAuthServerInfo();
     }
-    
+
     protected ContainerInfo backendNode(int i) {
         return suiteContext.getAuthServerBackendsInfo().get(i);
     }
