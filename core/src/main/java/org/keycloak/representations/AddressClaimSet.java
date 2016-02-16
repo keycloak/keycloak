@@ -14,21 +14,27 @@ public class AddressClaimSet {
     public static final String POSTAL_CODE = "postal_code";
     public static final String COUNTRY = "country";
 
+    @com.fasterxml.jackson.annotation.JsonProperty(FORMATTED)
     @JsonProperty(FORMATTED)
     protected String formattedAddress;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(STREET_ADDRESS)
     @JsonProperty(STREET_ADDRESS)
     protected String streetAddress;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(LOCALITY)
     @JsonProperty(LOCALITY)
     protected String locality;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(REGION)
     @JsonProperty(REGION)
     protected String region;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(POSTAL_CODE)
     @JsonProperty(POSTAL_CODE)
     protected String postalCode;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(COUNTRY)
     @JsonProperty(COUNTRY)
     protected String country;
 

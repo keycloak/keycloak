@@ -23,6 +23,7 @@
         <base64.version>2.3.8</base64.version>
         <bouncycastle.crypto.version>1.50</bouncycastle.crypto.version>
         <jackson.version>1.9.9</jackson.version>
+        <jackson2.version>2.6.3</jackson2.version>
         <apache.httpcomponents.version>4.3.6</apache.httpcomponents.version>
         <apache.httpcomponents.httpcore.version>4.3.3</apache.httpcomponents.httpcore.version>
         <resteasy.version>3.0.10.Final</resteasy.version>
@@ -226,6 +227,11 @@
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-jaxrs</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.servlet</groupId>

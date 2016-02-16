@@ -36,11 +36,13 @@ public class Version {
         SINGLETON = new Version();
     }
 
+    @com.fasterxml.jackson.annotation.JsonProperty("version")
     @JsonProperty("version")
     public String getVersion() {
         return version;
     }
 
+    @com.fasterxml.jackson.annotation.JsonProperty("build-time")
     @JsonProperty("build-time")
     public String getBuildTime() {
         return buildTime;

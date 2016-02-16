@@ -23,66 +23,87 @@ import org.codehaus.jackson.annotate.JsonProperty;
  * @author pedroigor
  */
 public class UserInfo {
+    @com.fasterxml.jackson.annotation.JsonProperty("sub")
     @JsonProperty("sub")
     protected String sub;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("name")
     @JsonProperty("name")
     protected String name;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("given_name")
     @JsonProperty("given_name")
     protected String givenName;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("family_name")
     @JsonProperty("family_name")
     protected String familyName;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("middle_name")
     @JsonProperty("middle_name")
     protected String middleName;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("nickname")
     @JsonProperty("nickname")
     protected String nickName;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("preferred_username")
     @JsonProperty("preferred_username")
     protected String preferredUsername;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("profile")
     @JsonProperty("profile")
     protected String profile;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("picture")
     @JsonProperty("picture")
     protected String picture;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("website")
     @JsonProperty("website")
     protected String website;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("email")
     @JsonProperty("email")
     protected String email;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("email_verified")
     @JsonProperty("email_verified")
     protected Boolean emailVerified;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("gender")
     @JsonProperty("gender")
     protected String gender;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("birthdate")
     @JsonProperty("birthdate")
     protected String birthdate;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("zoneinfo")
     @JsonProperty("zoneinfo")
     protected String zoneinfo;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("locale")
     @JsonProperty("locale")
     protected String locale;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("phone_number")
     @JsonProperty("phone_number")
     protected String phoneNumber;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("phone_number_verified")
     @JsonProperty("phone_number_verified")
     protected Boolean phoneNumberVerified;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("address")
     @JsonProperty("address")
     protected AddressClaimSet address;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("updated_at")
     @JsonProperty("updated_at")
     protected Long updatedAt;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("claims_locales")
     @JsonProperty("claims_locales")
     protected String claimsLocales;
 

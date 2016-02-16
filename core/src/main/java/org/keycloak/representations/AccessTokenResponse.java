@@ -14,27 +14,36 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class AccessTokenResponse {
+
+    @com.fasterxml.jackson.annotation.JsonProperty("access_token")
     @JsonProperty("access_token")
     protected String token;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("expires_in")
     @JsonProperty("expires_in")
     protected long expiresIn;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("refresh_expires_in")
     @JsonProperty("refresh_expires_in")
     protected long refreshExpiresIn;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("refresh_token")
     @JsonProperty("refresh_token")
     protected String refreshToken;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("token_type")
     @JsonProperty("token_type")
     protected String tokenType;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("id_token")
     @JsonProperty("id_token")
     protected String idToken;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("not-before-policy")
     @JsonProperty("not-before-policy")
     protected int notBeforePolicy;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("session-state")
     @JsonProperty("session-state")
     protected String sessionState;
 

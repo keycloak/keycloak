@@ -15,22 +15,31 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class JsonWebToken implements Serializable {
+    @com.fasterxml.jackson.annotation.JsonProperty("jti")
     @JsonProperty("jti")
     protected String id;
+    @com.fasterxml.jackson.annotation.JsonProperty("exp")
     @JsonProperty("exp")
     protected int expiration;
+    @com.fasterxml.jackson.annotation.JsonProperty("nbf")
     @JsonProperty("nbf")
     protected int notBefore;
+    @com.fasterxml.jackson.annotation.JsonProperty("iat")
     @JsonProperty("iat")
     protected int issuedAt;
+    @com.fasterxml.jackson.annotation.JsonProperty("iss")
     @JsonProperty("iss")
     protected String issuer;
+    @com.fasterxml.jackson.annotation.JsonProperty("aud")
     @JsonProperty("aud")
     protected String audience;
+    @com.fasterxml.jackson.annotation.JsonProperty("sub")
     @JsonProperty("sub")
     protected String subject;
+    @com.fasterxml.jackson.annotation.JsonProperty(("typ"))
     @JsonProperty("typ")
     protected String type;
+    @com.fasterxml.jackson.annotation.JsonProperty("azp")
     @JsonProperty("azp")
     public String issuedFor;
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();

@@ -37,69 +37,91 @@ public class IDToken extends JsonWebToken {
     public static final String CLAIMS_LOCALES = "claims_locales";
     // NOTE!!!  WE used to use @JsonUnwrapped on a UserClaimSet object.  This screws up otherClaims and the won't work
     // anymore.  So don't have any @JsonUnwrapped!
+    @com.fasterxml.jackson.annotation.JsonProperty(NONCE)
     @JsonProperty(NONCE)
     protected String nonce;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(SESSION_STATE)
     @JsonProperty(SESSION_STATE)
     protected String sessionState;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(NAME)
     @JsonProperty(NAME)
     protected String name;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(GIVEN_NAME)
     @JsonProperty(GIVEN_NAME)
-    protected String givenName;
-
+    protected String givenName
+            ;
+    @com.fasterxml.jackson.annotation.JsonProperty(FAMILY_NAME)
     @JsonProperty(FAMILY_NAME)
     protected String familyName;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(MIDDLE_NAME)
     @JsonProperty(MIDDLE_NAME)
     protected String middleName;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(NICKNAME)
     @JsonProperty(NICKNAME)
     protected String nickName;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(PREFERRED_USERNAME)
     @JsonProperty(PREFERRED_USERNAME)
     protected String preferredUsername;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(PROFILE)
     @JsonProperty(PROFILE)
     protected String profile;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(PICTURE)
     @JsonProperty(PICTURE)
     protected String picture;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(WEBSITE)
     @JsonProperty(WEBSITE)
     protected String website;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(EMAIL)
     @JsonProperty(EMAIL)
     protected String email;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(EMAIL_VERIFIED)
     @JsonProperty(EMAIL_VERIFIED)
     protected Boolean emailVerified;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(GENDER)
     @JsonProperty(GENDER)
     protected String gender;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(BIRTHDATE)
     @JsonProperty(BIRTHDATE)
     protected String birthdate;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(ZONEINFO)
     @JsonProperty(ZONEINFO)
     protected String zoneinfo;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(LOCALE)
     @JsonProperty(LOCALE)
     protected String locale;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(PHONE_NUMBER)
     @JsonProperty(PHONE_NUMBER)
     protected String phoneNumber;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(PHONE_NUMBER_VERIFIED)
     @JsonProperty(PHONE_NUMBER_VERIFIED)
     protected Boolean phoneNumberVerified;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(ADDRESS)
     @JsonProperty(ADDRESS)
     protected AddressClaimSet address;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(UPDATED_AT)
     @JsonProperty(UPDATED_AT)
     protected Long updatedAt;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(CLAIMS_LOCALES)
     @JsonProperty(CLAIMS_LOCALES)
     protected String claimsLocales;
 

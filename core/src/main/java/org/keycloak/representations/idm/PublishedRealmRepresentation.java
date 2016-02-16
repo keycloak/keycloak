@@ -16,18 +16,23 @@ import java.security.PublicKey;
 public class PublishedRealmRepresentation {
     protected String realm;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("public_key")
     @JsonProperty("public_key")
     protected String publicKeyPem;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("token-service")
     @JsonProperty("token-service")
     protected String tokenServiceUrl;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("account-service")
     @JsonProperty("account-service")
     protected String accountServiceUrl;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("admin-api")
     @JsonProperty("admin-api")
     protected String adminApiUrl;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("tokens-not-before")
     @JsonProperty("tokens-not-before")
     protected int notBefore;
 

@@ -15,8 +15,10 @@ import java.util.Set;
  */
 public class AccessToken extends IDToken {
     public static class Access implements Serializable {
+        @com.fasterxml.jackson.annotation.JsonProperty("roles")
         @JsonProperty("roles")
         protected Set<String> roles;
+        @com.fasterxml.jackson.annotation.JsonProperty("verify_caller")
         @JsonProperty("verify_caller")
         protected Boolean verifyCaller;
 
@@ -42,6 +44,7 @@ public class AccessToken extends IDToken {
             return this;
         }
 
+        @com.fasterxml.jackson.annotation.JsonIgnore
         @JsonIgnore
         public boolean isUserInRole(String role) {
             if (roles == null) return false;
@@ -64,18 +67,23 @@ public class AccessToken extends IDToken {
         }
     }
 
+    @com.fasterxml.jackson.annotation.JsonProperty("client_session")
     @JsonProperty("client_session")
     protected String clientSession;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("trusted-certs")
     @JsonProperty("trusted-certs")
     protected Set<String> trustedCertificates;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("allowed-origins")
     @JsonProperty("allowed-origins")
     protected Set<String> allowedOrigins;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("realm_access")
     @JsonProperty("realm_access")
     protected Access realmAccess;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("resource_access")
     @JsonProperty("resource_access")
     protected Map<String, Access> resourceAccess = new HashMap<String, Access>();
 

@@ -13,9 +13,11 @@ public class RSAPublicJWK extends JWK {
     public static final String MODULUS = "n";
     public static final String PUBLIC_EXPONENT = "e";
 
+    @com.fasterxml.jackson.annotation.JsonProperty(MODULUS)
     @JsonProperty(MODULUS)
     private String modulus;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("e")
     @JsonProperty("e")
     private String publicExponent;
 

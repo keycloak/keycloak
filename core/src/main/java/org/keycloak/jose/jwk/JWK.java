@@ -23,15 +23,19 @@ public class JWK {
     public static final String SIG_USE = "sig";
     public static final String ENCRYPTION_USE = "enc";
 
+    @com.fasterxml.jackson.annotation.JsonProperty(KEY_ID)
     @JsonProperty(KEY_ID)
     private String keyId;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(KEY_TYPE)
     @JsonProperty(KEY_TYPE)
     private String keyType;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(ALGORITHM)
     @JsonProperty(ALGORITHM)
     private String algorithm;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(PUBLIC_KEY_USE)
     @JsonProperty(PUBLIC_KEY_USE)
     private String publicKeyUse;
 

@@ -12,15 +12,19 @@ import java.io.Serializable;
  * @version $Revision: 1 $
  */
 public class JWSHeader implements Serializable {
+    @com.fasterxml.jackson.annotation.JsonProperty("alg")
     @JsonProperty("alg")
     private Algorithm algorithm;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("typ")
     @JsonProperty("typ")
     private String type;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("cty")
     @JsonProperty("cty")
     private String contentType;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("kid")
     @JsonProperty("kid")
     private String keyId;
 
