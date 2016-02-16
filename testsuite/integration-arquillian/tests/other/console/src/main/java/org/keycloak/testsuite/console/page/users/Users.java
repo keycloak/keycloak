@@ -17,6 +17,7 @@
  */
 package org.keycloak.testsuite.console.page.users;
 
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -77,15 +78,15 @@ public class Users extends AdminConsoleRealm {
         }
 
         public void editUser(String username) {
-            clickRowActionButton(getRowByLinkText(username), EDIT);
+            clickRowActionButton(getRowByUsername(username), EDIT);
         }
 
         public void impersonateUser(String username) {
-            clickRowActionButton(getRowByLinkText(username), IMPERSONATE);
+            clickRowActionButton(getRowByUsername(username), IMPERSONATE);
         }
 
         public void deleteUser(String username) {
-            clickRowActionButton(getRowByLinkText(username), DELETE);
+            clickRowActionButton(getRowByUsername(username), DELETE);
             modalDialog.confirmDeletion();
         }
 
@@ -130,6 +131,14 @@ public class Users extends AdminConsoleRealm {
                 }
 //            }
             return users;
+        }
+
+        protected WebElement getRowByUsername(String userName) {
+            WebElement row = body().findElement(
+                    By.xpath(".//tr[./td/following::td[text()='" + userName + "']]")
+            );
+            waitUntilElement(row).is().present();
+            return row;
         }
 
     }
