@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-social-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.2.1.Smartling-SNAPSHOT</version>
+        <version>1.2.1.Smartling-RELEASE</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
