@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-parent</artifactId>
-        <version>1.2.1.Smartling-RELEASE</version>
+        <version>1.2.2.Smartling-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
