@@ -36,8 +36,8 @@ public class TokensTest extends AbstractRealmTest {
     @Page
     private TokenSettings tokenSettingsPage;
 
-    private static final int TIMEOUT = 4;
-    private static final TimeUnit TIME_UNIT = TimeUnit.SECONDS;
+    private static final int TIMEOUT = 1;
+    private static final TimeUnit TIME_UNIT = TimeUnit.MINUTES;
 
     @Before
     public void beforeTokensTest() {
@@ -52,7 +52,7 @@ public class TokensTest extends AbstractRealmTest {
         tokenSettingsPage.form().save();
 
         loginToTestRealmConsoleAs(testUser);
-        TIME_UNIT.sleep(TIMEOUT + 2);
+        waitForTimeout(TIMEOUT + 2);
 
         driver.navigate().refresh();
 
@@ -66,16 +66,22 @@ public class TokensTest extends AbstractRealmTest {
         tokenSettingsPage.form().save();
 
         loginToTestRealmConsoleAs(testUser);
-        TIME_UNIT.sleep(TIMEOUT / 2);
+        waitForTimeout(TIMEOUT / 2);
 
         driver.navigate().refresh();
         assertCurrentUrlStartsWith(testRealmAdminConsolePage); // assert still logged in (within lifespan)
 
-        TIME_UNIT.sleep(TIMEOUT / 2 + 2);
+        waitForTimeout(TIMEOUT / 2 + 2);
         driver.navigate().refresh();
 
         log.debug(driver.getCurrentUrl());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage); // assert logged out (lifespan exceeded)
+    }
+
+    private void waitForTimeout (int timeout) throws InterruptedException {
+        log.info("Wait for timeout: " + timeout + " " + TIME_UNIT);
+        TIME_UNIT.sleep(timeout);
+        log.info("Timeout reached");
     }
 
 }
