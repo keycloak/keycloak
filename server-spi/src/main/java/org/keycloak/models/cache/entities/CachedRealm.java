@@ -222,7 +222,8 @@ public class CachedRealm implements Serializable {
         }
         this.identityProviders = Collections.unmodifiableList(this.identityProviders);
 
-        for (IdentityProviderMapperModel mapper : model.getIdentityProviderMappers()) {
+        this.identityProviderMapperSet = model.getIdentityProviderMappers();
+        for (IdentityProviderMapperModel mapper : identityProviderMapperSet) {
             identityProviderMappers.add(mapper.getIdentityProviderAlias(), mapper);
         }
 
