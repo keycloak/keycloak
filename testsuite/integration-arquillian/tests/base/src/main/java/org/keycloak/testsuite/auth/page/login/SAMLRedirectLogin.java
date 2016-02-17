@@ -20,8 +20,8 @@ package org.keycloak.testsuite.auth.page.login;
 /**
  * @author mhajas
  */
-public class SAMLLogin extends Login {
-    SAMLLogin() {
+public class SAMLRedirectLogin extends Login {
+    SAMLRedirectLogin() {
         setProtocol(SAML);
     }
 }

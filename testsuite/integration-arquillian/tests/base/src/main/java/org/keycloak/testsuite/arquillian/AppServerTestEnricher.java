@@ -1,9 +1,5 @@
 package org.keycloak.testsuite.arquillian;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import org.jboss.arquillian.container.spi.event.container.BeforeDeploy;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Instance;
@@ -13,12 +9,18 @@ import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.logging.Logger;
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerQualifier;
 import org.keycloak.testsuite.arquillian.annotation.AdapterLibsLocationProperty;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import static org.keycloak.testsuite.util.IOUtil.execCommand;
 import org.keycloak.testsuite.util.LogChecker;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerQualifier;
+import static org.keycloak.testsuite.util.IOUtil.execCommand;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
@@ -158,7 +160,9 @@ public class AppServerTestEnricher {
                 execCommand(command + " --connect --command=reload" + controllerArg, bin);
                 log.info("Container restarted");
                 pause(5000);
-                LogChecker.checkJBossServerLog(jbossHomePath);
+                if (System.getProperty("app.server.log.check","true").equals("true")) {
+                    LogChecker.checkJBossServerLog(jbossHomePath);
+                }
             }
 
             appServerInfo.setAdapterLibsInstalled(true);
