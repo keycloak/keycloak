@@ -20,57 +20,55 @@ package org.keycloak.models.sessions.infinispan.initializer;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.infinispan.distexec.DefaultExecutorService;
-import org.infinispan.notifications.Listener;
-import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
-import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
+import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.remoting.transport.Transport;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * Startup initialization for reading persistent userSessions/clientSessions to be filled into infinispan/memory . In cluster,
  * the initialization is distributed among all cluster nodes, so the startup time is even faster
  *
+ * TODO: Move to clusterService. Implementation is already pretty generic and doesn't contain any "userSession" specific stuff. All sessions-specific logic is in the SessionLoader implementation
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class InfinispanUserSessionInitializer {
 
+    private static final String STATE_KEY_PREFIX = "distributed::";
+
     private static final Logger log = Logger.getLogger(InfinispanUserSessionInitializer.class);
 
     private final KeycloakSessionFactory sessionFactory;
-    private final Cache<String, SessionEntity> cache;
+    private final Cache<String, Serializable> workCache;
     private final SessionLoader sessionLoader;
     private final int maxErrors;
     private final int sessionsPerSegment;
     private final String stateKey;
 
 
-    public InfinispanUserSessionInitializer(KeycloakSessionFactory sessionFactory, Cache<String, SessionEntity> cache, SessionLoader sessionLoader, int maxErrors, int sessionsPerSegment, String stateKey) {
+    public InfinispanUserSessionInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader sessionLoader, int maxErrors, int sessionsPerSegment, String stateKeySuffix) {
         this.sessionFactory = sessionFactory;
-        this.cache = cache;
+        this.workCache = workCache;
         this.sessionLoader = sessionLoader;
         this.maxErrors = maxErrors;
         this.sessionsPerSegment = sessionsPerSegment;
-        this.stateKey = stateKey;
+        this.stateKey = STATE_KEY_PREFIX + stateKeySuffix;
     }
 
     public void initCache() {
-        this.cache.getAdvancedCache().getComponentRegistry().registerComponent(sessionFactory, KeycloakSessionFactory.class);
+        this.workCache.getAdvancedCache().getComponentRegistry().registerComponent(sessionFactory, KeycloakSessionFactory.class);
     }
 
 
@@ -94,16 +92,14 @@ public class InfinispanUserSessionInitializer {
 
 
     private boolean isFinished() {
-        InitializerState state = (InitializerState) cache.get(stateKey);
+        InitializerState state = (InitializerState) workCache.get(stateKey);
         return state != null && state.isFinished();
     }
 
 
     private InitializerState getOrCreateInitializerState() {
-        TimeAwareInitializerState state = (TimeAwareInitializerState) cache.get(stateKey);
+        InitializerState state = (InitializerState) workCache.get(stateKey);
         if (state == null) {
-            int startTime = (int)(sessionFactory.getServerStartupTimestamp() / 1000);
-
             final int[] count = new int[1];
 
             // Rather use separate transactions for update and counting
@@ -111,7 +107,7 @@ public class InfinispanUserSessionInitializer {
             KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
                 @Override
                 public void run(KeycloakSession session) {
-                    sessionLoader.init(session, startTime);
+                    sessionLoader.init(session);
                 }
 
             });
@@ -124,9 +120,8 @@ public class InfinispanUserSessionInitializer {
 
             });
 
-            state = new TimeAwareInitializerState();
+            state = new InitializerState();
             state.init(count[0], sessionsPerSegment);
-            state.setClusterStartupTime(startTime);
             saveStateToCache(state);
         }
         return state;
@@ -143,7 +138,7 @@ public class InfinispanUserSessionInitializer {
             public void run() {
 
                 // Save this synchronously to ensure all nodes read correct state
-                InfinispanUserSessionInitializer.this.cache.getAdvancedCache().
+                InfinispanUserSessionInitializer.this.workCache.getAdvancedCache().
                         withFlags(Flag.IGNORE_RETURN_VALUES, Flag.FORCE_SYNCHRONOUS)
                         .put(stateKey, state);
             }
@@ -153,7 +148,7 @@ public class InfinispanUserSessionInitializer {
 
 
     private boolean isCoordinator() {
-        Transport transport = cache.getCacheManager().getTransport();
+        Transport transport = workCache.getCacheManager().getTransport();
         return transport == null || transport.isCoordinator();
     }
 
@@ -166,9 +161,9 @@ public class InfinispanUserSessionInitializer {
         int processors = Runtime.getRuntime().availableProcessors();
 
         ExecutorService localExecutor = Executors.newCachedThreadPool();
-        Transport transport = cache.getCacheManager().getTransport();
+        Transport transport = workCache.getCacheManager().getTransport();
         boolean distributed = transport != null;
-        ExecutorService executorService = distributed ? new DefaultExecutorService(cache, localExecutor) : localExecutor;
+        ExecutorService executorService = distributed ? new DefaultExecutorService(workCache, localExecutor) : localExecutor;
 
         int errors = 0;
 
@@ -190,7 +185,7 @@ public class InfinispanUserSessionInitializer {
                     SessionInitializerWorker worker = new SessionInitializerWorker();
                     worker.setWorkerEnvironment(segment, sessionsPerSegment, sessionLoader);
                     if (!distributed) {
-                        worker.setEnvironment(cache, null);
+                        worker.setEnvironment(workCache, null);
                     }
 
                     Future<WorkerResult> future = executorService.submit(worker);
@@ -242,6 +237,12 @@ public class InfinispanUserSessionInitializer {
                 runnable.run();
                 return;
             } catch (RuntimeException e) {
+                ComponentStatus status = workCache.getStatus();
+                if (status.isStopping() || status.isTerminated()) {
+                    log.warn("Failed to put initializerState to the cache. Cache is already terminating");
+                    log.debug(e.getMessage(), e);
+                    return;
+                }
                 retry--;
                 if (retry == 0) {
                     throw e;

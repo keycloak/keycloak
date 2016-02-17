@@ -15,20 +15,20 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.sessions.infinispan.initializer;
-
-import java.io.Serializable;
-
-import org.keycloak.models.KeycloakSession;
+package org.keycloak.cluster;
 
 /**
+ * Task to be executed on all cluster nodes once it's notified.
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface SessionLoader extends Serializable {
+public interface ClusterListener {
 
-    void init(KeycloakSession session);
+    /**
+     * Registered task to be executed on all cluster nodes once it's notified from cache.
+     *
+     * @param event value of notification (Object added into the cache)
+     */
+    void run(ClusterEvent event);
 
-    int getSessionsCount(KeycloakSession session);
-
-    boolean loadSessions(KeycloakSession session, int first, int max);
 }

@@ -15,20 +15,34 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.sessions.infinispan.initializer;
+package org.keycloak.cluster;
 
-import java.io.Serializable;
-
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface SessionLoader extends Serializable {
+public class ClusterSpi implements Spi {
 
-    void init(KeycloakSession session);
+    @Override
+    public boolean isInternal() {
+        return true;
+    }
 
-    int getSessionsCount(KeycloakSession session);
+    @Override
+    public String getName() {
+        return "cluster";
+    }
 
-    boolean loadSessions(KeycloakSession session, int first, int max);
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return ClusterProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return ClusterProviderFactory.class;
+    }
 }

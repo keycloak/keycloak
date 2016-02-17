@@ -23,6 +23,8 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.transaction.LockingMode;
+import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
@@ -145,6 +147,13 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, sessionCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, sessionCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfiguration);
+
+        ConfigurationBuilder replicationConfigBuilder = new ConfigurationBuilder();
+        if (clustered) {
+            replicationConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
+        }
+        Configuration replicationCacheConfiguration = replicationConfigBuilder.build();
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.WORK_CACHE_NAME, replicationCacheConfiguration);
     }
 
 }

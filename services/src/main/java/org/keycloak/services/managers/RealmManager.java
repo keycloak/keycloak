@@ -231,7 +231,7 @@ public class RealmManager implements RealmImporter {
             // Remove all periodic syncs for configured federation providers
             UsersSyncManager usersSyncManager = new UsersSyncManager();
             for (final UserFederationProviderModel fedProvider : federationProviders) {
-                usersSyncManager.removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), fedProvider);
+                usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, true);
             }
         }
         return removed;
@@ -434,7 +434,7 @@ public class RealmManager implements RealmImporter {
         List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
         UsersSyncManager usersSyncManager = new UsersSyncManager();
         for (final UserFederationProviderModel fedProvider : federationProviders) {
-            usersSyncManager.refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, realm.getId());
+            usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
         }
         return realm;
     }

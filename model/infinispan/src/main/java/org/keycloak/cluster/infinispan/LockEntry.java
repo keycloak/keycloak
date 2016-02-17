@@ -15,20 +15,31 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.sessions.infinispan.initializer;
+package org.keycloak.cluster.infinispan;
 
 import java.io.Serializable;
-
-import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface SessionLoader extends Serializable {
+public class LockEntry implements Serializable {
 
-    void init(KeycloakSession session);
+    private String node;
+    private int timestamp;
 
-    int getSessionsCount(KeycloakSession session);
+    public String getNode() {
+        return node;
+    }
 
-    boolean loadSessions(KeycloakSession session, int first, int max);
+    public void setNode(String node) {
+        this.node = node;
+    }
+
+    public int getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(int timestamp) {
+        this.timestamp = timestamp;
+    }
 }

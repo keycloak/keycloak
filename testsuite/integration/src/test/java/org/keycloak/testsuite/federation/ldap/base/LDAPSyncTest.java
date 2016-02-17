@@ -43,23 +43,19 @@ import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.testsuite.federation.ldap.FederationTestUtils;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
-import org.keycloak.testsuite.DummyUserFederationProviderFactory;
-import org.keycloak.timer.TimerProvider;
 import org.keycloak.common.util.Time;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class SyncProvidersTest {
+public class LDAPSyncTest {
 
     private static LDAPRule ldapRule = new LDAPRule();
 
     private static UserFederationProviderModel ldapModel = null;
-    private static UserFederationProviderModel dummyModel = null;
 
     private static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
 
@@ -84,9 +80,6 @@ public class SyncProvidersTest {
                 LDAPObject ldapUser = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "user" + i, "User" + i + "FN", "User" + i + "LN", "user" + i + "@email.org", null, "12" + i);
                 FederationTestUtils.updateLDAPPassword(ldapFedProvider, ldapUser, "Password1");
             }
-
-            // Add dummy provider
-            dummyModel = appRealm.addUserFederationProvider(DummyUserFederationProviderFactory.PROVIDER_NAME, new HashMap<String, String>(), 1, "test-dummy", -1, 1, 0);
         }
     });
 
@@ -362,37 +355,6 @@ public class SyncProvidersTest {
             testRealm.removeUserFederationMapper(streetMapper);
         } finally {
             keycloakRule.stopSession(session, true);
-        }
-    }
-
-    @Test
-    public void testPeriodicSync() {
-        KeycloakSession session = keycloakRule.startSession();
-        try {
-            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            DummyUserFederationProviderFactory dummyFedFactory = (DummyUserFederationProviderFactory)sessionFactory.getProviderFactory(UserFederationProvider.class, DummyUserFederationProviderFactory.PROVIDER_NAME);
-            int full = dummyFedFactory.getFullSyncCounter();
-            int changed = dummyFedFactory.getChangedSyncCounter();
-
-            // Assert that after some period was DummyUserFederationProvider triggered
-            UsersSyncManager usersSyncManager = new UsersSyncManager();
-            usersSyncManager.bootstrapPeriodic(sessionFactory, session.getProvider(TimerProvider.class));
-            sleep(1800);
-
-            // Cancel timer
-            usersSyncManager.removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), dummyModel);
-
-            // Assert that DummyUserFederationProviderFactory.syncChangedUsers was invoked
-            int newChanged = dummyFedFactory.getChangedSyncCounter();
-            Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
-            Assert.assertTrue(newChanged > changed);
-
-            // Assert that dummy provider won't be invoked anymore
-            sleep(1800);
-            Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
-            Assert.assertEquals(newChanged, dummyFedFactory.getChangedSyncCounter());
-        } finally {
-            keycloakRule.stopSession(session, false);
         }
     }
 

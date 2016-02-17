@@ -30,6 +30,7 @@
                 <local-cache name="sessions"/>
                 <local-cache name="offlineSessions"/>
                 <local-cache name="loginFailures"/>
+                <local-cache name="work"/>
                 <local-cache name="realmVersions">
                     <transaction mode="BATCH" locking="PESSIMISTIC"/>
                 </local-cache>
@@ -90,6 +91,7 @@
                 <distributed-cache name="sessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
+                <replicated-cache name="work" mode="SYNC" />
                 <local-cache name="realmVersions">
                     <transaction mode="BATCH" locking="PESSIMISTIC"/>
                 </local-cache>

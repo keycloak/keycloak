@@ -143,6 +143,61 @@ kinit hnelson@KEYCLOAK.ORG
                         
 and provide password `secret`
 
-Now when you access `http://localhost:8081/auth/realms/master/account` you should be logged in automatically as user `hnelson` . 
+Now when you access `http://localhost:8081/auth/realms/master/account` you should be logged in automatically as user `hnelson` .
+ 
+
+Create many users or offline sessions
+-------------------------------------
+Run testsuite with the command like this:
+
+```
+mvn exec:java -Pkeycloak-server -DstartTestsuiteCLI
+```
+
+Alternatively if you want to use your MySQL database use the command like this (replace properties values according your DB connection):
+
+```
+mvn exec:java -Pkeycloak-server -Dkeycloak.connectionsJpa.url=jdbc:mysql://localhost/keycloak -Dkeycloak.connectionsJpa.driver=com.mysql.jdbc.Driver -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak -DstartTestsuiteCLI
+```
+
+Then once CLI is started, you can use command `help` to see all the available commands. 
+
+### Creating many users
+
+For create many users you can use command `createUsers` 
+For example this will create 500 users `test0, test1, test2, ... , test499` in realm `demo` and each 100 users in separate transaction. All users will be granted realm roles `user` and `admin` :
+
+```
+createUsers test test demo 0 500 100 user,admin
+```
+
+Check count of users:
+
+```
+getUsersCount demo
+```
+
+Check if concrete user was really created:
+
+```
+getUser demo test499
+```
+
+### Creating many offline sessions
+
+For create many offline sessions you can use command `persistSessions` . For example create 50000 sessions (each 500 in separate transaction) with command:
+
+```
+persistSessions 50000 500
+```
+
+Once users or sessions are created, you can restart to ensure the startup import of offline sessions will be triggered and you can see impact on startup time. After restart you can use command:
+
+```
+size
+```
+
+to doublecheck total count of sessions in infinispan (it will be 2 times as there is also 1 client session per each user session created)
+
 
 
