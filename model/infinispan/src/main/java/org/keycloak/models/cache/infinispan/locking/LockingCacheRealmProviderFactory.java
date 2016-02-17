@@ -138,7 +138,7 @@ public class LockingCacheRealmProviderFactory implements CacheRealmProviderFacto
                     realmCache.evictRoleById(r);
                 }
 
-                for (String c : realm.getClients().values()) {
+                for (String c : realm.getClients()) {
                     realmCache.evictClientById(c);
                 }
 

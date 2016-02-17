@@ -147,7 +147,7 @@ public class CachedRealm implements Serializable {
     protected List<String> defaultGroups = new LinkedList<String>();
     protected Set<String> groups = new HashSet<String>();
     protected Map<String, String> realmRoles = new HashMap<String, String>();
-    protected Map<String, String> clients = new HashMap<String, String>();
+    protected List<String> clients = new LinkedList<>();
     protected List<String> clientTemplates= new LinkedList<>();
     protected boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
@@ -296,7 +296,7 @@ public class CachedRealm implements Serializable {
 
     protected void cacheClients(RealmCache cache, RealmProvider delegate, RealmModel model) {
         for (ClientModel client : model.getClients()) {
-            clients.put(client.getClientId(), client.getId());
+            clients.add(client.getId());
             CachedClient cachedClient = new CachedClient(cache, delegate, model, client);
             cache.addClient(cachedClient);
         }
@@ -339,7 +339,7 @@ public class CachedRealm implements Serializable {
         return realmRoles;
     }
 
-    public Map<String, String> getClients() {
+    public List<String> getClients() {
         return clients;
     }
 

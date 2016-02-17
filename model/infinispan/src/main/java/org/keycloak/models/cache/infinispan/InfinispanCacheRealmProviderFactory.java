@@ -141,7 +141,7 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
                     realmCache.evictRoleById(r);
                 }
 
-                for (String c : realm.getClients().values()) {
+                for (String c : realm.getClients()) {
                     realmCache.evictClientById(c);
                 }
 

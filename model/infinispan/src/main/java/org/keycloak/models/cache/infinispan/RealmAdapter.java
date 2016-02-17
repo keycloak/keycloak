@@ -591,7 +591,7 @@ public class RealmAdapter implements RealmModel {
     public List<ClientModel> getClients() {
         if (updated != null) return updated.getClients();
         List<ClientModel> apps = new LinkedList<>();
-        for (String id : cached.getClients().values()) {
+        for (String id : cached.getClients()) {
             ClientModel model = cacheSession.getClientById(id, this);
             if (model == null) {
                 throw new IllegalStateException("Cached application not found: " + id);
