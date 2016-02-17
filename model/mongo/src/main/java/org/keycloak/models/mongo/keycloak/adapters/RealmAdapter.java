@@ -814,17 +814,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public Map<String, ClientModel> getClientNameMap() {
-        List<ClientModel> clients = getClients();
-        if (clients.isEmpty()) return Collections.EMPTY_MAP;
-        Map<String, ClientModel> resourceMap = new HashMap<String, ClientModel>();
-        for (ClientModel resource : clients) {
-            resourceMap.put(resource.getClientId(), resource);
-        }
-        return Collections.unmodifiableMap(resourceMap);
-    }
-
-    @Override
     public List<ClientModel> getClients() {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(getId())

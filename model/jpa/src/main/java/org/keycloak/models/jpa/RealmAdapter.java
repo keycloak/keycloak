@@ -722,17 +722,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public Map<String, ClientModel> getClientNameMap() {
-        List<ClientModel> clients = getClients();
-        if (clients.isEmpty()) return Collections.EMPTY_MAP;
-        Map<String, ClientModel> map = new HashMap<String, ClientModel>();
-        for (ClientModel app : clients) {
-            map.put(app.getClientId(), app);
-        }
-        return Collections.unmodifiableMap(map);
-    }
-
-    @Override
     public List<ClientModel> getClients() {
         TypedQuery<ClientEntity> query = em.createNamedQuery("getClientsByRealm", ClientEntity.class);
         query.setParameter("realm", realm);

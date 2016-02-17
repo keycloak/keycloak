@@ -118,12 +118,12 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertNotNull(application);
         Assert.assertNotNull(otherApp);
         Assert.assertNull(nonExisting);
-        Map<String, ClientModel> clients = realm.getClientNameMap();
+        List<ClientModel> clients = realm.getClients();
         Assert.assertEquals(8, clients.size());
-        Assert.assertTrue(clients.values().contains(application));
-        Assert.assertTrue(clients.values().contains(otherApp));
-        Assert.assertTrue(clients.values().contains(accountApp));
-        realm.getClients().containsAll(clients.values());
+        Assert.assertTrue(clients.contains(application));
+        Assert.assertTrue(clients.contains(otherApp));
+        Assert.assertTrue(clients.contains(accountApp));
+        realm.getClients().containsAll(clients);
 
         Assert.assertEquals("Applicationn", application.getName());
         Assert.assertEquals(50, application.getNodeReRegistrationTimeout());

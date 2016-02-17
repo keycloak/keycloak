@@ -139,7 +139,7 @@ public class RealmsResource {
     public AccountService getAccountService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
 
-        ClientModel client = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         if (client == null || !client.isEnabled()) {
             logger.debug("account management not enabled");
             throw new NotFoundException("account management not enabled");

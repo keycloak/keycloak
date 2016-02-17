@@ -588,20 +588,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public Map<String, ClientModel> getClientNameMap() {
-        if (updated != null) return updated.getClientNameMap();
-        Map<String, ClientModel> map = new HashMap<String, ClientModel>();
-        for (String id : cached.getClients().values()) {
-            ClientModel model = cacheSession.getClientById(id, this);
-            if (model == null) {
-                throw new IllegalStateException("Cached application not found: " + id);
-            }
-            map.put(model.getClientId(), model);
-        }
-        return Collections.unmodifiableMap(map);
-    }
-
-    @Override
     public List<ClientModel> getClients() {
         if (updated != null) return updated.getClients();
         List<ClientModel> apps = new LinkedList<>();

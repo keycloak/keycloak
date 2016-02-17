@@ -234,12 +234,12 @@ public class RepresentationToModel {
 
         // Now that all possible roles and clients are created, create scope mappings
 
-        Map<String, ClientModel> appMap = newRealm.getClientNameMap();
+        //Map<String, ClientModel> appMap = newRealm.getClientNameMap();
 
         if (rep.getClientScopeMappings() != null) {
 
             for (Map.Entry<String, List<ScopeMappingRepresentation>> entry : rep.getClientScopeMappings().entrySet()) {
-                ClientModel app = appMap.get(entry.getKey());
+                ClientModel app = newRealm.getClientByClientId(entry.getKey());
                 if (app == null) {
                     throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
                 }
@@ -320,7 +320,7 @@ public class RepresentationToModel {
 
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {
-                UserModel user = createUser(session, newRealm, userRep, appMap);
+                UserModel user = createUser(session, newRealm, userRep);
             }
         }
 
@@ -383,14 +383,13 @@ public class RepresentationToModel {
         List<GroupRepresentation> groups = rep.getGroups();
         if (groups == null) return;
 
-        Map<String, ClientModel> clientMap = realm.getClientNameMap();
         GroupModel parent = null;
         for (GroupRepresentation group : groups) {
-            importGroup(realm, clientMap, parent, group);
+            importGroup(realm, parent, group);
         }
     }
 
-    public static void importGroup(RealmModel realm, Map<String, ClientModel> clientMap, GroupModel parent, GroupRepresentation group) {
+    public static void importGroup(RealmModel realm, GroupModel parent, GroupRepresentation group) {
         GroupModel newGroup = realm.createGroup(group.getId(), group.getName());
         if (group.getAttributes() != null) {
             for (Map.Entry<String, List<String>> attr : group.getAttributes().entrySet()) {
@@ -410,7 +409,7 @@ public class RepresentationToModel {
         }
         if (group.getClientRoles() != null) {
             for (Map.Entry<String, List<String>> entry : group.getClientRoles().entrySet()) {
-                ClientModel client = clientMap.get(entry.getKey());
+                ClientModel client = realm.getClientByClientId(entry.getKey());
                 if (client == null) {
                     throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
                 }
@@ -427,7 +426,7 @@ public class RepresentationToModel {
         }
         if (group.getSubGroups() != null) {
             for (GroupRepresentation subGroup : group.getSubGroups()) {
-                importGroup(realm, clientMap, newGroup, subGroup);
+                importGroup(realm, newGroup, subGroup);
             }
         }
     }
@@ -1180,7 +1179,7 @@ public class RepresentationToModel {
 
     // Users
 
-    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep, Map<String, ClientModel> clientMap) {
+    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep) {
         convertDeprecatedSocialProviders(userRep);
 
         // Import users just to user storage. Don't federate
@@ -1228,7 +1227,7 @@ public class RepresentationToModel {
         }
         if (userRep.getServiceAccountClientId() != null) {
             String clientId = userRep.getServiceAccountClientId();
-            ClientModel client = clientMap.get(clientId);
+            ClientModel client = newRealm.getClientByClientId(clientId);
             if (client == null) {
                 throw new RuntimeException("Unable to find client specified for service account link. Client: " + clientId);
             }
@@ -1316,9 +1315,8 @@ public class RepresentationToModel {
             }
         }
         if (userRep.getClientRoles() != null) {
-            Map<String, ClientModel> clientMap = realm.getClientNameMap();
             for (Map.Entry<String, List<String>> entry : userRep.getClientRoles().entrySet()) {
-                ClientModel client = clientMap.get(entry.getKey());
+                ClientModel client = realm.getClientByClientId(entry.getKey());
                 if (client == null) {
                     throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
                 }
