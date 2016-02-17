@@ -46,6 +46,8 @@ import javax.mail.internet.MimeMessage;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
@@ -542,8 +544,11 @@ public class ResetPasswordTest {
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                host[0] =  appRealm.getSmtpConfig().get("host");
-                appRealm.getSmtpConfig().put("host", "invalid_host");
+                Map<String, String> smtpConfig = new HashMap<>();
+                smtpConfig.putAll(appRealm.getSmtpConfig());
+                host[0] =  smtpConfig.get("host");
+                smtpConfig.put("host", "invalid_host");
+                appRealm.setSmtpConfig(smtpConfig);
             }
         });
 
@@ -568,7 +573,10 @@ public class ResetPasswordTest {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.getSmtpConfig().put("host",host[0]);
+                    Map<String, String> smtpConfig = new HashMap<>();
+                    smtpConfig.putAll(appRealm.getSmtpConfig());
+                    smtpConfig.put("host",host[0]);
+                    appRealm.setSmtpConfig(smtpConfig);
                 }
             });
         }

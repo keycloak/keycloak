@@ -42,7 +42,7 @@ public class RevisionedCachedRealm extends CachedRealm implements Revisioned {
     @Override
     protected void cacheClients(RealmCache cache, RealmProvider delegate, RealmModel model) {
         for (ClientModel client : model.getClients()) {
-            clients.put(client.getClientId(), client.getId());
+            clients.add(client.getId());
         }
     }
 

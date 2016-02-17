@@ -608,9 +608,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
-        List<RequiredCredentialModel> requiredCredentialModels = new ArrayList<RequiredCredentialModel>();
         Collection<RequiredCredentialEntity> entities = realm.getRequiredCredentials();
-        if (entities == null) return requiredCredentialModels;
+        if (entities == null) return Collections.EMPTY_LIST;
+        List<RequiredCredentialModel> requiredCredentialModels = new LinkedList<>();
         for (RequiredCredentialEntity entity : entities) {
             RequiredCredentialModel model = new RequiredCredentialModel();
             model.setFormLabel(entity.getFormLabel());
@@ -619,19 +619,19 @@ public class RealmAdapter implements RealmModel {
             model.setInput(entity.isInput());
             requiredCredentialModels.add(model);
         }
-        return requiredCredentialModels;  //To change body of implemented methods use File | Settings | File Templates.
+        return Collections.unmodifiableList(requiredCredentialModels);
     }
 
 
     @Override
     public List<String> getDefaultRoles() {
         Collection<RoleEntity> entities = realm.getDefaultRoles();
-        List<String> roles = new ArrayList<String>();
-        if (entities == null) return roles;
+        if (entities == null || entities.isEmpty()) return Collections.emptyList();
+        List<String> roles = new LinkedList<>();
         for (RoleEntity entity : entities) {
             roles.add(entity.getName());
         }
-        return roles;
+        return Collections.unmodifiableList(roles);
     }
 
     @Override
@@ -685,11 +685,12 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<GroupModel> getDefaultGroups() {
         Collection<GroupEntity> entities = realm.getDefaultGroups();
+        if (entities == null || entities.isEmpty()) return Collections.EMPTY_LIST;
         List<GroupModel> defaultGroups = new LinkedList<>();
         for (GroupEntity entity : entities) {
             defaultGroups.add(session.realms().getGroupById(entity.getId(), this));
         }
-        return defaultGroups;
+        return Collections.unmodifiableList(defaultGroups);
     }
 
     @Override
@@ -721,24 +722,16 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public Map<String, ClientModel> getClientNameMap() {
-        Map<String, ClientModel> map = new HashMap<String, ClientModel>();
-        for (ClientModel app : getClients()) {
-            map.put(app.getClientId(), app);
-        }
-        return map;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
     public List<ClientModel> getClients() {
-        List<ClientModel> list = new LinkedList<>();
         TypedQuery<ClientEntity> query = em.createNamedQuery("getClientsByRealm", ClientEntity.class);
         query.setParameter("realm", realm);
         List<ClientEntity> clients = query.getResultList();
+        if (clients.isEmpty()) return Collections.EMPTY_LIST;
+        List<ClientModel> list = new LinkedList<>();
         for (ClientEntity entity : clients) {
             list.add(new ClientAdapter(this, em, session, entity));
         }
-      return list;
+      return Collections.unmodifiableList(list);
     }
 
     @Override
@@ -794,13 +787,14 @@ public class RealmAdapter implements RealmModel {
     @Override
     public Map<String, String> getBrowserSecurityHeaders() {
         Map<String, String> attributes = getAttributes();
+        if (attributes.isEmpty()) return Collections.EMPTY_MAP;
         Map<String, String> headers = new HashMap<String, String>();
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             if (entry.getKey().startsWith(BROWSER_HEADER_PREFIX)) {
                 headers.put(entry.getKey().substring(BROWSER_HEADER_PREFIX.length()), entry.getValue());
             }
         }
-        return headers;
+        return Collections.unmodifiableMap(headers);
     }
 
     @Override
@@ -812,7 +806,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Map<String, String> getSmtpConfig() {
-        return realm.getSmtpConfig();
+        Map<String, String> config = new HashMap<String, String>();
+        config.putAll(realm.getSmtpConfig());
+        return Collections.unmodifiableMap(config);
     }
 
     @Override
@@ -824,6 +820,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<UserFederationProviderModel> getUserFederationProviders() {
         List<UserFederationProviderEntity> entities = realm.getUserFederationProviders();
+        if (entities.isEmpty()) return Collections.EMPTY_LIST;
         List<UserFederationProviderEntity> copy = new ArrayList<UserFederationProviderEntity>();
         for (UserFederationProviderEntity entity : entities) {
             copy.add(entity);
@@ -843,7 +840,7 @@ public class RealmAdapter implements RealmModel {
                     entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
         }
 
-        return result;
+        return Collections.unmodifiableList(result);
     }
 
     @Override
@@ -1062,13 +1059,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Set<RoleModel> getRoles() {
-        Set<RoleModel> list = new HashSet<RoleModel>();
         Collection<RoleEntity> roles = realm.getRoles();
-        if (roles == null) return list;
+        if (roles == null) return Collections.EMPTY_SET;
+        Set<RoleModel> list = new HashSet<RoleModel>();
         for (RoleEntity entity : roles) {
             list.add(new RoleAdapter(this, em, entity));
         }
-        return list;
+        return Collections.unmodifiableSet(list);
     }
 
     @Override
@@ -1206,7 +1203,11 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Set<String> getEventsListeners() {
-        return realm.getEventsListeners();
+        Set<String> eventsListeners = realm.getEventsListeners();
+        if (eventsListeners.isEmpty()) return Collections.EMPTY_SET;
+        Set<String> copy = new HashSet<>();
+        copy.addAll(eventsListeners);
+        return Collections.unmodifiableSet(copy);
     }
 
     @Override
@@ -1217,7 +1218,11 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Set<String> getEnabledEventTypes() {
-        return realm.getEnabledEventTypes();
+        Set<String> enabledEventTypes = realm.getEnabledEventTypes();
+        if (enabledEventTypes.isEmpty()) return Collections.EMPTY_SET;
+        Set<String> copy = new HashSet<>();
+        copy.addAll(enabledEventTypes);
+        return Collections.unmodifiableSet(copy);
     }
 
     @Override
@@ -1268,15 +1273,20 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<IdentityProviderModel> getIdentityProviders() {
+        List<IdentityProviderEntity> entities = realm.getIdentityProviders();
+        if (entities.isEmpty()) return Collections.EMPTY_LIST;
         List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
 
-        for (IdentityProviderEntity entity: realm.getIdentityProviders()) {
+        for (IdentityProviderEntity entity: entities) {
             IdentityProviderModel identityProviderModel = new IdentityProviderModel();
 
             identityProviderModel.setProviderId(entity.getProviderId());
             identityProviderModel.setAlias(entity.getAlias());
             identityProviderModel.setInternalId(entity.getInternalId());
-            identityProviderModel.setConfig(entity.getConfig());
+            Map<String, String> config = entity.getConfig();
+            Map<String, String> copy = new HashMap<>();
+            copy.putAll(config);
+            identityProviderModel.setConfig(copy);
             identityProviderModel.setEnabled(entity.isEnabled());
             identityProviderModel.setTrustEmail(entity.isTrustEmail());
             identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
@@ -1288,7 +1298,7 @@ public class RealmAdapter implements RealmModel {
             identityProviders.add(identityProviderModel);
         }
 
-        return identityProviders;
+        return Collections.unmodifiableList(identityProviders);
     }
 
     @Override
@@ -1373,7 +1383,11 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Set<String> getSupportedLocales() {
-        return realm.getSupportedLocales();
+        Set<String> supportedLocales = realm.getSupportedLocales();
+        if (supportedLocales == null || supportedLocales.isEmpty()) return Collections.EMPTY_SET;
+        Set<String> copy = new HashSet<>();
+        copy.addAll(supportedLocales);
+        return Collections.unmodifiableSet(copy);
     }
 
     @Override
@@ -1395,12 +1409,14 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Set<IdentityProviderMapperModel> getIdentityProviderMappers() {
+        Collection<IdentityProviderMapperEntity> entities = this.realm.getIdentityProviderMappers();
+        if (entities.isEmpty()) return Collections.EMPTY_SET;
         Set<IdentityProviderMapperModel> mappings = new HashSet<IdentityProviderMapperModel>();
-        for (IdentityProviderMapperEntity entity : this.realm.getIdentityProviderMappers()) {
+        for (IdentityProviderMapperEntity entity : entities) {
             IdentityProviderMapperModel mapping = entityToModel(entity);
             mappings.add(mapping);
         }
-        return mappings;
+        return Collections.unmodifiableSet(mappings);
     }
 
     @Override
@@ -1508,23 +1524,26 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Set<UserFederationMapperModel> getUserFederationMappers() {
-        Set<UserFederationMapperModel> mappers = new HashSet<UserFederationMapperModel>();
-        for (UserFederationMapperEntity entity : this.realm.getUserFederationMappers()) {
+        Collection<UserFederationMapperEntity> entities = this.realm.getUserFederationMappers();
+        if (entities.isEmpty()) return Collections.EMPTY_SET;
+        Set<UserFederationMapperModel> mappers = new HashSet<>();
+        for (UserFederationMapperEntity entity : entities) {
             UserFederationMapperModel mapper = entityToModel(entity);
             mappers.add(mapper);
         }
-        return mappers;
+        return Collections.unmodifiableSet(mappers);
     }
 
     @Override
     public Set<UserFederationMapperModel> getUserFederationMappersByFederationProvider(String federationProviderId) {
-        Set<UserFederationMapperModel> mappers = new HashSet<UserFederationMapperModel>();
         Set<UserFederationMapperEntity> mapperEntities = getUserFederationMapperEntitiesByFederationProvider(federationProviderId);
+        if (mapperEntities.isEmpty()) return Collections.EMPTY_SET;
+        Set<UserFederationMapperModel> mappers = new HashSet<UserFederationMapperModel>();
         for (UserFederationMapperEntity entity : mapperEntities) {
             UserFederationMapperModel mapper = entityToModel(entity);
             mappers.add(mapper);
         }
-        return mappers;
+        return Collections.unmodifiableSet(mappers);
     }
 
     @Override
@@ -1693,13 +1712,13 @@ public class RealmAdapter implements RealmModel {
         TypedQuery<AuthenticationFlowEntity> query = em.createNamedQuery("getAuthenticationFlowsByRealm", AuthenticationFlowEntity.class);
         query.setParameter("realm", realm);
         List<AuthenticationFlowEntity> flows = query.getResultList();
-        if (flows.size() == 0) return Collections.EMPTY_LIST;
+        if (flows.isEmpty()) return Collections.EMPTY_LIST;
         List<AuthenticationFlowModel> models = new LinkedList<>();
         for (AuthenticationFlowEntity entity : flows) {
             AuthenticationFlowModel model = entityToModel(entity);
             models.add(model);
         }
-        return models;
+        return Collections.unmodifiableList(models);
     }
 
     @Override
@@ -1785,13 +1804,14 @@ public class RealmAdapter implements RealmModel {
         query.setParameter("realm", realm);
         query.setParameter("parentFlow", flow);
         List<AuthenticationExecutionEntity> queryResult = query.getResultList();
+        if (queryResult.isEmpty()) return Collections.EMPTY_LIST;
         List<AuthenticationExecutionModel> executions = new LinkedList<>();
         for (AuthenticationExecutionEntity entity : queryResult) {
             AuthenticationExecutionModel model = entityToModel(entity);
             executions.add(model);
         }
         Collections.sort(executions, AuthenticationExecutionModel.ExecutionComparator.SINGLETON);
-        return executions;
+        return Collections.unmodifiableList(executions);
     }
 
     public AuthenticationExecutionModel entityToModel(AuthenticationExecutionEntity entity) {
@@ -1916,11 +1936,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<AuthenticatorConfigModel> getAuthenticatorConfigs() {
+        Collection<AuthenticatorConfigEntity> entities = realm.getAuthenticatorConfigs();
+        if (entities.isEmpty()) return Collections.EMPTY_LIST;
         List<AuthenticatorConfigModel> authenticators = new LinkedList<>();
-        for (AuthenticatorConfigEntity entity : realm.getAuthenticatorConfigs()) {
+        for (AuthenticatorConfigEntity entity : entities) {
             authenticators.add(entityToModel(entity));
         }
-        return authenticators;
+        return Collections.unmodifiableList(authenticators);
     }
 
     @Override
@@ -1993,11 +2015,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<RequiredActionProviderModel> getRequiredActionProviders() {
+        Collection<RequiredActionProviderEntity> entities = realm.getRequiredActionProviders();
+        if (entities.isEmpty()) return Collections.EMPTY_LIST;
         List<RequiredActionProviderModel> actions = new LinkedList<>();
-        for (RequiredActionProviderEntity entity : realm.getRequiredActionProviders()) {
+        for (RequiredActionProviderEntity entity : entities) {
             actions.add(entityToModel(entity));
         }
-        return actions;
+        return Collections.unmodifiableList(actions);
     }
 
     @Override
@@ -2028,26 +2052,26 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<GroupModel> getGroups() {
+        List<GroupEntity> groups =  em.createNamedQuery("getAllGroupsByRealm").setParameter("realm", realm).getResultList();
+        if (groups == null) return Collections.EMPTY_LIST;
         List<GroupModel> list = new LinkedList<>();
-        Collection<GroupEntity> groups =  em.createNamedQuery("getAllGroupsByRealm").setParameter("realm", realm).getResultList();
-        if (groups == null) return list;
         for (GroupEntity entity : groups) {
             list.add(new GroupAdapter(this, em, entity));
         }
-        return list;
+        return Collections.unmodifiableList(list);
     }
 
     @Override
     public List<GroupModel> getTopLevelGroups() {
-        List<GroupModel> all = getGroups();
-        Iterator<GroupModel> it = all.iterator();
-        while (it.hasNext()) {
-            GroupModel group = it.next();
-            if (group.getParent() != null) {
-                it.remove();
+        List<GroupModel> base = getGroups();
+        if (base.isEmpty()) return base;
+        List<GroupModel> copy = new LinkedList<>();
+        for (GroupModel group : base) {
+            if (group.getParent() == null) {
+                copy.add(group);
             }
         }
-        return all;
+        return Collections.unmodifiableList(copy);
     }
 
     @Override
@@ -2100,12 +2124,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<ClientTemplateModel> getClientTemplates() {
+        Collection<ClientTemplateEntity> entities = realm.getClientTemplates();
+        if (entities == null || entities.isEmpty()) return Collections.EMPTY_LIST;
         List<ClientTemplateModel> list = new LinkedList<>();
-        if (realm.getClientTemplates() == null) return list;
-        for (ClientTemplateEntity entity : realm.getClientTemplates()) {
+        for (ClientTemplateEntity entity : entities) {
             list.add(new ClientTemplateAdapter(this, em, session, entity));
         }
-        return list;
+        return Collections.unmodifiableList(list);
     }
 
     @Override

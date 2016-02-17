@@ -75,7 +75,7 @@ public class ClientModelTest extends AbstractModelTest {
     public void persist() {
         RealmModel persisted = realmManager.getRealm(realm.getId());
 
-        ClientModel actual = persisted.getClientNameMap().get("app-name");
+        ClientModel actual = persisted.getClientByClientId("app-name");
         assertEquals(client, actual);
     }
 

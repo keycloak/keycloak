@@ -199,9 +199,8 @@ public class ImportUtils {
 
     private static void importUsers(KeycloakSession session, RealmProvider model, String realmName, List<UserRepresentation> userReps) {
         RealmModel realm = model.getRealmByName(realmName);
-        Map<String, ClientModel> apps = realm.getClientNameMap();
         for (UserRepresentation user : userReps) {
-            RepresentationToModel.createUser(session, realm, user, apps);
+            RepresentationToModel.createUser(session, realm, user);
         }
     }
 

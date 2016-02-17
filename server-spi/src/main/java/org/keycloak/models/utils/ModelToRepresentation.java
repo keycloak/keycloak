@@ -400,6 +400,9 @@ public class ModelToRepresentation {
         rep.setRequiredActions(new LinkedList<RequiredActionProviderRepresentation>());
 
         List<RequiredActionProviderModel> requiredActionProviders = realm.getRequiredActionProviders();
+        List<RequiredActionProviderModel> copy = new LinkedList<>();
+        copy.addAll(requiredActionProviders);
+        requiredActionProviders = copy;
         //ensure consistent ordering of requiredActionProviders.
         Collections.sort(requiredActionProviders, new Comparator<RequiredActionProviderModel>() {
             @Override
