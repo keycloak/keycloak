@@ -33,8 +33,11 @@
 				Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
 				Location="${idp.sso.HTTP-Redirect}" />
 			<SingleLogoutService
-				Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
-				Location="${idp.sls.HTTP-POST}" />
+					Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+					Location="${idp.sls.HTTP-POST}" />
+			<SingleLogoutService
+					Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+					Location="${idp.sso.HTTP-Redirect}" />
             <KeyDescriptor use="signing">
                 <dsig:KeyInfo xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
                     <dsig:X509Data>

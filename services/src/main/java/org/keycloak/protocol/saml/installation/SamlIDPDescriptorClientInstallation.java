@@ -47,30 +47,40 @@ public class SamlIDPDescriptorClientInstallation implements ClientInstallationPr
                 "   <IDPSSODescriptor WantAuthnRequestsSigned=\"" + Boolean.toString(samlClient.requiresClientSignature()) + "\"\n" +
                 "      protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\">\n";
         if (samlClient.forceNameIDFormat() && samlClient.getNameIDFormat() != null) {
-            idp +=  "      " + samlClient.getNameIDFormat();
+            idp +=  "   <NameIDFormat>" + samlClient.getNameIDFormat() + "</NameIDFormat>\n";
         } else {
-            idp +=  "      <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</NameIDFormat>\n" +
-                    "      <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>\n" +
-                    "      <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</NameIDFormat>\n" +
-                    "      <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>\n";
+            idp +=  "   <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</NameIDFormat>\n" +
+                    "   <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>\n" +
+                    "   <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</NameIDFormat>\n" +
+                    "   <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>\n";
         }
         String bindUrl = RealmsResource.protocolUrl(UriBuilder.fromUri(serverBaseUri)).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString();
         idp +=  "\n" +
                 "      <SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"\n" +
-                "         Location=\"" + bindUrl + "\" />\n" +
-                "      <SingleLogoutService\n" +
+                "         Location=\"" + bindUrl + "\" />\n";
+        if (!samlClient.forcePostBinding()) {
+           idp +=   "      <SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\"\n" +
+                    "         Location=\"" + bindUrl + "\" />\n";
+
+        }
+        idp +=  "      <SingleLogoutService\n" +
                 "         Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"\n" +
-                "         Location=\"" + bindUrl + "\" />\n" +
-                "            <KeyDescriptor use=\"signing\">\n" +
-                "                <dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
-                "                    <dsig:X509Data>\n" +
-                "                        <dsig:X509Certificate>\n" +
-                "                            " + realm.getCertificatePem() + "\n" +
-                "                        </dsig:X509Certificate>\n" +
-                "                    </dsig:X509Data>\n" +
-                "                </dsig:KeyInfo>\n" +
-                "            </KeyDescriptor>\n" +
-                "      </IDPSSODescriptor>\n" +
+                "         Location=\"" + bindUrl + "\" />\n";
+        if (!samlClient.forcePostBinding()) {
+            idp +=  "      <SingleLogoutService\n" +
+                    "         Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\"\n" +
+                    "         Location=\"" + bindUrl + "\" />\n";
+        }
+        idp +=  "      <KeyDescriptor use=\"signing\">\n" +
+                "          <dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
+                "              <dsig:X509Data>\n" +
+                "                  <dsig:X509Certificate>\n" +
+                "                      " + realm.getCertificatePem() + "\n" +
+                "                  </dsig:X509Certificate>\n" +
+                "              </dsig:X509Data>\n" +
+                "          </dsig:KeyInfo>\n" +
+                "      </KeyDescriptor>\n" +
+                "   </IDPSSODescriptor>\n" +
                 "</EntityDescriptor>\n";
         return idp;
     }
