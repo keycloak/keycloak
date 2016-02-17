@@ -47,10 +47,11 @@ public class SyncDummyFederationProviderCommand extends AbstractCommand {
         } else {
             Map<String, String> cfg = fedProviderModel.getConfig();
             updateConfig(cfg, waitTime);
+            fedProviderModel.setChangedSyncPeriod(changedSyncPeriod);
             realm.updateUserFederationProvider(fedProviderModel);
         }
 
-        new UsersSyncManager().refreshPeriodicSyncForProvider(sessionFactory, session.getProvider(TimerProvider.class), fedProviderModel, "master");
+        new UsersSyncManager().notifyToRefreshPeriodicSync(session, realm, fedProviderModel, false);
 
         log.infof("User federation provider created and sync was started", waitTime);
     }

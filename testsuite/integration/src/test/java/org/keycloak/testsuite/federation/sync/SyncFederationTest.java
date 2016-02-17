@@ -19,6 +19,7 @@ package org.keycloak.testsuite.federation.sync;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -84,7 +85,8 @@ public class SyncFederationTest {
             sleep(1800);
 
             // Cancel timer
-            usersSyncManager.removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), dummyModel);
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            usersSyncManager.notifyToRefreshPeriodicSync(session, appRealm, dummyModel, true);
 
             // Assert that DummyUserFederationProviderFactory.syncChangedUsers was invoked
             int newChanged = dummyFedFactory.getChangedSyncCounter();
@@ -111,7 +113,9 @@ public class SyncFederationTest {
     }
 
     @Test
-    public void test02ConcurrentSync() {
+    public void test02ConcurrentSync() throws Exception {
+        SyncDummyUserFederationProviderFactory.restartLatches();
+
         // Enable timer for SyncDummyUserFederationProvider
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
 
@@ -139,10 +143,16 @@ public class SyncFederationTest {
             Assert.assertTrue(syncResult.isIgnored());
 
             // Cancel timer
-            usersSyncManager.removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), dummyModel);
+            usersSyncManager.notifyToRefreshPeriodicSync(session, realm, dummyModel, true);
+
+            // Signal to factory to finish waiting
+            SyncDummyUserFederationProviderFactory.latch1.countDown();
+
         } finally {
             keycloakRule.stopSession(session, true);
         }
+
+        SyncDummyUserFederationProviderFactory.latch2.await(20000, TimeUnit.MILLISECONDS);
 
         // remove provider
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {

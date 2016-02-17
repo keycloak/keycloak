@@ -15,20 +15,34 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.sessions.infinispan.initializer;
-
-import java.io.Serializable;
-
-import org.keycloak.models.KeycloakSession;
+package org.keycloak.cluster;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface SessionLoader extends Serializable {
+public class ExecutionResult<T> {
 
-    void init(KeycloakSession session);
+    private final boolean executed;
+    private final T result;
 
-    int getSessionsCount(KeycloakSession session);
+    private ExecutionResult(boolean executed, T result) {
+        this.executed = executed;
+        this.result = result;
+    }
 
-    boolean loadSessions(KeycloakSession session, int first, int max);
+    public static <T> ExecutionResult<T> executed(T result) {
+        return new ExecutionResult<>(true, result);
+    }
+
+    public static <T> ExecutionResult<T> notExecuted() {
+        return new ExecutionResult<>(false, null);
+    }
+
+    public boolean isExecuted() {
+        return executed;
+    }
+
+    public T getResult() {
+        return result;
+    }
 }

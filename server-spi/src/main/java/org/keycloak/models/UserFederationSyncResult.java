@@ -112,4 +112,10 @@ public class UserFederationSyncResult {
     public static UserFederationSyncResult empty() {
         return new UserFederationSyncResult();
     }
+
+    public static UserFederationSyncResult ignored() {
+        UserFederationSyncResult result = new UserFederationSyncResult();
+        result.setIgnored(true);
+        return result;
+    }
 }

@@ -30,6 +30,7 @@ public interface InfinispanConnectionProvider extends Provider {
     static final String SESSION_CACHE_NAME = "sessions";
     static final String OFFLINE_SESSION_CACHE_NAME = "offlineSessions";
     static final String LOGIN_FAILURE_CACHE_NAME = "loginFailures";
+    static final String WORK_CACHE_NAME = "work";
 
     <K, V> Cache<K, V> getCache(String name);
 

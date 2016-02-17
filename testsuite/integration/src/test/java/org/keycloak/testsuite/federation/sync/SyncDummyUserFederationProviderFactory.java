@@ -20,6 +20,8 @@ package org.keycloak.testsuite.federation.sync;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
@@ -36,6 +38,17 @@ import org.keycloak.testsuite.DummyUserFederationProviderFactory;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class SyncDummyUserFederationProviderFactory extends DummyUserFederationProviderFactory {
+
+    // Used during SyncFederationTest
+    static volatile CountDownLatch latch1 = new CountDownLatch(1);
+    static volatile CountDownLatch latch2 = new CountDownLatch(1);
+
+    static void restartLatches() {
+        latch1 = new CountDownLatch(1);
+        latch2 = new CountDownLatch(1);
+    }
+
+
 
     private static final Logger logger = Logger.getLogger(SyncDummyUserFederationProviderFactory.class);
 
@@ -68,7 +81,7 @@ public class SyncDummyUserFederationProviderFactory extends DummyUserFederationP
                 RealmModel realm = session.realms().getRealm(realmId);
 
                 // KEYCLOAK-2412 : Just remove and add some users for testing purposes
-                for (int i = 0; i<10; i++) {
+                for (int i = 0; i < 10; i++) {
                     String username = "dummyuser-" + i;
                     UserModel user = session.userStorage().getUserByUsername(username, realm);
 
@@ -83,7 +96,7 @@ public class SyncDummyUserFederationProviderFactory extends DummyUserFederationP
 
 
                 try {
-                    Thread.sleep(waitTime * 1000);
+                    latch1.await(waitTime * 1000, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     throw new RuntimeException("Interrupted!", ie);
@@ -93,6 +106,9 @@ public class SyncDummyUserFederationProviderFactory extends DummyUserFederationP
             }
 
         });
+
+        // countDown, so the SyncFederationTest can continue
+        latch2.countDown();
 
         return new UserFederationSyncResult();
     }

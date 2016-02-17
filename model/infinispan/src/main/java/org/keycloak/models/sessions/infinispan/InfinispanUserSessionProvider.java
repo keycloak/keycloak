@@ -21,15 +21,41 @@ import org.infinispan.Cache;
 import org.infinispan.CacheStream;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientInitialAccessModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.entities.*;
-import org.keycloak.models.sessions.infinispan.initializer.TimeAwareInitializerState;
-import org.keycloak.models.sessions.infinispan.stream.*;
+import org.keycloak.models.sessions.infinispan.entities.ClientInitialAccessEntity;
+import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.stream.ClientInitialAccessPredicate;
+import org.keycloak.models.sessions.infinispan.stream.ClientSessionPredicate;
+import org.keycloak.models.sessions.infinispan.stream.Comparators;
+import org.keycloak.models.sessions.infinispan.stream.Mappers;
+import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
+import org.keycloak.models.sessions.infinispan.stream.UserLoginFailurePredicate;
+import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmInfoUtil;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -409,19 +435,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         loginFailureCache.remove(new LoginFailureKey(realm.getId(), user.getUsername()));
         loginFailureCache.remove(new LoginFailureKey(realm.getId(), user.getEmail()));
-    }
-
-    @Override
-    public int getClusterStartupTime() {
-        TimeAwareInitializerState state = (TimeAwareInitializerState) offlineSessionCache.get(InfinispanUserSessionProviderFactory.SESSION_INITIALIZER_STATE_KEY);
-        int startTime;
-        if (state == null) {
-            log.warn("Cluster startup time not yet available. Fallback to local startup time");
-            startTime = (int)(session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
-        } else {
-            startTime = state.getClusterStartupTime();
-        }
-        return startTime;
     }
 
     @Override

@@ -15,20 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.sessions.infinispan.initializer;
+package org.keycloak.cluster;
+
+import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class TimeAwareInitializerState extends InitializerState {
-
-    private int clusterStartupTime;
-
-    public int getClusterStartupTime() {
-        return clusterStartupTime;
-    }
-
-    public void setClusterStartupTime(int clusterStartupTime) {
-        this.clusterStartupTime = clusterStartupTime;
-    }
+public interface ClusterProviderFactory extends ProviderFactory<ClusterProvider> {
 }

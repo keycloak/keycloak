@@ -178,7 +178,7 @@ public class UserFederationProvidersResource {
         }
         UserFederationProviderModel model = realm.addUserFederationProvider(rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName,
                 rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
-        new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
+        new UsersSyncManager().notifyToRefreshPeriodicSync(session, realm, model, false);
         boolean kerberosCredsAdded = checkKerberosCredential(session, realm, model);
         if (kerberosCredsAdded) {
             logger.addedKerberosToRealmCredentials();

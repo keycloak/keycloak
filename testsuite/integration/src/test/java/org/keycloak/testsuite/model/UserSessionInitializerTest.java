@@ -26,6 +26,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -83,7 +84,7 @@ public class UserSessionInitializerTest {
 
         // Create and persist offline sessions
         int started = Time.currentTime();
-        int serverStartTime = session.sessions().getClusterStartupTime();
+        int serverStartTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
 
         for (UserSessionModel origSession : origSessions) {
             UserSessionModel userSession = session.sessions().getUserSession(realm, origSession.getId());
