@@ -32,7 +32,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class SessionInitializerWorker implements DistributedCallable<String, SessionEntity, InfinispanUserSessionInitializer.WorkerResult>, Serializable {
+public class SessionInitializerWorker implements DistributedCallable<String, Serializable, InfinispanUserSessionInitializer.WorkerResult>, Serializable {
 
     private static final Logger log = Logger.getLogger(SessionInitializerWorker.class);
 
@@ -40,7 +40,7 @@ public class SessionInitializerWorker implements DistributedCallable<String, Ses
     private int sessionsPerSegment;
     private SessionLoader sessionLoader;
 
-    private transient Cache<String, SessionEntity> cache;
+    private transient Cache<String, Serializable> workCache;
 
     public void setWorkerEnvironment(int segment, int sessionsPerSegment, SessionLoader sessionLoader) {
         this.segment = segment;
@@ -49,8 +49,8 @@ public class SessionInitializerWorker implements DistributedCallable<String, Ses
     }
 
     @Override
-    public void setEnvironment(Cache<String, SessionEntity> cache, Set<String> inputKeys) {
-        this.cache = cache;
+    public void setEnvironment(Cache<String, Serializable> workCache, Set<String> inputKeys) {
+        this.workCache = workCache;
     }
 
     @Override
@@ -59,7 +59,7 @@ public class SessionInitializerWorker implements DistributedCallable<String, Ses
             log.tracef("Running computation for segment: %d", segment);
         }
 
-        KeycloakSessionFactory sessionFactory = cache.getAdvancedCache().getComponentRegistry().getComponent(KeycloakSessionFactory.class);
+        KeycloakSessionFactory sessionFactory = workCache.getAdvancedCache().getComponentRegistry().getComponent(KeycloakSessionFactory.class);
         if (sessionFactory == null) {
             log.warnf("KeycloakSessionFactory not yet set in cache. Worker skipped");
             return InfinispanUserSessionInitializer.WorkerResult.create(segment, false);

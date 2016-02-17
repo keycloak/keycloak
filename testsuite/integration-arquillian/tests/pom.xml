@@ -65,6 +65,9 @@
         <arquillian-wildfly-container.version>8.2.0.Final</arquillian-wildfly-container.version>
         <version.shrinkwrap.resolvers>2.1.1</version.shrinkwrap.resolvers>
         
+        <frontend.console.output>true</frontend.console.output>
+        <backends.console.output>true</backends.console.output>
+        
     </properties>
 
     <dependencyManagement>
@@ -119,6 +122,8 @@
                             <auth.server.ssl.required>${auth.server.ssl.required}</auth.server.ssl.required>
                             <startup.timeout.sec>${startup.timeout.sec}</startup.timeout.sec>
                             <jboss.server.config.dir>${jboss.server.config.dir}</jboss.server.config.dir>
+                            <frontend.console.output>${frontend.console.output}</frontend.console.output>
+                            <backends.console.output>${backend.console.output}</backends.console.output>
                         </systemPropertyVariables>
                         <properties>
                             <property>

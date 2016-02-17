@@ -26,7 +26,7 @@ import org.keycloak.models.KeycloakSession;
  */
 public interface SessionLoader extends Serializable {
 
-    void init(KeycloakSession session, int clusterStartupTime);
+    void init(KeycloakSession session);
 
     int getSessionsCount(KeycloakSession session);
 

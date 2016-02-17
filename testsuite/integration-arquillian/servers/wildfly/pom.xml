@@ -415,6 +415,11 @@
         
         <profile>
             <id>auth-server-wildfly-cluster</id>
+            <properties>
+                <session.cache.owners>1</session.cache.owners>
+                <offline.session.cache.owners>1</offline.session.cache.owners>
+                <login.failure.cache.owners>1</login.failure.cache.owners>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -445,6 +450,28 @@
                                                 <parameter>
                                                     <name>jdbc.url</name>
                                                     <value>jdbc:h2:tcp://${jboss.bind.address:localhost}:9092/mem:keycloak;DB_CLOSE_DELAY=-1</value>
+                                                </parameter>
+                                            </parameters>
+                                        </transformationSet>
+                                        <transformationSet>
+                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
+                                            <includes>
+                                                <include>standalone-ha.xml</include>
+                                            </includes>
+                                            <stylesheet>src/main/xslt/ispn-cache-owners.xsl</stylesheet>
+                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>sessionCacheOwners</name>
+                                                    <value>${session.cache.owners}</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>offlineSessionCacheOwners</name>
+                                                    <value>${offline.session.cache.owners}</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>loginFailureCacheOwners</name>
+                                                    <value>${login.failure.cache.owners}</value>
                                                 </parameter>
                                             </parameters>
                                         </transformationSet>

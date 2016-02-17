@@ -106,7 +106,7 @@ public class UserFederationProviderResource {
         UserFederationProviderModel model = new UserFederationProviderModel(rep.getId(), rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName,
                 rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
         realm.updateUserFederationProvider(model);
-        new UsersSyncManager().refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), model, realm.getId());
+        new UsersSyncManager().notifyToRefreshPeriodicSync(session, realm, model, false);
         boolean kerberosCredsAdded = UserFederationProvidersResource.checkKerberosCredential(session, realm, model);
         if (kerberosCredsAdded) {
             logger.addedKerberosToRealmCredentials();
@@ -138,7 +138,7 @@ public class UserFederationProviderResource {
         auth.requireManage();
 
         realm.removeUserFederationProvider(this.federationProviderModel);
-        new UsersSyncManager().removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), this.federationProviderModel);
+        new UsersSyncManager().notifyToRefreshPeriodicSync(session, realm, this.federationProviderModel, true);
 
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
 

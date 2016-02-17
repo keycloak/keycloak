@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan.initializer;
 import java.util.List;
 
 import org.jboss.logging.Logger;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
@@ -33,8 +34,11 @@ public class OfflineUserSessionLoader implements SessionLoader {
     private static final Logger log = Logger.getLogger(OfflineUserSessionLoader.class);
 
     @Override
-    public void init(KeycloakSession session, int clusterStartupTime) {
+    public void init(KeycloakSession session) {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+
+        // TODO: check if update of timestamps in persister can be skipped entirely
+        int clusterStartupTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
 
         log.debugf("Clearing detached sessions from persistent storage and updating timestamps to %d", clusterStartupTime);
 

@@ -15,20 +15,20 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.sessions.infinispan.initializer;
+package org.keycloak.cluster;
 
 /**
+ * Task to be executed on all cluster nodes once it's notified.
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class TimeAwareInitializerState extends InitializerState {
+public interface ClusterListener {
 
-    private int clusterStartupTime;
+    /**
+     * Registered task to be executed on all cluster nodes once it's notified from cache.
+     *
+     * @param event value of notification (Object added into the cache)
+     */
+    void run(ClusterEvent event);
 
-    public int getClusterStartupTime() {
-        return clusterStartupTime;
-    }
-
-    public void setClusterStartupTime(int clusterStartupTime) {
-        this.clusterStartupTime = clusterStartupTime;
-    }
 }

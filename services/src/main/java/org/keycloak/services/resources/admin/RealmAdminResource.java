@@ -242,7 +242,7 @@ public class RealmAdminResource {
             List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
             UsersSyncManager usersSyncManager = new UsersSyncManager();
             for (final UserFederationProviderModel fedProvider : federationProviders) {
-                usersSyncManager.refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, realm.getId());
+                usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
             }
 
             adminEvent.operation(OperationType.UPDATE).representation(rep).success();

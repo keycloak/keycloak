@@ -38,6 +38,7 @@ import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.scheduled.ClearExpiredEvents;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
+import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.services.util.JsonConfigProvider;
 import org.keycloak.services.util.ObjectMapperResolver;
@@ -217,8 +218,8 @@ public class KeycloakApplication extends Application {
         KeycloakSession session = sessionFactory.create();
         try {
             TimerProvider timer = session.getProvider(TimerProvider.class);
-            timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredEvents()), interval, "ClearExpiredEvents");
-            timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval, "ClearExpiredUserSessions");
+            timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredEvents(), interval), interval, "ClearExpiredEvents");
+            timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions(), interval), interval, "ClearExpiredUserSessions");
             new UsersSyncManager().bootstrapPeriodic(sessionFactory, timer);
         } finally {
             session.close();

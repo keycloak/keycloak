@@ -35,11 +35,12 @@ public abstract class Login extends AuthRealm {
     public static final String PROTOCOL = "protocol";
     public static final String OIDC = "openid-connect";
     public static final String SAML = "saml";
+    public static final String LOGIN_ACTION = "login-action";
 
     @Override
     public UriBuilder createUriBuilder() {
         return super.createUriBuilder()
-                .path("protocol/{" + PROTOCOL + "}" + (getProtocol().equals(OIDC) ? "/auth" : ""));
+                .path((getProtocol().equals(OIDC) || getProtocol().equals(SAML)) ? "protocol/" : "" + "{" + PROTOCOL + "}" + (getProtocol().equals(OIDC) ? "/auth" : ""));
     }
     
     public void setProtocol(String protocol) {

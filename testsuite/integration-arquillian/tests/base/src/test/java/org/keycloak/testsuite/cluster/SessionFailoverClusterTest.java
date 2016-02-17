@@ -17,7 +17,7 @@ import org.openqa.selenium.Cookie;
  *
  * @author tkyjovsk
  */
-public class SessionFailoverClusterTest extends AbstractTwoNodeClusterTest {
+public class SessionFailoverClusterTest extends AbstractClusterTest {
 
     public static final String KEYCLOAK_SESSION_COOKIE = "KEYCLOAK_SESSION";
     public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
@@ -30,7 +30,7 @@ public class SessionFailoverClusterTest extends AbstractTwoNodeClusterTest {
     @Ignore("work in progress") // only works with owners="2" at the moment
     public void sessionFailover() {
         
-        // LOGOUT
+        // LOGIN
         accountPage.navigateTo();
         driver.navigate().refresh();
         pause(3000);
@@ -40,7 +40,7 @@ public class SessionFailoverClusterTest extends AbstractTwoNodeClusterTest {
         Cookie sessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNotNull(sessionCookie);
 
-        killBackend1();
+        failure();
 
         // check if session survived backend failure
         
@@ -53,6 +53,7 @@ public class SessionFailoverClusterTest extends AbstractTwoNodeClusterTest {
         assertEquals(sessionCookieAfterFailover.getValue(), sessionCookie.getValue());
 
         failback();
+        iterateCurrentFailNode();
 
         // check if session survived backend failback
         driver.navigate().refresh();
@@ -71,7 +72,7 @@ public class SessionFailoverClusterTest extends AbstractTwoNodeClusterTest {
         sessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNull(sessionCookie);
 
-        killBackend1();
+        failure();
         
         // check if session survived backend failure
         driver.navigate().refresh();

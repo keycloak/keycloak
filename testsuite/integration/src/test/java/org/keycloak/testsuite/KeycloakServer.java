@@ -33,7 +33,7 @@ import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.testsuite.util.cli.InfinispanCLI;
+import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.DispatcherType;
@@ -206,8 +206,8 @@ public class KeycloakServer {
             }
         });
 
-        if (System.getProperties().containsKey("startInfinispanCLI")) {
-            new InfinispanCLI(keycloak).start();
+        if (System.getProperties().containsKey("startTestsuiteCLI")) {
+            new TestsuiteCLI(keycloak).start();
         }
 
         return keycloak;

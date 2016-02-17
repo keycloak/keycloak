@@ -79,6 +79,7 @@
                     -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m
                     -Djava.net.preferIPv4Stack=true
                 </property>
+                <property name="outputToConsole">${frontend.console.output}</property>
                 <property name="managementPort">${auth.server.management.port}</property>
                 <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
             </configuration>
@@ -98,7 +99,7 @@
                     -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m
                     -Djava.net.preferIPv4Stack=true
                 </property>
-                <!--<property name="outputToConsole">false</property>-->
+                <property name="outputToConsole">${backends.console.output}</property>
                 <property name="managementPort">${auth.server.backend1.management.port}</property>
                 <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
             </configuration>
@@ -118,7 +119,7 @@
                     -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m
                     -Djava.net.preferIPv4Stack=true
                 </property>
-                <!--<property name="outputToConsole">false</property>-->
+                <property name="outputToConsole">${backends.console.output}</property>
                 <property name="managementPort">${auth.server.backend2.management.port}</property>
                 <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
             </configuration>

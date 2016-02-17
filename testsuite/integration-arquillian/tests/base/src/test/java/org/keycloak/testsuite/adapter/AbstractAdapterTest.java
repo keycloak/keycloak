@@ -135,7 +135,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
                         masterUrl = client.getBaseUrl();
                     }
                     masterUrl = masterUrl.replaceFirst(regex, replacement);
-                    client.setAdminUrl(masterUrl);
+                    client.setAdminUrl(masterUrl + ((!masterUrl.endsWith("/saml")) ? "/saml" : ""));
                 }
             }
         }

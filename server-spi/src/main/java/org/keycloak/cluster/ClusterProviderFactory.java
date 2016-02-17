@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.auth.page.login;
+package org.keycloak.cluster;
+
+import org.keycloak.provider.ProviderFactory;
 
 /**
- * @author mhajas
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class SAMLLogin extends Login {
-    SAMLLogin() {
-        setProtocol(SAML);
-    }
+public interface ClusterProviderFactory extends ProviderFactory<ClusterProvider> {
 }

@@ -30,20 +30,20 @@ public class ModAuthMellonTest extends AbstractAuthTest {
     @Test
     public void modAuthMellonTest() throws TransformerException {
         testRealmPage.setAuthRealm("mellon-test");
-        testRealmSAMLLoginPage.setAuthRealm("mellon-test");
+        testRealmSAMLRedirectLoginPage.setAuthRealm("mellon-test");
 
         modAuthMellonUnprotectedResourcePage.navigateTo();
         assertTrue(driver.getPageSource().contains("Unprotected resource"));
 
         modAuthMellonProtectedResourcePage.navigateTo();
-        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLLoginPage);
-        testRealmSAMLLoginPage.form().login(bburkeUser);
+        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
+        testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
         assertTrue(driver.getPageSource().contains("Protected resource"));
 
         modAuthMellonProtectedResourcePage.logout();
         assertTrue(driver.getPageSource().contains("Unprotected resource"));
 
         modAuthMellonProtectedResourcePage.navigateTo();
-        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLLoginPage);
+        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
     }
 }

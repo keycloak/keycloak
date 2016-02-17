@@ -17,6 +17,10 @@
 
 package org.keycloak.services.scheduled;
 
+import java.util.concurrent.Callable;
+
+import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
@@ -26,10 +30,10 @@ import org.keycloak.services.ServicesLogger;
  */
 public class ScheduledTaskRunner implements Runnable {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
-    private final KeycloakSessionFactory sessionFactory;
-    private final ScheduledTask task;
+    protected final KeycloakSessionFactory sessionFactory;
+    protected final ScheduledTask task;
 
     public ScheduledTaskRunner(KeycloakSessionFactory sessionFactory, ScheduledTask task) {
         this.sessionFactory = sessionFactory;
@@ -40,11 +44,7 @@ public class ScheduledTaskRunner implements Runnable {
     public void run() {
         KeycloakSession session = sessionFactory.create();
         try {
-            session.getTransaction().begin();
-            task.run(session);
-            session.getTransaction().commit();
-
-            logger.debug("Executed scheduled task " + task.getClass().getSimpleName());
+            runTask(session);
         } catch (Throwable t) {
             logger.failedToRunScheduledTask(t, task.getClass().getSimpleName());
 
@@ -56,6 +56,14 @@ public class ScheduledTaskRunner implements Runnable {
                 logger.failedToCloseProviderSession(t);
             }
         }
+    }
+
+    protected void runTask(KeycloakSession session) {
+        session.getTransaction().begin();
+        task.run(session);
+        session.getTransaction().commit();
+
+        logger.debug("Executed scheduled task " + task.getClass().getSimpleName());
     }
 
 }
