@@ -1,19 +1,22 @@
 package org.keycloak.testsuite.cluster;
 
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.jboss.arquillian.container.test.api.ContainerController;
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import static org.junit.Assert.assertTrue;
+import org.junit.Before;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
-import org.keycloak.testsuite.auth.page.AuthRealm;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  *
@@ -24,52 +27,103 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     @ArquillianResource
     protected ContainerController controller;
 
-    protected List<Keycloak> backendAdminClients = new ArrayList<>();
+    protected Map<ContainerInfo, Keycloak> backendAdminClients = new HashMap<>();
 
-    public void startBackendNodes(int count) {
-        if (count < 0 || count > 10) {
-            throw new IllegalArgumentException();
+    private int currentFailNodeIndex = 0;
+
+    public int getClusterSize() {
+        return suiteContext.getAuthServerBackendsInfo().size();
+    }
+
+    protected void iterateCurrentFailNode() {
+        currentFailNodeIndex++;
+        if (currentFailNodeIndex >= getClusterSize()) {
+            currentFailNodeIndex = 0;
         }
-        assertTrue(suiteContext.getAuthServerBackendsInfo().size() >= count);
-        for (int i = 0; i < count; i++) {
+        logFailoverSetup();
+    }
 
-            ContainerInfo backendNode = suiteContext.getAuthServerBackendsInfo().get(i);
+    protected ContainerInfo getCurrentFailNode() {
+        return backendNode(currentFailNodeIndex);
+    }
 
-            controller.start(backendNode.getQualifier());
-            assertTrue(controller.isStarted(backendNode.getQualifier()));
+    protected Set<ContainerInfo> getCurrentSurvivorNodes() {
+        Set<ContainerInfo> survivors = new HashSet<>(suiteContext.getAuthServerBackendsInfo());
+        survivors.remove(getCurrentFailNode());
+        return survivors;
+    }
 
-            backendAdminClients.add(createAdminClientFor(backendNode));
+    protected void logFailoverSetup() {
+        log.info("Current failover setup");
+        boolean started = controller.isStarted(getCurrentFailNode().getQualifier());
+        log.info("Fail node: " + getCurrentFailNode() + (started ? "" : " (stopped)"));
+        for (ContainerInfo survivor : getCurrentSurvivorNodes()) {
+            started = controller.isStarted(survivor.getQualifier());
+            log.info("Survivor:  " + survivor + (started ? "" : " (stopped)"));
         }
     }
 
-    protected Keycloak createAdminClientFor(ContainerInfo backendNode) {
-        log.info("Initializing admin client for " + backendNode.getContextRoot() + "/auth");
-        return Keycloak.getInstance(backendNode.getContextRoot() + "/auth",
-                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+    public void failure() {
+        log.info("Simulating failure");
+        killBackendNode(getCurrentFailNode());
+    }
+
+    public void failback() {
+        log.info("Bringing all backend nodes online");
+        for (ContainerInfo node : suiteContext.getAuthServerBackendsInfo()) {
+            startBackendNode(node);
+        }
+    }
+
+    protected ContainerInfo frontendNode() {
+        return suiteContext.getAuthServerInfo();
     }
 
     protected ContainerInfo backendNode(int i) {
         return suiteContext.getAuthServerBackendsInfo().get(i);
     }
 
-    protected void startBackendNode(int i) {
-        String container = backendNode(i).getQualifier();
-        if (!controller.isStarted(container)) {
-            controller.start(container);
-            backendAdminClients.set(i, createAdminClientFor(backendNode(i)));
+    protected void startBackendNode(ContainerInfo node) {
+        if (!controller.isStarted(node.getQualifier())) {
+            log.info("Starting backend node: " + node);
+            controller.start(node.getQualifier());
+            assertTrue(controller.isStarted(node.getQualifier()));
+        }
+        log.info("Backend node " + node + " is started");
+        if (!backendAdminClients.containsKey(node)) {
+            backendAdminClients.put(node, createAdminClientFor(node));
         }
     }
 
-    protected void killBackendNode(int i) {
-        backendAdminClients.get(i).close();
-        controller.kill(backendNode(i).getQualifier());
+    protected Keycloak createAdminClientFor(ContainerInfo node) {
+        log.info("Initializing admin client for " + node.getContextRoot() + "/auth");
+        return Keycloak.getInstance(node.getContextRoot() + "/auth",
+                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
     }
 
-    protected void listRealms(int i) {
-        log.info(String.format("Node %s: AccessTokenString: %s", i + 1, backendAdminClients.get(i).tokenManager().getAccessTokenString()));
-        for (RealmRepresentation r : backendAdminClients.get(i).realms().findAll()) {
-            log.info(String.format("Node %s: Realm: %s, Id: %s", i + 1, r.getRealm(), r.getId()));
-        }
+    protected void killBackendNode(ContainerInfo node) {
+        backendAdminClients.get(node).close();
+        backendAdminClients.remove(node);
+        log.info("Killing backend node: " + node);
+        controller.kill(node.getQualifier());
     }
-    
+
+    protected Keycloak getAdminClientFor(ContainerInfo node) {
+        return node.equals(suiteContext.getAuthServerInfo())
+                ? adminClient // frontend client
+                : backendAdminClients.get(node);
+    }
+
+    @Before
+    public void beforeClusterTest() {
+        failback();
+        logFailoverSetup();
+        pause(3000);
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        // no test realms will be created by the default 
+    }
+
 }
