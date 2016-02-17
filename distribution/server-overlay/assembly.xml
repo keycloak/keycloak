@@ -27,8 +27,8 @@
 
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/modules/system/layers/base</directory>
-            <outputDirectory>modules/system/layers/base</outputDirectory>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/modules/system/layers/keycloak</directory>
+            <outputDirectory>modules/system/add-ons/keycloak</outputDirectory>
             <includes>
                 <include>com/google/zxing/**</include>
                 <include>org/freemarker/**</include>
