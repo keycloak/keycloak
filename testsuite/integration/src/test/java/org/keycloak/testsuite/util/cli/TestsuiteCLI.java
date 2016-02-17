@@ -32,27 +32,13 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.testsuite.KeycloakServer;
 
 /**
- * HOWTO USE THIS:
- *
- * 1) Run KeycloakServer with system properties (assuming mongo up and running on localhost):
- *      -Dkeycloak.realm.provider=mongo -Dkeycloak.user.provider=mongo -Dkeycloak.userSessionPersister.provider=mongo -Dkeycloak.connectionsMongo.db=keycloak -Dkeycloak.connectionsInfinispan.clustered=true -Dresources -DstartInfinispanCLI
- *
- * 2) Write command on STDIN to persist 50000 userSessions to mongo: persistSessions 50000
- *
- * 3) Run command "clear" to ensure infinispan cache is cleared. Doublecheck with command "size" is 0
- *
- * 4) Write command to load sessions from persistent storage - 100 sessions per worker transaction: loadPersistentSessions 100
- *
- * See the progress in log. Finally run command "size" to ensure size is 100001 (50000 userSessions + 50000 clientSessions + 1 initializationState item)
- *
- * 5) Alternative to step 3+4 - Kill the server after step 2 and start two KeycloakServer in parallel on ports 8081 and 8082 . See the progress in logs of loading persistent sessions to infinispan.
- * Kill the coordinator (usually 8081 node) during startup and see the node 8082 became coordinator and took ownership of loading persistent sessions. After node 8082 fully started, the size of infinispan is again 100001
+ * See Testsuite.md (section how to create many users and offline sessions)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanCLI {
+public class TestsuiteCLI {
 
-    private static final Logger log = Logger.getLogger(InfinispanCLI.class);
+    private static final Logger log = Logger.getLogger(TestsuiteCLI.class);
 
     private static final Class<?>[] BUILTIN_COMMANDS = {
             ExitCommand.class,
@@ -76,7 +62,7 @@ public class InfinispanCLI {
     private final KeycloakSessionFactory sessionFactory;
     private final Map<String, Class<? extends AbstractCommand>> commands = new LinkedHashMap<>();
 
-    public InfinispanCLI(KeycloakServer server) {
+    public TestsuiteCLI(KeycloakServer server) {
         this.sessionFactory = server.getSessionFactory();
 
         // register builtin commands
@@ -97,7 +83,7 @@ public class InfinispanCLI {
 
     // WARNING: Stdin blocking operation
     public void start() throws IOException {
-        log.info("Starting infinispan CLI. Exit with 'exit' . Available commands with 'help' ");
+        log.info("Starting testsuite CLI. Exit with 'exit' . Available commands with 'help' ");
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         String line;
@@ -132,7 +118,7 @@ public class InfinispanCLI {
                 System.out.print("$ ");
             }
         } finally {
-            log.info("Exit infinispan CLI");
+            log.info("Exit testsuite CLI");
             reader.close();
         }
     }
@@ -165,7 +151,7 @@ public class InfinispanCLI {
         private List<String> commandNames = new ArrayList<>();
 
         @Override
-        public void injectProperties(List<String> args, InfinispanCLI cli, KeycloakSessionFactory sessionFactory) {
+        public void injectProperties(List<String> args, TestsuiteCLI cli, KeycloakSessionFactory sessionFactory) {
             for (String commandName : cli.commands.keySet()) {
                 commandNames.add(commandName);
             }
