@@ -34,7 +34,6 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 
 /**
- * Various utils related to clustering
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -67,7 +66,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
 
             existingClusterStartTime = (Integer) cache.putIfAbsent(InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY, serverStartTime);
             if (existingClusterStartTime == null) {
-                logger.infof("Initialized cluster startup time to %s", Time.toDate(serverStartTime).toString());
+                logger.debugf("Initialized cluster startup time to %s", Time.toDate(serverStartTime).toString());
                 return serverStartTime;
             } else {
                 return existingClusterStartTime;
@@ -140,19 +139,26 @@ public class InfinispanClusterProvider implements ClusterProvider {
             int thatTime = existingLock.getTimestamp();
             int currentTime = Time.currentTime();
             if (thatTime + taskTimeoutInSeconds < currentTime) {
-                logger.infof("Task %s outdated when in progress by node %s. Will try to replace task with our node %s", cacheKey, existingLock.getNode(), myLock.getNode());
+                if (logger.isTraceEnabled()) {
+                    logger.tracef("Task %s outdated when in progress by node %s. Will try to replace task with our node %s", cacheKey, existingLock.getNode(), myLock.getNode());
+                }
                 boolean replaced = cache.replace(cacheKey, existingLock, myLock);
-                // TODO: trace
                 if (!replaced) {
-                    logger.infof("Failed to replace the task %s. Other thread replaced in the meantime. Ignoring task.", cacheKey);
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Failed to replace the task %s. Other thread replaced in the meantime. Ignoring task.", cacheKey);
+                    }
                 }
                 return replaced;
             } else {
-                logger.infof("Task %s in progress already by node %s. Ignoring task.", cacheKey, existingLock.getNode());
+                if (logger.isTraceEnabled()) {
+                    logger.tracef("Task %s in progress already by node %s. Ignoring task.", cacheKey, existingLock.getNode());
+                }
                 return false;
             }
         } else {
-            logger.infof("Successfully acquired lock for task %s. Our node is %s", cacheKey, myLock.getNode());
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Successfully acquired lock for task %s. Our node is %s", cacheKey, myLock.getNode());
+            }
             return true;
         }
     }
@@ -166,7 +172,9 @@ public class InfinispanClusterProvider implements ClusterProvider {
                 cache.getAdvancedCache()
                         .withFlags(Flag.IGNORE_RETURN_VALUES, Flag.FORCE_SYNCHRONOUS)
                         .remove(cacheKey);
-                logger.infof("Task %s removed from the cache", cacheKey);
+                if (logger.isTraceEnabled()) {
+                    logger.tracef("Task %s removed from the cache", cacheKey);
+                }
                 return;
             } catch (RuntimeException e) {
                 ComponentStatus status = cache.getStatus();

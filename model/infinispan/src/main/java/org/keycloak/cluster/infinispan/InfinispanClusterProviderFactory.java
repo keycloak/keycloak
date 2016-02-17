@@ -119,7 +119,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
                     return;
                 }
 
-                logger.infof("Nodes %s removed from cluster. Removing tasks locked by this nodes", removedNodesAddresses.toString());
+                logger.debugf("Nodes %s removed from cluster. Removing tasks locked by this nodes", removedNodesAddresses.toString());
 
                 Cache<String, Serializable> cache = cacheManager.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
@@ -146,7 +146,9 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
 
                 while (toRemove.hasNext()) {
                     String rem = toRemove.next();
-                    logger.infof("Removing task %s due it's node left cluster", rem);
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Removing task %s due it's node left cluster", rem);
+                    }
                     cache.remove(rem);
                 }
             }

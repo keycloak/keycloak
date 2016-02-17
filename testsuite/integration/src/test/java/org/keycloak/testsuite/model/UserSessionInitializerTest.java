@@ -100,7 +100,7 @@ public class UserSessionInitializerTest {
 
         // Clear ispn cache to ensure initializerState is removed as well
         InfinispanConnectionProvider infinispan = session.getProvider(InfinispanConnectionProvider.class);
-        infinispan.getCache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME).clear();
+        infinispan.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME).clear();
 
         resetSession();
 

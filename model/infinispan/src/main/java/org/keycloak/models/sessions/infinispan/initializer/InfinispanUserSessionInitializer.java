@@ -40,7 +40,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
  * Startup initialization for reading persistent userSessions/clientSessions to be filled into infinispan/memory . In cluster,
  * the initialization is distributed among all cluster nodes, so the startup time is even faster
  *
- * TODO: Move to clusterService. Implementation is already pretty generic and doesn't contain any "userSession" specific stuff. All logic is in the SessionLoader implementation
+ * TODO: Move to clusterService. Implementation is already pretty generic and doesn't contain any "userSession" specific stuff. All sessions-specific logic is in the SessionLoader implementation
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

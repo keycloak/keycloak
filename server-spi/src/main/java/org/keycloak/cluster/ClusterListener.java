@@ -17,8 +17,6 @@
 
 package org.keycloak.cluster;
 
-import java.io.Serializable;
-
 /**
  * Task to be executed on all cluster nodes once it's notified.
  *

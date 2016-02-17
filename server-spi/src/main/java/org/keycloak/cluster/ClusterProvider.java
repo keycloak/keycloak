@@ -23,12 +23,14 @@ import java.util.concurrent.Callable;
 import org.keycloak.provider.Provider;
 
 /**
+ * Various utils related to clustering and concurrent tasks on cluster nodes
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface ClusterProvider extends Provider {
 
     /**
-     * Will use startup time of this server in non-cluster environment. Otherwise the value is same for all cluster nodes
+     * Same value for all cluster nodes. It will use startup time of this server in non-cluster environment.
      */
     int getClusterStartupTime();
 

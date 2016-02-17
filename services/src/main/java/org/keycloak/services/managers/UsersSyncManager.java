@@ -106,7 +106,7 @@ public class UsersSyncManager {
         });
 
         if (holder.result == null || !holder.result.isExecuted()) {
-            logger.infof("syncAllUsers for federation provider %s was ignored as it's already in progress", fedProvider.getDisplayName());
+            logger.debugf("syncAllUsers for federation provider %s was ignored as it's already in progress", fedProvider.getDisplayName());
             return UserFederationSyncResult.ignored();
         } else {
             return holder.result.getResult();
@@ -145,7 +145,7 @@ public class UsersSyncManager {
         });
 
         if (holder.result == null || !holder.result.isExecuted()) {
-            logger.infof("syncChangedUsers for federation provider %s was ignored as it's already in progress", fedProvider.getDisplayName());
+            logger.debugf("syncChangedUsers for federation provider %s was ignored as it's already in progress", fedProvider.getDisplayName());
             return UserFederationSyncResult.ignored();
         } else {
             return holder.result.getResult();
@@ -162,7 +162,7 @@ public class UsersSyncManager {
 
     // Executed once it receives notification that some UserFederationProvider was created or updated
     protected void refreshPeriodicSyncForProvider(final KeycloakSessionFactory sessionFactory, TimerProvider timer, final UserFederationProviderModel fedProvider, final String realmId) {
-        logger.infof("Going to refresh periodic sync for provider '%s' . Full sync period: %d , changed users sync period: %d",
+        logger.debugf("Going to refresh periodic sync for provider '%s' . Full sync period: %d , changed users sync period: %d",
                 fedProvider.getDisplayName(), fedProvider.getFullSyncPeriod(), fedProvider.getChangedSyncPeriod());
 
         if (fedProvider.getFullSyncPeriod() > 0) {
@@ -176,7 +176,7 @@ public class UsersSyncManager {
                         if (shouldPerformSync) {
                             syncAllUsers(sessionFactory, realmId, fedProvider);
                         } else {
-                            logger.infof("Ignored periodic full sync with federation provider %s due small time since last sync", fedProvider.getDisplayName());
+                            logger.debugf("Ignored periodic full sync with federation provider %s due small time since last sync", fedProvider.getDisplayName());
                         }
                     } catch (Throwable t) {
                         logger.errorDuringFullUserSync(t);
@@ -199,7 +199,7 @@ public class UsersSyncManager {
                         if (shouldPerformSync) {
                             syncChangedUsers(sessionFactory, realmId, fedProvider);
                         } else {
-                            logger.infof("Ignored periodic changed-users sync with federation provider %s due small time since last sync", fedProvider.getDisplayName());
+                            logger.debugf("Ignored periodic changed-users sync with federation provider %s due small time since last sync", fedProvider.getDisplayName());
                         }
                     } catch (Throwable t) {
                         logger.errorDuringChangedUserSync(t);
@@ -227,7 +227,7 @@ public class UsersSyncManager {
 
     // Executed once it receives notification that some UserFederationProvider was removed
     protected void removePeriodicSyncForProvider(TimerProvider timer, UserFederationProviderModel fedProvider) {
-        logger.infof("Removing periodic sync for provider %s", fedProvider.getDisplayName());
+        logger.debugf("Removing periodic sync for provider %s", fedProvider.getDisplayName());
         timer.cancelTask(fedProvider.getId() + "-FULL");
         timer.cancelTask(fedProvider.getId() + "-CHANGED");
     }
