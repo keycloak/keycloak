@@ -15,7 +15,7 @@
  * the License.
  */
 
-package org.keycloak.testsuite.event;
+package org.keycloak.testsuite.admin.event;
 
 import java.util.Arrays;
 import java.util.Collections;
