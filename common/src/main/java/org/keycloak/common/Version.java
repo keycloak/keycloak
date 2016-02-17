@@ -17,8 +17,6 @@
 
 package org.keycloak.common;
 
-import org.keycloak.common.util.Time;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
