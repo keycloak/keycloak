@@ -31,4 +31,9 @@
 
     <name>Mod_auth_mellon tests</name>
 
+    <properties>
+        <apache.mod_auth_mellon.url>http://localhost:8380</apache.mod_auth_mellon.url>
+        <apache.mod_auth_mellon2.url>http://localhost:8480</apache.mod_auth_mellon2.url>
+    </properties>
+
 </project>

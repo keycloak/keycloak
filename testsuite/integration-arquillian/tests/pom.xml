@@ -52,7 +52,6 @@
         <auth.server.management.port>10090</auth.server.management.port>
         <auth.server.management.port.jmx>10099</auth.server.management.port.jmx>
         <auth.server.ssl.required>false</auth.server.ssl.required>
-        <apache.mod_auth_mellon.url>http://localhost:8380</apache.mod_auth_mellon.url>
         <startup.timeout.sec>60</startup.timeout.sec>
         
         <browser>phantomjs</browser>
