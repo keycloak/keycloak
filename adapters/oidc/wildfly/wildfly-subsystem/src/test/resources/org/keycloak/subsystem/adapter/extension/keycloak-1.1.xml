@@ -16,6 +16,30 @@
   -->
 
 <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
+    <realm name="master">
+        <realm-public-key>MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4siLKUew0WYxdtq6/rwk4Uj/4amGFFnE/yzIxQVU0PUqz3QBRVkUWpDj0K6ZnS5nzJV/y6DHLEy7hjZTdRDphyF1sq09aDOYnVpzu8o2sIlMM8q5RnUyEfIyUZqwo8pSZDJ90fS0s+IDUJNCSIrAKO3w1lqZDHL6E/YFHXyzkvQIDAQAB</realm-public-key>
+        <auth-server-url>http://localhost:8080/auth</auth-server-url>
+        <truststore>truststore.jks</truststore>
+        <truststore-password>secret</truststore-password>
+        <ssl-required>EXTERNAL</ssl-required>
+        <allow-any-hostname>false</allow-any-hostname>
+        <disable-trust-manager>true</disable-trust-manager>
+        <connection-pool-size>20</connection-pool-size>
+        <enable-cors>true</enable-cors>
+        <client-keystore>keys.jks</client-keystore>
+        <client-keystore-password>secret</client-keystore-password>
+        <client-key-password>secret</client-key-password>
+        <cors-max-age>600</cors-max-age>
+        <cors-allowed-headers>X-Custom</cors-allowed-headers>
+        <cors-allowed-methods>PUT,POST,DELETE,GET</cors-allowed-methods>
+        <expose-token>false</expose-token>
+        <auth-server-url-for-backend-requests>http://127.0.0.2:8080/auth</auth-server-url-for-backend-requests>
+        <always-refresh-token>false</always-refresh-token>
+        <register-node-at-startup>true</register-node-at-startup>
+        <register-node-period>60</register-node-period>
+        <token-store>session</token-store>
+        <principal-attribute>sub</principal-attribute>
+    </realm>
     <secure-deployment name="web-console">
         <realm>master</realm>
         <resource>web-console</resource>
