@@ -42,7 +42,7 @@
             <excludes>
                 <exclude>**/*.war</exclude>
             </excludes>
-            <outputDirectory>modules/system/layers/base</outputDirectory>
+            <outputDirectory>modules/system/add-ons/keycloak</outputDirectory>
         </fileSet>
     </fileSets>
     <files>
