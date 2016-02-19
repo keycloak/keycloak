@@ -23,6 +23,8 @@ import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.naming.ldap.Rdn;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -127,33 +129,13 @@ public class LDAPDn {
     }
 
     public void addFirst(String rdnName, String rdnValue) {
-        rdnValue = escape(rdnValue);
+        rdnValue = Rdn.escapeValue(rdnValue);
         entries.addFirst(new Entry(rdnName, rdnValue));
     }
 
     private void addLast(String rdnName, String rdnValue) {
         entries.addLast(new Entry(rdnName, rdnValue));
     }
-
-    // Need to escape "john,dot" to be "john\,dot"
-    private String escape(String rdnValue) {
-        if (rdnValue.contains(",")) {
-            StringBuilder result = new StringBuilder();
-            boolean first = true;
-            for (String split : rdnValue.split(",")) {
-                if (!first) {
-                    result.append("\\,");
-                } else {
-                    first = false;
-                }
-                result.append(split);
-            }
-            return result.toString();
-        } else {
-            return rdnValue;
-        }
-    }
-
 
     private static class Entry {
         private final String attrName;
