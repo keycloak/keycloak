@@ -589,40 +589,23 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<ClientModel> getClients() {
-        if (updated != null) return updated.getClients();
-        List<ClientModel> apps = new LinkedList<>();
-        for (String id : cached.getClients()) {
-            ClientModel model = cacheSession.getClientById(id, this);
-            if (model == null) {
-                throw new IllegalStateException("Cached application not found: " + id);
-            }
-            apps.add(model);
-        }
-        return Collections.unmodifiableList(apps);
+        return cacheSession.getClients(this);
 
     }
 
     @Override
     public ClientModel addClient(String name) {
-        getDelegateForUpdate();
-        ClientModel app = updated.addClient(name);
-        cacheSession.registerApplicationInvalidation(app.getId());
-        return app;
+        return cacheSession.addClient(this, name);
     }
 
     @Override
     public ClientModel addClient(String id, String clientId) {
-        getDelegateForUpdate();
-        ClientModel app =  updated.addClient(id, clientId);
-        cacheSession.registerApplicationInvalidation(app.getId());
-        return app;
+        return cacheSession.addClient(this, id, clientId);
     }
 
     @Override
     public boolean removeClient(String id) {
-        cacheSession.registerApplicationInvalidation(id);
-        getDelegateForUpdate();
-        return updated.removeClient(id);
+        return cacheSession.removeClient(id, this);
     }
 
     @Override

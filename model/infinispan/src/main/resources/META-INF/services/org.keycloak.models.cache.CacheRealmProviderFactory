@@ -16,4 +16,3 @@
 #
 
 org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory
-org.keycloak.models.cache.infinispan.locking.LockingCacheRealmProviderFactory

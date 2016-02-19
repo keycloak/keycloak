@@ -1,15 +1,14 @@
-package org.keycloak.models.cache.infinispan.locking.entities;
+package org.keycloak.models.cache.infinispan.stream.entities;
 
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.entities.CachedGroup;
-import org.keycloak.models.cache.infinispan.locking.Revisioned;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RevisionedCachedGroup extends CachedGroup implements Revisioned {
+public class RevisionedCachedGroup extends CachedGroup implements Revisioned, InRealm {
     public RevisionedCachedGroup(Long revision, RealmModel realm, GroupModel group) {
         super(realm, group);
         this.revision = revision;

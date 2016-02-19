@@ -36,6 +36,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -90,25 +91,27 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public List<RealmModel> getRealms() {
-        TypedQuery<RealmEntity> query = em.createNamedQuery("getAllRealms", RealmEntity.class);
-        List<RealmEntity> entities = query.getResultList();
+        TypedQuery<String> query = em.createNamedQuery("getAllRealmIds", String.class);
+        List<String> entities = query.getResultList();
         List<RealmModel> realms = new ArrayList<RealmModel>();
-        for (RealmEntity entity : entities) {
-            realms.add(new RealmAdapter(session, em, entity));
+        for (String id : entities) {
+            RealmModel realm = session.realms().getRealm(id);
+            if (realm != null) realms.add(realm);
+
         }
         return realms;
     }
 
     @Override
     public RealmModel getRealmByName(String name) {
-        TypedQuery<RealmEntity> query = em.createNamedQuery("getRealmByName", RealmEntity.class);
+        TypedQuery<String> query = em.createNamedQuery("getRealmIdByName", String.class);
         query.setParameter("name", name);
-        List<RealmEntity> entities = query.getResultList();
+        List<String> entities = query.getResultList();
         if (entities.size() == 0) return null;
         if (entities.size() > 1) throw new IllegalStateException("Should not be more than one realm with same name");
-        RealmEntity realm = query.getResultList().get(0);
-        if (realm == null) return null;
-        return new RealmAdapter(session, em, realm);
+        String id = query.getResultList().get(0);
+
+        return session.realms().getRealm(id);
     }
 
     @Override
@@ -126,11 +129,11 @@ public class JpaRealmProvider implements RealmProvider {
         num = em.createNamedQuery("deleteGroupsByRealm")
                 .setParameter("realm", realm).executeUpdate();
 
-        TypedQuery<ClientEntity> query = em.createNamedQuery("getClientsByRealm", ClientEntity.class);
-        query.setParameter("realm", realm);
-        List<ClientEntity> clients = query.getResultList();
-        for (ClientEntity a : clients) {
-            adapter.removeClient(a.getId());
+        TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
+        query.setParameter("realm", realm.getId());
+        List<String> clients = query.getResultList();
+        for (String client : clients) {
+            session.realms().removeClient(client, adapter);
         }
         /*
         for (ClientEntity a : new LinkedList<>(realm.getClients())) {
@@ -145,11 +148,6 @@ public class JpaRealmProvider implements RealmProvider {
 
         em.flush();
         em.clear();
-        realm = em.find(RealmEntity.class, id);
-        if (realm != null) {
-            logger.error("WTF is the realm still there after a removal????????");
-        }
-
         return true;
     }
 
@@ -162,7 +160,7 @@ public class JpaRealmProvider implements RealmProvider {
         RoleEntity entity = em.find(RoleEntity.class, id);
         if (entity == null) return null;
         if (!realm.getId().equals(entity.getRealmId())) return null;
-        return new RoleAdapter(realm, em, entity);
+        return new RoleAdapter(session, realm, em, entity);
     }
 
     @Override
@@ -172,6 +170,52 @@ public class JpaRealmProvider implements RealmProvider {
         if (!groupEntity.getRealm().getId().equals(realm.getId())) return null;
         return new GroupAdapter(realm, em, groupEntity);
     }
+
+    @Override
+    public ClientModel addClient(RealmModel realm, String clientId) {
+        return addClient(realm, KeycloakModelUtils.generateId(), clientId);
+    }
+
+    @Override
+    public ClientModel addClient(RealmModel realm, String id, String clientId) {
+        if (clientId == null) {
+            clientId = id;
+        }
+        ClientEntity entity = new ClientEntity();
+        entity.setId(id);
+        entity.setClientId(clientId);
+        entity.setEnabled(true);
+        entity.setStandardFlowEnabled(true);
+        RealmEntity realmRef = em.getReference(RealmEntity.class, realm.getId());
+        entity.setRealm(realmRef);
+        em.persist(entity);
+        em.flush();
+        final ClientModel resource = new ClientAdapter(realm, em, session, entity);
+        em.flush();
+        session.getKeycloakSessionFactory().publish(new RealmModel.ClientCreationEvent() {
+            @Override
+            public ClientModel getCreatedClient() {
+                return resource;
+            }
+        });
+        return resource;
+    }
+
+    @Override
+    public List<ClientModel> getClients(RealmModel realm) {
+        TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
+        query.setParameter("realm", realm.getId());
+        List<String> clients = query.getResultList();
+        if (clients.isEmpty()) return Collections.EMPTY_LIST;
+        List<ClientModel> list = new LinkedList<>();
+        for (String id : clients) {
+            ClientModel client = session.realms().getClientById(id, realm);
+            if (client != null) list.add(client);
+        }
+        return Collections.unmodifiableList(list);
+
+    }
+
 
     @Override
     public ClientModel getClientById(String id, RealmModel realm) {
@@ -184,13 +228,13 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public ClientModel getClientByClientId(String clientId, RealmModel realm) {
-        TypedQuery<ClientEntity> query = em.createNamedQuery("findClientByClientId", ClientEntity.class);
+        TypedQuery<String> query = em.createNamedQuery("findClientIdByClientId", String.class);
         query.setParameter("clientId", clientId);
         query.setParameter("realm", realm.getId());
-        List<ClientEntity> results = query.getResultList();
+        List<String> results = query.getResultList();
         if (results.isEmpty()) return null;
-        ClientEntity entity = results.get(0);
-        return new ClientAdapter(realm, em, session, entity);
+        String id = results.get(0);
+        return session.realms().getClientById(id, realm);
     }
 
     @Override

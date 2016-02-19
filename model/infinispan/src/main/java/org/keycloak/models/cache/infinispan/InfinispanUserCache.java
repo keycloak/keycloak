@@ -27,7 +27,7 @@ import org.keycloak.models.cache.entities.CachedUser;
  */
 public class InfinispanUserCache implements UserCache {
 
-    protected static final Logger logger = Logger.getLogger(InfinispanRealmCache.class);
+    protected static final Logger logger = Logger.getLogger(InfinispanUserCache.class);
 
     protected volatile boolean enabled = true;
 

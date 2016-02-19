@@ -723,45 +723,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<ClientModel> getClients() {
-        TypedQuery<ClientEntity> query = em.createNamedQuery("getClientsByRealm", ClientEntity.class);
-        query.setParameter("realm", realm);
-        List<ClientEntity> clients = query.getResultList();
-        if (clients.isEmpty()) return Collections.EMPTY_LIST;
-        List<ClientModel> list = new LinkedList<>();
-        for (ClientEntity entity : clients) {
-            list.add(new ClientAdapter(this, em, session, entity));
-        }
-      return Collections.unmodifiableList(list);
+        return session.realms().getClients(this);
     }
 
     @Override
     public ClientModel addClient(String name) {
-        return this.addClient(KeycloakModelUtils.generateId(), name);
+        return session.realms().addClient(this, name);
     }
 
     @Override
     public ClientModel addClient(String id, String clientId) {
-        if (clientId == null) {
-            clientId = id;
-        }
-        ClientEntity entity = new ClientEntity();
-        entity.setId(id);
-        entity.setClientId(clientId);
-        entity.setEnabled(true);
-        entity.setStandardFlowEnabled(true);
-        entity.setRealm(realm);
-        realm.getClients().add(entity);
-        em.persist(entity);
-        em.flush();
-        final ClientModel resource = new ClientAdapter(this, em, session, entity);
-        em.flush();
-        session.getKeycloakSessionFactory().publish(new ClientCreationEvent() {
-            @Override
-            public ClientModel getCreatedClient() {
-                return resource;
-            }
-        });
-        return resource;
+        return session.realms().addClient(this, id, clientId);
     }
 
     @Override
@@ -956,7 +928,7 @@ public class RealmAdapter implements RealmModel {
             em.remove(entity);
         }
 
-        List<UserFederationProviderModel> add = new LinkedList<UserFederationProviderModel>();
+        List<UserFederationProviderModel> add = new LinkedList<>();
         for (UserFederationProviderModel model : providers) {
             boolean found = false;
             for (UserFederationProviderEntity entity : realm.getUserFederationProviders()) {
@@ -1008,12 +980,12 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRole(String name) {
-        TypedQuery<RoleEntity> query = em.createNamedQuery("getRealmRoleByName", RoleEntity.class);
+        TypedQuery<String> query = em.createNamedQuery("getRealmRoleIdByName", String.class);
         query.setParameter("name", name);
-        query.setParameter("realm", realm);
-        List<RoleEntity> roles = query.getResultList();
+        query.setParameter("realm", realm.getId());
+        List<String> roles = query.getResultList();
         if (roles.size() == 0) return null;
-        return new RoleAdapter(this, em, roles.get(0));
+        return session.realms().getRoleById(roles.get(0), this);
     }
 
     @Override
@@ -1031,7 +1003,7 @@ public class RealmAdapter implements RealmModel {
         realm.getRoles().add(entity);
         em.persist(entity);
         em.flush();
-        return new RoleAdapter(this, em, entity);
+        return new RoleAdapter(session, this, em, entity);
     }
 
     @Override
@@ -1063,7 +1035,9 @@ public class RealmAdapter implements RealmModel {
         if (roles == null) return Collections.EMPTY_SET;
         Set<RoleModel> list = new HashSet<RoleModel>();
         for (RoleEntity entity : roles) {
-            list.add(new RoleAdapter(this, em, entity));
+            list.add(new RoleAdapter(session, this, em, entity));
+            // can't get it from cache cuz of stack overflow
+            // list.add(session.realms().getRoleById(entity.getId(), this));
         }
         return Collections.unmodifiableSet(list);
     }
@@ -1259,9 +1233,14 @@ public class RealmAdapter implements RealmModel {
         if (masterAdminClient == null) {
             return null;
         }
-
-        RealmAdapter masterRealm = new RealmAdapter(session, em, masterAdminClient.getRealm());
-        return new ClientAdapter(masterRealm, em, session, masterAdminClient);
+        RealmModel masterRealm = null;
+        String masterAdminClientRealmId = masterAdminClient.getRealm().getId();
+        if (masterAdminClientRealmId.equals(getId())) {
+            masterRealm = this;
+        } else {
+            masterRealm = session.realms().getRealm(masterAdminClientRealmId);
+        }
+        return session.realms().getClientById(masterAdminClient.getId(), masterRealm);
     }
 
     @Override
@@ -2052,11 +2031,12 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<GroupModel> getGroups() {
-        List<GroupEntity> groups =  em.createNamedQuery("getAllGroupsByRealm").setParameter("realm", realm).getResultList();
+        List<String> groups =  em.createNamedQuery("getAllGroupIdsByRealm", String.class)
+                .setParameter("realm", realm.getId()).getResultList();
         if (groups == null) return Collections.EMPTY_LIST;
         List<GroupModel> list = new LinkedList<>();
-        for (GroupEntity entity : groups) {
-            list.add(new GroupAdapter(this, em, entity));
+        for (String id : groups) {
+            list.add(session.realms().getGroupById(id, this));
         }
         return Collections.unmodifiableList(list);
     }
@@ -2128,7 +2108,7 @@ public class RealmAdapter implements RealmModel {
         if (entities == null || entities.isEmpty()) return Collections.EMPTY_LIST;
         List<ClientTemplateModel> list = new LinkedList<>();
         for (ClientTemplateEntity entity : entities) {
-            list.add(new ClientTemplateAdapter(this, em, session, entity));
+            list.add(session.realms().getClientTemplateById(entity.getId(), this));
         }
         return Collections.unmodifiableList(list);
     }

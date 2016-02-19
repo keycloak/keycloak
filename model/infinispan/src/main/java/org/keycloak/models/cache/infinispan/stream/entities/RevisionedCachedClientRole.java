@@ -1,15 +1,14 @@
-package org.keycloak.models.cache.infinispan.locking.entities;
+package org.keycloak.models.cache.infinispan.stream.entities;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.entities.CachedClientRole;
-import org.keycloak.models.cache.infinispan.locking.Revisioned;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RevisionedCachedClientRole extends CachedClientRole implements Revisioned {
+public class RevisionedCachedClientRole extends CachedClientRole implements Revisioned, InClient {
 
     public RevisionedCachedClientRole(Long revision, String idClient, RoleModel model, RealmModel realm) {
         super(idClient, model, realm);

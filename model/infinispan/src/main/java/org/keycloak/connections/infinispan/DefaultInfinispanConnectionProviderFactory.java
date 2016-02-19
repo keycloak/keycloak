@@ -24,6 +24,7 @@ import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.transaction.LockingMode;
+import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -154,6 +155,15 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
         Configuration replicationCacheConfiguration = replicationConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.WORK_CACHE_NAME, replicationCacheConfiguration);
+
+        ConfigurationBuilder counterConfigBuilder = new ConfigurationBuilder();
+        counterConfigBuilder.invocationBatching().enable()
+                .transaction().transactionMode(TransactionMode.TRANSACTIONAL);
+        counterConfigBuilder.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+        counterConfigBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
+        Configuration counterCacheConfiguration = counterConfigBuilder.build();
+
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.VERSION_CACHE_NAME, counterCacheConfiguration);
     }
 
 }

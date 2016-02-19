@@ -1,4 +1,4 @@
-package org.keycloak.models.cache.infinispan.locking.entities;
+package org.keycloak.models.cache.infinispan.stream.entities;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
@@ -7,7 +7,6 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.RealmCache;
 import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.models.cache.infinispan.locking.Revisioned;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

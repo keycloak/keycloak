@@ -1,4 +1,4 @@
-package org.keycloak.models.cache.infinispan.locking;
+package org.keycloak.models.cache.infinispan.stream;
 
 import java.util.concurrent.atomic.AtomicLong;
 

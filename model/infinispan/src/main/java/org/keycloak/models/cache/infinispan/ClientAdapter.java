@@ -45,7 +45,7 @@ public class ClientAdapter implements ClientModel {
 
     private void getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerApplicationInvalidation(getId());
+            cacheSession.registerClientInvalidation(getId());
             updated = cacheSession.getDelegate().getClientById(getId(), cachedRealm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -377,7 +377,6 @@ public class ClientAdapter implements ClientModel {
     public void setClientId(String clientId) {
         getDelegateForUpdate();
         updated.setClientId(clientId);
-        cacheSession.registerRealmInvalidation(cachedRealm.getId());
     }
 
     @Override

@@ -27,7 +27,7 @@
     },
 
     "userCache": {
-        "infinispan" : {
+        "default" : {
             "enabled": true
         }
     },
@@ -78,15 +78,13 @@
     },
 
     "realmCache": {
-        "provider": "infinispan-locking",
-        "infinispan-locking" : {
+        "default" : {
             "enabled": true
         }
     },
 
     "connectionsInfinispan": {
-        "provider": "locking",
-        "locking": {
+        "default": {
             "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
             "async": "${keycloak.connectionsInfinispan.async:true}",
             "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:2}"

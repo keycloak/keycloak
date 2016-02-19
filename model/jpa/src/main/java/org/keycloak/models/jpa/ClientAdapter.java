@@ -612,12 +612,12 @@ public class ClientAdapter implements ClientModel {
 
     @Override
     public RoleModel getRole(String name) {
-        TypedQuery<RoleEntity> query = em.createNamedQuery("getClientRoleByName", RoleEntity.class);
+        TypedQuery<String> query = em.createNamedQuery("getClientRoleIdByName", String.class);
         query.setParameter("name", name);
-        query.setParameter("client", entity);
-        List<RoleEntity> roles = query.getResultList();
+        query.setParameter("client", entity.getId());
+        List<String> roles = query.getResultList();
         if (roles.size() == 0) return null;
-        return new RoleAdapter(realm, em, roles.get(0));
+        return session.realms().getRoleById(roles.get(0), realm);
     }
 
     @Override
@@ -636,7 +636,7 @@ public class ClientAdapter implements ClientModel {
         entity.getRoles().add(roleEntity);
         em.persist(roleEntity);
         em.flush();
-        return new RoleAdapter(realm, em, roleEntity);
+        return new RoleAdapter(session, realm, em, roleEntity);
     }
 
     @Override
@@ -667,19 +667,21 @@ public class ClientAdapter implements ClientModel {
     @Override
     public Set<RoleModel> getRoles() {
         Set<RoleModel> list = new HashSet<RoleModel>();
-        /*
-        Collection<RoleEntity> roles = entity.getRoles();
-        if (roles == null) return list;
-        for (RoleEntity entity : roles) {
-            list.add(new RoleAdapter(realm, em, entity));
-        }
-        */
         TypedQuery<RoleEntity> query = em.createNamedQuery("getClientRoles", RoleEntity.class);
         query.setParameter("client", entity);
         List<RoleEntity> roles = query.getResultList();
         for (RoleEntity roleEntity : roles) {
-             list.add(new RoleAdapter(realm, em, roleEntity));
+            list.add(new RoleAdapter(session, realm, em, roleEntity));
         }
+
+        /*
+        TypedQuery<String> query = em.createNamedQuery("getClientRoleIds", String.class);
+        query.setParameter("client", entity.getId());
+        List<String> roles = query.getResultList();
+        for (String id : roles) {
+             list.add(session.realms().getRoleById(id, realm));
+        }
+        */
         return list;
 
     }

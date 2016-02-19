@@ -26,15 +26,15 @@ import org.keycloak.models.RoleModel;
  */
 public class CachedClientRole extends CachedRole {
 
-    private final String idClient;
+    private final String clientId;
 
-    public CachedClientRole(String idClient, RoleModel model, RealmModel realm) {
+    public CachedClientRole(String clientId, RoleModel model, RealmModel realm) {
         super(model, realm);
-        this.idClient = idClient;
+        this.clientId = clientId;
 
     }
 
-    public String getIdClient() {
-        return idClient;
+    public String getClientId() {
+        return clientId;
     }
 }

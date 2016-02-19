@@ -78,7 +78,7 @@ public class InfinispanCacheUserProviderFactory implements CacheUserProviderFact
 
     @Override
     public String getId() {
-        return "infinispan";
+        return "default";
     }
 
     @Listener

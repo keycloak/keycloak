@@ -39,6 +39,7 @@ import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -105,7 +106,8 @@ public class MongoRealmProvider implements RealmProvider {
 
         List<RealmModel> results = new ArrayList<RealmModel>();
         for (MongoRealmEntity realmEntity : realms) {
-            results.add(new RealmAdapter(session, realmEntity, invocationContext));
+            RealmModel realm = session.realms().getRealm(realmEntity.getId());
+            if (realm != null) results.add(realm);
         }
         return results;
     }
@@ -118,7 +120,7 @@ public class MongoRealmProvider implements RealmProvider {
         MongoRealmEntity realm = getMongoStore().loadSingleEntity(MongoRealmEntity.class, query, invocationContext);
 
         if (realm == null) return null;
-        return new RealmAdapter(session, realm, invocationContext);
+        return session.realms().getRealm(realm.getId());
     }
 
     @Override
@@ -163,6 +165,51 @@ public class MongoRealmProvider implements RealmProvider {
     }
 
     @Override
+    public ClientModel addClient(RealmModel realm, String clientId) {
+        return addClient(realm, KeycloakModelUtils.generateId(), clientId);
+    }
+
+    @Override
+    public ClientModel addClient(RealmModel realm, String id, String clientId) {
+        MongoClientEntity clientEntity = new MongoClientEntity();
+        clientEntity.setId(id);
+        clientEntity.setClientId(clientId);
+        clientEntity.setRealmId(realm.getId());
+        clientEntity.setEnabled(true);
+        clientEntity.setStandardFlowEnabled(true);
+        getMongoStore().insertEntity(clientEntity, invocationContext);
+
+        if (clientId == null) {
+            clientEntity.setClientId(clientEntity.getId());
+            getMongoStore().updateEntity(clientEntity, invocationContext);
+        }
+
+        final ClientModel model = new ClientAdapter(session, realm, clientEntity, invocationContext);
+        session.getKeycloakSessionFactory().publish(new RealmModel.ClientCreationEvent() {
+            @Override
+            public ClientModel getCreatedClient() {
+                return model;
+            }
+        });
+        return model;
+    }
+
+    @Override
+    public List<ClientModel> getClients(RealmModel realm) {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .get();
+        List<MongoClientEntity> clientEntities = getMongoStore().loadEntities(MongoClientEntity.class, query, invocationContext);
+
+        if (clientEntities.isEmpty()) return Collections.EMPTY_LIST;
+        List<ClientModel> result = new ArrayList<ClientModel>();
+        for (MongoClientEntity clientEntity : clientEntities) {
+            result.add(session.realms().getClientById(clientEntity.getId(), realm));
+        }
+        return Collections.unmodifiableList(result);
+    }
+
+    @Override
     public boolean removeClient(String id, RealmModel realm) {
         if (id == null) return false;
         ClientModel client = getClientById(id, realm);
@@ -180,7 +227,8 @@ public class MongoRealmProvider implements RealmProvider {
                 .and("clientId").is(clientId)
                 .get();
         MongoClientEntity appEntity = getMongoStore().loadSingleEntity(MongoClientEntity.class, query, invocationContext);
-        return appEntity == null ? null : new ClientAdapter(session, realm, appEntity, invocationContext);
+        if (appEntity == null) return null;
+        return session.realms().getClientById(appEntity.getId(), realm);
 
     }
 

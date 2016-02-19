@@ -36,6 +36,8 @@ import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CacheRealmProviderFactory;
 import org.keycloak.models.cache.entities.CachedClient;
 import org.keycloak.models.cache.entities.CachedRealm;
+import org.keycloak.models.cache.infinispan.stream.StreamCacheRealmProvider;
+import org.keycloak.models.cache.infinispan.stream.StreamRealmCache;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -47,14 +49,12 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
 
     private static final Logger log = Logger.getLogger(InfinispanCacheRealmProviderFactory.class);
 
-    protected volatile InfinispanRealmCache realmCache;
-
-    protected final ConcurrentHashMap<String, String> realmLookup = new ConcurrentHashMap<>();
+    protected volatile StreamRealmCache realmCache;
 
     @Override
     public CacheRealmProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new DefaultCacheRealmProvider(realmCache, session);
+        return new StreamCacheRealmProvider(realmCache, session);
     }
 
     private void lazyInit(KeycloakSession session) {
@@ -62,8 +62,8 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
             synchronized (this) {
                 if (realmCache == null) {
                     Cache<String, Object> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
-                    cache.addListener(new CacheListener());
-                    realmCache = new InfinispanRealmCache(cache, realmLookup);
+                    Cache<String, Long> revisions = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.VERSION_CACHE_NAME);
+                    realmCache = new StreamRealmCache(cache, revisions);
                 }
             }
         }
@@ -84,77 +84,7 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
 
     @Override
     public String getId() {
-        return "infinispan";
+        return "default";
     }
 
-    @Listener
-    public class CacheListener {
-
-        @CacheEntryCreated
-        public void created(CacheEntryCreatedEvent<String, Object> event) {
-            if (!event.isPre()) {
-                Object object = event.getValue();
-                if (object != null) {
-                    if (object instanceof CachedRealm) {
-                        CachedRealm realm = (CachedRealm) object;
-                        realmLookup.put(realm.getName(), realm.getId());
-                        log.tracev("Realm added realm={0}", realm.getName());
-                    }
-                }
-            }
-        }
-
-        @CacheEntryRemoved
-        public void removed(CacheEntryRemovedEvent<String, Object> event) {
-            if (event.isPre()) {
-                Object object = event.getValue();
-                if (object != null) {
-                    remove(object);
-                }
-            }
-        }
-
-        @CacheEntryInvalidated
-        public void removed(CacheEntryInvalidatedEvent<String, Object> event) {
-            if (event.isPre()) {
-                Object object = event.getValue();
-                if (object != null) {
-                    remove(object);
-                }
-            }
-        }
-
-        @CacheEntriesEvicted
-        public void userEvicted(CacheEntriesEvictedEvent<String, Object> event) {
-            for (Object object : event.getEntries().values()) {
-                remove(object);
-            }
-        }
-
-        private void remove(Object object) {
-            if (object instanceof CachedRealm) {
-                CachedRealm realm = (CachedRealm) object;
-
-                realmLookup.remove(realm.getName());
-
-                for (String r : realm.getRealmRoles().values()) {
-                    realmCache.evictRoleById(r);
-                }
-
-                for (String c : realm.getClients()) {
-                    realmCache.evictClientById(c);
-                }
-
-                log.tracev("Realm removed realm={0}", realm.getName());
-            } else if (object instanceof CachedClient) {
-                CachedClient client = (CachedClient) object;
-
-                for (String r : client.getRoles().values()) {
-                    realmCache.evictRoleById(r);
-                }
-
-                log.tracev("Client removed client={0}", client.getId());
-            }
-        }
-    }
 }

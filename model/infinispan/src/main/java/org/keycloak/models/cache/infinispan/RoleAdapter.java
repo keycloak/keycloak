@@ -125,7 +125,7 @@ public class RoleAdapter implements RoleModel {
         for (String id : cached.getComposites()) {
             RoleModel role = realm.getRoleById(id);
             if (role == null) {
-                throw new IllegalStateException("Could not find composite: " + id);
+                throw new IllegalStateException("Could not find composite in role " + getName() + ": " + id);
             }
             set.add(role);
         }
@@ -138,7 +138,7 @@ public class RoleAdapter implements RoleModel {
             return realm;
         } else {
             CachedClientRole appRole = (CachedClientRole)cached;
-            return realm.getClientById(appRole.getIdClient());
+            return realm.getClientById(appRole.getClientId());
         }
     }
 

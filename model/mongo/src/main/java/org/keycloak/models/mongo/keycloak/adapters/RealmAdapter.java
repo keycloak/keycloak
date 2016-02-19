@@ -815,47 +815,18 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public List<ClientModel> getClients() {
-        DBObject query = new QueryBuilder()
-                .and("realmId").is(getId())
-                .get();
-        List<MongoClientEntity> clientEntities = getMongoStore().loadEntities(MongoClientEntity.class, query, invocationContext);
-
-        if (clientEntities.isEmpty()) return Collections.EMPTY_LIST;
-        List<ClientModel> result = new ArrayList<ClientModel>();
-        for (MongoClientEntity clientEntity : clientEntities) {
-            result.add(new ClientAdapter(session, this, clientEntity, invocationContext));
-        }
-        return Collections.unmodifiableList(result);
+        return session.realms().getClients(this);
     }
 
     @Override
     public ClientModel addClient(String name) {
-        return this.addClient(null, name);
+        return session.realms().addClient(this, name);
     }
 
     @Override
     public ClientModel addClient(String id, String clientId) {
-        MongoClientEntity clientEntity = new MongoClientEntity();
-        clientEntity.setId(id);
-        clientEntity.setClientId(clientId);
-        clientEntity.setRealmId(getId());
-        clientEntity.setEnabled(true);
-        clientEntity.setStandardFlowEnabled(true);
-        getMongoStore().insertEntity(clientEntity, invocationContext);
+        return session.realms().addClient(this, id, clientId);
 
-        if (clientId == null) {
-            clientEntity.setClientId(clientEntity.getId());
-            getMongoStore().updateEntity(clientEntity, invocationContext);
-        }
-
-        final ClientModel model = new ClientAdapter(session, this, clientEntity, invocationContext);
-        session.getKeycloakSessionFactory().publish(new ClientCreationEvent() {
-            @Override
-            public ClientModel getCreatedClient() {
-                return model;
-            }
-        });
-        return model;
     }
 
     @Override
