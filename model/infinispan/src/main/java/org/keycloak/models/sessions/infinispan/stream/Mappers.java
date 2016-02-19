@@ -45,6 +45,10 @@ public class Mappers {
         return new SessionIdMapper();
     }
 
+    public static Function<Map.Entry<String, SessionEntity>, SessionEntity> sessionEntity() {
+        return new SessionEntityMapper();
+    }
+
     public static Function<Map.Entry<LoginFailureKey, LoginFailureEntity>, LoginFailureKey> loginFailureId() {
         return new LoginFailureIdMapper();
     }
@@ -73,6 +77,13 @@ public class Mappers {
         @Override
         public String apply(Map.Entry<String, SessionEntity> entry) {
             return entry.getKey();
+        }
+    }
+
+    private static class SessionEntityMapper implements Function<Map.Entry<String, SessionEntity>, SessionEntity>, Serializable {
+        @Override
+        public SessionEntity apply(Map.Entry<String, SessionEntity> entry) {
+            return entry.getValue();
         }
     }
 
