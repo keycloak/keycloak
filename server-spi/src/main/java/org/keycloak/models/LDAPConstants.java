@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import java.util.Map;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -38,7 +40,6 @@ public class LDAPConstants {
     public static final String USER_OBJECT_CLASSES = "userObjectClasses";
 
     public static final String CONNECTION_URL = "connectionUrl";
-    public static final String SECURITY_PROTOCOL = "securityProtocol";
     public static final String BASE_DN = "baseDn"; // used for tests only
     public static final String USERS_DN = "usersDn";
     public static final String BIND_DN = "bindDn";
@@ -47,6 +48,11 @@ public class LDAPConstants {
     public static final String AUTH_TYPE = "authType";
     public static final String AUTH_TYPE_NONE = "none";
     public static final String AUTH_TYPE_SIMPLE = "simple";
+
+    public static final String USE_TRUSTSTORE_SPI = "useTruststoreSpi";
+    public static final String USE_TRUSTSTORE_ALWAYS = "always";
+    public static final String USE_TRUSTSTORE_NEVER = "never";
+    public static final String USE_TRUSTSTORE_LDAPS_ONLY = "ldapsOnly";
 
     public static final String SEARCH_SCOPE = "searchScope";
     public static final String CONNECTION_POOLING = "connectionPooling";
@@ -118,5 +124,22 @@ public class LDAPConstants {
         }
 
         return ENTRY_UUID;
+    }
+
+
+
+    public static void setTruststoreSpiIfNeeded(String useTruststoreSpi, String url, Map<String, Object> env) {
+        boolean shouldSetTruststore;
+        if (useTruststoreSpi != null && useTruststoreSpi.equals(LDAPConstants.USE_TRUSTSTORE_ALWAYS)) {
+            shouldSetTruststore = true;
+        } else if (useTruststoreSpi != null && useTruststoreSpi.equals(LDAPConstants.USE_TRUSTSTORE_NEVER)) {
+            shouldSetTruststore = false;
+        } else {
+            shouldSetTruststore = (url != null && url.startsWith("ldaps"));
+        }
+
+        if (shouldSetTruststore) {
+            env.put("java.naming.ldap.factory.socket", "org.keycloak.truststore.SSLSocketFactory");
+        }
     }
 }

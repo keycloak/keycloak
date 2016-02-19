@@ -480,15 +480,6 @@ public class LDAPOperationManager {
         env.put(Context.INITIAL_CONTEXT_FACTORY, this.config.getFactoryName());
         env.put(Context.SECURITY_AUTHENTICATION, authType);
 
-        String protocol = this.config.getSecurityProtocol();
-
-        if (protocol != null) {
-            env.put(Context.SECURITY_PROTOCOL, protocol);
-            if ("ssl".equals(protocol)) {
-                env.put("java.naming.ldap.factory.socket", "org.keycloak.connections.truststore.SSLSocketFactory");
-            }
-        }
-
         String bindDN = this.config.getBindDN();
 
         char[] bindCredential = null;
@@ -509,6 +500,9 @@ public class LDAPOperationManager {
         } else {
             logger.warn("LDAP URL is null. LDAPOperationManager won't work correctly");
         }
+
+        String useTruststoreSpi = this.config.getUseTruststoreSpi();
+        LDAPConstants.setTruststoreSpiIfNeeded(useTruststoreSpi, url, env);
 
         String connectionPooling = this.config.getConnectionPooling();
         if (connectionPooling != null) {

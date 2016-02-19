@@ -163,6 +163,19 @@
                 </div>
                 <kc-tooltip>{{:: 'ldap.search-scope.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="useTruststoreSpi">{{:: 'use-truststore-spi' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="useTruststoreSpi"
+                                ng-model="instance.config.useTruststoreSpi"
+                                ng-options="useTruststoreSpi.id as useTruststoreSpi.name for useTruststoreSpi in useTruststoreOptions"
+                                required>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'ldap.use-truststore-spi.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="connectionPooling">{{:: 'connection-pooling' | translate}}</label>
                 <div class="col-md-6">
