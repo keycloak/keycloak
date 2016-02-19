@@ -117,7 +117,7 @@ public class UserSessionManager {
 
                 kcSession.sessions().removeOfflineClientSession(realm, clientSession.getId());
                 persister.removeClientSession(clientSession.getId(), true);
-                checkOfflineUserSessionHasClientSessions(realm, user, clientSession.getUserSession().getId(), clientSessions);
+                checkOfflineUserSessionHasClientSessions(realm, user, clientSession.getUserSession(), clientSessions);
                 anyRemoved = true;
             }
         }
@@ -129,7 +129,7 @@ public class UserSessionManager {
         if (logger.isTraceEnabled()) {
             logger.tracef("Removing offline user session '%s' for user '%s' ", userSession.getId(), userSession.getLoginUsername());
         }
-        kcSession.sessions().removeOfflineUserSession(userSession.getRealm(), userSession.getId());
+        kcSession.sessions().removeOfflineUserSession(userSession.getRealm(), userSession);
         persister.removeUserSession(userSession.getId(), true);
     }
 
@@ -165,7 +165,8 @@ public class UserSessionManager {
     }
 
     // Check if userSession has any offline clientSessions attached to it. Remove userSession if not
-    private void checkOfflineUserSessionHasClientSessions(RealmModel realm, UserModel user, String userSessionId, List<ClientSessionModel> clientSessions) {
+    private void checkOfflineUserSessionHasClientSessions(RealmModel realm, UserModel user, UserSessionModel userSession, List<ClientSessionModel> clientSessions) {
+        String userSessionId = userSession.getId();
         for (ClientSessionModel clientSession : clientSessions) {
             if (clientSession.getUserSession().getId().equals(userSessionId)) {
                 return;
@@ -175,7 +176,7 @@ public class UserSessionManager {
         if (logger.isTraceEnabled()) {
             logger.tracef("Removing offline userSession for user %s as it doesn't have any client sessions attached. UserSessionID: %s", user.getUsername(), userSessionId);
         }
-        kcSession.sessions().removeOfflineUserSession(realm, userSessionId);
+        kcSession.sessions().removeOfflineUserSession(realm, userSession);
         persister.removeUserSession(userSessionId, true);
     }
 }
