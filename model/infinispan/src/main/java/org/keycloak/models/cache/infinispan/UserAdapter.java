@@ -19,7 +19,7 @@ package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheUserProvider;
-import org.keycloak.models.cache.entities.CachedUser;
+import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.*;

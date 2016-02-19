@@ -1,4 +1,4 @@
-package org.keycloak.models.cache.infinispan.stream.entities;
+package org.keycloak.models.cache.infinispan.entities;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

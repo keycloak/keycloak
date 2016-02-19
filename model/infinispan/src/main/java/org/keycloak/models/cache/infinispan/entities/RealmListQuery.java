@@ -1,6 +1,4 @@
-package org.keycloak.models.cache.infinispan.stream;
-
-import org.keycloak.models.cache.infinispan.stream.entities.AbstractRevisioned;
+package org.keycloak.models.cache.infinispan.entities;
 
 import java.util.HashSet;
 import java.util.Set;

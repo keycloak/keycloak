@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.cache.entities;
+package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -35,7 +35,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.cache.RealmCache;
+import org.keycloak.models.cache.infinispan.RealmCache;
 import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.io.Serializable;
@@ -56,9 +56,8 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedRealm implements Serializable {
+public class CachedRealm extends AbstractRevisioned {
 
-    protected String id;
     protected String name;
     protected String displayName;
     protected String displayNameHtml;
@@ -155,11 +154,8 @@ public class CachedRealm implements Serializable {
     protected MultivaluedHashMap<String, IdentityProviderMapperModel> identityProviderMappers = new MultivaluedHashMap<>();
     protected Set<IdentityProviderMapperModel> identityProviderMapperSet;
 
-    public CachedRealm() {
-    }
-
-    public CachedRealm(RealmCache cache, RealmProvider delegate, RealmModel model) {
-        id = model.getId();
+    public CachedRealm(Long revision, RealmModel model) {
+        super(revision, model.getId());
         name = model.getName();
         displayName = model.getDisplayName();
         displayNameHtml = model.getDisplayNameHtml();
@@ -244,11 +240,11 @@ public class CachedRealm implements Serializable {
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
-        cacheRealmRoles(cache, model);
+        cacheRealmRoles(model);
 
-        cacheClients(cache, delegate, model);
+        cacheClients(model);
 
-        cacheClientTemplates(cache, delegate, model);
+        cacheClientTemplates(model);
 
         internationalizationEnabled = model.isInternationalizationEnabled();
         supportedLocales = model.getSupportedLocales();
@@ -286,34 +282,24 @@ public class CachedRealm implements Serializable {
 
     }
 
-    protected void cacheClientTemplates(RealmCache cache, RealmProvider delegate, RealmModel model) {
+    protected void cacheClientTemplates(RealmModel model) {
         for (ClientTemplateModel template : model.getClientTemplates()) {
             clientTemplates.add(template.getId());
-            CachedClientTemplate cachedClient = new CachedClientTemplate(cache, delegate, model, template);
-            cache.addClientTemplate(cachedClient);
         }
     }
 
-    protected void cacheClients(RealmCache cache, RealmProvider delegate, RealmModel model) {
+    protected void cacheClients(RealmModel model) {
         for (ClientModel client : model.getClients()) {
             clients.add(client.getId());
-            CachedClient cachedClient = new CachedClient(cache, delegate, model, client);
-            cache.addClient(cachedClient);
         }
     }
 
-    protected void cacheRealmRoles(RealmCache cache, RealmModel model) {
+    protected void cacheRealmRoles(RealmModel model) {
         for (RoleModel role : model.getRoles()) {
             realmRoles.put(role.getName(), role.getId());
-            CachedRole cachedRole = new CachedRealmRole(role, model);
-            cache.addRole(cachedRole);
         }
     }
 
-
-    public String getId() {
-        return id;
-    }
 
     public String getMasterAdminClient() {
         return masterAdminClient;

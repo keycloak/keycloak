@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.cache.entities;
+package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.RealmCache;
+import org.keycloak.models.cache.infinispan.RealmCache;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -34,9 +34,8 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedClientTemplate implements Serializable {
+public class CachedClientTemplate extends AbstractRevisioned implements InRealm {
 
-    private String id;
     private String name;
     private String description;
     private String realm;
@@ -50,12 +49,12 @@ public class CachedClientTemplate implements Serializable {
     private boolean implicitFlowEnabled;
     private boolean directAccessGrantsEnabled;
     private boolean serviceAccountsEnabled;
-    private Set<String> scope = new HashSet<String>();
+    private Set<String> scope = new HashSet<>();
     private Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
-    private Map<String, String> attributes = new HashMap<String, String>();
+    private Map<String, String> attributes = new HashMap<>();
 
-    public CachedClientTemplate(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientTemplateModel model) {
-        id = model.getId();
+    public CachedClientTemplate(Long revision, RealmModel realm, ClientTemplateModel model) {
+        super(revision, model.getId());
         name = model.getName();
         description = model.getDescription();
         this.realm = realm.getId();
@@ -77,10 +76,6 @@ public class CachedClientTemplate implements Serializable {
         directAccessGrantsEnabled = model.isDirectAccessGrantsEnabled();
         serviceAccountsEnabled = model.isServiceAccountsEnabled();
     }
-    public String getId() {
-        return id;
-    }
-
 
     public String getName() {
         return name;

@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.cache;
+package org.keycloak.models.cache.infinispan;
 
-import org.keycloak.models.cache.entities.CachedUser;
+import org.keycloak.models.cache.infinispan.entities.CachedUser;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

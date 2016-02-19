@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.cache.entities;
+package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.RealmCache;
+import org.keycloak.models.cache.infinispan.RealmCache;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -37,9 +37,7 @@ import java.util.TreeMap;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedClient implements Serializable {
-
-    protected String id;
+public class CachedClient extends AbstractRevisioned implements InRealm {
     protected String clientId;
     protected String name;
     protected String description;
@@ -77,8 +75,8 @@ public class CachedClient implements Serializable {
     protected boolean useTemplateConfig;
     protected boolean useTemplateMappers;
 
-    public CachedClient(RealmCache cache, RealmProvider delegate, RealmModel realm, ClientModel model) {
-        id = model.getId();
+    public CachedClient(Long revision, RealmModel realm, ClientModel model) {
+        super(revision, model.getId());
         clientAuthenticatorType = model.getClientAuthenticatorType();
         secret = model.getSecret();
         registrationToken = model.getRegistrationToken();
@@ -112,10 +110,10 @@ public class CachedClient implements Serializable {
         implicitFlowEnabled = model.isImplicitFlowEnabled();
         directAccessGrantsEnabled = model.isDirectAccessGrantsEnabled();
         serviceAccountsEnabled = model.isServiceAccountsEnabled();
-        cacheRoles(cache, realm, model);
+        cacheRoles(model);
 
         nodeReRegistrationTimeout = model.getNodeReRegistrationTimeout();
-        registeredNodes = new TreeMap<String, Integer>(model.getRegisteredNodes());
+        registeredNodes = new TreeMap<>(model.getRegisteredNodes());
         if (model.getClientTemplate() != null) {
             clientTemplate = model.getClientTemplate().getId();
         }
@@ -124,15 +122,10 @@ public class CachedClient implements Serializable {
         useTemplateScope = model.useTemplateScope();
     }
 
-    protected void cacheRoles(RealmCache cache, RealmModel realm, ClientModel model) {
+    protected void cacheRoles(ClientModel model) {
         for (RoleModel role : model.getRoles()) {
             roles.put(role.getName(), role.getId());
-            cache.addRole(new CachedClientRole(id, role, realm));
         }
-    }
-
-    public String getId() {
-        return id;
     }
 
     public String getClientId() {

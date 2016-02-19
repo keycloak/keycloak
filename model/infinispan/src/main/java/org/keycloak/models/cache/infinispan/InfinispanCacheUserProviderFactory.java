@@ -28,7 +28,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.cache.CacheUserProviderFactory;
-import org.keycloak.models.cache.entities.CachedUser;
+import org.keycloak.models.cache.infinispan.entities.CachedUser;
 
 import java.util.concurrent.ConcurrentHashMap;
 

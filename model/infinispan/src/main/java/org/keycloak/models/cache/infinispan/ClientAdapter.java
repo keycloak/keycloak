@@ -19,8 +19,7 @@ package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.RealmCache;
-import org.keycloak.models.cache.entities.CachedClient;
+import org.keycloak.models.cache.infinispan.entities.CachedClient;
 
 import java.util.*;
 

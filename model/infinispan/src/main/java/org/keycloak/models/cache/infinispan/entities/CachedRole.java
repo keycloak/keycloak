@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.cache.entities;
+package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -28,9 +28,8 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedRole implements Serializable {
+public class CachedRole extends AbstractRevisioned implements InRealm {
 
-    final protected String id;
     final protected String name;
     final protected String realm;
     final protected String description;
@@ -38,10 +37,10 @@ public class CachedRole implements Serializable {
     final protected boolean composite;
     final protected Set<String> composites = new HashSet<String>();
 
-    public CachedRole(RoleModel model, RealmModel realm) {
+    public CachedRole(Long revision, RoleModel model, RealmModel realm) {
+        super(revision, model.getId());
         composite = model.isComposite();
         description = model.getDescription();
-        id = model.getId();
         name = model.getName();
         scopeParamRequired = model.isScopeParamRequired();
         this.realm = realm.getId();
@@ -51,10 +50,6 @@ public class CachedRole implements Serializable {
             }
         }
 
-    }
-
-    public String getId() {
-        return id;
     }
 
     public String getName() {

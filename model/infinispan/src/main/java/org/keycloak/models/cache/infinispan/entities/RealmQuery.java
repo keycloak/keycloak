@@ -1,6 +1,4 @@
-package org.keycloak.models.cache.infinispan.stream;
-
-import org.keycloak.models.cache.infinispan.stream.entities.InRealm;
+package org.keycloak.models.cache.infinispan.entities;
 
 import java.util.Set;
 

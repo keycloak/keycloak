@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.cache.entities;
+package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -24,12 +24,12 @@ import org.keycloak.models.RoleModel;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedClientRole extends CachedRole {
+public class CachedClientRole extends CachedRole implements InClient {
 
     private final String clientId;
 
-    public CachedClientRole(String clientId, RoleModel model, RealmModel realm) {
-        super(model, realm);
+    public CachedClientRole(Long revision, String clientId, RoleModel model, RealmModel realm) {
+        super(revision, model, realm);
         this.clientId = clientId;
 
     }

@@ -21,10 +21,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.RealmCache;
-import org.keycloak.models.cache.entities.CachedClientRole;
-import org.keycloak.models.cache.entities.CachedRealmRole;
-import org.keycloak.models.cache.entities.CachedRole;
+import org.keycloak.models.cache.infinispan.entities.CachedClientRole;
+import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
+import org.keycloak.models.cache.infinispan.entities.CachedRole;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.HashSet;
@@ -38,13 +37,11 @@ public class RoleAdapter implements RoleModel {
 
     protected RoleModel updated;
     protected CachedRole cached;
-    protected RealmCache cache;
     protected CacheRealmProvider cacheSession;
     protected RealmModel realm;
 
-    public RoleAdapter(CachedRole cached, RealmCache cache, CacheRealmProvider session, RealmModel realm) {
+    public RoleAdapter(CachedRole cached, CacheRealmProvider session, RealmModel realm) {
         this.cached = cached;
-        this.cache = cache;
         this.cacheSession = session;
         this.realm = realm;
     }

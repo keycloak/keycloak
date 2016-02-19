@@ -1,7 +1,8 @@
 package org.keycloak.models.cache.infinispan.stream;
 
-import org.keycloak.models.cache.entities.CachedGroup;
-import org.keycloak.models.cache.entities.CachedRole;
+import org.keycloak.models.cache.infinispan.entities.CachedGroup;
+import org.keycloak.models.cache.infinispan.entities.CachedRole;
+import org.keycloak.models.cache.infinispan.entities.Revisioned;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -11,7 +12,7 @@ import java.util.function.Predicate;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class HasRolePredicate implements Predicate<Map.Entry<String, Object>>, Serializable {
+public class HasRolePredicate implements Predicate<Map.Entry<String, Revisioned>>, Serializable {
     private String role;
 
     public static HasRolePredicate create() {
@@ -24,7 +25,7 @@ public class HasRolePredicate implements Predicate<Map.Entry<String, Object>>, S
     }
 
     @Override
-    public boolean test(Map.Entry<String, Object> entry) {
+    public boolean test(Map.Entry<String, Revisioned> entry) {
         Object value = entry.getValue();
         if (value == null) return false;
         if (value instanceof CachedRole) {

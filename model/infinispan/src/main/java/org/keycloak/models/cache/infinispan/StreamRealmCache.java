@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.cache.infinispan.stream;
+package org.keycloak.models.cache.infinispan;
 
 import org.infinispan.Cache;
 import org.infinispan.notifications.Listener;
@@ -24,12 +24,19 @@ import org.infinispan.notifications.cachelistener.annotation.CacheEntryInvalidat
 import org.infinispan.notifications.cachelistener.event.CacheEntriesEvictedEvent;
 import org.infinispan.notifications.cachelistener.event.CacheEntryInvalidatedEvent;
 import org.jboss.logging.Logger;
-import org.keycloak.models.cache.entities.CachedClient;
-import org.keycloak.models.cache.entities.CachedClientTemplate;
-import org.keycloak.models.cache.entities.CachedGroup;
-import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.models.cache.entities.CachedRole;
-import org.keycloak.models.cache.infinispan.stream.entities.Revisioned;
+import org.keycloak.models.cache.infinispan.entities.CachedClient;
+import org.keycloak.models.cache.infinispan.entities.CachedClientTemplate;
+import org.keycloak.models.cache.infinispan.entities.CachedGroup;
+import org.keycloak.models.cache.infinispan.entities.CachedRealm;
+import org.keycloak.models.cache.infinispan.entities.CachedRole;
+import org.keycloak.models.cache.infinispan.entities.Revisioned;
+import org.keycloak.models.cache.infinispan.stream.ClientQueryPredicate;
+import org.keycloak.models.cache.infinispan.stream.ClientTemplateQueryPredicate;
+import org.keycloak.models.cache.infinispan.stream.GroupQueryPredicate;
+import org.keycloak.models.cache.infinispan.stream.HasRolePredicate;
+import org.keycloak.models.cache.infinispan.stream.InClientPredicate;
+import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
+import org.keycloak.models.cache.infinispan.stream.RealmQueryPredicate;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -46,15 +53,15 @@ public class StreamRealmCache {
     protected static final Logger logger = Logger.getLogger(StreamRealmCache.class);
 
     protected final Cache<String, Long> revisions;
-    protected final Cache<String, Object> cache;
+    protected final Cache<String, Revisioned> cache;
 
-    public StreamRealmCache(Cache<String, Object> cache, Cache<String, Long> revisions) {
+    public StreamRealmCache(Cache<String, Revisioned> cache, Cache<String, Long> revisions) {
         this.cache = cache;
         this.cache.addListener(this);
         this.revisions = revisions;
     }
 
-    public Cache<String, Object> getCache() {
+    public Cache<String, Revisioned> getCache() {
         return cache;
     }
 
@@ -144,11 +151,11 @@ public class StreamRealmCache {
     }
 
     public void realmInvalidation(String id, Set<String> invalidations) {
-        Predicate<Map.Entry<String, Object>> predicate = getRealmInvalidationPredicate(id);
+        Predicate<Map.Entry<String, Revisioned>> predicate = getRealmInvalidationPredicate(id);
         addInvalidations(predicate, invalidations);
     }
 
-    public Predicate<Map.Entry<String, Object>> getRealmInvalidationPredicate(String id) {
+    public Predicate<Map.Entry<String, Revisioned>> getRealmInvalidationPredicate(String id) {
         return RealmQueryPredicate.create().realm(id);
     }
 
@@ -156,7 +163,7 @@ public class StreamRealmCache {
         addInvalidations(getClientInvalidationPredicate(id), invalidations);
     }
 
-    public Predicate<Map.Entry<String, Object>> getClientInvalidationPredicate(String id) {
+    public Predicate<Map.Entry<String, Revisioned>> getClientInvalidationPredicate(String id) {
         return ClientQueryPredicate.create().client(id);
     }
 
@@ -165,7 +172,7 @@ public class StreamRealmCache {
 
     }
 
-    public Predicate<Map.Entry<String, Object>> getRoleInvalidationPredicate(String id) {
+    public Predicate<Map.Entry<String, Revisioned>> getRoleInvalidationPredicate(String id) {
         return HasRolePredicate.create().role(id);
     }
 
@@ -174,7 +181,7 @@ public class StreamRealmCache {
 
     }
 
-    public Predicate<Map.Entry<String, Object>> getGroupInvalidationPredicate(String id) {
+    public Predicate<Map.Entry<String, Revisioned>> getGroupInvalidationPredicate(String id) {
         return GroupQueryPredicate.create().group(id);
     }
 
@@ -183,17 +190,17 @@ public class StreamRealmCache {
 
     }
 
-    public Predicate<Map.Entry<String, Object>> getClientTemplateInvalidationPredicate(String id) {
+    public Predicate<Map.Entry<String, Revisioned>> getClientTemplateInvalidationPredicate(String id) {
         return ClientTemplateQueryPredicate.create().template(id);
     }
 
     public void realmRemoval(String id, Set<String> invalidations) {
-        Predicate<Map.Entry<String, Object>> predicate = getRealmRemovalPredicate(id);
+        Predicate<Map.Entry<String, Revisioned>> predicate = getRealmRemovalPredicate(id);
         addInvalidations(predicate, invalidations);
     }
 
-    public Predicate<Map.Entry<String, Object>> getRealmRemovalPredicate(String id) {
-        Predicate<Map.Entry<String, Object>> predicate = null;
+    public Predicate<Map.Entry<String, Revisioned>> getRealmRemovalPredicate(String id) {
+        Predicate<Map.Entry<String, Revisioned>> predicate = null;
         predicate = RealmQueryPredicate.create().realm(id)
                 .or(InRealmPredicate.create().realm(id));
         return predicate;
@@ -203,18 +210,18 @@ public class StreamRealmCache {
         addInvalidations(getClientAddedPredicate(realmId), invalidations);
     }
 
-    public Predicate<Map.Entry<String, Object>> getClientAddedPredicate(String realmId) {
+    public Predicate<Map.Entry<String, Revisioned>> getClientAddedPredicate(String realmId) {
         return ClientQueryPredicate.create().inRealm(realmId);
     }
 
     public void clientRemoval(String realmId, String id, Set<String> invalidations) {
-        Predicate<Map.Entry<String, Object>> predicate = null;
+        Predicate<Map.Entry<String, Revisioned>> predicate = null;
         predicate = getClientRemovalPredicate(realmId, id);
         addInvalidations(predicate, invalidations);
     }
 
-    public Predicate<Map.Entry<String, Object>> getClientRemovalPredicate(String realmId, String id) {
-        Predicate<Map.Entry<String, Object>> predicate;
+    public Predicate<Map.Entry<String, Revisioned>> getClientRemovalPredicate(String realmId, String id) {
+        Predicate<Map.Entry<String, Revisioned>> predicate;
         predicate = ClientQueryPredicate.create().inRealm(realmId)
                 .or(ClientQueryPredicate.create().client(id))
                 .or(InClientPredicate.create().client(id));
@@ -226,18 +233,18 @@ public class StreamRealmCache {
 
     }
 
-    public Predicate<Map.Entry<String, Object>> getRoleRemovalPredicate(String id) {
+    public Predicate<Map.Entry<String, Revisioned>> getRoleRemovalPredicate(String id) {
         return getRoleInvalidationPredicate(id);
     }
 
-    public void addInvalidations(Predicate<Map.Entry<String, Object>> predicate, Set<String> invalidations) {
-        Iterator<Map.Entry<String, Object>> it = getEntryIterator(predicate);
+    public void addInvalidations(Predicate<Map.Entry<String, Revisioned>> predicate, Set<String> invalidations) {
+        Iterator<Map.Entry<String, Revisioned>> it = getEntryIterator(predicate);
         while (it.hasNext()) {
             invalidations.add(it.next().getKey());
         }
     }
 
-    private Iterator<Map.Entry<String, Object>> getEntryIterator(Predicate<Map.Entry<String, Object>> predicate) {
+    private Iterator<Map.Entry<String, Revisioned>> getEntryIterator(Predicate<Map.Entry<String, Revisioned>> predicate) {
         return cache
                 .entrySet()
                 .stream()
@@ -249,7 +256,7 @@ public class StreamRealmCache {
         if (event.isPre()) {
             Object object = event.getValue();
             if (object != null) {
-                Predicate<Map.Entry<String, Object>> predicate = getInvalidationPredicate(object);
+                Predicate<Map.Entry<String, Revisioned>> predicate = getInvalidationPredicate(object);
                 if (predicate != null) runEvictions(predicate);
             }
         }
@@ -258,18 +265,18 @@ public class StreamRealmCache {
     @CacheEntriesEvicted
     public void cacheEvicted(CacheEntriesEvictedEvent<String, Object> event) {
         for (Object object : event.getEntries().values()) {
-            Predicate<Map.Entry<String, Object>> predicate = getEvictionPredicate(object);
+            Predicate<Map.Entry<String, Revisioned>> predicate = getEvictionPredicate(object);
             if (predicate != null) runEvictions(predicate);
         }
     }
 
-    public void runEvictions(Predicate<Map.Entry<String, Object>> current) {
+    public void runEvictions(Predicate<Map.Entry<String, Revisioned>> current) {
         Set<String> evictions = new HashSet<>();
         addInvalidations(current, evictions);
         for (String key : evictions) cache.evict(key);
     }
 
-    protected Predicate<Map.Entry<String, Object>> getEvictionPredicate(Object object) {
+    protected Predicate<Map.Entry<String, Revisioned>> getEvictionPredicate(Object object) {
         if (object instanceof CachedRealm) {
             CachedRealm cached = (CachedRealm)object;
             return getRealmInvalidationPredicate(cached.getId());
@@ -288,13 +295,13 @@ public class StreamRealmCache {
         }
         return null;
     }
-    protected Predicate<Map.Entry<String, Object>> getInvalidationPredicate(Object object) {
+    protected Predicate<Map.Entry<String, Revisioned>> getInvalidationPredicate(Object object) {
         if (object instanceof CachedRealm) {
             CachedRealm cached = (CachedRealm)object;
             return getRealmRemovalPredicate(cached.getId());
         } else if (object instanceof CachedClient) {
             CachedClient cached = (CachedClient)object;
-            Predicate<Map.Entry<String, Object>> predicate = getClientRemovalPredicate(cached.getRealm(), cached.getId());
+            Predicate<Map.Entry<String, Revisioned>> predicate = getClientRemovalPredicate(cached.getRealm(), cached.getId());
             for (String roleId : cached.getRoles().values()) {
                 predicate.or(getRoleRemovalPredicate(roleId));
             }

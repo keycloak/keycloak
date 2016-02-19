@@ -21,8 +21,7 @@ import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.RealmCache;
-import org.keycloak.models.cache.entities.CachedRealm;
+import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.security.Key;

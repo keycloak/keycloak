@@ -1,7 +1,6 @@
-package org.keycloak.models.cache.infinispan.stream;
+package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.cache.infinispan.stream.entities.AbstractRevisioned;
 
 import java.util.HashSet;
 import java.util.Set;

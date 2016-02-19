@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.cache;
+package org.keycloak.models.cache.infinispan;
 
-import org.keycloak.models.cache.entities.CachedClient;
-import org.keycloak.models.cache.entities.CachedClientTemplate;
-import org.keycloak.models.cache.entities.CachedGroup;
-import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.models.cache.entities.CachedRole;
+import org.keycloak.models.cache.infinispan.entities.CachedClient;
+import org.keycloak.models.cache.infinispan.entities.CachedClientTemplate;
+import org.keycloak.models.cache.infinispan.entities.CachedGroup;
+import org.keycloak.models.cache.infinispan.entities.CachedRealm;
+import org.keycloak.models.cache.infinispan.entities.CachedRole;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

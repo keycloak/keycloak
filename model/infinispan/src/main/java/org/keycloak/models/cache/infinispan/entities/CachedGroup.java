@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.cache.entities;
+package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.GroupModel;
@@ -30,8 +30,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedGroup implements Serializable {
-    private String id;
+public class CachedGroup extends AbstractRevisioned implements InRealm {
     private String realm;
     private String name;
     private String parentId;
@@ -39,8 +38,8 @@ public class CachedGroup implements Serializable {
     private Set<String> roleMappings = new HashSet<>();
     private Set<String> subGroups = new HashSet<>();
 
-    public CachedGroup(RealmModel realm, GroupModel group) {
-        this.id = group.getId();
+    public CachedGroup(Long revision, RealmModel realm, GroupModel group) {
+        super(revision, group.getId());
         this.realm = realm.getId();
         this.name = group.getName();
         this.parentId = group.getParentId();
@@ -55,10 +54,6 @@ public class CachedGroup implements Serializable {
                 subGroups.add(subGroup.getId());
             }
         }
-    }
-
-    public String getId() {
-        return id;
     }
 
     public String getRealm() {

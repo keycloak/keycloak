@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.cache.infinispan.stream;
+package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
 import org.keycloak.migration.MigrationModel;
@@ -28,19 +28,16 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.entities.CachedRole;
-import org.keycloak.models.cache.infinispan.ClientAdapter;
-import org.keycloak.models.cache.infinispan.ClientTemplateAdapter;
-import org.keycloak.models.cache.infinispan.GroupAdapter;
-import org.keycloak.models.cache.infinispan.RealmAdapter;
-import org.keycloak.models.cache.infinispan.RoleAdapter;
-import org.keycloak.models.cache.infinispan.stream.entities.Revisioned;
-import org.keycloak.models.cache.infinispan.stream.entities.RevisionedCachedClient;
-import org.keycloak.models.cache.infinispan.stream.entities.RevisionedCachedClientRole;
-import org.keycloak.models.cache.infinispan.stream.entities.RevisionedCachedClientTemplate;
-import org.keycloak.models.cache.infinispan.stream.entities.RevisionedCachedGroup;
-import org.keycloak.models.cache.infinispan.stream.entities.RevisionedCachedRealm;
-import org.keycloak.models.cache.infinispan.stream.entities.RevisionedCachedRealmRole;
+import org.keycloak.models.cache.infinispan.entities.CachedClient;
+import org.keycloak.models.cache.infinispan.entities.CachedClientRole;
+import org.keycloak.models.cache.infinispan.entities.CachedClientTemplate;
+import org.keycloak.models.cache.infinispan.entities.CachedGroup;
+import org.keycloak.models.cache.infinispan.entities.CachedRealm;
+import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
+import org.keycloak.models.cache.infinispan.entities.CachedRole;
+import org.keycloak.models.cache.infinispan.entities.ClientListQuery;
+import org.keycloak.models.cache.infinispan.entities.RealmListQuery;
+import org.keycloak.models.cache.infinispan.entities.Revisioned;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -249,7 +246,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public RealmModel getRealm(String id) {
-        RevisionedCachedRealm cached = cache.get(id, RevisionedCachedRealm.class);
+        CachedRealm cached = cache.get(id, CachedRealm.class);
         if (cached != null) {
             logger.tracev("by id cache hit: {0}", cached.getName());
         }
@@ -258,7 +255,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             RealmModel model = getDelegate().getRealm(id);
             if (model == null) return null;
             if (invalidations.contains(id)) return model;
-            cached = new RevisionedCachedRealm(loaded, null, this, model);
+            cached = new CachedRealm(loaded, model);
             cache.addRevisioned(cached);
         } else if (invalidations.contains(id)) {
             return getDelegate().getRealm(id);
@@ -415,25 +412,25 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             if (model == null) return null;
             if (invalidations.contains(id)) return model;
             if (model.getContainer() instanceof ClientModel) {
-                cached = new RevisionedCachedClientRole(loaded, ((ClientModel) model.getContainer()).getId(), model, realm);
+                cached = new CachedClientRole(loaded, ((ClientModel) model.getContainer()).getId(), model, realm);
             } else {
-                cached = new RevisionedCachedRealmRole(loaded, model, realm);
+                cached = new CachedRealmRole(loaded, model, realm);
             }
-            cache.addRevisioned((Revisioned)cached);
+            cache.addRevisioned(cached);
 
         } else if (invalidations.contains(id)) {
             return getDelegate().getRoleById(id, realm);
         } else if (managedRoles.containsKey(id)) {
             return managedRoles.get(id);
         }
-        RoleAdapter adapter = new RoleAdapter(cached, null, this, realm);
+        RoleAdapter adapter = new RoleAdapter(cached,this, realm);
         managedRoles.put(id, adapter);
         return adapter;
     }
 
     @Override
     public GroupModel getGroupById(String id, RealmModel realm) {
-        RevisionedCachedGroup cached = cache.get(id, RevisionedCachedGroup.class);
+        CachedGroup cached = cache.get(id, CachedGroup.class);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
         }
@@ -443,7 +440,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             GroupModel model = getDelegate().getGroupById(id, realm);
             if (model == null) return null;
             if (invalidations.contains(id)) return model;
-            cached = new RevisionedCachedGroup(loaded, realm, model);
+            cached = new CachedGroup(loaded, realm, model);
             cache.addRevisioned(cached);
 
         } else if (invalidations.contains(id)) {
@@ -458,7 +455,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public ClientModel getClientById(String id, RealmModel realm) {
-        RevisionedCachedClient cached = cache.get(id, RevisionedCachedClient.class);
+        CachedClient cached = cache.get(id, CachedClient.class);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
         }
@@ -471,7 +468,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             ClientModel model = getDelegate().getClientById(id, realm);
             if (model == null) return null;
             if (invalidations.contains(id)) return model;
-            cached = new RevisionedCachedClient(loaded, null, getDelegate(), realm, model);
+            cached = new CachedClient(loaded, realm, model);
             logger.tracev("adding client by id cache miss: {0}", cached.getClientId());
             cache.addRevisioned(cached);
         } else if (invalidations.contains(id)) {
@@ -516,7 +513,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public ClientTemplateModel getClientTemplateById(String id, RealmModel realm) {
-        RevisionedCachedClientTemplate cached = cache.get(id, RevisionedCachedClientTemplate.class);
+        CachedClientTemplate cached = cache.get(id, CachedClientTemplate.class);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
         }
@@ -526,14 +523,14 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             ClientTemplateModel model = getDelegate().getClientTemplateById(id, realm);
             if (model == null) return null;
             if (invalidations.contains(id)) return model;
-            cached = new RevisionedCachedClientTemplate(loaded, null, getDelegate(), realm, model);
+            cached = new CachedClientTemplate(loaded, realm, model);
             cache.addRevisioned(cached);
         } else if (invalidations.contains(id)) {
             return getDelegate().getClientTemplateById(id, realm);
         } else if (managedClientTemplates.containsKey(id)) {
             return managedClientTemplates.get(id);
         }
-        ClientTemplateModel adapter = new ClientTemplateAdapter(realm, cached, this, null);
+        ClientTemplateModel adapter = new ClientTemplateAdapter(realm, cached, this);
         managedClientTemplates.put(id, adapter);
         return adapter;
     }
