@@ -146,6 +146,9 @@ public class StreamRealmCache {
         }
 
     }
+
+
+
     public void clear() {
         cache.clear();
     }
@@ -253,7 +256,7 @@ public class StreamRealmCache {
 
     @CacheEntryInvalidated
     public void cacheInvalidated(CacheEntryInvalidatedEvent<String, Object> event) {
-        if (event.isPre()) {
+        if (!event.isPre()) {
             Object object = event.getValue();
             if (object != null) {
                 Predicate<Map.Entry<String, Revisioned>> predicate = getInvalidationPredicate(object);
@@ -264,8 +267,9 @@ public class StreamRealmCache {
 
     @CacheEntriesEvicted
     public void cacheEvicted(CacheEntriesEvictedEvent<String, Object> event) {
+        if (!event.isPre())
         for (Object object : event.getEntries().values()) {
-            Predicate<Map.Entry<String, Revisioned>> predicate = getEvictionPredicate(object);
+            Predicate<Map.Entry<String, Revisioned>> predicate = getInvalidationPredicate(object);
             if (predicate != null) runEvictions(predicate);
         }
     }
@@ -276,25 +280,6 @@ public class StreamRealmCache {
         for (String key : evictions) cache.evict(key);
     }
 
-    protected Predicate<Map.Entry<String, Revisioned>> getEvictionPredicate(Object object) {
-        if (object instanceof CachedRealm) {
-            CachedRealm cached = (CachedRealm)object;
-            return getRealmInvalidationPredicate(cached.getId());
-        } else if (object instanceof CachedClient) {
-            CachedClient cached = (CachedClient)object;
-            return getClientInvalidationPredicate(cached.getId());
-        } else if (object instanceof CachedRole) {
-            CachedRole cached = (CachedRole)object;
-            return getRoleInvalidationPredicate(cached.getId());
-        } else if (object instanceof CachedGroup) {
-            CachedGroup cached = (CachedGroup)object;
-            return getGroupInvalidationPredicate(cached.getId());
-        } else if (object instanceof CachedClientTemplate) {
-            CachedClientTemplate cached = (CachedClientTemplate)object;
-            return getClientTemplateInvalidationPredicate(cached.getId());
-        }
-        return null;
-    }
     protected Predicate<Map.Entry<String, Revisioned>> getInvalidationPredicate(Object object) {
         if (object instanceof CachedRealm) {
             CachedRealm cached = (CachedRealm)object;

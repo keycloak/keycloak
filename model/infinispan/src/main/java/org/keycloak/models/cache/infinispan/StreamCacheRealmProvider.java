@@ -313,7 +313,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public RealmModel getRealmByName(String name) {
-        String cacheKey = "realm.query.by.name." + name;
+        String cacheKey = getRealmByNameCacheKey(name);
         RealmListQuery query = cache.get(cacheKey, RealmListQuery.class);
         if (query != null) {
             logger.tracev("realm by name cache hit: {0}", name);
@@ -337,6 +337,10 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
         }
     }
 
+    public String getRealmByNameCacheKey(String name) {
+        return "realm.query.by.name." + name;
+    }
+
     @Override
     public List<RealmModel> getRealms() {
         // Retrieve realms from backend
@@ -353,9 +357,11 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public boolean removeRealm(String id) {
-        if (getRealm(id) == null) return false;
+        RealmModel realm = getRealm(id);
+        if (realm == null) return false;
 
         invalidations.add(getRealmClientsQueryCacheKey(id));
+        invalidations.add(getRealmByNameCacheKey(realm.getName()));
         cache.invalidateObject(id);
         cache.realmRemoval(id, invalidations);
         return getDelegate().removeRealm(id);
@@ -379,6 +385,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
         invalidations.add(getRealmClientsQueryCacheKey(realm.getId()));
         invalidations.add(client.getId());
         cache.clientAdded(realm.getId(), client.getId(), invalidations);
+        // this is needed so that a new client that hasn't been committed isn't cached in a query
         clientListInvalidations.add(realm.getId());
         return client;
     }
@@ -429,6 +436,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
         if (client == null) return false;
         // need to invalidate realm client query cache every time client list is changed
         invalidations.add(getRealmClientsQueryCacheKey(realm.getId()));
+        invalidations.add(getClientByClientIdCacheKey(client.getClientId(), realm));
         clientListInvalidations.add(realm.getId());
         registerClientInvalidation(id);
         cache.clientRemoval(realm.getId(), id, invalidations);
@@ -527,7 +535,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
 
     @Override
     public ClientModel getClientByClientId(String clientId, RealmModel realm) {
-        String cacheKey = realm.getId() + ".client.query.by.clientId." + clientId;
+        String cacheKey = getClientByClientIdCacheKey(clientId, realm);
         ClientListQuery query = cache.get(cacheKey, ClientListQuery.class);
         String id = null;
 
@@ -553,6 +561,10 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             }
         }
         return getClientById(id, realm);
+    }
+
+    public String getClientByClientIdCacheKey(String clientId, RealmModel realm) {
+        return realm.getId() + ".client.query.by.clientId." + clientId;
     }
 
     @Override

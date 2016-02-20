@@ -64,22 +64,17 @@ public class ClusteredCacheBehaviorTest {
 
         @CacheEntryRemoved
         public void removed(CacheEntryRemovedEvent<String, Object> event) {
-            if (event.isPre()) {
-                System.out.println("Listener '" + name + "' entry removed");
-            }
+            System.out.println("Listener '" + name + "' entry removed  isPre: " + event.isPre());
         }
 
         @CacheEntryInvalidated
         public void removed(CacheEntryInvalidatedEvent<String, Object> event) {
-            if (event.isPre()) {
-                System.out.println("Listener '" + name + "' entry invalidated");
-
-            }
+            System.out.println("Listener '" + name + "' entry invalidated: isPre: " + event.isPre());
         }
 
         @CacheEntriesEvicted
         public void evicted(CacheEntriesEvictedEvent<String, Object> event) {
-            System.out.println("Listener '" + name + "' entry evicted");
+            System.out.println("Listener '" + name + "' entry evicted isPre: " + event.isPre());
 
         }
 
