@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
@@ -46,6 +47,8 @@ import org.keycloak.timer.TimerProvider;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SyncFederationTest {
+
+    private static final Logger log = Logger.getLogger(SyncFederationTest.class);
 
     private static UserFederationProviderModel dummyModel = null;
 
@@ -87,16 +90,29 @@ public class SyncFederationTest {
             // Cancel timer
             RealmModel appRealm = session.realms().getRealmByName("test");
             usersSyncManager.notifyToRefreshPeriodicSync(session, appRealm, dummyModel, true);
+            log.infof("Notified sync manager about cancel periodic sync");
 
-            // Assert that DummyUserFederationProviderFactory.syncChangedUsers was invoked
+            // This sync is here just to ensure that we have lock (doublecheck that periodic sync, which was possibly triggered before canceling timer is finished too)
+            while (true) {
+                UserFederationSyncResult result = usersSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(), appRealm.getId(), dummyModel);
+                if (result.isIgnored()) {
+                    log.infof("Still waiting for lock before periodic sync is finished", result.toString());
+                    sleep(1000);
+                } else {
+                    break;
+                }
+            }
+
+            // Assert that DummyUserFederationProviderFactory.syncChangedUsers was invoked at least 2 times (once periodically and once for us)
             int newChanged = dummyFedFactory.getChangedSyncCounter();
             Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
-            Assert.assertTrue(newChanged > changed);
+            Assert.assertTrue("Assertion failed. newChanged=" + newChanged + ", changed=" + changed, newChanged > (changed + 1));
 
             // Assert that dummy provider won't be invoked anymore
             sleep(1800);
             Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
-            Assert.assertEquals(newChanged, dummyFedFactory.getChangedSyncCounter());
+            int newestChanged =  dummyFedFactory.getChangedSyncCounter();
+            Assert.assertEquals("Assertion failed. newChanged=" + newChanged + ", newestChanged="  + newestChanged, newChanged, newestChanged);
         } finally {
             keycloakRule.stopSession(session, true);
         }
