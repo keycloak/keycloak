@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa;
 
 import org.jboss.logging.Logger;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
@@ -25,6 +26,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.ClientTemplateEntity;
@@ -37,8 +39,10 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -135,13 +139,13 @@ public class JpaRealmProvider implements RealmProvider {
         for (String client : clients) {
             session.realms().removeClient(client, adapter);
         }
-        /*
-        for (ClientEntity a : new LinkedList<>(realm.getClients())) {
-            adapter.removeClient(a.getId());
-        }
-        */
+
         for (ClientTemplateEntity a : new LinkedList<>(realm.getClientTemplates())) {
             adapter.removeClientTemplate(a.getId());
+        }
+
+        for (RoleModel role : adapter.getRoles()) {
+            session.realms().removeRole(adapter, role);
         }
 
         em.remove(realm);
@@ -153,6 +157,112 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public RoleModel addRealmRole(RealmModel realm, String name) {
+        return addRealmRole(realm, KeycloakModelUtils.generateId(), name);
+
+    }
+    @Override
+    public RoleModel addRealmRole(RealmModel realm, String id, String name) {
+        RoleEntity entity = new RoleEntity();
+        entity.setId(id);
+        entity.setName(name);
+        RealmEntity ref = em.getReference(RealmEntity.class, realm.getId());
+        entity.setRealm(ref);
+        entity.setRealmId(realm.getId());
+        em.persist(entity);
+        em.flush();
+        return new RoleAdapter(session, realm, em, entity);
+
+    }
+
+    @Override
+    public RoleModel getRealmRole(RealmModel realm, String name) {
+        TypedQuery<String> query = em.createNamedQuery("getRealmRoleIdByName", String.class);
+        query.setParameter("name", name);
+        query.setParameter("realm", realm.getId());
+        List<String> roles = query.getResultList();
+        if (roles.size() == 0) return null;
+        return session.realms().getRoleById(roles.get(0), realm);
+    }
+
+    @Override
+    public RoleModel addClientRole(RealmModel realm, ClientModel client, String name) {
+        return addClientRole(realm, client, KeycloakModelUtils.generateId(), name);
+    }
+    @Override
+    public RoleModel addClientRole(RealmModel realm, ClientModel client, String id, String name) {
+        ClientEntity clientEntity = em.getReference(ClientEntity.class, client.getId());
+        RoleEntity roleEntity = new RoleEntity();
+        roleEntity.setId(id);
+        roleEntity.setName(name);
+        roleEntity.setClient(clientEntity);
+        roleEntity.setClientRole(true);
+        roleEntity.setRealmId(realm.getId());
+        em.persist(roleEntity);
+        em.flush();
+        return new RoleAdapter(session, realm, em, roleEntity);
+    }
+
+    @Override
+    public Set<RoleModel> getRealmRoles(RealmModel realm) {
+        TypedQuery<String> query = em.createNamedQuery("getRealmRoleIds", String.class);
+        query.setParameter("realm", realm.getId());
+        List<String> roles = query.getResultList();
+
+        if (roles.isEmpty()) return Collections.EMPTY_SET;
+        Set<RoleModel> list = new HashSet<RoleModel>();
+        for (String id : roles) {
+            list.add(session.realms().getRoleById(id, realm));
+        }
+        return Collections.unmodifiableSet(list);
+    }
+
+    @Override
+    public RoleModel getClientRole(RealmModel realm, ClientModel client, String name) {
+        TypedQuery<String> query = em.createNamedQuery("getClientRoleIdByName", String.class);
+        query.setParameter("name", name);
+        query.setParameter("client", client.getId());
+        List<String> roles = query.getResultList();
+        if (roles.size() == 0) return null;
+        return session.realms().getRoleById(roles.get(0), realm);
+    }
+
+
+    @Override
+    public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client) {
+        Set<RoleModel> list = new HashSet<RoleModel>();
+        TypedQuery<String> query = em.createNamedQuery("getClientRoleIds", String.class);
+        query.setParameter("client", client.getId());
+        List<String> roles = query.getResultList();
+        for (String id : roles) {
+            list.add(session.realms().getRoleById(id, realm));
+        }
+        return list;
+
+    }
+
+    @Override
+    public boolean removeRole(RealmModel realm, RoleModel role) {
+        session.users().preRemove(realm, role);
+        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
+        RoleContainerModel container = role.getContainer();
+        if (container.getDefaultRoles().contains(role.getName())) {
+            container.removeDefaultRoles(role.getName());
+        }
+        String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
+        em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
+        em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
+        em.createNamedQuery("deleteTemplateScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
+        em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
+
+        em.remove(roleEntity);
+        em.flush();
+
+        return true;
+
     }
 
     @Override

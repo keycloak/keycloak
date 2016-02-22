@@ -67,7 +67,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected boolean implicitFlowEnabled;
     protected boolean directAccessGrantsEnabled;
     protected boolean serviceAccountsEnabled;
-    protected Map<String, String> roles = new HashMap<String, String>();
     protected int nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
     protected String clientTemplate;
@@ -110,7 +109,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         implicitFlowEnabled = model.isImplicitFlowEnabled();
         directAccessGrantsEnabled = model.isDirectAccessGrantsEnabled();
         serviceAccountsEnabled = model.isServiceAccountsEnabled();
-        cacheRoles(model);
 
         nodeReRegistrationTimeout = model.getNodeReRegistrationTimeout();
         registeredNodes = new TreeMap<>(model.getRegisteredNodes());
@@ -120,12 +118,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         useTemplateConfig = model.useTemplateConfig();
         useTemplateMappers = model.useTemplateMappers();
         useTemplateScope = model.useTemplateScope();
-    }
-
-    protected void cacheRoles(ClientModel model) {
-        for (RoleModel role : model.getRoles()) {
-            roles.put(role.getName(), role.getId());
-        }
     }
 
     public String getClientId() {
@@ -242,10 +234,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
     public boolean isServiceAccountsEnabled() {
         return serviceAccountsEnabled;
-    }
-
-    public Map<String, String> getRoles() {
-        return roles;
     }
 
     public int getNodeReRegistrationTimeout() {

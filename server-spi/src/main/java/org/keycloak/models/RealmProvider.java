@@ -21,6 +21,7 @@ import org.keycloak.migration.MigrationModel;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -44,6 +45,24 @@ public interface RealmProvider extends Provider {
     ClientModel getClientById(String id, RealmModel realm);
     ClientModel getClientByClientId(String clientId, RealmModel realm);
 
+
+    RoleModel addRealmRole(RealmModel realm, String name);
+
+    RoleModel addRealmRole(RealmModel realm, String id, String name);
+
+    RoleModel getRealmRole(RealmModel realm, String name);
+
+    RoleModel addClientRole(RealmModel realm, ClientModel client, String name);
+
+    RoleModel addClientRole(RealmModel realm, ClientModel client, String id, String name);
+
+    Set<RoleModel> getRealmRoles(RealmModel realm);
+
+    RoleModel getClientRole(RealmModel realm, ClientModel client, String name);
+
+    Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client);
+
+    boolean removeRole(RealmModel realm, RoleModel role);
 
     RoleModel getRoleById(String id, RealmModel realm);
 

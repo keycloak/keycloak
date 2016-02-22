@@ -85,12 +85,6 @@ public interface ClientModel extends RoleContainerModel,  ProtocolMapperContaine
 
     void setBaseUrl(String url);
 
-    List<String> getDefaultRoles();
-
-    void addDefaultRole(String name);
-
-    void updateDefaultRoles(String[] defaultRoles);
-
 
     boolean isBearerOnly();
     void setBearerOnly(boolean only);

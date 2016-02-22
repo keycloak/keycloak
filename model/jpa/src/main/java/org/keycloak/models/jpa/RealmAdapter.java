@@ -683,6 +683,21 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public void removeDefaultRoles(String... defaultRoles) {
+        Collection<RoleEntity> entities = realm.getDefaultRoles();
+        List<RoleEntity> remove = new ArrayList<RoleEntity>();
+        for (RoleEntity rel : entities) {
+            if (contains(rel.getName(), defaultRoles)) {
+                remove.add(rel);
+            }
+        }
+        for (RoleEntity entity : remove) {
+            entities.remove(entity);
+        }
+        em.flush();
+     }
+
+    @Override
     public List<GroupModel> getDefaultGroups() {
         Collection<GroupEntity> entities = realm.getDefaultGroups();
         if (entities == null || entities.isEmpty()) return Collections.EMPTY_LIST;
@@ -980,66 +995,27 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRole(String name) {
-        TypedQuery<String> query = em.createNamedQuery("getRealmRoleIdByName", String.class);
-        query.setParameter("name", name);
-        query.setParameter("realm", realm.getId());
-        List<String> roles = query.getResultList();
-        if (roles.size() == 0) return null;
-        return session.realms().getRoleById(roles.get(0), this);
+        return session.realms().getRealmRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String name) {
-        return this.addRole(KeycloakModelUtils.generateId(), name);
+        return session.realms().addRealmRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
-        RoleEntity entity = new RoleEntity();
-        entity.setId(id);
-        entity.setName(name);
-        entity.setRealm(realm);
-        entity.setRealmId(realm.getId());
-        realm.getRoles().add(entity);
-        em.persist(entity);
-        em.flush();
-        return new RoleAdapter(session, this, em, entity);
+        return session.realms().addRealmRole(this, id, name);
     }
 
     @Override
     public boolean removeRole(RoleModel role) {
-        if (role == null) {
-            return false;
-        }
-        if (!role.getContainer().equals(this)) return false;
-        session.users().preRemove(this, role);
-        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
-        realm.getRoles().remove(roleEntity);
-        realm.getDefaultRoles().remove(roleEntity);
-
-        String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
-        em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
-        em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
-        em.createNamedQuery("deleteTemplateScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
-        em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
-
-        em.remove(roleEntity);
-        em.flush();
-
-        return true;
+        return session.realms().removeRole(this, role);
     }
 
     @Override
     public Set<RoleModel> getRoles() {
-        Collection<RoleEntity> roles = realm.getRoles();
-        if (roles == null) return Collections.EMPTY_SET;
-        Set<RoleModel> list = new HashSet<RoleModel>();
-        for (RoleEntity entity : roles) {
-            list.add(new RoleAdapter(session, this, em, entity));
-            // can't get it from cache cuz of stack overflow
-            // list.add(session.realms().getRoleById(entity.getId(), this));
-        }
-        return Collections.unmodifiableSet(list);
+        return session.realms().getRealmRoles(this);
     }
 
     @Override

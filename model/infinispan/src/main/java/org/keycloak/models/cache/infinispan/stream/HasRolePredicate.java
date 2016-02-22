@@ -3,6 +3,7 @@ package org.keycloak.models.cache.infinispan.stream;
 import org.keycloak.models.cache.infinispan.entities.CachedGroup;
 import org.keycloak.models.cache.infinispan.entities.CachedRole;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
+import org.keycloak.models.cache.infinispan.entities.RoleQuery;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -35,6 +36,10 @@ public class HasRolePredicate implements Predicate<Map.Entry<String, Revisioned>
         if (value instanceof CachedGroup) {
             CachedGroup cachedRole = (CachedGroup)value;
             if (cachedRole.getRoleMappings().contains(role)) return true;
+        }
+        if (value instanceof RoleQuery) {
+            RoleQuery roleQuery = (RoleQuery)value;
+            if (roleQuery.getRoles().contains(role)) return true;
         }
         return false;
     }

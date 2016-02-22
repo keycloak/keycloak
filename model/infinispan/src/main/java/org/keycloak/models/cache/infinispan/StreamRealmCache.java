@@ -37,6 +37,7 @@ import org.keycloak.models.cache.infinispan.stream.HasRolePredicate;
 import org.keycloak.models.cache.infinispan.stream.InClientPredicate;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 import org.keycloak.models.cache.infinispan.stream.RealmQueryPredicate;
+import org.keycloak.models.cache.infinispan.stream.RoleQueryPredicate;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -287,9 +288,6 @@ public class StreamRealmCache {
         } else if (object instanceof CachedClient) {
             CachedClient cached = (CachedClient)object;
             Predicate<Map.Entry<String, Revisioned>> predicate = getClientRemovalPredicate(cached.getRealm(), cached.getId());
-            for (String roleId : cached.getRoles().values()) {
-                predicate.or(getRoleRemovalPredicate(roleId));
-            }
             return predicate;
         } else if (object instanceof CachedRole) {
             CachedRole cached = (CachedRole)object;

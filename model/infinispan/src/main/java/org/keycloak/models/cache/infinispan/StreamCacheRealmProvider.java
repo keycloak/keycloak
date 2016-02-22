@@ -37,7 +37,8 @@ import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRole;
 import org.keycloak.models.cache.infinispan.entities.ClientListQuery;
 import org.keycloak.models.cache.infinispan.entities.RealmListQuery;
-import org.keycloak.models.cache.infinispan.entities.Revisioned;
+import org.keycloak.models.cache.infinispan.entities.RoleListQuery;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -77,7 +78,7 @@ import java.util.Set;
  * - realm client lists need to be invalidated and evited whenever a client is added or removed from a realm.  RealmProvider
  * now has addClient/removeClient at its top level.  All adapaters should use these methods so that the appropriate invalidations
  * can be registered.
- * - whenever a client is added/removed the realm of the client is added to a clientListInvalidations set
+ * - whenever a client is added/removed the realm of the client is added to a listInvalidations set
  * this set must be checked before sending back or caching a cached query.  This check is required to
  * avoid caching an uncommitted removal/add in a query cache.
  * - when a client is removed, any queries that contain that client must also be removed.
@@ -104,6 +105,8 @@ import java.util.Set;
 public class StreamCacheRealmProvider implements CacheRealmProvider {
     protected static final Logger logger = Logger.getLogger(StreamCacheRealmProvider.class);
     public static final String REALM_CLIENTS_QUERY_SUFFIX = ".realm.clients";
+    public static final String ROLES_QUERY_SUFFIX = ".roles";
+    public static final String ROLE_BY_NAME_QUERY_SUFFIX = ".role.by-name";
     protected StreamRealmCache cache;
     protected KeycloakSession session;
     protected RealmProvider delegate;
@@ -115,7 +118,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
     protected Map<String, ClientTemplateModel> managedClientTemplates = new HashMap<>();
     protected Map<String, RoleModel> managedRoles = new HashMap<>();
     protected Map<String, GroupModel> managedGroups = new HashMap<>();
-    protected Set<String> clientListInvalidations = new HashSet<>();
+    protected Set<String> listInvalidations = new HashSet<>();
     protected Set<String> invalidations = new HashSet<>();
 
     protected boolean clearAll;
@@ -386,7 +389,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
         invalidations.add(client.getId());
         cache.clientAdded(realm.getId(), client.getId(), invalidations);
         // this is needed so that a new client that hasn't been committed isn't cached in a query
-        clientListInvalidations.add(realm.getId());
+        listInvalidations.add(realm.getId());
         return client;
     }
 
@@ -394,10 +397,17 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
         return realm + REALM_CLIENTS_QUERY_SUFFIX;
     }
 
+    private String getRolesCacheKey(String container) {
+        return container + ROLES_QUERY_SUFFIX;
+    }
+    private String getRoleByNameCacheKey(String container, String name) {
+        return container + "." + name + ROLES_QUERY_SUFFIX;
+    }
+
     @Override
     public List<ClientModel> getClients(RealmModel realm) {
         String cacheKey = getRealmClientsQueryCacheKey(realm.getId());
-        boolean queryDB = invalidations.contains(cacheKey) || clientListInvalidations.contains(realm.getId());
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId());
         if (queryDB) {
             return getDelegate().getClients(realm);
         }
@@ -430,6 +440,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
         return list;
     }
 
+
     @Override
     public boolean removeClient(String id, RealmModel realm) {
         ClientModel client = getClientById(id, realm);
@@ -437,7 +448,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
         // need to invalidate realm client query cache every time client list is changed
         invalidations.add(getRealmClientsQueryCacheKey(realm.getId()));
         invalidations.add(getClientByClientIdCacheKey(client.getClientId(), realm));
-        clientListInvalidations.add(realm.getId());
+        listInvalidations.add(realm.getId());
         registerClientInvalidation(id);
         cache.clientRemoval(realm.getId(), id, invalidations);
         for (RoleModel role : client.getRoles()) {
@@ -449,6 +460,177 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
     @Override
     public void close() {
         if (delegate != null) delegate.close();
+    }
+
+    @Override
+    public RoleModel addRealmRole(RealmModel realm, String name) {
+        return addRealmRole(realm, KeycloakModelUtils.generateId(), name);
+    }
+
+    @Override
+    public RoleModel addRealmRole(RealmModel realm, String id, String name) {
+        invalidations.add(getRolesCacheKey(realm.getId()));
+        // this is needed so that a new role that hasn't been committed isn't cached in a query
+        listInvalidations.add(realm.getId());
+        RoleModel role = getDelegate().addRealmRole(realm, name);
+        invalidations.add(role.getId());
+        return role;
+    }
+
+    @Override
+    public Set<RoleModel> getRealmRoles(RealmModel realm) {
+        String cacheKey = getRolesCacheKey(realm.getId());
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId());
+        if (queryDB) {
+            return getDelegate().getRealmRoles(realm);
+        }
+
+        RoleListQuery query = cache.get(cacheKey, RoleListQuery.class);
+        if (query != null) {
+            logger.tracev("getRealmRoles cache hit: {0}", realm.getName());
+        }
+
+        if (query == null) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            Set<RoleModel> model = getDelegate().getRealmRoles(realm);
+            if (model == null) return null;
+            Set<String> ids = new HashSet<>();
+            for (RoleModel role : model) ids.add(role.getId());
+            query = new RoleListQuery(loaded, cacheKey, realm, ids);
+            logger.tracev("adding realm roles cache miss: realm {0} key {1}", realm.getName(), cacheKey);
+            cache.addRevisioned(query);
+            return model;
+        }
+        Set<RoleModel> list = new HashSet<>();
+        for (String id : query.getRoles()) {
+            RoleModel role = session.realms().getRoleById(id, realm);
+            if (role == null) {
+                invalidations.add(cacheKey);
+                return getDelegate().getRealmRoles(realm);
+            }
+            list.add(role);
+        }
+        return list;
+    }
+
+    @Override
+    public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client) {
+        String cacheKey = getRolesCacheKey(client.getId());
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(client.getId());
+        if (queryDB) {
+            return getDelegate().getClientRoles(realm, client);
+        }
+
+        RoleListQuery query = cache.get(cacheKey, RoleListQuery.class);
+        if (query != null) {
+            logger.tracev("getClientRoles cache hit: {0}", client.getClientId());
+        }
+
+        if (query == null) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            Set<RoleModel> model = getDelegate().getClientRoles(realm, client);
+            if (model == null) return null;
+            Set<String> ids = new HashSet<>();
+            for (RoleModel role : model) ids.add(role.getId());
+            query = new RoleListQuery(loaded, cacheKey, realm, ids, client.getClientId());
+            logger.tracev("adding client roles cache miss: client {0} key {1}", client.getClientId(), cacheKey);
+            cache.addRevisioned(query);
+            return model;
+        }
+        Set<RoleModel> list = new HashSet<>();
+        for (String id : query.getRoles()) {
+            RoleModel role = session.realms().getRoleById(id, realm);
+            if (role == null) {
+                invalidations.add(cacheKey);
+                return getDelegate().getClientRoles(realm, client);
+            }
+            list.add(role);
+        }
+        return list;
+    }
+
+    @Override
+    public RoleModel addClientRole(RealmModel realm, ClientModel client, String name) {
+        return addClientRole(realm, client, KeycloakModelUtils.generateId(), name);
+    }
+
+    @Override
+    public RoleModel addClientRole(RealmModel realm, ClientModel client, String id, String name) {
+        invalidations.add(getRolesCacheKey(client.getId()));
+        // this is needed so that a new role that hasn't been committed isn't cached in a query
+        listInvalidations.add(client.getId());
+        RoleModel role = getDelegate().addClientRole(realm, client, id, name);
+        invalidations.add(role.getId());
+        return role;
+    }
+
+    @Override
+    public RoleModel getRealmRole(RealmModel realm, String name) {
+        String cacheKey = getRoleByNameCacheKey(realm.getId(), name);
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId());
+        if (queryDB) {
+            return getDelegate().getRealmRole(realm, name);
+        }
+
+        RoleListQuery query = cache.get(cacheKey, RoleListQuery.class);
+        if (query != null) {
+            logger.tracev("getRealmRole cache hit: {0}.{1}", realm.getName(), name);
+        }
+
+        if (query == null) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            RoleModel model = getDelegate().getRealmRole(realm, name);
+            if (model == null) return null;
+            query = new RoleListQuery(loaded, cacheKey, realm, model.getId());
+            logger.tracev("adding realm role cache miss: client {0} key {1}", realm.getName(), cacheKey);
+            cache.addRevisioned(query);
+            return model;
+        }
+        RoleModel role = getRoleById(query.getRoles().iterator().next(), realm);
+        if (role == null) {
+            invalidations.add(cacheKey);
+            return getDelegate().getRealmRole(realm, name);
+        }
+        return role;
+    }
+
+    @Override
+    public RoleModel getClientRole(RealmModel realm, ClientModel client, String name) {
+        String cacheKey = getRoleByNameCacheKey(client.getId(), name);
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(client.getId());
+        if (queryDB) {
+            return getDelegate().getClientRole(realm, client, name);
+        }
+
+        RoleListQuery query = cache.get(cacheKey, RoleListQuery.class);
+        if (query != null) {
+            logger.tracev("getClientRole cache hit: {0}.{1}", client.getClientId(), name);
+        }
+
+        if (query == null) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            RoleModel model = getDelegate().getClientRole(realm, client, name);
+            if (model == null) return null;
+            query = new RoleListQuery(loaded, cacheKey, realm, model.getId(), client.getClientId());
+            logger.tracev("adding client role cache miss: client {0} key {1}", client.getClientId(), cacheKey);
+            cache.addRevisioned(query);
+            return model;
+        }
+        RoleModel role = getRoleById(query.getRoles().iterator().next(), realm);
+        if (role == null) {
+            invalidations.add(cacheKey);
+            return getDelegate().getClientRole(realm, client, name);
+        }
+        return role;
+    }
+
+    @Override
+    public boolean removeRole(RealmModel realm, RoleModel role) {
+        invalidations.add(getRolesCacheKey(role.getContainer().getId()));
+        invalidations.add(getRoleByNameCacheKey(role.getContainer().getId(), role.getName()));
+        listInvalidations.add(role.getContainer().getId());
+        invalidations.add(role.getId());
+        return getDelegate().removeRole(realm, role);
     }
 
     @Override

@@ -581,9 +581,16 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public void updateDefaultRoles(String[] defaultRoles) {
+    public void updateDefaultRoles(String... defaultRoles) {
         getDelegateForUpdate();
         updated.updateDefaultRoles(defaultRoles);
+    }
+
+    @Override
+    public void removeDefaultRoles(String... defaultRoles) {
+        getDelegateForUpdate();
+        updated.removeDefaultRoles(defaultRoles);
+
     }
 
     @Override
@@ -870,11 +877,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRole(String name) {
-        if (updated != null) return updated.getRole(name);
-        String id = cached.getRealmRoles().get(name);
-        if (id == null) return null;
-        return cacheSession.getRoleById(id, this);
+        for (RoleModel role : getRoles()) {
+            if (role.getName().equals(name)) return role;
+        }
+        return null;
     }
+
+    @Override
+    public Set<RoleModel> getRoles() {
+        return cacheSession.getRealmRoles(this);
+    }
+
 
     @Override
     public RoleModel addRole(String name) {
@@ -899,18 +912,6 @@ public class RealmAdapter implements RealmModel {
         return updated.removeRole(role);
     }
 
-    @Override
-    public Set<RoleModel> getRoles() {
-        if (updated != null) return updated.getRoles();
-
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String id : cached.getRealmRoles().values()) {
-            RoleModel roleById = cacheSession.getRoleById(id, this);
-            if (roleById == null) continue;
-            roles.add(roleById);
-        }
-        return Collections.unmodifiableSet(roles);
-    }
 
     @Override
     public boolean isIdentityFederationEnabled() {

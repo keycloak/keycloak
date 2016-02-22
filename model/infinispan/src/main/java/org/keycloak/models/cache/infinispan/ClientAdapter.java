@@ -463,9 +463,16 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public void updateDefaultRoles(String[] defaultRoles) {
+    public void updateDefaultRoles(String... defaultRoles) {
         getDelegateForUpdate();
         updated.updateDefaultRoles(defaultRoles);
+    }
+
+    @Override
+    public void removeDefaultRoles(String... defaultRoles) {
+        getDelegateForUpdate();
+        updated.removeDefaultRoles(defaultRoles);
+
     }
 
     @Override
@@ -542,12 +549,10 @@ public class ClientAdapter implements ClientModel {
 
     @Override
     public RoleModel getRole(String name) {
-        if (updated != null) return updated.getRole(name);
-        String id = cached.getRoles().get(name);
-        if (id == null) {
-            return null;
+        for (RoleModel role : getRoles()) {
+            if (role.getName().equals(name)) return role;
         }
-        return cacheSession.getRoleById(id, cachedRealm);
+        return null;
     }
 
     @Override
@@ -575,15 +580,7 @@ public class ClientAdapter implements ClientModel {
 
     @Override
     public Set<RoleModel> getRoles() {
-        if (updated != null) return updated.getRoles();
-
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String id : cached.getRoles().values()) {
-            RoleModel roleById = cacheSession.getRoleById(id, cachedRealm);
-            if (roleById == null) continue;
-            roles.add(roleById);
-        }
-        return roles;
+        return cacheSession.getClientRoles(cachedRealm, this);
     }
 
     @Override

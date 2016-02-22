@@ -40,7 +40,9 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -207,6 +209,107 @@ public class MongoRealmProvider implements RealmProvider {
             result.add(session.realms().getClientById(clientEntity.getId(), realm));
         }
         return Collections.unmodifiableList(result);
+    }
+
+    @Override
+    public RoleModel addRealmRole(RealmModel realm, String name) {
+        return addRealmRole(realm, KeycloakModelUtils.generateId(), name);
+    }
+
+    @Override
+    public RoleModel addRealmRole(RealmModel realm, String id, String name) {
+        MongoRoleEntity roleEntity = new MongoRoleEntity();
+        roleEntity.setId(id);
+        roleEntity.setName(name);
+        roleEntity.setRealmId(realm.getId());
+
+        getMongoStore().insertEntity(roleEntity, invocationContext);
+
+        return new RoleAdapter(session, realm, roleEntity, realm, invocationContext);
+    }
+
+    @Override
+    public Set<RoleModel> getRealmRoles(RealmModel realm) {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .get();
+        List<MongoRoleEntity> roles = getMongoStore().loadEntities(MongoRoleEntity.class, query, invocationContext);
+
+
+        if (roles == null) return Collections.EMPTY_SET;
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        for (MongoRoleEntity role : roles) {
+            result.add(session.realms().getRoleById(role.getId(), realm));
+        }
+
+        return Collections.unmodifiableSet(result);
+
+    }
+
+    @Override
+    public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client) {
+        DBObject query = new QueryBuilder()
+                .and("clientId").is(client.getId())
+                .get();
+        List<MongoRoleEntity> roles = getMongoStore().loadEntities(MongoRoleEntity.class, query, invocationContext);
+
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        for (MongoRoleEntity role : roles) {
+            result.add(session.realms().getRoleById(role.getId(), realm));
+        }
+
+        return result;
+    }
+
+    @Override
+    public RoleModel getRealmRole(RealmModel realm, String name) {
+        DBObject query = new QueryBuilder()
+                .and("name").is(name)
+                .and("realmId").is(realm.getId())
+                .get();
+        MongoRoleEntity role = getMongoStore().loadSingleEntity(MongoRoleEntity.class, query, invocationContext);
+        if (role == null) {
+            return null;
+        } else {
+            return session.realms().getRoleById(role.getId(), realm);
+        }
+    }
+
+    @Override
+    public RoleModel getClientRole(RealmModel realm, ClientModel client, String name) {
+        DBObject query = new QueryBuilder()
+                .and("name").is(name)
+                .and("clientId").is(client.getId())
+                .get();
+        MongoRoleEntity role = getMongoStore().loadSingleEntity(MongoRoleEntity.class, query, invocationContext);
+        if (role == null) {
+            return null;
+        } else {
+            return session.realms().getRoleById(role.getId(), realm);
+        }
+    }
+
+    @Override
+    public RoleModel addClientRole(RealmModel realm, ClientModel client, String name) {
+        return addClientRole(realm, client, KeycloakModelUtils.generateId(), name);
+    }
+
+    @Override
+    public RoleModel addClientRole(RealmModel realm, ClientModel client, String id, String name) {
+        MongoRoleEntity roleEntity = new MongoRoleEntity();
+        roleEntity.setId(id);
+        roleEntity.setName(name);
+        roleEntity.setClientId(client.getId());
+
+        getMongoStore().insertEntity(roleEntity, invocationContext);
+
+        return new RoleAdapter(session, realm, roleEntity, client, invocationContext);
+    }
+
+    @Override
+    public boolean removeRole(RealmModel realm, RoleModel role) {
+        session.users().preRemove(realm, role);
+        return getMongoStore().removeEntity(MongoRoleEntity.class, role.getId(), invocationContext);
     }
 
     @Override

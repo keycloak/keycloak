@@ -595,47 +595,30 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public RoleAdapter getRole(String name) {
-        DBObject query = new QueryBuilder()
-                .and("name").is(name)
-                .and("realmId").is(getId())
-                .get();
-        MongoRoleEntity role = getMongoStore().loadSingleEntity(MongoRoleEntity.class, query, invocationContext);
-        if (role == null) {
-            return null;
-        } else {
-            return new RoleAdapter(session, this, role, this, invocationContext);
-        }
+    public RoleModel getRole(String name) {
+        return session.realms().getRealmRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String name) {
-        return this.addRole(null, name);
+        return session.realms().addRealmRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
-        MongoRoleEntity roleEntity = new MongoRoleEntity();
-        roleEntity.setId(id);
-        roleEntity.setName(name);
-        roleEntity.setRealmId(getId());
-
-        getMongoStore().insertEntity(roleEntity, invocationContext);
-
-        return new RoleAdapter(session, this, roleEntity, this, invocationContext);
+        return session.realms().addRealmRole(this, id, name);
     }
 
     @Override
     public boolean removeRole(RoleModel role) {
-        return removeRoleById(role.getId());
+        return session.realms().removeRole(this, role);
     }
 
     @Override
     public boolean removeRoleById(String id) {
         RoleModel role = getRoleById(id);
         if (role == null) return false;
-        session.users().preRemove(this, role);
-        return getMongoStore().removeEntity(MongoRoleEntity.class, id, invocationContext);
+        return removeRole(role);
     }
 
     @Override
@@ -657,7 +640,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public RoleModel getRoleById(String id) {
-        return model.getRoleById(id, this);
+        return session.realms().getRoleById(id, this);
     }
 
     @Override
@@ -776,6 +759,24 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             roleNames.add(roleName);
         }
 
+        realm.setDefaultRoles(roleNames);
+        updateRealm();
+    }
+
+    public static boolean contains(String str, String[] array) {
+        for (String s : array) {
+            if (str.equals(s)) return true;
+        }
+        return false;
+    }
+
+
+    @Override
+    public void removeDefaultRoles(String... defaultRoles) {
+        List<String> roleNames = new ArrayList<String>();
+        for (String role : realm.getDefaultRoles()) {
+            if (!contains(role, defaultRoles)) roleNames.add(role);
+        }
         realm.setDefaultRoles(roleNames);
         updateRealm();
     }

@@ -181,12 +181,6 @@ public interface RealmModel extends RoleContainerModel {
 
     RoleModel getRoleById(String id);
 
-    List<String> getDefaultRoles();
-
-    void addDefaultRole(String name);
-
-    void updateDefaultRoles(String[] defaultRoles);
-
     List<GroupModel> getDefaultGroups();
 
     void addDefaultGroup(GroupModel group);

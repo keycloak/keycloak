@@ -145,8 +145,6 @@ public class CachedRealm extends AbstractRevisioned {
 
     protected List<String> defaultGroups = new LinkedList<String>();
     protected Set<String> groups = new HashSet<String>();
-    protected Map<String, String> realmRoles = new HashMap<String, String>();
-    protected List<String> clients = new LinkedList<>();
     protected List<String> clientTemplates= new LinkedList<>();
     protected boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
@@ -240,10 +238,6 @@ public class CachedRealm extends AbstractRevisioned {
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
-        cacheRealmRoles(model);
-
-        cacheClients(model);
-
         cacheClientTemplates(model);
 
         internationalizationEnabled = model.isInternationalizationEnabled();
@@ -288,19 +282,6 @@ public class CachedRealm extends AbstractRevisioned {
         }
     }
 
-    protected void cacheClients(RealmModel model) {
-        for (ClientModel client : model.getClients()) {
-            clients.add(client.getId());
-        }
-    }
-
-    protected void cacheRealmRoles(RealmModel model) {
-        for (RoleModel role : model.getRoles()) {
-            realmRoles.put(role.getName(), role.getId());
-        }
-    }
-
-
     public String getMasterAdminClient() {
         return masterAdminClient;
     }
@@ -319,14 +300,6 @@ public class CachedRealm extends AbstractRevisioned {
 
     public List<String> getDefaultRoles() {
         return defaultRoles;
-    }
-
-    public Map<String, String> getRealmRoles() {
-        return realmRoles;
-    }
-
-    public List<String> getClients() {
-        return clients;
     }
 
     public boolean isEnabled() {

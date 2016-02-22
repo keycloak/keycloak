@@ -150,9 +150,6 @@ public class RealmEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<ClientTemplateEntity> clientTemplates = new ArrayList<>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, mappedBy = "realm")
-    Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
-
     @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
@@ -418,21 +415,6 @@ public class RealmEntity {
     public void setRequiredCredentials(Collection<RequiredCredentialEntity> requiredCredentials) {
         this.requiredCredentials = requiredCredentials;
     }
-    public Collection<RoleEntity> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Collection<RoleEntity> roles) {
-        this.roles = roles;
-    }
-
-    public void addRole(RoleEntity role) {
-        if (roles == null) {
-            roles = new ArrayList<RoleEntity>();
-        }
-        roles.add(role);
-    }
-
     public Map<String, String> getSmtpConfig() {
         return smtpConfig;
     }
