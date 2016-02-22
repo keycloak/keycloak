@@ -71,9 +71,6 @@
                 Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
                 Location="http://localhost:8380/mellon/logout"/>
         <SingleLogoutService
-                Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
-                Location="http://localhost:8380/mellon/logout"/>
-        <SingleLogoutService
                 Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
                 Location="http://localhost:8380/mellon/logout"/>
         <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>

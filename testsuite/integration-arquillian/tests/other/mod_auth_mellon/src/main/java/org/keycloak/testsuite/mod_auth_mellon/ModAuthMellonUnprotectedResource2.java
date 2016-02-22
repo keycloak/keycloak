@@ -8,12 +8,12 @@ import java.net.URL;
 /**
  * @author mhajas
  */
-public class ModAuthMellonUnprotectedResource extends AbstractPageWithInjectedUrl {
+public class ModAuthMellonUnprotectedResource2 extends AbstractPageWithInjectedUrl {
 
     @Override
     public URL getInjectedUrl() {
         try {
-            return new URL(System.getProperty("apache.mod_auth_mellon.url", "http://localhost:8380/"));
+            return new URL(System.getProperty("apache.mod_auth_mellon2.url", "http://localhost:8480/"));
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
