@@ -35,15 +35,15 @@ body {
 }
 a {
 	text-decoration: none;
-	color: #5e8a9a;
+	color: #008aaa;
 }
 h1 {
 	padding-top: 20px;
-	color: #7b1e1e;
+	color: #008aaa;
 }
 a:hover {
 	text-decoration: underline;
-	color: #8ec6d9;
+	color: #33c6e9;
 }
 .content {
     margin: 0;
@@ -62,4 +62,8 @@ a:hover {
 .note {
 	font-size: 8pt;
 	color: #aaaaaa;
+}
+
+p.logos {
+	padding-top: 20px;
 }

@@ -58,9 +58,8 @@ public class LDAPConfig {
         }
     }
 
-    public String getSecurityProtocol() {
-        // hardcoded for now
-        return config.get(LDAPConstants.SECURITY_PROTOCOL);
+    public String getUseTruststoreSpi() {
+        return config.get(LDAPConstants.USE_TRUSTSTORE_SPI);
     }
 
     public String getUsersDn() {

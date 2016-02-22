@@ -1,6 +1,6 @@
 {
     "providers": [
-        "classpath:${jboss.server.config.dir}/providers/*"
+        "classpath:${jboss.home.dir}/providers/*"
     ],
 
     "admin": {
@@ -41,7 +41,7 @@
         "cacheTemplates": true,
         "cacheThemes": true,
         "folder": {
-          "dir": "${jboss.server.config.dir}/themes"
+          "dir": "${jboss.home.dir}/themes"
         }
     },
 

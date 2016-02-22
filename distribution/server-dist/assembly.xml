@@ -54,5 +54,12 @@
                 <include>*.*</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>src/main/modules</directory>
+            <outputDirectory>modules</outputDirectory>
+            <includes>
+                <include>layers.conf</include>
+            </includes>
+        </fileSet>
     </fileSets>
 </assembly>

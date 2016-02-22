@@ -10,7 +10,7 @@ import java.net.URL;
 /**
  * @author mhajas
  */
-public class ModAuthMellonProtectedResource extends AbstractPageWithInjectedUrl{
+public class ModAuthMellonProtectedResource extends AbstractPageWithInjectedUrl {
 
     @FindBy(linkText = "logout")
     private WebElement logoutButton;
@@ -18,7 +18,7 @@ public class ModAuthMellonProtectedResource extends AbstractPageWithInjectedUrl{
     @Override
     public URL getInjectedUrl() {
         try {
-            return new URL(System.getProperty("apache.mod_auth_mellon.url","http://localhost:8380") + "/auth");
+            return new URL(System.getProperty("apache.mod_auth_mellon.url", "http://localhost:8380") + "/auth");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }

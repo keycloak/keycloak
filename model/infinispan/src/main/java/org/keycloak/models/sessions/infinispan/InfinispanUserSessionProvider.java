@@ -269,7 +269,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSession(RealmModel realm, UserSessionModel session) {
-        removeUserSession(realm, session.getId(), false);
+        UserSessionEntity entity = getUserSessionEntity(session, false);
+        removeUserSession(realm, entity, false);
     }
 
     @Override
@@ -280,9 +281,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     protected void removeUserSessions(RealmModel realm, UserModel user, boolean offline) {
         Cache<String, SessionEntity> cache = getCache(offline);
 
-        Iterator<String> itr = cache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).user(user.getId())).map(Mappers.sessionId()).iterator();
+        Iterator<SessionEntity> itr = cache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).user(user.getId())).map(Mappers.sessionEntity()).iterator();
         while (itr.hasNext()) {
-            removeUserSession(realm, itr.next(), offline);
+            UserSessionEntity userSessionEntity = (UserSessionEntity) itr.next();
+            removeUserSession(realm, userSessionEntity, offline);
         }
     }
 
@@ -486,12 +488,11 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
     }
 
-    protected void removeUserSession(RealmModel realm, String userSessionId, boolean offline) {
+    protected void removeUserSession(RealmModel realm, UserSessionEntity sessionEntity, boolean offline) {
         Cache<String, SessionEntity> cache = getCache(offline);
 
-        tx.remove(cache, userSessionId);
+        tx.remove(cache, sessionEntity.getId());
 
-        UserSessionEntity sessionEntity = (UserSessionEntity) cache.get(userSessionId);
         if (sessionEntity.getClientSessions() != null) {
             for (String clientSessionId : sessionEntity.getClientSessions()) {
                 tx.remove(cache, clientSessionId);
@@ -547,6 +548,15 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return models;
     }
 
+    UserSessionEntity getUserSessionEntity(UserSessionModel userSession, boolean offline) {
+        if (userSession instanceof UserSessionAdapter) {
+            return ((UserSessionAdapter) userSession).getEntity();
+        } else {
+            Cache<String, SessionEntity> cache = getCache(offline);
+            return (UserSessionEntity) cache.get(userSession.getId());
+        }
+    }
+
 
     @Override
     public UserSessionModel createOfflineUserSession(UserSessionModel userSession) {
@@ -566,8 +576,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public void removeOfflineUserSession(RealmModel realm, String userSessionId) {
-        removeUserSession(realm, userSessionId, true);
+    public void removeOfflineUserSession(RealmModel realm, UserSessionModel userSession) {
+        UserSessionEntity userSessionEntity = getUserSessionEntity(userSession, true);
+        removeUserSession(realm, userSessionEntity, true);
     }
 
     @Override

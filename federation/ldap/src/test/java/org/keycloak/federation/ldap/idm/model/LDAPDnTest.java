@@ -31,9 +31,9 @@ public class LDAPDnTest {
         dn.addFirst("ou", "People");
         Assert.assertEquals("ou=People,dc=keycloak,dc=org", dn.toString());
 
-        dn.addFirst("uid", "Johny,Depp");
-        Assert.assertEquals("uid=Johny\\,Depp,ou=People,dc=keycloak,dc=org", dn.toString());
-        Assert.assertEquals(LDAPDn.fromString("uid=Johny\\,Depp,ou=People,dc=keycloak,dc=org"), dn);
+        dn.addFirst("uid", "Johny,Depp+Pepp");
+        Assert.assertEquals("uid=Johny\\,Depp\\+Pepp,ou=People,dc=keycloak,dc=org", dn.toString());
+        Assert.assertEquals(LDAPDn.fromString("uid=Johny\\,Depp\\+Pepp,ou=People,dc=keycloak,dc=org"), dn);
 
         Assert.assertEquals("ou=People,dc=keycloak,dc=org", dn.getParentDn());
 
@@ -44,6 +44,6 @@ public class LDAPDnTest {
         Assert.assertFalse(dn.isDescendantOf(dn));
 
         Assert.assertEquals("uid", dn.getFirstRdnAttrName());
-        Assert.assertEquals("Johny\\,Depp", dn.getFirstRdnAttrValue());
+        Assert.assertEquals("Johny\\,Depp\\+Pepp", dn.getFirstRdnAttrValue());
     }
 }
