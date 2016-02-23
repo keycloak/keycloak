@@ -27,6 +27,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
@@ -90,6 +91,7 @@ public class ConcurrencyTest extends AbstractClientTest {
 
     @Test
     public void createClient() throws Throwable {
+        System.out.println("***************************");
         long start = System.currentTimeMillis();
         run(new KeycloakRunnable() {
             @Override
@@ -101,7 +103,8 @@ public class ConcurrencyTest extends AbstractClientTest {
                 String id = ApiUtil.getCreatedId(response);
                 response.close();
 
-                assertNotNull(realm.clients().get(id));
+                c = realm.clients().get(id).toRepresentation();
+                assertNotNull(c);
                 boolean found = false;
                 for (ClientRepresentation r : realm.clients().findAll()) {
                     if (r.getClientId().equals(name)) {
@@ -118,6 +121,58 @@ public class ConcurrencyTest extends AbstractClientTest {
         System.out.println("createClient took " + end);
 
     }
+
+    @Test
+    @Ignore
+    public void createRemoveClient() throws Throwable {
+        // FYI< this will fail as HSQL seems to be trying to perform table locks.
+        System.out.println("***************************");
+        long start = System.currentTimeMillis();
+        run(new KeycloakRunnable() {
+            @Override
+            public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
+                String name = "c-" + threadNum + "-" + iterationNum;
+                ClientRepresentation c = new ClientRepresentation();
+                c.setClientId(name);
+                Response response = realm.clients().create(c);
+                String id = ApiUtil.getCreatedId(response);
+                response.close();
+
+                c = realm.clients().get(id).toRepresentation();
+                assertNotNull(c);
+                boolean found = false;
+                for (ClientRepresentation r : realm.clients().findAll()) {
+                    if (r.getClientId().equals(name)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    fail("Client " + name + " not found in client list");
+                }
+                realm.clients().get(id).remove();
+                try {
+                    c = realm.clients().get(id).toRepresentation();
+                    fail("Client " + name + " should not be found.  Should throw a 404");
+                } catch (NotFoundException e) {
+
+                }
+                found = false;
+                for (ClientRepresentation r : realm.clients().findAll()) {
+                    if (r.getClientId().equals(name)) {
+                        found = true;
+                        break;
+                    }
+                }
+                Assert.assertFalse("Client " + name + " should not be in client list", found);
+
+            }
+        });
+        long end = System.currentTimeMillis() - start;
+        System.out.println("createClient took " + end);
+
+    }
+
 
     @Test
     public void createRole() throws Throwable {

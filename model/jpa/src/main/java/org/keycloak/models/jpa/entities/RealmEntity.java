@@ -49,8 +49,8 @@ import java.util.Set;
 @Table(name="REALM")
 @Entity
 @NamedQueries({
-        @NamedQuery(name="getAllRealms", query="select realm from RealmEntity realm"),
-        @NamedQuery(name="getRealmByName", query="select realm from RealmEntity realm where realm.name = :name"),
+        @NamedQuery(name="getAllRealmIds", query="select realm.id from RealmEntity realm"),
+        @NamedQuery(name="getRealmIdByName", query="select realm.id from RealmEntity realm where realm.name = :name"),
 })
 public class RealmEntity {
     @Id
@@ -147,14 +147,8 @@ public class RealmEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<UserFederationMapperEntity> userFederationMappers = new ArrayList<UserFederationMapperEntity>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy="realm")
-    Collection<ClientEntity> clients = new ArrayList<>();
-
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<ClientTemplateEntity> clientTemplates = new ArrayList<>();
-
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, mappedBy = "realm")
-    Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
@@ -421,29 +415,6 @@ public class RealmEntity {
     public void setRequiredCredentials(Collection<RequiredCredentialEntity> requiredCredentials) {
         this.requiredCredentials = requiredCredentials;
     }
-    public Collection<ClientEntity> getClients() {
-        return clients;
-    }
-
-    public void setClients(Collection<ClientEntity> clients) {
-        this.clients = clients;
-    }
-
-    public Collection<RoleEntity> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Collection<RoleEntity> roles) {
-        this.roles = roles;
-    }
-
-    public void addRole(RoleEntity role) {
-        if (roles == null) {
-            roles = new ArrayList<RoleEntity>();
-        }
-        roles.add(role);
-    }
-
     public Map<String, String> getSmtpConfig() {
         return smtpConfig;
     }

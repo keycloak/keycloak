@@ -23,7 +23,7 @@
     },
 
     "userCache": {
-        "infinispan" : {
+        "default" : {
             "enabled": true
         }
     },
@@ -61,15 +61,15 @@
     },
 
     "realmCache": {
-        "provider": "infinispan-locking",
-        "infinispan-locking" : {
+        "provider": "default",
+        "default" : {
             "enabled": true
         }
     },
 
     "connectionsInfinispan": {
-        "provider": "locking",
-        "locking": {
+        "provider": "default",
+        "default": {
             "cacheContainer" : "java:comp/env/infinispan/Keycloak"
         }
     }

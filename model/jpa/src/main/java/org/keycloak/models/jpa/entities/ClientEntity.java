@@ -50,6 +50,7 @@ import java.util.Set;
 @Table(name="CLIENT", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "CLIENT_ID"})})
 @NamedQueries({
         @NamedQuery(name="getClientsByRealm", query="select client from ClientEntity client where client.realm = :realm"),
+        @NamedQuery(name="getClientIdsByRealm", query="select client.id from ClientEntity client where client.realm.id = :realm"),
         @NamedQuery(name="findClientIdByClientId", query="select client.id from ClientEntity client where client.clientId = :clientId and client.realm.id = :realm"),
         @NamedQuery(name="findClientByClientId", query="select client from ClientEntity client where client.clientId = :clientId and client.realm.id = :realm"),
 })
@@ -155,9 +156,6 @@ public class ClientEntity {
 
     @Column(name="NODE_REREG_TIMEOUT")
     private int nodeReRegistrationTimeout;
-
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, mappedBy = "client")
-    Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="CLIENT_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
@@ -351,14 +349,6 @@ public class ClientEntity {
 
     public void setManagementUrl(String managementUrl) {
         this.managementUrl = managementUrl;
-    }
-
-    public Collection<RoleEntity> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Collection<RoleEntity> roles) {
-        this.roles = roles;
     }
 
     public Collection<RoleEntity> getDefaultRoles() {

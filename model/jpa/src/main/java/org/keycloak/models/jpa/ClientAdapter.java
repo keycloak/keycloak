@@ -612,31 +612,17 @@ public class ClientAdapter implements ClientModel {
 
     @Override
     public RoleModel getRole(String name) {
-        TypedQuery<RoleEntity> query = em.createNamedQuery("getClientRoleByName", RoleEntity.class);
-        query.setParameter("name", name);
-        query.setParameter("client", entity);
-        List<RoleEntity> roles = query.getResultList();
-        if (roles.size() == 0) return null;
-        return new RoleAdapter(realm, em, roles.get(0));
+        return session.realms().getClientRole(realm, this, name);
     }
 
     @Override
     public RoleModel addRole(String name) {
-        return this.addRole(KeycloakModelUtils.generateId(), name);
+        return session.realms().addClientRole(realm, this, name);
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
-        RoleEntity roleEntity = new RoleEntity();
-        roleEntity.setId(id);
-        roleEntity.setName(name);
-        roleEntity.setClient(entity);
-        roleEntity.setClientRole(true);
-        roleEntity.setRealmId(realm.getId());
-        entity.getRoles().add(roleEntity);
-        em.persist(roleEntity);
-        em.flush();
-        return new RoleAdapter(realm, em, roleEntity);
+        return session.realms().addClientRole(realm, this, id, name);
     }
 
     @Override
@@ -650,7 +636,6 @@ public class ClientAdapter implements ClientModel {
         RoleEntity role = RoleAdapter.toRoleEntity(roleModel, em);
         if (!role.isClientRole()) return false;
 
-        entity.getRoles().remove(role);
         entity.getDefaultRoles().remove(role);
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", role).executeUpdate();
@@ -666,22 +651,7 @@ public class ClientAdapter implements ClientModel {
 
     @Override
     public Set<RoleModel> getRoles() {
-        Set<RoleModel> list = new HashSet<RoleModel>();
-        /*
-        Collection<RoleEntity> roles = entity.getRoles();
-        if (roles == null) return list;
-        for (RoleEntity entity : roles) {
-            list.add(new RoleAdapter(realm, em, entity));
-        }
-        */
-        TypedQuery<RoleEntity> query = em.createNamedQuery("getClientRoles", RoleEntity.class);
-        query.setParameter("client", entity);
-        List<RoleEntity> roles = query.getResultList();
-        for (RoleEntity roleEntity : roles) {
-             list.add(new RoleAdapter(realm, em, roleEntity));
-        }
-        return list;
-
+        return session.realms().getClientRoles(realm, this);
     }
 
     @Override
@@ -731,10 +701,10 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public void updateDefaultRoles(String[] defaultRoles) {
+    public void updateDefaultRoles(String... defaultRoles) {
         Collection<RoleEntity> entities = entity.getDefaultRoles();
         Set<String> already = new HashSet<String>();
-        List<RoleEntity> remove = new ArrayList<RoleEntity>();
+        List<RoleEntity> remove = new ArrayList<>();
         for (RoleEntity rel : entities) {
             if (!contains(rel.getName(), defaultRoles)) {
                 remove.add(rel);
@@ -753,6 +723,24 @@ public class ClientAdapter implements ClientModel {
         }
         em.flush();
     }
+
+    @Override
+    public void removeDefaultRoles(String... defaultRoles) {
+        Collection<RoleEntity> entities = entity.getDefaultRoles();
+        List<RoleEntity> remove = new ArrayList<RoleEntity>();
+        for (RoleEntity rel : entities) {
+            if (contains(rel.getName(), defaultRoles)) {
+                remove.add(rel);
+            }
+        }
+        for (RoleEntity entity : remove) {
+            entities.remove(entity);
+        }
+        em.flush();
+    }
+
+
+
 
     @Override
     public int getNodeReRegistrationTimeout() {
