@@ -60,6 +60,8 @@
             <where>ACCESS_TOKEN_LIFE_IMPLICIT is NULL</where>
         </update>
 
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate1_9_0_Final"/>
+
         <dropForeignKeyConstraint baseTableName="REALM_CLIENT" constraintName="FK_93S3P0DIUXAWWQQSA528UBY2Q"/>
         <dropForeignKeyConstraint baseTableName="REALM_CLIENT" constraintName="FK_M6QGA3RFME47335JY8JXYXH3I"/>
         <dropUniqueConstraint tableName="REALM_CLIENT" constraintName="UK_M6QGA3RFME47335JY8JXYXH3I"  />
