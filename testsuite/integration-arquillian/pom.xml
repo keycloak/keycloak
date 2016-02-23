@@ -34,11 +34,10 @@
 
     <name>Keycloak Arquillian Integration TestSuite</name>
     
-    <modules>
-        <module>servers</module>
-        <module>tests</module>
-    </modules>
-    
+    <properties>
+        <auth.server.jboss.classifier>wildfly</auth.server.jboss.classifier>
+    </properties>
+
     <build>
         <pluginManagement>
             <plugins>
@@ -60,5 +59,19 @@
             </plugins>
         </pluginManagement>
     </build>
+    
+    <profiles>
+        <profile>
+            <id>auth-server-jboss-eap7</id>
+            <properties>
+                <auth.server.jboss.classifier>eap7</auth.server.jboss.classifier>
+            </properties>
+        </profile>
+    </profiles>
+    
+    <modules>
+        <module>servers</module>
+        <module>tests</module>
+    </modules>
     
 </project>

@@ -17,7 +17,7 @@
 
 <assembly>
     
-    <id>auth-server-wildfly</id>
+    <id>${auth.server.jboss.classifier}</id>
 
     <formats>
         <format>zip</format>
@@ -28,14 +28,14 @@
     <fileSets>
         <fileSet>
             <directory>${keycloak.server.home}</directory>
-            <outputDirectory>keycloak-${project.version}</outputDirectory>
+            <outputDirectory>auth-server-${auth.server.jboss.classifier}-${project.version}</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>${keycloak.server.home}</directory>
-            <outputDirectory>keycloak-${project.version}</outputDirectory>
+            <outputDirectory>auth-server-${auth.server.jboss.classifier}-${project.version}</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
             </includes>

@@ -25,10 +25,40 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-server-eap7</artifactId>
     <packaging>pom</packaging>
-    <name>Server on EAP 7</name>
     
+    <artifactId>integration-arquillian-auth-server-jboss</artifactId>
+    
+    <name>Auth Server on JBoss (Wildfly/EAP)</name>
+    
+    <description>Keycloak Server on Wildfly/EAP</description>
+
+    <properties>
+        <xslt.resources>src/main/xslt/${auth.server.jboss.classifier}</xslt.resources>
+        
+        <!--server-dist-->
+        <keycloak.server.dist.groupId>org.keycloak</keycloak.server.dist.groupId>
+        <keycloak.server.dist.artifactId>keycloak-server-dist</keycloak.server.dist.artifactId>
+        <keycloak.server.dist.version>${project.version}</keycloak.server.dist.version>
+        <keycloak.server.dist.unpacked.folder.name>keycloak-${keycloak.server.dist.version}</keycloak.server.dist.unpacked.folder.name>
+        
+        <!--server-overlay-->
+        <keycloak.server.overlay.groupId>org.keycloak</keycloak.server.overlay.groupId>
+        <keycloak.server.overlay.artifactId>keycloak-server-overlay</keycloak.server.overlay.artifactId>
+        <keycloak.server.overlay.version>${project.version}</keycloak.server.overlay.version>
+
+        <overlaid.container.groupId>org.wildfly</overlaid.container.groupId>
+        <overlaid.container.artifactId>wildfly-dist</overlaid.container.artifactId>
+        <overlaid.container.version>${wildfly.version}</overlaid.container.version>
+        <overlaid.container.unpacked.folder.name>wildfly-${overlaid.container.version}</overlaid.container.unpacked.folder.name>
+                                
+        <!--actual unpacked artifact: server-dist by default, overriden in server-overlay profile-->
+        <unpacked.artifact.groupId>${keycloak.server.dist.groupId}</unpacked.artifact.groupId>
+        <unpacked.artifact.artifactId>${keycloak.server.dist.artifactId}</unpacked.artifact.artifactId>
+        <unpacked.artifact.version>${keycloak.server.dist.version}</unpacked.artifact.version>
+        <keycloak.server.home>${project.build.directory}/unpacked/${keycloak.server.dist.unpacked.folder.name}</keycloak.server.home>
+    </properties>
+                        
     <build>
         <plugins>
             <plugin>
@@ -37,15 +67,67 @@
                 <configuration>
                     <skip>true</skip>
                 </configuration>
-            </plugin>            
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-zip</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>assembly.xml</descriptor>
+                            </descriptors>
+                            <appendAssemblyId>true</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-server-or-overlay</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${unpacked.artifact.groupId}</groupId>
+                                    <artifactId>${unpacked.artifact.artifactId}</artifactId>
+                                    <version>${unpacked.artifact.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     
     <profiles>
+
+        <!-- OPT-IN -->
         <profile>
-            <id>auth-server-eap7</id>
+            <id>auth-server-jboss-eap7</id>
             <properties>
-                <keycloak.server.home>${project.build.directory}/unpacked/${unpacked.container.folder.name}</keycloak.server.home>
+                <!--server-dist-->
+                <keycloak.server.dist.version>${product.version}</keycloak.server.dist.version>
+                <keycloak.server.dist.unpacked.folder.name>${product.unpacked.folder.name}</keycloak.server.dist.unpacked.folder.name>
+
+                <!--server-overlay-->
+                <keycloak.server.overlay.version>${product.version}</keycloak.server.overlay.version>
+                <overlaid.container.groupId>org.jboss.eap</overlaid.container.groupId>
+                <overlaid.container.version>${eap.version}</overlaid.container.version>
+                <overlaid.container.unpacked.folder.name>jboss-eap-7.0</overlaid.container.unpacked.folder.name>
             </properties>
             <build>
                 <plugins>
@@ -54,29 +136,50 @@
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>enforce-properties</id>
+                                <id>enforce-auth-server-jboss-profile</id>
                                 <goals>
                                     <goal>enforce</goal>
                                 </goals>
                                 <configuration>
                                     <rules>
                                         <requireProperty>
-                                            <property>version.server.dist</property>
+                                            <property>product.version</property>
                                         </requireProperty>
                                         <requireProperty>
-                                            <property>unpacked.container.folder.name</property>
+                                            <property>product.unpacked.folder.name</property>
                                         </requireProperty>
                                     </rules>
                                 </configuration>
                             </execution>
                         </executions>
                     </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
+        <!-- OPT-IN -->
+        <profile>
+            <id>server-overlay</id>
+            <activation>
+                <property>
+                    <name>server-overlay</name>
+                </property>
+            </activation>
+            <properties>
+                <!--override default unpacked artifact with server-overlay-->
+                <unpacked.artifact.groupId>${keycloak.server.overlay.groupId}</unpacked.artifact.groupId>
+                <unpacked.artifact.artifactId>${keycloak.server.overlay.artifactId}</unpacked.artifact.artifactId>
+                <unpacked.artifact.version>${keycloak.server.overlay.version}</unpacked.artifact.version>
+                <keycloak.server.home>${project.build.directory}/unpacked/${overlaid.container.unpacked.folder.name}</keycloak.server.home>
+            </properties>
+            <build>
+                <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>unpack-server</id>
+                                <id>unpack-overlaid-container</id>
                                 <phase>generate-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -84,11 +187,11 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>org.keycloak</groupId>
-                                            <artifactId>keycloak-server-dist</artifactId>
-                                            <version>${version.server.dist}</version>
+                                            <groupId>${overlaid.container.groupId}</groupId>
+                                            <artifactId>${overlaid.container.artifactId}</artifactId>
+                                            <version>${overlaid.container.version}</version>
                                             <type>zip</type>
-                                            <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
+                                            <outputDirectory>${keycloak.server.home}</outputDirectory>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>
@@ -96,19 +199,21 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <artifactId>maven-assembly-plugin</artifactId>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.8</version>
                         <executions>
                             <execution>
-                                <id>create-zip</id>
-                                <phase>package</phase>
+                                <id>move-standalone-keycloak-xml</id>
+                                <phase>process-resources</phase>
                                 <goals>
-                                    <goal>single</goal>
+                                    <goal>run</goal>
                                 </goals>
                                 <configuration>
-                                    <descriptors>
-                                        <descriptor>assembly.xml</descriptor>
-                                    </descriptors>
-                                    <appendAssemblyId>false</appendAssemblyId>
+                                    <tasks>
+                                        <move file="${keycloak.server.home}/standalone/configuration/standalone-keycloak.xml" 
+                                              tofile="${keycloak.server.home}/standalone/configuration/standalone.xml"/>
+                                    </tasks>
                                 </configuration>
                             </execution>
                         </executions>
@@ -143,7 +248,7 @@
                                             <includes>
                                                 <include>standalone.xml</include>
                                             </includes>
-                                            <stylesheet>src/main/xslt/security.xsl</stylesheet>
+                                            <stylesheet>${xslt.resources}/security.xsl</stylesheet>
                                             <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
                                         </transformationSet>
                                     </transformationSets>
@@ -153,7 +258,6 @@
                     </plugin>
                     <plugin>
                         <artifactId>maven-resources-plugin</artifactId>
-                        <version>2.7</version>
                         <executions>
                             <execution>
                                 <id>copy-keystore</id>
@@ -179,6 +283,7 @@
                 </plugins>
             </build>
         </profile>
+        
         <profile>
             <id>jpa</id>
             <properties>
@@ -250,16 +355,17 @@
                         <artifactId>xml-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>configure-datasource</id>
+                                <id>configure-wildfly-datasource</id>
                                 <phase>process-resources</phase>
                                 <goals>
                                     <goal>transform</goal>
                                 </goals>
                                 <configuration>
                                     <transformationSets>
+                                        <!-- create module.xml in modules -->
                                         <transformationSet>
                                             <dir>${keycloak.server.home}/modules/system/layers/base/com/h2database/h2/main</dir>
-                                            <stylesheet>src/main/xslt/module.xsl</stylesheet>
+                                            <stylesheet>${xslt.resources}/module.xsl</stylesheet>
                                             <includes>
                                                 <include>module.xml</include>
                                             </includes>
@@ -275,9 +381,10 @@
                                                 </parameter>
                                             </parameters>
                                         </transformationSet>
+                                        <!-- add datasource to standalone.xml -->
                                         <transformationSet>
                                             <dir>${keycloak.server.home}/standalone/configuration</dir>
-                                            <stylesheet>src/main/xslt/datasource.xsl</stylesheet>
+                                            <stylesheet>${xslt.resources}/datasource.xsl</stylesheet>
                                             <includes>
                                                 <include>standalone.xml</include>
                                             </includes>
@@ -301,9 +408,10 @@
                                                 </parameter>
                                             </parameters>
                                         </transformationSet>
+                                        <!-- add logger for org.hibernate.dialect.Dialect -->
                                         <transformationSet>
                                             <dir>${keycloak.server.home}/standalone/configuration</dir>
-                                            <stylesheet>src/main/xslt/add-dialect-logger.xsl</stylesheet>
+                                            <stylesheet>${xslt.resources}/add-dialect-logger.xsl</stylesheet>
                                             <includes>
                                                 <include>standalone.xml</include>
                                             </includes>
@@ -316,10 +424,10 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
+        </profile>        
         
         <profile>
-            <id>auth-server-eap7-cluster</id>
+            <id>auth-server-jboss-cluster</id>
             <properties>
                 <session.cache.owners>1</session.cache.owners>
                 <offline.session.cache.owners>1</offline.session.cache.owners>
@@ -345,7 +453,7 @@
                                             <includes>
                                                 <include>standalone-ha.xml</include>
                                             </includes>
-                                            <stylesheet>src/main/xslt/datasource-jdbc-url.xsl</stylesheet>
+                                            <stylesheet>${xslt.resources}/datasource-jdbc-url.xsl</stylesheet>
                                             <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
                                             <parameters>
                                                 <parameter>
@@ -363,7 +471,7 @@
                                             <includes>
                                                 <include>standalone-ha.xml</include>
                                             </includes>
-                                            <stylesheet>src/main/xslt/ispn-cache-owners.xsl</stylesheet>
+                                            <stylesheet>${xslt.resources}/ispn-cache-owners.xsl</stylesheet>
                                             <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
                                             <parameters>
                                                 <parameter>

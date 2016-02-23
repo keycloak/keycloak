@@ -62,14 +62,14 @@
                     <artifactId>maven-enforcer-plugin</artifactId>
                     <executions>
                         <execution>
-                            <id>enforce-auth-server-wildfly-profile</id>
+                            <id>enforce-auth-server-jboss-profile</id>
                             <goals>
                                 <goal>enforce</goal>
                             </goals>
                             <configuration>
                                 <rules>
                                     <requireActiveProfile>
-                                        <profiles>auth-server-wildfly</profiles>
+                                        <profiles>auth-server-jboss</profiles>
                                     </requireActiveProfile>
                                 </rules>
                             </configuration>
@@ -83,7 +83,7 @@
     <profiles>
         
         <profile>
-            <id>auth-server-wildfly</id>
+            <id>auth-server-jboss</id>
             <!--dummy profile for the enforcer plugin to work-->
         </profile>
         

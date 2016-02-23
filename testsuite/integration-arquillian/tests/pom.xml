@@ -472,14 +472,14 @@
                 </pluginManagement>
             </build>
         </profile>        
-        
+
         <profile>
-            <id>auth-server-wildfly</id>
+            <id>auth-server-jboss</id>
             <properties>
-                <auth.server.container>auth-server-wildfly</auth.server.container>
+                <auth.server.container>auth-server-jboss</auth.server.container>
                 <startup.timeout.sec>300</startup.timeout.sec>
                 <adapter.test.props/>
-                <keycloak.home>${containers.home}/keycloak-${project.version}</keycloak.home>
+                <keycloak.home>${containers.home}/auth-server-${auth.server.jboss.classifier}-${project.version}</keycloak.home>
                 <jboss.server.config.dir>${keycloak.home}/standalone/configuration</jboss.server.config.dir>
                 <h2.version>1.3.173</h2.version>
             </properties>
@@ -497,7 +497,7 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
-                                    <auth.server.wildfly>true</auth.server.wildfly>
+                                    <auth.server.jboss>true</auth.server.jboss>
                                     <auth.server.undertow>false</auth.server.undertow>
                                     <keycloak.home>${keycloak.home}</keycloak.home>
                                     <adapter.test.props>${adapter.test.props}</adapter.test.props>
@@ -509,7 +509,7 @@
                             <artifactId>maven-dependency-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>unpack-auth-server-wildfly</id>
+                                    <id>unpack-auth-server-jboss</id>
                                     <phase>generate-test-resources</phase>
                                     <goals>
                                         <goal>unpack</goal>
@@ -518,9 +518,10 @@
                                         <artifactItems>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-wildfly</artifactId>
+                                                <artifactId>integration-arquillian-auth-server-jboss</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
+                                                <classifier>${auth.server.jboss.classifier}</classifier>
                                             </artifactItem>
                                         </artifactItems>
                                         <outputDirectory>${containers.home}</outputDirectory>
@@ -536,19 +537,19 @@
         
         
         <profile>
-            <id>auth-server-wildfly-cluster</id>
+            <id>auth-server-jboss-cluster</id>
             <properties>
                 <!--disable exclusion pattern for cluster test which is enabled by default in base/pom.xml-->
                 <exclude.cluster>-</exclude.cluster>
                 
-                <auth.server.container>auth-server-wildfly-cluster</auth.server.container>
+                <auth.server.container>auth-server-jboss-cluster</auth.server.container>
                 <startup.timeout.sec>300</startup.timeout.sec>
                 <adapter.test.props/>
                 <h2.version>1.3.173</h2.version>
 
                 <keycloak.balancer.home>${containers.home}/balancer/wildfly-balancer-${project.version}</keycloak.balancer.home>
-                <keycloak.backend1.home>${containers.home}/node1/keycloak-${project.version}</keycloak.backend1.home>
-                <keycloak.backend2.home>${containers.home}/node2/keycloak-${project.version}</keycloak.backend2.home>
+                <keycloak.backend1.home>${containers.home}/node1/auth-server-${auth.server.jboss.classifier}-${project.version}</keycloak.backend1.home>
+                <keycloak.backend2.home>${containers.home}/node2/auth-server-${auth.server.jboss.classifier}-${project.version}</keycloak.backend2.home>
 
                 <keycloak.home>${keycloak.backend1.home}</keycloak.home>
                 <jboss.server.config.dir>${keycloak.home}/standalone/configuration</jboss.server.config.dir>
@@ -569,7 +570,7 @@
                                 <systemPropertyVariables>
                                     <run.h2>true</run.h2>
                                     
-                                    <auth.server.wildfly.cluster>true</auth.server.wildfly.cluster>
+                                    <auth.server.jboss.cluster>true</auth.server.jboss.cluster>
                                     <auth.server.undertow>false</auth.server.undertow>
                                     <adapter.test.props>${adapter.test.props}</adapter.test.props>
                                     
@@ -600,7 +601,7 @@
                             <artifactId>maven-dependency-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>unpack-auth-server-wildfly</id>
+                                    <id>unpack-auth-server-jboss-cluster</id>
                                     <phase>generate-test-resources</phase>
                                     <goals>
                                         <goal>unpack</goal>
@@ -616,16 +617,18 @@
                                             </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-wildfly</artifactId>
+                                                <artifactId>integration-arquillian-auth-server-jboss</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
+                                                <classifier>${auth.server.jboss.classifier}</classifier>
                                                 <outputDirectory>${containers.home}/node1</outputDirectory>
                                             </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-wildfly</artifactId>
+                                                <artifactId>integration-arquillian-auth-server-jboss</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
+                                                <classifier>${auth.server.jboss.classifier}</classifier>
                                                 <outputDirectory>${containers.home}/node2</outputDirectory>
                                             </artifactItem>
                                         </artifactItems>
@@ -639,208 +642,6 @@
             </build>
         </profile>
 
-
-        <profile>
-            <id>auth-server-eap7</id>
-            <properties>
-                <auth.server.container>auth-server-eap7</auth.server.container>
-                <startup.timeout.sec>300</startup.timeout.sec>
-                <adapter.test.props/>
-                <keycloak.home>${containers.home}/keycloak-${version.server.dist}</keycloak.home>
-                <jboss.server.config.dir>${keycloak.home}/standalone/configuration</jboss.server.config.dir>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-arquillian-container-managed</artifactId>
-                </dependency>
-            </dependencies>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-enforcer-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>enforce-properties</id>
-                                    <goals>
-                                        <goal>enforce</goal>
-                                    </goals>
-                                    <configuration>
-                                        <rules>
-                                            <requireProperty>
-                                                <property>version.server.dist</property>
-                                            </requireProperty>
-                                        </rules>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-surefire-plugin</artifactId>
-                            <configuration>
-                                <systemPropertyVariables>
-                                    <auth.server.eap7>true</auth.server.eap7>
-                                    <auth.server.undertow>false</auth.server.undertow>
-                                    <keycloak.home>${keycloak.home}</keycloak.home>
-                                    <adapter.test.props>${adapter.test.props}</adapter.test.props>
-                                </systemPropertyVariables>
-                            </configuration>
-                        </plugin>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-dependency-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>unpack-auth-server-eap</id>
-                                    <phase>generate-test-resources</phase>
-                                    <goals>
-                                        <goal>unpack</goal>
-                                    </goals>
-                                    <configuration>
-                                        <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-eap7</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                            </artifactItem>
-                                        </artifactItems>
-                                        <outputDirectory>${containers.home}</outputDirectory>
-                                        <overWriteIfNewer>true</overWriteIfNewer>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        
-        <profile>
-            <id>auth-server-eap7-cluster</id>
-            <properties>
-                <!--disable exclusion pattern for cluster test which is enabled by default in base/pom.xml-->
-                <exclude.cluster>-</exclude.cluster>
-                
-                <auth.server.container>auth-server-eap7-cluster</auth.server.container>
-                <startup.timeout.sec>300</startup.timeout.sec>
-                <adapter.test.props/>
-                <h2.version>1.3.173</h2.version>
-
-                <keycloak.balancer.home>${containers.home}/balancer/wildfly-balancer-${project.version}</keycloak.balancer.home>
-                <keycloak.backend1.home>${containers.home}/node1/keycloak-${version.server.dist}</keycloak.backend1.home>
-                <keycloak.backend2.home>${containers.home}/node2/keycloak-${version.server.dist}</keycloak.backend2.home>
-
-                <keycloak.home>${keycloak.backend1.home}</keycloak.home>
-                <jboss.server.config.dir>${keycloak.home}/standalone/configuration</jboss.server.config.dir>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-arquillian-container-managed</artifactId>
-                </dependency>
-            </dependencies>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-enforcer-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>enforce-properties</id>
-                                    <goals>
-                                        <goal>enforce</goal>
-                                    </goals>
-                                    <configuration>
-                                        <rules>
-                                            <requireProperty>
-                                                <property>version.server.dist</property>
-                                            </requireProperty>
-                                        </rules>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-surefire-plugin</artifactId>
-                            <configuration>
-                                <systemPropertyVariables>
-                                    <run.h2>true</run.h2>
-                                    
-                                    <auth.server.eap7.cluster>true</auth.server.eap7.cluster>
-                                    <auth.server.undertow>false</auth.server.undertow>
-                                    <adapter.test.props>${adapter.test.props}</adapter.test.props>
-                                    
-                                    <keycloak.balancer.home>${keycloak.balancer.home}</keycloak.balancer.home>
-                                    <keycloak.backend1.home>${keycloak.backend1.home}</keycloak.backend1.home>
-                                    <keycloak.backend2.home>${keycloak.backend2.home}</keycloak.backend2.home>
-
-                                    <!--100-->
-                                    <auth.server.backend1.port.offset>101</auth.server.backend1.port.offset>
-                                    <auth.server.backend2.port.offset>102</auth.server.backend2.port.offset>
-                                    <!--8180-->
-                                    <auth.server.backend1.http.port>8181</auth.server.backend1.http.port>
-                                    <auth.server.backend2.http.port>8182</auth.server.backend2.http.port>
-                                    <!--8543-->
-                                    <auth.server.backend1.https.port>8544</auth.server.backend1.https.port>
-                                    <auth.server.backend2.https.port>8545</auth.server.backend2.https.port>
-                                    <!--10090-->
-                                    <auth.server.backend1.management.port>10091</auth.server.backend1.management.port>
-                                    <auth.server.backend2.management.port>10092</auth.server.backend2.management.port>
-                                    <!--10099-->
-                                    <auth.server.backend1.management.port.jmx>10100</auth.server.backend1.management.port.jmx>
-                                    <auth.server.backend2.management.port.jmx>10101</auth.server.backend2.management.port.jmx>
-                                </systemPropertyVariables>
-                            </configuration>
-                        </plugin>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-dependency-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>unpack-auth-server-wildfly</id>
-                                    <phase>generate-test-resources</phase>
-                                    <goals>
-                                        <goal>unpack</goal>
-                                    </goals>
-                                    <configuration>
-                                        <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-wildfly-balancer</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                                <outputDirectory>${containers.home}/balancer</outputDirectory>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-eap7</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                                <outputDirectory>${containers.home}/node1</outputDirectory>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-server-eap7</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                                <outputDirectory>${containers.home}/node2</outputDirectory>
-                                            </artifactItem>
-                                        </artifactItems>
-                                        <overWriteIfNewer>true</overWriteIfNewer>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
 
         <!-- Profiles for migration tests-->
         
@@ -881,7 +682,7 @@
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>unpack-migrated-auth-server-wildfly</id>
+                                <id>unpack-migrated-auth-server-jboss</id>
                                 <phase>generate-test-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -933,7 +734,7 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
-                                    <auth.server.wildfly.kc16>true</auth.server.wildfly.kc16>
+                                    <auth.server.jboss.kc16>true</auth.server.jboss.kc16>
                                     <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
                                     <keycloak.migration.file>src/test/resources/migration-test/migration-realm-16.json</keycloak.migration.file>
                                 </systemPropertyVariables>
@@ -963,7 +764,7 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
-                                    <auth.server.wildfly.kc15>true</auth.server.wildfly.kc15>
+                                    <auth.server.jboss.kc15>true</auth.server.jboss.kc15>
                                     <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
                                     <keycloak.migration.file>src/test/resources/migration-test/migration-realm-15.json</keycloak.migration.file>
                                 </systemPropertyVariables>
@@ -993,7 +794,7 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
-                                    <auth.server.wildfly.kc14>true</auth.server.wildfly.kc14>
+                                    <auth.server.jboss.kc14>true</auth.server.jboss.kc14>
                                     <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
                                 </systemPropertyVariables>
                             </configuration>
@@ -1022,7 +823,7 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
-                                    <auth.server.wildfly.kc13>true</auth.server.wildfly.kc13>
+                                    <auth.server.jboss.kc13>true</auth.server.jboss.kc13>
                                     <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
                                 </systemPropertyVariables>
                             </configuration>
@@ -1051,7 +852,7 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
-                                    <auth.server.wildfly.kc12>true</auth.server.wildfly.kc12>
+                                    <auth.server.jboss.kc12>true</auth.server.jboss.kc12>
                                     <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
                                 </systemPropertyVariables>
                             </configuration>

@@ -55,9 +55,9 @@
         </configuration>
     </container>
     
-    <container qualifier="auth-server-wildfly" mode="suite" >
+    <container qualifier="auth-server-jboss" mode="suite" >
         <configuration>
-            <property name="enabled">${auth.server.wildfly}</property>
+            <property name="enabled">${auth.server.jboss}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Djboss.bind.address=0.0.0.0 -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
@@ -67,10 +67,10 @@
         </configuration>
     </container>
     
-    <group qualifier="auth-server-wildfly-cluster">
-        <container qualifier="auth-server-wildfly-balancer" mode="suite" >
+    <group qualifier="auth-server-jboss-cluster">
+        <container qualifier="auth-server-jboss-balancer" mode="suite" >
             <configuration>
-                <property name="enabled">${auth.server.wildfly.cluster}</property>
+                <property name="enabled">${auth.server.jboss.cluster}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${keycloak.balancer.home}</property>
                 <property name="jbossArguments">
@@ -85,9 +85,9 @@
                 <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
             </configuration>
         </container>
-        <container qualifier="auth-server-wildfly-backend1" mode="manual" >
+        <container qualifier="auth-server-jboss-backend1" mode="manual" >
             <configuration>
-                <property name="enabled">${auth.server.wildfly.cluster}</property>
+                <property name="enabled">${auth.server.jboss.cluster}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${keycloak.backend1.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
@@ -105,9 +105,9 @@
                 <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
             </configuration>
         </container>
-        <container qualifier="auth-server-wildfly-backend2" mode="manual" >
+        <container qualifier="auth-server-jboss-backend2" mode="manual" >
             <configuration>
-                <property name="enabled">${auth.server.wildfly.cluster}</property>
+                <property name="enabled">${auth.server.jboss.cluster}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${keycloak.backend2.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
@@ -127,83 +127,11 @@
         </container>
     </group>
     
-    <container qualifier="auth-server-eap7" mode="suite" >
-        <configuration>
-            <property name="enabled">${auth.server.eap7}</property>
-            <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${keycloak.home}</property>
-            <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Djboss.bind.address=0.0.0.0 -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
-            <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
-            <property name="managementPort">${auth.server.management.port}</property>
-            <property name="javaHome">${auth.server.java.home}</property>
-        </configuration>
-    </container>
-
-    <group qualifier="auth-server-eap7-cluster">
-        <container qualifier="auth-server-eap7-balancer" mode="suite" >
-            <configuration>
-                <property name="enabled">${auth.server.eap7.cluster}</property>
-                <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-                <property name="jbossHome">${keycloak.balancer.home}</property>
-                <property name="jbossArguments">
-                    -Djboss.socket.binding.port-offset=${auth.server.port.offset} 
-                </property>
-                <property name="javaVmArguments">
-                    -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m
-                    -Djava.net.preferIPv4Stack=true
-                </property>
-                <property name="outputToConsole">${frontend.console.output}</property>
-                <property name="managementPort">${auth.server.management.port}</property>
-                <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
-            </configuration>
-        </container>
-        <container qualifier="auth-server-eap7-backend1" mode="manual" >
-            <configuration>
-                <property name="enabled">${auth.server.eap7.cluster}</property>
-                <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-                <property name="jbossHome">${keycloak.backend1.home}</property>
-                <property name="serverConfig">standalone-ha.xml</property>
-                <property name="jbossArguments">
-                    -Djboss.socket.binding.port-offset=${auth.server.backend1.port.offset} 
-                    -Djboss.node.name=node1
-                    ${adapter.test.props}
-                </property>
-                <property name="javaVmArguments">
-                    -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m
-                    -Djava.net.preferIPv4Stack=true
-                </property>
-                <property name="outputToConsole">${backends.console.output}</property>
-                <property name="managementPort">${auth.server.backend1.management.port}</property>
-                <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
-            </configuration>
-        </container>
-        <container qualifier="auth-server-eap7-backend2" mode="manual" >
-            <configuration>
-                <property name="enabled">${auth.server.eap7.cluster}</property>
-                <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-                <property name="jbossHome">${keycloak.backend2.home}</property>
-                <property name="serverConfig">standalone-ha.xml</property>
-                <property name="jbossArguments">
-                    -Djboss.socket.binding.port-offset=${auth.server.backend2.port.offset} 
-                    -Djboss.node.name=node2
-                    ${adapter.test.props}
-                </property>
-                <property name="javaVmArguments">
-                    -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m
-                    -Djava.net.preferIPv4Stack=true
-                </property>
-                <property name="outputToConsole">${backends.console.output}</property>
-                <property name="managementPort">${auth.server.backend2.management.port}</property>
-                <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
-            </configuration>
-        </container>
-    </group>
-
     <!-- PREVIOUS VERSIONS OF KEYCLOAK FOR MIGRATION TESTS -->
     
-    <container qualifier="auth-server-wildfly-kc16" mode="manual" >
+    <container qualifier="auth-server-jboss-kc16" mode="manual" >
         <configuration>
-            <property name="enabled">${auth.server.wildfly.kc16}</property>
+            <property name="enabled">${auth.server.jboss.kc16}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">
@@ -220,9 +148,9 @@
         </configuration>
     </container>
     
-    <container qualifier="auth-server-wildfly-kc15" mode="manual" >
+    <container qualifier="auth-server-jboss-kc15" mode="manual" >
         <configuration>
-            <property name="enabled">${auth.server.wildfly.kc15}</property>
+            <property name="enabled">${auth.server.jboss.kc15}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">
@@ -239,9 +167,9 @@
         </configuration>
     </container>
     
-    <container qualifier="auth-server-wildfly-kc14" mode="manual" >
+    <container qualifier="auth-server-jboss-kc14" mode="manual" >
         <configuration>
-            <property name="enabled">${auth.server.wildfly.kc14}</property>
+            <property name="enabled">${auth.server.jboss.kc14}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
@@ -250,9 +178,9 @@
         </configuration>
     </container>
     
-    <container qualifier="auth-server-wildfly-kc13" mode="manual" >
+    <container qualifier="auth-server-jboss-kc13" mode="manual" >
         <configuration>
-            <property name="enabled">${auth.server.wildfly.kc13}</property>
+            <property name="enabled">${auth.server.jboss.kc13}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
@@ -261,9 +189,9 @@
         </configuration>
     </container>
     
-    <container qualifier="auth-server-wildfly-kc12" mode="manual" >
+    <container qualifier="auth-server-jboss-kc12" mode="manual" >
         <configuration>
-            <property name="enabled">${auth.server.wildfly.kc12}</property>
+            <property name="enabled">${auth.server.jboss.kc12}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>

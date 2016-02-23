@@ -17,7 +17,7 @@
 
 <assembly>
     
-    <id>auth-server-wildfly-kc15</id>
+    <id>auth-server-jboss-kc15</id>
 
     <formats>
         <format>zip</format>
