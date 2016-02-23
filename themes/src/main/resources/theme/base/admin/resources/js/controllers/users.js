@@ -771,6 +771,12 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
         { "id": "2", "name": "Subtree" }
     ];
 
+    $scope.useTruststoreOptions = [
+        { "id": "always", "name": "Always" },
+        { "id": "ldapsOnly", "name": "Only for ldaps" },
+        { "id": "never", "name": "Never" }
+    ];
+
     var DEFAULT_BATCH_SIZE = "1000";
 
     $scope.create = !instance.providerName;
@@ -793,6 +799,7 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
             instance.config.authType = 'simple';
             instance.config.batchSizeForSync = DEFAULT_BATCH_SIZE;
             instance.config.searchScope = "1";
+            instance.config.useTruststoreSpi = "ldapsOnly";
 
             $scope.fullSyncEnabled = false;
             $scope.changedSyncEnabled = false;
@@ -814,6 +821,9 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
             }
             if (!instance.config.searchScope) {
                 instance.config.searchScope = '1';
+            }
+            if (!instance.config.useTruststoreSpi) {
+                instance.config.useTruststoreSpi = "ldapsOnly";
             }
 
             $scope.fullSyncEnabled = (instance.fullSyncPeriod && instance.fullSyncPeriod > 0);
@@ -939,7 +949,8 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
             realm: $scope.realm.realm,
             connectionUrl: ldapConfig.connectionUrl,
             bindDn: ldapConfig.bindDn,
-            bindCredential: ldapConfig.bindCredential
+            bindCredential: ldapConfig.bindCredential,
+            useTruststoreSpi: ldapConfig.useTruststoreSpi
         };
     };
 

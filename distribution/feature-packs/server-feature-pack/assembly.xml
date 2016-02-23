@@ -53,7 +53,7 @@
         </fileSet>
         <fileSet>
             <directory>../../../themes/src/main/resources/theme</directory>
-            <outputDirectory>content/standalone/configuration/themes</outputDirectory>
+            <outputDirectory>content/themes</outputDirectory>
             <includes>
                 <include>**/**</include>
             </includes>

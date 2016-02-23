@@ -31,7 +31,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>1.9.0.Final-SNAPSHOT</version>
+    <version>1.9.1.Final-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -108,6 +108,9 @@
         <minify.plugin.version>1.7.2</minify.plugin.version>
         <osgi.bundle.plugin.version>2.3.7</osgi.bundle.plugin.version>
         <wildfly.plugin.version>1.0.1.Final</wildfly.plugin.version>
+        
+        <!-- Surefire Settings -->
+        <surefire.memory.settings>-Xms512m -Xmx2048m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -1221,7 +1224,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <forkMode>once</forkMode>
-                        <argLine>-Xms512m -Xmx2048m -XX:MaxPermSize=1024m</argLine>
+                        <argLine>${surefire.memory.settings}</argLine>
                     </configuration>
                 </plugin>
                 <plugin>

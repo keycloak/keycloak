@@ -405,6 +405,9 @@ public class FederationProvidersIntegrationTest {
             if (!skip) {
                 LDAPObject johnComma = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "john,comma", "John", "Comma", "johncomma@email.org", null, "12387");
                 FederationTestUtils.updateLDAPPassword(ldapFedProvider, johnComma, "Password1");
+
+                LDAPObject johnPlus = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "john+plus,comma", "John", "Plus", "johnplus@email.org", null, "12387");
+                FederationTestUtils.updateLDAPPassword(ldapFedProvider, johnPlus, "Password1");
             }
         } finally {
             keycloakRule.stopSession(session, false);
@@ -413,6 +416,7 @@ public class FederationProvidersIntegrationTest {
         if (!skip) {
             // Try to import the user with comma in username into Keycloak
             loginSuccessAndLogout("john,comma", "Password1");
+            loginSuccessAndLogout("john+plus,comma", "Password1");
         }
     }
 

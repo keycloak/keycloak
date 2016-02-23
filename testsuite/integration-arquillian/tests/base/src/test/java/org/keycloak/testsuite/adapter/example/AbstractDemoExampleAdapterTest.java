@@ -246,7 +246,10 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         assertTrue(oAuthGrantPage.isCurrent());
 
         loginEventsPage.navigateTo();
-        loginPage.form().login(adminUser);
+        if (!testContext.isAdminLoggedIn()) {
+            loginPage.form().login(adminUser);
+            testContext.setAdminLoggedIn(true);
+        }
         loginEventsPage.table().filter();
         loginEventsPage.table().filterForm().addEventType("REVOKE_GRANT");
         loginEventsPage.table().update();

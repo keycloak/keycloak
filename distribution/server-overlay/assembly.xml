@@ -45,15 +45,15 @@
             <outputDirectory></outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/themes</directory>
-            <outputDirectory>standalone/configuration/themes</outputDirectory>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/themes</directory>
+            <outputDirectory>themes</outputDirectory>
             <includes>
                 <include>**/**</include>
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/providers</directory>
-            <outputDirectory>standalone/configuration/providers</outputDirectory>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/providers</directory>
+            <outputDirectory>providers</outputDirectory>
             <includes>
                 <include>**/**</include>
             </includes>

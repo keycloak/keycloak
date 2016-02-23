@@ -181,9 +181,7 @@ public class AuthenticationManager {
                 String authMethod = clientSession.getAuthMethod();
                 if (authMethod == null) continue; // must be a keycloak service like account
                 redirectClients.add(clientSession);
-                continue;
-            }
-            if (client instanceof ClientModel && !client.isFrontchannelLogout()) {
+            } else {
                 String authMethod = clientSession.getAuthMethod();
                 if (authMethod == null) continue; // must be a keycloak service like account
                 LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);

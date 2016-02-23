@@ -24,11 +24,16 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>1.9.0.Final-SNAPSHOT</version>
+        <version>1.9.1.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other-mod_auth_mellon</artifactId>
 
     <name>Mod_auth_mellon tests</name>
+
+    <properties>
+        <apache.mod_auth_mellon.url>http://localhost:8380</apache.mod_auth_mellon.url>
+        <apache.mod_auth_mellon2.url>http://localhost:8480</apache.mod_auth_mellon2.url>
+    </properties>
 
 </project>

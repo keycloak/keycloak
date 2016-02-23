@@ -380,6 +380,25 @@ public class UserSessionProviderTest {
         }
     }
 
+    // KEYCLOAK-2508
+    @Test
+    public void testRemovingExpiredSession() {
+        UserSessionModel[] sessions = createSessions();
+        try {
+            Time.setOffset(3600000);
+            UserSessionModel userSession = sessions[0];
+            RealmModel realm = userSession.getRealm();
+            session.sessions().removeExpired(realm);
+
+            resetSession();
+
+            // Assert no exception is thrown here
+            session.sessions().removeUserSession(realm, userSession);
+        } finally {
+            Time.setOffset(0);
+        }
+    }
+
     @Test
     public void testGetByClient() {
         UserSessionModel[] sessions = createSessions();
