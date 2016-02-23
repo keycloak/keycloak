@@ -4,6 +4,8 @@ import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.keycloak.testsuite.util.WaitUtils.*;
+
 /**
  *
  * @author tkyjovsk
@@ -37,34 +39,42 @@ public class RealmSettings extends AdminConsoleRealm {
         private WebElement defenseTab;
 
         public void general() {
+            waitUntilElement(generalSettingsTab).is().present();
             generalSettingsTab.click();
         }
 
         public void login() {
+            waitUntilElement(loginSettingsTab).is().present();
             loginSettingsTab.click();
         }
 
         public void keys() {
+            waitUntilElement(keysSettingsTab).is().present();
             keysSettingsTab.click();
         }
 
         public void email() {
+            waitUntilElement(emailSettingsTab).is().present();
             emailSettingsTab.click();
         }
 
         public void themes() {
+            waitUntilElement(themeSettingsTab).is().present();
             themeSettingsTab.click();
         }
 
         public void cache() {
+            waitUntilElement(cacheSettingsTab).is().present();
             cacheSettingsTab.click();
         }
 
         public void tokens() {
+            waitUntilElement(tokenSettingsTab).is().present();
             tokenSettingsTab.click();
         }
 
         public void securityDefenses() {
+            waitUntilElement(defenseTab).is().present();
             defenseTab.click();
         }
 

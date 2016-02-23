@@ -40,18 +40,6 @@ div#kc-content {
     margin-left: -225px;
 }
 
-h2#kc-header {
-    position: fixed;
-    top: 50px;
-    left: 0;
-    width: 100%;
-    text-align: center;
-    margin: 0 auto;
-    color: rgba(255, 255, 255, 0.08);
-    text-shadow: none;
-    font-size: 80px;
-}
-
 div#kc-form {
     float: left;
     width: 350px;
@@ -154,15 +142,7 @@ div.feedback-error {
 }
 
 div#kc-header {
-    background-image: url('../img/logo.png');
-    background-repeat: no-repeat;
-    height: 500px;
-    position: absolute;
-    left: 30px;
-    top: 30px;
-    width: 500px;
-    z-index: -1;
-    text-indent: -9999px;
+    display: none;
 }
 
 div#kc-registration {

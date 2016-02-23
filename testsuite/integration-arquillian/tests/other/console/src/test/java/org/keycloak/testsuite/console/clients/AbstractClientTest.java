@@ -43,6 +43,7 @@ import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsBooleanAt
 import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsListAttributes;
 import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsStringAttributes;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  *
@@ -69,11 +70,14 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
     }
 
     public void createClient(ClientRepresentation client) {
-        WaitUtils.waitUntilElement(By.tagName("body"));
+        WaitUtils.waitUntilElement(By.tagName("body")).is().present();
         assertCurrentUrlEquals(clientsPage);
         clientsPage.table().createClient();
         createClientPage.form().setValues(client);
         createClientPage.form().save();
+        assertAlertSuccess();
+
+        pause(500); // To ensure that the form will be loaded completely
 
         clientSettingsPage.form().setValues(client);
         if (SAML.equals(client.getProtocol())) {

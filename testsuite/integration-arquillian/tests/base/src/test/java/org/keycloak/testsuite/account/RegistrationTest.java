@@ -70,8 +70,9 @@ public class RegistrationTest extends AbstractAccountManagementTest {
     }
 
     public void assertMessageAttributeMissing(String attributeName) {
-        assertTrue(testRealmRegistrationPage.getFeedbackText()
-                .contains("Please specify " + attributeName + "."));
+        String feedbackTest = testRealmRegistrationPage.getFeedbackText();
+        String contains = "Please specify " + attributeName + ".";
+        assertTrue("'" + feedbackTest + "' doesn't contain '" + contains + "'", feedbackTest.contains(contains));
     }
 
     @Test
@@ -84,8 +85,7 @@ public class RegistrationTest extends AbstractAccountManagementTest {
     public void invalidEmail() {
         newUser.setEmail("invalid.email.value");
         testRealmRegistrationPage.register(newUser);
-        assertTrue(testRealmRegistrationPage.getFeedbackText()
-                .equals("Invalid email address."));
+        assertEquals("Invalid email address.", testRealmRegistrationPage.getFeedbackText());
         assertUserDoesntExistWithAdminClient(newUser);
     }
 
@@ -121,8 +121,7 @@ public class RegistrationTest extends AbstractAccountManagementTest {
     public void notMatchingPasswords() {
         testRealmRegistrationPage.setValues(newUser, "not-matching-password");
         testRealmRegistrationPage.submit();
-        assertTrue(testRealmRegistrationPage.getFeedbackText()
-                .equals("Password confirmation doesn't match."));
+        assertEquals("Password confirmation doesn't match.", testRealmRegistrationPage.getFeedbackText());
 
         testRealmRegistrationPage.register(newUser);
         assertUserExistsWithAdminClient(newUser);

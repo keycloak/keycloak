@@ -26,7 +26,11 @@
     <dependencies>
         <module name="org.keycloak.keycloak-common" services="import"/>
         <module name="org.keycloak.keycloak-core" services="import"/>
-        <module name="org.keycloak.keycloak-themes" services="import"/>
+        <module name="org.keycloak.keycloak-themes">
+            <imports>
+                <include path="META-INF"/>
+            </imports>
+        </module>
         <module name="org.keycloak.keycloak-js-adapter" services="import"/>
         <module name="org.keycloak.keycloak-kerberos-federation" services="import"/>
         <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
