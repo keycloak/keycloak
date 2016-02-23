@@ -8,7 +8,7 @@ You can either deploy the themes by copying to the themes folder or as modules.
 
 ### Copy
 
-Simplest way to deploy the themes is to copy `src/main/resources/theme/*` to `standalone/configuration/themes/`.
+Simplest way to deploy the themes is to copy `src/main/resources/theme/*` to `themes/`.
 
 ### Module
 
