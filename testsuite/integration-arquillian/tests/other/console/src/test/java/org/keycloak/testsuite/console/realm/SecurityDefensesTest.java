@@ -173,7 +173,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
     }
 
     private void assertFeedbackText(String text) {
-        waitUntilElement(feedbackTextElement);
+        waitUntilElement(feedbackTextElement).is().present();
         assertEquals(text, feedbackTextElement.getText());
     }
 

@@ -29,6 +29,7 @@ public class InternationalizationTest extends AbstractRealmTest {
         tabs().themes();
         themeSettingsPage.setInternatEnabled(true);
         themeSettingsPage.saveTheme();
+        assertAlertSuccess();
         realmSettingsPage.setAdminRealm(AuthRealm.TEST);
         accountPage.setAuthRealm(testRealmPage);
         deleteAllCookiesForTestRealm();
@@ -76,11 +77,13 @@ public class InternationalizationTest extends AbstractRealmTest {
     }
 
     private void assertConsoleLocale(String expected) {
+        pause(500);
         assertCurrentUrlEquals(realmSettingsPage);
         assertLocale(".//a[contains(@href,'/theme-settings')]", expected); // Themes
     }
 
     private void assertAccountLocale(String expected) {
+        pause(500);
         assertCurrentUrlEquals(accountPage);
         assertLocale(".//div[contains(@class,'bs-sidebar')]/ul/li", expected); // Account
     }

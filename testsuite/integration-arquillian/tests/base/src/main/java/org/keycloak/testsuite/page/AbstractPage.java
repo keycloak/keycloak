@@ -24,6 +24,9 @@ import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -90,6 +93,7 @@ public abstract class AbstractPage {
         log.info("navigating to " + uri);
         driver.navigate().to(uri);
         pause(300); // this is needed for FF for some reason
+        waitUntilElement(By.tagName("body")).is().visible();
         log.info("current URL:  " + driver.getCurrentUrl());
     }
 

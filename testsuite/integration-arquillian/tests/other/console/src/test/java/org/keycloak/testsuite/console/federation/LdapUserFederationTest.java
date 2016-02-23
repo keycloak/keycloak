@@ -41,7 +41,7 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().setLdapBindDnInput("KEYCLOAK/Administrator");
         createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
         createLdapUserProvider.form().setLdapBindCredentialInput("secret");
-        createLdapUserProvider.form().setAccountAfterPasswordUpdateEnabled(false);
+//        createLdapUserProvider.form().setAccountAfterPasswordUpdateEnabled(false);
         // enable kerberos
         createLdapUserProvider.form().setAllowKerberosAuthEnabled(true);
         createLdapUserProvider.form().setKerberosRealmInput("KEYCLOAK.ORG");
@@ -119,7 +119,7 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().setLdapBindDnInput("uid=admin,ou=system");
         createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
         createLdapUserProvider.form().setLdapBindCredentialInput("secret");
-        createLdapUserProvider.form().setAccountAfterPasswordUpdateEnabled(true);
+//        createLdapUserProvider.form().setAccountAfterPasswordUpdateEnabled(true);
         createLdapUserProvider.form().save();
         assertAlertSuccess();
         LDAPEmbeddedServer ldapServer = null;
@@ -152,7 +152,7 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         assertEquals(searchScope, ufpr.getConfig().get("searchScope"));
         assertEquals(connectionPooling, ufpr.getConfig().get("connectionPooling"));
         assertEquals(pagination, ufpr.getConfig().get("pagination"));
-        assertEquals(enableAccountAfterPasswordUpdate, ufpr.getConfig().get("userAccountControlsAfterPasswordUpdate"));
+//        assertEquals(enableAccountAfterPasswordUpdate, ufpr.getConfig().get("userAccountControlsAfterPasswordUpdate"));
     }
 
     private void assertLdapBasicMapping(UserFederationProviderRepresentation ufpr, String usernameLdapAttribute,

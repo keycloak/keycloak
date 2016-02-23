@@ -47,7 +47,7 @@ public class URLAssert {
 //            }
 //        };
 //        wait.until(urlStartsWith);
-        assertEqualsNormalized(driver.getCurrentUrl(), page.toString());
+        assertEqualsNormalized(page.toString(), driver.getCurrentUrl());
     }
 
     public static void assertCurrentUrlStartsWith(AbstractPage page) {
