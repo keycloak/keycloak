@@ -181,6 +181,7 @@ public class ModelToRepresentation {
         rep.setClientId(event.getClientId());
         rep.setUserId(event.getUserId());
         rep.setSessionId(event.getSessionId());
+        rep.setIpAddress(event.getIpAddress());
         rep.setError(event.getError());
         rep.setDetails(event.getDetails());
         return rep;
