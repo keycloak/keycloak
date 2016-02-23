@@ -14,7 +14,7 @@ Then registering the provider by editing keycloak-server.json and adding the mod
     ],
 
 
-You then have to copy the secret-question.ftl and secret-question-config.ftl files to the standalone/configuration/themes/base/login directory.
+You then have to copy the secret-question.ftl and secret-question-config.ftl files to the themes/base/login directory.
 
 After you do all this, you then have to reboot keycloak.  When reboot is complete, you will need to log into
 the admin console to create a new flow with your new authenticator.
