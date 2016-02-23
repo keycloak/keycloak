@@ -48,8 +48,14 @@
             }
         }
 
+        function error() {
+            document.getElementById('authenticated').style.display = 'none';
+            document.getElementById('not-authenticated').style.display = 'block';
+            document.getElementById('error').innerText = 'Failed to initialize Keycloak adapter';
+        }
+
         document.addEventListener("deviceready", function() {
-            keycloak.init({ onLoad: 'check-sso' }).success(updateState);
+            keycloak.init({ onLoad: "check-sso" }).success(updateState).error(error);
         }, false);
     </script>
     <style>
@@ -104,7 +110,7 @@
         <button onclick="keycloak.login()">Log in</button>
     </div>
     <div>
-        <p>Not authenticated</p>
+        <p id="error">Not authenticated</p>
     </div>
 </div>
 </body>
