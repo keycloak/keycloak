@@ -41,6 +41,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -152,6 +153,92 @@ public class MongoRealmProvider implements RealmProvider {
         if (group == null) return null;
         if (group.getRealmId() != null && !group.getRealmId().equals(realm.getId())) return null;
         return new GroupAdapter(session, realm, group, invocationContext);
+    }
+
+    @Override
+    public void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent) {
+        if (toParent != null && group.getId().equals(toParent.getId())) {
+            return;
+        }
+        if (group.getParentId() != null) {
+            group.getParent().removeChild(group);
+        }
+        group.setParent(toParent);
+        if (toParent != null) toParent.addChild(group);
+        else session.realms().addTopLevelGroup(realm, group);
+
+    }
+
+    @Override
+    public List<GroupModel> getGroups(RealmModel realm) {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .get();
+        List<MongoGroupEntity> groups = getMongoStore().loadEntities(MongoGroupEntity.class, query, invocationContext);
+        if (groups == null) return Collections.EMPTY_LIST;
+
+        List<GroupModel> result = new LinkedList<>();
+
+        if (groups == null) return result;
+        for (MongoGroupEntity group : groups) {
+            result.add(getGroupById(group.getId(), realm));
+        }
+
+        return Collections.unmodifiableList(result);
+    }
+
+    @Override
+    public List<GroupModel> getTopLevelGroups(RealmModel realm) {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .and("parentId").is(null)
+                .get();
+        List<MongoGroupEntity> groups = getMongoStore().loadEntities(MongoGroupEntity.class, query, invocationContext);
+        if (groups == null) return Collections.EMPTY_LIST;
+
+        List<GroupModel> result = new LinkedList<>();
+
+        if (groups == null) return result;
+        for (MongoGroupEntity group : groups) {
+            result.add(getGroupById(group.getId(), realm));
+        }
+
+        return Collections.unmodifiableList(result);
+    }
+
+    @Override
+    public boolean removeGroup(RealmModel realm, GroupModel group) {
+        session.users().preRemove(realm, group);
+        realm.removeDefaultGroup(group);
+        for (GroupModel subGroup : group.getSubGroups()) {
+            removeGroup(realm, subGroup);
+        }
+        moveGroup(realm, group, null);
+        return getMongoStore().removeEntity(MongoGroupEntity.class, group.getId(), invocationContext);
+    }
+
+    @Override
+    public GroupModel createGroup(RealmModel realm, String name) {
+        String id = KeycloakModelUtils.generateId();
+        return createGroup(realm, id, name);
+    }
+
+    @Override
+    public GroupModel createGroup(RealmModel realm, String id, String name) {
+        if (id == null) id = KeycloakModelUtils.generateId();
+        MongoGroupEntity group = new MongoGroupEntity();
+        group.setId(id);
+        group.setName(name);
+        group.setRealmId(realm.getId());
+
+        getMongoStore().insertEntity(group, invocationContext);
+
+        return new GroupAdapter(session, realm, group, invocationContext);
+    }
+
+    @Override
+    public void addTopLevelGroup(RealmModel realm, GroupModel subGroup) {
+        subGroup.setParent(null);
     }
 
     @Override

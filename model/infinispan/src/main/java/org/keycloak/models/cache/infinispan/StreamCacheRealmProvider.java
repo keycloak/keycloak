@@ -397,6 +397,14 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
         return realm + REALM_CLIENTS_QUERY_SUFFIX;
     }
 
+    private String getGroupsQueryCacheKey(String realm) {
+        return realm + ".groups";
+    }
+
+    private String getTopGroupsQueryCacheKey(String realm) {
+        return realm + ".top.groups";
+    }
+
     private String getRolesCacheKey(String container) {
         return container + ROLES_QUERY_SUFFIX;
     }
@@ -685,6 +693,129 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
         GroupAdapter adapter = new GroupAdapter(cached, this, session, realm);
         managedGroups.put(id, adapter);
         return adapter;
+    }
+
+    @Override
+    public void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent) {
+        registerGroupInvalidation(group.getId());
+        if (toParent != null) registerGroupInvalidation(toParent.getId());
+        getDelegate().moveGroup(realm, group, toParent);
+    }
+
+    @Override
+    public List<GroupModel> getGroups(RealmModel realm) {
+        String cacheKey = getGroupsQueryCacheKey(realm.getId());
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId());
+        if (queryDB) {
+            return getDelegate().getGroups(realm);
+        }
+
+        GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
+        if (query != null) {
+            logger.tracev("getGroups cache hit: {0}", realm.getName());
+        }
+
+        if (query == null) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            List<GroupModel> model = getDelegate().getGroups(realm);
+            if (model == null) return null;
+            Set<String> ids = new HashSet<>();
+            for (GroupModel client : model) ids.add(client.getId());
+            query = new GroupListQuery(loaded, cacheKey, realm, ids);
+            logger.tracev("adding realm getGroups cache miss: realm {0} key {1}", realm.getName(), cacheKey);
+            cache.addRevisioned(query);
+            return model;
+        }
+        List<GroupModel> list = new LinkedList<>();
+        for (String id : query.getGroups()) {
+            GroupModel group = session.realms().getGroupById(id, realm);
+            if (group == null) {
+                invalidations.add(cacheKey);
+                return getDelegate().getGroups(realm);
+            }
+            list.add(group);
+        }
+        return list;
+    }
+
+    @Override
+    public List<GroupModel> getTopLevelGroups(RealmModel realm) {
+        String cacheKey = getTopGroupsQueryCacheKey(realm.getId());
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId());
+        if (queryDB) {
+            return getDelegate().getTopLevelGroups(realm);
+        }
+
+        GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
+        if (query != null) {
+            logger.tracev("getTopLevelGroups cache hit: {0}", realm.getName());
+        }
+
+        if (query == null) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            List<GroupModel> model = getDelegate().getTopLevelGroups(realm);
+            if (model == null) return null;
+            Set<String> ids = new HashSet<>();
+            for (GroupModel client : model) ids.add(client.getId());
+            query = new GroupListQuery(loaded, cacheKey, realm, ids);
+            logger.tracev("adding realm getTopLevelGroups cache miss: realm {0} key {1}", realm.getName(), cacheKey);
+            cache.addRevisioned(query);
+            return model;
+        }
+        List<GroupModel> list = new LinkedList<>();
+        for (String id : query.getGroups()) {
+            GroupModel group = session.realms().getGroupById(id, realm);
+            if (group == null) {
+                invalidations.add(cacheKey);
+                return getDelegate().getTopLevelGroups(realm);
+            }
+            list.add(group);
+        }
+        return list;
+    }
+
+    @Override
+    public boolean removeGroup(RealmModel realm, GroupModel group) {
+        registerGroupInvalidation(group.getId());
+        listInvalidations.add(realm.getId());
+        invalidations.add(getGroupsQueryCacheKey(realm.getId()));
+        if (group.getParentId() == null) {
+            invalidations.add(getTopGroupsQueryCacheKey(realm.getId()));
+        } else {
+            registerGroupInvalidation(group.getParentId());
+        }
+        return getDelegate().removeGroup(realm, group);
+    }
+
+    @Override
+    public GroupModel createGroup(RealmModel realm, String name) {
+        GroupModel group = getDelegate().createGroup(realm, name);
+        return groupAdded(realm, group);
+    }
+
+    public GroupModel groupAdded(RealmModel realm, GroupModel group) {
+        listInvalidations.add(realm.getId());
+        invalidations.add(getGroupsQueryCacheKey(realm.getId()));
+        invalidations.add(getTopGroupsQueryCacheKey(realm.getId()));
+        invalidations.add(group.getId());
+        return group;
+    }
+
+    @Override
+    public GroupModel createGroup(RealmModel realm, String id, String name) {
+        GroupModel group = getDelegate().createGroup(realm, id, name);
+        return groupAdded(realm, group);
+    }
+
+    @Override
+    public void addTopLevelGroup(RealmModel realm, GroupModel subGroup) {
+        invalidations.add(getTopGroupsQueryCacheKey(realm.getId()));
+        invalidations.add(subGroup.getId());
+        if (subGroup.getParentId() != null) {
+            registerGroupInvalidation(subGroup.getParentId());
+        }
+        getDelegate().addTopLevelGroup(realm, subGroup);
+
     }
 
     @Override

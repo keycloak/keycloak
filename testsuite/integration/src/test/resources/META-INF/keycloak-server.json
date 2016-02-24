@@ -62,7 +62,7 @@
             "user": "${keycloak.connectionsJpa.user:sa}",
             "password": "${keycloak.connectionsJpa.password:}",
             "databaseSchema": "${keycloak.connectionsJpa.databaseSchema:update}",
-            "showSql": "${keycloak.connectionsJpa.showSql:false}",
+            "showSql": "${keycloak.connectionsJpa.showSql:true}",
             "formatSql": "${keycloak.connectionsJpa.formatSql:true}"
         }
     },
