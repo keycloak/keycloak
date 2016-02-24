@@ -1988,16 +1988,24 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public GroupModel createGroup(String name) {
+        return session.realms().createGroup(this, name);
+    }
+
+    @Override
+    public GroupModel createGroup(String id, String name) {
+        return session.realms().createGroup(this, id, name);
+    }
+
+    @Override
+    public void addTopLevelGroup(GroupModel subGroup) {
+        session.realms().addTopLevelGroup(this, subGroup);
+
+    }
+
+    @Override
     public void moveGroup(GroupModel group, GroupModel toParent) {
-        if (toParent != null && group.getId().equals(toParent.getId())) {
-            return;
-        }
-        if (group.getParentId() != null) {
-            group.getParent().removeChild(group);
-        }
-        group.setParent(toParent);
-        if (toParent != null) toParent.addChild(group);
-        else addTopLevelGroup(group);
+        session.realms().moveGroup(this, group, toParent);
     }
 
     @Override
@@ -2007,75 +2015,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<GroupModel> getGroups() {
-        List<String> groups =  em.createNamedQuery("getAllGroupIdsByRealm", String.class)
-                .setParameter("realm", realm.getId()).getResultList();
-        if (groups == null) return Collections.EMPTY_LIST;
-        List<GroupModel> list = new LinkedList<>();
-        for (String id : groups) {
-            list.add(session.realms().getGroupById(id, this));
-        }
-        return Collections.unmodifiableList(list);
+        return session.realms().getGroups(this);
     }
 
     @Override
     public List<GroupModel> getTopLevelGroups() {
-        List<GroupModel> base = getGroups();
-        if (base.isEmpty()) return base;
-        List<GroupModel> copy = new LinkedList<>();
-        for (GroupModel group : base) {
-            if (group.getParent() == null) {
-                copy.add(group);
-            }
-        }
-        return Collections.unmodifiableList(copy);
+        return session.realms().getTopLevelGroups(this);
     }
 
     @Override
     public boolean removeGroup(GroupModel group) {
-        if (group == null) {
-            return false;
-        }
-        GroupEntity groupEntity = GroupAdapter.toEntity(group, em);
-        if (!groupEntity.getRealm().getId().equals(getId())) {
-            return false;
-        }
-        realm.getDefaultGroups().remove(groupEntity);
-        for (GroupModel subGroup : group.getSubGroups()) {
-            removeGroup(subGroup);
-        }
-
-
-        session.users().preRemove(this, group);
-        moveGroup(group, null);
-        em.createNamedQuery("deleteGroupAttributesByGroup").setParameter("group", groupEntity).executeUpdate();
-        em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", groupEntity).executeUpdate();
-        em.remove(groupEntity);
-        return true;
-
-
-    }
-
-    @Override
-    public GroupModel createGroup(String name) {
-        String id = KeycloakModelUtils.generateId();
-        return createGroup(id, name);
-    }
-
-    @Override
-    public GroupModel createGroup(String id, String name) {
-        if (id == null) id = KeycloakModelUtils.generateId();
-        GroupEntity groupEntity = new GroupEntity();
-        groupEntity.setId(id);
-        groupEntity.setName(name);
-        groupEntity.setRealm(realm);
-        em.persist(groupEntity);
-
-        return new GroupAdapter(this, em, groupEntity);
-    }
-
-    @Override
-    public void addTopLevelGroup(GroupModel subGroup) {
-        subGroup.setParent(null);
+        return session.realms().removeGroup(this, group);
     }
 
     @Override

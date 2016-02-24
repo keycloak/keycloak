@@ -36,6 +36,20 @@ public interface RealmProvider extends Provider {
     RealmModel getRealm(String id);
     RealmModel getRealmByName(String name);
 
+    void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent);
+
+    List<GroupModel> getGroups(RealmModel realm);
+
+    List<GroupModel> getTopLevelGroups(RealmModel realm);
+
+    boolean removeGroup(RealmModel realm, GroupModel group);
+
+    GroupModel createGroup(RealmModel realm, String name);
+
+    GroupModel createGroup(RealmModel realm, String id, String name);
+
+    void addTopLevelGroup(RealmModel realm, GroupModel subGroup);
+
     ClientModel addClient(RealmModel realm, String clientId);
 
     ClientModel addClient(RealmModel realm, String id, String clientId);

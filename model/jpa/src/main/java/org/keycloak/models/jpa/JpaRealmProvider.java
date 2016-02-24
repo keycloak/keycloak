@@ -282,6 +282,96 @@ public class JpaRealmProvider implements RealmProvider {
     }
 
     @Override
+    public void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent) {
+        if (toParent != null && group.getId().equals(toParent.getId())) {
+            return;
+        }
+        if (group.getParentId() != null) {
+            group.getParent().removeChild(group);
+        }
+        group.setParent(toParent);
+        if (toParent != null) toParent.addChild(group);
+        else session.realms().addTopLevelGroup(realm, group);
+    }
+
+    @Override
+    public List<GroupModel> getGroups(RealmModel realm) {
+        List<String> groups =  em.createNamedQuery("getAllGroupIdsByRealm", String.class)
+                .setParameter("realm", realm.getId()).getResultList();
+        if (groups == null) return Collections.EMPTY_LIST;
+        List<GroupModel> list = new LinkedList<>();
+        for (String id : groups) {
+            list.add(session.realms().getGroupById(id, realm));
+        }
+        return Collections.unmodifiableList(list);
+    }
+
+    @Override
+    public List<GroupModel> getTopLevelGroups(RealmModel realm) {
+        List<String> groups =  em.createNamedQuery("getTopLevelGroupIds", String.class)
+                .setParameter("realm", realm.getId())
+                .getResultList();
+        if (groups == null) return Collections.EMPTY_LIST;
+        List<GroupModel> list = new LinkedList<>();
+        for (String id : groups) {
+            list.add(session.realms().getGroupById(id, realm));
+        }
+        return Collections.unmodifiableList(list);
+    }
+
+    @Override
+    public boolean removeGroup(RealmModel realm, GroupModel group) {
+        if (group == null) {
+            return false;
+        }
+
+        session.users().preRemove(realm, group);
+
+        realm.removeDefaultGroup(group);
+        for (GroupModel subGroup : group.getSubGroups()) {
+            session.realms().removeGroup(realm, subGroup);
+        }
+        moveGroup(realm, group, null);
+        GroupEntity groupEntity = em.find(GroupEntity.class, group.getId());
+        if (!groupEntity.getRealm().getId().equals(realm.getId())) {
+            return false;
+        }
+        // I don't think we need this as GroupEntity has cascade removal.  It causes batch errors if you turn this on.
+        // em.createNamedQuery("deleteGroupAttributesByGroup").setParameter("group", groupEntity).executeUpdate();
+        em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", groupEntity).executeUpdate();
+        em.remove(groupEntity);
+        return true;
+
+
+    }
+
+    @Override
+    public GroupModel createGroup(RealmModel realm, String name) {
+        String id = KeycloakModelUtils.generateId();
+        return createGroup(realm, id, name);
+    }
+
+    @Override
+    public GroupModel createGroup(RealmModel realm, String id, String name) {
+        if (id == null) id = KeycloakModelUtils.generateId();
+        GroupEntity groupEntity = new GroupEntity();
+        groupEntity.setId(id);
+        groupEntity.setName(name);
+        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
+        groupEntity.setRealm(realmEntity);
+        em.persist(groupEntity);
+
+        return new GroupAdapter(realm, em, groupEntity);
+    }
+
+    @Override
+    public void addTopLevelGroup(RealmModel realm, GroupModel subGroup) {
+        subGroup.setParent(null);
+    }
+
+
+
+    @Override
     public ClientModel addClient(RealmModel realm, String clientId) {
         return addClient(realm, KeycloakModelUtils.generateId(), clientId);
     }
