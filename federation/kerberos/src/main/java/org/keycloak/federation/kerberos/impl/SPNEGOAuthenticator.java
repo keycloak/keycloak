@@ -19,15 +19,21 @@ package org.keycloak.federation.kerberos.impl;
 
 import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Iterator;
+import java.util.Set;
 
 import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosTicket;
 
+import org.ietf.jgss.Oid;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.Base64;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.KerberosJdkProvider;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.common.util.KerberosSerializationUtils;
 
@@ -45,6 +51,7 @@ public class SPNEGOAuthenticator {
     private boolean authenticated = false;
     private String authenticatedKerberosPrincipal = null;
     private GSSCredential delegationCredential;
+    private KerberosTicket kerberosTicket;
     private String responseToken = null;
 
     public SPNEGOAuthenticator(CommonKerberosConfig kerberosConfig, KerberosServerSubjectAuthenticator kerberosSubjectAuthenticator, String spnegoToken) {
@@ -61,6 +68,14 @@ public class SPNEGOAuthenticator {
         try {
             Subject serverSubject = kerberosSubjectAuthenticator.authenticateServerSubject();
             authenticated = Subject.doAs(serverSubject, new AcceptSecContext());
+
+            // kerberosTicketis available in IBM JDK in case that GSSContext supports delegated credentials
+            Set<KerberosTicket> kerberosTickets = serverSubject.getPrivateCredentials(KerberosTicket.class);
+            Iterator<KerberosTicket> iterator = kerberosTickets.iterator();
+            if (iterator.hasNext()) {
+                kerberosTicket = iterator.next();
+            }
+
         } catch (Exception e) {
             log.warn("SPNEGO login failed", e);
         } finally {
@@ -89,7 +104,7 @@ public class SPNEGOAuthenticator {
             if (log.isTraceEnabled()) {
                 log.trace("Serializing credential " + delegationCredential);
             }
-            return KerberosSerializationUtils.serializeCredential(delegationCredential);
+            return KerberosSerializationUtils.serializeCredential(kerberosTicket, delegationCredential);
         } catch (KerberosSerializationUtils.KerberosSerializationException kse) {
             log.warn("Couldn't serialize credential: " + delegationCredential, kse);
             return null;
@@ -150,7 +165,10 @@ public class SPNEGOAuthenticator {
 
     protected GSSContext establishContext() throws GSSException, IOException {
         GSSManager manager = GSSManager.getInstance();
-        GSSContext gssContext = manager.createContext((GSSCredential) null);
+
+        Oid[] supportedMechs = new Oid[] { KerberosConstants.KRB5_OID, KerberosConstants.SPNEGO_OID };
+        GSSCredential gssCredential = manager.createCredential(null, GSSCredential.INDEFINITE_LIFETIME, supportedMechs, GSSCredential.ACCEPT_ONLY);
+        GSSContext gssContext = manager.createContext(gssCredential);
 
         byte[] inputToken = Base64.decode(spnegoToken);
         byte[] respToken = gssContext.acceptSecContext(inputToken, 0, inputToken.length);
