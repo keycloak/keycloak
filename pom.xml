@@ -72,8 +72,7 @@
         <undertow.version>1.3.15.Final</undertow.version>
         <wildfly.core.version>2.0.10.Final</wildfly.core.version>
         <wildfly.build-tools.version>1.1.0.Final</wildfly.build-tools.version>
-        <!--<xmlsec.version>2.0.5</xmlsec.version>--> <!-- WILDFLY VERSION -->
-        <xmlsec.version>1.5.1</xmlsec.version>
+        <xmlsec.version>2.0.5</xmlsec.version>
 
         <!-- Others -->
         <apacheds.version>2.0.0-M17</apacheds.version>
@@ -376,6 +375,10 @@
                     <exclusion>
                         <groupId>javax.servlet</groupId>
                         <artifactId>servlet-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>woodstox-core-asl</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
