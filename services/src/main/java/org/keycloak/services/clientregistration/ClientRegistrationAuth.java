@@ -17,7 +17,9 @@
 
 package org.keycloak.services.clientregistration;
 
+import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
 import org.jboss.resteasy.spi.UnauthorizedException;
+import org.keycloak.Config;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -28,6 +30,7 @@ import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +42,7 @@ public class ClientRegistrationAuth {
     private KeycloakSession session;
     private EventBuilder event;
 
+    private RealmModel realm;
     private JsonWebToken jwt;
     private ClientInitialAccessModel initialAccessModel;
 
@@ -50,7 +54,7 @@ public class ClientRegistrationAuth {
     }
 
     private void init() {
-        RealmModel realm = session.getContext().getRealm();
+        realm = session.getContext().getRealm();
         UriInfo uri = session.getContext().getUri();
 
         String authorizationHeader = session.getContext().getRequestHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
@@ -174,18 +178,25 @@ public class ClientRegistrationAuth {
                     return false;
                 }
 
-                Map<String, List<String>> realmManagement = resourceAccess.get(Constants.REALM_MANAGEMENT_CLIENT_ID);
-                if (realmManagement == null) {
-                    return false;
+                List<String> roles = null;
+
+                Map<String, List<String>> map;
+                if (realm.getName().equals(Config.getAdminRealm())) {
+                    map = resourceAccess.get(realm.getMasterAdminClient().getClientId());
+                } else {
+                    map = resourceAccess.get(Constants.REALM_MANAGEMENT_CLIENT_ID);
                 }
 
-                List<String> resources = realmManagement.get("roles");
-                if (resources == null) {
+                if (map != null) {
+                    roles = map.get("roles");
+                }
+
+                if (roles == null) {
                     return false;
                 }
 
                 for (String r : role) {
-                    if (resources.contains(r)) {
+                    if (roles.contains(r)) {
                         return true;
                     }
                 }
