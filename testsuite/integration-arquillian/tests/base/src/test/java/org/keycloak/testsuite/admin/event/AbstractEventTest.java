@@ -54,4 +54,8 @@ public abstract class AbstractEventTest extends AbstractAuthTest {
 
         saveConfig();
     }
+
+    protected String realmName() {
+        return testRealmResource().toRepresentation().getId();
+    }
 }

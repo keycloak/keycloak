@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin.event;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,6 +27,9 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -60,6 +64,28 @@ public class LoginEventsTest extends AbstractEventTest {
         } catch (InterruptedException e) {
             fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void eventAttributesTest() {
+        badLogin();
+        List<EventRepresentation> events = events();
+        assertEquals(1, events.size());
+        EventRepresentation event = events.get(0);
+        assertTrue(event.getTime() > 0);
+        assertNotNull(event.getIpAddress());
+        assertEquals("LOGIN_ERROR", event.getType());
+        assertEquals(realmName(), event.getRealmId());
+        assertNull(event.getUserId()); // no user for bad login
+        assertNull(event.getSessionId()); // no session for bad login
+        assertEquals("user_not_found", event.getError());
+
+        Map<String, String> details = event.getDetails();
+        assertEquals("openid-connect", details.get("auth_method"));
+        assertEquals("code", details.get("auth_type"));
+        assertNotNull(details.get("redirect_uri"));
+        assertNotNull(details.get("code_id"));
+        assertEquals("bad", details.get("username"));
     }
 
     @Test
