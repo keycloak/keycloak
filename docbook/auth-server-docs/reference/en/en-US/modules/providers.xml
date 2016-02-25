@@ -99,19 +99,19 @@ public class MyEventListenerProvider implements EventListenerProvider {
             contain the full name of your ProviderFactory implementation:
 <programlisting><![CDATA[org.acme.provider.MyEventListenerProviderFactory]]></programlisting>
         </para>
-        
+
         <section>
             <title>Show info from you SPI implementation in Keycloak admin console</title>
             <para>
                 Sometimes it is useful to show additional info about your Provider to a Keycloak administrator.
-                You can show provider build time informations (eg. version of custom provider currently installed), 
-                current configuration of the provider (eg. url of remote system your provider talks to) or some operational 
-                info (average time of response from remote system your provider talks to). 
+                You can show provider build time informations (eg. version of custom provider currently installed),
+                current configuration of the provider (eg. url of remote system your provider talks to) or some operational
+                info (average time of response from remote system your provider talks to).
                 Keycloak admin console provides Server Info page to show this kind of information.
              </para>
-             <para>   
-                To show info from your provider it is enough to implement 
-                <literal>org.keycloak.provider.ServerInfoAwareProviderFactory</literal> interface in your ProviderFactory. 
+             <para>
+                To show info from your provider it is enough to implement
+                <literal>org.keycloak.provider.ServerInfoAwareProviderFactory</literal> interface in your ProviderFactory.
                 Example implementation for MyEventListenerProviderFactory from previous example:
                 <programlisting><![CDATA[
 package org.acme.provider;
@@ -122,7 +122,7 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
 
     private List<Event> events;
     private int max;
-     
+
 ...
 
     @Override
@@ -144,9 +144,9 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
 
 }
 ]]></programlisting>
-            
+
             </para>
-        </section>    
+        </section>
     </section>
 
     <section>
@@ -199,7 +199,7 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
             <title>Register a provider using file-system</title>
             <para>
                 To register your provider simply copy the JAR including the ProviderFactory and Provider classes and the
-                provider configuration file to <literal>standalone/configuration/providers</literal>.
+                provider configuration file to server's root <literal>providers</literal> directory.
             </para>
             <para>
                 You can also define multiple provider class-path if you want to create isolated class-loaders. To do this
