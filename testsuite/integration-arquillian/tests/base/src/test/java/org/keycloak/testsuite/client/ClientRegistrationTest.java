@@ -19,8 +19,10 @@ package org.keycloak.testsuite.client;
 
 import org.junit.Test;
 import org.keycloak.client.registration.Auth;
+import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 import javax.ws.rs.NotFoundException;
@@ -54,6 +56,23 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     public void registerClientAsAdmin() throws ClientRegistrationException {
         authManageClients();
         registerClient();
+    }
+
+    @Test
+    public void registerClientInMasterRealm() throws ClientRegistrationException {
+        ClientRegistration masterReg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "master").build();
+
+        String token = oauthClient.getToken("master", Constants.ADMIN_CLI_CLIENT_ID, null, "admin", "admin").getToken();
+        masterReg.auth(Auth.token(token));
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(CLIENT_ID);
+        client.setSecret(CLIENT_SECRET);
+
+        ClientRepresentation createdClient = masterReg.create(client);
+        assertNotNull(createdClient);
+
+        adminClient.realm("master").clients().get(createdClient.getId()).remove();
     }
 
     @Test
