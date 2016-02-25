@@ -163,7 +163,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
             if (responseType.hasResponseType(OIDCResponseType.TOKEN)) {
                 redirectUri.addParam("access_token", res.getToken());
                 redirectUri.addParam("token_type", res.getTokenType());
-                redirectUri.addParam("session-state", res.getSessionState());
+                redirectUri.addParam("session_state", res.getSessionState());
                 redirectUri.addParam("expires_in", String.valueOf(res.getExpiresIn()));
             }
 

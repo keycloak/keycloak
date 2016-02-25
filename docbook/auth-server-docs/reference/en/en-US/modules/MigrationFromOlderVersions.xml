@@ -122,6 +122,13 @@
                 </para>
             </simplesect>
             <simplesect>
+                <title>Session state parameter in authentication response renamed</title>
+                <para>
+                    In the OpenID Connect authentication response we used to return the session state as <literal>session-state</literal> this is not
+                    correct according to the specification and has been renamed to <literal>session_state</literal>.
+                </para>
+            </simplesect>
+            <simplesect>
                 <title>Deprecated OpenID Connect endpoints</title>
                 <para>
                     In 1.2 we deprecated a number of endpoints that where not consistent with the OpenID Connect

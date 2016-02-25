@@ -52,7 +52,7 @@ public class AccessTokenResponse {
     @JsonProperty("not-before-policy")
     protected int notBeforePolicy;
 
-    @JsonProperty("session-state")
+    @JsonProperty("session_state")
     protected String sessionState;
 
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
