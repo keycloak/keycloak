@@ -11,6 +11,9 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author fkiss, pdrozd
  */
@@ -179,6 +182,21 @@ public class LdapUserProviderForm extends Form {
     public void selectVendor(String vendor) {
         waitUntilElement(By.id("vendor")).is().present();
         vendorSelect.selectByVisibleText(vendor);
+    }
+
+    public List<String> getVendors() {
+        waitUntilElement(By.id("vendor")).is().present();
+
+        List<WebElement> vendorsElements = vendorSelect.getOptions();
+        List<String> vendorsString = new ArrayList<>();
+
+        for (WebElement vendorElement : vendorsElements) {
+            String text = vendorElement.getText();
+            if (text.equals("")) {continue;}
+            vendorsString.add(text);
+        }
+
+        return vendorsString;
     }
 
     public void selectAuthenticationType(String authenticationType) {
