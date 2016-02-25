@@ -73,7 +73,7 @@ Pragma: no-cache
     "expires_in":3600,
     "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA",
     "id_token":"tGzv3JOkF0XG5Qx2TlKWIA",
-    "session-state":"234234-234234-234234"
+    "session_state":"234234-234234-234234"
 }]]>
 </programlisting>
     </para>
