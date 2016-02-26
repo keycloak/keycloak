@@ -168,7 +168,6 @@
         <module>integration</module>
         <module>adapters</module>
         <module>examples</module>
-        <module>testsuite</module>
     </modules>
 
     <dependencyManagement>
