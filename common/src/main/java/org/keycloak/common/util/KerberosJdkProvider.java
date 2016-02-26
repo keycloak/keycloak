@@ -53,7 +53,7 @@ public abstract class KerberosJdkProvider {
 
 
     public GSSCredential kerberosTicketToGSSCredential(KerberosTicket kerberosTicket) {
-        return kerberosTicketToGSSCredential(kerberosTicket, GSSCredential.DEFAULT_LIFETIME, GSSCredential.INITIATE_AND_ACCEPT);
+        return kerberosTicketToGSSCredential(kerberosTicket, GSSCredential.DEFAULT_LIFETIME, GSSCredential.INITIATE_ONLY);
     }
 
     // Actually same on both JDKs
