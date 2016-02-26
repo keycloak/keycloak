@@ -27,6 +27,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
 import org.keycloak.testsuite.util.IOUtil;
 import org.w3c.dom.Document;
 
@@ -80,6 +81,9 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Page
     private SalesPostSigTransientServlet salesPostSigTransientServletPage;
+
+    @Page
+    private SAMLIDPInitiatedLogin samlidpInitiatedLogin;
 
     @Deployment(name = BadClientSalesPostSigServlet.DEPLOYMENT_NAME)
     protected static WebArchive badClientSalesPostSig() {
@@ -457,5 +461,21 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         //Different 403 status page on EAP and Wildfly
         assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
         salesPostSigTransientServletPage.logout();
+    }
+
+    @Test
+    public void  idpInitiatedLogin() {
+        samlidpInitiatedLogin.setAuthRealm(SAMLSERVLETDEMO);
+        samlidpInitiatedLogin.setUrlName("employee2");
+        samlidpInitiatedLogin.navigateTo();
+        samlidpInitiatedLogin.form().login(bburkeUser);
+
+        employee2ServletPage.navigateTo();
+        assertTrue(driver.getPageSource().contains("principal=bburke"));
+
+        salesPostSigServletPage.navigateTo();
+        assertTrue(driver.getPageSource().contains("principal=bburke"));
+
+        employee2ServletPage.logout();
     }
 }
