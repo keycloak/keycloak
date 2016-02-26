@@ -138,7 +138,7 @@ public class Timer {
             stream.flush();
             IOUtils.closeQuietly(stream);
         } catch (IOException ex) {
-            log.error("Unable to save data for operation '" + op + "'");
+            log.error("Unable to save data for operation '" + op + "'", ex);
         }
     }
 
