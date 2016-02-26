@@ -1,0 +1,10 @@
+/* Custom styles for typography-2.html */
+
+@media (min-width: 768px) {
+.border-right {
+  border-right: 1px solid #d1d1d1;
+}
+
+section + section {
+  margin: 4em 0;
+}

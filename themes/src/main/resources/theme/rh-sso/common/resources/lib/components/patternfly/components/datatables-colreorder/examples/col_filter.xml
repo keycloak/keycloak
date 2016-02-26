@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dt-example table-type="html" order="13">
+
+<css lib="datatables colreorder" />
+<js lib="jquery datatables colreorder">
+<![CDATA[
+$(document).ready(function() {
+    // Setup - add a text input to each footer cell
+    $('#example tfoot th').each( function () {
+        var title = $('#example thead th').eq( $(this).index() ).text();
+        $(this).html( '<input type="text" placeholder="Search '+title+'" />' );
+    } );
+ 
+    // DataTable
+    var table = $('#example').DataTable( {
+		dom: 'Rlfrtip'
+	} );
+     
+    // Apply the filter
+    $("#example tfoot input").on( 'keyup change', function () {
+        table
+            .column( $(this).parent().index()+':visible' )
+            .search( this.value )
+            .draw();
+    } );
+} );
+]]>
+</js>
+
+<title lib="ColReorder">Individual column filtering</title>
+
+<info><![CDATA[
+
+This example of how to use ColReorder shows how it can with with DataTables' ability to do individual column filtering. The basic example is exactly the same as the DataTables column filtering example, but with ColReorder also added to the table (through the `R` option for `dt-init dom`).
+
+]]></info>
+
+</dt-example>

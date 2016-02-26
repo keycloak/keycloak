@@ -5,5 +5,8 @@
     }, {
         "name" : "keycloak",
         "types": [ "admin", "account", "login", "common", "email", "welcome" ]
+    }, {
+        "name" : "rh-sso",
+        "types": [ "admin", "account", "login", "common", "email", "welcome" ]
     }]
 }
