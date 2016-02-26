@@ -695,6 +695,16 @@ public class RepresentationToModel {
 
         if ("GENERATE".equals(rep.getPublicKey())) {
             KeycloakModelUtils.generateRealmKeys(realm);
+        } else {
+            if (rep.getPrivateKey() != null && rep.getPublicKey() != null) {
+                realm.setPrivateKeyPem(rep.getPrivateKey());
+                realm.setPublicKeyPem(rep.getPublicKey());
+                realm.setCodeSecret(KeycloakModelUtils.generateCodeSecret());
+            }
+
+            if (rep.getCertificate() != null) {
+                realm.setCertificatePem(rep.getCertificate());
+            }
         }
 
         if(rep.isInternationalizationEnabled() != null){
