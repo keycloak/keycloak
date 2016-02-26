@@ -71,7 +71,7 @@ public class CredentialValidation {
 
 
     public static boolean validateHashedCredential(KeycloakSession session, RealmModel realm, UserModel user, String unhashedCredValue, UserCredentialValueModel credential) {
-        if(unhashedCredValue == null){
+        if (unhashedCredValue == null || unhashedCredValue.isEmpty()) {
             return false;
         }
 

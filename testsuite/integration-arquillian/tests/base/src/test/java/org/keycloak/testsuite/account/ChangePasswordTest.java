@@ -62,6 +62,9 @@ public class ChangePasswordTest extends AbstractAccountManagementTest {
 
         testRealmChangePasswordPage.changePasswords(correctPassword, NEW_PASSWORD, NEW_PASSWORD + "-mismatch");
         assertAlertError();
+
+        testRealmChangePasswordPage.changePasswords(correctPassword, " ", " ");
+        assertAlertError();
     }
 
     @Test
