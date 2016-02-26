@@ -93,6 +93,7 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.common.util.Time;
+import org.keycloak.services.validation.Validation;
 
 /**
  * Base resource for managing users
@@ -706,6 +707,9 @@ public class UsersResource {
         }
         if (pass == null || pass.getValue() == null || !CredentialRepresentation.PASSWORD.equals(pass.getType())) {
             throw new BadRequestException("No password provided");
+        }
+        if (Validation.isBlank(pass.getValue())) {
+            throw new BadRequestException("Empty password not allowed");
         }
 
         UserCredentialModel cred = RepresentationToModel.convertCredential(pass);

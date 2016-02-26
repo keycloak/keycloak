@@ -621,7 +621,7 @@ public class AccountService extends AbstractSecuredLocalService {
             }
         }
 
-        if (Validation.isEmpty(passwordNew)) {
+        if (Validation.isBlank(passwordNew)) {
             setReferrerOnPage();
             return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         }
