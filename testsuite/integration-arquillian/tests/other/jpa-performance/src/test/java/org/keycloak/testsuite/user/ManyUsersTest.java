@@ -92,9 +92,10 @@ public class ManyUsersTest extends AbstractUserTest {
             log.debug("realm deleted");
         }
 
-        // REIMPORT SAVED REALM
+        // RE-IMPORT SAVED REALM
         realmTimer.reset("re-import realm with " + realm.getUsers().size() + " users");
         realmsResouce().create(realm);
+        realmTimer.reset("load " + realm.getUsers().size() + " users");
         users = realmResource().users().search("", 0, Integer.MAX_VALUE);
 
         // DELETE INDIVIDUAL USERS
