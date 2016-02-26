@@ -24,6 +24,7 @@ import org.infinispan.notifications.cachelistener.annotation.CacheEntryInvalidat
 import org.infinispan.notifications.cachelistener.event.CacheEntriesEvictedEvent;
 import org.infinispan.notifications.cachelistener.event.CacheEntryInvalidatedEvent;
 import org.jboss.logging.Logger;
+import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 import org.keycloak.models.cache.infinispan.entities.CachedClient;
 import org.keycloak.models.cache.infinispan.entities.CachedClientTemplate;
 import org.keycloak.models.cache.infinispan.entities.CachedGroup;
@@ -72,7 +73,11 @@ public class StreamRealmCache {
 
     public Long getCurrentRevision(String id) {
         Long revision = revisions.get(id);
-        if (revision == null) return UpdateCounter.current();
+        if (revision == null) revision = UpdateCounter.current();
+        // if you do cache.remove() on node 1 and the entry doesn't exist on node 2, node 2 never receives a invalidation event
+        // so, we do this to force this.
+        String invalidationKey = "invalidation.key" + id;
+        cache.putForExternalRead(invalidationKey, new AbstractRevisioned(-1L, invalidationKey));
         return revision;
     }
 
@@ -104,6 +109,9 @@ public class StreamRealmCache {
 
     public Object invalidateObject(String id) {
         Revisioned removed = (Revisioned)cache.remove(id);
+        // if you do cache.remove() on node 1 and the entry doesn't exist on node 2, node 2 never receives a invalidation event
+        // so, we do this to force the event.
+        cache.remove("invalidation.key" + id);
         bumpVersion(id);
         return removed;
     }
@@ -261,11 +269,32 @@ public class StreamRealmCache {
 
     @CacheEntryInvalidated
     public void cacheInvalidated(CacheEntryInvalidatedEvent<String, Object> event) {
-        if (!event.isPre()) {
-            bumpVersion(event.getKey());
+        if (event.isPre()) {
+            String key = event.getKey();
+            if (key.startsWith("invalidation.key")) {
+                // if you do cache.remove() on node 1 and the entry doesn't exist on node 2, node 2 never receives a invalidation event
+                // so, we do this to force this.
+                String bump = key.substring("invalidation.key".length());
+                logger.tracev("bumping invalidation key {0}", bump);
+                bumpVersion(bump);
+                return;
+            }
+
+        } else {
+        //if (!event.isPre()) {
+            String key = event.getKey();
+            if (key.startsWith("invalidation.key")) {
+                // if you do cache.remove() on node 1 and the entry doesn't exist on node 2, node 2 never receives a invalidation event
+                // so, we do this to force this.
+                String bump = key.substring("invalidation.key".length());
+                bumpVersion(bump);
+                logger.tracev("bumping invalidation key {0}", bump);
+                return;
+            }
+            bumpVersion(key);
             Object object = event.getValue();
             if (object != null) {
-                bumpVersion(event.getKey());
+                bumpVersion(key);
                 Predicate<Map.Entry<String, Revisioned>> predicate = getInvalidationPredicate(object);
                 if (predicate != null) runEvictions(predicate);
                 logger.tracev("invalidating: {0}" + object.getClass().getName());

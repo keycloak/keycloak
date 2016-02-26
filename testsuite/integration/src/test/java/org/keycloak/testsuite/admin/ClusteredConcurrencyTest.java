@@ -55,8 +55,8 @@ public class ClusteredConcurrencyTest {
 
     private static final Logger log = Logger.getLogger(ClusteredConcurrencyTest.class);
 
-    private static final int DEFAULT_THREADS = 5;
-    private static final int DEFAULT_ITERATIONS = 20;
+    private static final int DEFAULT_THREADS = 10;
+    private static final int DEFAULT_ITERATIONS = 100;
 
     // If enabled only one request is allowed at the time. Useful for checking that test is working.
     private static final boolean SYNCHRONIZED = false;

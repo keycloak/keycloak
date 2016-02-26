@@ -93,7 +93,9 @@ import java.util.Set;
  * - roles are tricky because of composites.  Composite lists are cached too.  So, when a role is removed
  * we also iterate and invalidate any role or group that contains that role being removed.
  *
- *
+ * - Clustering gotchyas. With an invalidation cache, if you remove an entry on node 1 and this entry does not exist on node 2, node 2 will not receive a @Listener invalidation event.
+ * so, hat we have to put a marker entry in the invalidation cache before we read from the DB, so if the DB changes in between reading and adding a cache entry, the cache will be notified and bump
+ * the version information.
  *
  * - any relationship should be resolved from session.realms().  For example if JPA.getClientByClientId() is invoked,
  *  JPA should find the id of the client and then call session.realms().getClientById().  THis is to ensure that the cached
@@ -192,13 +194,16 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
 
             @Override
             public void commit() {
+                /*  THIS WAS CAUSING DEADLOCK IN A CLUSTER
                 if (delegate == null) return;
                 List<String> locks = new LinkedList<>();
                 locks.addAll(invalidations);
 
                 Collections.sort(locks); // lock ordering
                 cache.getRevisions().startBatch();
-                //if (!locks.isEmpty()) cache.getRevisions().getAdvancedCache().lock(locks);
+
+                if (!locks.isEmpty()) cache.getRevisions().getAdvancedCache().lock(locks);
+                */
 
             }
 
