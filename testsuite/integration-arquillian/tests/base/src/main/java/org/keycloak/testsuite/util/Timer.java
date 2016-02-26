@@ -127,10 +127,11 @@ public class Timer {
     private void saveData(String op) {
         try {
             File f = new File(DATA_DIR, op.replace(" ", "_") + ".txt");
-            assertTrue(f.createNewFile());
+            if (!f.createNewFile()) {
+                throw new IOException("Couldn't create file: " + f);
+            }
             OutputStream stream = new BufferedOutputStream(new FileOutputStream(f));
             for (Long duration : stats.get(op)) {
-//                log.info(duration);
                 IOUtils.write(duration.toString(), stream);
                 IOUtils.write("\n", stream);
             }
