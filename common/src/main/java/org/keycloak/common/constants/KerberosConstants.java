@@ -17,6 +17,9 @@
 
 package org.keycloak.common.constants;
 
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.Oid;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -31,19 +34,33 @@ public class KerberosConstants {
     /**
      * OID of SPNEGO mechanism. See http://www.oid-info.com/get/1.3.6.1.5.5.2
      */
-    public static final String SPNEGO_OID = "1.3.6.1.5.5.2";
+    private static final String SPNEGO_OID_STR = "1.3.6.1.5.5.2";
+    public static final Oid SPNEGO_OID;
 
 
     /**
      * OID of Kerberos v5 mechanism. See http://www.oid-info.com/get/1.2.840.113554.1.2.2
      */
-    public static final String KRB5_OID = "1.2.840.113554.1.2.2";
+    private static final String KRB5_OID_STR = "1.2.840.113554.1.2.2";
+    public static final Oid KRB5_OID;
 
 
     /**
      * OID of Kerberos v5 name. See http://www.oid-info.com/get/1.2.840.113554.1.2.2.1
      */
-    public static final String KRB5_NAME_OID = "1.2.840.113554.1.2.2.1";
+    private static final String KRB5_NAME_OID_STR = "1.2.840.113554.1.2.2.1";
+    public static final Oid KRB5_NAME_OID;
+
+
+    static {
+        try {
+            KRB5_OID = new Oid(KerberosConstants.KRB5_OID_STR);
+            KRB5_NAME_OID = new Oid(KerberosConstants.KRB5_NAME_OID_STR);
+            SPNEGO_OID = new Oid(KerberosConstants.SPNEGO_OID_STR);
+        } catch (GSSException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 
     /**
