@@ -25,6 +25,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
 import javax.ws.rs.NotFoundException;
@@ -119,6 +120,39 @@ public class ConcurrencyTest extends AbstractClientTest {
         });
         long end = System.currentTimeMillis() - start;
         System.out.println("createClient took " + end);
+
+    }
+
+    @Test
+    public void createGroup() throws Throwable {
+        System.out.println("***************************");
+        long start = System.currentTimeMillis();
+        run(new KeycloakRunnable() {
+            @Override
+            public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
+                String name = "c-" + threadNum + "-" + iterationNum;
+                GroupRepresentation c = new GroupRepresentation();
+                c.setName(name);
+                Response response = realm.groups().add(c);
+                String id = ApiUtil.getCreatedId(response);
+                response.close();
+
+                c = realm.groups().group(id).toRepresentation();
+                assertNotNull(c);
+                boolean found = false;
+                for (GroupRepresentation r : realm.groups().groups()) {
+                    if (r.getName().equals(name)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    fail("Group " + name + " not found in group list");
+                }
+            }
+        });
+        long end = System.currentTimeMillis() - start;
+        System.out.println("createGroup took " + end);
 
     }
 

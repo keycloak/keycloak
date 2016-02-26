@@ -198,10 +198,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
 
                 Collections.sort(locks); // lock ordering
                 cache.getRevisions().startBatch();
-                //if (!invalidates.isEmpty()) cache.getRevisions().getAdvancedCache().lock(invalidates);
-                for (String lock : locks) {
-                    boolean success = cache.getRevisions().getAdvancedCache().lock(lock);
-                }
+                //if (!locks.isEmpty()) cache.getRevisions().getAdvancedCache().lock(locks);
 
             }
 

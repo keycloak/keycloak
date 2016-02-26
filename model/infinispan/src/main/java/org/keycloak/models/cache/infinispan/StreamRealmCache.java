@@ -104,9 +104,13 @@ public class StreamRealmCache {
 
     public Object invalidateObject(String id) {
         Revisioned removed = (Revisioned)cache.remove(id);
+        bumpVersion(id);
+        return removed;
+    }
+
+    protected void bumpVersion(String id) {
         long next = UpdateCounter.next();
         Object rev = revisions.put(id, next);
-        return removed;
     }
 
     public void addRevisioned(Revisioned object) {
@@ -258,10 +262,13 @@ public class StreamRealmCache {
     @CacheEntryInvalidated
     public void cacheInvalidated(CacheEntryInvalidatedEvent<String, Object> event) {
         if (!event.isPre()) {
+            bumpVersion(event.getKey());
             Object object = event.getValue();
             if (object != null) {
+                bumpVersion(event.getKey());
                 Predicate<Map.Entry<String, Revisioned>> predicate = getInvalidationPredicate(object);
                 if (predicate != null) runEvictions(predicate);
+                logger.tracev("invalidating: {0}" + object.getClass().getName());
             }
         }
     }
@@ -269,7 +276,11 @@ public class StreamRealmCache {
     @CacheEntriesEvicted
     public void cacheEvicted(CacheEntriesEvictedEvent<String, Object> event) {
         if (!event.isPre())
-        for (Object object : event.getEntries().values()) {
+        for (Map.Entry<String, Object> entry : event.getEntries().entrySet()) {
+            Object object = entry.getValue();
+            bumpVersion(entry.getKey());
+            if (object == null) continue;
+            logger.tracev("evicting: {0}" + object.getClass().getName());
             Predicate<Map.Entry<String, Revisioned>> predicate = getInvalidationPredicate(object);
             if (predicate != null) runEvictions(predicate);
         }
@@ -278,7 +289,11 @@ public class StreamRealmCache {
     public void runEvictions(Predicate<Map.Entry<String, Revisioned>> current) {
         Set<String> evictions = new HashSet<>();
         addInvalidations(current, evictions);
-        for (String key : evictions) cache.evict(key);
+        logger.tracev("running evictions size: {0}", evictions.size());
+        for (String key : evictions) {
+            cache.evict(key);
+            bumpVersion(key);
+        }
     }
 
     protected Predicate<Map.Entry<String, Revisioned>> getInvalidationPredicate(Object object) {
