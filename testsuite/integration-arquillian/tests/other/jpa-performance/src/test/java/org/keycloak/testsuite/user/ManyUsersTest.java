@@ -4,7 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
@@ -39,7 +39,7 @@ public class ManyUsersTest extends AbstractUserTest {
 
     @Before
     public void before() {
-        users = new ArrayList<>();
+        users = new LinkedList<>();
         for (int i = 0; i < COUNT; i++) {
             users.add(createUserRep("user" + i));
         }
