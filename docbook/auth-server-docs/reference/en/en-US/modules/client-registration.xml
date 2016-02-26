@@ -155,7 +155,7 @@ Authorization: basic BASE64(client-id + ':' + client-secret)
         </para>
         <para>
             To retrieve the Adapter Configuration then do a HTTP GET to:
-            <literal>&lt;KEYCLOAK URL&gt;//realms/&lt;realm&gt;/clients-registrations/installation/&lt;client id&gt;</literal>
+            <literal>&lt;KEYCLOAK URL&gt;//realms/&lt;realm&gt;/clients-registrations/install/&lt;client id&gt;</literal>
         </para>
         <para>
             No authentication is required for public clients. This means that for the JavaScript adapter you can
