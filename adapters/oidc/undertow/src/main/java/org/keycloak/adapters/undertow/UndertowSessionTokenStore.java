@@ -22,6 +22,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.Session;
 import io.undertow.util.Sessions;
 import org.jboss.logging.Logger;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
@@ -101,6 +102,7 @@ public class UndertowSessionTokenStore implements AdapterTokenStore {
     public void saveAccountInfo(OidcKeycloakAccount account) {
         Session session = Sessions.getOrCreateSession(exchange);
         session.setAttribute(KeycloakUndertowAccount.class.getName(), account);
+        session.setAttribute(KeycloakSecurityContext.class.getName(), account.getKeycloakSecurityContext());
         sessionManagement.login(session.getSessionManager());
     }
 
@@ -111,6 +113,7 @@ public class UndertowSessionTokenStore implements AdapterTokenStore {
         KeycloakUndertowAccount account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
         if (account == null) return;
         session.removeAttribute(KeycloakUndertowAccount.class.getName());
+        session.removeAttribute(KeycloakSecurityContext.class.getName());
     }
 
     @Override

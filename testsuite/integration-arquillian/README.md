@@ -152,6 +152,7 @@ integration-arquillian
       │
       ├──console          (activated by -Pconsole-ui-tests)
       ├──mod_auth_mellon  (activated by -Pmod_auth_mellon)
+      ├──console_no_users (activated by -Pconsole-ui-no-users-tests)
       └──...
 ```
 

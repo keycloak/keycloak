@@ -1171,16 +1171,7 @@ module.controller('CreateClientCtrl', function($scope, realm, client, templates,
 
 
     $scope.save = function() {
-
         $scope.client.protocol = $scope.protocol;
-
-        if ($scope.client.protocol == 'openid-connect' && !$scope.client.rootUrl) {
-            Notifications.error("You must specify the root URL of application");
-        }
-
-        if ($scope.client.protocol == 'saml' && !$scope.client.adminUrl) {
-            Notifications.error("You must specify the SAML Endpoint URL");
-        }
 
         Client.save({
             realm: realm.realm,
@@ -1599,8 +1590,8 @@ module.controller('ClientProtocolMapperListCtrl', function($scope, realm, client
 });
 
 module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo, client, mapper, ClientProtocolMapper, Notifications, Dialog, $location) {
-    /*
     $scope.realm = realm;
+    /*
     $scope.client = client;
     $scope.create = false;
     $scope.protocol = client.protocol;
@@ -1674,12 +1665,13 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
 });
 
 module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serverInfo, client, ClientProtocolMapper, Notifications, Dialog, $location) {
+    $scope.realm = realm;
+
     if (client.protocol == null) {
         client.protocol = 'openid-connect';
     }
     var protocol = client.protocol;
     /*
-    $scope.realm = realm;
     $scope.client = client;
     $scope.create = true;
     $scope.protocol = protocol;

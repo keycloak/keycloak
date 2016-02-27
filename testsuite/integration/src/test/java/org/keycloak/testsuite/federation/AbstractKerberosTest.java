@@ -192,6 +192,10 @@ public abstract class AbstractKerberosTest {
         loginPage.login("jduke", "theduke");
         changePasswordPage.assertCurrent();
 
+        // Bad existing password
+        changePasswordPage.changePassword("theduke-invalid", "newPass", "newPass");
+        Assert.assertTrue(driver.getPageSource().contains("Invalid existing password."));
+
         // Change password is not possible as editMode is READ_ONLY
         changePasswordPage.changePassword("theduke", "newPass", "newPass");
         Assert.assertTrue(driver.getPageSource().contains("You can't update your password as your account is read only"));

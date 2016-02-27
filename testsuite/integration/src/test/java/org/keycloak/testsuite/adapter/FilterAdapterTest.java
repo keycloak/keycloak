@@ -100,6 +100,7 @@ public class FilterAdapterTest {
 
     @Test
     public void testSavedPostRequest() throws Exception {
+        System.setProperty("insecure.user.principal.unsupported", "true");
         testStrategy.testSavedPostRequest();
     }
 

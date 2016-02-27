@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.auth.page;
 
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -38,7 +39,8 @@ public class WelcomePage extends AuthServer {
     private WebElement createButton;
 
     public boolean isPasswordSet() {
-        return !driver.getPageSource().contains("Please create an initial admin user to get started.");
+        return !(driver.getPageSource().contains("Please create an initial admin user to get started.") ||
+                 driver.getPageSource().contains("You need local access to create the initial admin user."));
     }
 
     public void setPassword(String username, String password) {
@@ -58,4 +60,8 @@ public class WelcomePage extends AuthServer {
         }
     }
 
+    public void navigateToAdminConsole() {
+        driver.findElement(By.linkText("Administration Console")).click();
+    }
+    
 }

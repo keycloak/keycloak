@@ -36,10 +36,10 @@ public interface TokenService {
 
     @POST
     @Path("/realms/{realm}/protocol/openid-connect/token")
-    public AccessTokenResponse grantToken(@PathParam("realm") String realm, MultivaluedMap<String, String> map);
+    AccessTokenResponse grantToken(@PathParam("realm") String realm, MultivaluedMap<String, String> map);
 
     @POST
     @Path("/realms/{realm}/protocol/openid-connect/token")
-    public AccessTokenResponse refreshToken(@PathParam("realm") String realm, MultivaluedMap<String, String> map);
+    AccessTokenResponse refreshToken(@PathParam("realm") String realm, MultivaluedMap<String, String> map);
 
 }

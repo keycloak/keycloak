@@ -17,7 +17,9 @@
 package org.keycloak.testsuite.arquillian;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -33,6 +35,8 @@ public final class TestContext {
     private final List<ContainerInfo> appServerBackendsInfo = new ArrayList<>();
 
     private boolean adminLoggedIn;
+    
+    private final Map customContext = new HashMap<>();
 
     public TestContext(SuiteContext suiteContext, Class testClass) {
         this.suiteContext = suiteContext;
@@ -86,6 +90,14 @@ public final class TestContext {
     public String toString() {
         return "TEST CONTEXT: " + getTestClass().getCanonicalName() + "\n"
                 + (isAdapterTest() ? "App server container: " + getAppServerInfo() + "\n" : "");
+    }
+
+    public Object getCustomValue(Object key) {
+        return customContext.get(key);
+    }
+    
+    public void setCustomValue(Object key, Object value) {
+        customContext.put(key, value);
     }
 
 }
