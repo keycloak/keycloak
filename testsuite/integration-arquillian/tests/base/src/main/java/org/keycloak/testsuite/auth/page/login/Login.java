@@ -18,6 +18,7 @@ package org.keycloak.testsuite.auth.page.login;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -36,6 +37,7 @@ public abstract class Login extends AuthRealm {
     public static final String OIDC = "openid-connect";
     public static final String SAML = "saml";
     public static final String LOGIN_ACTION = "login-action";
+    private String keycloakThemeCssName;
 
     @Override
     public UriBuilder createUriBuilder() {
@@ -58,15 +60,23 @@ public abstract class Login extends AuthRealm {
         return form;
     }
 
-    @FindBy(css = "link[href*='login/keycloak/css/login.css']")
-    private WebElement keycloakTheme;
+    public void setKeycloakThemeCssName(String name) {
+        keycloakThemeCssName = name;
+    }
+
+    protected By getKeycloakThemeLocator() {
+        if (keycloakThemeCssName == null) {
+            throw new IllegalStateException("keycloakThemeCssName property must be set");
+        }
+        return By.cssSelector("link[href*='login/" + keycloakThemeCssName + "/css/login.css']");
+    }
 
     public void waitForKeycloakThemeNotPresent() {
-        waitUntilElement(keycloakTheme).is().not().present();
+        waitUntilElement(getKeycloakThemeLocator()).is().not().present();
     }
 
     public void waitForKeycloakThemePresent() {
-        waitUntilElement(keycloakTheme).is().present();
+        waitUntilElement(getKeycloakThemeLocator()).is().present();
     }
 
 }

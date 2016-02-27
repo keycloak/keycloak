@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.keycloak.testsuite.arquillian.TestContext;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,6 +99,8 @@ public abstract class AbstractKeycloakTest {
     protected WelcomePage welcomePage;
 
     protected UserRepresentation adminUser;
+
+    private PropertiesConfiguration constantsProperties;
 
     @Before
     public void beforeAbstractKeycloakTest() {
@@ -203,6 +207,18 @@ public abstract class AbstractKeycloakTest {
     
     public RealmsResource realmsResouce() {
         return adminClient.realms();
+    }
+
+    private void loadConstantsProperties() throws ConfigurationException {
+        constantsProperties = new PropertiesConfiguration("test-constants.properties");
+        constantsProperties.setThrowExceptionOnMissing(true);
+    }
+
+    protected PropertiesConfiguration getConstantsProperties() throws ConfigurationException {
+        if (constantsProperties == null) {
+            loadConstantsProperties();
+        }
+        return constantsProperties;
     }
 
 }
