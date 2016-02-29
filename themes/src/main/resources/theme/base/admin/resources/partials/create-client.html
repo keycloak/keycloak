@@ -58,14 +58,14 @@
                 <kc-tooltip>{{:: 'client-template.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-hide="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="rootUrl">{{:: 'root-url' | translate}} <span class="required">*</span></label>
+                <label class="col-md-2 control-label" for="rootUrl">{{:: 'root-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" name="rootUrl" id="rootUrl" data-ng-model="client.rootUrl">
                 </div>
                 <kc-tooltip>{{:: 'root-url.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="protocol == 'saml'">
-                <label class="col-md-2 control-label" for="masterSamlUrl">{{:: 'client-saml-endpoint' | translate}} <span class="required">*</span></label>
+                <label class="col-md-2 control-label" for="masterSamlUrl">{{:: 'client-saml-endpoint' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" name="masterSamlUrl" id="masterSamlUrl"
                            data-ng-model="client.adminUrl">

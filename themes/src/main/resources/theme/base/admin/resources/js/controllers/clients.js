@@ -1171,16 +1171,7 @@ module.controller('CreateClientCtrl', function($scope, realm, client, templates,
 
 
     $scope.save = function() {
-
         $scope.client.protocol = $scope.protocol;
-
-        if ($scope.client.protocol == 'openid-connect' && !$scope.client.rootUrl) {
-            Notifications.error("You must specify the root URL of application");
-        }
-
-        if ($scope.client.protocol == 'saml' && !$scope.client.adminUrl) {
-            Notifications.error("You must specify the SAML Endpoint URL");
-        }
 
         Client.save({
             realm: realm.realm,
