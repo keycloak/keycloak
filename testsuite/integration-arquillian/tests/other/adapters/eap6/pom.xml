@@ -92,6 +92,32 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>configure-adapter-debug-log</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>transform</goal>
+                        </goals>
+                        <configuration>
+                            <transformationSets>
+                                <transformationSet>
+                                    <dir>${app.server.eap6.home}/standalone/configuration</dir>
+                                    <includes>
+                                        <include>standalone.xml</include>
+                                    </includes>
+                                    <stylesheet>src/main/xslt/add-adapter-log-level.xsl</stylesheet>
+                                    <outputDir>${app.server.eap6.home}/standalone/configuration</outputDir>
+                                </transformationSet>
+                            </transformationSets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
     
