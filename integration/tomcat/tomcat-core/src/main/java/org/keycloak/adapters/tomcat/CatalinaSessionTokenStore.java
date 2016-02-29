@@ -52,12 +52,22 @@ public class CatalinaSessionTokenStore extends CatalinaAdapterSessionStore imple
         // just in case session got serialized
         if (session.getDeployment() == null) session.setCurrentRequestInfo(deployment, this);
 
-        if (session.isActive() && !session.getDeployment().isAlwaysRefreshToken()) return;
+        if (session.isActive() && !session.getDeployment().isAlwaysRefreshToken()) {
+            request.setAttribute(KeycloakSecurityContext.class.getName(), session);
+            request.setUserPrincipal(account.getPrincipal());
+            request.setAuthType("KEYCLOAK");
+            return;
+        }
 
         // FYI: A refresh requires same scope, so same roles will be set.  Otherwise, refresh will fail and token will
         // not be updated
         boolean success = session.refreshExpiredToken(false);
-        if (success && session.isActive()) return;
+        if (success && session.isActive()) {
+            request.setAttribute(KeycloakSecurityContext.class.getName(), session);
+            request.setUserPrincipal(account.getPrincipal());
+            request.setAuthType("KEYCLOAK");
+            return;
+        }
 
         // Refresh failed, so user is already logged out from keycloak. Cleanup and expire our session
         log.fine("Cleanup and expire session " + catalinaSession.getId() + " after failed refresh");
@@ -68,6 +78,7 @@ public class CatalinaSessionTokenStore extends CatalinaAdapterSessionStore imple
     }
 
     protected void cleanSession(Session catalinaSession) {
+        catalinaSession.getSession().removeAttribute(KeycloakSecurityContext.class.getName());
         catalinaSession.getSession().removeAttribute(OidcKeycloakAccount.class.getName());
         catalinaSession.setPrincipal(null);
         catalinaSession.setAuthType(null);

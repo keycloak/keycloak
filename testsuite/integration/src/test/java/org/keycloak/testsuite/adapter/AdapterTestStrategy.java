@@ -143,6 +143,12 @@ public class AdapterTestStrategy extends ExternalResource {
         String pageSource = driver.getPageSource();
         System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("parameter=hello"));
+        // test that user principal and KeycloakSecurityContext available
+        driver.navigate().to(APP_SERVER_BASE_URL + "/input-portal/insecure");
+        System.out.println("insecure: ");
+        System.out.println(driver.getPageSource());
+        Assert.assertTrue(driver.getPageSource().contains("Insecure Page"));
+        if (System.getProperty("insecure.user.principal.unsupported") == null) Assert.assertTrue(driver.getPageSource().contains("UserPrincipal"));
 
         // test logout
 
