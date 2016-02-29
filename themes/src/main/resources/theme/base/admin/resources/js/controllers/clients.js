@@ -1590,8 +1590,8 @@ module.controller('ClientProtocolMapperListCtrl', function($scope, realm, client
 });
 
 module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo, client, mapper, ClientProtocolMapper, Notifications, Dialog, $location) {
-    /*
     $scope.realm = realm;
+    /*
     $scope.client = client;
     $scope.create = false;
     $scope.protocol = client.protocol;
@@ -1665,12 +1665,13 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
 });
 
 module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serverInfo, client, ClientProtocolMapper, Notifications, Dialog, $location) {
+    $scope.realm = realm;
+
     if (client.protocol == null) {
         client.protocol = 'openid-connect';
     }
     var protocol = client.protocol;
     /*
-    $scope.realm = realm;
     $scope.client = client;
     $scope.create = true;
     $scope.protocol = protocol;
