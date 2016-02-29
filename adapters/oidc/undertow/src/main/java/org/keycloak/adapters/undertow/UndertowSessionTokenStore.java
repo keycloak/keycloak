@@ -83,6 +83,7 @@ public class UndertowSessionTokenStore implements AdapterTokenStore {
         } else {
             log.debug("Account was not active, returning false");
             session.removeAttribute(KeycloakUndertowAccount.class.getName());
+            session.removeAttribute(KeycloakSecurityContext.class.getName());
             session.invalidate(exchange);
             return false;
         }

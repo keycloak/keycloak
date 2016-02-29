@@ -27,6 +27,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.util.JAXBSource;
@@ -108,6 +109,16 @@ public class TransformerUtil {
                     SecurityActions.setTCCL(TransformerUtil.class.getClassLoader());
                 }
                 transformerFactory = TransformerFactory.newInstance();
+                try {
+                    transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+                } catch (TransformerConfigurationException e) {
+                    throw new RuntimeException(e);
+                }
+
+                transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+
+                transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+
             } finally {
                 if (tccl_jaxp) {
                     SecurityActions.setTCCL(prevTCCL);
