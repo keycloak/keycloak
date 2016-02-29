@@ -146,6 +146,12 @@
                 <module>mod_auth_mellon</module>
             </modules>
         </profile>
+        <profile>
+            <id>jpa-performance</id>
+            <modules>
+                <module>jpa-performance</module>
+            </modules>
+        </profile>
     </profiles>
 
 </project>

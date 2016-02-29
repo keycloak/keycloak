@@ -108,6 +108,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <systemPropertyVariables>
+                            <project.build.directory>${project.build.directory}</project.build.directory>
                             <browser>${browser}</browser>
                             <firefox_binary>${firefox_binary}</firefox_binary>
                             <shouldDeploy>false</shouldDeploy>
@@ -221,6 +222,12 @@
                     <groupId>org.jboss.arquillian.graphene</groupId>
                     <artifactId>arquillian-browser-screenshooter</artifactId>
                     <version>2.1.0.Alpha3</version><!-- TODO upgrade <arquillian-graphene.version> and use ${arquillian-graphene.version} -->
+                </dependency>
+                
+                <dependency>
+                    <groupId>jfree</groupId>
+                    <artifactId>jfreechart</artifactId>
+                    <version>1.0.13</version>
                 </dependency>
                 
                 <!--                <dependency>
@@ -411,9 +418,82 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>xml-maven-plugin</artifactId>
                     </plugin>
+                    <plugin>
+                        <groupId>org.liquibase</groupId>
+                        <artifactId>liquibase-maven-plugin</artifactId>
+                    </plugin>
                 </plugins>
             </build>            
         </profile>
+        
+        <!-- MySQL -->
+        <profile>
+            <activation>
+                <property>
+                    <name>keycloak.connectionsJpa.driver</name>
+                    <value>com.mysql.jdbc.Driver</value>
+                </property>
+            </activation>
+            <id>mysql</id>
+            <dependencies>
+                <dependency>
+                    <groupId>mysql</groupId>
+                    <artifactId>mysql-connector-java</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- PostgreSQL -->
+        <profile>
+            <activation>
+                <property>
+                    <name>keycloak.connectionsJpa.driver</name>
+                    <value>org.postgresql.Driver</value>
+                </property>
+            </activation>
+            <id>postgresql</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>${postgresql.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        
+        <profile>
+            <id>clean-jpa</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.liquibase</groupId>
+                            <artifactId>liquibase-maven-plugin</artifactId>
+                            <configuration>
+                                <changeLogFile>META-INF/jpa-changelog-master.xml</changeLogFile>
+
+                                <url>${keycloak.connectionsJpa.url}</url>
+                                <driver>${keycloak.connectionsJpa.driver}</driver>
+                                <username>${keycloak.connectionsJpa.user}</username>
+                                <password>${keycloak.connectionsJpa.password}</password>
+
+                                <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
+                                <databaseClass>${keycloak.connectionsJpa.liquibaseDatabaseClass}</databaseClass>
+                            </configuration>
+                            <executions>
+                                <execution>
+                                    <id>clean-jpa</id>
+                                    <phase>clean</phase>
+                                    <goals>
+                                        <goal>dropAll</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>        
         
         <profile>
             <id>auth-server-wildfly</id>
