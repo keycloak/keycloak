@@ -68,7 +68,8 @@ public class ServletSessionTokenStore implements AdapterTokenStore {
             return true;
         } else {
             log.debug("Refresh failed. Account was not active. Returning null and invalidating Http session");
-            session.setAttribute(KeycloakUndertowAccount.class.getName(), null);
+            session.removeAttribute(KeycloakSecurityContext.class.getName());
+            session.removeAttribute(KeycloakUndertowAccount.class.getName());
             session.invalidate();
             return false;
         }
@@ -79,6 +80,7 @@ public class ServletSessionTokenStore implements AdapterTokenStore {
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpSession session = getSession(true);
         session.setAttribute(KeycloakUndertowAccount.class.getName(), account);
+        session.setAttribute(KeycloakSecurityContext.class.getName(), account.getKeycloakSecurityContext());
         sessionManagement.login(servletRequestContext.getDeployment().getSessionManager());
     }
 

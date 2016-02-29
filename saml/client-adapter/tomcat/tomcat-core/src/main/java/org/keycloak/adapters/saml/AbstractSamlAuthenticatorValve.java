@@ -151,6 +151,12 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
     public void invoke(Request request, Response response) throws IOException, ServletException {
         log.fine("*********************** SAML ************");
         try {
+            CatalinaHttpFacade facade = new CatalinaHttpFacade(response, request);
+            SamlDeployment deployment = deploymentContext.resolveDeployment(facade);
+            if (deployment != null) {
+                // sets request UserPrincipal if logged in.  we do this so that the UserPrincipal is available on unsecured, unconstrainted URLs
+                getTokenStore(request, facade, deployment).isLoggedIn();
+            }
             super.invoke(request, response);
         } finally {
         }

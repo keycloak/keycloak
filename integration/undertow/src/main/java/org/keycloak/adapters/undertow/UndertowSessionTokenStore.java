@@ -5,6 +5,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.Session;
 import io.undertow.util.Sessions;
 import org.jboss.logging.Logger;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
@@ -65,6 +66,7 @@ public class UndertowSessionTokenStore implements AdapterTokenStore {
         } else {
             log.debug("Account was not active, returning false");
             session.removeAttribute(KeycloakUndertowAccount.class.getName());
+            session.removeAttribute(KeycloakSecurityContext.class.getName());
             session.invalidate(exchange);
             return false;
         }
@@ -84,6 +86,7 @@ public class UndertowSessionTokenStore implements AdapterTokenStore {
     public void saveAccountInfo(OidcKeycloakAccount account) {
         Session session = Sessions.getOrCreateSession(exchange);
         session.setAttribute(KeycloakUndertowAccount.class.getName(), account);
+        session.setAttribute(KeycloakSecurityContext.class.getName(), account.getKeycloakSecurityContext());
         sessionManagement.login(session.getSessionManager());
     }
 
