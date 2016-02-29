@@ -166,10 +166,10 @@ public class ClientSettingsTest extends AbstractClientTest {
         for (int i = 0; i < count; i++) {
             String clientId = String.format("%s%02d", clientIdPrefix, i);
             ClientRepresentation cr = createOidcClientRep(CONFIDENTIAL, clientId, "http://example.test/*");
-            Timer.time();
+            Timer.DEFAULT.reset();
             Response r = testRealmResource().clients().create(cr);
             r.close();
-            Timer.time("create client");
+            Timer.DEFAULT.reset("create client");
         }
     }
 
