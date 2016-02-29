@@ -425,7 +425,6 @@ public class SAMLEndpoint {
         @Override
         protected SAMLDocumentHolder extractResponseDocument(String response) {
             byte[] samlBytes = PostBindingUtil.base64Decode(response);
-            String xml = new String(samlBytes);
             return SAMLRequestParser.parseResponseDocument(samlBytes);
         }
 

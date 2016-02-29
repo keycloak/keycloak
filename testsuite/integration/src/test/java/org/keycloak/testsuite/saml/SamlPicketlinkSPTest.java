@@ -22,8 +22,13 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.util.Environment;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ProtocolMapperModel;
@@ -66,7 +71,28 @@ import static org.junit.Assert.assertEquals;
  */
 public class SamlPicketlinkSPTest {
 
-    @ClassRule
+    // This test is ignored in IBM JDK due to the IBM JDK bug, which is handled in Keycloak SP ( org.keycloak.saml.common.parsers.AbstractParser ) but not in Picketlink SP
+    public static TestRule ignoreIBMJDK = new TestRule() {
+
+        @Override
+        public Statement apply(final Statement base, final Description description) {
+            return new Statement() {
+
+                @Override
+                public void evaluate() throws Throwable {
+                    if (Environment.IS_IBM_JAVA) {
+                        System.err.println("Ignore " + description.getDisplayName() + " because executing on IBM JDK");
+                    } else {
+                        base.evaluate();
+                    }
+                }
+
+            };
+        }
+
+    };
+
+
     public static SamlKeycloakRule keycloakRule = new SamlKeycloakRule() {
         @Override
         public void initWars() {
@@ -96,6 +122,12 @@ public class SamlPicketlinkSPTest {
             return "/saml/testsaml.json";
         }
     };
+
+    @ClassRule
+    public static TestRule chain = RuleChain
+            .outerRule(ignoreIBMJDK)
+            .around(keycloakRule);
+
 
     public static class SamlSPFacade extends HttpServlet {
         public static String samlResponse;
