@@ -6,6 +6,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import static org.keycloak.testsuite.util.WaitUtils.*;
+import org.openqa.selenium.By;
 
 /**
  *
@@ -42,6 +43,13 @@ public class User extends Users {
         return userTabs;
     }
 
+    public void setPassword(String password) throws Exception {
+        driver.findElement(By.id("password")).sendKeys(password);
+        driver.findElement(By.id("confirmPassword")).sendKeys(password);
+        driver.findElement(By.xpath("//button[@type='submit' and text()='Reset Password']")).click();
+        driver.findElement(By.xpath("//button[text()='Change password']")).click();
+    }
+    
     public class UserTabs {
 
         @FindBy(linkText = "Attributes")
