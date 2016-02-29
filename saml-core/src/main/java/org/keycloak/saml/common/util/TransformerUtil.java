@@ -111,13 +111,16 @@ public class TransformerUtil {
                 transformerFactory = TransformerFactory.newInstance();
                 try {
                     transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                } catch (TransformerConfigurationException e) {
-                    throw new RuntimeException(e);
+                } catch (TransformerConfigurationException ignored) {
+                    // some platforms don't support this.   For example our testsuite pulls Selenium which requires Xalan 2.7.1
                 }
+                try {
+                    transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
 
-                transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-
-                transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+                    transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+                } catch (Exception ignored) {
+                    // some platforms don't support this.   For example our testsuite pulls Selenium which requires Xalan 2.7.1
+                }
 
             } finally {
                 if (tccl_jaxp) {
