@@ -19,16 +19,12 @@
             <tr ng-repeat="(key, value) in user.attributes | toOrderedMapSortedByKey">
                 <td>{{key}}</td>
                 <td><input ng-model="user.attributes[key]" class="form-control" type="text" name="{{key}}" id="attribute-{{key}}" /></td>
-                <td class="kc-action-cell">
-                    <button type="button" class="btn btn-default btn-block btn-sm" data-ng-click="removeAttribute(key)">{{:: 'delete' | translate}}</button>
-                </td>
+                <td class="kc-action-cell" data-ng-click="removeAttribute(key)">{{:: 'delete' | translate}}</td>
             </tr>
             <tr>
                 <td><input ng-model="newAttribute.key" class="form-control" type="text" id="newAttributeKey" /></td>
                 <td><input ng-model="newAttribute.value" class="form-control" type="text" id="newAttributeValue" /></td>
-                <td class="kc-action-cell">
-                    <button class="btn btn-default btn-block btn-sm" data-ng-click="addAttribute()" data-ng-disabled="!newAttribute.key.length || !newAttribute.value.length">{{:: 'add' | translate}}</button>
-                </td>
+                <td class="kc-action-cell" data-ng-click="addAttribute()" data-ng-disabled="!newAttribute.key.length || !newAttribute.value.length">{{:: 'add' | translate}}</td>
             </tr>
             </tbody>
         </table>
