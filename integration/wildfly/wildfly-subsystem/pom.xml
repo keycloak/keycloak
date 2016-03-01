@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-parent</artifactId>
-        <version>1.8.2.Final-SNAPSHOT</version>
+        <version>1.8.2.Final</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
