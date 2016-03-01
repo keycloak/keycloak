@@ -20,7 +20,7 @@
     <properties>
         <product.name>RH-SSO</product.name>
         <product.name-html>\u003Cstrong\u003ERed Hat\u003C\u002Fstrong\u003E\u003Csup\u003E\u00AE\u003C\u002Fsup\u003E Single Sign On</product.name-html>
-        <product.version>7.0</product.version>
+        <product.version>7.0.0.ER2-SP2</product.version>
         <product.build-time>${timestamp}</product.build-time>
         <maven.compiler.target>1.7</maven.compiler.target>
         <maven.compiler.source>1.7</maven.compiler.source>
@@ -62,7 +62,7 @@
         <wildfly.build-tools.version>1.1.0.Final</wildfly.build-tools.version>
 
         <!-- this is EAP 6.4.5 -->
-        <jboss.version>7.5.5.Final-redhat-3</jboss.version>
+        <jboss.version>7.5.6.Final-redhat-2</jboss.version>
 
         <!--<servlet.api.30.version>1.0.2.Final</servlet.api.30.version>-->
         <google.zxing.version>3.2.1.redhat-3</google.zxing.version>
@@ -167,7 +167,6 @@
         <module>export-import</module>
         <module>util</module>
         <module>wildfly</module>
-        <module>testsuite</module>
         <module>examples</module>
     </modules>
 
@@ -176,7 +175,7 @@
             <dependency>
                 <groupId>org.jboss.bom</groupId>
                 <artifactId>eap6-supported-artifacts</artifactId>
-                <version>6.4.5.GA</version>
+                <version>6.4.6.GA</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
