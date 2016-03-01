@@ -31,8 +31,12 @@ import org.openqa.selenium.WebElement;
 public final class WaitUtils {
 
     public static final String PAGELOAD_TIMEOUT_PROP = "pageload.timeout";
+    
+    public static final String ELEMENTLOOKUP_TIMEOUT_PROP = "elementlookup.timeout";
 
     public static final Integer PAGELOAD_TIMEOUT = Integer.parseInt(System.getProperty(PAGELOAD_TIMEOUT_PROP, "60000"));
+    
+    public static final Integer ELEMENTLOOKUP_TIMEOUT = Integer.parseInt(System.getProperty(ELEMENTLOOKUP_TIMEOUT_PROP, "10000"));
 
     public static ElementBuilder<Void> waitUntilElement(By by) {
         return waitGui().until().element(by);
