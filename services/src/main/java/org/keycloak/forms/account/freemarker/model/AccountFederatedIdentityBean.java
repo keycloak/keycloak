@@ -79,7 +79,7 @@ public class AccountFederatedIdentityBean {
         this.identities = new LinkedList<FederatedIdentityEntry>(orderedSet); 
 
         // Removing last social provider is not possible if you don't have other possibility to authenticate
-        this.removeLinkPossible = availableIdentities > 1 || user.getFederationLink() != null || AccountService.isPasswordSet(user);
+        this.removeLinkPossible = availableIdentities > 1 || user.getFederationLink() != null || AccountService.isPasswordSet(session, realm, user);
     }
 
     private FederatedIdentityModel getIdentity(Set<FederatedIdentityModel> identities, String providerId) {

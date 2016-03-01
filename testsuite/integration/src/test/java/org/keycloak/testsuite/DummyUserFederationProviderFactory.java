@@ -25,6 +25,7 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 
@@ -43,9 +44,11 @@ public class DummyUserFederationProviderFactory implements UserFederationProvide
     private AtomicInteger fullSyncCounter = new AtomicInteger();
     private AtomicInteger changedSyncCounter = new AtomicInteger();
 
+    private Map<String, UserModel> users = new HashMap<String, UserModel>();
+
     @Override
     public UserFederationProvider getInstance(KeycloakSession session, UserFederationProviderModel model) {
-        return new DummyUserFederationProvider();
+        return new DummyUserFederationProvider(users);
     }
 
     @Override
@@ -57,7 +60,7 @@ public class DummyUserFederationProviderFactory implements UserFederationProvide
 
     @Override
     public UserFederationProvider create(KeycloakSession session) {
-        return new DummyUserFederationProvider();
+        return new DummyUserFederationProvider(users);
     }
 
     @Override
