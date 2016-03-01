@@ -113,6 +113,7 @@ public class TransformerUtil {
                     transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
                 } catch (TransformerConfigurationException ignored) {
                     // some platforms don't support this.   For example our testsuite pulls Selenium which requires Xalan 2.7.1
+                    logger.warn("XML External Entity switches are not supported.  You may get XML injection vulnerabilities.");
                 }
                 try {
                     transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
@@ -120,6 +121,7 @@ public class TransformerUtil {
                     transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
                 } catch (Exception ignored) {
                     // some platforms don't support this.   For example our testsuite pulls Selenium which requires Xalan 2.7.1
+                    logger.warn("XML External Entity switches are not supported.  You may get XML injection vulnerabilities.");
                 }
 
             } finally {

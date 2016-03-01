@@ -1315,10 +1315,9 @@ module.factory('PasswordPolicy', function() {
         if (!policies || policies.length == 0) {
             return "";
         }
-
         var policyString = "";
 
-        for (var i in policies){
+        for (var i = 0; i < policies.length; i++) {
             policyString += policies[i].name;
             if ( policies[i].value ){
                 policyString += '(' + policies[i].value + ')';
