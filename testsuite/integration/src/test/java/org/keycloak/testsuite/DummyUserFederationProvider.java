@@ -39,7 +39,11 @@ import java.util.Set;
  */
 public class DummyUserFederationProvider implements UserFederationProvider {
 
-    private static Map<String, UserModel> users = new HashMap<String, UserModel>();
+    private final Map<String, UserModel> users;
+
+    public DummyUserFederationProvider(Map<String, UserModel> users) {
+        this.users = users;
+    }
 
     @Override
     public UserModel validateAndProxy(RealmModel realm, UserModel local) {
