@@ -38,6 +38,7 @@ import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet.UserSessionStatus;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
+import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -102,6 +103,9 @@ public abstract class AbstractIdentityProviderTest {
 
     @WebResource
     protected OAuthGrantPage grantPage;
+
+    @WebResource
+    AccountUpdateProfilePage accountUpdateProfilePage;
 
     @WebResource
     protected AccountPasswordPage changePasswordPage;
