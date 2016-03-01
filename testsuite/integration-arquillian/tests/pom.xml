@@ -67,6 +67,8 @@
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
         
+        <auth.server.java.home>${java.home}</auth.server.java.home>
+        
     </properties>
 
     <dependencyManagement>
@@ -120,6 +122,7 @@
                             <auth.server.management.port>${auth.server.management.port}</auth.server.management.port>
                             <auth.server.management.port.jmx>${auth.server.management.port.jmx}</auth.server.management.port.jmx>
                             <auth.server.ssl.required>${auth.server.ssl.required}</auth.server.ssl.required>
+                            <auth.server.java.home>${auth.server.java.home}</auth.server.java.home>
                             <startup.timeout.sec>${startup.timeout.sec}</startup.timeout.sec>
                             <jboss.server.config.dir>${jboss.server.config.dir}</jboss.server.config.dir>
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>

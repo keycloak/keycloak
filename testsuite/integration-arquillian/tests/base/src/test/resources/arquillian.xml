@@ -63,6 +63,7 @@
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Djboss.bind.address=0.0.0.0 -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+            <property name="javaHome">${auth.server.java.home}</property>
         </configuration>
     </container>
     
@@ -134,6 +135,7 @@
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Djboss.bind.address=0.0.0.0 -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
             <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
             <property name="managementPort">${auth.server.management.port}</property>
+            <property name="javaHome">${auth.server.java.home}</property>
         </configuration>
     </container>
 
