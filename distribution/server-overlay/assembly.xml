@@ -82,12 +82,12 @@
         <file>
             <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user.sh</source>
             <outputDirectory>bin</outputDirectory>
-            <destName>add-user-keycloak.sh</destName>
+            <destName>add-user.sh</destName>
         </file>
         <file>
             <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user.bat</source>
             <outputDirectory>bin</outputDirectory>
-            <destName>add-user-keycloak.bat</destName>
+            <destName>add-user.bat</destName>
         </file>
     </files>
 
