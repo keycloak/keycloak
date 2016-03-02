@@ -41,11 +41,7 @@
                     <span ng-if="!$first">, </span><a href="#/realms/{{realm.realm}}/users/{{user.id}}/offline-sessions/{{additionalGrant.client}}">{{additionalGrant.key}}</a>
                 </span>
             </td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" ng-click="revokeConsent(consent.clientId)">
-                    <i class="pficon pficon-delete"></i> {{:: 'revoke' | translate}}
-                </button>
-            </td>
+            <td class="kc-action-cell" ng-click="revokeConsent(consent.clientId)">{{:: 'revoke' | translate}}</td>
         </tr>
         </tbody>
     </table>

@@ -336,23 +336,23 @@ h1 i {
 
 /* Action cell */
 .kc-action-cell {
-    position: relative;
-    width: 100px;
+    background-color: #eeeeee;
+    background-image: linear-gradient(to bottom, #fafafa 0%, #ededed 100%);
+    background-repeat: repeat-x;
+
+    text-align: center;
+    vertical-align: middle;
+
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    cursor:pointer;
 }
 
-.kc-action-cell .btn {
-    border: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.kc-action-cell:hover {
+    background-color: #eeeeee;
+    background-image: none;
 }
 
 .kc-sorter span {
