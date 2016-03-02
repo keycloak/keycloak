@@ -36,7 +36,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 public class ConcurrentTransactionsTest extends AbstractModelTest {
 
     @Test
-    @Ignore
     public void persistClient() throws Exception {
         RealmModel realm = realmManager.createRealm("original");
         KeycloakSession session = realmManager.getSession();
@@ -128,6 +127,8 @@ public class ConcurrentTransactionsTest extends AbstractModelTest {
 
         thread1.join();
         thread2.join();
+
+        System.out.println("after thread join");
 
         commit();
 

@@ -39,9 +39,11 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -52,6 +54,14 @@ public class JpaRealmProvider implements RealmProvider {
     protected static final Logger logger = Logger.getLogger(JpaRealmProvider.class);
     private final KeycloakSession session;
     protected EntityManager em;
+
+    // we have a local map of adapter classes for two reasons
+    // 1. So we don't have to allocate one again
+    // 2. So that we can do em.refresh() on the entity to make sure the state
+    // is up to date.  If em.find is called a second time without a session, the same
+    // entity instance is returned.  With the caching layer above it, it will cache stale
+    // entries.
+    protected Map<String, Object> adapters = new HashMap<>();
 
 
     public JpaRealmProvider(KeycloakSession session, EntityManager em) {
@@ -76,21 +86,28 @@ public class JpaRealmProvider implements RealmProvider {
         realm.setId(id);
         em.persist(realm);
         em.flush();
-        final RealmModel model = new RealmAdapter(session, em, realm);
+        final RealmModel adapter = new RealmAdapter(session, em, realm);
         session.getKeycloakSessionFactory().publish(new RealmModel.RealmCreationEvent() {
             @Override
             public RealmModel getCreatedRealm() {
-                return model;
+                return adapter;
             }
         });
-        return model;
+        adapters.put(id, adapter);
+        return adapter;
     }
 
     @Override
     public RealmModel getRealm(String id) {
+        RealmAdapter adapter = (RealmAdapter)findJpaModel(id);
+        if (adapter != null) {
+            return adapter;
+        }
         RealmEntity realm = em.find(RealmEntity.class, id);
         if (realm == null) return null;
-        return new RealmAdapter(session, em, realm);
+        adapter = new RealmAdapter(session, em, realm);
+        adapters.put(id, adapter);
+        return adapter;
     }
 
     @Override
@@ -124,8 +141,10 @@ public class JpaRealmProvider implements RealmProvider {
         if (realm == null) {
             return false;
         }
+        em.refresh(realm);
         RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
+        adapters.remove(id);
         int num = em.createNamedQuery("deleteGroupRoleMappingsByRealm")
                 .setParameter("realm", realm).executeUpdate();
         num = em.createNamedQuery("deleteGroupAttributesByRealm")
@@ -174,7 +193,9 @@ public class JpaRealmProvider implements RealmProvider {
         entity.setRealmId(realm.getId());
         em.persist(entity);
         em.flush();
-        return new RoleAdapter(session, realm, em, entity);
+        RoleAdapter adapter = new RoleAdapter(session, realm, em, entity);
+        adapters.put(id, adapter);
+        return adapter;
 
     }
 
@@ -203,7 +224,9 @@ public class JpaRealmProvider implements RealmProvider {
         roleEntity.setRealmId(realm.getId());
         em.persist(roleEntity);
         em.flush();
-        return new RoleAdapter(session, realm, em, roleEntity);
+        RoleAdapter adapter = new RoleAdapter(session, realm, em, roleEntity);
+        adapters.put(id, adapter);
+        return adapter;
     }
 
     @Override
@@ -247,11 +270,12 @@ public class JpaRealmProvider implements RealmProvider {
     @Override
     public boolean removeRole(RealmModel realm, RoleModel role) {
         session.users().preRemove(realm, role);
-        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
         RoleContainerModel container = role.getContainer();
         if (container.getDefaultRoles().contains(role.getName())) {
             container.removeDefaultRoles(role.getName());
         }
+        adapters.remove(role.getId());
+        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
         em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
@@ -260,25 +284,35 @@ public class JpaRealmProvider implements RealmProvider {
 
         em.remove(roleEntity);
         em.flush();
-
         return true;
 
     }
 
     @Override
     public RoleModel getRoleById(String id, RealmModel realm) {
+        RoleAdapter adapter = (RoleAdapter)findJpaModel(id);
+        if (adapter != null) {
+            if (!realm.getId().equals(adapter.getEntity().getRealmId())) return null;
+            return adapter;
+        }
         RoleEntity entity = em.find(RoleEntity.class, id);
         if (entity == null) return null;
         if (!realm.getId().equals(entity.getRealmId())) return null;
-        return new RoleAdapter(session, realm, em, entity);
+        adapter = new RoleAdapter(session, realm, em, entity);
+        adapters.put(id, adapter);
+        return adapter;
     }
 
     @Override
     public GroupModel getGroupById(String id, RealmModel realm) {
+        GroupAdapter adapter = (GroupAdapter)findJpaModel(id);
+        if (adapter != null) return adapter;
         GroupEntity groupEntity = em.find(GroupEntity.class, id);
         if (groupEntity == null) return null;
         if (!groupEntity.getRealm().getId().equals(realm.getId())) return null;
-        return new GroupAdapter(realm, em, groupEntity);
+        adapter =  new GroupAdapter(realm, em, groupEntity);
+        adapters.put(id, adapter);
+        return adapter;
     }
 
     @Override
@@ -326,6 +360,7 @@ public class JpaRealmProvider implements RealmProvider {
         }
 
         session.users().preRemove(realm, group);
+        adapters.remove(group.getId());
 
         realm.removeDefaultGroup(group);
         for (GroupModel subGroup : group.getSubGroups()) {
@@ -361,7 +396,9 @@ public class JpaRealmProvider implements RealmProvider {
         groupEntity.setRealm(realmEntity);
         em.persist(groupEntity);
 
-        return new GroupAdapter(realm, em, groupEntity);
+        GroupAdapter adapter = new GroupAdapter(realm, em, groupEntity);
+        adapters.put(id, adapter);
+        return adapter;
     }
 
     @Override
@@ -391,6 +428,8 @@ public class JpaRealmProvider implements RealmProvider {
         em.persist(entity);
         em.flush();
         final ClientModel resource = new ClientAdapter(realm, em, session, entity);
+        adapters.put(id, resource);
+
         em.flush();
         session.getKeycloakSessionFactory().publish(new RealmModel.ClientCreationEvent() {
             @Override
@@ -416,14 +455,39 @@ public class JpaRealmProvider implements RealmProvider {
 
     }
 
+    protected JpaModel findJpaModel(String id) {
+        // we have a local map of adapter classes for two reasons
+        // 1. So we don't have to allocate one again
+        // 2. So that we can do em.refresh() on the entity to make sure the state
+        // is up to date.  If em.find is called a second time without a session, the same
+        // entity instance is returned as its already in the first level cache.  With the caching layer above it, it will cache stale
+        // entries.
+        JpaModel client = (JpaModel)adapters.get(id);
+        if (client != null) {
+            if (em.contains(client.getEntity())) {
+                em.flush(); // have to flush as refresh blows away updates
+                em.refresh(client.getEntity());
+                return client;
+            }
+        }
+        return null;
+
+    }
 
     @Override
     public ClientModel getClientById(String id, RealmModel realm) {
+        ClientAdapter client = (ClientAdapter)findJpaModel(id);
+        if (client != null) {
+            if (!realm.getId().equals(client.getRealm().getId())) return null;
+            return client;
+        }
         ClientEntity app = em.find(ClientEntity.class, id);
-
         // Check if application belongs to this realm
         if (app == null || !realm.getId().equals(app.getRealm().getId())) return null;
-        return new ClientAdapter(realm, em, session, app);
+        client = new ClientAdapter(realm, em, session, app);
+        adapters.put(id, client);
+        return client;
+
     }
 
     @Override
@@ -459,15 +523,23 @@ public class JpaRealmProvider implements RealmProvider {
             logger.errorv("Unable to delete client entity: {0} from realm {1}", client.getClientId(), realm.getName());
             throw e;
         }
+        adapters.remove(id);
         return true;
     }
 
     @Override
     public ClientTemplateModel getClientTemplateById(String id, RealmModel realm) {
+        ClientTemplateAdapter adapter = (ClientTemplateAdapter)findJpaModel(id);
+        if (adapter != null) {
+            if (!realm.getId().equals(adapter.getRealm().getId())) return null;
+            return adapter;
+        }
         ClientTemplateEntity app = em.find(ClientTemplateEntity.class, id);
 
         // Check if application belongs to this realm
         if (app == null || !realm.getId().equals(app.getRealm().getId())) return null;
-        return new ClientTemplateAdapter(realm, em, session, app);
+        adapter = new ClientTemplateAdapter(realm, em, session, app);
+        adapters.put(id, adapter);
+        return adapter;
     }
 }
