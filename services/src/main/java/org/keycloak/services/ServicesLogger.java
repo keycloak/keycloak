@@ -401,4 +401,8 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=90, value="Failed to close ProviderSession")
     void failedToCloseProviderSession(@Cause Throwable t);
+
+    @LogMessage(level = WARN)
+    @Message(id=91, value="Forced release of DB lock at startup requested by System property. Make sure to not use this in production environment! And especially when more cluster nodes are started concurrently.")
+    void forcedReleaseDBLock();
 }
