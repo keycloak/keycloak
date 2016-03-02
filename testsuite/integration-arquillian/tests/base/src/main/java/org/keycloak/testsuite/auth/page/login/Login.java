@@ -40,7 +40,7 @@ public abstract class Login extends AuthRealm {
     @Override
     public UriBuilder createUriBuilder() {
         return super.createUriBuilder()
-                .path((getProtocol().equals(OIDC) || getProtocol().equals(SAML)) ? "protocol/" : "" + "{" + PROTOCOL + "}" + (getProtocol().equals(OIDC) ? "/auth" : ""));
+                .path(((getProtocol().equals(OIDC) || getProtocol().equals(SAML)) ? "protocol/" : "") + "{" + PROTOCOL + "}" + (getProtocol().equals(OIDC) ? "/auth" : ""));
     }
     
     public void setProtocol(String protocol) {

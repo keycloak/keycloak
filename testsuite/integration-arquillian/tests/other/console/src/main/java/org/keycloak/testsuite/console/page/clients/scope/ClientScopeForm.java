@@ -31,7 +31,7 @@ import org.openqa.selenium.support.FindBy;
  */
 public class ClientScopeForm extends Form {
 
-    @FindBy(className = "onoffswitch")
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='fullScopeAllowed']]")
     private OnOffSwitch fullScopeAllowedSwitch;
     
 

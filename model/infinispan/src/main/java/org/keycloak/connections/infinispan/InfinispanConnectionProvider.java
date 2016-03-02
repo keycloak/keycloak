@@ -25,6 +25,7 @@ import org.keycloak.provider.Provider;
  */
 public interface InfinispanConnectionProvider extends Provider {
 
+    public static final String VERSION_CACHE_NAME = "realmVersions";
     static final String REALM_CACHE_NAME = "realms";
     static final String USER_CACHE_NAME = "users";
     static final String SESSION_CACHE_NAME = "sessions";

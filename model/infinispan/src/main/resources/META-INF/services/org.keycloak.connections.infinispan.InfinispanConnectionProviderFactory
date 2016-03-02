@@ -16,4 +16,3 @@
 #
 
 org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory
-org.keycloak.models.cache.infinispan.locking.LockingConnectionProviderFactory

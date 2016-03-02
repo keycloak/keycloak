@@ -30,12 +30,8 @@
             <td><a href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">{{instance.displayName}}</a></td>
             <td>{{instance.providerName|capitalize}}</td>
             <td>{{instance.priority}}</td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">{{:: 'edit' | translate}}</button>
-            </td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="removeUserFederation(instance)">{{:: 'delete' | translate}}</button>
-            </td>
+            <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">{{:: 'edit' | translate}}</td>
+            <td class="kc-action-cell" data-ng-click="removeUserFederation(instance)">{{:: 'delete' | translate}}</td>
          </tr>
         <tr data-ng-show="!instances || instances.length == 0">
             <td class="text-muted">{{:: 'no-user-federation-providers-configured' | translate}}</td>

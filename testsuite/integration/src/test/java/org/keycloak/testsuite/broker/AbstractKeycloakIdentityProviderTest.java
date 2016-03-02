@@ -19,6 +19,7 @@ package org.keycloak.testsuite.broker;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Set;
 
 import javax.mail.MessagingException;
@@ -39,9 +40,11 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.Urls;
+import org.keycloak.testsuite.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -530,5 +533,65 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
     }
 
     protected abstract void doAssertTokenRetrieval(String pageSource);
+
+    @Test
+    public void testWithLinkedFederationProvider() throws Exception {
+        // Add federationProvider to realm. It's configured with sync registrations
+        RealmModel realm = getRealm();
+        UserFederationProviderModel dummyModel = realm.addUserFederationProvider(DummyUserFederationProviderFactory.PROVIDER_NAME, new HashMap<String, String>(), 1, "test-dummy", -1, -1, 0);
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
+
+        brokerServerRule.stopSession(session, true);
+        session = brokerServerRule.startSession();
+
+        try {
+            // Login as user "test-user" to account management.
+            authenticateWithIdentityProvider(getIdentityProviderModel(), "test-user", false);
+            changePasswordPage.realm("realm-with-broker");
+            changePasswordPage.open();
+            assertTrue(changePasswordPage.isCurrent());
+
+            // Assert changing password with old password "secret" as this is the password from federationProvider (See DummyUserFederationProvider)
+            changePasswordPage.changePassword("new-password", "new-password");
+            Assert.assertEquals("Please specify password.", accountUpdateProfilePage.getError());
+
+            changePasswordPage.changePassword("bad", "new-password", "new-password");
+            Assert.assertEquals("Invalid existing password.", accountUpdateProfilePage.getError());
+
+            changePasswordPage.changePassword("secret", "new-password", "new-password");
+            Assert.assertEquals("Your password has been updated.", accountUpdateProfilePage.getSuccess());
+
+            // Logout
+            driver.navigate().to("http://localhost:8081/test-app/logout");
+
+
+            // Login as user "test-user-noemail" .
+            authenticateWithIdentityProvider(getIdentityProviderModel(), "test-user-noemail", false);
+            changePasswordPage.open();
+            assertTrue(changePasswordPage.isCurrent());
+
+            //  Assert old password is not required as federationProvider doesn't have it for this user
+            changePasswordPage.changePassword("new-password", "new-password");
+            Assert.assertEquals("Your password has been updated.", accountUpdateProfilePage.getSuccess());
+
+            // Now it is required as it's set on model
+            changePasswordPage.changePassword("new-password2", "new-password2");
+            Assert.assertEquals("Please specify password.", accountUpdateProfilePage.getError());
+
+            changePasswordPage.changePassword("new-password", "new-password2", "new-password2");
+            Assert.assertEquals("Your password has been updated.", accountUpdateProfilePage.getSuccess());
+
+            // Logout
+            driver.navigate().to("http://localhost:8081/test-app/logout");
+        } finally {
+
+            // remove dummy federation provider for this realm
+            realm = getRealm();
+            realm.removeUserFederationProvider(dummyModel);
+
+            brokerServerRule.stopSession(session, true);
+            session = brokerServerRule.startSession();
+        }
+    }
 
 }

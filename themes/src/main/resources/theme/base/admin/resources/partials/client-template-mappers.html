@@ -40,12 +40,8 @@
             <td><a href="#/realms/{{realm.realm}}/client-templates/{{template.id}}/mappers/{{mapper.id}}">{{mapper.name}}</a></td>
             <td>{{mapperTypes[mapper.protocolMapper].category}}</td>
             <td>{{mapperTypes[mapper.protocolMapper].name}}</td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/client-templates/{{template.id}}/mappers/{{mapper.id}}">{{:: 'edit' | translate}}</button>
-            </td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="removeMapper(mapper)">{{:: 'delete' | translate}}</button>
-            </td>
+            <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/client-templates/{{template.id}}/mappers/{{mapper.id}}">{{:: 'edit' | translate}}</td>
+            <td class="kc-action-cell" data-ng-click="removeMapper(mapper)">{{:: 'delete' | translate}}</td>
         </tr>
         <tr data-ng-show="mappers.length == 0">
             <td>{{:: 'no-mappers-available' | translate}}</td>

@@ -39,7 +39,7 @@ public class MigrateTo1_9_0 {
 
     public void migrate(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
-        if (realm != null && realm.getDisplayNameHtml().equals("<strong>Keycloak</strong>")) {
+        if (realm != null && realm.getDisplayNameHtml() != null && realm.getDisplayNameHtml().equals("<strong>Keycloak</strong>")) {
             realm.setDisplayNameHtml("<div class=\"kc-logo-text\"><span>Keycloak</span></div>");
         }
     }

@@ -52,7 +52,7 @@ public abstract class CommonKerberosConfig {
         return getConfig().get(KerberosConstants.KEYTAB);
     }
 
-    public boolean getDebug() {
+    public boolean isDebug() {
         return Boolean.valueOf(getConfig().get(KerberosConstants.DEBUG));
     }
 

@@ -24,7 +24,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.entities.CachedGroup;
+import org.keycloak.models.cache.infinispan.entities.CachedGroup;
 
 import java.util.HashSet;
 import java.util.List;

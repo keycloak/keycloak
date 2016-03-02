@@ -25,8 +25,10 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserModel;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,7 +39,11 @@ import java.util.Set;
  */
 public class DummyUserFederationProvider implements UserFederationProvider {
 
-    private static Map<String, UserModel> users = new HashMap<String, UserModel>();
+    private final Map<String, UserModel> users;
+
+    public DummyUserFederationProvider(Map<String, UserModel> users) {
+        this.users = users;
+    }
 
     @Override
     public UserModel validateAndProxy(RealmModel realm, UserModel local) {
@@ -97,27 +103,39 @@ public class DummyUserFederationProvider implements UserFederationProvider {
 
     @Override
     public boolean isValid(RealmModel realm, UserModel local) {
-        return false;
+        String username = local.getUsername();
+        return users.containsKey(username);
     }
 
     @Override
     public Set<String> getSupportedCredentialTypes(UserModel user) {
-        return Collections.emptySet();
+        // Just user "test-user" is able to validate password with this federationProvider
+        if (user.getUsername().equals("test-user")) {
+            return Collections.singleton(UserCredentialModel.PASSWORD);
+        } else {
+            return Collections.emptySet();
+        }
     }
 
     @Override
     public Set<String> getSupportedCredentialTypes() {
-        return Collections.emptySet();
+        return Collections.singleton(UserCredentialModel.PASSWORD);
     }
 
     @Override
     public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
+        if (user.getUsername().equals("test-user") && input.size() == 1) {
+            UserCredentialModel password = input.get(0);
+            if (password.getType().equals(UserCredentialModel.PASSWORD)) {
+                return "secret".equals(password.getValue());
+            }
+        }
         return false;
     }
 
     @Override
     public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        return false;
+        return validCredentials(realm, user, Arrays.asList(input));
     }
 
     @Override

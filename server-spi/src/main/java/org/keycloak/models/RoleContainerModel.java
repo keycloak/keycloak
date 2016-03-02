@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -24,6 +25,8 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface RoleContainerModel {
+    String getId();
+
     RoleModel getRole(String name);
 
     RoleModel addRole(String name);
@@ -34,4 +37,11 @@ public interface RoleContainerModel {
 
     Set<RoleModel> getRoles();
 
+    List<String> getDefaultRoles();
+
+    void addDefaultRole(String name);
+
+    void updateDefaultRoles(String... defaultRoles);
+
+    void removeDefaultRoles(String... defaultRoles);
 }

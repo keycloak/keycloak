@@ -683,6 +683,21 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public void removeDefaultRoles(String... defaultRoles) {
+        Collection<RoleEntity> entities = realm.getDefaultRoles();
+        List<RoleEntity> remove = new ArrayList<RoleEntity>();
+        for (RoleEntity rel : entities) {
+            if (contains(rel.getName(), defaultRoles)) {
+                remove.add(rel);
+            }
+        }
+        for (RoleEntity entity : remove) {
+            entities.remove(entity);
+        }
+        em.flush();
+     }
+
+    @Override
     public List<GroupModel> getDefaultGroups() {
         Collection<GroupEntity> entities = realm.getDefaultGroups();
         if (entities == null || entities.isEmpty()) return Collections.EMPTY_LIST;
@@ -723,45 +738,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<ClientModel> getClients() {
-        TypedQuery<ClientEntity> query = em.createNamedQuery("getClientsByRealm", ClientEntity.class);
-        query.setParameter("realm", realm);
-        List<ClientEntity> clients = query.getResultList();
-        if (clients.isEmpty()) return Collections.EMPTY_LIST;
-        List<ClientModel> list = new LinkedList<>();
-        for (ClientEntity entity : clients) {
-            list.add(new ClientAdapter(this, em, session, entity));
-        }
-      return Collections.unmodifiableList(list);
+        return session.realms().getClients(this);
     }
 
     @Override
     public ClientModel addClient(String name) {
-        return this.addClient(KeycloakModelUtils.generateId(), name);
+        return session.realms().addClient(this, name);
     }
 
     @Override
     public ClientModel addClient(String id, String clientId) {
-        if (clientId == null) {
-            clientId = id;
-        }
-        ClientEntity entity = new ClientEntity();
-        entity.setId(id);
-        entity.setClientId(clientId);
-        entity.setEnabled(true);
-        entity.setStandardFlowEnabled(true);
-        entity.setRealm(realm);
-        realm.getClients().add(entity);
-        em.persist(entity);
-        em.flush();
-        final ClientModel resource = new ClientAdapter(this, em, session, entity);
-        em.flush();
-        session.getKeycloakSessionFactory().publish(new ClientCreationEvent() {
-            @Override
-            public ClientModel getCreatedClient() {
-                return resource;
-            }
-        });
-        return resource;
+        return session.realms().addClient(this, id, clientId);
     }
 
     @Override
@@ -956,7 +943,7 @@ public class RealmAdapter implements RealmModel {
             em.remove(entity);
         }
 
-        List<UserFederationProviderModel> add = new LinkedList<UserFederationProviderModel>();
+        List<UserFederationProviderModel> add = new LinkedList<>();
         for (UserFederationProviderModel model : providers) {
             boolean found = false;
             for (UserFederationProviderEntity entity : realm.getUserFederationProviders()) {
@@ -1008,64 +995,27 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRole(String name) {
-        TypedQuery<RoleEntity> query = em.createNamedQuery("getRealmRoleByName", RoleEntity.class);
-        query.setParameter("name", name);
-        query.setParameter("realm", realm);
-        List<RoleEntity> roles = query.getResultList();
-        if (roles.size() == 0) return null;
-        return new RoleAdapter(this, em, roles.get(0));
+        return session.realms().getRealmRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String name) {
-        return this.addRole(KeycloakModelUtils.generateId(), name);
+        return session.realms().addRealmRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
-        RoleEntity entity = new RoleEntity();
-        entity.setId(id);
-        entity.setName(name);
-        entity.setRealm(realm);
-        entity.setRealmId(realm.getId());
-        realm.getRoles().add(entity);
-        em.persist(entity);
-        em.flush();
-        return new RoleAdapter(this, em, entity);
+        return session.realms().addRealmRole(this, id, name);
     }
 
     @Override
     public boolean removeRole(RoleModel role) {
-        if (role == null) {
-            return false;
-        }
-        if (!role.getContainer().equals(this)) return false;
-        session.users().preRemove(this, role);
-        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
-        realm.getRoles().remove(roleEntity);
-        realm.getDefaultRoles().remove(roleEntity);
-
-        String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
-        em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
-        em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
-        em.createNamedQuery("deleteTemplateScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
-        em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
-
-        em.remove(roleEntity);
-        em.flush();
-
-        return true;
+        return session.realms().removeRole(this, role);
     }
 
     @Override
     public Set<RoleModel> getRoles() {
-        Collection<RoleEntity> roles = realm.getRoles();
-        if (roles == null) return Collections.EMPTY_SET;
-        Set<RoleModel> list = new HashSet<RoleModel>();
-        for (RoleEntity entity : roles) {
-            list.add(new RoleAdapter(this, em, entity));
-        }
-        return Collections.unmodifiableSet(list);
+        return session.realms().getRealmRoles(this);
     }
 
     @Override
@@ -1259,9 +1209,14 @@ public class RealmAdapter implements RealmModel {
         if (masterAdminClient == null) {
             return null;
         }
-
-        RealmAdapter masterRealm = new RealmAdapter(session, em, masterAdminClient.getRealm());
-        return new ClientAdapter(masterRealm, em, session, masterAdminClient);
+        RealmModel masterRealm = null;
+        String masterAdminClientRealmId = masterAdminClient.getRealm().getId();
+        if (masterAdminClientRealmId.equals(getId())) {
+            masterRealm = this;
+        } else {
+            masterRealm = session.realms().getRealm(masterAdminClientRealmId);
+        }
+        return session.realms().getClientById(masterAdminClient.getId(), masterRealm);
     }
 
     @Override
@@ -2033,16 +1988,24 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public GroupModel createGroup(String name) {
+        return session.realms().createGroup(this, name);
+    }
+
+    @Override
+    public GroupModel createGroup(String id, String name) {
+        return session.realms().createGroup(this, id, name);
+    }
+
+    @Override
+    public void addTopLevelGroup(GroupModel subGroup) {
+        session.realms().addTopLevelGroup(this, subGroup);
+
+    }
+
+    @Override
     public void moveGroup(GroupModel group, GroupModel toParent) {
-        if (toParent != null && group.getId().equals(toParent.getId())) {
-            return;
-        }
-        if (group.getParentId() != null) {
-            group.getParent().removeChild(group);
-        }
-        group.setParent(toParent);
-        if (toParent != null) toParent.addChild(group);
-        else addTopLevelGroup(group);
+        session.realms().moveGroup(this, group, toParent);
     }
 
     @Override
@@ -2052,74 +2015,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<GroupModel> getGroups() {
-        List<GroupEntity> groups =  em.createNamedQuery("getAllGroupsByRealm").setParameter("realm", realm).getResultList();
-        if (groups == null) return Collections.EMPTY_LIST;
-        List<GroupModel> list = new LinkedList<>();
-        for (GroupEntity entity : groups) {
-            list.add(new GroupAdapter(this, em, entity));
-        }
-        return Collections.unmodifiableList(list);
+        return session.realms().getGroups(this);
     }
 
     @Override
     public List<GroupModel> getTopLevelGroups() {
-        List<GroupModel> base = getGroups();
-        if (base.isEmpty()) return base;
-        List<GroupModel> copy = new LinkedList<>();
-        for (GroupModel group : base) {
-            if (group.getParent() == null) {
-                copy.add(group);
-            }
-        }
-        return Collections.unmodifiableList(copy);
+        return session.realms().getTopLevelGroups(this);
     }
 
     @Override
     public boolean removeGroup(GroupModel group) {
-        if (group == null) {
-            return false;
-        }
-        GroupEntity groupEntity = GroupAdapter.toEntity(group, em);
-        if (!groupEntity.getRealm().getId().equals(getId())) {
-            return false;
-        }
-        realm.getDefaultGroups().remove(groupEntity);
-        for (GroupModel subGroup : group.getSubGroups()) {
-            removeGroup(subGroup);
-        }
-
-
-        session.users().preRemove(this, group);
-        moveGroup(group, null);
-        em.createNamedQuery("deleteGroupAttributesByGroup").setParameter("group", groupEntity).executeUpdate();
-        em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", groupEntity).executeUpdate();
-        em.remove(groupEntity);
-        return true;
-
-
-    }
-
-    @Override
-    public GroupModel createGroup(String name) {
-        String id = KeycloakModelUtils.generateId();
-        return createGroup(id, name);
-    }
-
-    @Override
-    public GroupModel createGroup(String id, String name) {
-        if (id == null) id = KeycloakModelUtils.generateId();
-        GroupEntity groupEntity = new GroupEntity();
-        groupEntity.setId(id);
-        groupEntity.setName(name);
-        groupEntity.setRealm(realm);
-        em.persist(groupEntity);
-
-        return new GroupAdapter(this, em, groupEntity);
-    }
-
-    @Override
-    public void addTopLevelGroup(GroupModel subGroup) {
-        subGroup.setParent(null);
+        return session.realms().removeGroup(this, group);
     }
 
     @Override
@@ -2128,7 +2034,7 @@ public class RealmAdapter implements RealmModel {
         if (entities == null || entities.isEmpty()) return Collections.EMPTY_LIST;
         List<ClientTemplateModel> list = new LinkedList<>();
         for (ClientTemplateEntity entity : entities) {
-            list.add(new ClientTemplateAdapter(this, em, session, entity));
+            list.add(session.realms().getClientTemplateById(entity.getId(), this));
         }
         return Collections.unmodifiableList(list);
     }

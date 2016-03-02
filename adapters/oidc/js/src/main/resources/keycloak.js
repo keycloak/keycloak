@@ -878,31 +878,28 @@
                         var loginUrl = kc.createLoginUrl(options);
                         var ref = window.open(loginUrl, '_blank', o);
 
-                        var callback;
-                        var error;
+                        var completed = false;
 
                         ref.addEventListener('loadstart', function(event) {
                             if (event.url.indexOf('http://localhost') == 0) {
-                                callback = parseCallback(event.url);
+                                var callback = parseCallback(event.url);
+                                processCallback(callback, promise);
                                 ref.close();
+                                completed = true;
                             }
                         });
 
                         ref.addEventListener('loaderror', function(event) {
-                            if (event.url.indexOf('http://localhost') == 0) {
-                                callback = parseCallback(event.url);
-                                ref.close();
-                            } else {
-                                error = true;
-                                ref.close();
-                            }
-                        });
-
-                        ref.addEventListener('exit', function(event) {
-                            if (error || !callback) {
-                                promise.setError();
-                            } else {
-                                processCallback(callback, promise);
+                            if (!completed) {
+                                if (event.url.indexOf('http://localhost') == 0) {
+                                    var callback = parseCallback(event.url);
+                                    processCallback(callback, promise);
+                                    ref.close();
+                                    completed = true;
+                                } else {
+                                    promise.setError();
+                                    ref.close();
+                                }
                             }
                         });
 

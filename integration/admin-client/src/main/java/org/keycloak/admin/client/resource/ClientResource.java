@@ -17,6 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -80,14 +81,9 @@ public interface ClientResource {
     public CredentialRepresentation getSecret();
 
     @GET
-    @Path("installation/jboss")
-    @Produces(MediaType.APPLICATION_XML)
-    public String getInstallationJbossXml();
-
-    @GET
-    @Path("installation/json")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getInstallationJson();
+    @NoCache
+    @Path("installation/providers/{providerId}")
+    public String getInstallationProvider(@PathParam("providerId") String providerId);
 
     @POST
     @Path("logout-all")

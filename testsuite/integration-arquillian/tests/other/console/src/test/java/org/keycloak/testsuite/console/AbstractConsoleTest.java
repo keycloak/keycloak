@@ -107,13 +107,13 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
 
     public void assertAlertSuccess() {
         alert.waitUntilPresentAndClassSet();
-        assertTrue(alert.isSuccess());
+        assertTrue("Is not success; @class=" + alert.getAttributeClass(), alert.isSuccess());
         alert.close();
     }
 
     public void assertAlertDanger() {
         alert.waitUntilPresentAndClassSet();
-        assertTrue(alert.isDanger());
+        assertTrue("Is not danger; @class=" + alert.getAttributeClass(), alert.isDanger());
         alert.close();
     }
 

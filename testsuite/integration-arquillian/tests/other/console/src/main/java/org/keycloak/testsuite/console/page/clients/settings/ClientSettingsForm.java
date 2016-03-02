@@ -187,19 +187,19 @@ public class ClientSettingsForm extends CreateClientForm {
     }
 
     public void setRedirectUris(List<String> redirectUris) {
-        Timer.time();
+        Timer.DEFAULT.reset();
         while (!deleteRedirectUriIcons.isEmpty()) {
             deleteRedirectUriIcons.get(0).click();
             pause(100);
         }
-        Timer.time("deleteRedirectUris");
+        Timer.DEFAULT.reset("deleteRedirectUris");
         if (redirectUris != null) {
             for (String redirectUri : redirectUris) {
                 addRedirectUri(redirectUri);
                 pause(100);
             }
         }
-        Timer.time("addRedirectUris");
+        Timer.DEFAULT.reset("addRedirectUris");
     }
 
     public boolean isStandardFlowEnabled() {

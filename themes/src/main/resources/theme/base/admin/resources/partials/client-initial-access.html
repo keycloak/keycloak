@@ -37,9 +37,7 @@
             <td><span data-ng-show="ia.expiration > 0">{{((ia.timestamp + ia.expiration) * 1000)|date:'shortDate'}}&nbsp;{{((ia.timestamp + ia.expiration) * 1000)|date:'mediumTime'}}</span></td>
             <td>{{ia.count}}</td>
             <td>{{ia.remainingCount}}</td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="remove(ia.id)">{{:: 'delete' | translate}}</button>
-            </td>
+            <td class="kc-action-cell" data-ng-click="remove(ia.id)">{{:: 'delete' | translate}}</td>
         </tr>
         <tr data-ng-show="(clients | filter:search).length == 0">
             <td class="text-muted" colspan="3" data-ng-show="search.clientId">{{:: 'no-results' | translate}}</td>

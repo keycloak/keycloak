@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -36,11 +37,13 @@ public class RoleAdapter implements RoleModel {
     protected RoleEntity role;
     protected EntityManager em;
     protected RealmModel realm;
+    protected KeycloakSession session;
 
-    public RoleAdapter(RealmModel realm, EntityManager em, RoleEntity role) {
+    public RoleAdapter(KeycloakSession session, RealmModel realm, EntityManager em, RoleEntity role) {
         this.em = em;
         this.realm = realm;
         this.role = role;
+        this.session = session;
     }
 
     public RoleEntity getRole() {
@@ -115,7 +118,10 @@ public class RoleAdapter implements RoleModel {
         Set<RoleModel> set = new HashSet<RoleModel>();
 
         for (RoleEntity composite : getRole().getCompositeRoles()) {
-           set.add(new RoleAdapter(realm, em, composite));
+            set.add(new RoleAdapter(session, realm, em, composite));
+
+            // todo I want to do this, but can't as you get stack overflow
+            // set.add(session.realms().getRoleById(composite.getId(), realm));
         }
         return set;
     }

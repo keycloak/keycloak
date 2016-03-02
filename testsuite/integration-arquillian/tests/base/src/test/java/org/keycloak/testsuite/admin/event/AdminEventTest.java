@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -60,16 +61,32 @@ public class AdminEventTest extends AbstractEventTest {
         testRealmResource().update(realm);
     }
 
-    private String realmName() {
-        return testRealmResource().toRepresentation().getId();
-    }
-
     @Test
     public void clearAdminEventsTest() {
         createUser("user0");
         assertEquals(1, events().size());
         testRealmResource().clearAdminEvents();
         assertEquals(Collections.EMPTY_LIST, events());
+    }
+
+    @Test
+    public void adminEventAttributeTest() {
+        createUser("user5");
+        List<AdminEventRepresentation> events = events();
+        assertEquals(1, events.size());
+
+        AdminEventRepresentation event = events.get(0);
+        assertTrue(event.getTime() > 0);
+        assertEquals(realmName(), event.getRealmId());
+        assertEquals("CREATE", event.getOperationType());
+        assertNotNull(event.getResourcePath());
+        assertNull(event.getError());
+
+        AuthDetailsRepresentation details = event.getAuthDetails();
+        assertEquals(realmName(), details.getRealmId());
+        assertNotNull(details.getClientId());
+        assertNotNull(details.getUserId());
+        assertNotNull(details.getIpAddress());
     }
 
     @Test
@@ -95,6 +112,7 @@ public class AdminEventTest extends AbstractEventTest {
         AdminEventRepresentation event = events().get(0);
         assertNotNull(event.getRepresentation());
         assertTrue(event.getRepresentation().contains("foo"));
+        assertTrue(event.getRepresentation().contains("bar"));
     }
 
     @Test

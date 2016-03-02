@@ -205,6 +205,10 @@ public class OAuthClient {
         return doGrantAccessTokenRequest(realm, username, password, null, clientId, clientSecret);
     }
 
+    public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username,  String password, String otp) throws Exception {
+        return doGrantAccessTokenRequest(realm, username, password, otp, clientId, clientSecret);
+    }
+
     public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
                                                          String clientId, String clientSecret) throws Exception {
         CloseableHttpClient client = new DefaultHttpClient();

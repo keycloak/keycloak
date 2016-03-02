@@ -19,15 +19,14 @@ package org.keycloak.models.cache.infinispan;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
-import org.keycloak.models.cache.UserCache;
-import org.keycloak.models.cache.entities.CachedUser;
+import org.keycloak.models.cache.infinispan.entities.CachedUser;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class InfinispanUserCache implements UserCache {
 
-    protected static final Logger logger = Logger.getLogger(InfinispanRealmCache.class);
+    protected static final Logger logger = Logger.getLogger(InfinispanUserCache.class);
 
     protected volatile boolean enabled = true;
 

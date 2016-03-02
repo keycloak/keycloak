@@ -43,6 +43,8 @@ public class IOUtil {
 
     private static final Logger log = Logger.getLogger(IOUtil.class);
 
+    public static final File PROJECT_BUILD_DIRECTORY = new File(System.getProperty("project.build.directory", "target"));
+
     public static <T> T loadJson(InputStream is, Class<T> type) {
         try {
             return JsonSerialization.readValue(is, type);

@@ -121,13 +121,13 @@ public class RealmRolesTest extends AbstractRolesTest {
     }
     
     public void createTestRoles(String namePrefix, int count) {
-        Timer.time();
+        Timer.DEFAULT.reset();
         for (int i = 0; i < count; i++) {
             String roleName = String.format("%s%02d", namePrefix, i);
             RoleRepresentation rr = new RoleRepresentation(roleName, "", false);
             testRealmResource().roles().create(rr);
         }
-        Timer.time("create " + count + " roles");
+        Timer.DEFAULT.reset("create " + count + " roles");
     }
 
 //    @Test

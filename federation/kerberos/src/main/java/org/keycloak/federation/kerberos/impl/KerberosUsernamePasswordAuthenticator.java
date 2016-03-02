@@ -33,6 +33,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.KerberosJdkProvider;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.models.ModelException;
 
@@ -58,7 +59,7 @@ public class KerberosUsernamePasswordAuthenticator {
      * @return true if user available
      */
     public boolean isUserAvailable(String username) {
-        logger.debug("Checking existence of user: " + username);
+        logger.debugf("Checking existence of user: %s", username);
         try {
             String principal = getKerberosPrincipal(username);
             loginContext = new LoginContext("does-not-matter", null,
@@ -70,7 +71,7 @@ public class KerberosUsernamePasswordAuthenticator {
             throw new IllegalStateException("Didn't expect to end here");
         } catch (LoginException le) {
             String message = le.getMessage();
-            logger.debug("Message from kerberos: " + message);
+            logger.debugf("Message from kerberos: %s", message);
 
             checkKerberosServerAvailable(le);
 
@@ -128,6 +129,7 @@ public class KerberosUsernamePasswordAuthenticator {
         return loginContext.getSubject();
     }
 
+
     public void logoutSubject() {
         if (loginContext != null) {
             try {
@@ -137,7 +139,6 @@ public class KerberosUsernamePasswordAuthenticator {
             }
         }
     }
-
 
 
     protected String getKerberosPrincipal(String username) throws LoginException {
@@ -155,6 +156,7 @@ public class KerberosUsernamePasswordAuthenticator {
 
         return username + "@" + config.getKerberosRealm();
     }
+
 
     protected CallbackHandler createJaasCallbackHandler(final String principal, final String password) {
         return new CallbackHandler() {
@@ -176,17 +178,8 @@ public class KerberosUsernamePasswordAuthenticator {
         };
     }
 
-    protected Configuration createJaasConfiguration() {
-        return new Configuration() {
 
-            @Override
-            public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
-                Map<String, Object> options = new HashMap<String, Object>();
-                options.put("storeKey", "true");
-                options.put("debug", String.valueOf(config.getDebug()));
-                AppConfigurationEntry kerberosLMConfiguration = new AppConfigurationEntry("com.sun.security.auth.module.Krb5LoginModule", AppConfigurationEntry.LoginModuleControlFlag.REQUIRED, options);
-                return new AppConfigurationEntry[] { kerberosLMConfiguration };
-            }
-        };
+    protected Configuration createJaasConfiguration() {
+        return KerberosJdkProvider.getProvider().createJaasConfigurationForUsernamePasswordLogin(config.isDebug());
     }
 }

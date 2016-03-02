@@ -595,47 +595,30 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public RoleAdapter getRole(String name) {
-        DBObject query = new QueryBuilder()
-                .and("name").is(name)
-                .and("realmId").is(getId())
-                .get();
-        MongoRoleEntity role = getMongoStore().loadSingleEntity(MongoRoleEntity.class, query, invocationContext);
-        if (role == null) {
-            return null;
-        } else {
-            return new RoleAdapter(session, this, role, this, invocationContext);
-        }
+    public RoleModel getRole(String name) {
+        return session.realms().getRealmRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String name) {
-        return this.addRole(null, name);
+        return session.realms().addRealmRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
-        MongoRoleEntity roleEntity = new MongoRoleEntity();
-        roleEntity.setId(id);
-        roleEntity.setName(name);
-        roleEntity.setRealmId(getId());
-
-        getMongoStore().insertEntity(roleEntity, invocationContext);
-
-        return new RoleAdapter(session, this, roleEntity, this, invocationContext);
+        return session.realms().addRealmRole(this, id, name);
     }
 
     @Override
     public boolean removeRole(RoleModel role) {
-        return removeRoleById(role.getId());
+        return session.realms().removeRole(this, role);
     }
 
     @Override
     public boolean removeRoleById(String id) {
         RoleModel role = getRoleById(id);
         if (role == null) return false;
-        session.users().preRemove(this, role);
-        return getMongoStore().removeEntity(MongoRoleEntity.class, id, invocationContext);
+        return removeRole(role);
     }
 
     @Override
@@ -657,45 +640,28 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public RoleModel getRoleById(String id) {
-        return model.getRoleById(id, this);
+        return session.realms().getRoleById(id, this);
     }
 
     @Override
     public GroupModel createGroup(String name) {
-        String id = KeycloakModelUtils.generateId();
-        return createGroup(id, name);
+        return session.realms().createGroup(this, name);
     }
 
     @Override
     public GroupModel createGroup(String id, String name) {
-        if (id == null) id = KeycloakModelUtils.generateId();
-        MongoGroupEntity group = new MongoGroupEntity();
-        group.setId(id);
-        group.setName(name);
-        group.setRealmId(getId());
-
-        getMongoStore().insertEntity(group, invocationContext);
-
-        return new GroupAdapter(session, this, group, invocationContext);
+        return session.realms().createGroup(this, id, name);
     }
 
     @Override
     public void addTopLevelGroup(GroupModel subGroup) {
-        subGroup.setParent(null);
+        session.realms().addTopLevelGroup(this, subGroup);
 
     }
 
     @Override
     public void moveGroup(GroupModel group, GroupModel toParent) {
-        if (toParent != null && group.getId().equals(toParent.getId())) {
-            return;
-        }
-        if (group.getParentId() != null) {
-            group.getParent().removeChild(group);
-        }
-        group.setParent(toParent);
-        if (toParent != null) toParent.addChild(group);
-        else addTopLevelGroup(group);
+        session.realms().moveGroup(this, group, toParent);
     }
 
     @Override
@@ -705,46 +671,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public List<GroupModel> getGroups() {
-        DBObject query = new QueryBuilder()
-                .and("realmId").is(getId())
-                .get();
-        List<MongoGroupEntity> groups = getMongoStore().loadEntities(MongoGroupEntity.class, query, invocationContext);
-        if (groups == null) return Collections.EMPTY_LIST;
-
-        List<GroupModel> result = new LinkedList<>();
-
-        if (groups == null) return result;
-        for (MongoGroupEntity group : groups) {
-            result.add(model.getGroupById(group.getId(), this));
-        }
-
-        return Collections.unmodifiableList(result);
+        return session.realms().getGroups(this);
     }
 
     @Override
     public List<GroupModel> getTopLevelGroups() {
-        List<GroupModel> base = getGroups();
-        if (base.isEmpty()) return base;
-        List<GroupModel> copy = new LinkedList<>();
-        for (GroupModel group : base) {
-            if (group.getParent() == null) {
-                copy.add(group);
-            }
-        }
-        return Collections.unmodifiableList(copy);
+        return session.realms().getTopLevelGroups(this);
     }
 
     @Override
     public boolean removeGroup(GroupModel group) {
-        if (realm.getDefaultGroups() != null) {
-            getMongoStore().pullItemFromList(realm, "defaultGroups", group.getId(), invocationContext);
-        }
-        for (GroupModel subGroup : group.getSubGroups()) {
-            removeGroup(subGroup);
-        }
-        session.users().preRemove(this, group);
-        moveGroup(group, null);
-        return getMongoStore().removeEntity(MongoGroupEntity.class, group.getId(), invocationContext);
+        return session.realms().removeGroup(this, group);
     }
 
 
@@ -776,6 +713,24 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             roleNames.add(roleName);
         }
 
+        realm.setDefaultRoles(roleNames);
+        updateRealm();
+    }
+
+    public static boolean contains(String str, String[] array) {
+        for (String s : array) {
+            if (str.equals(s)) return true;
+        }
+        return false;
+    }
+
+
+    @Override
+    public void removeDefaultRoles(String... defaultRoles) {
+        List<String> roleNames = new ArrayList<String>();
+        for (String role : realm.getDefaultRoles()) {
+            if (!contains(role, defaultRoles)) roleNames.add(role);
+        }
         realm.setDefaultRoles(roleNames);
         updateRealm();
     }
@@ -815,47 +770,18 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public List<ClientModel> getClients() {
-        DBObject query = new QueryBuilder()
-                .and("realmId").is(getId())
-                .get();
-        List<MongoClientEntity> clientEntities = getMongoStore().loadEntities(MongoClientEntity.class, query, invocationContext);
-
-        if (clientEntities.isEmpty()) return Collections.EMPTY_LIST;
-        List<ClientModel> result = new ArrayList<ClientModel>();
-        for (MongoClientEntity clientEntity : clientEntities) {
-            result.add(new ClientAdapter(session, this, clientEntity, invocationContext));
-        }
-        return Collections.unmodifiableList(result);
+        return session.realms().getClients(this);
     }
 
     @Override
     public ClientModel addClient(String name) {
-        return this.addClient(null, name);
+        return session.realms().addClient(this, name);
     }
 
     @Override
     public ClientModel addClient(String id, String clientId) {
-        MongoClientEntity clientEntity = new MongoClientEntity();
-        clientEntity.setId(id);
-        clientEntity.setClientId(clientId);
-        clientEntity.setRealmId(getId());
-        clientEntity.setEnabled(true);
-        clientEntity.setStandardFlowEnabled(true);
-        getMongoStore().insertEntity(clientEntity, invocationContext);
+        return session.realms().addClient(this, id, clientId);
 
-        if (clientId == null) {
-            clientEntity.setClientId(clientEntity.getId());
-            getMongoStore().updateEntity(clientEntity, invocationContext);
-        }
-
-        final ClientModel model = new ClientAdapter(session, this, clientEntity, invocationContext);
-        session.getKeycloakSessionFactory().publish(new ClientCreationEvent() {
-            @Override
-            public ClientModel getCreatedClient() {
-                return model;
-            }
-        });
-        return model;
     }
 
     @Override

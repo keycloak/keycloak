@@ -26,18 +26,14 @@
         </tr>
         <tr data-ng-hide="clients.length == 0">
             <th>{{:: 'name' | translate}}</th>
-            <th colspan="2">{{:: 'actions' | translate}}</th>
+            <th colspan="2" class="w-25">{{:: 'actions' | translate}}</th>
         </tr>
         </thead>
         <tbody>
         <tr ng-repeat="template in templates | filter:search | orderBy:'name'">
             <td><a href="#/realms/{{realm.realm}}/client-templates/{{template.id}}">{{template.name}}</a></td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/client-templates/{{template.id}}">{{:: 'edit' | translate}}</button>
-            </td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="removeClientTemplate(template)">{{:: 'delete' | translate}}</button>
-            </td>
+            <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/client-templates/{{template.id}}">{{:: 'edit' | translate}}</td>
+            <td class="kc-action-cell" data-ng-click="removeClientTemplate(template)">{{:: 'delete' | translate}}</td>
         </tr>
         <tr data-ng-show="(clients | filter:search).length == 0">
             <td class="text-muted" colspan="3" data-ng-show="search.name">{{:: 'no-results' | translate}}</td>

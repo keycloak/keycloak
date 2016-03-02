@@ -21,8 +21,7 @@ import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.RealmCache;
-import org.keycloak.models.cache.entities.CachedRealm;
+import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.security.Key;
@@ -582,47 +581,37 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public void updateDefaultRoles(String[] defaultRoles) {
+    public void updateDefaultRoles(String... defaultRoles) {
         getDelegateForUpdate();
         updated.updateDefaultRoles(defaultRoles);
     }
 
     @Override
+    public void removeDefaultRoles(String... defaultRoles) {
+        getDelegateForUpdate();
+        updated.removeDefaultRoles(defaultRoles);
+
+    }
+
+    @Override
     public List<ClientModel> getClients() {
-        if (updated != null) return updated.getClients();
-        List<ClientModel> apps = new LinkedList<>();
-        for (String id : cached.getClients()) {
-            ClientModel model = cacheSession.getClientById(id, this);
-            if (model == null) {
-                throw new IllegalStateException("Cached application not found: " + id);
-            }
-            apps.add(model);
-        }
-        return Collections.unmodifiableList(apps);
+        return cacheSession.getClients(this);
 
     }
 
     @Override
     public ClientModel addClient(String name) {
-        getDelegateForUpdate();
-        ClientModel app = updated.addClient(name);
-        cacheSession.registerApplicationInvalidation(app.getId());
-        return app;
+        return cacheSession.addClient(this, name);
     }
 
     @Override
     public ClientModel addClient(String id, String clientId) {
-        getDelegateForUpdate();
-        ClientModel app =  updated.addClient(id, clientId);
-        cacheSession.registerApplicationInvalidation(app.getId());
-        return app;
+        return cacheSession.addClient(this, id, clientId);
     }
 
     @Override
     public boolean removeClient(String id) {
-        cacheSession.registerApplicationInvalidation(id);
-        getDelegateForUpdate();
-        return updated.removeClient(id);
+        return cacheSession.removeClient(id, this);
     }
 
     @Override
@@ -888,11 +877,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRole(String name) {
-        if (updated != null) return updated.getRole(name);
-        String id = cached.getRealmRoles().get(name);
-        if (id == null) return null;
-        return cacheSession.getRoleById(id, this);
+        for (RoleModel role : getRoles()) {
+            if (role.getName().equals(name)) return role;
+        }
+        return null;
     }
+
+    @Override
+    public Set<RoleModel> getRoles() {
+        return cacheSession.getRealmRoles(this);
+    }
+
 
     @Override
     public RoleModel addRole(String name) {
@@ -917,18 +912,6 @@ public class RealmAdapter implements RealmModel {
         return updated.removeRole(role);
     }
 
-    @Override
-    public Set<RoleModel> getRoles() {
-        if (updated != null) return updated.getRoles();
-
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String id : cached.getRealmRoles().values()) {
-            RoleModel roleById = cacheSession.getRoleById(id, this);
-            if (roleById == null) continue;
-            roles.add(roleById);
-        }
-        return Collections.unmodifiableSet(roles);
-    }
 
     @Override
     public boolean isIdentityFederationEnabled() {
@@ -1321,66 +1304,44 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public GroupModel getGroupById(String id) {
-        if (updated != null) return updated.getGroupById(id);
-        return cacheSession.getGroupById(id, this);
-    }
-
-    @Override
-    public List<GroupModel> getGroups() {
-        if (updated != null) return updated.getGroups();
-        if (cached.getGroups().isEmpty()) return Collections.EMPTY_LIST;
-        List<GroupModel> list = new LinkedList<>();
-        for (String id : cached.getGroups()) {
-            GroupModel group = cacheSession.getGroupById(id, this);
-            if (group == null) continue;
-            list.add(group);
-        }
-        return Collections.unmodifiableList(list);
-    }
-
-    @Override
-    public List<GroupModel> getTopLevelGroups() {
-        List<GroupModel> base = getGroups();
-        if (base.isEmpty()) return base;
-        List<GroupModel> copy = new LinkedList<>();
-        for (GroupModel group : base) {
-            if (group.getParent() == null) {
-                copy.add(group);
-            }
-        }
-        return Collections.unmodifiableList(copy);
-    }
-
-    @Override
-    public boolean removeGroup(GroupModel group) {
-        getDelegateForUpdate();
-        return updated.removeGroup(group);
-    }
-
-    @Override
     public GroupModel createGroup(String name) {
-        getDelegateForUpdate();
-        return updated.createGroup(name);
+        return cacheSession.createGroup(this, name);
     }
 
     @Override
     public GroupModel createGroup(String id, String name) {
-        getDelegateForUpdate();
-        return updated.createGroup(id, name);
+        return cacheSession.createGroup(this, id, name);
     }
 
     @Override
     public void addTopLevelGroup(GroupModel subGroup) {
-        getDelegateForUpdate();
-        updated.addTopLevelGroup(subGroup);
+        cacheSession.addTopLevelGroup(this, subGroup);
 
     }
 
     @Override
     public void moveGroup(GroupModel group, GroupModel toParent) {
-        getDelegateForUpdate();
-        updated.moveGroup(group, toParent);
+        cacheSession.moveGroup(this, group, toParent);
+    }
+
+    @Override
+    public GroupModel getGroupById(String id) {
+        return cacheSession.getGroupById(id, this);
+    }
+
+    @Override
+    public List<GroupModel> getGroups() {
+        return cacheSession.getGroups(this);
+    }
+
+    @Override
+    public List<GroupModel> getTopLevelGroups() {
+        return cacheSession.getTopLevelGroups(this);
+    }
+
+    @Override
+    public boolean removeGroup(GroupModel group) {
+        return cacheSession.removeGroup(this, group);
     }
 
     @Override
