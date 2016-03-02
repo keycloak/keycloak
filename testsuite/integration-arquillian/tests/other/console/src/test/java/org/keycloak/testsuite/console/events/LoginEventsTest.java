@@ -39,7 +39,6 @@ public class LoginEventsTest extends AbstractConsoleTest {
     }
 
     @Test
-    @Ignore("KEYCLOAK-2570")
     public void userAccessEventsTest() {
         testRealmAdminConsolePage.navigateTo();
         Users.setPasswordFor(testUser, "Wrong_password");
