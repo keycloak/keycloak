@@ -25,6 +25,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import org.keycloak.testsuite.console.page.fragment.Menu;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
+import org.keycloak.testsuite.page.PageWithLogOutAction;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -32,8 +33,8 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author Petr Mensik
  */
-public class AdminConsole extends AuthServer implements PageWithLoginUrl {
-    
+public class AdminConsole extends AuthServer implements PageWithLoginUrl, PageWithLogOutAction {
+
     public static final String ADMIN_REALM = "adminRealm";
 
     public AdminConsole() {
@@ -56,7 +57,7 @@ public class AdminConsole extends AuthServer implements PageWithLoginUrl {
 
     @Page
     private Menu menu;
-    
+
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
 
@@ -79,7 +80,8 @@ public class AdminConsole extends AuthServer implements PageWithLoginUrl {
 
     @FindBy(css = "navbar-brand")
     protected WebElement brandLink;
-    
+
+    @Override
     public void logOut() {
         menu.logOut();
     }

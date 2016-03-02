@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
-  ~ and other contributors as indicated by the @author tags.
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
 
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -117,6 +117,68 @@
             </build>
         </profile>
         
+        <profile>
+            <id>ssl</id>
+            <activation>
+                <property>
+                    <name>auth.server.ssl.required</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>configure-adapter-subsystem-security</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
+                                            <includes>
+                                                <include>standalone.xml</include>
+                                            </includes>
+                                            <stylesheet>src/main/xslt/security.xsl</stylesheet>
+                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>2.7</version>
+                        <executions>
+                            <execution>
+                                <id>copy-keystore</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${keycloak.server.home}/standalone/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/keystore</directory>
+                                            <includes>
+                                                <include>keycloak.jks</include>
+                                                <include>keycloak.truststore</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>jpa</id>
             <properties>
@@ -255,13 +317,14 @@
                 </plugins>
             </build>
         </profile>
+        
         <profile>
-            <id>ssl</id>
-            <activation>
-                <property>
-                    <name>auth.server.ssl.required</name>
-                </property>
-            </activation>
+            <id>auth-server-eap7-cluster</id>
+            <properties>
+                <session.cache.owners>1</session.cache.owners>
+                <offline.session.cache.owners>1</offline.session.cache.owners>
+                <login.failure.cache.owners>1</login.failure.cache.owners>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -269,47 +332,55 @@
                         <artifactId>xml-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>configure-adapter-subsystem-security</id>
+                                <id>configure-wildfly-datasource</id>
                                 <phase>process-resources</phase>
                                 <goals>
                                     <goal>transform</goal>
                                 </goals>
                                 <configuration>
                                     <transformationSets>
+                                        <!-- point KeycloakDS datasource to H2 running on TCP port -->
                                         <transformationSet>
                                             <dir>${keycloak.server.home}/standalone/configuration</dir>
                                             <includes>
-                                                <include>standalone.xml</include>
+                                                <include>standalone-ha.xml</include>
                                             </includes>
-                                            <stylesheet>src/main/xslt/security.xsl</stylesheet>
+                                            <stylesheet>src/main/xslt/datasource-jdbc-url.xsl</stylesheet>
                                             <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>pool.name</name>
+                                                    <value>KeycloakDS</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>jdbc.url</name>
+                                                    <value>jdbc:h2:tcp://${jboss.bind.address:localhost}:9092/mem:keycloak;DB_CLOSE_DELAY=-1</value>
+                                                </parameter>
+                                            </parameters>
+                                        </transformationSet>
+                                        <transformationSet>
+                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
+                                            <includes>
+                                                <include>standalone-ha.xml</include>
+                                            </includes>
+                                            <stylesheet>src/main/xslt/ispn-cache-owners.xsl</stylesheet>
+                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>sessionCacheOwners</name>
+                                                    <value>${session.cache.owners}</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>offlineSessionCacheOwners</name>
+                                                    <value>${offline.session.cache.owners}</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>loginFailureCacheOwners</name>
+                                                    <value>${login.failure.cache.owners}</value>
+                                                </parameter>
+                                            </parameters>
                                         </transformationSet>
                                     </transformationSets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <version>2.7</version>
-                        <executions>
-                            <execution>
-                                <id>copy-keystore</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                     <outputDirectory>${keycloak.server.home}/standalone/configuration</outputDirectory>
-                                     <resources>
-                                         <resource>
-                                              <directory>src/main/keystore</directory>
-                                              <includes>
-                                                  <include>keycloak.jks</include>
-                                                  <include>keycloak.truststore</include>
-                                              </includes>
-                                         </resource>
-                                     </resources>
                                 </configuration>
                             </execution>
                         </executions>
@@ -317,5 +388,6 @@
                 </plugins>
             </build>
         </profile>
+        
     </profiles>
 </project>
