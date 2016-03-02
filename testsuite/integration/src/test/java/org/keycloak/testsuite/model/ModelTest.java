@@ -83,7 +83,7 @@ public class ModelTest extends AbstractModelTest {
         Assert.assertEquals(expected.getPublicKeyPem(), actual.getPublicKeyPem());
         Assert.assertEquals(expected.getPrivateKeyPem(), actual.getPrivateKeyPem());
 
-        Assert.assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());
+        Assert.assertEquals(new HashSet<>(expected.getDefaultRoles()), new HashSet<>(actual.getDefaultRoles()));
 
         Assert.assertEquals(expected.getSmtpConfig(), actual.getSmtpConfig());
 

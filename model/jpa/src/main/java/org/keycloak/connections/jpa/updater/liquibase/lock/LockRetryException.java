@@ -15,25 +15,25 @@
  * limitations under the License.
  */
 
-package org.keycloak.connections.jpa.updater;
-
-import org.keycloak.provider.Provider;
-
-import java.sql.Connection;
+package org.keycloak.connections.jpa.updater.liquibase.lock;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * Indicates that retrieve lock wasn't successful, but it worth to retry it in different transaction (For example if we were trying to create LOCK table, but other transaction
+ * created the table in the meantime etc)
+ *
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface JpaUpdaterProvider extends Provider {
+public class LockRetryException extends RuntimeException {
 
-    public String FIRST_VERSION = "1.0.0.Final";
+    public LockRetryException(String message) {
+        super(message);
+    }
 
-    public String LAST_VERSION = "1.9.0";
+    public LockRetryException(Throwable cause) {
+        super(cause);
+    }
 
-    public String getCurrentVersionSql(String defaultSchema);
-
-    public void update(Connection connection, String defaultSchema);
-
-    public void validate(Connection connection, String defaultSchema);
-
+    public LockRetryException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

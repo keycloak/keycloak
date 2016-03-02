@@ -15,25 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.connections.jpa.updater;
+package org.keycloak.connections.jpa.updater.liquibase.lock;
 
-import org.keycloak.provider.Provider;
-
-import java.sql.Connection;
+import liquibase.exception.LockException;
+import liquibase.lockservice.StandardLockService;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * Dummy lock service injected to Liquibase. Doesn't need to do anything as we already have a lock when Liquibase update is called.
+ *
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface JpaUpdaterProvider extends Provider {
+public class DummyLockService extends StandardLockService {
 
-    public String FIRST_VERSION = "1.0.0.Final";
+    @Override
+    public void waitForLock() throws LockException {
+    }
 
-    public String LAST_VERSION = "1.9.0";
-
-    public String getCurrentVersionSql(String defaultSchema);
-
-    public void update(Connection connection, String defaultSchema);
-
-    public void validate(Connection connection, String defaultSchema);
+    @Override
+    public void releaseLock() throws LockException {
+    }
 
 }

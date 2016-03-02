@@ -17,10 +17,17 @@
 
 package org.keycloak.connections.mongo;
 
+import com.mongodb.DB;
 import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface MongoConnectionProviderFactory extends ProviderFactory<MongoConnectionProvider> {
+
+    /**
+     * @return DB object, which may not be yet updated to current Keycloak version. Useful just if something needs to be done even before DB update (for example acquire DB lock)
+     */
+    DB getDBBeforeUpdate();
+
 }

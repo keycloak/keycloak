@@ -57,6 +57,29 @@
             database. This can be a relational database or Mongo. To make sure your database doesn't become a single
             point of failure you may also want to deploy your database to a cluster.
         </para>
+        <section>
+            <title>DB lock</title>
+            <para>Note that Keycloak supports concurrent startup by more cluster nodes at the same. This is ensured by DB lock, which prevents that some
+                startup actions (migrating database from previous version, importing realms at startup, initial bootstrap of admin user) are always executed just by one
+                cluster node at a time and other cluster nodes need to wait until the current node finishes startup actions and release the DB lock.
+            </para>
+            <para>
+                By default, the maximum timeout for lock is 900 seconds, so in case that second node is not able to acquire the lock within 900 seconds, it fails to start.
+                The lock checking is done every 2 seconds by default. Typically you won't need to increase/decrease the default value, but just in case
+                it's possible to configure it in <literal>standalone/configuration/keycloak-server.json</literal>:
+<programlisting>
+<![CDATA[
+"dblock": {
+    "jpa": {
+        "lockWaitTimeout": 900,
+        "lockRecheckTime": 2
+    }
+}
+]]>
+</programlisting>
+                or similarly if you're using Mongo (just by replace <literal>jpa</literal> with <literal>mongo</literal>)
+            </para>
+        </section>
     </section>
 
     <section>

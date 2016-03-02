@@ -15,25 +15,19 @@
  * limitations under the License.
  */
 
-package org.keycloak.connections.jpa.updater;
-
-import org.keycloak.provider.Provider;
+package org.keycloak.connections.jpa.updater.liquibase.conn;
 
 import java.sql.Connection;
 
+import liquibase.Liquibase;
+import liquibase.exception.LiquibaseException;
+import org.keycloak.provider.Provider;
+
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface JpaUpdaterProvider extends Provider {
+public interface LiquibaseConnectionProvider extends Provider {
 
-    public String FIRST_VERSION = "1.0.0.Final";
-
-    public String LAST_VERSION = "1.9.0";
-
-    public String getCurrentVersionSql(String defaultSchema);
-
-    public void update(Connection connection, String defaultSchema);
-
-    public void validate(Connection connection, String defaultSchema);
+    Liquibase getLiquibase(Connection connection, String defaultSchema) throws LiquibaseException;
 
 }

@@ -15,6 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.connections.jpa.JpaConnectionSpi
-org.keycloak.connections.jpa.updater.JpaUpdaterSpi
-org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionSpi
+org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider
