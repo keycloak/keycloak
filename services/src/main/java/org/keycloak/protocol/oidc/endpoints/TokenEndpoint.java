@@ -222,6 +222,22 @@ public class TokenEndpoint {
 
         accessCode.setAction(null);
         UserSessionModel userSession = clientSession.getUserSession();
+
+        if (userSession == null) {
+            event.error(Errors.USER_SESSION_NOT_FOUND);
+            throw new ErrorResponseException("invalid_grant", "User session not found", Response.Status.BAD_REQUEST);
+        }
+
+        UserModel user = userSession.getUser();
+        if (user == null) {
+            event.error(Errors.USER_NOT_FOUND);
+            throw new ErrorResponseException("invalid_grant", "User not found", Response.Status.BAD_REQUEST);
+        }
+        if (!user.isEnabled()) {
+            event.error(Errors.USER_DISABLED);
+            throw new ErrorResponseException("invalid_grant", "User disabled", Response.Status.BAD_REQUEST);
+        }
+
         event.user(userSession.getUser());
         event.session(userSession.getId());
 
@@ -239,17 +255,6 @@ public class TokenEndpoint {
         if (!client.isStandardFlowEnabled()) {
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorResponseException("invalid_grant", "Client not allowed to exchange code", Response.Status.BAD_REQUEST);
-        }
-
-        UserModel user = session.users().getUserById(userSession.getUser().getId(), realm);
-        if (user == null) {
-            event.error(Errors.USER_NOT_FOUND);
-            throw new ErrorResponseException("invalid_grant", "User not found", Response.Status.BAD_REQUEST);
-        }
-
-        if (!user.isEnabled()) {
-            event.error(Errors.USER_DISABLED);
-            throw new ErrorResponseException("invalid_grant", "User disabled", Response.Status.BAD_REQUEST);
         }
 
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
