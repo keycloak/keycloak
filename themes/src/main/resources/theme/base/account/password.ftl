@@ -18,7 +18,7 @@
                 </div>
 
                 <div class="col-sm-10 col-md-10">
-                    <input type="password" class="form-control" id="password" name="password" autofocus>
+                    <input type="password" class="form-control" id="password" name="password" autofocus autocomplete="off">
                 </div>
             </div>
         </#if>
@@ -31,7 +31,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="password" class="form-control" id="password-new" name="password-new">
+                <input type="password" class="form-control" id="password-new" name="password-new" autocomplete="off">
             </div>
         </div>
 
@@ -41,7 +41,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="password" class="form-control" id="password-confirm" name="password-confirm">
+                <input type="password" class="form-control" id="password-confirm" name="password-confirm" autocomplete="off">
             </div>
         </div>
 
