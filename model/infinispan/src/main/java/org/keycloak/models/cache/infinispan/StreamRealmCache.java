@@ -24,6 +24,7 @@ import org.infinispan.notifications.cachelistener.annotation.CacheEntryInvalidat
 import org.infinispan.notifications.cachelistener.event.CacheEntriesEvictedEvent;
 import org.infinispan.notifications.cachelistener.event.CacheEntryInvalidatedEvent;
 import org.jboss.logging.Logger;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 import org.keycloak.models.cache.infinispan.entities.CachedClient;
 import org.keycloak.models.cache.infinispan.entities.CachedClientTemplate;
@@ -38,7 +39,7 @@ import org.keycloak.models.cache.infinispan.stream.HasRolePredicate;
 import org.keycloak.models.cache.infinispan.stream.InClientPredicate;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 import org.keycloak.models.cache.infinispan.stream.RealmQueryPredicate;
-import org.keycloak.models.cache.infinispan.stream.RoleQueryPredicate;
+import org.keycloak.models.utils.UpdateCounter;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -73,7 +74,9 @@ public class StreamRealmCache {
 
     public Long getCurrentRevision(String id) {
         Long revision = revisions.get(id);
-        if (revision == null) revision = UpdateCounter.current();
+        if (revision == null) {
+            revision = UpdateCounter.current();
+        }
         // if you do cache.remove() on node 1 and the entry doesn't exist on node 2, node 2 never receives a invalidation event
         // so, we do this to force this.
         String invalidationKey = "invalidation.key" + id;
@@ -121,7 +124,7 @@ public class StreamRealmCache {
         Object rev = revisions.put(id, next);
     }
 
-    public void addRevisioned(Revisioned object) {
+    public void addRevisioned(Revisioned object, KeycloakSession session) {
         //startRevisionBatch();
         String id = object.getId();
         try {
@@ -135,10 +138,17 @@ public class StreamRealmCache {
             revisions.startBatch();
             if (!revisions.getAdvancedCache().lock(id)) {
                 logger.trace("Could not obtain version lock");
+                return;
             }
             rev = revisions.get(id);
             if (rev == null) {
                 if (id.endsWith("realm.clients")) logger.trace("addRevisioned rev2 == null realm.clients");
+                return;
+            }
+            if (rev > session.getTransaction().getStartupRevision()) { // revision is ahead transaction start. Other transaction updated in the meantime. Don't cache
+                if (logger.isTraceEnabled()) {
+                    logger.tracev("Skipped cache. Current revision {0}, Transaction start revision {1}", object.getRevision(), session.getTransaction().getStartupRevision());
+                }
                 return;
             }
             if (rev.equals(object.getRevision())) {

@@ -23,6 +23,8 @@ package org.keycloak.models;
  */
 public interface KeycloakTransactionManager extends KeycloakTransaction {
 
+    long getStartupRevision();
+
     void enlist(KeycloakTransaction transaction);
     void enlistAfterCompletion(KeycloakTransaction transaction);
 
