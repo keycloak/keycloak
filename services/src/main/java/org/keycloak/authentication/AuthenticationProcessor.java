@@ -569,7 +569,7 @@ public class AuthenticationProcessor {
             } else if (e.getError() == AuthenticationFlowError.USER_TEMPORARILY_DISABLED) {
                 logger.failedAuthentication(e);
                 event.error(Errors.USER_TEMPORARILY_DISABLED);
-                return ErrorPage.error(session, Messages.ACCOUNT_TEMPORARILY_DISABLED);
+                return ErrorPage.error(session, Messages.INVALID_USER);
 
             } else if (e.getError() == AuthenticationFlowError.INVALID_CLIENT_SESSION) {
                 logger.failedAuthentication(e);
