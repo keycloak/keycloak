@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
@@ -170,6 +171,24 @@ public class FlowTest extends AbstractAuthenticationTest {
         copyOfBrowser = authMgmtResource.getFlow(copyOfBrowser.getId());
         Assert.assertNotNull(copyOfBrowser);
         compareFlows(browser, copyOfBrowser);
+    }
+
+    @Test
+    // KEYCLOAK-2580
+    public void addExecutionFlow() {
+        HashMap<String, String> params = new HashMap<>();
+        params.put("newName", "parent");
+        Response response = authMgmtResource.copy("browser", params);
+        Assert.assertEquals(201, response.getStatus());
+        response.close();
+
+        params = new HashMap<>();
+        params.put("alias", "child");
+        params.put("description", "Description");
+        params.put("provider", "registration-page-form");
+        params.put("type", "basic-flow");
+
+        authMgmtResource.addExecutionFlow("parent", params);
     }
 
 }
