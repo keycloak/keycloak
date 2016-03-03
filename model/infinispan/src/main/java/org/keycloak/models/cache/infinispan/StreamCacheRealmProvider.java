@@ -305,7 +305,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             if (model == null) return null;
             if (invalidations.contains(id)) return model;
             cached = new CachedRealm(loaded, model);
-            cache.addRevisioned(cached);
+            cache.addRevisioned(cached, session);
         } else if (invalidations.contains(id)) {
             return getDelegate().getRealm(id);
         } else if (managedRealms.containsKey(id)) {
@@ -329,7 +329,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             if (model == null) return null;
             if (invalidations.contains(model.getId())) return model;
             query = new RealmListQuery(loaded, cacheKey, model.getId());
-            cache.addRevisioned(query);
+            cache.addRevisioned(query, session);
             return model;
         } else if (invalidations.contains(cacheKey)) {
             return getDelegate().getRealmByName(name);
@@ -435,7 +435,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             for (ClientModel client : model) ids.add(client.getId());
             query = new ClientListQuery(loaded, cacheKey, realm, ids);
             logger.tracev("adding realm clients cache miss: realm {0} key {1}", realm.getName(), cacheKey);
-            cache.addRevisioned(query);
+            cache.addRevisioned(query, session);
             return model;
         }
         List<ClientModel> list = new LinkedList<>();
@@ -508,7 +508,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             for (RoleModel role : model) ids.add(role.getId());
             query = new RoleListQuery(loaded, cacheKey, realm, ids);
             logger.tracev("adding realm roles cache miss: realm {0} key {1}", realm.getName(), cacheKey);
-            cache.addRevisioned(query);
+            cache.addRevisioned(query, session);
             return model;
         }
         Set<RoleModel> list = new HashSet<>();
@@ -544,7 +544,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             for (RoleModel role : model) ids.add(role.getId());
             query = new RoleListQuery(loaded, cacheKey, realm, ids, client.getClientId());
             logger.tracev("adding client roles cache miss: client {0} key {1}", client.getClientId(), cacheKey);
-            cache.addRevisioned(query);
+            cache.addRevisioned(query, session);
             return model;
         }
         Set<RoleModel> list = new HashSet<>();
@@ -593,7 +593,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             if (model == null) return null;
             query = new RoleListQuery(loaded, cacheKey, realm, model.getId());
             logger.tracev("adding realm role cache miss: client {0} key {1}", realm.getName(), cacheKey);
-            cache.addRevisioned(query);
+            cache.addRevisioned(query, session);
             return model;
         }
         RoleModel role = getRoleById(query.getRoles().iterator().next(), realm);
@@ -623,7 +623,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             if (model == null) return null;
             query = new RoleListQuery(loaded, cacheKey, realm, model.getId(), client.getClientId());
             logger.tracev("adding client role cache miss: client {0} key {1}", client.getClientId(), cacheKey);
-            cache.addRevisioned(query);
+            cache.addRevisioned(query, session);
             return model;
         }
         RoleModel role = getRoleById(query.getRoles().iterator().next(), realm);
@@ -660,7 +660,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             } else {
                 cached = new CachedRealmRole(loaded, model, realm);
             }
-            cache.addRevisioned(cached);
+            cache.addRevisioned(cached, session);
 
         } else if (invalidations.contains(id)) {
             return getDelegate().getRoleById(id, realm);
@@ -685,7 +685,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             if (model == null) return null;
             if (invalidations.contains(id)) return model;
             cached = new CachedGroup(loaded, realm, model);
-            cache.addRevisioned(cached);
+            cache.addRevisioned(cached, session);
 
         } else if (invalidations.contains(id)) {
             return getDelegate().getGroupById(id, realm);
@@ -725,7 +725,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             for (GroupModel client : model) ids.add(client.getId());
             query = new GroupListQuery(loaded, cacheKey, realm, ids);
             logger.tracev("adding realm getGroups cache miss: realm {0} key {1}", realm.getName(), cacheKey);
-            cache.addRevisioned(query);
+            cache.addRevisioned(query, session);
             return model;
         }
         List<GroupModel> list = new LinkedList<>();
@@ -761,7 +761,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             for (GroupModel client : model) ids.add(client.getId());
             query = new GroupListQuery(loaded, cacheKey, realm, ids);
             logger.tracev("adding realm getTopLevelGroups cache miss: realm {0} key {1}", realm.getName(), cacheKey);
-            cache.addRevisioned(query);
+            cache.addRevisioned(query, session);
             return model;
         }
         List<GroupModel> list = new LinkedList<>();
@@ -837,7 +837,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             if (invalidations.contains(id)) return model;
             cached = new CachedClient(loaded, realm, model);
             logger.tracev("adding client by id cache miss: {0}", cached.getClientId());
-            cache.addRevisioned(cached);
+            cache.addRevisioned(cached, session);
         } else if (invalidations.contains(id)) {
             return getDelegate().getClientById(id, realm);
         } else if (managedApplications.containsKey(id)) {
@@ -866,7 +866,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             id = model.getId();
             query = new ClientListQuery(loaded, cacheKey, realm, id);
             logger.tracev("adding client by name cache miss: {0}", clientId);
-            cache.addRevisioned(query);
+            cache.addRevisioned(query, session);
         } else if (invalidations.contains(cacheKey)) {
             return getDelegate().getClientByClientId(clientId, realm);
         } else {
@@ -895,7 +895,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
             if (model == null) return null;
             if (invalidations.contains(id)) return model;
             cached = new CachedClientTemplate(loaded, realm, model);
-            cache.addRevisioned(cached);
+            cache.addRevisioned(cached, session);
         } else if (invalidations.contains(id)) {
             return getDelegate().getClientTemplateById(id, realm);
         } else if (managedClientTemplates.containsKey(id)) {

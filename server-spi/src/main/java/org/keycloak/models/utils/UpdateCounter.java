@@ -1,8 +1,10 @@
-package org.keycloak.models.cache.infinispan;
+package org.keycloak.models.utils;
 
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * Used to track cache revisions
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class UpdateCounter {
