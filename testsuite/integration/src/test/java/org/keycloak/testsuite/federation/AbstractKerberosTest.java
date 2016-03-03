@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.federation;
 
 import java.security.Principal;
@@ -175,6 +192,10 @@ public abstract class AbstractKerberosTest {
         loginPage.login("jduke", "theduke");
         changePasswordPage.assertCurrent();
 
+        // Bad existing password
+        changePasswordPage.changePassword("theduke-invalid", "newPass", "newPass");
+        Assert.assertTrue(driver.getPageSource().contains("Invalid existing password."));
+
         // Change password is not possible as editMode is READ_ONLY
         changePasswordPage.changePassword("theduke", "newPass", "newPass");
         Assert.assertTrue(driver.getPageSource().contains("You can't update your password as your account is read only"));
@@ -267,7 +288,7 @@ public abstract class AbstractKerberosTest {
         SpnegoAuthenticator.bypassChallengeJavascript = true;
         driver.navigate().to(KERBEROS_APP_URL);
         String kcLoginPageLocation = driver.getCurrentUrl();
-        String location = "http://localhost:8081/auth/realms/test/protocol/openid-connect/auth?response_type=code&client_id=kerberos-app&redirect_uri=http%3A%2F%2Flocalhost%3A8081%2Fkerberos-portal&state=0%2F88a96ddd-84fe-4e77-8a46-02394d7b3a7d&login=true";
+
         // Request for SPNEGO login sent with Resteasy client
         spnegoSchemeFactory.setCredentials(username, password);
         Response response = client.target(kcLoginPageLocation).request().get();

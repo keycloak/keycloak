@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak;
 
 import org.junit.Assert;
@@ -108,5 +125,13 @@ public class SkeletonKeyTokenTest {
         token.addAccess("foo").addRole("admin");
         token.addAccess("bar").addRole("user");
         return token;
+    }
+
+    @Test
+    public void testZipException() throws Exception {
+        // KEYCLOAK-2479
+        // Example of LogoutAction, which shows the exception to STDERR during Base64.decode . Need to use flag DONT_GUNZIP to avoid it.
+        String logoutAction = "eyJhbGciOiJSUzI1NiJ9.eyJpZCI6ImUwYmRmMjQyLWJjZGItNGVjMy1hMGU4LTNjN2YyOTUzOTk5MC0xNDU1NzgyNTU2NjAyIiwiZXhwaXJhdGlvbiI6MTQ1NTc4MjU4NiwicmVzb3VyY2UiOiJwcm9kdWN0LXBvcnRhbCIsImFjdGlvbiI6IkxPR09VVCIsImFkYXB0ZXJTZXNzaW9uSWRzIjpbImx2c0oxNUpSX01XUE13aTIwbWRhTkJFRVZQZzQtMTkzVUZKem42M1EiXSwibm90QmVmb3JlIjowLCJrZXljbG9ha1Nlc3Npb25JZHMiOlsiOThkNWE3YTYtYjNmNi00ZTg3LWI5OTktOTg1N2YzMDRiZjY4Il19.H4vo7YXW8oQgYsIo9VPYeSsp1jXJR0TwJUwmiXjQJSyxFoKhHgIh3Y63ldVUeBRppxX9xhjOdYEckeppAn-1XnNxUmbExXWXirRIw8tiEtUPPCPztdkKsM0y6xWRd3Sjgg4fWB_1sMn6EWvCAvO7ahs6Rbb2Vo18nlHfxYRSTWw";
+        JWSInput input = new JWSInput(logoutAction);
     }
 }

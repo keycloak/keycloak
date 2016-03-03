@@ -1,0 +1,28 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/groups">{{:: 'groups' | translate}}</a></li>
+        <li>{{group.name}}</li>
+    </ol>
+
+    <kc-tabs-group></kc-tabs-group>
+    <form class="form-horizontal" name="clientForm" novalidate>
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label"for="name">{{:: 'name' | translate}} <span class="required">*</span></label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="group.name" autofocus
+                           required >
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="form-group" data-ng-show="access.manageUsers">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed" data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.common.util;
 
 import java.io.ByteArrayInputStream;
@@ -8,22 +25,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.lang.reflect.Method;
+import java.util.Iterator;
+import java.util.Set;
 
+import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosTicket;
 
 import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.Oid;
-import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.common.util.reflections.Reflections;
-import sun.security.jgss.GSSCredentialImpl;
-import sun.security.jgss.GSSManagerImpl;
-import sun.security.jgss.krb5.Krb5InitCredential;
-import sun.security.jgss.krb5.Krb5NameElement;
-import sun.security.jgss.spi.GSSCredentialSpi;
-import sun.security.krb5.Credentials;
 
 /**
  * Provides serialization/deserialization of kerberos {@link org.ietf.jgss.GSSCredential}, so it can be transmitted from auth-server to the application
@@ -33,18 +41,9 @@ import sun.security.krb5.Credentials;
  */
 public class KerberosSerializationUtils {
 
-    public static final Oid KRB5_OID;
-    public static final Oid KRB5_NAME_OID;
     public static final String JAVA_INFO;
 
     static {
-        try {
-            KRB5_OID = new Oid(KerberosConstants.KRB5_OID);
-            KRB5_NAME_OID = new Oid(KerberosConstants.KRB5_NAME_OID);
-        } catch (GSSException e) {
-            throw new RuntimeException(e);
-        }
-
         String javaVersion = System.getProperty("java.version");
         String javaRuntimeVersion = System.getProperty("java.runtime.version");
         String javaVendor = System.getProperty("java.vendor");
@@ -55,50 +54,17 @@ public class KerberosSerializationUtils {
     private KerberosSerializationUtils() {
     }
 
-    public static String serializeCredential(GSSCredential gssCredential) throws KerberosSerializationException {
+    public static String serializeCredential(KerberosTicket kerberosTicket, GSSCredential gssCredential) throws KerberosSerializationException {
         try {
             if (gssCredential == null) {
                 throw new KerberosSerializationException("Null credential given as input");
             }
 
-            if (!(gssCredential instanceof GSSCredentialImpl)) {
-                throw new KerberosSerializationException("Unknown credential type: " + gssCredential.getClass());
-            }
+            kerberosTicket = KerberosJdkProvider.getProvider().gssCredentialToKerberosTicket(kerberosTicket, gssCredential);
 
-            GSSCredentialImpl gssCredImpl = (GSSCredentialImpl) gssCredential;
-            Oid[] mechs = gssCredImpl.getMechs();
-
-            for (Oid oid : mechs) {
-                if (oid.equals(KRB5_OID)) {
-                    int usage = gssCredImpl.getUsage(oid);
-                    boolean initiate = (usage == GSSCredential.INITIATE_ONLY || usage == GSSCredential.INITIATE_AND_ACCEPT);
-
-                    GSSCredentialSpi credentialSpi = gssCredImpl.getElement(oid, initiate);
-                    if (credentialSpi instanceof Krb5InitCredential) {
-                        Krb5InitCredential credential = (Krb5InitCredential) credentialSpi;
-                        KerberosTicket kerberosTicket = new KerberosTicket(credential.getEncoded(),
-                                credential.getClient(),
-                                credential.getServer(),
-                                credential.getSessionKey().getEncoded(),
-                                credential.getSessionKeyType(),
-                                credential.getFlags(),
-                                credential.getAuthTime(),
-                                credential.getStartTime(),
-                                credential.getEndTime(),
-                                credential.getRenewTill(),
-                                credential.getClientAddresses());
-                        return serialize(kerberosTicket);
-                    } else {
-                        throw new KerberosSerializationException("Unsupported type of credentialSpi: " + credentialSpi.getClass());
-                    }
-                }
-            }
-
-            throw new KerberosSerializationException("Kerberos credential not found. Available mechanisms: " + mechs);
+            return serialize(kerberosTicket);
         } catch (IOException e) {
-            throw new KerberosSerializationException("Exception occured", e);
-        } catch (GSSException e) {
-            throw new KerberosSerializationException("Exception occured", e);
+            throw new KerberosSerializationException("Unexpected exception when serialize GSSCredential", e);
         }
     }
 
@@ -115,32 +81,12 @@ public class KerberosSerializationUtils {
             }
 
             KerberosTicket ticket = (KerberosTicket) deserializedCred;
-            String fullName = ticket.getClient().getName();
 
-            Method getInstance = Reflections.findDeclaredMethod(Krb5NameElement.class, "getInstance", String.class, Oid.class);
-            Krb5NameElement krb5Name = Reflections.invokeMethod(true, getInstance, Krb5NameElement.class, null, fullName, KRB5_NAME_OID);
-
-            Credentials krb5CredsInternal = new Credentials(
-                    ticket.getEncoded(),
-                    ticket.getClient().getName(),
-                    ticket.getServer().getName(),
-                    ticket.getSessionKey().getEncoded(),
-                    ticket.getSessionKeyType(),
-                    ticket.getFlags(),
-                    ticket.getAuthTime(),
-                    ticket.getStartTime(),
-                    ticket.getEndTime(),
-                    ticket.getRenewTill(),
-                    ticket.getClientAddresses()
-            );
-
-            Method getInstance2 = Reflections.findDeclaredMethod(Krb5InitCredential.class, "getInstance", Krb5NameElement.class, Credentials.class);
-            Krb5InitCredential initCredential = Reflections.invokeMethod(true, getInstance2, Krb5InitCredential.class, null, krb5Name, krb5CredsInternal);
-
-            GSSManagerImpl manager = (GSSManagerImpl) GSSManager.getInstance();
-            return new GSSCredentialImpl(manager, initCredential);
+            return KerberosJdkProvider.getProvider().kerberosTicketToGSSCredential(ticket);
+        } catch (KerberosSerializationException ke) {
+            throw ke;
         } catch (Exception ioe) {
-            throw new KerberosSerializationException("Exception occured", ioe);
+            throw new KerberosSerializationException("Unexpected exception when deserialize GSSCredential", ioe);
         }
     }
 

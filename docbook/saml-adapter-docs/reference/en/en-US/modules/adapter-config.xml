@@ -1,3 +1,20 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <chapter id="adapter-config">
     <title>General Adapter Config</title>
     <para>
@@ -12,7 +29,8 @@
         nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
         logoutPage="/logout.jsp"
         forceAuthentication="false"
-        isPassive="false">
+        isPassive="false"
+        turnOffChangeSessionIdOnLogin="false">
         <Keys>
             <Key signing="true" >
                 <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
@@ -122,6 +140,15 @@
                             they are not logged in at the IDP. Set this to <literal>true</literal> if you want this.
                             Do not use together with <literal>forceAuthentication</literal> as they are opposite.
                             <emphasis>OPTIONAL.</emphasis>. Set to <literal>false</literal> by default.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>turnOffChangeSessionIdOnLogin</term>
+                    <listitem>
+                        <para>
+                            The session id is changed by default on a successful login on some platforms to plug a security attack vector (Tomcat 8, Jetty9, Undertow/Wildfly).  Change this to true if you want to turn this off
+                            This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
                         </para>
                     </listitem>
                 </varlistentry>
@@ -375,10 +402,10 @@
             </variablelist>
         </para>
     </section>    <section>
-    <title>IDP SingleSignOnService sub element</title>
+    <title>IDP SingleLogoutService sub element</title>
     <para>
-        The <literal>SignleSignOnService</literal> sub element defines the
-        login SAML endpoint of the IDP.
+        The <literal>SingleLogoutService</literal> sub element defines the
+        logout SAML endpoint of the IDP.
     </para>
     <programlisting><![CDATA[
 <SingleLogoutService validateRequestSignature="true"

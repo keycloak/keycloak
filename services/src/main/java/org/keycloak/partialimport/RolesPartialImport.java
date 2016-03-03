@@ -1,18 +1,18 @@
 /*
- * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
- * as indicated by the @author tags. All rights reserved.
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.keycloak.partialimport;
 
@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.ws.rs.core.Response;
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -29,6 +28,7 @@ import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ServicesLogger;
 
 /**
  * This class handles both realm roles and client roles.  It delegates to
@@ -44,7 +44,7 @@ import org.keycloak.services.ErrorResponse;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class RolesPartialImport implements PartialImport<RolesRepresentation> {
-    protected static Logger logger = Logger.getLogger(RolesPartialImport.class);
+    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private Set<RoleRepresentation> realmRolesToOverwrite;
     private Set<RoleRepresentation> realmRolesToSkip;
@@ -97,7 +97,7 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
         try {
             RepresentationToModel.importRoles(rep.getRoles(), realm);
         } catch (Exception e) {
-            logger.error("Error importing roles", e);
+            logger.roleImportError(e);
             throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
         }
 

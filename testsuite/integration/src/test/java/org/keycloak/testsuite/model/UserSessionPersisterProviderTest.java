@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.model;
 
 import java.util.ArrayList;
@@ -53,8 +70,12 @@ public class UserSessionPersisterProviderTest {
         UserModel user2 = session.users().getUserByUsername("user2", realm);
 
         UserManager um = new UserManager(session);
-        um.removeUser(realm, user1);
-        um.removeUser(realm, user2);
+        if (user1 != null) {
+            um.removeUser(realm, user1);
+        }
+        if (user2 != null) {
+            um.removeUser(realm, user2);
+        }
         kc.stopSession(session, true);
     }
 
@@ -290,6 +311,43 @@ public class UserSessionPersisterProviderTest {
         realmMgr.removeRealm(realmMgr.getRealm("foo"));
     }
 
+    @Test
+    public void testOnUserRemoved() {
+        // Create some sessions in infinispan
+        int started = Time.currentTime();
+        UserSessionModel[] origSessions = createSessions();
+
+        resetSession();
+
+        // Persist 2 offline sessions of 2 users
+        UserSessionModel userSession1 = session.sessions().getUserSession(realm, origSessions[1].getId());
+        UserSessionModel userSession2 = session.sessions().getUserSession(realm, origSessions[2].getId());
+        persistUserSession(userSession1, true);
+        persistUserSession(userSession2, true);
+
+        resetSession();
+
+        // Load offline sessions
+        List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(true, 10, 1, 2);
+
+        // Properly delete user and assert his offlineSession removed
+        UserModel user1 = session.users().getUserByUsername("user1", realm);
+        new UserManager(session).removeUser(realm, user1);
+
+        resetSession();
+
+        loadedSessions = loadPersistedSessionsPaginated(true, 10, 1, 1);
+        UserSessionModel persistedSession = loadedSessions.get(0);
+        UserSessionProviderTest.assertSession(persistedSession, session.users().getUserByUsername("user2", realm), "127.0.0.3", started, started, "test-app");
+
+        // KEYCLOAK-2431 Assert that userSessionPersister is resistent even to situation, when users are deleted "directly"
+        UserModel user2 = session.users().getUserByUsername("user2", realm);
+        session.users().removeUser(realm, user2);
+
+        loadedSessions = loadPersistedSessionsPaginated(true, 10, 0, 0);
+
+    }
+
     // KEYCLOAK-1999
     @Test
     public void testNoSessions() {
@@ -376,8 +434,7 @@ public class UserSessionPersisterProviderTest {
         }
 
         Assert.assertEquals(pageCount, expectedPageCount);
-        Assert.assertEquals(count, expectedSessionsCount);
-        Assert.assertEquals(count, result.size());
+        Assert.assertEquals(result.size(), expectedSessionsCount);
         return result;
     }
 }

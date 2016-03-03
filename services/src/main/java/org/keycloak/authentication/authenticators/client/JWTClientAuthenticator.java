@@ -1,7 +1,25 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.authentication.authenticators.client;
 
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -11,7 +29,6 @@ import java.util.Map;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
@@ -23,6 +40,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 
 /**
@@ -36,7 +54,7 @@ import org.keycloak.services.Urls;
  */
 public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
-    protected static Logger logger = Logger.getLogger(JWTClientAuthenticator.class);
+    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public static final String PROVIDER_ID = "client-jwt";
     public static final String CERTIFICATE_ATTR = "jwt.credential.certificate";
@@ -120,7 +138,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             // Validate other things
             String expectedAudience = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
             if (!token.hasAudience(expectedAudience)) {
-                throw new RuntimeException("Token audience doesn't match domain. Realm audience is '" + expectedAudience + "' but audience from token is '" + token.getAudience() + "'");
+                throw new RuntimeException("Token audience doesn't match domain. Realm audience is '" + expectedAudience + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
             }
 
             if (!token.isActive()) {
@@ -129,7 +147,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
             context.success();
         } catch (Exception e) {
-            logger.error("Error when validate client assertion", e);
+            logger.errorValidatingAssertion(e);
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client authentication with signed JWT failed: " + e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
         }

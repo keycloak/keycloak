@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source
- *
- * Copyright 2013 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +23,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.auth.page.login.SAMLLogin;
+import org.keycloak.testsuite.auth.page.login.SAMLPostLogin;
+import org.keycloak.testsuite.auth.page.login.SAMLRedirectLogin;
 import org.openqa.selenium.Cookie;
 
 import java.text.MessageFormat;
@@ -48,7 +48,10 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     protected OIDCLogin testRealmLoginPage;
 
     @Page
-    protected SAMLLogin testRealmSAMLLoginPage;
+    protected SAMLPostLogin testRealmSAMLPostLoginPage;
+
+    @Page
+    protected SAMLRedirectLogin testRealmSAMLRedirectLoginPage;
 
     protected UserRepresentation testUser;
 

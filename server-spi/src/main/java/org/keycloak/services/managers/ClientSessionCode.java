@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.services.managers;
 
 import org.keycloak.models.ClientModel;
@@ -21,8 +38,6 @@ import java.util.UUID;
  * @version $Revision: 1 $
  */
 public class ClientSessionCode {
-
-    public static final String ACTION_KEY = "action_key";
 
     private static final byte[] HASH_SEPERATOR = "//".getBytes();
 
@@ -65,6 +80,7 @@ public class ClientSessionCode {
         ClientSessionCode code;
         boolean clientSessionNotFound;
         boolean illegalHash;
+        ClientSessionModel clientSession;
 
         public ClientSessionCode getCode() {
             return code;
@@ -76,6 +92,10 @@ public class ClientSessionCode {
 
         public boolean isIllegalHash() {
             return illegalHash;
+        }
+
+        public ClientSessionModel getClientSession() {
+            return clientSession;
         }
     }
 
@@ -89,19 +109,19 @@ public class ClientSessionCode {
             String[] parts = code.split("\\.");
             String id = parts[1];
 
-            ClientSessionModel clientSession = session.sessions().getClientSession(realm, id);
-            if (clientSession == null) {
+            result.clientSession = session.sessions().getClientSession(realm, id);
+            if (result.clientSession == null) {
                 result.clientSessionNotFound = true;
                 return result;
             }
 
-            String hash = createHash(realm, clientSession);
+            String hash = createHash(realm, result.clientSession);
             if (!hash.equals(parts[0])) {
                 result.illegalHash = true;
                 return result;
             }
 
-            result.code = new ClientSessionCode(realm, clientSession);
+            result.code = new ClientSessionCode(realm, result.clientSession);
             return result;
         } catch (RuntimeException e) {
             result.illegalHash = true;
@@ -206,7 +226,6 @@ public class ClientSessionCode {
 
     public void setAction(String action) {
         clientSession.setAction(action);
-        clientSession.setNote(ACTION_KEY, UUID.randomUUID().toString());
         clientSession.setTimestamp(Time.currentTime());
     }
 
@@ -232,7 +251,7 @@ public class ClientSessionCode {
             mac.init(codeSecretKey);
             mac.update(clientSession.getId().getBytes());
             mac.update(HASH_SEPERATOR);
-            mac.update(clientSession.getNote(ACTION_KEY).getBytes());
+            mac.update(clientSession.getNote(ClientSessionModel.ACTION_KEY).getBytes());
             return Base64Url.encode(mac.doFinal());
         } catch (Exception e) {
             throw new RuntimeException(e);

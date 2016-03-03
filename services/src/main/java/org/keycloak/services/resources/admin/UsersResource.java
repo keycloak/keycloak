@@ -1,6 +1,21 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.services.resources.admin;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
@@ -43,6 +58,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserManager;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 
 import javax.ws.rs.Consumes;
@@ -77,6 +93,7 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.common.util.Time;
+import org.keycloak.services.validation.Validation;
 
 /**
  * Base resource for managing users
@@ -85,7 +102,7 @@ import org.keycloak.common.util.Time;
  * @version $Revision: 1 $
  */
 public class UsersResource {
-    protected static final Logger logger = Logger.getLogger(UsersResource.class);
+    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     protected RealmModel realm;
 
@@ -204,12 +221,12 @@ public class UsersResource {
     }
 
     public static void updateUserFromRep(UserModel user, UserRepresentation rep, Set<String> attrsToRemove, RealmModel realm, KeycloakSession session) {
-        if (realm.isEditUsernameAllowed()) {
+        if (rep.getUsername() != null && realm.isEditUsernameAllowed()) {
             user.setUsername(rep.getUsername());
         }
-        user.setEmail(rep.getEmail());
-        user.setFirstName(rep.getFirstName());
-        user.setLastName(rep.getLastName());
+        if (rep.getEmail() != null) user.setEmail(rep.getEmail());
+        if (rep.getFirstName() != null) user.setFirstName(rep.getFirstName());
+        if (rep.getLastName() != null) user.setLastName(rep.getLastName());
 
         if (rep.isEnabled() != null) user.setEnabled(rep.isEnabled());
         if (rep.isTotp() != null) user.setOtpEnabled(rep.isTotp());
@@ -691,6 +708,9 @@ public class UsersResource {
         if (pass == null || pass.getValue() == null || !CredentialRepresentation.PASSWORD.equals(pass.getType())) {
             throw new BadRequestException("No password provided");
         }
+        if (Validation.isBlank(pass.getValue())) {
+            throw new BadRequestException("Empty password not allowed");
+        }
 
         UserCredentialModel cred = RepresentationToModel.convertCredential(pass);
         try {
@@ -804,7 +824,7 @@ public class UsersResource {
 
             return Response.ok().build();
         } catch (EmailException e) {
-            logger.error("Failed to send execute actions email", e);
+            logger.failedToSendActionsEmail(e);
             return ErrorResponse.error("Failed to send execute actions email", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }

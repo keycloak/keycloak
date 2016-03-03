@@ -1,8 +1,27 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.models.jpa;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -15,18 +34,20 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RoleAdapter implements RoleModel {
+public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     protected RoleEntity role;
     protected EntityManager em;
     protected RealmModel realm;
+    protected KeycloakSession session;
 
-    public RoleAdapter(RealmModel realm, EntityManager em, RoleEntity role) {
+    public RoleAdapter(KeycloakSession session, RealmModel realm, EntityManager em, RoleEntity role) {
         this.em = em;
         this.realm = realm;
         this.role = role;
+        this.session = session;
     }
 
-    public RoleEntity getRole() {
+    public RoleEntity getEntity() {
         return role;
     }
 
@@ -77,17 +98,17 @@ public class RoleAdapter implements RoleModel {
     @Override
     public void addCompositeRole(RoleModel role) {
         RoleEntity entity = RoleAdapter.toRoleEntity(role, em);
-        for (RoleEntity composite : getRole().getCompositeRoles()) {
+        for (RoleEntity composite : getEntity().getCompositeRoles()) {
             if (composite.equals(entity)) return;
         }
-        getRole().getCompositeRoles().add(entity);
+        getEntity().getCompositeRoles().add(entity);
         em.flush();
     }
 
     @Override
     public void removeCompositeRole(RoleModel role) {
         RoleEntity entity = RoleAdapter.toRoleEntity(role, em);
-        Iterator<RoleEntity> it = getRole().getCompositeRoles().iterator();
+        Iterator<RoleEntity> it = getEntity().getCompositeRoles().iterator();
         while (it.hasNext()) {
             if (it.next().equals(entity)) it.remove();
         }
@@ -97,8 +118,11 @@ public class RoleAdapter implements RoleModel {
     public Set<RoleModel> getComposites() {
         Set<RoleModel> set = new HashSet<RoleModel>();
 
-        for (RoleEntity composite : getRole().getCompositeRoles()) {
-           set.add(new RoleAdapter(realm, em, composite));
+        for (RoleEntity composite : getEntity().getCompositeRoles()) {
+            set.add(new RoleAdapter(session, realm, em, composite));
+
+            // todo I want to do this, but can't as you get stack overflow
+            // set.add(session.realms().getRoleById(composite.getId(), realm));
         }
         return set;
     }
@@ -138,7 +162,7 @@ public class RoleAdapter implements RoleModel {
 
     public static RoleEntity toRoleEntity(RoleModel model, EntityManager em) {
         if (model instanceof RoleAdapter) {
-            return ((RoleAdapter)model).getRole();
+            return ((RoleAdapter)model).getEntity();
         }
         return em.getReference(RoleEntity.class, model.getId());
     }

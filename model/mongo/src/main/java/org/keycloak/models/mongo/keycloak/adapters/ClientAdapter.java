@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.models.mongo.keycloak.adapters;
 
 import com.mongodb.DBObject;
@@ -550,34 +567,18 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
-    public RoleAdapter getRole(String name) {
-        DBObject query = new QueryBuilder()
-                .and("name").is(name)
-                .and("clientId").is(getId())
-                .get();
-        MongoRoleEntity role = getMongoStore().loadSingleEntity(MongoRoleEntity.class, query, invocationContext);
-        if (role == null) {
-            return null;
-        } else {
-            return new RoleAdapter(session, getRealm(), role, invocationContext);
-        }
+    public RoleModel getRole(String name) {
+        return session.realms().getClientRole(realm, this, name);
     }
 
     @Override
-    public RoleAdapter addRole(String name) {
-        return this.addRole(null, name);
+    public RoleModel addRole(String name) {
+        return session.realms().addClientRole(realm, this, name);
     }
 
     @Override
-    public RoleAdapter addRole(String id, String name) {
-        MongoRoleEntity roleEntity = new MongoRoleEntity();
-        roleEntity.setId(id);
-        roleEntity.setName(name);
-        roleEntity.setClientId(getId());
-
-        getMongoStore().insertEntity(roleEntity, invocationContext);
-
-        return new RoleAdapter(session, getRealm(), roleEntity, this, invocationContext);
+    public RoleModel addRole(String id, String name) {
+        return session.realms().addClientRole(realm, this, id, name);
     }
 
     @Override
@@ -588,17 +589,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
 
     @Override
     public Set<RoleModel> getRoles() {
-        DBObject query = new QueryBuilder()
-                .and("clientId").is(getId())
-                .get();
-        List<MongoRoleEntity> roles = getMongoStore().loadEntities(MongoRoleEntity.class, query, invocationContext);
-
-        Set<RoleModel> result = new HashSet<RoleModel>();
-        for (MongoRoleEntity role : roles) {
-            result.add(new RoleAdapter(session, getRealm(), role, this, invocationContext));
-        }
-
-        return result;
+        return session.realms().getClientRoles(realm, this);
     }
 
     @Override
@@ -636,7 +627,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
-    public void updateDefaultRoles(String[] defaultRoles) {
+    public void updateDefaultRoles(String... defaultRoles) {
         List<String> roleNames = new ArrayList<String>();
         for (String roleName : defaultRoles) {
             RoleModel role = getRole(roleName);
@@ -650,6 +641,17 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
         getMongoEntity().setDefaultRoles(roleNames);
         updateMongoEntity();
     }
+
+    @Override
+    public void removeDefaultRoles(String... defaultRoles) {
+        List<String> roleNames = new ArrayList<String>();
+        for (String role : getMongoEntity().getDefaultRoles()) {
+            if (!RealmAdapter.contains(role, defaultRoles)) roleNames.add(role);
+        }
+        getMongoEntity().setDefaultRoles(roleNames);
+        updateMongoEntity();
+    }
+
 
     @Override
     public int getNodeReRegistrationTimeout() {

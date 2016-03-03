@@ -1,25 +1,28 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.services;
 
-import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakTransactionManager;
-import org.keycloak.models.RealmProvider;
-import org.keycloak.models.UserFederationManager;
-import org.keycloak.models.UserProvider;
-import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -35,8 +38,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private UserSessionProvider sessionProvider;
     private UserFederationManager federationManager;
     private KeycloakContext context;
-    
-    private static final Logger logger = Logger.getLogger(DefaultKeycloakSession.class);
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -51,16 +52,18 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     private RealmProvider getRealmProvider() {
-        if (factory.getDefaultProvider(CacheRealmProvider.class) != null) {
-            return getProvider(CacheRealmProvider.class);
+        CacheRealmProvider cache = getProvider(CacheRealmProvider.class);
+        if (cache != null) {
+            return cache;
         } else {
             return getProvider(RealmProvider.class);
         }
     }
 
     private UserProvider getUserProvider() {
-        if (factory.getDefaultProvider(CacheUserProvider.class) != null) {
-            return getProvider(CacheUserProvider.class);
+        CacheUserProvider cache = getProvider(CacheUserProvider.class);
+        if (cache != null) {
+            return cache;
         } else {
             return getProvider(UserProvider.class);
         }
@@ -87,7 +90,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
             userModel = getUserProvider();
         }
         return userModel;
-
     }
 
     public <T extends Provider> T getProvider(Class<T> clazz) {
@@ -108,7 +110,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         T provider = (T) providers.get(hash);
         if (provider == null) {
             ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, id);
-          
+
             if (providerFactory != null) {
                 provider = providerFactory.create(this);
                 providers.put(hash, provider);

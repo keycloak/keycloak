@@ -1,0 +1,41 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/users">{{:: 'users' | translate}}</a></li>
+        <li>{{user.username}}</li>
+    </ol>
+
+    <kc-tabs-user></kc-tabs-user>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr data-ng-show="hasAnyProvidersToCreate()">
+                <th class="kc-table-actions" colspan="4">
+                    <div class="form-inline">
+                        <div class="pull-right">
+                            <a class="btn btn-primary" href="#/create/federated-identity/{{realm.realm}}/{{user.id}}">{{:: 'create' | translate}}</a>
+                        </div>
+                    </div>
+                </th>
+            </tr>
+            <tr data-ng-hide="federatedIdentities.length == 0">
+                <th>{{:: 'identity-provider-alias' | translate}}</th>
+                <th>{{:: 'provider-user-id' | translate}}</th>
+                <th>{{:: 'provider-username' | translate}}</th>
+                <th>{{:: 'action' | translate}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr data-ng-repeat="identity in federatedIdentities">
+                <td>{{identity.identityProvider}}</td>
+                <td>{{identity.userId}}</td>
+                <td>{{identity.userName}}</td>
+                <td class="kc-action-cell" ng-click="removeProviderLink(identity)">{{:: 'remove' | translate}}</td>
+            </tr>
+            <tr data-ng-show="federatedIdentities.length == 0">
+                <td>{{:: 'no-identity-provider-links-available' | translate}}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<kc-menu></kc-menu>

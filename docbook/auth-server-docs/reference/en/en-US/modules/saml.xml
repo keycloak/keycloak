@@ -1,16 +1,37 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <chapter id="saml">
     <title>SAML SSO</title>
     <para>
-        Keycloak supports SAML 2.0 for registered applications.  Both POST and Redirect bindings are supported.  You can choose
-        to require client signature validation and can have the server sign and/or encrypt responses as well.  We do not
-        yet support logout via redirects.  All logouts happen via a background POST binding request to the application
-        that will be logged out.  We do not support SAML 1.1 either.  If you want support for either of those, please
+        Keycloak supports SAML 2.0 for registered applications. Both POST and Redirect bindings are supported. You can
+        choose
+        to require client signature validation and can have the server sign and/or encrypt responses as well. We do not
+        yet support logout via redirects. All logouts happen via a background POST binding request to the application
+        that will be logged out. We do not support SAML 1.1 either. If you want support for either of those, please
         log a JIRA request and we'll schedule it.
     </para>
     <para>
-        When you create an application in the admin console, you can choose which protocol the application will log in with.
-        In the application create screen, choose <literal>saml</literal> from the protocol list.  After that there
-        are a bunch of configuration options.  Here is a description of each item:
+        When you create an application in the admin console, you can choose which protocol the application will log in
+        with.
+        In the application create screen, choose
+        <literal>saml</literal>
+        from the protocol list. After that there
+        are a bunch of configuration options. Here is a description of each item:
     </para>
     <para>
         <variablelist>
@@ -18,7 +39,7 @@
                 <term>Client ID</term>
                 <listitem>
                     <para>
-                        This value must match the issuer value sent with AuthNRequests.  Keycloak will pull the issuer
+                        This value must match the issuer value sent with AuthNRequests. Keycloak will pull the issuer
                         from the Authn SAML request and match it to a client by this value.
                     </para>
                 </listitem>
@@ -28,7 +49,8 @@
                 <listitem>
                     <para>
                         SAML login responses may specify the authentication method used (password, etc.) as well as
-                        a timestamp of the login.  Setting this to on will include that statement in the response document.
+                        a timestamp of the login. Setting this to on will include that statement in the response
+                        document.
                     </para>
                 </listitem>
             </varlistentry>
@@ -36,7 +58,8 @@
                 <term>Multi-valued Roles</term>
                 <listitem>
                     <para>
-                        If this switch is off, any user role mappings will have a corresponding attribute created for it.
+                        If this switch is off, any user role mappings will have a corresponding attribute created for
+                        it.
                         If this switch is turn on, only one role attribute will be created, but it will have
                         multiple values within in.
                     </para>
@@ -54,7 +77,9 @@
                 <term>Sign Assertions</term>
                 <listitem>
                     <para>
-                        With the <literal>Sign Documents</literal> switch signs the whole document.  With this setting
+                        With the
+                        <literal>Sign Documents</literal>
+                        switch signs the whole document. With this setting
                         you just assign the assertions of the document.
                     </para>
                 </listitem>
@@ -71,7 +96,7 @@
                 <term>Encrypt Assertions</term>
                 <listitem>
                     <para>
-                        Encrypt assertions in SAML documents with the realm's private key.  The AES algorithm is used
+                        Encrypt assertions in SAML documents with the realm's private key. The AES algorithm is used
                         with a key size of 128 bits.
                     </para>
                 </listitem>
@@ -80,8 +105,10 @@
                 <term>Client Signature Required</term>
                 <listitem>
                     <para>
-                        Expect that documents coming from a client are signed.  Keycloak will validate this signature
-                        using the client keys set up in the <literal>Application Keys</literal> submenu item.
+                        Expect that documents coming from a client are signed. Keycloak will validate this signature
+                        using the client keys set up in the
+                        <literal>Application Keys</literal>
+                        submenu item.
                     </para>
                 </listitem>
             </varlistentry>
@@ -89,8 +116,10 @@
                 <term>Force POST Binding</term>
                 <listitem>
                     <para>
-                        By default, Keycloak will respond using the initial SAML binding of the original request.  By turning
-                        on this switch, you will force Keycloak to always respond using the SAML POST Binding even if the
+                        By default, Keycloak will respond using the initial SAML binding of the original request. By
+                        turning
+                        on this switch, you will force Keycloak to always respond using the SAML POST Binding even if
+                        the
                         original request was the Redirect binding.
                     </para>
                 </listitem>
@@ -99,9 +128,12 @@
                 <term>Front Channel Logout</term>
                 <listitem>
                     <para>
-                        If true, this application requires a browser redirect to be able to perform a logout.  For example,
-                        the application may require a cookie to be reset which could only be done by a done via a redirect.
-                        If this switch is false, then Keycloak will invoke a background SAML request to logout the application.
+                        If true, this application requires a browser redirect to be able to perform a logout. For
+                        example,
+                        the application may require a cookie to be reset which could only be done by a done via a
+                        redirect.
+                        If this switch is false, then Keycloak will invoke a background SAML request to logout the
+                        application.
                     </para>
                 </listitem>
             </varlistentry>
@@ -109,7 +141,8 @@
                 <term>Force Name ID Format</term>
                 <listitem>
                     <para>
-                        If the request has a name ID policy, ignore it and used the value configured in the admin console
+                        If the request has a name ID policy, ignore it and used the value configured in the admin
+                        console
                         under Name ID Format
                     </para>
                 </listitem>
@@ -118,18 +151,118 @@
                 <term>Name ID Format</term>
                 <listitem>
                     <para>
-                        Name ID Format for the subject.  If no name ID policy is specified in the request or if the
-                        Force Name ID Format attribute is true, this value is used.
+                        Name ID Format for the subject. If no name ID policy is specified in the request or if the
+                        Force Name ID Format attribute is true, this value is used. Properties used for each of the
+                        respective formats are defined below.
                     </para>
+                    <variablelist>
+                        <varlistentry>
+                            <term>username</term>
+                            <listitem>
+                                <para>
+                                    Format:
+                                    <literal>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</literal>
+                                </para>
+                                <para>
+                                    Source:
+                                    <literal>UserModel.userName</literal>
+                                    property
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                            <term>email</term>
+                            <listitem>
+                                <para>
+                                    Format:
+                                    <literal>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</literal>
+                                </para>
+                                <para>
+                                    Source:
+                                    <literal>UserModel.email</literal>
+                                    property
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                            <term>transient</term>
+                            <listitem>
+                                <para>
+                                    Format:
+                                    <literal>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</literal>
+                                </para>
+                                <para>
+                                    Source:<literal>G-$randomUuid</literal>, I.E.
+                                    <literal>G-5ef5b38f-864f-41ad-82a0-04ade9139500</literal>
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                            <term>persistent</term>
+                            <listitem>
+                                <para>
+                                    Format:
+                                    <literal>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</literal>
+                                </para>
+                                <para>
+                                    The persistent identifier will be evaluated in the following order. If one step
+                                    does not yield a value, processing will continue on to the next until a value is
+                                    found.
+                                </para>
+                                <variablelist>
+                                    <varlistentry>
+                                        <term>
+                                            1) saml.persistent.name.id.for.$clientId
+                                            <literal>UserModel</literal> attribute
+                                        </term>
+                                        <listitem>
+                                            <para>
+                                                identifier unique to this client/user pair.
+                                            </para>
+                                        </listitem>
+                                    </varlistentry>
+                                    <varlistentry>
+                                        <term>
+                                            2) saml.persistent.name.id.for.*
+                                            <literal>UserModel</literal> attribute
+                                        </term>
+                                        <listitem>
+                                            <para>
+                                                user identifier for all clients, unless otherwise overridden by a
+                                                $clientId attribute.
+                                            </para>
+                                        </listitem>
+                                    </varlistentry>
+                                    <varlistentry>
+                                        <term>
+                                            3) G-$randomUuid
+                                        </term>
+                                        <listitem>
+                                            <para>
+                                                I.E.<literal>G-5ef5b38f-864f-41ad-82a0-04ade9139500</literal>. If
+                                                neither a $clientId or wildcard user attribute is found, a persistent
+                                                identifier will be generated for the given client. Note that once this
+                                                identifier has been generated, a user attribute with the key
+                                                <emphasis>saml.persistent.name.id.for.$clientId</emphasis>
+                                                will be persisted and used on all subsequent requests against the given
+                                                client.
+                                            </para>
+                                        </listitem>
+                                    </varlistentry>
+                                </variablelist>
+                            </listitem>
+                        </varlistentry>
+                    </variablelist>
                 </listitem>
             </varlistentry>
             <varlistentry>
                 <term>Master SAML Processing URL</term>
                 <listitem>
                     <para>
-                        This URL will be used for all SAML requests and responsed directed to the SP.  It will be used
-                        as the Assertion Consumer Service URL and the Single Logout Service URL.  If a login request
-                        contains the Assertion Consumer Service URL, that will take precedence, but this URL must be valided
+                        This URL will be used for all SAML requests and responsed directed to the SP. It will be used
+                        as the Assertion Consumer Service URL and the Single Logout Service URL. If a login request
+                        contains the Assertion Consumer Service URL, that will take precedence, but this URL must be
+                        valided
                         by a registered Valid Redirect URI pattern
                     </para>
                 </listitem>
@@ -169,9 +302,10 @@
         </variablelist>
     </para>
     <para>
-        For login to work, Keycloak needs to be able to resolve the URL for the Assertion Consumer Service of the SP.  If
-        you are relying on the SP to provide this URL in the login request, then you must register valid redirect uri patterns
-        so that this URL can be validated.  You can set the Master SAML Processing URL as well, or alternatively, you can
+        For login to work, Keycloak needs to be able to resolve the URL for the Assertion Consumer Service of the SP. If
+        you are relying on the SP to provide this URL in the login request, then you must register valid redirect uri
+        patterns
+        so that this URL can be validated. You can set the Master SAML Processing URL as well, or alternatively, you can
         specify the Assertion Consumer Service URL per binding.
     </para>
     <para>
@@ -179,32 +313,43 @@
         you want Keycloak to use.
     </para>
     <para>
-        One thing to note is that roles are not treated as a hierarchy.  So, any role mappings will just be added
-        to the role attributes in the SAML document using their basic name.  So, if you have multiple application roles
-        you might have name collisions.  You can use the Scope Mapping menu item to control which role mappings are set
+        One thing to note is that roles are not treated as a hierarchy. So, any role mappings will just be added
+        to the role attributes in the SAML document using their basic name. So, if you have multiple application roles
+        you might have name collisions. You can use the Scope Mapping menu item to control which role mappings are set
         in the response.
     </para>
     <section>
         <title>SAML Entity Descriptor</title>
         <para>
-            If you go into the admin console in the application list menu page you will see an <literal>Import</literal>
-            button.  If you click on that you can import SAML Service Provider definitions using the <ulink url="http://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf">Entity Descriptor</ulink>
-            format described in SAML 2.0.  You should review all the information there to make sure everything is set up correctly.
+            If you go into the admin console in the application list menu page you will see an
+            <literal>Import</literal>
+            button. If you click on that you can import SAML Service Provider definitions using the
+            <ulink url="http://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf">Entity Descriptor
+            </ulink>
+            format described in SAML 2.0. You should review all the information there to make sure everything is set up
+            correctly.
         </para>
         <para>
-            Each realm has a URL where you can view the XML entity descriptor for the IDP.  <literal>root/auth/realms/{realm}/protocol/saml/descriptor</literal>
+            Each realm has a URL where you can view the XML entity descriptor for the IDP.
+            <literal>root/auth/realms/{realm}/protocol/saml/descriptor</literal>
         </para>
     </section>
     <section>
         <title>IDP Initiated Login</title>
         <para>
-            IDP Initiated Login is a feature that where you can set up a URL on the Keycloak server that will log you into a specific application/client.  To set this up
-            go to the client page in the admin console of the client you want to set this up for.  Specify the <literal>IDP Initiated SSO URL Name</literal>.  This is a simple string
-            with no whitespace in it.  After this you can reference your client at the following URL:  <literal>root/auth/realms/{realm}/protocol/saml/clients/{url-name}</literal>
+            IDP Initiated Login is a feature that where you can set up a URL on the Keycloak server that will log you
+            into a specific application/client. To set this up
+            go to the client page in the admin console of the client you want to set this up for. Specify the<literal>
+            IDP Initiated SSO URL Name</literal>. This is a simple string
+            with no whitespace in it. After this you can reference your client at the following URL:
+            <literal>root/auth/realms/{realm}/protocol/saml/clients/{url-name}</literal>
         </para>
         <para>
-            If your client requires a special relay state, you can also configure this in the admin console.  Alternatively, you can specify the relay state in a
-            <literal>RelayState</literal> query parameter, i.e. :  <literal>root/auth/realms/{realm}/protocol/saml/clients/{url-name}?RelayState=thestate</literal>
+            If your client requires a special relay state, you can also configure this in the admin console.
+            Alternatively, you can specify the relay state in a
+            <literal>RelayState</literal>
+            query parameter, i.e. :
+            <literal>root/auth/realms/{realm}/protocol/saml/clients/{url-name}?RelayState=thestate</literal>
         </para>
     </section>
 </chapter>

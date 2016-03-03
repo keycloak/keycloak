@@ -1,11 +1,41 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.testsuite.util;
 
-import java.text.MessageFormat;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import org.apache.commons.io.IOUtils;
+import org.jboss.logging.Logger;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartUtilities;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
+import static org.jgroups.util.Util.assertTrue;
 
 /**
  *
@@ -13,45 +43,129 @@ import java.util.Map;
  */
 public class Timer {
 
-    private static Long time;
+    public static final Timer DEFAULT = new Timer();
 
-    private static final Map<String, List<Long>> stats = new HashMap<>();
+    protected final Logger log = Logger.getLogger(Timer.class);
 
-    public static void time() {
-        time = new Date().getTime();
+    protected static final File DATA_DIR = new File(PROJECT_BUILD_DIRECTORY, "stats/data");
+    protected static final File CHARTS_DIR = new File(PROJECT_BUILD_DIRECTORY, "stats/charts");
+
+    public static final String DEFAULT_OPERATION = "DEFAULT_OPERATION";
+
+    private Long time;
+    private String operation = DEFAULT_OPERATION;
+    private final Map<String, List<Long>> stats = new TreeMap<>();
+
+    public long elapsedTime() {
+        long elapsedTime = 0;
+        if (time == null) {
+        } else {
+            elapsedTime = new Date().getTime() - time;
+        }
+        return elapsedTime;
     }
 
-    public static void time(String operation) {
-        if (time == null) {
-            System.out.println(MessageFormat.format("Starting timer for operation {0}", operation));
-            time();
-        } else {
-            long timeOrig = time;
-            time();
-            logOperation(operation, time - timeOrig);
-            System.out.println(MessageFormat.format("Operation {0} took {1} ms", operation, time - timeOrig));
+    public void reset() {
+        reset(operation); // log last operation
+    }
+
+    public void reset(String operation) {
+        reset(operation, true);
+    }
+
+    public void reset(String newOperation, boolean logOperationOnChange) {
+        if (time != null) {
+            if (operation.equals(newOperation) || logOperationOnChange) {
+                logOperation(operation, elapsedTime());
+            }
+        }
+        time = new Date().getTime();
+        if (!operation.equals(newOperation)) {
+            operation = newOperation;
+            log.info(String.format("Operation '%s' started.", newOperation));
         }
     }
 
-    private static void logOperation(String operation, long delta) {
+    private void logOperation(String operation, long duration) {
         if (!stats.containsKey(operation)) {
             stats.put(operation, new ArrayList<Long>());
         }
-        stats.get(operation).add(delta);
+        stats.get(operation).add(duration);
+        log.info(String.format("Operation '%s' took: %s ms", operation, duration));
     }
 
-    public static void printStats() {
-        if (!stats.isEmpty()) {
-            System.out.println("OPERATION STATS:");
-        }
-        for (String op : stats.keySet()) {
-            long sum = 0;
-            for (Long t : stats.get(op)) {
-                sum += t;
+    public void clearStats() {
+        clearStats(true, true, true);
+    }
+
+    public void clearStats(boolean logStats, boolean saveData, boolean saveCharts) {
+        if (logStats) {
+            log.info("Timer Statistics:");
+            for (String op : stats.keySet()) {
+                long sum = 0;
+                for (Long duration : stats.get(op)) {
+                    sum += duration;
+                }
+                log.info(String.format("Operation '%s' average: %s ms", op, sum / stats.get(op).size()));
             }
-            System.out.println(MessageFormat.format("Operation {0} average time: {1,number,#} ms", op, sum / stats.get(op).size()));
+        }
+        if (PROJECT_BUILD_DIRECTORY.exists()) {
+            DATA_DIR.mkdirs();
+            CHARTS_DIR.mkdirs();
+            for (String op : stats.keySet()) {
+                if (saveData) {
+                    saveData(op);
+                }
+                if (saveCharts) {
+                    saveChart(op);
+                }
+            }
         }
         stats.clear();
+    }
+
+    private void saveData(String op) {
+        try {
+            File f = new File(DATA_DIR, op.replace(" ", "_") + ".txt");
+            if (!f.createNewFile()) {
+                throw new IOException("Couldn't create file: " + f);
+            }
+            OutputStream stream = new BufferedOutputStream(new FileOutputStream(f));
+            for (Long duration : stats.get(op)) {
+                IOUtils.write(duration.toString(), stream);
+                IOUtils.write("\n", stream);
+            }
+            stream.flush();
+            IOUtils.closeQuietly(stream);
+        } catch (IOException ex) {
+            log.error("Unable to save data for operation '" + op + "'", ex);
+        }
+    }
+
+    private void saveChart(String op) {
+        XYSeries series = new XYSeries(op);
+        int i = 0;
+        for (Long duration : stats.get(op)) {
+            series.add(++i, duration);
+        }
+        final XYSeriesCollection data = new XYSeriesCollection(series);
+        final JFreeChart chart = ChartFactory.createXYLineChart(
+                op,
+                "Operations",
+                "Duration (ms)",
+                data,
+                PlotOrientation.VERTICAL,
+                true,
+                true,
+                false
+        );
+        try {
+            ChartUtilities.saveChartAsPNG(
+                    new File(CHARTS_DIR, op.replace(" ", "_") + ".png"),
+                    chart, 640, 480);
+        } catch (IOException ex) {
+            log.warn("Unable to save chart for operation '" + op + "'.");
+        }
     }
 
 }

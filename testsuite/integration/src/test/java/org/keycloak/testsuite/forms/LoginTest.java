@@ -1,23 +1,18 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.keycloak.testsuite.forms;
 
@@ -30,6 +25,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -69,17 +65,13 @@ public class LoginTest {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            UserCredentialModel creds = new UserCredentialModel();
-            creds.setType(CredentialRepresentation.PASSWORD);
-            creds.setValue("password");
-
             UserModel user = manager.getSession().users().addUser(appRealm, "login-test");
             user.setEmail("login@test.com");
             user.setEnabled(true);
 
             userId = user.getId();
 
-            user.updateCredential(creds);
+            user.updateCredential(UserCredentialModel.password("password"));
 
             UserModel user2 = manager.getSession().users().addUser(appRealm, "login-test2");
             user2.setEmail("login2@test.com");
@@ -87,7 +79,7 @@ public class LoginTest {
 
             user2Id = user2.getId();
 
-            user2.updateCredential(creds);
+            user2.updateCredential(UserCredentialModel.password("password"));
         }
     });
 
@@ -309,10 +301,30 @@ public class LoginTest {
     }
 
     @Test
+    // KEYCLOAK-2557
+    public void loginUserWithEmailAsUsername() {
+        KeycloakSession session = keycloakRule.startSession();
+
+        UserModel user = session.users().addUser(session.realms().getRealmByName("test"), "login@test.com");
+        user.setEnabled(true);
+        user.updateCredential(UserCredentialModel.password("password"));
+
+        keycloakRule.stopSession(session, true);
+
+        loginPage.open();
+        loginPage.login("login@test.com", "password");
+        
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
+    }
+
+    @Test
     public void loginSuccess() {
         loginPage.open();
         loginPage.login("login-test", "password");
-        
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 

@@ -1,6 +1,22 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.protocol.oidc.endpoints;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
@@ -27,6 +43,7 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -51,7 +68,7 @@ import java.util.Map;
  */
 public class TokenEndpoint {
 
-    private static final Logger logger = Logger.getLogger(TokenEndpoint.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     private MultivaluedMap<String, String> formParams;
     private ClientModel client;
     private Map<String, String> clientAuthAttributes;
@@ -205,6 +222,22 @@ public class TokenEndpoint {
 
         accessCode.setAction(null);
         UserSessionModel userSession = clientSession.getUserSession();
+
+        if (userSession == null) {
+            event.error(Errors.USER_SESSION_NOT_FOUND);
+            throw new ErrorResponseException("invalid_grant", "User session not found", Response.Status.BAD_REQUEST);
+        }
+
+        UserModel user = userSession.getUser();
+        if (user == null) {
+            event.error(Errors.USER_NOT_FOUND);
+            throw new ErrorResponseException("invalid_grant", "User not found", Response.Status.BAD_REQUEST);
+        }
+        if (!user.isEnabled()) {
+            event.error(Errors.USER_DISABLED);
+            throw new ErrorResponseException("invalid_grant", "User disabled", Response.Status.BAD_REQUEST);
+        }
+
         event.user(userSession.getUser());
         event.session(userSession.getId());
 
@@ -222,17 +255,6 @@ public class TokenEndpoint {
         if (!client.isStandardFlowEnabled()) {
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorResponseException("invalid_grant", "Client not allowed to exchange code", Response.Status.BAD_REQUEST);
-        }
-
-        UserModel user = session.users().getUserById(userSession.getUser().getId(), realm);
-        if (user == null) {
-            event.error(Errors.USER_NOT_FOUND);
-            throw new ErrorResponseException("invalid_grant", "User not found", Response.Status.BAD_REQUEST);
-        }
-
-        if (!user.isEnabled()) {
-            event.error(Errors.USER_DISABLED);
-            throw new ErrorResponseException("invalid_grant", "User disabled", Response.Status.BAD_REQUEST);
         }
 
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
@@ -285,7 +307,7 @@ public class TokenEndpoint {
     private void updateClientSession(ClientSessionModel clientSession) {
 
         if(clientSession == null) {
-            logger.error("client session is null");
+            logger.clientSessionNull();
             return;
         }
 
@@ -303,16 +325,16 @@ public class TokenEndpoint {
 
     private void updateClientSessions(List<ClientSessionModel> clientSessions) {
         if(clientSessions == null) {
-            logger.error("client sessions is null");
+            logger.clientSessionNull();
             return;
         }
         for (ClientSessionModel clientSession : clientSessions) {
             if(clientSession == null) {
-                logger.error("client session is null");
+                logger.clientSessionNull();
                 continue;
             }
             if(clientSession.getClient() == null) {
-                logger.error("client model in client session is null");
+                logger.clientModelNull();
                 continue;
             }
             if(client.getId().equals(clientSession.getClient().getId())) {

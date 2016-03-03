@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.authentication;
 
 import java.util.ArrayList;
@@ -12,11 +29,14 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.ServicesLogger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientAuthenticationFlow implements AuthenticationFlow {
+
+    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     Response alternativeChallenge = null;
     AuthenticationProcessor processor;
@@ -42,7 +62,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
                 throw new AuthenticationFlowException("Could not find ClientAuthenticatorFactory for: " + model.getAuthenticator(), AuthenticationFlowError.INTERNAL_ERROR);
             }
             ClientAuthenticator authenticator = factory.create();
-            AuthenticationProcessor.logger.debugv("client authenticator: {0}", factory.getId());
+            logger.debugv("client authenticator: {0}", factory.getId());
 
             AuthenticationProcessor.Result context = processor.createClientAuthenticatorContext(model, authenticator, executions);
             authenticator.authenticateClient(context);
@@ -54,7 +74,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
                 // Fallback to secret just in case (for backwards compatibility)
                 if (expectedClientAuthType == null) {
                     expectedClientAuthType = KeycloakModelUtils.getDefaultClientAuthenticatorType();
-                    AuthenticationProcessor.logger.warnv("Client {0} doesn't have have authentication method configured. Fallback to {1}", client.getClientId(), expectedClientAuthType);
+                    logger.authMethodFallback(client.getClientId(), expectedClientAuthType);
                 }
 
                 // Check if client authentication matches
@@ -66,7 +86,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
                         throw new AuthenticationFlowException("Expected success, but for an unknown reason the status was " + context.getStatus(), AuthenticationFlowError.INTERNAL_ERROR);
                     }
 
-                    AuthenticationProcessor.logger.debugv("Client {0} authenticated by {1}", client.getClientId(), factory.getId());
+                    logger.debugv("Client {0} authenticated by {1}", client.getClientId(), factory.getId());
                     processor.getEvent().detail(Details.CLIENT_AUTH_METHOD, factory.getId());
                     return null;
                 }
@@ -96,12 +116,12 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             }
         }
 
-        if (AuthenticationProcessor.logger.isTraceEnabled()) {
+        if (logger.isTraceEnabled()) {
             List<String> exIds = new ArrayList<>();
             for (AuthenticationExecutionModel execution : executionsToRun) {
                 exIds.add(execution.getId());
             }
-            AuthenticationProcessor.logger.tracef("Using executions for client authentication: %s", exIds.toString());
+            logger.tracef("Using executions for client authentication: %s", exIds.toString());
         }
 
         return executionsToRun;
@@ -111,7 +131,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
         AuthenticationExecutionModel execution = result.getExecution();
         FlowStatus status = result.getStatus();
 
-        AuthenticationProcessor.logger.debugv("client authenticator {0}: {1}", status.toString(), execution.getAuthenticator());
+        logger.debugv("client authenticator {0}: {1}", status.toString(), execution.getAuthenticator());
 
         if (status == FlowStatus.SUCCESS) {
             return null;
@@ -135,13 +155,13 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
         } else if (status == FlowStatus.FAILURE_CHALLENGE) {
             return sendChallenge(result, execution);
         } else {
-            AuthenticationProcessor.logger.error("Unknown result status");
+            logger.unknownResultStatus();
             throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
         }
     }
 
     public Response sendChallenge(AuthenticationProcessor.Result result, AuthenticationExecutionModel execution) {
-        AuthenticationProcessor.logger.debugv("client authenticator: sending challenge for authentication execution {0}", execution.getAuthenticator());
+        logger.debugv("client authenticator: sending challenge for authentication execution {0}", execution.getAuthenticator());
 
         if (result.getError() != null) {
             String errorAsString = result.getError().toString().toLowerCase();

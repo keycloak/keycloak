@@ -1,11 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <xsl:stylesheet version="2.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xalan="http://xml.apache.org/xalan"
-                xmlns:ds="urn:jboss:domain:datasources:3.0"
+                xmlns:ds="urn:jboss:domain:datasources:4.0"
                 xmlns:logging="urn:jboss:domain:logging:3.0"
-                xmlns:ispn="urn:jboss:domain:infinispan:3.0"
+                xmlns:ispn="urn:jboss:domain:infinispan:4.0"
                 xmlns:mcluster="urn:jboss:domain:modcluster:2.0"
                 xmlns:server="urn:jboss:domain:3.0"
                 exclude-result-prefixes='ds logging ispn mcluster xalan server'
@@ -52,6 +69,7 @@
             <ispn:invalidation-cache name="realms" mode="SYNC"/>
             <ispn:invalidation-cache name="users" mode="SYNC"/>
             <ispn:distributed-cache name="sessions" mode="SYNC" owners="2"/>
+            <ispn:distributed-cache name="offlineSessions" mode="SYNC" owners="2"/>
             <ispn:distributed-cache name="loginFailures" mode="SYNC" owners="2"/>
         </ispn:cache-container>
     </xsl:template>

@@ -1,9 +1,0 @@
-{
-    "themes": [{
-        "name" : "base",
-        "types": [ "admin", "account", "login" ]
-    }, {
-        "name" : "keycloak",
-        "types": [ "admin", "account", "login", "common", "email", "welcome" ]
-    }]
-}

@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="bburke@redhat.com" id="1.3.0">
+        <delete tableName="CLIENT_SESSION_ROLE"/>
+        <delete tableName="CLIENT_SESSION_PROT_MAPPER"/>
+        <delete tableName="CLIENT_SESSION_NOTE"/>
+        <delete tableName="CLIENT_SESSION"/>
+        <delete tableName="USER_SESSION_NOTE"/>
+        <delete tableName="USER_SESSION"/>
+        <createTable tableName="ADMIN_EVENT_ENTITY">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ADMIN_EVENT_TIME" type="BIGINT"/>
+            <column name="REALM_ID" type="VARCHAR(255)"/>
+            <column name="OPERATION_TYPE" type="VARCHAR(255)"/>
+            <column name="AUTH_REALM_ID" type="VARCHAR(255)"/>
+            <column name="AUTH_CLIENT_ID" type="VARCHAR(255)"/>
+            <column name="AUTH_USER_ID" type="VARCHAR(255)"/>
+            <column name="IP_ADDRESS" type="VARCHAR(255)"/>
+            <column name="RESOURCE_PATH" type="VARCHAR(2550)"/>
+            <column name="REPRESENTATION" type="TEXT(25500)"/>
+            <column name="ERROR" type="VARCHAR(255)"/>
+        </createTable>
+        <createTable tableName="AUTHENTICATOR">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ALIAS" type="VARCHAR(255)"/>
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="PROVIDER_ID" type="VARCHAR(255)"/>
+        </createTable>
+        <createTable tableName="AUTHENTICATION_FLOW">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ALIAS" type="VARCHAR(255)"/>
+            <column name="DESCRIPTION" type="VARCHAR(255)"/>
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createTable>
+        <createTable tableName="AUTHENTICATION_EXECUTION">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ALIAS" type="VARCHAR(255)"/>
+            <column name="AUTHENTICATOR" type="VARCHAR(36)"/>
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="FLOW_ID" type="VARCHAR(36)"/>
+            <column name="REQUIREMENT" type="INT"/>
+            <column name="PRIORITY" type="INT"/>
+            <column name="USER_SETUP_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="AUTHENTICATOR_FLOW" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="AUTHENTICATOR_CONFIG">
+            <column name="AUTHENTICATOR_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="CLOB"/>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="USER_FEDERATION_MAPPER">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FEDERATION_PROVIDER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FEDERATION_MAPPER_TYPE" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="USER_FEDERATION_MAPPER_CONFIG">
+            <column name="USER_FEDERATION_MAPPER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addColumn tableName="REALM">
+            <column name="ADMIN_EVENTS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ADMIN_EVENTS_DETAILS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EDIT_USERNAME_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <createTable tableName="CLIENT_SESSION_AUTH_STATUS">
+            <column name="AUTHENTICATOR" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STATUS" type="INT"/>
+            <column name="CLIENT_SESSION" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addColumn tableName="CLIENT_SESSION">
+            <column name="AUTH_USER_ID" type="VARCHAR(36)"/>
+        </addColumn>
+        <addColumn tableName="IDENTITY_PROVIDER">
+            <column name="TRUST_EMAIL" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="UPDATE_PROFILE_FIRST_LGN_MD" type="VARCHAR(255)" defaultValue="on">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <!-- migrate value from UPDATE_PROFILE_FIRST_LOGIN to UPDATE_PROFILE_FIRST_LGN_MD then drop it -->
+        <update tableName="IDENTITY_PROVIDER">
+            <column name="UPDATE_PROFILE_FIRST_LGN_MD" value="off"/>
+            <where>UPDATE_PROFILE_FIRST_LOGIN = :value</where>
+            <whereParams>
+                <param valueBoolean="false" />
+            </whereParams>
+        </update>
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LOGIN" />
+        <dropColumn tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LOGIN"/>
+        
+        <addColumn tableName="USER_REQUIRED_ACTION">
+            <column name="REQUIRED_ACTION" type="VARCHAR(255)" defaultValue=" ">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <!-- VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD -->
+        <update tableName="USER_REQUIRED_ACTION">
+            <column name="REQUIRED_ACTION" value="VERIFY_EMAIL"/>
+            <where>ACTION = 0</where>
+        </update>
+        <update tableName="USER_REQUIRED_ACTION">
+            <column name="REQUIRED_ACTION" value="UPDATE_PROFILE"/>
+            <where>ACTION = 1</where>
+        </update>
+        <update tableName="USER_REQUIRED_ACTION">
+            <column name="REQUIRED_ACTION" value="CONFIGURE_TOTP"/>
+            <where>ACTION = 2</where>
+        </update>
+        <update tableName="USER_REQUIRED_ACTION">
+            <column name="REQUIRED_ACTION" value="UPDATE_PASSWORD"/>
+            <where>ACTION = 3</where>
+        </update>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_AUTH_PK" tableName="AUTHENTICATOR"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_AUTH_FLOW_PK" tableName="AUTHENTICATION_FLOW"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_AUTH_EXEC_PK" tableName="AUTHENTICATION_EXECUTION"/>
+        <addPrimaryKey columnNames="AUTHENTICATOR_ID, NAME" constraintName="CONSTRAINT_AUTH_CFG_PK" tableName="AUTHENTICATOR_CONFIG"/>
+        <dropPrimaryKey constraintName="CONSTRAINT_2" tableName="USER_REQUIRED_ACTION"/>
+        <dropColumn tableName="USER_REQUIRED_ACTION" columnName="ACTION"/>
+        <addPrimaryKey columnNames="REQUIRED_ACTION, USER_ID" constraintName="CONSTRAINT_REQUIRED_ACTION" tableName="USER_REQUIRED_ACTION"/>
+        <addPrimaryKey columnNames="CLIENT_SESSION, AUTHENTICATOR" constraintName="CONSTRAINT_AUTH_STATUS_PK" tableName="CLIENT_SESSION_AUTH_STATUS"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_FEDMAPPERPM" tableName="USER_FEDERATION_MAPPER"/>
+        <addPrimaryKey columnNames="USER_FEDERATION_MAPPER_ID, NAME" constraintName="CONSTRAINT_FEDMAPPER_CFG_PM" tableName="USER_FEDERATION_MAPPER_CONFIG"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_SESSION" baseTableName="CLIENT_SESSION_AUTH_STATUS" constraintName="AUTH_STATUS_CONSTRAINT" referencedColumnNames="ID" referencedTableName="CLIENT_SESSION"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="AUTHENTICATOR" constraintName="FK_AUTH_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="AUTHENTICATION_FLOW" constraintName="FK_AUTH_FLOW_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="AUTHENTICATION_EXECUTION" constraintName="FK_AUTH_EXEC_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="FLOW_ID" baseTableName="AUTHENTICATION_EXECUTION" constraintName="FK_AUTH_EXEC_FLOW" referencedColumnNames="ID" referencedTableName="AUTHENTICATION_FLOW"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="USER_FEDERATION_MAPPER" constraintName="FK_FEDMAPPERPM_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="FEDERATION_PROVIDER_ID" baseTableName="USER_FEDERATION_MAPPER" constraintName="FK_FEDMAPPERPM_FEDPRV" referencedColumnNames="ID" referencedTableName="USER_FEDERATION_PROVIDER"/>
+        <addForeignKeyConstraint baseColumnNames="USER_FEDERATION_MAPPER_ID" baseTableName="USER_FEDERATION_MAPPER_CONFIG" constraintName="FK_FEDMAPPER_CFG" referencedColumnNames="ID" referencedTableName="USER_FEDERATION_MAPPER"/>
+
+        <dropDefaultValue tableName="REALM" columnName="PASSWORD_CRED_GRANT_ALLOWED" />
+        <dropColumn tableName="REALM" columnName="PASSWORD_CRED_GRANT_ALLOWED"/>
+
+        <!-- KEYCLOAK-1298 Change constraint names to be upper-cased -->
+        <dropForeignKeyConstraint baseTableName="PROTOCOL_MAPPER_CONFIG" constraintName="FK_PMConfig" />
+        <dropPrimaryKey constraintName="CONSTRAINT_PMConfig" tableName="PROTOCOL_MAPPER_CONFIG"/>
+        <addPrimaryKey columnNames="PROTOCOL_MAPPER_ID, NAME" constraintName="CONSTRAINT_PMCONFIG" tableName="PROTOCOL_MAPPER_CONFIG"/>
+        <addForeignKeyConstraint baseColumnNames="PROTOCOL_MAPPER_ID" baseTableName="PROTOCOL_MAPPER_CONFIG" constraintName="FK_PMCONFIG" referencedColumnNames="ID" referencedTableName="PROTOCOL_MAPPER"/>
+
+        <dropForeignKeyConstraint baseTableName="IDP_MAPPER_CONFIG" constraintName="FK_IDPMConfig" />
+        <dropPrimaryKey constraintName="CONSTRAINT_IDPMConfig" tableName="IDP_MAPPER_CONFIG"/>
+        <addPrimaryKey columnNames="IDP_MAPPER_ID, NAME" constraintName="CONSTRAINT_IDPMCONFIG" tableName="IDP_MAPPER_CONFIG"/>
+        <addForeignKeyConstraint baseColumnNames="IDP_MAPPER_ID" baseTableName="IDP_MAPPER_CONFIG" constraintName="FK_IDPMCONFIG" referencedColumnNames="ID" referencedTableName="IDENTITY_PROVIDER_MAPPER"/>
+
+        <!-- Sybase specific hacks -->
+        <modifySql dbms="sybase">
+            <replace replace="[USER_REQUIRED_ACTION] DROP PRIMARY KEY" with="[USER_REQUIRED_ACTION] DROP CONSTRAINT CONSTRAINT_2" />
+            <replace replace="[PROTOCOL_MAPPER_CONFIG] DROP PRIMARY KEY" with="[PROTOCOL_MAPPER_CONFIG] DROP CONSTRAINT CONSTRAINT_PMConfig" />
+            <replace replace="[IDP_MAPPER_CONFIG] DROP PRIMARY KEY" with="[IDP_MAPPER_CONFIG] DROP CONSTRAINT CONSTRAINT_IDPMConfig" />
+            <regExpReplace replace=".*(SET DEFAULT NULL)" with="SELECT 1" />
+        </modifySql>
+
+    </changeSet>
+</databaseChangeLog>

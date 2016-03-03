@@ -1,5 +1,24 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -20,8 +39,10 @@ import java.util.Collection;
  */
 @NamedQueries({
         @NamedQuery(name="getAllGroupsByRealm", query="select u from GroupEntity u where u.realm = :realm order by u.name"),
+        @NamedQuery(name="getAllGroupIdsByRealm", query="select u.id from GroupEntity u where u.realm.id = :realm order by u.name"),
         @NamedQuery(name="getGroupById", query="select u from GroupEntity u where u.id = :id and u.realm = :realm"),
         @NamedQuery(name="getGroupIdsByParent", query="select u.id from GroupEntity u where u.parent = :parent"),
+        @NamedQuery(name="getTopLevelGroupIds", query="select u.id from GroupEntity u where u.parent is null and u.realm.id = :realm"),
         @NamedQuery(name="getGroupCount", query="select count(u) from GroupEntity u where u.realm = :realm"),
         @NamedQuery(name="deleteGroupsByRealm", query="delete from GroupEntity u where u.realm = :realm")
 })
@@ -30,6 +51,7 @@ import java.util.Collection;
 public class GroupEntity {
     @Id
     @Column(name="ID", length = 36)
+    @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     protected String id;
 
     @Column(name = "NAME")
@@ -43,7 +65,9 @@ public class GroupEntity {
     @JoinColumn(name = "REALM_ID")
     private RealmEntity realm;
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="group")
+    @OneToMany(
+            cascade = CascadeType.REMOVE,
+            orphanRemoval = true, mappedBy="group")
     protected Collection<GroupAttributeEntity> attributes = new ArrayList<GroupAttributeEntity>();
 
     public String getId() {
@@ -90,6 +114,7 @@ public class GroupEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null) return false;
+        if (!(o instanceof GroupEntity)) return false;
 
         GroupEntity that = (GroupEntity) o;
 

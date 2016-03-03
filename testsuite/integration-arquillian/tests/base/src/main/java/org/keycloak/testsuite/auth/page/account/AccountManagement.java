@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source
- *
- * Copyright 2013 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,8 +18,8 @@ package org.keycloak.testsuite.auth.page.account;
 
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.page.PageWithLogOutAction;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -30,7 +29,7 @@ import org.openqa.selenium.support.FindBy;
  * @author <a href="mailto:pmensik@redhat.com">Petr Mensik</a>
  * @author tkyjovsk
  */
-public class AccountManagement extends AuthRealm {
+public class AccountManagement extends AuthRealm implements PageWithLogOutAction {
 
     @Override
     public UriBuilder createUriBuilder() {
@@ -77,7 +76,12 @@ public class AccountManagement extends AuthRealm {
     public void signOut() {
         signOutLink.click();
     }
-
+    
+    @Override
+    public void logOut() {
+        signOut();
+    }
+    
     public void account() {
         accountLink.click();
     }
@@ -102,11 +106,12 @@ public class AccountManagement extends AuthRealm {
         save.click();
     }
 
-    public RealmResource realmResource() {
-        return keycloak().realm(getAuthRealm());
-    }
+//    public RealmResource realmResource() {
+//        return keycloak().realm(getAuthRealm());
+//    }
 
     public void waitForAccountLinkPresent() {
         waitUntilElement(accountLink, "account link should be present").is().present();
     }
+
 }

@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.models.jpa;
 
 import org.keycloak.hash.PasswordHashManager;
@@ -46,7 +63,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserAdapter implements UserModel {
+public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     protected UserEntity user;
     protected EntityManager em;
@@ -60,7 +77,7 @@ public class UserAdapter implements UserModel {
         this.session = session;
     }
 
-    public UserEntity getUser() {
+    public UserEntity getEntity() {
         return user;
     }
 
@@ -486,7 +503,7 @@ public class UserAdapter implements UserModel {
         // we query ids only as the group  might be cached and following the @ManyToOne will result in a load
         // even if we're getting just the id.
         TypedQuery<String> query = em.createNamedQuery("userGroupIds", String.class);
-        query.setParameter("user", getUser());
+        query.setParameter("user", getEntity());
         List<String> ids = query.getResultList();
         Set<GroupModel> groups = new HashSet<>();
         for (String groupId : ids) {
@@ -501,7 +518,7 @@ public class UserAdapter implements UserModel {
     public void joinGroup(GroupModel group) {
         if (isMemberOf(group)) return;
         UserGroupMembershipEntity entity = new UserGroupMembershipEntity();
-        entity.setUser(getUser());
+        entity.setUser(getEntity());
         entity.setGroupId(group.getId());
         em.persist(entity);
         em.flush();
@@ -531,7 +548,7 @@ public class UserAdapter implements UserModel {
 
     protected TypedQuery<UserGroupMembershipEntity> getUserGroupMappingQuery(GroupModel group) {
         TypedQuery<UserGroupMembershipEntity> query = em.createNamedQuery("userMemberOf", UserGroupMembershipEntity.class);
-        query.setParameter("user", getUser());
+        query.setParameter("user", getEntity());
         query.setParameter("groupId", group.getId());
         return query;
     }
@@ -545,7 +562,7 @@ public class UserAdapter implements UserModel {
 
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {
         TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userHasRole", UserRoleMappingEntity.class);
-        query.setParameter("user", getUser());
+        query.setParameter("user", getEntity());
         query.setParameter("roleId", role.getId());
         return query;
     }
@@ -554,7 +571,7 @@ public class UserAdapter implements UserModel {
     public void grantRole(RoleModel role) {
         if (hasRole(role)) return;
         UserRoleMappingEntity entity = new UserRoleMappingEntity();
-        entity.setUser(getUser());
+        entity.setUser(getEntity());
         entity.setRoleId(role.getId());
         em.persist(entity);
         em.flush();
@@ -581,7 +598,7 @@ public class UserAdapter implements UserModel {
         // we query ids only as the role might be cached and following the @ManyToOne will result in a load
         // even if we're getting just the id.
         TypedQuery<String> query = em.createNamedQuery("userRoleMappingIds", String.class);
-        query.setParameter("user", getUser());
+        query.setParameter("user", getEntity());
         List<String> ids = query.getResultList();
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (String roleId : ids) {

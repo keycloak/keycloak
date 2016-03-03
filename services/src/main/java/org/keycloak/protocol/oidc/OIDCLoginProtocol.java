@@ -1,27 +1,21 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.keycloak.protocol.oidc;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
@@ -37,6 +31,7 @@ import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 
@@ -68,7 +63,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     public static final String RESPONSE_MODE_PARAM = "response_mode";
 
-    private static final Logger log = Logger.getLogger(OIDCLoginProtocol.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     protected KeycloakSession session;
 
@@ -143,7 +138,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         String redirect = clientSession.getRedirectUri();
         OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode);
         String state = clientSession.getNote(OIDCLoginProtocol.STATE_PARAM);
-        log.debugv("redirectAccessCode: state: {0}", state);
+        logger.debugv("redirectAccessCode: state: {0}", state);
         if (state != null)
             redirectUri.addParam(OAuth2Constants.STATE, state);
 
@@ -168,7 +163,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
             if (responseType.hasResponseType(OIDCResponseType.TOKEN)) {
                 redirectUri.addParam("access_token", res.getToken());
                 redirectUri.addParam("token_type", res.getTokenType());
-                redirectUri.addParam("session-state", res.getSessionState());
+                redirectUri.addParam("session_state", res.getSessionState());
                 redirectUri.addParam("expires_in", String.valueOf(res.getExpiresIn()));
             }
 
@@ -203,7 +198,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
             case PASSIVE_LOGIN_REQUIRED:
                 return "login_required";
             default:
-                log.warn("Untranslated protocol Error: " + error.name() + " so we return default SAML error");
+                logger.untranslatedProtocol(error.name());
                 return "access_denied";
         }
     }

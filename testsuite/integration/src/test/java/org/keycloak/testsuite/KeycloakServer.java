@@ -1,23 +1,18 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.keycloak.testsuite;
 
@@ -34,11 +29,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.filters.ClientConnectionFilter;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.DispatcherType;
@@ -155,12 +150,16 @@ public class KeycloakServer {
             }
 
             File dir = new File(resources).getAbsoluteFile();
-            if (!dir.isDirectory() || !new File(dir, "forms").isDirectory()) {
-                throw new RuntimeException("Invalid resources directory");
+            if (!dir.isDirectory()) {
+                throw new RuntimeException("Invalid base resources directory");
+
+            }
+            if (!new File(dir, "themes").isDirectory()) {
+                throw new RuntimeException("Invalid resources forms directory");
             }
 
             if (!System.getProperties().containsKey("keycloak.theme.dir")) {
-                System.setProperty("keycloak.theme.dir", file(dir.getAbsolutePath(), "forms", "common-themes", "src", "main", "resources", "theme").getAbsolutePath());
+                System.setProperty("keycloak.theme.dir", file(dir.getAbsolutePath(), "themes", "src", "main", "resources", "theme").getAbsolutePath());
             } else {
                 String foo = System.getProperty("keycloak.theme.dir");
                 System.out.println(foo);
@@ -207,8 +206,8 @@ public class KeycloakServer {
             }
         });
 
-        if (System.getProperties().containsKey("startInfinispanCLI")) {
-            new InfinispanCLI(keycloak).start();
+        if (System.getProperties().containsKey("startTestsuiteCLI")) {
+            new TestsuiteCLI(keycloak).start();
         }
 
         return keycloak;
@@ -313,10 +312,6 @@ public class KeycloakServer {
             FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
             di.addFilter(filter);
             di.addFilterUrlMapping("SessionFilter", "/*", DispatcherType.REQUEST);
-
-            FilterInfo connectionFilter = Servlets.filter("ClientConnectionFilter", ClientConnectionFilter.class);
-            di.addFilter(connectionFilter);
-            di.addFilterUrlMapping("ClientConnectionFilter", "/*", DispatcherType.REQUEST);
 
             server.deploy(di);
 

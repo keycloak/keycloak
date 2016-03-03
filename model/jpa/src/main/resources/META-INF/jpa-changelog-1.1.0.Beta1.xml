@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
+    <changeSet author="sthorger@redhat.com" id="1.1.0.Beta1">
+        <delete tableName="CLIENT_SESSION_ROLE"/>
+        <delete tableName="CLIENT_SESSION"/>
+        <delete tableName="USER_SESSION"/>
+
+        <createTable tableName="CLIENT_ATTRIBUTES">
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(2048)"/>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="CLIENT_SESSION_NOTE">
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="CLIENT_SESSION" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="APP_NODE_REGISTRATIONS">
+            <column name="APPLICATION_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="INT"/>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addColumn tableName="CLIENT_SESSION">
+            <column name="AUTH_METHOD" type="VARCHAR(255)"/>
+        </addColumn>
+        <addColumn tableName="CLIENT">
+            <column name="PROTOCOL" type="VARCHAR(255)"/>
+        </addColumn>
+        <addColumn tableName="CLIENT_SESSION">
+            <column name="REALM_ID" type="VARCHAR(255)"/>
+        </addColumn>
+        <addColumn tableName="REALM">
+            <column name="CERTIFICATE" type="VARCHAR(2048)"/>
+            <column name="CODE_SECRET" type="VARCHAR(255)"/>
+        </addColumn>
+        <addColumn tableName="CLIENT">
+            <column name="NODE_REREG_TIMEOUT" type="INT" defaultValueNumeric="0"/>
+        </addColumn>
+        <addPrimaryKey columnNames="CLIENT_ID, NAME" constraintName="CONSTRAINT_3C" tableName="CLIENT_ATTRIBUTES"/>
+        <addPrimaryKey columnNames="CLIENT_SESSION, NAME" constraintName="CONSTRAINT_5E" tableName="CLIENT_SESSION_NOTE"/>
+        <addPrimaryKey columnNames="APPLICATION_ID, NAME" constraintName="CONSTRAINT_84" tableName="APP_NODE_REGISTRATIONS"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="CLIENT_ATTRIBUTES" constraintName="FK3C47C64BEACCA966" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_SESSION" baseTableName="CLIENT_SESSION_NOTE" constraintName="FK5EDFB00FF51C2736" referencedColumnNames="ID" referencedTableName="CLIENT_SESSION"/>
+        <addForeignKeyConstraint baseColumnNames="APPLICATION_ID" baseTableName="APP_NODE_REGISTRATIONS" constraintName="FK8454723BA992F594" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.AddRealmCodeSecret"/>
+    </changeSet>
+</databaseChangeLog>

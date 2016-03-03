@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.samlfilter;
 
 import org.junit.Assert;
@@ -24,6 +41,7 @@ public class SamlAdapterTest {
              ClassLoader classLoader = SamlAdapterTest.class.getClassLoader();
 
             initializeSamlSecuredWar("/keycloak-saml/simple-post", "/sales-post",  "post.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/simple-post2", "/sales-post2",  "post.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/simple-post-passive", "/sales-post-passive", "post-passive.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post", "/sales-post-sig",  "post-sig.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-email", "/sales-post-sig-email",  "post-sig-email.war", classLoader);
@@ -71,6 +89,12 @@ public class SamlAdapterTest {
             SendUsernameServlet.checkRoles = null;
         }
     }
+
+    @Test
+    public void testPostSimpleLoginLogoutIdpInitiatedRedirectTo() {
+        testStrategy.testPostSimpleLoginLogoutIdpInitiatedRedirectTo();
+    }
+
 
     @Test
     public void testMetadataPostSignedLoginLogout() throws Exception {

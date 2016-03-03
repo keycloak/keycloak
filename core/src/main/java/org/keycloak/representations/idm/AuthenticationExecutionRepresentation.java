@@ -1,86 +1,52 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.representations.idm;
 
-import java.io.Serializable;
-import java.util.Comparator;
-
 /**
-* @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
-* @version $Revision: 1 $
-*/
-public class AuthenticationExecutionRepresentation implements Serializable {
+ * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
+ */
+public class AuthenticationExecutionRepresentation extends AbstractAuthenticationExecutionRepresentation {
 
-    private String authenticatorConfig;
-    private String authenticator;
-    private String flowAlias;
-    private boolean autheticatorFlow;
-    private String requirement;
-    private boolean userSetupAllowed;
-    private int priority;
+    private String id;
+    private String flowId;
+    private String parentFlow;
 
-    public String getAuthenticatorConfig() {
-        return authenticatorConfig;
+    public String getId() {
+        return id;
     }
 
-    public void setAuthenticatorConfig(String authenticatorConfig) {
-        this.authenticatorConfig = authenticatorConfig;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public String getAuthenticator() {
-        return authenticator;
+    public String getFlowId() {
+        return flowId;
     }
 
-    public void setAuthenticator(String authenticator) {
-        this.authenticator = authenticator;
+    public void setFlowId(String flowId) {
+        this.flowId = flowId;
     }
 
-    public String getRequirement() {
-        return requirement;
+    public String getParentFlow() {
+        return parentFlow;
     }
 
-    public void setRequirement(String requirement) {
-        this.requirement = requirement;
+    public void setParentFlow(String parentFlow) {
+        this.parentFlow = parentFlow;
     }
-
-    public int getPriority() {
-        return priority;
-    }
-
-    public void setPriority(int priority) {
-        this.priority = priority;
-    }
-
-    public boolean isUserSetupAllowed() {
-        return userSetupAllowed;
-    }
-
-    public void setUserSetupAllowed(boolean userSetupAllowed) {
-        this.userSetupAllowed = userSetupAllowed;
-    }
-
-    /**
-     * If this execution is a flow, this is the flowId pointing to an AuthenticationFlowModel
-     *
-     * @return
-     */
-    public String getFlowAlias() {
-        return flowAlias;
-    }
-
-    public void setFlowAlias(String flowId) {
-        this.flowAlias = flowId;
-    }
-
-    /**
-     * Is the referenced authenticator a flow?
-     *
-     * @return
-     */
-    public boolean isAutheticatorFlow() {
-        return autheticatorFlow;
-    }
-
-    public void setAutheticatorFlow(boolean autheticatorFlow) {
-        this.autheticatorFlow = autheticatorFlow;
-    }
-
 }

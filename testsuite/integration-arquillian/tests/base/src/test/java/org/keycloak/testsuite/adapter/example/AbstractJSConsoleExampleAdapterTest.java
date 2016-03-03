@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.adapter.example;
 
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -12,8 +29,6 @@ import org.keycloak.testsuite.adapter.page.JSConsoleExample;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
-import org.keycloak.testsuite.console.page.clients.Clients;
-import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
 import org.openqa.selenium.By;
@@ -36,12 +51,6 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
     @Page
     private JSConsoleExample jsConsoleExamplePage;
-
-    @Page
-    private Clients clientsPage;
-
-    @Page
-    private ClientSettings clientSettingsPage;
 
     @Page
     private Config configPage;
@@ -167,17 +176,12 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     public void grantBrowserBasedApp() {
         testRealmPage.setAuthRealm(EXAMPLE);
         testRealmLoginPage.setAuthRealm(EXAMPLE);
-        clientsPage.setConsoleRealm(EXAMPLE);
         configPage.setConsoleRealm(EXAMPLE);
         loginEventsPage.setConsoleRealm(EXAMPLE);
         applicationsPage.setAuthRealm(EXAMPLE);
 
         jsConsoleExamplePage.navigateTo();
         driver.manage().deleteAllCookies();
-
-        clientsPage.navigateTo();
-
-        loginPage.form().login("admin", "admin");
 
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "js-console");
         ClientRepresentation client = clientResource.toRepresentation();
@@ -208,6 +212,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(oAuthGrantPage.isCurrent());
 
         loginEventsPage.navigateTo();
+        loginPage.form().login(adminUser);
         loginEventsPage.table().filter();
         loginEventsPage.table().filterForm().addEventType("REVOKE_GRANT");
         loginEventsPage.table().update();

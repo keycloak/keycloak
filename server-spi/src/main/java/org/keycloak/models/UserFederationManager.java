@@ -1,6 +1,25 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.models;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.managers.UserManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,9 +55,7 @@ public class UserFederationManager implements UserProvider {
     }
 
     protected UserFederationProvider getFederationProvider(UserFederationProviderModel model) {
-        UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, model.getProviderName());
-        return factory.getInstance(session, model);
-
+        return KeycloakModelUtils.getFederationProviderInstance(session, model);
     }
 
     @Override
@@ -104,19 +121,19 @@ public class UserFederationManager implements UserProvider {
 
     }
 
-    protected void deleteInvalidUser(RealmModel realm, UserModel user) {
-        KeycloakSession tx = session.getKeycloakSessionFactory().create();
-        try {
-            tx.getTransaction().begin();
-            RealmModel realmModel = tx.realms().getRealm(realm.getId());
-            if (realmModel == null) return;
-            UserModel deletedUser = tx.userStorage().getUserById(user.getId(), realmModel);
-            tx.userStorage().removeUser(realmModel, deletedUser);
-            logger.debugf("Removed invalid user '%s'", user.getUsername());
-            tx.getTransaction().commit();
-        } finally {
-            tx.close();
-        }
+    protected void deleteInvalidUser(final RealmModel realm, final UserModel user) {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+
+            @Override
+            public void run(KeycloakSession session) {
+                RealmModel realmModel = session.realms().getRealm(realm.getId());
+                if (realmModel == null) return;
+                UserModel deletedUser = session.userStorage().getUserById(user.getId(), realmModel);
+                new UserManager(session).removeUser(realmModel, deletedUser, session.userStorage());
+                logger.debugf("Removed invalid user '%s'", user.getUsername());
+            }
+
+        });
     }
 
 

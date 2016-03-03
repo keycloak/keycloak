@@ -1,0 +1,49 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<script>
+    function getCookie(cname)
+    {
+        var name = cname + "=";
+        var ca = document.cookie.split(';');
+        for(var i=0; i<ca.length; i++)
+        {
+            var c = ca[i].trim();
+            if (c.indexOf(name)==0) return c.substring(name.length,c.length);
+        }
+        return null;
+    }
+    function receiveMessage(event)
+    {
+        if (event.origin !== "ORIGIN") {
+            console.log(event.origin + " does not match built origin");
+            return;
+
+        }
+        var data = JSON.parse(event.data);
+        data.loggedIn = false;
+        var cookie = getCookie('KEYCLOAK_SESSION');
+        if (cookie) {
+            data.loggedIn = true;
+            data.session = cookie;
+        }
+
+        event.source.postMessage(JSON.stringify(data),
+                event.origin);
+    }
+    window.addEventListener("message", receiveMessage, false);
+</script>

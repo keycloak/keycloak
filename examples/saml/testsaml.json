@@ -26,28 +26,33 @@
     ],
     "clients": [
         {
-            "clientId": "http://localhost:8080/sales-post/",
-            "enabled": true,
-            "fullScopeAllowed": true,
-            "protocol": "saml",
-            "baseUrl": "http://localhost:8080/sales-post/",
-            "adminUrl": "http://localhost:8080/sales-post/",
-            "redirectUris": [
-                "http://localhost:8080/sales-post/*"
-            ],
-            "attributes": {
-                "saml.authnstatement": "true"
-            }
-        },
-        {
             "clientId": "http://localhost:8080/sales-post-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
             "baseUrl": "http://localhost:8080/sales-post-sig/",
-            "adminUrl": "http://localhost:8080/sales-post-sig/",
+            "adminUrl": "http://localhost:8080/sales-post-sig/saml",
             "redirectUris": [
                 "http://localhost:8080/sales-post-sig/*"
+            ],
+            "attributes": {
+                "saml.server.signature": "true",
+                "saml.signature.algorithm": "RSA_SHA256",
+                "saml.client.signature": "true",
+                "saml.authnstatement": "true",
+                "saml.signing.private.key": "MIICWwIBAAKBgQDVG8a7xGN6ZIkDbeecySygcDfsypjUMNPE4QJjis8B316CvsZQ0hcTTLUyiRpHlHZys2k3xEhHBHymFC1AONcvzZzpb40tAhLHO1qtAnut00khjAdjR3muLVdGkM/zMC7G5s9iIwBVhwOQhy+VsGnCH91EzkjZ4SVEr55KJoyQJQIDAQABAoGADaTtoG/+foOZUiLjRWKL/OmyavK9vjgyFtThNkZY4qHOh0h3og0RdSbgIxAsIpEa1FUwU2W5yvI6mNeJ3ibFgCgcxqPk6GkAC7DWfQfdQ8cS+dCuaFTs8ObIQEvU50YzeNPiiFxRA+MnauCUXaKm/PnDfjd4tPgru7XZvlGh0wECQQDsBbN2cKkBKpr/b5oJiBcBaSZtWiMNuYBDn9x8uORj+Gy/49BUIMHF2EWyxOWz6ocP5YiynNRkPe21Zus7PEr1AkEA5yWQOkxUTIg43s4pxNSeHtL+Ebqcg54lY2xOQK0yufxUVZI8ODctAKmVBMiCKpU3mZQquOaQicuGtocpgxlScQI/YM31zZ5nsxLGf/5GL6KhzPJT0IYn2nk7IoFu7bjn9BjwgcPurpLA52TNMYWQsTqAKwT6DEhG1NaRqNWNpb4VAkBehObAYBwMm5udyHIeEc+CzUalm0iLLa0eRdiN7AUVNpCJ2V2Uo0NcxPux1AgeP5xXydXafDXYkwhINWcNO9qRAkEA58ckAC5loUGwU5dLaugsGH/a2Q8Ac8bmPglwfCstYDpl8Gp/eimb1eKyvDEELOhyImAv4/uZV9wN85V0xZXWsw==",
+                "saml.signing.certificate": "MIIB1DCCAT0CBgFJGP5dZDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1zaWcvMB4XDTE0MTAxNjEyNDQyM1oXDTI0MTAxNjEyNDYwM1owMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3Qtc2lnLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA1RvGu8RjemSJA23nnMksoHA37MqY1DDTxOECY4rPAd9egr7GUNIXE0y1MokaR5R2crNpN8RIRwR8phQtQDjXL82c6W+NLQISxztarQJ7rdNJIYwHY0d5ri1XRpDP8zAuxubPYiMAVYcDkIcvlbBpwh/dRM5I2eElRK+eSiaMkCUCAwEAATANBgkqhkiG9w0BAQsFAAOBgQCLms6htnPaY69k1ntm9a5jgwSn/K61cdai8R8B0ccY7zvinn9AfRD7fiROQpFyY29wKn8WCLrJ86NBXfgFUGyR5nLNHVy3FghE36N2oHy53uichieMxffE6vhkKJ4P8ChfJMMOZlmCPsQPDvjoAghHt4mriFiQgRdPgIy/zDjSNw=="
+            }
+        },
+        {
+            "clientId": "http://localhost:8080/saml-servlet-filter/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8080/saml-servlet-filter/",
+            "adminUrl": "http://localhost:8080/saml-servlet-filter/saml",
+            "redirectUris": [
+                "http://localhost:8080/saml-servlet-filter/*"
             ],
             "attributes": {
                 "saml.server.signature": "true",
@@ -64,7 +69,7 @@
             "protocol": "saml",
             "fullScopeAllowed": true,
             "baseUrl": "http://localhost:8080/sales-post-enc/",
-            "adminUrl": "http://localhost:8080/sales-post-enc/",
+            "adminUrl": "http://localhost:8080/sales-post-enc/saml",
             "redirectUris": [
                 "http://localhost:8080/sales-post-enc/*"
             ],
@@ -81,26 +86,12 @@
             }
         },
         {
-            "clientId": "http://localhost:8080/employee/",
-            "enabled": true,
-            "fullScopeAllowed": true,
-            "protocol": "saml",
-            "baseUrl": "http://localhost:8080/employee/",
-            "adminUrl": "http://localhost:8080/employee/",
-            "redirectUris": [
-                "http://localhost:8080/employee/*"
-            ],
-            "attributes": {
-                "saml.authnstatement": "true"
-            }
-        },
-        {
             "clientId": "http://localhost:8080/employee-sig/",
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
             "baseUrl": "http://localhost:8080/employee-sig/",
-            "adminUrl": "http://localhost:8080/employee-sig/",
+            "adminUrl": "http://localhost:8080/employee-sig/saml",
             "redirectUris": [
                 "http://localhost:8080/employee-sig/*"
             ],

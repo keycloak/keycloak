@@ -1,4 +1,0 @@
-org.keycloak.protocol.saml.installation.KeycloakSamlClientInstallation
-org.keycloak.protocol.saml.installation.SamlSPDescriptorClientInstallation
-org.keycloak.protocol.saml.installation.SamlIDPDescriptorClientInstallation
-org.keycloak.protocol.saml.installation.ModAuthMellonClientInstallation

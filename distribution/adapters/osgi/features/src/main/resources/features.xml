@@ -1,14 +1,33 @@
 <?xml version='1.0' encoding='UTF-8'?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <features xmlns="http://karaf.apache.org/xmlns/features/v1.0.0" name="keycloak-${project.version}">
 
     <feature name="keycloak-adapter-core" version="${project.version}" resolver="(obr)">
         <details>The keycloak adapter core stuff</details>
         <bundle dependency="true">mvn:org.keycloak/keycloak-osgi-thirdparty/${project.version}</bundle>
-        <bundle dependency="true">mvn:org.bouncycastle/bcprov-jdk15on/${bouncycastle.crypto.version}</bundle>
-        <bundle dependency="true">mvn:org.bouncycastle/bcpkix-jdk15on/${bouncycastle.crypto.version}</bundle>
+        <bundle dependency="true">mvn:org.bouncycastle/bcprov-jdk15on/${bouncycastle.version}</bundle>
+        <bundle dependency="true">mvn:org.bouncycastle/bcpkix-jdk15on/${bouncycastle.version}</bundle>
         <bundle dependency="true">mvn:com.fasterxml.jackson.core/jackson-core/${jackson.version}</bundle>
+        <bundle dependency="true">mvn:com.fasterxml.jackson.core/jackson-annotations/${jackson.version}</bundle>
         <bundle dependency="true">mvn:com.fasterxml.jackson.core/jackson-databind/${jackson.version}</bundle>
         <bundle dependency="true">mvn:com.fasterxml.jackson.module/jackson-module-jaxb-annotations/${jackson.version}</bundle>
+        <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-base/${jackson.version}</bundle>
         <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-json-provider/${jackson.version}</bundle>
         <bundle dependency="true">mvn:org.jboss.logging/jboss-logging/${jboss.logging.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-common/${project.version}</bundle>

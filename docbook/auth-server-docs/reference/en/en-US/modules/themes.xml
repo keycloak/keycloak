@@ -1,3 +1,20 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <chapter id="themes">
     <title>Themes</title>
 
@@ -48,8 +65,9 @@
     <section>
         <title>Default themes</title>
         <para>
-            Keycloak comes bundled with default themes in <literal>standalone/configuration/themes</literal>. You should
-            not edit the bundled themes directly. Instead create a new theme that extends a bundled theme.
+            Keycloak comes bundled with default themes in the server's root <literal>themes</literal> directory.
+            You should not edit the bundled themes directly. Instead create a new theme that extends a
+            bundled theme.
         </para>
     </section>
 
@@ -84,26 +102,25 @@
     "cacheTemplates": false,
     "cacheThemes": false,
     "folder": {
-      "dir": "${jboss.server.config.dir}/themes"
+      "dir": "${jboss.home.dir}/themes"
     }
 },
 ]]></programlisting>
             Remember to re-enable caching in production as it will significantly impact performance.
         </para>
         <para>
-            To create a new theme create a directory for the theme in <literal>.../standalone/configuration/themes</literal>.
+            To create a new theme create a directory for the theme in the server's root <literal>themes</literal>.
             The name of the directory should be the name of the theme. For example to create a theme called <literal>example-theme</literal>
-            create the directory <literal>.../standalone/configuration/themes/example-theme</literal>. Inside the theme
+            create the directory <literal>themes/example-theme</literal>. Inside the theme
             directory you then need to create a directory for each of the types your theme is going to provide. For example
             to add the login type to the <literal>example-theme</literal> theme create the directory
-            <literal>.../standalone/configuration/themes/example-theme/login</literal>.
+            <literal>themes/example-theme/login</literal>.
         </para>
         <para>
             For each type create a file <literal>theme.properties</literal> which allows setting some configuration for
             the theme, for example what theme it overrides and if it should import any themes. For the above example we
             want to override the base theme and import common resources from the Keycloak theme. To do this create the
-            file <literal>.../standalone/configuration/themes/example-theme/login/theme.properties</literal> with the
-            following contents:
+            file <literal>themes/example-theme/login/theme.properties</literal> with following contents:
 <programlisting>[<![CDATA[
 parent=base
 import=common/keycloak
@@ -194,10 +211,9 @@ import=common/keycloak
                 Keycloak uses <ulink url="http://freemarker.org">Freemarker Templates</ulink> in order to generate HTML.
                 These templates are defined in <literal>.ftl</literal> files and can be overriden from the base theme.
                 Check out the Freemarker website on how to form a template file. To override the login template for the
-                <literal>example-theme</literal> copy <literal>../standalone/configuration/themes/base/login/login.ftl</literal>
-                to <literal>../standalone/configuration/themes/example-theme/login</literal> and open it in an editor. After
-                the first line (&lt;#import ...&gt;) add <literal>&lt;h1&gt;HELLO WORLD!&lt;/h1&gt;</literal> then refresh
-                the page.
+                <literal>example-theme</literal> copy <literal>themes/base/login/login.ftl</literal> to
+                <literal>themes/example-theme/login</literal> and open it in an editor. After the first line
+                (&lt;#import ...&gt;) add <literal>&lt;h1&gt;HELLO WORLD!&lt;/h1&gt;</literal> then refresh the page.
             </para>
         </section>
     </section>
@@ -205,7 +221,7 @@ import=common/keycloak
     <section>
         <title>Deploying themes</title>
         <para>
-            Themes can be deployed to Keycloak by copying the theme directory to <literal>../standalone/configuration/themes</literal>
+            Themes can be deployed to Keycloak by copying the theme directory to <literal>themes</literal>
             or it can be deployed as a module. For a single server or during development just copying the theme is fine, but
             in a cluster or domain it's recommended to deploy as a module.
         </para>
@@ -256,8 +272,7 @@ import=common/keycloak
 ]]></programlisting>
         </para>
         <para>
-            If a theme is deployed to <literal>../standalone/configuration/themes</literal> and as a module the first
-            is used.
+            If a theme is deployed to <literal>themes</literal> and as a module the first is used.
         </para>
     </section>
 

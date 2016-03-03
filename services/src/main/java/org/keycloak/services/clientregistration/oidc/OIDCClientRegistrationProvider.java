@@ -1,12 +1,28 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.services.clientregistration.oidc;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
 import org.keycloak.services.clientregistration.ClientRegistrationAuth;
 import org.keycloak.services.clientregistration.ClientRegistrationException;
@@ -22,7 +38,7 @@ import java.net.URI;
  */
 public class OIDCClientRegistrationProvider extends AbstractClientRegistrationProvider {
 
-    private static final Logger log = Logger.getLogger(OIDCClientRegistrationProvider.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public OIDCClientRegistrationProvider(KeycloakSession session) {
         super(session);
@@ -44,7 +60,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             clientOIDC.setClientIdIssuedAt(Time.currentTime());
             return Response.created(uri).entity(clientOIDC).build();
         } catch (ClientRegistrationException cre) {
-            log.error(cre.getMessage());
+            logger.clientRegistrationException(cre.getMessage());
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
         }
     }
@@ -69,7 +85,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             clientOIDC = DescriptionConverter.toExternalResponse(client, uri);
             return Response.ok(clientOIDC).build();
         } catch (ClientRegistrationException cre) {
-            log.error(cre.getMessage());
+            logger.clientRegistrationException(cre.getMessage());
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
         }
     }

@@ -1,3 +1,20 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <chapter id="providers">
     <title>Providers and SPIs</title>
 
@@ -82,19 +99,19 @@ public class MyEventListenerProvider implements EventListenerProvider {
             contain the full name of your ProviderFactory implementation:
 <programlisting><![CDATA[org.acme.provider.MyEventListenerProviderFactory]]></programlisting>
         </para>
-        
+
         <section>
             <title>Show info from you SPI implementation in Keycloak admin console</title>
             <para>
                 Sometimes it is useful to show additional info about your Provider to a Keycloak administrator.
-                You can show provider build time informations (eg. version of custom provider currently installed), 
-                current configuration of the provider (eg. url of remote system your provider talks to) or some operational 
-                info (average time of response from remote system your provider talks to). 
+                You can show provider build time informations (eg. version of custom provider currently installed),
+                current configuration of the provider (eg. url of remote system your provider talks to) or some operational
+                info (average time of response from remote system your provider talks to).
                 Keycloak admin console provides Server Info page to show this kind of information.
              </para>
-             <para>   
-                To show info from your provider it is enough to implement 
-                <literal>org.keycloak.provider.ServerInfoAwareProviderFactory</literal> interface in your ProviderFactory. 
+             <para>
+                To show info from your provider it is enough to implement
+                <literal>org.keycloak.provider.ServerInfoAwareProviderFactory</literal> interface in your ProviderFactory.
                 Example implementation for MyEventListenerProviderFactory from previous example:
                 <programlisting><![CDATA[
 package org.acme.provider;
@@ -105,7 +122,7 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
 
     private List<Event> events;
     private int max;
-     
+
 ...
 
     @Override
@@ -127,9 +144,9 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
 
 }
 ]]></programlisting>
-            
+
             </para>
-        </section>    
+        </section>
     </section>
 
     <section>
@@ -182,7 +199,7 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
             <title>Register a provider using file-system</title>
             <para>
                 To register your provider simply copy the JAR including the ProviderFactory and Provider classes and the
-                provider configuration file to <literal>standalone/configuration/providers</literal>.
+                provider configuration file to server's root <literal>providers</literal> directory.
             </para>
             <para>
                 You can also define multiple provider class-path if you want to create isolated class-loaders. To do this
@@ -215,6 +232,21 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
             "max": 100
         }
     }
+}]]></programlisting>
+            </para>
+        </section>
+
+        <section>
+            <title>Disabling a provider</title>
+            <para>
+                You can disable a provider by setting the enabled field for the provider to false in <literal>keycloak-server.json</literal>.
+                For example to disable the Infinispan user cache provider add:
+<programlisting><![CDATA[{
+"userCache": {
+    "infinispan" : {
+        "enabled": false
+    }
+}
 }]]></programlisting>
             </para>
         </section>

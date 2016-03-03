@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.test;
 
 import java.util.Arrays;
@@ -20,7 +37,7 @@ public class ResponseTypeTest {
         assertSuccess("code");
         assertSuccess("none");
         assertSuccess("id_token");
-        assertFail("token");
+        assertSuccess("token");
         assertFail("refresh_token");
         assertSuccess("id_token token");
         assertSuccess("code token");
@@ -32,13 +49,13 @@ public class ResponseTypeTest {
 
     @Test
     public void testMultipleResponseTypes() {
-        try {
-            OIDCResponseType.parse(Arrays.asList("code", "token"));
-            Assert.fail("Not expected to parse with success");
-        } catch (IllegalArgumentException iae) {
-        }
+        OIDCResponseType responseType = OIDCResponseType.parse(Arrays.asList("code", "token"));
+        Assert.assertTrue(responseType.hasResponseType("code"));
+        Assert.assertFalse(responseType.hasResponseType("none"));
+        Assert.assertTrue(responseType.isImplicitOrHybridFlow());
+        Assert.assertFalse(responseType.isImplicitFlow());
 
-        OIDCResponseType responseType = OIDCResponseType.parse(Collections.singletonList("code"));
+        responseType = OIDCResponseType.parse(Collections.singletonList("code"));
         Assert.assertTrue(responseType.hasResponseType("code"));
         Assert.assertFalse(responseType.hasResponseType("none"));
         Assert.assertFalse(responseType.isImplicitOrHybridFlow());

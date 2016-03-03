@@ -1,11 +1,29 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.services.resources.admin;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.KeyPairVerifier;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -15,6 +33,8 @@ import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -30,14 +50,18 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.timer.TimerProvider;
@@ -55,10 +79,14 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -66,7 +94,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.PatternSyntaxException;
 import org.keycloak.partialimport.PartialImportManager;
-import org.keycloak.representations.idm.PartialImportRepresentation;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -75,7 +102,7 @@ import org.keycloak.representations.idm.PartialImportRepresentation;
  * @version $Revision: 1 $
  */
 public class RealmAdminResource {
-    protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
+    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     protected RealmAuth auth;
     protected RealmModel realm;
     private TokenManager tokenManager;
@@ -191,16 +218,7 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     public RealmRepresentation getRealm() {
         if (auth.hasView()) {
-            RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, false);
-            if (session.realms() instanceof CacheRealmProvider) {
-                CacheRealmProvider cacheRealmProvider = (CacheRealmProvider)session.realms();
-                rep.setRealmCacheEnabled(cacheRealmProvider.isEnabled());
-            }
-            if (session.userStorage() instanceof CacheUserProvider) {
-                CacheUserProvider cache = (CacheUserProvider)session.userStorage();
-                rep.setUserCacheEnabled(cache.isEnabled());
-            }
-            return rep;
+            return ModelToRepresentation.toRepresentation(realm, false);
         } else {
             auth.requireAny();
 
@@ -226,21 +244,21 @@ public class RealmAdminResource {
 
         logger.debug("updating realm: " + realm.getName());
         try {
+            if (!"GENERATE".equals(rep.getPublicKey()) && (rep.getPrivateKey() != null && rep.getPublicKey() != null)) {
+                try {
+                    KeyPairVerifier.verify(rep.getPrivateKey(), rep.getPublicKey());
+                } catch (VerificationException e) {
+                    return ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+                }
+            }
+
             RepresentationToModel.updateRealm(rep, realm);
-            if (rep.isRealmCacheEnabled() != null && session.realms() instanceof CacheRealmProvider) {
-                CacheRealmProvider cacheRealmProvider = (CacheRealmProvider)session.realms();
-                cacheRealmProvider.setEnabled(rep.isRealmCacheEnabled());
-            }
-            if (rep.isUserCacheEnabled() != null && session.userStorage() instanceof CacheUserProvider) {
-                CacheUserProvider cache = (CacheUserProvider)session.userStorage();
-                cache.setEnabled(rep.isUserCacheEnabled());
-            }
 
             // Refresh periodic sync tasks for configured federationProviders
             List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
             UsersSyncManager usersSyncManager = new UsersSyncManager();
             for (final UserFederationProviderModel fedProvider : federationProviders) {
-                usersSyncManager.refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, realm.getId());
+                usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
             }
 
             adminEvent.operation(OperationType.UPDATE).representation(rep).success();
@@ -251,7 +269,7 @@ public class RealmAdminResource {
             throw e;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            return ErrorResponse.error("Failed to update " + rep.getRealm() + " Realm.", Response.Status.INTERNAL_SERVER_ERROR);
+            return ErrorResponse.error("Failed to update realm", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -429,6 +447,7 @@ public class RealmAdminResource {
      *
      * Returns all events, or filters them based on URL query parameters listed here
      *
+     * @param types The types of events to return
      * @param client App or oauth client name
      * @param user User id
      * @param ipAddress IP address
@@ -442,7 +461,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Event> getEvents(@QueryParam("client") String client,
+    public List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
             @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
             @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults) {
@@ -455,8 +474,7 @@ public class RealmAdminResource {
             query.client(client);
         }
 
-        List<String> types = uriInfo.getQueryParameters().get("type");
-        if (types != null) {
+        if (types != null & !types.isEmpty()) {
             EventType[] t = new EventType[types.size()];
             for (int i = 0; i < t.length; i++) {
                 t[i] = EventType.valueOf(types.get(i));
@@ -500,7 +518,15 @@ public class RealmAdminResource {
             query.maxResults(maxResults);
         }
 
-        return query.getResultList();
+        return toEventListRep(query.getResultList());
+    }
+
+    private List<EventRepresentation> toEventListRep(List<Event> events) {
+        List<EventRepresentation> reps = new ArrayList<>();
+        for (Event event : events) {
+            reps.add(ModelToRepresentation.toRepresentation(event));
+        }
+        return reps;
     }
 
     /**
@@ -508,6 +534,7 @@ public class RealmAdminResource {
      *
      * Returns all admin events, or filters events based on URL query parameters listed here
      *
+     * @param operationTypes
      * @param authRealm
      * @param authClient
      * @param authUser user id
@@ -515,7 +542,6 @@ public class RealmAdminResource {
      * @param resourcePath
      * @param dateTo
      * @param dateFrom
-     * @param resourcePath
      * @param firstResult
      * @param maxResults
      * @return
@@ -524,7 +550,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<AdminEvent> getEvents(@QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
+    public List<AdminEventRepresentation> getEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
             @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
             @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
             @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
@@ -554,8 +580,7 @@ public class RealmAdminResource {
             query.resourcePath(resourcePath);
         }
 
-        List<String> operationTypes = uriInfo.getQueryParameters().get("operationTypes");
-        if (operationTypes != null) {
+        if (operationTypes != null && !operationTypes.isEmpty()) {
             OperationType[] t = new OperationType[operationTypes.size()];
             for (int i = 0; i < t.length; i++) {
                 t[i] = OperationType.valueOf(operationTypes.get(i));
@@ -592,7 +617,16 @@ public class RealmAdminResource {
             query.maxResults(maxResults);
         }
 
-        return query.getResultList();
+        return toAdminEventRep(query.getResultList());
+    }
+
+    private List<AdminEventRepresentation> toAdminEventRep(List<AdminEvent> events) {
+        List<AdminEventRepresentation> reps = new ArrayList<>();
+        for (AdminEvent event : events) {
+            reps.add(ModelToRepresentation.toRepresentation(event));
+        }
+
+        return reps;
     }
 
     /**
@@ -634,10 +668,11 @@ public class RealmAdminResource {
     @GET
     @NoCache
     public Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
-                                       @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential) {
+                                       @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential,
+                                       @QueryParam("useTruststoreSpi") String useTruststoreSpi) {
         auth.init(RealmAuth.Resource.REALM).requireManage();
 
-        boolean result = new LDAPConnectionTestManager().testLDAP(action, connectionUrl, bindDn, bindCredential);
+        boolean result = new LDAPConnectionTestManager().testLDAP(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi);
         return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
     }
 
@@ -724,4 +759,35 @@ public class RealmAdminResource {
         PartialImportManager partialImport = new PartialImportManager(rep, session, realm, adminEvent);
         return partialImport.saveResources();
     }
+
+    /**
+     * Clear realm cache
+     *
+     */
+    @Path("clear-realm-cache")
+    @POST
+    public void clearRealmCache() {
+        auth.requireManage();
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+        CacheRealmProvider cache = session.getProvider(CacheRealmProvider.class);
+        if (cache != null) {
+            cache.clear();
+        }
+    }
+
+    /**
+     * Clear user cache
+     *
+     */
+    @Path("clear-user-cache")
+    @POST
+    public void clearUserCache() {
+        auth.requireManage();
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+        CacheUserProvider cache = session.getProvider(CacheUserProvider.class);
+        if (cache != null) {
+            cache.clear();
+        }
+    }
+
 }

@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source
- *
- * Copyright 2013 Red Hat, Inc. and/or its affiliates.
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,8 +30,12 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.Response.StatusType;
+import org.apache.commons.lang.builder.EqualsBuilder;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import org.keycloak.representations.idm.GroupRepresentation;
 
 /**
  * Created by st on 28.05.15.
@@ -40,16 +43,21 @@ import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD
 public class ApiUtil {
     
     private static final Logger log = Logger.getLogger(ApiUtil.class);
-
+    
     public static String getCreatedId(Response response) {
         URI location = response.getLocation();
+        if (!response.getStatusInfo().equals(Status.CREATED)) {
+            StatusType statusInfo = response.getStatusInfo();
+            throw new RuntimeException("Create method returned status " + 
+                    statusInfo.getReasonPhrase() + " (Code: " + statusInfo.getStatusCode() + "); expected status: Created (201)");
+        }
         if (location == null) {
             return null;
         }
         String path = location.getPath();
         return path.substring(path.lastIndexOf('/') + 1);
     }
-
+    
     public static ClientResource findClientResourceByClientId(RealmResource realm, String clientId) {
         for (ClientRepresentation c : realm.clients().findAll()) {
             if (c.getClientId().equals(clientId)) {
@@ -58,7 +66,7 @@ public class ApiUtil {
         }
         return null;
     }
-
+    
     public static ClientResource findClientResourceByName(RealmResource realm, String name) {
         for (ClientRepresentation c : realm.clients().findAll()) {
             if (c.getName().equals(name)) {
@@ -67,7 +75,7 @@ public class ApiUtil {
         }
         return null;
     }
-
+    
     public static ClientRepresentation findClientByClientId(RealmResource realm, String clientId) {
         ClientRepresentation client = null;
         for (ClientRepresentation c : realm.clients().findAll()) {
@@ -77,7 +85,7 @@ public class ApiUtil {
         }
         return client;
     }
-
+    
     public static UserRepresentation findUserByUsername(RealmResource realm, String username) {
         UserRepresentation user = null;
         List<UserRepresentation> ur = realm.users().search(username, null, null);
@@ -86,7 +94,7 @@ public class ApiUtil {
         }
         return user;
     }
-
+    
     public static String createUserWithAdminClient(RealmResource realm, UserRepresentation user) {
         Response response = realm.users().create(user);
         String createdId = getCreatedId(response);
@@ -99,7 +107,7 @@ public class ApiUtil {
         resetUserPassword(realm.users().get(id), password, false);
         return id;
     }
-
+    
     public static void resetUserPassword(UserResource userResource, String newPassword, boolean temporary) {
         CredentialRepresentation newCredential = new CredentialRepresentation();
         newCredential.setType(PASSWORD);
@@ -107,7 +115,7 @@ public class ApiUtil {
         newCredential.setTemporary(temporary);
         userResource.resetPassword(newCredential);
     }
-
+    
     public static void assignClientRoles(RealmResource realm, String userId, String clientName, String... roles) {
         String realmName = realm.toRepresentation().getRealm();
         String clientId = "";
@@ -119,21 +127,32 @@ public class ApiUtil {
         
         if (!clientId.isEmpty()) {
             ClientResource clientResource = realm.clients().get(clientId);
-
+            
             List<RoleRepresentation> roleRepresentations = new ArrayList<>();
             for (String roleName : roles) {
                 RoleRepresentation role = clientResource.roles().get(roleName).toRepresentation();
                 roleRepresentations.add(role);
             }
-
+            
             UserResource userResource = realm.users().get(userId);
-            log.debug("assigning roles: " + Arrays.toString(roles) + " to user: \"" + 
-                    userResource.toRepresentation().getUsername() + "\" of client: \"" + 
-                    clientName + "\" in realm: \"" + realmName + "\"");
+            log.debug("assigning roles: " + Arrays.toString(roles) + " to user: \""
+                    + userResource.toRepresentation().getUsername() + "\" of client: \""
+                    + clientName + "\" in realm: \"" + realmName + "\"");
             userResource.roles().clientLevel(clientId).add(roleRepresentations);
         } else {
             log.warn("client with name " + clientName + "doesn't exist in realm " + realmName);
         }
     }
-
+    
+    public static boolean groupContainsSubgroup(GroupRepresentation group, GroupRepresentation subgroup) {
+        boolean contains = false;
+        for (GroupRepresentation sg : group.getSubGroups()) {
+            if (subgroup.getId().equals(sg.getId())) {
+                contains = true;
+                break;
+            }
+        }
+        return contains;
+    }
+    
 }

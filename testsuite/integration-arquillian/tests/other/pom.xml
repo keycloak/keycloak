@@ -1,0 +1,157 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian-tests</artifactId>
+        <version>1.9.1.Final-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>integration-arquillian-tests-other</artifactId>
+
+    <packaging>pom</packaging>
+
+    <name>Other Tests Modules</name>
+    
+    <description>Test modules that depend on the Base TestSuite.
+        This POM contains common configuration for submodules.</description>
+
+    <modules>
+        <module>adapters</module>
+    </modules>
+    
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>unpack-test-resources</id>
+                            <phase>generate-resources</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                            <configuration>
+                                <artifactItems>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>integration-arquillian-tests-base</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>test-jar</type>
+                                        <includes>arquillian.xml,keycloak-add-user.json</includes>
+                                    </artifactItem>
+                                </artifactItems>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin> 
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>copy-admin-user-json-file</id>
+                            <phase>process-test-resources</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${jboss.server.config.dir}</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>${project.build.directory}/dependency</directory>
+                                        <includes>
+                                            <include>keycloak-add-user.json</include>
+                                        </includes>
+                                        <filtering>true</filtering>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <systemPropertyVariables>
+                            <arquillian.xml>${project.build.directory}/dependency/arquillian.xml</arquillian.xml>
+                        </systemPropertyVariables>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>dependency-on-base-testsuite</id>
+            <activation>
+                <!-- activated for all submodules with /src -->
+                <file>
+                    <exists>src</exists>
+                </file>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-tests-base</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-tests-base</artifactId>
+                    <version>${project.version}</version>
+                    <type>test-jar</type>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>console-ui-tests</id>
+            <modules>
+                <module>console</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>console-ui-no-users-tests</id>
+            <modules>
+                <module>console_no_users</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>mod_auth_mellon</id>
+            <modules>
+                <module>mod_auth_mellon</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>jpa-performance</id>
+            <modules>
+                <module>jpa-performance</module>
+            </modules>
+        </profile>
+    </profiles>
+
+</project>

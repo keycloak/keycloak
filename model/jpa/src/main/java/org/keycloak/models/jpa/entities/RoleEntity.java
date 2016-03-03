@@ -1,5 +1,27 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
+
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -20,17 +42,26 @@ import java.util.Collection;
  * @version $Revision: 1 $
  */
 @Entity
+//@DynamicInsert
+//@DynamicUpdate
 @Table(name="KEYCLOAK_ROLE", uniqueConstraints = {
         @UniqueConstraint(columnNames = { "NAME", "CLIENT_REALM_CONSTRAINT" })
 })
 @NamedQueries({
+        @NamedQuery(name="getClientRoles", query="select role from RoleEntity role where role.client = :client"),
+        @NamedQuery(name="getClientRoleIds", query="select role.id from RoleEntity role where role.client.id = :client"),
         @NamedQuery(name="getClientRoleByName", query="select role from RoleEntity role where role.name = :name and role.client = :client"),
-        @NamedQuery(name="getRealmRoleByName", query="select role from RoleEntity role where role.clientRole = false and role.name = :name and role.realm = :realm")
+        @NamedQuery(name="getClientRoleIdByName", query="select role.id from RoleEntity role where role.name = :name and role.client.id = :client"),
+        @NamedQuery(name="getRealmRoles", query="select role from RoleEntity role where role.clientRole = false and role.realm = :realm"),
+        @NamedQuery(name="getRealmRoleIds", query="select role.id from RoleEntity role where role.clientRole = false and role.realm.id = :realm"),
+        @NamedQuery(name="getRealmRoleByName", query="select role from RoleEntity role where role.clientRole = false and role.name = :name and role.realm = :realm"),
+        @NamedQuery(name="getRealmRoleIdByName", query="select role.id from RoleEntity role where role.clientRole = false and role.name = :name and role.realm.id = :realm")
 })
 
 public class RoleEntity {
     @Id
     @Column(name="ID", length = 36)
+    @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     private String id;
 
     @Column(name = "NAME")
@@ -78,6 +109,8 @@ public class RoleEntity {
     public void setRealmId(String realmId) {
         this.realmId = realmId;
     }
+
+
 
     public String getName() {
         return name;
@@ -150,6 +183,7 @@ public class RoleEntity {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
+        if (o == null) return false;
         if (!(o instanceof RoleEntity)) return false;
 
         RoleEntity that = (RoleEntity) o;

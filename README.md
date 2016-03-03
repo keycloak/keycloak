@@ -1,7 +1,9 @@
 Keycloak
 ========
 
-Keycloak is an SSO Service for web apps and REST services. For more information visit [http://keycloak.org](http://keycloak.org).  
+Open Source Identity and Access Management for modern Applications and Services.
+
+For more information about Keycloak visit [Keycloak homepage](http://keycloak.org) and [Keycloak blog](http://blog.keycloak.org).
 
 
 Building
@@ -48,22 +50,22 @@ To start Keycloak from the appliance distribution first build the distribution i
 To stop the server press `Ctrl + C`.
 
 
+Help and Documentation
+----------------------
+* [Documentation](http://keycloak.jboss.org/docs) - User Guide, Admin REST API and Javadocs
+* [User Mailing List](https://lists.jboss.org/mailman/listinfo/keycloak-user) - Mailing list to ask for help and general questions about Keycloak
+* [JIRA](https://issues.jboss.org/projects/KEYCLOAK) - Issue tracker for bugs and feature requests
+
+
 Contributing
 ------------
 
-* See [Hacking on Keycloak](misc/HackingOnKeycloak.md)
-
-
-Documentation
--------------
-
-* [User Guide, Admin REST API and Javadocs](http://keycloak.jboss.org/docs)
 * Developer documentation
-    * [Hacking on Keycloak](misc/HackingOnKeycloak.md) - how to become a Keycloak contributor
-    * [Testsuite](misc/Testsuite.md) - details about testsuite, but also how to quickly run Keycloak during development and a few test tools (OTP generation, LDAP server, Mail server)
-    * [Database Testing](misc/DatabaseTesting.md) - how to do testing of Keycloak on different databases
-    * [Updating Database](misc/UpdatingDatabaseSchema.md) - how to change the Keycloak database
-    * [Release Process](misc/ReleaseProcess.md) - how to release Keycloak
+    * [Hacking on Keycloak](misc/HackingOnKeycloak.md) - How to become a Keycloak contributor
+    * [Testsuite](misc/Testsuite.md) - Details about testsuite, but also how to quickly run Keycloak during development and a few test tools (OTP generation, LDAP server, Mail server)
+    * [Database Testing](misc/DatabaseTesting.md) - How to do testing of Keycloak on different databases
+    * [Updating Database](misc/UpdatingDatabaseSchema.md) - How to change the Keycloak database
+* [Developer Mailing List](https://lists.jboss.org/mailman/listinfo/keycloak-dev) - Mailing list to discuss development of Keycloak
 
 
 License

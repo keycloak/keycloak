@@ -1,23 +1,18 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.keycloak.services.resources;
 
@@ -35,22 +30,27 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
@@ -91,7 +91,7 @@ import java.util.UUID;
  */
 public class AccountService extends AbstractSecuredLocalService {
 
-    private static final Logger logger = Logger.getLogger(AccountService.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private static Set<String> VALID_PATHS = new HashSet<String>();
     static {
@@ -302,7 +302,7 @@ public class AccountService extends AbstractSecuredLocalService {
     @GET
     public Response passwordPage() {
         if (auth != null) {
-            account.setPasswordSet(isPasswordSet(auth.getUser()));
+            account.setPasswordSet(isPasswordSet(session, realm, auth.getUser()));
         }
 
         return forwardToPage("password", AccountPages.PASSWORD);
@@ -605,7 +605,7 @@ public class AccountService extends AbstractSecuredLocalService {
         csrfCheck(formData);
         UserModel user = auth.getUser();
 
-        boolean requireCurrent = isPasswordSet(user);
+        boolean requireCurrent = isPasswordSet(session, realm, user);
         account.setPasswordSet(requireCurrent);
 
         String password = formData.getFirst("password");
@@ -625,7 +625,7 @@ public class AccountService extends AbstractSecuredLocalService {
             }
         }
 
-        if (Validation.isEmpty(passwordNew)) {
+        if (Validation.isBlank(passwordNew)) {
             setReferrerOnPage();
             return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         }
@@ -641,11 +641,11 @@ public class AccountService extends AbstractSecuredLocalService {
             setReferrerOnPage();
             return account.setError(Messages.READ_ONLY_PASSWORD).createResponse(AccountPages.PASSWORD);
         }catch (ModelException me) {
-            logger.error("Failed to update password", me);
+            logger.failedToUpdatePassword(me);
             setReferrerOnPage();
             return account.setError(me.getMessage(), me.getParameters()).createResponse(AccountPages.PASSWORD);
         }catch (Exception ape) {
-            logger.error("Failed to update password", ape);
+            logger.failedToUpdatePassword(ape);
             setReferrerOnPage();
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }
@@ -727,7 +727,7 @@ public class AccountService extends AbstractSecuredLocalService {
                 if (link != null) {
 
                     // Removing last social provider is not possible if you don't have other possibility to authenticate
-                    if (session.users().getFederatedIdentities(user, realm).size() > 1 || user.getFederationLink() != null || isPasswordSet(user)) {
+                    if (session.users().getFederatedIdentities(user, realm).size() > 1 || user.getFederationLink() != null || isPasswordSet(session, realm, user)) {
                         session.users().removeFederatedIdentity(realm, user, providerId);
 
                         logger.debugv("Social provider {0} removed successfully from user {1}", providerId, user.getUsername());
@@ -762,11 +762,25 @@ public class AccountService extends AbstractSecuredLocalService {
         return Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName());
     }
 
-    public static boolean isPasswordSet(UserModel user) {
+    public static boolean isPasswordSet(KeycloakSession session, RealmModel realm, UserModel user) {
         boolean passwordSet = false;
 
+        // See if password is set for user on linked UserFederationProvider
         if (user.getFederationLink() != null) {
-            passwordSet = true;
+
+            UserFederationProvider federationProvider = null;
+            for (UserFederationProviderModel fedProviderModel : realm.getUserFederationProviders()) {
+                if (fedProviderModel.getId().equals(user.getFederationLink())) {
+                    federationProvider = KeycloakModelUtils.getFederationProviderInstance(session, fedProviderModel);
+                }
+            }
+
+            if (federationProvider != null) {
+                Set<String> supportedCreds = federationProvider.getSupportedCredentialTypes(user);
+                if (supportedCreds.contains(UserCredentialModel.PASSWORD)) {
+                    passwordSet = true;
+                }
+            }
         }
 
         for (UserCredentialValueModel c : user.getCredentialsDirectly()) {

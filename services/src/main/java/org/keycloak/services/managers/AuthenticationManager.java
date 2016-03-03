@@ -1,22 +1,21 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
- * as indicated by the @author tags. All rights reserved.
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.keycloak.services.managers;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
@@ -39,6 +38,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -60,7 +60,7 @@ import java.util.Set;
  */
 public class AuthenticationManager {
     public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
-    protected static Logger logger = Logger.getLogger(AuthenticationManager.class);
+    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     public static final String FORM_USERNAME = "username";
     // used for auth login
     public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
@@ -121,7 +121,7 @@ public class AuthenticationManager {
             backchannelLogoutClientSession(session, realm, clientSession, userSession, uriInfo, headers);
         }
         if (logoutBroker) {
-            String brokerId = userSession.getNote(IdentityBrokerService.BROKER_PROVIDER_ID);
+            String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
             if (brokerId != null) {
                 IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
                 try {
@@ -181,9 +181,7 @@ public class AuthenticationManager {
                 String authMethod = clientSession.getAuthMethod();
                 if (authMethod == null) continue; // must be a keycloak service like account
                 redirectClients.add(clientSession);
-                continue;
-            }
-            if (client instanceof ClientModel && !client.isFrontchannelLogout()) {
+            } else {
                 String authMethod = clientSession.getAuthMethod();
                 if (authMethod == null) continue; // must be a keycloak service like account
                 LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
@@ -195,7 +193,7 @@ public class AuthenticationManager {
                     protocol.backchannelLogout(userSession, clientSession);
                     clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
                 } catch (Exception e) {
-                    logger.warn("Failed to logout client, continuing", e);
+                    logger.failedToLogoutClient(e);
                 }
             }
         }
@@ -216,11 +214,11 @@ public class AuthenticationManager {
                     return response;
                 }
             } catch (Exception e) {
-                logger.warn("Failed to logout client, continuing", e);
+                logger.failedToLogoutClient(e);
             }
 
         }
-        String brokerId = userSession.getNote(IdentityBrokerService.BROKER_PROVIDER_ID);
+        String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
         if (brokerId != null) {
             IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
             Response response = identityProvider.keycloakInitiatedBrowserLogout(userSession, uriInfo, realm);
@@ -528,7 +526,8 @@ public class AuthenticationManager {
 
             // Skip grant screen if everything was already approved by this user
             if (realmRoles.size() > 0 || resourceRoles.size() > 0 || protocolMappers.size() > 0) {
-                accessCode.setAction(ClientSessionModel.Action.OAUTH_GRANT.name());
+                accessCode.setAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name());
+                clientSession.setNote(CURRENT_REQUIRED_ACTION, ClientSessionModel.Action.OAUTH_GRANT.name());
 
                 return session.getProvider(LoginFormsProvider.class)
                         .setClientSessionCode(accessCode.getCode())

@@ -1,0 +1,95 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/user-federation">{{:: 'user-federation' | translate}}</a></li>
+        <li data-ng-hide="create">{{instance.displayName|capitalize}}</li>
+        <li data-ng-show="create">{{:: 'add-user-federation-provider' | translate}}</li>
+    </ol>
+
+    <kc-tabs-user-federation></kc-tabs-user-federation>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <fieldset>
+            <legend><span class="text">{{:: 'required-settings' | translate}}</span></legend>
+            <div class="form-group clearfix" data-ng-show="!create">
+                <label class="col-md-2 control-label" for="providerId">{{:: 'provider-id' | translate}} </label>
+                <div class="col-md-6">
+                    <input class="form-control" id="providerId" type="text" ng-model="instance.id" readonly>
+                </div>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="consoleDisplayName">{{:: 'console-display-name' | translate}} </label>
+                <div class="col-md-6">
+                    <input class="form-control" id="consoleDisplayName" type="text" ng-model="instance.displayName" placeholder="{{:: 'defaults-to-id' | translate}}">
+                </div>
+                <kc-tooltip>{{:: 'console-display-name.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="priority">{{:: 'priority' | translate}} </label>
+                <div class="col-md-6">
+                    <input class="form-control" id="priority" type="text" ng-model="instance.priority">
+                </div>
+                <kc-tooltip>{{:: 'priority.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div data-ng-repeat="option in providerFactory.options" class="form-group">
+                <label class="col-md-2 control-label">{{option|capitalize}} </label>
+
+                <div class="col-md-6">
+                    <input class="form-control" type="text" data-ng-model="instance.config[ option ]" >
+                </div>
+            </div>
+
+            <kc-provider-config realm="realm" config="instance.config" properties="providerFactory.properties"></kc-provider-config>
+
+        </fieldset>
+
+        <fieldset>
+            <legend><span class="text">{{:: 'sync-settings' | translate}}</span></legend>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="fullSyncEnabled">{{:: 'periodic-full-sync' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="fullSyncEnabled" name="fullSyncEnabled" id="fullSyncEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'periodic-full-sync.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="fullSyncEnabled">
+                <label class="col-md-2 control-label" for="fullSyncPeriod">{{:: 'full-sync-period' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="number" ng-model="instance.fullSyncPeriod" id="fullSyncPeriod" />
+                </div>
+                <kc-tooltip>{{:: 'full-sync-period.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="changedSyncEnabled">{{:: 'periodic-changed-users-sync' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="changedSyncEnabled" name="changedSyncEnabled" id="changedSyncEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'periodic-changed-users-sync.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="changedSyncEnabled">
+                <label class="col-md-2 control-label" for="changedSyncPeriod">{{:: 'changed-users-sync-period' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="number" ng-model="instance.changedSyncPeriod" id="changedSyncPeriod" />
+                </div>
+                <kc-tooltip>{{:: 'changed-users-sync-period.tooltip' | translate}}</kc-tooltip>
+            </div>
+        </fieldset>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageUsers">
+                <button kc-save>{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageUsers">
+                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+                <button class="btn btn-primary" data-ng-click="triggerChangedUsersSync()" data-ng-hide="changed">{{:: 'synchronize-changed-users' | translate}}</button>
+                <button class="btn btn-primary" data-ng-click="triggerFullSync()" data-ng-hide="changed">{{:: 'synchronize-all-users' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

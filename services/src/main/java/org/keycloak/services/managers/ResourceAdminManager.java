@@ -1,6 +1,21 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.services.managers;
 
-import org.jboss.logging.Logger;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
@@ -15,6 +30,7 @@ import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -37,7 +53,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ResourceAdminManager {
-    protected static Logger logger = Logger.getLogger(ResourceAdminManager.class);
+    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     private static final String CLIENT_SESSION_HOST_PROPERTY = "${application.session.host}";
 
     private KeycloakSession session;
@@ -237,7 +253,7 @@ public class ResourceAdminManager {
             logger.debugf("logout success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.warn("Logout for client '" + resource.getClientId() + "' failed", e);
+            logger.logoutFailed(e, resource.getClientId());
             return false;
         }
     }
@@ -288,7 +304,7 @@ public class ResourceAdminManager {
             logger.debugf("pushRevocation success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.warn("Failed to send revocation request", e);
+            logger.failedToSendRevocation(e);
             return false;
         }
     }
@@ -326,7 +342,7 @@ public class ResourceAdminManager {
             logger.debugf("testAvailability success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.warn("Availability test failed for uri '" + managementUrl + "'", e);
+            logger.availabilityTestFailed(managementUrl);
             return false;
         }
    }

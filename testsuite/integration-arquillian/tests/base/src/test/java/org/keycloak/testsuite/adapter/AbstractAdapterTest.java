@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.adapter;
 
 import org.apache.commons.io.IOUtils;
@@ -8,7 +25,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
-import org.keycloak.testsuite.arquillian.ContainersTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 import java.io.IOException;
@@ -61,7 +77,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
     public abstract void addAdapterTestRealms(List<RealmRepresentation> testRealms);
 
     public boolean isRelative() {
-        return ContainersTestEnricher.isRelative(this.getClass());
+        return testContext.isRelativeAdapterTest();
     }
 
     protected void modifyClientRedirectUris(RealmRepresentation realm, String regex, String replacement) {
@@ -95,28 +111,32 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
     }
 
     protected void modifyClientWebOrigins(RealmRepresentation realm, String regex, String replacement) {
-        for (ClientRepresentation client : realm.getClients()) {
-            List<String> webOrigins = client.getWebOrigins();
-            if (webOrigins != null) {
-                List<String> newWebOrigins = new ArrayList<>();
-                for (String uri : webOrigins) {
-                    newWebOrigins.add(uri.replaceAll(regex, replacement));
+        if (realm.getClients() != null) {
+            for (ClientRepresentation client : realm.getClients()) {
+                List<String> webOrigins = client.getWebOrigins();
+                if (webOrigins != null) {
+                    List<String> newWebOrigins = new ArrayList<>();
+                    for (String uri : webOrigins) {
+                        newWebOrigins.add(uri.replaceAll(regex, replacement));
+                    }
+                    client.setWebOrigins(newWebOrigins);
                 }
-                client.setWebOrigins(newWebOrigins);
             }
         }
     }
 
     protected void modifySamlMasterURLs(RealmRepresentation realm, String regex, String replacement) {
-        for (ClientRepresentation client : realm.getClients()) {
-            if (client.getProtocol() != null && client.getProtocol().equals("saml")) {
-                log.info("Modifying master URL of SAML client: " + client.getClientId());
-                String masterUrl = client.getAdminUrl();
-                if (masterUrl == null) {
-                    masterUrl = client.getBaseUrl();
+        if (realm.getClients() != null) {
+            for (ClientRepresentation client : realm.getClients()) {
+                if (client.getProtocol() != null && client.getProtocol().equals("saml")) {
+                    log.info("Modifying master URL of SAML client: " + client.getClientId());
+                    String masterUrl = client.getAdminUrl();
+                    if (masterUrl == null) {
+                        masterUrl = client.getBaseUrl();
+                    }
+                    masterUrl = masterUrl.replaceFirst(regex, replacement);
+                    client.setAdminUrl(masterUrl + ((!masterUrl.endsWith("/saml")) ? "/saml" : ""));
                 }
-                masterUrl = masterUrl.replaceFirst(regex, replacement);
-                client.setAdminUrl(masterUrl);
             }
         }
     }

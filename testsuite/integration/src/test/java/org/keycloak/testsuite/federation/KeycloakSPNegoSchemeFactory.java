@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.federation;
 
 import java.security.PrivilegedExceptionAction;
@@ -5,6 +22,7 @@ import java.security.PrivilegedExceptionAction;
 import javax.security.auth.Subject;
 
 import org.apache.http.auth.AuthScheme;
+import org.apache.http.auth.Credentials;
 import org.apache.http.impl.auth.SPNegoScheme;
 import org.apache.http.impl.auth.SPNegoSchemeFactory;
 import org.apache.http.params.HttpParams;
@@ -30,7 +48,7 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
 
 
     public KeycloakSPNegoSchemeFactory(CommonKerberosConfig kerberosConfig) {
-        super(true);
+        super(true, false);
         this.kerberosConfig = kerberosConfig;
     }
 
@@ -43,19 +61,19 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
 
     @Override
     public AuthScheme newInstance(HttpParams params) {
-        return new KeycloakSPNegoScheme(isStripPort());
+        return new KeycloakSPNegoScheme(isStripPort(), isUseCanonicalHostname());
     }
 
 
     public class KeycloakSPNegoScheme extends SPNegoScheme {
 
-        public KeycloakSPNegoScheme(boolean stripPort) {
-            super(stripPort);
+        public KeycloakSPNegoScheme(boolean stripPort, boolean useCanonicalHostname) {
+            super(stripPort, useCanonicalHostname);
         }
 
 
         @Override
-        protected byte[] generateGSSToken(byte[] input, Oid oid, String authServer) throws GSSException {
+        protected byte[] generateGSSToken(byte[] input, Oid oid, String authServer, Credentials credentials) throws GSSException {
             KerberosUsernamePasswordAuthenticator authenticator = new KerberosUsernamePasswordAuthenticator(kerberosConfig);
             try {
                 Subject clientSubject = authenticator.authenticateSubject(username, password);

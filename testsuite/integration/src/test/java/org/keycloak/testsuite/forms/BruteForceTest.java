@@ -1,23 +1,18 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.keycloak.testsuite.forms;
 
@@ -41,6 +36,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
+import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.rule.GreenMailRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
@@ -102,11 +98,13 @@ public class BruteForceTest {
     protected LoginPage loginPage;
 
     @WebResource
+    private RegisterPage registerPage;
+
+    @WebResource
     protected LoginTotpPage loginTotpPage;
 
     @WebResource
     protected OAuthClient oauth;
-
 
     private TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -340,6 +338,17 @@ public class BruteForceTest {
         loginSuccess();
     }
 
+    @Test
+    public void testNonExistingAccounts() throws Exception {
+
+        loginInvalidPassword("non-existent-user");
+        loginInvalidPassword("non-existent-user");
+        loginInvalidPassword("non-existent-user");
+
+        registerUser("non-existent-user");
+
+    }
+
     public void expectTemporarilyDisabled() throws Exception {
         expectTemporarilyDisabled("test-user@localhost");
     }
@@ -427,6 +436,18 @@ public class BruteForceTest {
         loginPage.assertCurrent();
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        events.clear();
+    }
+
+    public void registerUser(String username){
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("user", "name",  username + "@localhost", username, "password", "password");
+
+        Assert.assertNull(registerPage.getInstruction());
+
         events.clear();
     }
 

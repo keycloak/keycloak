@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.federation.ldap.base;
 
 import org.junit.Assert;
@@ -388,6 +405,9 @@ public class FederationProvidersIntegrationTest {
             if (!skip) {
                 LDAPObject johnComma = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "john,comma", "John", "Comma", "johncomma@email.org", null, "12387");
                 FederationTestUtils.updateLDAPPassword(ldapFedProvider, johnComma, "Password1");
+
+                LDAPObject johnPlus = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "john+plus,comma", "John", "Plus", "johnplus@email.org", null, "12387");
+                FederationTestUtils.updateLDAPPassword(ldapFedProvider, johnPlus, "Password1");
             }
         } finally {
             keycloakRule.stopSession(session, false);
@@ -396,6 +416,7 @@ public class FederationProvidersIntegrationTest {
         if (!skip) {
             // Try to import the user with comma in username into Keycloak
             loginSuccessAndLogout("john,comma", "Password1");
+            loginSuccessAndLogout("john+plus,comma", "Password1");
         }
     }
 

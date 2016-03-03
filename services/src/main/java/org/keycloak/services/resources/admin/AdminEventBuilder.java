@@ -1,10 +1,25 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.services.resources.admin;
 
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventStoreProvider;
@@ -15,6 +30,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.common.util.Time;
 
@@ -22,7 +38,7 @@ import javax.ws.rs.core.UriInfo;
 
 public class AdminEventBuilder {
 
-    private static final Logger log = Logger.getLogger(AdminEventBuilder.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private EventStoreProvider store;
     private List<EventListenerProvider> listeners;
@@ -38,7 +54,7 @@ public class AdminEventBuilder {
             if (store != null) {
                 this.store = store;
             } else {
-                log.error("Admin Events enabled, but no event store provider configured");
+                logger.noEventStoreProvider();
             }
         }
 
@@ -49,7 +65,7 @@ public class AdminEventBuilder {
                 if (listener != null) {
                     listeners.add(listener);
                 } else {
-                    log.error("Event listener '" + id + "' registered, but provider not found");
+                    logger.providerNotFound(id);
                 }
             }
         }
@@ -199,7 +215,7 @@ public class AdminEventBuilder {
             try {
                 store.onEvent(adminEvent, includeRepresentation);
             } catch (Throwable t) {
-                log.error("Failed to save event", t);
+                logger.failedToSaveEvent(t);
             }
         }
 
@@ -208,7 +224,7 @@ public class AdminEventBuilder {
                 try {
                     l.onEvent(adminEvent, includeRepresentation);
                 } catch (Throwable t) {
-                    log.error("Failed to send type to " + l, t);
+                    logger.failedToSendType(t, l);
                 }
             }
         }

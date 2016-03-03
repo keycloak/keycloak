@@ -1,0 +1,34 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1>{{:: 'authentication' | translate}}</h1>
+
+    <kc-tabs-authentication></kc-tabs-authentication>
+    <table class="table table-striped table-bordered">
+        <thead>
+        <tr data-ng-hide="unregisteredRequiredActions.length == 0">
+            <th colspan = "3" class="kc-table-actions">
+                <div class="pull-right" data-ng-show="access.manageRealm">
+                    <button class="btn btn-default" data-ng-click="register()">{{:: 'register' | translate}}</button>
+                </div>
+            </th>
+        </tr>
+        <tr data-ng-hide="requiredActions.length == 0">
+            <th>{{:: 'required-action' | translate}}</th>
+            <th>{{:: 'enabled' | translate}}</th>
+            <th>{{:: 'default-action' | translate}} <i class="fa fa-question-circle text-muted" tooltip-trigger="mouseover mouseout" tooltip="{{:: 'auth.default-action.tooltip' | translate}}" tooltip-placement="top"></i></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="requiredAction in requiredActions | orderBy : 'name'" data-ng-show="requiredActions.length > 0">
+            <td>{{requiredAction.name}}</td>
+            <td><input type="checkbox" ng-model="requiredAction.enabled" ng-change="updateRequiredAction(requiredAction)" id="{{requiredAction.alias}}.enabled"></td>
+            <td><input type="checkbox" ng-model="requiredAction.defaultAction" ng-change="updateRequiredAction(requiredAction)" id="{{requiredAction.alias}}.defaultAction"></td>
+        </tr>
+        <tr data-ng-show="requiredActions.length == 0">
+            <td>{{:: 'no-required-actions-configured' | translate}}</td>
+        </tr>
+        </tbody>
+    </table>
+
+</div>
+
+<kc-menu></kc-menu>

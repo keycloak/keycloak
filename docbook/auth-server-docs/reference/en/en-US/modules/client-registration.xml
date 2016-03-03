@@ -1,3 +1,20 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <chapter id="client-registration">
     <title>Client Registration</title>
 
@@ -10,7 +27,7 @@
     <para>
         The Client Registration Service provides built-in support for Keycloak Client Representations, OpenID Connect
         Client Meta Data and SAML Entity Descriptors. It's also possible to plugin custom client registration providers
-        if required. The Client Registration Service endpoint is <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/&lt;provider&gt;</literal>.
+        if required. The Client Registration Service endpoint is <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients-registrations/&lt;provider&gt;</literal>.
     </para>
     <para>
         The built-in supported <literal>providers</literal> are:
@@ -106,23 +123,23 @@ Authorization: bearer eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJmMjJmNzQyYy04ZjNlLTQ2M....
         </para>
         <para>
             To create a client create a Client Representation (JSON) then do a HTTP POST to:
-            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/default</literal>. It will return a Client Representation
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients-registrations/default</literal>. It will return a Client Representation
             that also includes the registration access token. You should save the registration access token somewhere
             if you want to retrieve the config, update or delete the client later.
         </para>
         <para>
             To retrieve the Client Representation then do a HTTP GET to:
-            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/default/&lt;client id&gt;</literal>. It will also
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients-registrations/default/&lt;client id&gt;</literal>. It will also
             return a new registration access token.
         </para>
         <para>
             To update the Client Representation then do a HTTP PUT to with the updated Client Representation to:
-            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/default/&lt;client id&gt;</literal>. It will also
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients-registrations/default/&lt;client id&gt;</literal>. It will also
             return a new registration access token.
         </para>
         <para>
             To delete the Client Representation then do a HTTP DELETE to:
-            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/default/&lt;client id&gt;</literal>
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients-registrations/default/&lt;client id&gt;</literal>
         </para>
     </section>
 
@@ -138,7 +155,7 @@ Authorization: basic BASE64(client-id + ':' + client-secret)
         </para>
         <para>
             To retrieve the Adapter Configuration then do a HTTP GET to:
-            <literal>&lt;KEYCLOAK URL&gt;//realms/&lt;realm&gt;/clients/installation/&lt;client id&gt;</literal>
+            <literal>&lt;KEYCLOAK URL&gt;//realms/&lt;realm&gt;/clients-registrations/install/&lt;client id&gt;</literal>
         </para>
         <para>
             No authentication is required for public clients. This means that for the JavaScript adapter you can
@@ -155,7 +172,7 @@ Authorization: basic BASE64(client-id + ':' + client-secret)
         </para>
         <para>
             The endpoint to use these specifications to register clients in Keycloak is:
-            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/oidc[/&lt;client id&gt;]</literal>.
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients-registrations/oidc[/&lt;client id&gt;]</literal>.
         </para>
         <para>
             This endpoints can also be found in the OpenID Connect Discovery endpoint for the realm:
@@ -173,7 +190,7 @@ Authorization: basic BASE64(client-id + ':' + client-secret)
         </para>
         <para>
             To create a client do a HTTP POST with the SAML Entity Descriptor to:
-            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients/saml2-entity-descriptor</literal>.
+            <literal>&lt;KEYCLOAK URL&gt;/realms/&lt;realm&gt;/clients-registrations/saml2-entity-descriptor</literal>.
         </para>
     </section>
 

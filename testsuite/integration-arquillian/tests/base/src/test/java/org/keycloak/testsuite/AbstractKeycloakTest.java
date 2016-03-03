@@ -1,5 +1,22 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.testsuite;
 
+import java.io.File;
 import org.keycloak.testsuite.arquillian.TestContext;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,9 +33,11 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RealmsResource;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.auth.page.WelcomePage;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -33,6 +52,8 @@ import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.util.Timer;
 import org.keycloak.testsuite.util.WaitUtils;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 
 /**
  *
@@ -49,11 +70,9 @@ public abstract class AbstractKeycloakTest {
 
     @ArquillianResource
     protected TestContext testContext;
-    
-    @ArquillianResource
+
     protected Keycloak adminClient;
 
-    @ArquillianResource
     protected OAuthClient oauthClient;
 
     protected List<RealmRepresentation> testRealmReps;
@@ -83,6 +102,11 @@ public abstract class AbstractKeycloakTest {
 
     @Before
     public void beforeAbstractKeycloakTest() {
+        adminClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+        oauthClient = new OAuthClient(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
+
+        
         adminUser = createAdminUserRepresentation();
 
         setDefaultPageUriParameters();
@@ -102,7 +126,6 @@ public abstract class AbstractKeycloakTest {
     public void afterAbstractKeycloakTest() {
 //        removeTestRealms(); // keeping test realms after test to be able to inspect failures, instead deleting existing realms before import
 //        keycloak.close(); // keeping admin connection open
-        Timer.printStats();
     }
 
     private void updateMasterAdminPassword() {
@@ -177,6 +200,10 @@ public abstract class AbstractKeycloakTest {
 
     public void removeRealm(RealmRepresentation realm) {
         adminClient.realms().realm(realm.getRealm()).remove();
+    }
+    
+    public RealmsResource realmsResouce() {
+        return adminClient.realms();
     }
 
 }

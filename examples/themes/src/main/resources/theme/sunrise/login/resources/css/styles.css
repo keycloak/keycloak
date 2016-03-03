@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 @import url('../../keycloak/lib/zocial/zocial.css');
 
 body {
@@ -21,18 +38,6 @@ div#kc-content {
     left: 50%;
     width: 550px;
     margin-left: -225px;
-}
-
-h2#kc-header {
-    position: fixed;
-    top: 50px;
-    left: 0;
-    width: 100%;
-    text-align: center;
-    margin: 0 auto;
-    color: rgba(255, 255, 255, 0.08);
-    text-shadow: none;
-    font-size: 80px;
 }
 
 div#kc-form {
@@ -137,15 +142,7 @@ div.feedback-error {
 }
 
 div#kc-header {
-    background-image: url('../img/logo.png');
-    background-repeat: no-repeat;
-    height: 500px;
-    position: absolute;
-    left: 30px;
-    top: 30px;
-    width: 500px;
-    z-index: -1;
-    text-indent: -9999px;
+    display: none;
 }
 
 div#kc-registration {

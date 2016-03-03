@@ -1,22 +1,21 @@
 /*
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
- * as indicated by the @author tags. All rights reserved.
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.keycloak.services.managers;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.session.UserSessionPersisterProvider;
@@ -61,7 +60,6 @@ import org.keycloak.protocol.ProtocolMapperUtils;
  * @version $Revision: 1 $
  */
 public class RealmManager implements RealmImporter {
-    protected static final Logger logger = Logger.getLogger(RealmManager.class);
 
     protected KeycloakSession session;
     protected RealmProvider model;
@@ -213,10 +211,11 @@ public class RealmManager implements RealmImporter {
     public boolean removeRealm(RealmModel realm) {
         List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
 
+        ClientModel masterAdminClient = realm.getMasterAdminClient();
         boolean removed = model.removeRealm(realm.getId());
         if (removed) {
-            if (realm.getMasterAdminClient() != null) {
-                new ClientManager(this).removeClient(getKeycloakAdminstrationRealm(), realm.getMasterAdminClient());
+            if (masterAdminClient != null) {
+                new ClientManager(this).removeClient(getKeycloakAdminstrationRealm(), masterAdminClient);
             }
 
             UserSessionProvider sessions = session.sessions();
@@ -232,7 +231,7 @@ public class RealmManager implements RealmImporter {
             // Remove all periodic syncs for configured federation providers
             UsersSyncManager usersSyncManager = new UsersSyncManager();
             for (final UserFederationProviderModel fedProvider : federationProviders) {
-                usersSyncManager.removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), fedProvider);
+                usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, true);
             }
         }
         return removed;
@@ -328,7 +327,7 @@ public class RealmManager implements RealmImporter {
 
 
     private void setupAccountManagement(RealmModel realm) {
-        ClientModel client = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         if (client == null) {
             client = KeycloakModelUtils.createClient(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
             client.setName("${client_" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "}");
@@ -353,7 +352,7 @@ public class RealmManager implements RealmImporter {
     }
 
     public void setupBrokerService(RealmModel realm) {
-        ClientModel client = realm.getClientNameMap().get(Constants.BROKER_SERVICE_CLIENT_ID);
+        ClientModel client = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
         if (client == null) {
             client = KeycloakModelUtils.createClient(realm, Constants.BROKER_SERVICE_CLIENT_ID);
             client.setEnabled(true);
@@ -435,7 +434,7 @@ public class RealmManager implements RealmImporter {
         List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
         UsersSyncManager usersSyncManager = new UsersSyncManager();
         for (final UserFederationProviderModel fedProvider : federationProviders) {
-            usersSyncManager.refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, realm.getId());
+            usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
         }
         return realm;
     }
@@ -474,7 +473,7 @@ public class RealmManager implements RealmImporter {
     private boolean hasClient(RealmRepresentation rep, String clientId) {
         if (rep.getClients() != null) {
             for (ClientRepresentation clientRep : rep.getClients()) {
-                if (clientRep.getClientId().equals(clientId)) {
+                if (clientRep.getClientId() != null && clientRep.getClientId().equals(clientId)) {
                     return true;
                 }
             }

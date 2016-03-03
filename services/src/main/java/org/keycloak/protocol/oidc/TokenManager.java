@@ -1,6 +1,23 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.protocol.oidc;
 
-import org.jboss.logging.Logger;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -34,6 +51,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionManager;
@@ -59,7 +77,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class TokenManager {
-    protected static final Logger logger = Logger.getLogger(TokenManager.class);
+    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public static void applyScope(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
         if (visited.contains(scope)) return;
@@ -176,9 +194,9 @@ public class TokenManager {
         int currentTime = Time.currentTime();
 
         if (realm.isRevokeRefreshToken()) {
-            int serverStartupTime = (int)(session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
+            int clusterStartupTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
 
-            if (refreshToken.getIssuedAt() < validation.clientSession.getTimestamp() && (serverStartupTime != validation.clientSession.getTimestamp())) {
+            if (refreshToken.getIssuedAt() < validation.clientSession.getTimestamp() && (clusterStartupTime != validation.clientSession.getTimestamp())) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
             }
 

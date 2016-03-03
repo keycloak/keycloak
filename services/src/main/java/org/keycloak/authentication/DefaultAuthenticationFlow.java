@@ -1,10 +1,27 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.authentication;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.ServicesLogger;
 
 import javax.ws.rs.core.Response;
 import java.util.Iterator;
@@ -15,7 +32,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class DefaultAuthenticationFlow implements AuthenticationFlow {
-    protected static Logger logger = Logger.getLogger(DefaultAuthenticationFlow.class);
+    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     Response alternativeChallenge = null;
     AuthenticationExecutionModel challengedAlternativeExecution = null;
     boolean alternativeSuccessful = false;
@@ -68,6 +85,10 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 Response response = processResult(result);
                 if (response == null) {
                     processor.getClientSession().removeNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+                    if (result.status == FlowStatus.SUCCESS) {
+                        // we do this so that flow can redirect to a non-action URL
+                        processor.setActionSuccessful();
+                    }
                     return processFlow();
                 } else return response;
             }
@@ -153,6 +174,10 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                     }
                 }
             }
+            // skip if action as successful already
+            Response redirect = processor.checkWasSuccessfulBrowserAction();
+            if (redirect != null) return redirect;
+
             AuthenticationProcessor.Result context = processor.createAuthenticatorContext(model, authenticator, executions);
             logger.debug("invoke authenticator.authenticate");
             authenticator.authenticate(context);
@@ -222,7 +247,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return processor.authenticate();
             default:
                 logger.debugv("authenticator INTERNAL_ERROR: {0}", execution.getAuthenticator());
-                logger.error("Unknown result status");
+                logger.unknownResultStatus();
                 throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
         }
     }

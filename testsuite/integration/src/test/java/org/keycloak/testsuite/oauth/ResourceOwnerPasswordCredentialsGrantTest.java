@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.oauth;
 
 import org.apache.http.HttpResponse;
@@ -12,8 +29,10 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
@@ -46,9 +65,24 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
             user.setEmail("direct-login@localhost");
             user.setEnabled(true);
 
+            session.users().updateCredential(appRealm, user, UserCredentialModel.password("password"));
+
             userId = user.getId();
 
-            session.users().updateCredential(appRealm, user, UserCredentialModel.password("password"));
+            UserModel user2 = session.users().addUser(appRealm, "direct-login-otp");
+            user2.setEnabled(true);
+
+            UserCredentialModel credentials = new UserCredentialModel();
+            credentials.setType(CredentialRepresentation.TOTP);
+            credentials.setValue("totpSecret");
+            user2.updateCredential(credentials);
+
+            user2.setOtpEnabled(true);
+
+            session.users().updateCredential(appRealm, user2, UserCredentialModel.password("password"));
+
+            userId2 = user2.getId();
+
         }
     });
 
@@ -66,6 +100,10 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
 
     private static String userId;
 
+    private static String userId2;
+
+    private TimeBasedOTP totp = new TimeBasedOTP();
+
     @Test
     public void grantAccessTokenUsername() throws Exception {
         grantAccessToken("direct-login", "resource-owner");
@@ -81,11 +119,57 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         grantAccessToken("direct-login", "resource-owner-public");
     }
 
+    @Test
+    public void grantAccessTokenWithTotp() throws Exception {
+        grantAccessToken(userId2, "direct-login-otp", "resource-owner", totp.generateTOTP("totpSecret"));
+    }
+
+    @Test
+    public void grantAccessTokenMissingTotp() throws Exception {
+        oauth.clientId("resource-owner");
+
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "direct-login-otp", "password");
+
+        assertEquals(401, response.getStatusCode());
+
+        assertEquals("invalid_grant", response.getError());
+
+        events.expectLogin()
+                .client("resource-owner")
+                .session((String) null)
+                .clearDetails()
+                .error(Errors.INVALID_USER_CREDENTIALS)
+                .user(userId2)
+                .assertEvent();
+    }
+
+    @Test
+    public void grantAccessTokenInvalidTotp() throws Exception {
+        oauth.clientId("resource-owner");
+
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "direct-login-otp", "password", totp.generateTOTP("totpSecret2"));
+
+        assertEquals(401, response.getStatusCode());
+
+        assertEquals("invalid_grant", response.getError());
+
+        events.expectLogin()
+                .client("resource-owner")
+                .session((String) null)
+                .clearDetails()
+                .error(Errors.INVALID_USER_CREDENTIALS)
+                .user(userId2)
+                .assertEvent();
+    }
 
     private void grantAccessToken(String login, String clientId) throws Exception {
+        grantAccessToken(userId, login, clientId, null);
+    }
+
+    private void grantAccessToken(String userId, String login, String clientId, String otp) throws Exception {
         oauth.clientId(clientId);
 
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", login, "password");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", login, "password", otp);
 
         assertEquals(200, response.getStatusCode());
 

@@ -69,7 +69,8 @@
             ],
             "realmRoles": [ "user","admin" ],
             "clientRoles": {
-                "realm-management": [ "realm-admin" ]
+                "realm-management": [ "realm-admin" ],
+                "account": [ "manage-account" ]
             }
         },
         {
@@ -121,6 +122,16 @@
             "secret": "password"
         },
         {
+            "clientId": "customer-portal-filter",
+            "enabled": true,
+            "adminUrl": "/customer-portal-filter/keycloak",
+            "baseUrl": "/customer-portal-filter",
+            "redirectUris": [
+                "/customer-portal-filter/*"
+            ],
+            "secret": "password"
+        },
+        {
             "clientId": "customer-portal-js",
             "enabled": true,
             "publicClient": true,
@@ -136,6 +147,15 @@
             "baseUrl": "/angular-product/index.html",
             "redirectUris": [
                 "/angular-product/*"
+            ]
+        },
+		{
+            "clientId": "angular2-product",
+            "enabled": true,
+            "publicClient": true,
+            "baseUrl": "/angular2-product/index.html",
+            "redirectUris": [
+                "/angular2-product/*"
             ]
         },
         {
@@ -216,6 +236,10 @@
             },
             {
                 "client": "customer-portal",
+                "roles": ["realm-admin"]
+            },
+            {
+                "client": "customer-portal-filter",
                 "roles": ["realm-admin"]
             }
         ]

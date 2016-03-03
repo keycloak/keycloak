@@ -172,8 +172,8 @@
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
-            "baseUrl": "http://localhost:8080/bad-realm-sales-post-sig/",
-            "adminUrl": "http://localhost:8080/bad-realm-sales-post-sig/",
+            "baseUrl": "http://localhost:8080/bad-realm-sales-post-sig",
+            "adminUrl": "http://localhost:8080/bad-realm-sales-post-sig",
             "redirectUris": [
                 "http://localhost:8080/bad-realm-sales-post-sig/*"
             ],
@@ -189,8 +189,8 @@
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
-            "baseUrl": "http://localhost:8080/bad-client-sales-post-sig/",
-            "adminUrl": "http://localhost:8080/bad-client-sales-post-sig/",
+            "baseUrl": "http://localhost:8080/bad-client-sales-post-sig",
+            "adminUrl": "http://localhost:8080/bad-client-sales-post-sig",
             "redirectUris": [
                 "http://localhost:8080/bad-client-sales-post-sig/*"
             ],
@@ -229,7 +229,7 @@
             "redirectUris": [
                 "http://localhost:8080/employee-sig/*"
             ],
-            "adminUrl": "http://localhost:8080/employee-sig/",
+            "adminUrl": "http://localhost:8080/employee-sig",
             "attributes": {
                 "saml.server.signature": "true",
                 "saml.client.signature": "true",
@@ -243,11 +243,11 @@
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
-            "baseUrl": "http://localhost:8080/employee/",
+            "baseUrl": "http://localhost:8080/employee",
             "redirectUris": [
                 "http://localhost:8080/employee/*"
             ],
-            "adminUrl": "http://localhost:8080/employee/",
+            "adminUrl": "http://localhost:8080/employee",
             "attributes": {
                 "saml.authnstatement": "true"
             },
@@ -293,13 +293,14 @@
             "enabled": true,
             "protocol": "saml",
             "fullScopeAllowed": true,
-            "baseUrl": "http://localhost:8080/employee2/",
+            "baseUrl": "http://localhost:8080/employee2",
             "redirectUris": [
                 "http://localhost:8080/employee2/*"
             ],
-            "adminUrl": "http://localhost:8080/employee2/",
+            "adminUrl": "http://localhost:8080/employee2",
             "attributes": {
-                "saml.authnstatement": "true"
+                "saml.authnstatement": "true",
+                "saml_idp_initiated_sso_url_name" : "employee2"
             },
             "protocolMappers": [
                 {
@@ -344,7 +345,7 @@
             "protocol": "saml",
             "fullScopeAllowed": true,
             "frontchannelLogout": true,
-            "baseUrl": "http://localhost:8080/employee-sig-front/",
+            "baseUrl": "http://localhost:8080/employee-sig-front",
             "redirectUris": [
                 "http://localhost:8080/employee-sig-front/*"
             ],

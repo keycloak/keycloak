@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.admin;
 
 import org.junit.Assert;
@@ -529,6 +546,32 @@ public class UserTest extends AbstractClientTest {
     }
 
     @Test
+    public void updateUserWithoutUsername() {
+        switchEditUsernameAllowedOn();
+
+        String id = createUser();
+
+        UserResource user = realm.users().get(id);
+
+        UserRepresentation rep = new UserRepresentation();
+        rep.setFirstName("Firstname");
+
+        user.update(rep);
+
+        rep = new UserRepresentation();
+        rep.setLastName("Lastname");
+
+        user.update(rep);
+
+        rep = realm.users().get(id).toRepresentation();
+
+        assertEquals("user1", rep.getUsername());
+        assertEquals("user1@localhost", rep.getEmail());
+        assertEquals("Firstname", rep.getFirstName());
+        assertEquals("Lastname", rep.getLastName());
+    }
+
+    @Test
     public void updateUserWithNewUsernameNotPossible() {
         String id = createUser();
 
@@ -601,6 +644,23 @@ public class UserTest extends AbstractClientTest {
         loginPage.login("user1", "password");
 
         assertEquals("Keycloak Account Management", driver.getTitle());
+    }
+
+    @Test
+    public void resetUserInvalidPassword() {
+        String userId = createUser("user1", "user1@localhost");
+
+        try {
+            CredentialRepresentation cred = new CredentialRepresentation();
+            cred.setType(CredentialRepresentation.PASSWORD);
+            cred.setValue(" ");
+            cred.setTemporary(false);
+            realm.users().get(userId).resetPassword(cred);
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+            e.getResponse().close();
+        }
     }
 
     private void switchEditUsernameAllowedOn() {

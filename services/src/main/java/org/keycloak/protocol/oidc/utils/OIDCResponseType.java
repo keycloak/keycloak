@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.protocol.oidc.utils;
 
 import java.util.ArrayList;
@@ -63,9 +80,11 @@ public class OIDCResponseType {
         if (responseTypes.contains(NONE) && responseTypes.size() > 1) {
             throw new IllegalArgumentException("None not allowed with some other response_type");
         }
-        if (responseTypes.contains(TOKEN) && responseTypes.size() == 1) {
-            throw new IllegalArgumentException("Not supported to use response_type=token alone");
-        }
+
+        // response_type value "token" alone is not mentioned in OIDC specification, however it is supported by OAuth2. We allow it just to be compatible with pure OAuth2 clients like swagger.ui
+//        if (responseTypes.contains(TOKEN) && responseTypes.size() == 1) {
+//            throw new IllegalArgumentException("Not supported to use response_type=token alone");
+//        }
     }
 
 
@@ -79,7 +98,7 @@ public class OIDCResponseType {
     }
 
     public boolean isImplicitFlow() {
-        return hasResponseType(ID_TOKEN) && !hasResponseType(CODE);
+        return (hasResponseType(TOKEN) || hasResponseType(ID_TOKEN)) && !hasResponseType(CODE);
     }
 
 

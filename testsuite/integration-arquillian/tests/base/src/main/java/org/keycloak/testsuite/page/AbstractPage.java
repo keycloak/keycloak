@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.testsuite.page;
 
 import java.net.URI;
@@ -7,6 +24,9 @@ import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -73,6 +93,7 @@ public abstract class AbstractPage {
         log.info("navigating to " + uri);
         driver.navigate().to(uri);
         pause(300); // this is needed for FF for some reason
+        waitUntilElement(By.tagName("body")).is().visible();
         log.info("current URL:  " + driver.getCurrentUrl());
     }
 

@@ -1,31 +1,39 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.models.entities;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class CredentialEntity {
+public class CredentialEntity extends AbstractIdentifiableEntity {
 
-    private String id;
-    private String type;
-    private String value;
-    private String device;
-    private byte[] salt;
-    private int hashIterations;
-    private Long createdDate;
-    private UserEntity user;
-    private int counter;
-    private String algorithm;
-    private int digits;
-    private int period;
+    protected String type;
+    protected String value;
+    protected String device;
+    protected byte[] salt;
+    protected int hashIterations;
+    protected Long createdDate;
+    protected UserEntity user;
+    protected int counter;
+    protected String algorithm;
+    protected int digits;
+    protected int period;
 
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getType() {
         return type;

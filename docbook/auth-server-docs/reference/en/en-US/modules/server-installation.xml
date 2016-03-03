@@ -1,3 +1,20 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <chapter id="server-installation">
     <title>Installation and Configuration of Keycloak Server</title>
 
@@ -47,11 +64,11 @@
             <para>
                 To add Keycloak to existing standalone.xml server config run:
 <programlisting>
-bin/jboss-cli.sh --file=keycloak-install.cli
+bin/jboss-cli.sh --file=bin/keycloak-install.cli
 </programlisting>
                 To add Keycloak to existing standalone-ha.xml server config run:
 <programlisting>
-    bin/jboss-cli.sh --file=keycloak-install.cli
+bin/jboss-cli.sh --file=bin/keycloak-install-ha.cli
 </programlisting>
                 If you want to add Keycloak to a different server config edit keycloak-install.cli or keycloak-install-ha.cli
                 and change the name of the server config.
@@ -111,7 +128,13 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
 ]]></programlisting>
                 Then restart the server.
             </para>
-        </section>
+            <para>
+                For <literal>keycloak-overlay</literal>, please make sure to use:
+<programlisting><![CDATA[
+bin/add-user-keycloak.[sh|bat] -r master -u <username> -p <password>
+]]></programlisting>
+            </para>
+            </section>
 
         <section>
             <title>Relational Database Configuration</title>
@@ -226,6 +249,11 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
                                     <entry>auto</entry>
                                 </row>
                                 <row>
+                                    <entry>PostgresPlus 9.4</entry>
+                                    <entry>edb-jdbc17-4.0</entry>
+                                    <entry>auto</entry>
+                                </row>
+                                <row>
                                     <entry>Oracle 11g R1</entry>
                                     <entry>Oracle JDBC Driver v11.1.0.7</entry>
                                     <entry>auto</entry>
@@ -236,8 +264,8 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
                                     <entry>org.hibernate.dialect.SQLServer2008Dialect</entry>
                                 </row>
                                 <row>
-                                    <entry>Sybase ASE 15.7</entry>
-                                    <entry>JDBC(TM)/7.07 ESD #5 (Build 26792)/P/EBF20686</entry>
+                                    <entry>IBM DB2 10.5</entry>
+                                    <entry>JDBC 4.0 Driver (db2jcc4.jar) 4.19.26</entry>
                                     <entry>auto</entry>
                                 </row>
                             </tbody>
@@ -374,7 +402,7 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
                         <term>connection-pool-size</term>
                         <listitem>
                             <para>
-                                How many connections can be in the pool.
+                                How many connections can be in the pool (128 by default).
                             </para>
                         </listitem>
                     </varlistentry>
@@ -382,7 +410,24 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
                         <term>max-pooled-per-route</term>
                         <listitem>
                             <para>
-                                How many connections can be pooled per host.
+                                How many connections can be pooled per host (64 by default).
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>connection-ttl-millis</term>
+                        <listitem>
+                            <para>
+                                Maximum connection time to live in milliseconds. Not set by default.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term>max-connection-idle-time-millis</term>
+                        <listitem>
+                            <para>
+                                Maximum time the connection might stay idle in the connection pool (900 seconds by default). Will start background cleaner thread of Apache HTTP client.
+                                Set to -1 to disable this checking and the background thread.
                             </para>
                         </listitem>
                     </varlistentry>
@@ -793,7 +838,7 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
             <link linkend='themes'>Themes</link> sections for more information on how to do this.
         </para>
     </section>
-    
+
     <section>
         <title>Installing Keycloak Server as Root Context</title>
         <para>
@@ -816,11 +861,11 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
              <note>
                  If you have run your server before altering the root context, your database
                  will contain references to the old /auth context. Your clients may also have incorrect
-                 references.  To fix this on the server side, you will need to <link linkend="export-import">export 
-                 your database to json, make corrections, and then import.</link>  Client-side keycloak.json 
+                 references.  To fix this on the server side, you will need to <link linkend="export-import">export
+                 your database to json, make corrections, and then import.</link>  Client-side keycloak.json
                  files will need to be updated manually as well.
              </note>
         </para>
-        
+
     </section>
 </chapter>

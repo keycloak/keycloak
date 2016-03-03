@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="mposolda@redhat.com" id="1.9.0">
+
+        <!-- This is needed for MSSQL :( -->
+        <!-- 1.5 -->
+        <update tableName="REALM">
+            <column name="OTP_POLICY_COUNTER" type="INT" valueNumeric="0" />
+            <where>OTP_POLICY_COUNTER is NULL</where>
+        </update>
+        <update tableName="REALM">
+            <column name="OTP_POLICY_WINDOW" type="INT" valueNumeric="1" />
+            <where>OTP_POLICY_WINDOW is NULL</where>
+        </update>
+        <update tableName="REALM">
+            <column name="OTP_POLICY_PERIOD" type="INT" valueNumeric="30" />
+            <where>OTP_POLICY_PERIOD is NULL</where>
+        </update>
+        <update tableName="REALM">
+            <column name="OTP_POLICY_DIGITS" type="INT" valueNumeric="6" />
+            <where>OTP_POLICY_DIGITS is NULL</where>
+        </update>
+        <update tableName="CREDENTIAL">
+            <column name="COUNTER" type="INT" valueNumeric="0" />
+            <where>COUNTER is NULL</where>
+        </update>
+        <update tableName="CREDENTIAL">
+            <column name="DIGITS" type="INT" valueNumeric="6" />
+            <where>DIGITS is NULL</where>
+        </update>
+        <update tableName="CREDENTIAL">
+            <column name="PERIOD" type="INT" valueNumeric="30" />
+            <where>PERIOD is NULL</where>
+        </update>
+        <!-- 1.6 -->
+        <update tableName="REALM">
+            <column name="OFFLINE_SESSION_IDLE_TIMEOUT" type="INT" valueNumeric="2592000" />
+            <where>OFFLINE_SESSION_IDLE_TIMEOUT is NULL</where>
+        </update>
+        <!-- 1.7 -->
+        <update tableName="REALM">
+            <column name="ACCESS_TOKEN_LIFE_IMPLICIT" type="INT" valueNumeric="900" />
+            <where>ACCESS_TOKEN_LIFE_IMPLICIT is NULL</where>
+        </update>
+
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate1_9_0_Final"/>
+
+        <dropForeignKeyConstraint baseTableName="REALM_CLIENT" constraintName="FK_93S3P0DIUXAWWQQSA528UBY2Q"/>
+        <dropForeignKeyConstraint baseTableName="REALM_CLIENT" constraintName="FK_M6QGA3RFME47335JY8JXYXH3I"/>
+        <dropUniqueConstraint tableName="REALM_CLIENT" constraintName="UK_M6QGA3RFME47335JY8JXYXH3I"  />
+        <dropTable tableName="REALM_CLIENT" />
+        <dropForeignKeyConstraint baseTableName="REALM_CLIENT_TEMPLATE" constraintName="FK_RLM_CLI_TMPLT_RLM" />
+        <dropForeignKeyConstraint baseTableName="REALM_CLIENT_TEMPLATE" constraintName="FK_RLM_CLI_TMPLT_CLI"/>
+        <dropTable tableName="REALM_CLIENT_TEMPLATE" />
+
+        <dropForeignKeyConstraint baseTableName="FED_PROVIDERS" constraintName="FK_213LYQ09FKXQ8K8NY8DY3737T"/>
+        <dropForeignKeyConstraint baseTableName="FED_PROVIDERS" constraintName="FK_DCCIRJLIPU1478VQC89DID88C"/>
+        <dropUniqueConstraint tableName="FED_PROVIDERS" constraintName="UK_DCCIRJLIPU1478VQC89DID88C" />
+        <dropTable tableName="FED_PROVIDERS" />
+
+        <createIndex indexName="IDX_US_SESS_ID_ON_CL_SESS" tableName="OFFLINE_CLIENT_SESSION">
+            <column name="USER_SESSION_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+    </changeSet>
+</databaseChangeLog>

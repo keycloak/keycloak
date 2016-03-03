@@ -1,0 +1,38 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<chapter id="Migration_from_older_versions">
+    <title>Migration from older versions</title>
+
+    <section>
+        <title>Version specific migration</title>
+        <section>
+            <title>Migrating to 1.9.0</title>
+            <simplesect>
+                <title>SAML SP Client Adapter Changes</title>
+                <para>
+                    Keycloak SAML SP Client Adapter now requires a specific endpoint, <literal>/saml</literal> to be
+                    registered with your IDP.  The SamlFilter must also be bound to /saml in addition to any other binding it has.
+                    This had to be done because SAML POST binding would eat the request input stream and this would be really
+                    bad for clients that relied on it.
+                </para>
+            </simplesect>
+
+        </section>
+
+    </section>
+</chapter>

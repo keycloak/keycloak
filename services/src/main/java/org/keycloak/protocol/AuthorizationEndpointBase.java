@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.protocol;
 
 import java.util.List;
@@ -7,7 +24,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
@@ -19,6 +35,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol.Error;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -31,7 +48,7 @@ import org.keycloak.services.resources.LoginActionsService;
  */
 public abstract class AuthorizationEndpointBase {
 
-    private static final Logger logger = Logger.getLogger(AuthorizationEndpointBase.class);
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     protected RealmModel realm;
     protected EventBuilder event;
@@ -70,17 +87,18 @@ public abstract class AuthorizationEndpointBase {
 
     /**
      * Common method to handle browser authentication request in protocols unified way.
-     * 
+     *
      * @param clientSession for current request
      * @param protocol handler for protocol used to initiate login
      * @param isPassive set to true if login should be passive (without login screen shown)
+     * @param redirectToAuthentication if true redirect to flow url.  If initial call to protocol is a POST, you probably want to do this.  This is so we can disable the back button on browser
      * @return response to be returned to the browser
      */
-    protected Response handleBrowserAuthenticationRequest(ClientSessionModel clientSession, LoginProtocol protocol, boolean isPassive) {
+    protected Response handleBrowserAuthenticationRequest(ClientSessionModel clientSession, LoginProtocol protocol, boolean isPassive, boolean redirectToAuthentication) {
 
         List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
         for (IdentityProviderModel identityProvider : identityProviders) {
-            if (identityProvider.isAuthenticateByDefault()) {
+            if (identityProvider.isEnabled() && identityProvider.isAuthenticateByDefault()) {
                 // TODO if we are isPassive we should propagate this flag to default identity provider also if possible
                 return buildRedirectToIdentityProvider(identityProvider.getAlias(), new ClientSessionCode(realm, clientSession).getCode());
             }
@@ -115,6 +133,9 @@ public abstract class AuthorizationEndpointBase {
         } else {
             try {
                 RestartLoginCookie.setRestartCookie(realm, clientConnection, uriInfo, clientSession);
+                if (redirectToAuthentication) {
+                    return processor.redirectToFlow();
+                }
                 return processor.authenticate();
             } catch (Exception e) {
                 return processor.handleBrowserException(e);

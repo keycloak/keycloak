@@ -11,6 +11,7 @@ The following examples requires Wildfly 8.0.0, JBoss EAP 6.x, or JBoss AS 7.1.1.
 There are multiple WAR projects.  These will all run on the same WildFly instance, but pretend each one is running on a different
 machine on the network or Internet.
 * **customer-app** A WAR application that does remote login using OAuth2 browser redirects with the auth server
+* **customer-app-filter** A WAR application secured by the Keycloak Servlet Filter Adapter.  Useful for EE platforms that don't have an adapter.
 * **customer-app-js** A pure HTML/Javascript application that does remote login using OAuth2 browser redirects with the auth server
 * **customer-app-cli** A pure CLI application that does remote login using OAuth2 browser redirects with the auth server
 * **product-app** A WAR application that does remote login using OAuth2 browser redirects with the auth server
@@ -201,7 +202,28 @@ An Angular JS example using Keycloak to secure it.
 If you are already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
 
-Step 9: Pure HTML5/Javascript Example
+Step 10: Angular2 JS Example
+----------------------------------
+An Angular2 JS example using Keycloak to secure it. Angular2 is in beta version yet.
+
+To install angular2
+```
+$ cd keycloak/examples/demo-template/angular2-product-app/src/main/webapp/
+$ npm install
+```
+
+Transpile TypeScript to JavaScript before running the application.
+```
+$ npm run tsc
+```
+
+[http://localhost:8080/angular2-product](http://localhost:8080/angular2-product)
+
+If you are already logged in, you will not be asked for a username and password, but you will be redirected to
+an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
+
+
+Step 11: Pure HTML5/Javascript Example
 ----------------------------------
 An pure HTML5/Javascript example using Keycloak to secure it.
 
@@ -210,7 +232,7 @@ An pure HTML5/Javascript example using Keycloak to secure it.
 If you are already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
 
-Step 10: Service Account Example
+Step 12: Service Account Example
 ================================
 An example for retrieve service account dedicated to the Client Application itself (not to any user). 
 
@@ -221,7 +243,7 @@ Client authentication is done with OAuth2 Client Credentials Grant in out-of-bou
 The example also shows different methods of client authentication. There is ProductSAClientSecretServlet using traditional authentication with clientId and client_secret, 
 but there is also ProductSAClientSignedJWTServlet using client authentication with JWT signed by client private key.  
 
-Step 11: Offline Access Example
+Step 13: Offline Access Example
 ===============================
 An example for retrieve offline token, which is then saved to the database and can be used by application anytime later. Offline token
 is valid even if user is already logged out from SSO. Server restart also won't invalidate offline token. Offline token can be revoked by the user in 

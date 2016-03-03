@@ -1,9 +1,26 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <section id="javascript-adapter">
     <title>Javascript Adapter</title>
     <para>
         The Keycloak Server comes with a Javascript library you can use to secure HTML/Javascript applications.  This
-        library is referencable directly from the keycloak server.  You can also download the adapter from Keycloak's download
-        site if you want a static copy of this library.  It
+        library is referenceable directly from the keycloak server.  You can also download the adapter from Keycloak's download
+        site if you want a static copy.  It
         works in the same way as other application adapters except that your browser is driving the OAuth redirect protocol
         rather than the server.
     </para>
@@ -14,13 +31,13 @@
     <para>
         To use this adapter, you must first configure an application (or client) through the <literal>Keycloak Admin Console</literal>.
         You should select <literal>public</literal> for the <literal>Client Type</literal> field. As public clients can't
-        be verified with a client secret you are required to configure one or more valid redirect uris as well.
-        Once you've configured the application click on the <literal>Installation</literal> tab and download the <literal>keycloak.json</literal>
-        file. This file should be hosted in your web-server at the same root as your HTML pages. Alternatively you can either
-        specify the URL for this file, or manually configure the adapter.
+        be verified with a client secret, you are required to configure one or more valid redirect uris.
+        Once you've configured the application, click on the <literal>Installation</literal> tab and download the <literal>keycloak.json</literal>
+        file. This file should be hosted on your web-server at the same root as your HTML pages. Alternatively, you can manually
+        configure the adapter and specify the URL for this file.
     </para>
     <para>
-        Next you have to initialize the adapter in your application. An example on how to do this is shown below.
+        Next, you have to initialize the adapter in your application. An example is shown below.
 <programlisting><![CDATA[
 <head>
     <script src="http://<keycloak server>/auth/js/keycloak.js"></script>
@@ -47,7 +64,7 @@ var keycloak = Keycloak({
 });
 ]]></programlisting>
         You can also pass <literal>login-required</literal> or <literal>check-sso</literal> to the init function. Login
-        required will redirect to the login form on the server, while check-sso will redirect to the auth server to check
+        required will cause a redirect to the login form on the server, while check-sso will simply redirect to the auth server to check
         if the user is already logged in to the realm. For example:
 <programlisting><![CDATA[
 keycloak.init({ onLoad: 'login-required' })
@@ -111,9 +128,9 @@ keycloak.init({ onLoad: 'login-required' })
     </para>
 
     <para>
-        To refresh the token if it's expired call the <literal>updateToken</literal> method. This method returns a promise
-        object which can be used to invoke a function on success or failure. This method can be used to wrap functions
-        that should only be called with a valid token. For example the following method will refresh the token if it
+        To refresh the token when it is expired, call the <literal>updateToken</literal> method. This method returns a promise
+        object, which can be used to invoke a function on success or failure. This method can be used to wrap functions
+        that should only be called with a valid token. For example, the following method will refresh the token if it
         expires within 30 seconds, and then invoke the specified function. If the token is valid for more than 30 seconds it
         will just call the specified function.
 <programlisting><![CDATA[
@@ -129,7 +146,7 @@ keycloak.updateToken(30).success(function() {
         <title>Session status iframe</title>
 
         <para>
-            By default the JavaScript adapter creates a non-visible iframe that is used to detect if a single-sign out has occured.
+            By default, the JavaScript adapter creates a non-visible iframe that is used to detect if a single-sign out has occurred.
             This does not require any network traffic, instead the status is retrieved from a special status cookie. This feature can be disabled
             by setting <literal>checkLoginIframe: false</literal> in the options passed to the <literal>init</literal>
             method.
@@ -140,33 +157,32 @@ keycloak.updateToken(30).success(function() {
         <title>Implicit and Hybrid Flow</title>
 
         <para>
-            By default the JavaScript adapter uses <ulink url="http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth">OpenID Connect standard (Authorization code) flow</ulink>, which
-            means that after authentication will Keycloak server redirects back to your application and Javascript adapter will exchange <literal>code</literal> for access token and refresh token.
+            By default, the JavaScript adapter uses <ulink url="http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth">OpenID Connect standard (Authorization code) flow</ulink>, which
+            means that after authentication, the Keycloak server redirects the user back to your application, where the JavaScript adapter will exchange the <literal>code</literal> for an access token and a refresh token.
         </para>
         <para>
-            However Keycloak also supports <ulink url="http://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth">OpenID Connect Implicit flow</ulink>
-            where access token is directly sent after successful authentication from Keycloak and there is no additional request for exchange code.
-            This might have better performance than standard flow as there is no additional request for exchange code-to-token. However sending access token
-            in URL fragment might be security issue in some environments (Token can be more easily stolen from the network etc).
+            However, Keycloak also supports <ulink url="http://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth">OpenID Connect Implicit flow</ulink>
+            where an access token is sent immediately after successful authentication with Keycloak (there is no additional request for exchange code).
+            This could have better performance than standard flow, as there is no additional request to exchange the code for tokens. However, sending the access token
+            in the URL fragment could pose a security issue in some environments (access logs might expose tokens located in the URL).
         </para>
-        <para>To enable implicit flow, you need to enable the flag <literal>Implicit Flow Enabled</literal> for the client in Keycloak admin console. You also need to pass
-            the parameter <literal>flow</literal> with value <literal>implicit</literal> to <literal>init</literal> method, so that Javascript adapter will use implicit flow instead of standard flow.
-            The example is here:
+        <para>To enable implicit flow, you need to enable the <literal>Implicit Flow Enabled</literal> flag for the client in the Keycloak admin console. You also need to pass
+            the parameter <literal>flow</literal> with value <literal>implicit</literal> to <literal>init</literal> method.
+            An example is below:
 <programlisting><![CDATA[
 keycloak.init({ flow: 'implicit' })
 ]]></programlisting>
-            Note that with implicit flow, you don't have refresh token available after authentication. This makes it harder for your application to periodically update
-            access token in background (without browser redirection). It's recommended that you implement <literal>onTokenExpired</literal> callback method on keycloak object, so you
-            have possibility to do something after token is expired (For example you can call keycloak.login, which will redirect browser to Keycloak login screen and it will immediately
-            redirect you back if SSO session is still valid and user is still logged. However make sure to save the application state before doing redirect.)
+            Note that with implicit flow, you are not given a refresh token after authentication. This makes it harder for your application to periodically update
+            the access token in background (without browser redirection). It's recommended that you implement an <literal>onTokenExpired</literal> callback method on the keycloak object, so you
+            are notified after the token is expired (For example you can call keycloak.login, which will redirect browser to Keycloak login screen and it will immediately
+            redirect you back if the SSO session is still valid and the user is still logged. However, make sure to save the application state before performing a redirect.)
         </para>
         <para>
-            Keycloak also have support for <ulink url="http://openid.net/specs/openid-connect-core-1_0.html#HybridFlowAuth">OpenID Connect Hybrid flow</ulink>. This requires
-            that client in admin console has both flags <literal>Standard Flow Enabled</literal> and <literal>Implicit Flow Enabled</literal> enabled in admin console.
-            The Keycloak will send both the code and tokens to your application. Access token can be immediately used and in the meantime, code can be exchanged for access token and refresh token.
-            Hybrid flow is good for performance similarly like implicit flow, because access token is available immediatelly to your application. But similarly like implicit flow, the token is
-            sent in URL fragment, so security may not be so good.
-            One advantage over implicit flow is, that you have also refresh token available in your application (after code-to-token request is finished in background).
+            Keycloak also has support for <ulink url="http://openid.net/specs/openid-connect-core-1_0.html#HybridFlowAuth">OpenID Connect Hybrid flow</ulink>. This requires
+            the client to have both the <literal>Standard Flow Enabled</literal> and <literal>Implicit Flow Enabled</literal> flags enabled in the admin console.
+            The Keycloak server will then send both the code and tokens to your application. The access token can be used immediately while the code can be exchanged for access and refresh tokens.
+            Similar to the implicit flow, the hybrid flow is good for performance because the access token is available immediately. But, the token is still sent in the URL, and security risks might still apply.
+            However, one advantage over the implicit flow is that a refresh token is made available to the application (after the code-to-token request is finished).
         </para>
         <para>
             For hybrid flow, you need to pass the parameter <literal>flow</literal> with value <literal>hybrid</literal> to <literal>init</literal> method.

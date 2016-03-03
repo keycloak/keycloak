@@ -1,0 +1,13 @@
+<div data-ng-controller="GroupTabCtrl">
+    <h1>
+        {{group.name|capitalize}}
+        <i id="removeGroup" class="pficon pficon-delete clickable" data-ng-show="access.manageUsers" data-ng-click="removeGroup()"></i>
+    </h1>
+
+    <ul class="nav nav-tabs">
+        <li ng-class="{active: !path[4]}"><a href="#/realms/{{realm.realm}}/groups/{{group.id}}">{{:: 'settings' | translate}}</a></li>
+        <li ng-class="{active: path[4] == 'attributes'}"><a href="#/realms/{{realm.realm}}/groups/{{group.id}}/attributes">{{:: 'attributes' | translate}}</a></li>
+        <li ng-class="{active: path[4] == 'role-mappings'}" ><a href="#/realms/{{realm.realm}}/groups/{{group.id}}/role-mappings">{{:: 'role-mappings' | translate}}</a></li>
+        <li ng-class="{active: path[4] == 'members'}"><a href="#/realms/{{realm.realm}}/groups/{{group.id}}/members">{{:: 'members' | translate}}</a></li>
+    </ul>
+</div>

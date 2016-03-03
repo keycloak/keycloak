@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<EntityDescriptor
+        entityID="http://localhost:8380/auth"
+        xmlns="urn:oasis:names:tc:SAML:2.0:metadata">
+    <SPSSODescriptor
+            AuthnRequestsSigned="true"
+            WantAssertionsSigned="true"
+            protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <KeyDescriptor use="signing">
+            <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <ds:X509Data>
+                    <ds:X509Certificate>MIICrjCCAZYCCQDmdnUguf+VxTANBgkqhkiG9w0BAQsFADAZMRcwFQYDVQQDDA5s
+                        b2NhbGhvc3Q6ODM4MDAeFw0xNjAxMTkxMTUwMDdaFw0yNjAxMTgxMTUwMDdaMBkx
+                        FzAVBgNVBAMMDmxvY2FsaG9zdDo4MzgwMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+                        MIIBCgKCAQEAuissRqhpCBR9nMuoRp+Varx151DKbmdL6NhNxWUOdaYF+fSpNmtG
+                        0NsaYV0Coz0Jak/6ap7EfhUeG83vh0G2xj6YTVYtXDVMnUPGmzHprvmFvTOfP4KI
+                        VM+1aHcPLfk8ED4ea6TOPDGBjmQw8Y9nZaMATDqEnO8IGaF/Jkl476O3Ek1Nd5yO
+                        Sday83Or1GkD+ZsZxvyc0CpGJYYaGPrsUFAXekebSlon5SIDerQB7WgABSoGOKDo
+                        I8Z+JU/KftwewrE0hr9GZ8HAYBJVt0XfuNSWL7ulmF2HC3RZ877FYk3Vg3KVQs7d
+                        yJfK3+V3pGyzOBp/xU61nVZrb0fvua1hWQIDAQABMA0GCSqGSIb3DQEBCwUAA4IB
+                        AQCPR4RhXan28Eq/A6pGfJ29USKLqqDZChYy9q71Zi8hTs4+YYD6wMU8kz+MnTHC
+                        /Gf+6XFix7W07XxpFirZ5dkENn7lQUBklBmbxRdB9aW9WfJjx148a/I4+pXZalEI
+                        fqpnmWBYt4+/L9exu8tIwj/bshBmuO8Nn4ronTBDgrTCu5feyYO5l12hEdT2d+5r
+                        wc/Be66ftl8eOhsr9XJNidjoTVGB3SlHC6v0J7izgS+wT0UxIi3a3gwzW5ZsF4y8
+                        8iEicAVGmkjgmyJ5GoInQhVhLU2vlxgoULAEWKhF79JYChkGSg8dXAvqBfLm3OCg
+                        hxj9HldPc8mCn3gMt8F+POZL
+                    </ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </KeyDescriptor>
+        <KeyDescriptor use="encryption">
+            <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <ds:X509Data>
+                    <ds:X509Certificate>MIICrjCCAZYCCQDmdnUguf+VxTANBgkqhkiG9w0BAQsFADAZMRcwFQYDVQQDDA5s
+                        b2NhbGhvc3Q6ODM4MDAeFw0xNjAxMTkxMTUwMDdaFw0yNjAxMTgxMTUwMDdaMBkx
+                        FzAVBgNVBAMMDmxvY2FsaG9zdDo4MzgwMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+                        MIIBCgKCAQEAuissRqhpCBR9nMuoRp+Varx151DKbmdL6NhNxWUOdaYF+fSpNmtG
+                        0NsaYV0Coz0Jak/6ap7EfhUeG83vh0G2xj6YTVYtXDVMnUPGmzHprvmFvTOfP4KI
+                        VM+1aHcPLfk8ED4ea6TOPDGBjmQw8Y9nZaMATDqEnO8IGaF/Jkl476O3Ek1Nd5yO
+                        Sday83Or1GkD+ZsZxvyc0CpGJYYaGPrsUFAXekebSlon5SIDerQB7WgABSoGOKDo
+                        I8Z+JU/KftwewrE0hr9GZ8HAYBJVt0XfuNSWL7ulmF2HC3RZ877FYk3Vg3KVQs7d
+                        yJfK3+V3pGyzOBp/xU61nVZrb0fvua1hWQIDAQABMA0GCSqGSIb3DQEBCwUAA4IB
+                        AQCPR4RhXan28Eq/A6pGfJ29USKLqqDZChYy9q71Zi8hTs4+YYD6wMU8kz+MnTHC
+                        /Gf+6XFix7W07XxpFirZ5dkENn7lQUBklBmbxRdB9aW9WfJjx148a/I4+pXZalEI
+                        fqpnmWBYt4+/L9exu8tIwj/bshBmuO8Nn4ronTBDgrTCu5feyYO5l12hEdT2d+5r
+                        wc/Be66ftl8eOhsr9XJNidjoTVGB3SlHC6v0J7izgS+wT0UxIi3a3gwzW5ZsF4y8
+                        8iEicAVGmkjgmyJ5GoInQhVhLU2vlxgoULAEWKhF79JYChkGSg8dXAvqBfLm3OCg
+                        hxj9HldPc8mCn3gMt8F+POZL
+                    </ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </KeyDescriptor>
+        <SingleLogoutService
+                Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
+                Location="http://localhost:8380/mellon/logout"/>
+        <SingleLogoutService
+                Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+                Location="http://localhost:8380/mellon/logout"/>
+        <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
+        <AssertionConsumerService
+                index="0"
+                isDefault="true"
+                Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                Location="http://localhost:8380/mellon/postResponse"/>
+        <AssertionConsumerService
+                index="1"
+                Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+                Location="http://localhost:8380/mellon/artifactResponse"/>
+        <AssertionConsumerService
+                index="2"
+                Binding="urn:oasis:names:tc:SAML:2.0:bindings:PAOS"
+                Location="http://localhost:8380/mellon/paosResponse"/>
+    </SPSSODescriptor>
+</EntityDescriptor>

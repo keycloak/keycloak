@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.wildfly.adduser;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -19,6 +36,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.util.JsonSerialization;
 
+import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -56,12 +74,16 @@ public class AddUser {
             printHelp(command);
         } else {
             try {
+                String password = command.getPassword();
                 checkRequired(command, "user");
-                checkRequired(command, "password");
+
+                if(isEmpty(command, "password")){
+                    password = promptForInput();
+                }
 
                 File addUserFile = getAddUserFile(command);
 
-                createUser(addUserFile, command.getRealm(), command.getUser(), command.getPassword(), command.getRoles(), command.getIterations());
+                createUser(addUserFile, command.getRealm(), command.getUser(), password, command.getRoles(), command.getIterations());
             } catch (Exception e) {
                 System.err.println(e.getMessage());
                 System.exit(1);
@@ -190,8 +212,7 @@ public class AddUser {
     }
 
     private static void checkRequired(Command command, String field) throws Exception {
-        Method m = command.getClass().getMethod("get" + Character.toUpperCase(field.charAt(0)) + field.substring(1));
-        if (m.invoke(command) == null) {
+        if (isEmpty(command, field)) {
             Option option = command.getClass().getDeclaredField(field).getAnnotation(Option.class);
             String optionName;
             if (option != null && option.shortName() != '\u0000') {
@@ -201,6 +222,27 @@ public class AddUser {
             }
             throw new Exception("Option: " + optionName + " is required");
         }
+    }
+
+    private static Boolean isEmpty(Command command, String field) throws Exception {
+        Method m = command.getClass().getMethod("get" + Character.toUpperCase(field.charAt(0)) + field.substring(1));
+        if (m.invoke(command) == null) {
+            return true;
+        }
+        return false;
+    }
+
+    private static String promptForInput() throws Exception {
+        Console console = System.console();
+        if (console == null) {
+            throw new Exception("Couldn't get Console instance");
+        }
+        console.printf("Press ctrl-d (Unix) or ctrl-z (Windows) to exit\n");
+        char passwordArray[] = console.readPassword("Password: ");
+
+        if(passwordArray == null) System.exit(0);
+
+        return new String(passwordArray);
     }
 
     private static void printHelp(Command command) throws CommandNotFoundException {

@@ -1,0 +1,155 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <kc-tabs-realm></kc-tabs-realm>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="revokeRefreshToken">{{:: 'revoke-refresh-token' | translate}}</label>
+
+            <div class="col-md-6">
+                <input ng-model="realm.revokeRefreshToken" name="revokeRefreshToken" id="revokeRefreshToken" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+            </div>
+
+            <kc-tooltip>{{:: 'revoke-refresh-token.tooltip' | translate}}
+            </kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="ssoSessionIdleTimeout">{{:: 'sso-session-idle' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.ssoSessionIdleTimeout.time" id="ssoSessionIdleTimeout"
+                       name="ssoSessionIdleTimeout"/>
+                <select class="form-control" name="ssoSessionIdleTimeoutUnit" data-ng-model="realm.ssoSessionIdleTimeout.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'sso-session-idle.tooltip' | translate}}
+            </kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="ssoSessionMaxLifespan">{{:: 'sso-session-max' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1"
+                       max="31536000" data-ng-model="realm.ssoSessionMaxLifespan.time"
+                       id="ssoSessionMaxLifespan" name="ssoSessionMaxLifespan"/>
+                <select class="form-control" name="ssoSessionMaxLifespanUnit" data-ng-model="realm.ssoSessionMaxLifespan.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'sso-session-max.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="offlineSessionIdleTimeout">{{:: 'offline-session-idle' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1"
+                       max="31536000" data-ng-model="realm.offlineSessionIdleTimeout.time"
+                       id="offlineSessionIdleTimeout" name="offlineSessionIdleTimeout"/>
+                <select class="form-control" name="offlineSessionIdleTimeoutUnit" data-ng-model="realm.offlineSessionIdleTimeout.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'offline-session-idle.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="accessTokenLifespan">{{:: 'access-token-lifespan' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1"
+                       max="31536000" data-ng-model="realm.accessTokenLifespan.time"
+                       id="accessTokenLifespan" name="accessTokenLifespan"/>
+                <select class="form-control" name="accessTokenLifespanUnit" data-ng-model="realm.accessTokenLifespan.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'access-token-lifespan.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="accessTokenLifespanForImplicitFlow">{{:: 'access-token-lifespan-for-implicit-flow' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1"
+                       max="31536000" data-ng-model="realm.accessTokenLifespanForImplicitFlow.time"
+                       id="accessTokenLifespanForImplicitFlow" name="accessTokenLifespanForImplicitFlow"/>
+                <select class="form-control" name="accessTokenLifespanForImplicitFlowUnit" data-ng-model="realm.accessTokenLifespanForImplicitFlow.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'access-token-lifespan-for-implicit-flow.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="accessCodeLifespan">{{:: 'client-login-timeout' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespan.time" id="accessCodeLifespan"
+                       name="accessCodeLifespan">
+                <select class="form-control" name="accessCodeLifespanUnit" data-ng-model="realm.accessCodeLifespan.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'client-login-timeout.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="accessCodeLifespanLogin" class="two-lines">{{:: 'login-timeout' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespanLogin.time"
+                       id="accessCodeLifespanLogin" name="accessCodeLifespanLogin">
+                <select class="form-control" name="accessCodeLifespanLoginUnit" data-ng-model="realm.accessCodeLifespanLogin.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'login-timeout' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="accessCodeLifespanUserAction" class="two-lines">{{:: 'login-action-timeout' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespanUserAction.time"
+                       id="accessCodeLifespanUserAction" name="accessCodeLifespanUserAction">
+                <select class="form-control" name="accessCodeLifespanUserActionUnit" data-ng-model="realm.accessCodeLifespanUserAction.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>
+                {{:: 'login-action-timeout.tooltip' | translate}}
+            </kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+
+    </form>
+
+</div>
+
+<kc-menu></kc-menu>

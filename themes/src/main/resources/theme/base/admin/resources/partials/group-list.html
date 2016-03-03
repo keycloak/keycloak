@@ -1,0 +1,37 @@
+ <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+     <kc-tabs-group-list></kc-tabs-group-list>
+
+    <table class="table table-striped table-bordered">
+         <thead>
+         <tr>
+             <th class="kc-table-actions" colspan="5">
+                 <div class="form-inline">
+                      <div class="pull-right" data-ng-show="access.manageUsers">
+                          <button id="createGroup" class="btn btn-default" ng-click="createGroup(tree.currentNode)">{{:: 'new' | translate}}</button>
+                          <button id="editGroup" ng-disabled="isDisabled()" class="btn btn-default" ng-click="edit(tree.currentNode)">{{:: 'edit' | translate}}</button>
+                          <button id="cutGroup" ng-disabled="isDisabled()" class="btn btn-default" ng-click="cut(tree.currentNode)">{{:: 'cut' | translate}}</button>
+                          <button id="pasteGroup" ng-disabled="!cutNode" class="btn btn-default" ng-click="paste(tree.currentNode)">{{:: 'paste' | translate}}</button>
+                          <button id="removeGroup" ng-disabled="isDisabled()" class="btn btn-default" ng-click="remove(tree.currentNode)">{{:: 'delete' | translate}}</button>
+                     </div>
+                 </div>
+             </th>
+         </tr>
+         </thead>
+         <tbody>
+         <tr>
+             <td>    <div
+                     tree-id="tree"
+                     angular-treeview="true"
+                     tree-model="groupList"
+                     node-id="id"
+                     node-label="name"
+                     node-children="subGroups" >
+             </div>
+             </td>
+         </tr>
+         </tbody>
+     </table>
+
+ </div>
+
+<kc-menu></kc-menu>
