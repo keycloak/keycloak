@@ -17,10 +17,12 @@
 
 package org.keycloak.testsuite.admin.client;
 
+import java.util.List;
 import javax.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 
@@ -34,29 +36,35 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
         return testRealmResource().toRepresentation();
     }
 
-    protected void createOidcClient(String name) {
+    // returns UserRepresentation retrieved from server, with all fields, including id
+    protected UserRepresentation getFullUserRep(String userName) {
+        List<UserRepresentation> results = testRealmResource().users().search(userName, null, null, null, null, null);
+        if (results.size() != 1) throw new RuntimeException("Did not find single user with username " + userName);
+        return results.get(0);
+    }
+
+    protected String createOidcClient(String name) {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId(name);
         clientRep.setName(name);
         clientRep.setRootUrl("foo");
         clientRep.setProtocol("openid-connect");
-        createClient(clientRep);
+        return createClient(clientRep);
     }
 
-        protected void createSamlClient(String name) {
+    protected String createSamlClient(String name) {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId(name);
         clientRep.setName(name);
         clientRep.setProtocol("saml");
         clientRep.setAdminUrl("samlEndpoint");
-        createClient(clientRep);
+        return createClient(clientRep);
     }
 
-    protected void createClient(ClientRepresentation clientRep) {
+    protected String createClient(ClientRepresentation clientRep) {
         Response resp = testRealmResource().clients().create(clientRep);
-        // for some reason, findAll() will later fail unless readEntity is called here
-        resp.readEntity(String.class);
-        //testRealmResource().clients().findAll();
+        resp.close();
+        return ApiUtil.getCreatedId(resp);
     }
 
     protected ClientRepresentation findClientRepresentation(String name) {
@@ -67,6 +75,10 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
 
     protected ClientResource findClientResource(String name) {
         return ApiUtil.findClientResourceByName(testRealmResource(), name);
+    }
+
+    protected ClientResource findClientResourceById(String id) {
+        return ApiUtil.findClientResourceByClientId(testRealmResource(), id);
     }
 
 }

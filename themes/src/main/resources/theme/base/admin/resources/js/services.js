@@ -952,19 +952,6 @@ module.factory('ClientOfflineSessions', function($resource) {
     });
 });
 
-module.factory('ClientLogoutAll', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients/:client/logout-all', {
-        realm : '@realm',
-        client : "@client"
-    });
-});
-module.factory('ClientLogoutUser', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients/:client/logout-user/:user', {
-        realm : '@realm',
-        client : "@client",
-        user : "@user"
-    });
-});
 module.factory('RealmLogoutAll', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/logout-all', {
         realm : '@realm'
