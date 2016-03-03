@@ -48,10 +48,6 @@ public class ClientRolesTest extends AbstractClientTest {
         return role;
     }
 
-  /*  private boolean hasRole(RolesResource rolesRsc, String name) {
-        return rolesRsc.get(name) != null;
-    }*/
-
     private boolean hasRole(RolesResource rolesRsc, String name) {
         for (RoleRepresentation role : rolesRsc.list()) {
             if (role.getName().equals(name)) return true;
