@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin.client;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -40,6 +41,11 @@ public class ClientRolesTest extends AbstractClientTest {
         createOidcClient("roleClient");
         clientRsc = findClientResource("roleClient");
         rolesRsc = clientRsc.roles();
+    }
+
+    @After
+    public void tearDown() {
+        clientRsc.remove();
     }
 
     private RoleRepresentation makeRole(String name) {
