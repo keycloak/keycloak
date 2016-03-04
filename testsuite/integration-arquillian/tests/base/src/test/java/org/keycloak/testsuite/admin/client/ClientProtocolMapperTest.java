@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -47,7 +48,7 @@ public class ClientProtocolMapperTest extends AbstractClientTest {
     private ClientResource samlClientRsc;
     private ProtocolMappersResource samlMappersRsc;
 
-    private Map<String, List<ProtocolMapperRepresentation>> builtinMappers;
+    private Map<String, List<ProtocolMapperRepresentation>> builtinMappers = null;
 
     @Before
     public void init() {
@@ -60,6 +61,12 @@ public class ClientProtocolMapperTest extends AbstractClientTest {
         samlMappersRsc = samlClientRsc.getProtocolMappers();
 
         builtinMappers = adminClient.serverInfo().getInfo().getBuiltinProtocolMappers();
+    }
+
+    @After
+    public void tearDown() {
+        oidcClientRsc.remove();
+        samlClientRsc.remove();
     }
 
     private ProtocolMapperRepresentation makeMapper(String protocol, String name, String mapperType, Map<String, String> config) {
