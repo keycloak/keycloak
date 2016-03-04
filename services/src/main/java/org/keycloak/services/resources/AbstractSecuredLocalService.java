@@ -177,6 +177,8 @@ public abstract class AbstractSecuredLocalService {
 
         oauth.setClientId(client.getClientId());
 
+        oauth.setSecure(realm.getSslRequired().isRequired(clientConnection));
+
         UriBuilder uriBuilder = UriBuilder.fromUri(getBaseRedirectUri()).path("login-redirect");
 
         if (path != null) {
