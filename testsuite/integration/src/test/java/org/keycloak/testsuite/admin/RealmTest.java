@@ -158,6 +158,7 @@ public class RealmTest extends AbstractClientTest {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setSsoSessionIdleTimeout(123);
         rep.setSsoSessionMaxLifespan(12);
+        rep.setSsoSessionMaxLifespanRememberMe(34);
         rep.setAccessCodeLifespanLogin(1234);
         rep.setRegistrationAllowed(true);
         rep.setRegistrationEmailAsUsername(true);
@@ -169,6 +170,7 @@ public class RealmTest extends AbstractClientTest {
 
         assertEquals(123, rep.getSsoSessionIdleTimeout().intValue());
         assertEquals(12, rep.getSsoSessionMaxLifespan().intValue());
+        assertEquals(34, rep.getSsoSessionMaxLifespanRememberMe().intValue());
         assertEquals(1234, rep.getAccessCodeLifespanLogin().intValue());
         assertEquals(Boolean.TRUE, rep.isRegistrationAllowed());
         assertEquals(Boolean.TRUE, rep.isRegistrationEmailAsUsername());
@@ -307,6 +309,7 @@ public class RealmTest extends AbstractClientTest {
         if (realm.getAccessTokenLifespanForImplicitFlow() != null) Assert.assertEquals(realm.getAccessTokenLifespanForImplicitFlow(), storedRealm.getAccessTokenLifespanForImplicitFlow());
         if (realm.getSsoSessionIdleTimeout() != null) Assert.assertEquals(realm.getSsoSessionIdleTimeout(), storedRealm.getSsoSessionIdleTimeout());
         if (realm.getSsoSessionMaxLifespan() != null) Assert.assertEquals(realm.getSsoSessionMaxLifespan(), storedRealm.getSsoSessionMaxLifespan());
+        if (realm.getSsoSessionMaxLifespanRememberMe() != null) Assert.assertEquals(realm.getSsoSessionMaxLifespanRememberMe(), storedRealm.getSsoSessionMaxLifespanRememberMe());
         if (realm.getRequiredCredentials() != null) {
             Assert.assertNotNull(storedRealm.getRequiredCredentials());
             for (String cred : realm.getRequiredCredentials()) {

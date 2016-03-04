@@ -60,12 +60,22 @@ public class TokenSettings extends RealmSettings {
         @FindBy(name = "ssoSessionMaxLifespanUnit")
         private Select sessionLifespanTimeoutUnit;
 
+        @FindBy(id = "ssoSessionMaxLifespanRememberMe")
+        private WebElement sessionLifespanTimeoutRememberMe;
+
+        @FindBy(name = "ssoSessionMaxLifespanRememberMeUnit")
+        private Select sessionLifespanTimeoutRememberMeUnit;
+
         public void setSessionTimeout(int timeout, TimeUnit unit) {
             setTimeout(sessionTimeoutUnit, sessionTimeout, timeout, unit);
         }
 
         public void setSessionTimeoutLifespan(int time, TimeUnit unit) {
             setTimeout(sessionLifespanTimeoutUnit, sessionLifespanTimeout, time, unit);
+        }
+
+        public void setSessionTimeoutLifespanRememberMe(int time, TimeUnit unit) {
+            setTimeout(sessionLifespanTimeoutRememberMeUnit, sessionLifespanTimeoutRememberMe, time, unit);
         }
 
         private void setTimeout(Select timeoutElement, WebElement unitElement,

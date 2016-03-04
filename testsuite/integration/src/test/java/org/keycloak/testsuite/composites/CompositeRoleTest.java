@@ -58,6 +58,7 @@ public class CompositeRoleTest {
             realm.setSsoSessionIdleTimeout(3000);
             realm.setAccessTokenLifespan(10000);
             realm.setSsoSessionMaxLifespan(10000);
+            realm.setSsoSessionMaxLifespanRememberMe(10000);
             realm.setAccessCodeLifespanUserAction(1000);
             realm.setAccessCodeLifespan(1000);
             realm.setSslRequired(SslRequired.EXTERNAL);

@@ -36,6 +36,8 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
     private Integer expired;
 
     private Integer expiredRefresh;
+    
+    private Integer expiredRememberMe;
 
     private String brokerSessionId;
     private String brokerUserId;
@@ -53,9 +55,10 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
         return this;
     }
 
-    public UserSessionPredicate expired(Integer expired, Integer expiredRefresh) {
+    public UserSessionPredicate expired(Integer expired, Integer expiredRefresh, Integer expiredRememberMe) {
         this.expired = expired;
         this.expiredRefresh = expiredRefresh;
+        this.expiredRememberMe = expiredRememberMe;
         return this;
     }
 
@@ -93,6 +96,10 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
 
         if (brokerUserId != null && !brokerUserId.equals(entity.getBrokerUserId())) {
             return false;
+        }
+        
+        if (expiredRememberMe != null && entity.isRememberMe()) {
+        	return entity.getStarted() <= expiredRememberMe;
         }
 
         if (expired != null && expiredRefresh != null && entity.getStarted() > expired && entity.getLastSessionRefresh() > expiredRefresh) {

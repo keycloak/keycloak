@@ -7,6 +7,7 @@
   "accessTokenLifespanForImplicitFlow" : 900,
   "ssoSessionIdleTimeout" : 2,
   "ssoSessionMaxLifespan" : 36000,
+  "ssoSessionMaxLifespanRememberMe" : 36000,
   "offlineSessionIdleTimeout" : 2592000,
   "accessCodeLifespan" : 60,
   "accessCodeLifespanUserAction" : 300,

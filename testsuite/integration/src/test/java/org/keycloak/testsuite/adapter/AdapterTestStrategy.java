@@ -367,6 +367,46 @@ public class AdapterTestStrategy extends ExternalResource {
         Time.setOffset(0);
     }
 
+    public void testLoginSSOMaxWithRememberMe() throws Exception {
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.realms().getRealmByName("demo");
+        boolean originalRememberMe = realm.isRememberMe();
+        realm.setRememberMe(true);
+        session.getTransaction().commit();
+        // test login to customer-portal which does a bearer request to
+        // customer-db
+        driver.navigate().to(APP_SERVER_BASE_URL + "/customer-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.setRememberMe(true);
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/customer-portal" + slash);
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+
+        // so we can verify that the remember me timeout is being used instead
+        // of the default max lifespan setting
+        session.getTransaction().begin();
+        int original = realm.getSsoSessionMaxLifespanRememberMe();
+        realm.setSsoSessionMaxLifespanRememberMe(1);
+        session.getTransaction().commit();
+
+        Time.setOffset(2);
+        // verify that we are redirected back to the login page
+        driver.navigate().to(APP_SERVER_BASE_URL + "/product-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+
+        session.getTransaction().begin();
+        realm.setSsoSessionMaxLifespanRememberMe(original);
+        realm.setRememberMe(originalRememberMe);
+        session.getTransaction().commit();
+        session.close();
+
+        Time.setOffset(0);
+    }
+
     /**
      * KEYCLOAK-518
      * @throws Exception

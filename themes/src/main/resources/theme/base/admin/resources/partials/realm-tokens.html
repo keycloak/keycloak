@@ -47,6 +47,22 @@
         </div>
 
         <div class="form-group">
+            <label class="col-md-2 control-label" for="ssoSessionMaxLifespanRememberMe">{{:: 'sso-session-max-remember-me' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1"
+                       max="31536000" data-ng-model="realm.ssoSessionMaxLifespanRememberMe.time"
+                       id="ssoSessionMaxLifespanRememberMe" name="ssoSessionMaxLifespanRememberMe"/>
+                <select class="form-control" name="ssoSessionMaxLifespanRememberMeUnit" data-ng-model="realm.ssoSessionMaxLifespanRememberMe.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'sso-session-max-remember-me.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
             <label class="col-md-2 control-label" for="offlineSessionIdleTimeout">{{:: 'offline-session-idle' | translate}}</label>
 
             <div class="col-md-6 time-selector">

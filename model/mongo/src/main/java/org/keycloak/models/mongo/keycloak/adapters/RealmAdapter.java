@@ -385,6 +385,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         realm.setSsoSessionMaxLifespan(seconds);
         updateRealm();
     }
+    
+    @Override
+    public int getSsoSessionMaxLifespanRememberMe() {
+        return realm.getSsoSessionMaxLifespanRememberMe();
+    }
+
+    @Override
+    public void setSsoSessionMaxLifespanRememberMe(int seconds) {
+        realm.setSsoSessionMaxLifespanRememberMe(seconds);
+        updateRealm();
+    }
 
     @Override
     public int getOfflineSessionIdleTimeout() {
@@ -2040,6 +2051,5 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public ClientTemplateModel getClientTemplateById(String id) {
         return model.getClientTemplateById(id, this);
     }
-
 
 }

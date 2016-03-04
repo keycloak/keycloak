@@ -125,6 +125,11 @@ public class AdapterTest {
     public void testLoginSSOMax() throws Exception {
         testStrategy.testLoginSSOMax();
     }
+    
+    @Test
+    public void testLoginSSOMaxWithRememberMe() throws Exception {
+        testStrategy.testLoginSSOMaxWithRememberMe();
+    }
 
     /**
      * KEYCLOAK-518
