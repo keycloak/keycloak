@@ -65,7 +65,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
     protected Response temporarilyDisabledUser(AuthenticationFlowContext context) {
         return context.form()
-                .setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).createLogin();
+                .setError(Messages.INVALID_USER).createLogin();
     }
 
     protected Response invalidCredentials(AuthenticationFlowContext context) {
