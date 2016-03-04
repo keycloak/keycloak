@@ -18,8 +18,6 @@ package org.keycloak.services;
 
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
-import org.keycloak.models.utils.UpdateCounter;
-import org.keycloak.services.ServicesLogger;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -36,12 +34,6 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
     private List<KeycloakTransaction> afterCompletion = new LinkedList<KeycloakTransaction>();
     private boolean active;
     private boolean rollback;
-    private long startupRevision;
-
-    @Override
-    public long getStartupRevision() {
-        return startupRevision;
-    }
 
     @Override
     public void enlist(KeycloakTransaction transaction) {
@@ -75,8 +67,6 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         if (active) {
              throw new IllegalStateException("Transaction already active");
         }
-
-        startupRevision = UpdateCounter.current();
 
         for (KeycloakTransaction tx : transactions) {
             tx.begin();

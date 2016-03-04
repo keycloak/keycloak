@@ -39,7 +39,6 @@ import org.keycloak.models.cache.infinispan.stream.HasRolePredicate;
 import org.keycloak.models.cache.infinispan.stream.InClientPredicate;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 import org.keycloak.models.cache.infinispan.stream.RealmQueryPredicate;
-import org.keycloak.models.utils.UpdateCounter;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -124,7 +123,7 @@ public class StreamRealmCache {
         Object rev = revisions.put(id, next);
     }
 
-    public void addRevisioned(Revisioned object, KeycloakSession session) {
+    public void addRevisioned(Revisioned object, long startupRevision) {
         //startRevisionBatch();
         String id = object.getId();
         try {
@@ -145,9 +144,9 @@ public class StreamRealmCache {
                 if (id.endsWith("realm.clients")) logger.trace("addRevisioned rev2 == null realm.clients");
                 return;
             }
-            if (rev > session.getTransaction().getStartupRevision()) { // revision is ahead transaction start. Other transaction updated in the meantime. Don't cache
+            if (rev > startupRevision) { // revision is ahead transaction start. Other transaction updated in the meantime. Don't cache
                 if (logger.isTraceEnabled()) {
-                    logger.tracev("Skipped cache. Current revision {0}, Transaction start revision {1}", object.getRevision(), session.getTransaction().getStartupRevision());
+                    logger.tracev("Skipped cache. Current revision {0}, Transaction start revision {1}", object.getRevision(), startupRevision);
                 }
                 return;
             }
