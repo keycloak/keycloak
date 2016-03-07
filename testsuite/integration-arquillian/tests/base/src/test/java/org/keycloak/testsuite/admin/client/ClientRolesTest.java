@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin.client;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -42,15 +43,16 @@ public class ClientRolesTest extends AbstractClientTest {
         rolesRsc = clientRsc.roles();
     }
 
+    @After
+    public void tearDown() {
+        clientRsc.remove();
+    }
+
     private RoleRepresentation makeRole(String name) {
         RoleRepresentation role = new RoleRepresentation();
         role.setName(name);
         return role;
     }
-
-  /*  private boolean hasRole(RolesResource rolesRsc, String name) {
-        return rolesRsc.get(name) != null;
-    }*/
 
     private boolean hasRole(RolesResource rolesRsc, String name) {
         for (RoleRepresentation role : rolesRsc.list()) {

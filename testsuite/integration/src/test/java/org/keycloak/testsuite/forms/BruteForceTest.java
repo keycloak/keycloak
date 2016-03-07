@@ -359,7 +359,7 @@ public class BruteForceTest {
 
         loginPage.assertCurrent();
         String src = driver.getPageSource();
-        Assert.assertEquals("Account is temporarily disabled, contact admin or try again later.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
         events.expectLogin().session((String) null).error(Errors.USER_TEMPORARILY_DISABLED)
                 .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.CONSENT)

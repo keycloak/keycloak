@@ -18,7 +18,6 @@ package org.keycloak.services;
 
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
-import org.keycloak.services.ServicesLogger;
 
 import java.util.LinkedList;
 import java.util.List;

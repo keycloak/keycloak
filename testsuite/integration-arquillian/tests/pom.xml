@@ -57,12 +57,12 @@
         <browser>phantomjs</browser>
         <firefox_binary>/usr/bin/firefox</firefox_binary>
 
-        <arquillian-core.version>1.1.8.Final</arquillian-core.version>
-        <selenium.version>2.45.0</selenium.version>
-        <arquillian-drone.version>2.0.0.Alpha4</arquillian-drone.version>
+        <arquillian-core.version>1.1.11.Final</arquillian-core.version>
+        <selenium.version>2.52.0</selenium.version>
+        <arquillian-drone.version>2.0.0.Beta1</arquillian-drone.version>
         <arquillian-graphene.version>2.1.0.Alpha2</arquillian-graphene.version>
         <arquillian-wildfly-container.version>8.2.0.Final</arquillian-wildfly-container.version>
-        <version.shrinkwrap.resolvers>2.1.1</version.shrinkwrap.resolvers>
+        <version.shrinkwrap.resolvers>2.2.2</version.shrinkwrap.resolvers>
         
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
@@ -224,7 +224,7 @@
                 <dependency>
                     <groupId>org.jboss.arquillian.graphene</groupId>
                     <artifactId>arquillian-browser-screenshooter</artifactId>
-                    <version>2.1.0.Alpha3</version><!-- TODO upgrade <arquillian-graphene.version> and use ${arquillian-graphene.version} -->
+                    <version>${arquillian-graphene.version}</version>
                 </dependency>
                 
                 <dependency>

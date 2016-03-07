@@ -45,7 +45,6 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.common.util.Time;
 
 import javax.ws.rs.Consumes;
@@ -62,12 +61,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
 import static java.lang.Boolean.TRUE;
 
 
@@ -172,54 +170,6 @@ public class ClientResource {
         return provider.generateInstallation(session, realm, client, keycloak.getBaseUri(uriInfo));
     }
 
-
-    /**
-     * Get keycloak.json file
-     *
-     * this method is deprecated, see getInstallationProvider
-     *
-     * Returns a keycloak.json file to be used to configure the adapter of the specified client.
-     *
-     * @return
-     * @throws IOException
-     */
-    @Deprecated
-    @GET
-    @NoCache
-    @Path("installation/json")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getInstallation() throws IOException {
-        auth.requireView();
-
-        ClientManager clientManager = new ClientManager(new RealmManager(session));
-        Object rep = clientManager.toInstallationRepresentation(realm, client, getKeycloakApplication().getBaseUri(uriInfo));
-
-        // TODO Temporary solution to pretty-print
-        return JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rep);
-    }
-
-    /**
-     * Get adapter configuration XML for JBoss / Wildfly Keycloak subsystem
-     *
-     * this method is deprecated, see getInstallationProvider
-     *
-     * Returns XML that can be included in the JBoss / Wildfly Keycloak subsystem to configure the adapter of that client.
-     *
-     * @return
-     * @throws IOException
-     */
-    @Deprecated
-    @GET
-    @NoCache
-    @Path("installation/jboss")
-    @Produces(MediaType.TEXT_PLAIN)
-    public String getJBossInstallation() throws IOException {
-        auth.requireView();
-
-        ClientManager clientManager = new ClientManager(new RealmManager(session));
-        return clientManager.toJBossSubsystemConfig(realm, client, getKeycloakApplication().getBaseUri(uriInfo));
-    }
-
     /**
      * Delete the client
      *
@@ -304,64 +254,6 @@ public class ClientResource {
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
         return new RoleContainerResource(uriInfo, realm, auth, client, adminEvent);
-    }
-
-    /**
-     * Get allowed origins
-     *
-     * This is used for CORS requests.  Access tokens will have
-     * their allowedOrigins claim set to this value for tokens created for this client.
-     *
-     * @return
-     */
-    @Path("allowed-origins")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public Set<String> getAllowedOrigins()
-    {
-        auth.requireView();
-        return client.getWebOrigins();
-    }
-
-    /**
-     * Update allowed origins
-     *
-     * This is used for CORS requests.  Access tokens will have
-     * their allowedOrigins claim set to this value for tokens created for this client.
-     *
-     * @param allowedOrigins
-     */
-    @Path("allowed-origins")
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void updateAllowedOrigins(Set<String> allowedOrigins)
-    {
-        auth.requireManage();
-
-        client.setWebOrigins(allowedOrigins);
-        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(client).success();
-    }
-
-    /**
-     * Delete the specified origins from current allowed origins
-     *
-     * This is used for CORS requests.  Access tokens will have
-     * their allowedOrigins claim set to this value for tokens created for this client.
-     *
-     * @param allowedOrigins List of origins to delete
-     */
-    @Path("allowed-origins")
-    @DELETE
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void deleteAllowedOrigins(Set<String> allowedOrigins)
-    {
-        auth.requireManage();
-
-        for (String origin : allowedOrigins) {
-            client.removeWebOrigin(origin);
-        }
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
     /**
@@ -505,41 +397,6 @@ public class ClientResource {
             sessions.add(rep);
         }
         return sessions;
-    }
-
-
-    /**
-     * Logout all sessions
-     *
-     * If the client has an admin URL, invalidate all sessions associated with that client directly.
-     *
-     */
-    @Path("logout-all")
-    @POST
-    public GlobalRequestResult logoutAll() {
-        auth.requireManage();
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
-        return new ResourceAdminManager(session).logoutClient(uriInfo.getRequestUri(), realm, client);
-
-    }
-
-    /**
-     * Logout the user by username
-     *
-     * If the client has an admin URL, invalidate the sessions for a particular user directly.
-     *
-     */
-    @Path("logout-user/{username}")
-    @POST
-    public void logout(final @PathParam("username") String username) {
-        auth.requireManage();
-        UserModel user = session.users().getUserByUsername(username, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
-        new ResourceAdminManager(session).logoutUserFromClient(uriInfo.getRequestUri(), realm, client, user);
-
     }
 
     /**

@@ -19,12 +19,15 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -62,12 +65,51 @@ public class FlowTest extends AbstractAuthenticationTest {
             response.close();
         }
 
-        // check that new flow is returned
+        // check that new flow is returned in a children list
         flows = authMgmtResource.getFlows();
         AuthenticationFlowRepresentation found = findFlowByAlias("browser-2", flows);
 
-        Assert.assertNotNull("created flow visible", found);
+        Assert.assertNotNull("created flow visible in parent", found);
         compareFlows(newFlow, found);
+
+        // check that new flow is returned individually
+        AuthenticationFlowRepresentation found2 = authMgmtResource.getFlow(found.getId());
+        Assert.assertNotNull("created flow visible directly", found2);
+        compareFlows(newFlow, found2);
+
+
+        // add execution flow using a different method
+        Map<String, String> data = new HashMap<>();
+        data.put("alias", "SomeFlow");
+        data.put("type", "basic-flow");
+        data.put("description", "Test flow");
+        data.put("provider", "registration-page-form");
+
+        try {
+            authMgmtResource.addExecutionFlow("inexistent-parent-flow-alias", data);
+            Assert.fail("addExecutionFlow for inexistent parent should have failed");
+        } catch (Exception expected) {
+        }
+
+        authMgmtResource.addExecutionFlow("browser-2", data);
+
+        // check that new flow is returned in a children list
+        flows = authMgmtResource.getFlows();
+        found2 = findFlowByAlias("browser-2", flows);
+        Assert.assertNotNull("created flow visible in parent", found2);
+
+        List<AuthenticationExecutionExportRepresentation> execs = found2.getAuthenticationExecutions();
+        Assert.assertNotNull(execs);
+        Assert.assertEquals("Size one", 1, execs.size());
+
+        AuthenticationExecutionExportRepresentation expected = new AuthenticationExecutionExportRepresentation();
+        expected.setFlowAlias("SomeFlow");
+        expected.setUserSetupAllowed(false);
+        expected.setAuthenticator("registration-page-form");
+        expected.setAutheticatorFlow(true);
+        expected.setRequirement("DISABLED");
+        expected.setPriority(0);
+        compareExecution(expected, execs.get(0));
 
         // delete non-built-in flow
         authMgmtResource.deleteFlow(found.getId());
@@ -122,7 +164,31 @@ public class FlowTest extends AbstractAuthenticationTest {
         // adjust expected values before comparing
         browser.setAlias("Copy of browser");
         browser.setBuiltIn(false);
+        browser.getAuthenticationExecutions().get(2).setFlowAlias("Copy of browser forms");
         compareFlows(browser, copyOfBrowser);
+
+        // get new flow directly and compare
+        copyOfBrowser = authMgmtResource.getFlow(copyOfBrowser.getId());
+        Assert.assertNotNull(copyOfBrowser);
+        compareFlows(browser, copyOfBrowser);
+    }
+
+    @Test
+    // KEYCLOAK-2580
+    public void addExecutionFlow() {
+        HashMap<String, String> params = new HashMap<>();
+        params.put("newName", "parent");
+        Response response = authMgmtResource.copy("browser", params);
+        Assert.assertEquals(201, response.getStatus());
+        response.close();
+
+        params = new HashMap<>();
+        params.put("alias", "child");
+        params.put("description", "Description");
+        params.put("provider", "registration-page-form");
+        params.put("type", "basic-flow");
+
+        authMgmtResource.addExecutionFlow("parent", params);
     }
 
 }
