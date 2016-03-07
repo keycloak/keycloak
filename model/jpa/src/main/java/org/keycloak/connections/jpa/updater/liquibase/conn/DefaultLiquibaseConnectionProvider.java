@@ -93,9 +93,6 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
         // Change command for creating lock and drop DELETE lock record from it
         SqlGeneratorFactory.getInstance().register(new CustomInsertLockRecordGenerator());
-
-        // We wrap liquibase update in CustomLockService provided by DBLockProvider. No need to lock inside liquibase itself.
-        LockServiceFactory.getInstance().register(new DummyLockService());
     }
 
 
@@ -127,6 +124,11 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
         String changelog = (database instanceof DB2Database) ? LiquibaseJpaUpdaterProvider.DB2_CHANGELOG :  LiquibaseJpaUpdaterProvider.CHANGELOG;
         logger.debugf("Using changelog file: %s", changelog);
+
+        // We wrap liquibase update in CustomLockService provided by DBLockProvider. No need to lock inside liquibase itself.
+        // NOTE: This can't be done in baseLiquibaseInitialization() as liquibase always restarts lock service
+        LockServiceFactory.getInstance().register(new DummyLockService());
+
         return new Liquibase(changelog, new ClassLoaderResourceAccessor(getClass().getClassLoader()), database);
     }
 

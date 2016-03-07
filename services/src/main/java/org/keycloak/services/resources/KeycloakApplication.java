@@ -166,6 +166,7 @@ public class KeycloakApplication extends Application {
         } catch (Exception e) {
             session.getTransaction().rollback();
             logger.migrationFailure(e);
+            throw e;
         } finally {
             session.close();
         }
