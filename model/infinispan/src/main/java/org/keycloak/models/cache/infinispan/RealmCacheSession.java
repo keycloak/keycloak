@@ -40,7 +40,6 @@ import org.keycloak.models.cache.infinispan.entities.RealmListQuery;
 import org.keycloak.models.cache.infinispan.entities.RoleListQuery;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -107,12 +106,12 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class StreamCacheRealmProvider implements CacheRealmProvider {
-    protected static final Logger logger = Logger.getLogger(StreamCacheRealmProvider.class);
+public class RealmCacheSession implements CacheRealmProvider {
+    protected static final Logger logger = Logger.getLogger(RealmCacheSession.class);
     public static final String REALM_CLIENTS_QUERY_SUFFIX = ".realm.clients";
     public static final String ROLES_QUERY_SUFFIX = ".roles";
     public static final String ROLE_BY_NAME_QUERY_SUFFIX = ".role.by-name";
-    protected StreamRealmCache cache;
+    protected RealmCacheManager cache;
     protected KeycloakSession session;
     protected RealmProvider delegate;
     protected boolean transactionActive;
@@ -129,7 +128,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
     protected boolean clearAll;
     protected final long startupRevision;
 
-    public StreamCacheRealmProvider(StreamRealmCache cache, KeycloakSession session) {
+    public RealmCacheSession(RealmCacheManager cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
         this.startupRevision = UpdateCounter.current();
