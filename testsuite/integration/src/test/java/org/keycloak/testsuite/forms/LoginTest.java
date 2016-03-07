@@ -25,6 +25,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -64,17 +65,13 @@ public class LoginTest {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            UserCredentialModel creds = new UserCredentialModel();
-            creds.setType(CredentialRepresentation.PASSWORD);
-            creds.setValue("password");
-
             UserModel user = manager.getSession().users().addUser(appRealm, "login-test");
             user.setEmail("login@test.com");
             user.setEnabled(true);
 
             userId = user.getId();
 
-            user.updateCredential(creds);
+            user.updateCredential(UserCredentialModel.password("password"));
 
             UserModel user2 = manager.getSession().users().addUser(appRealm, "login-test2");
             user2.setEmail("login2@test.com");
@@ -82,7 +79,7 @@ public class LoginTest {
 
             user2Id = user2.getId();
 
-            user2.updateCredential(creds);
+            user2.updateCredential(UserCredentialModel.password("password"));
         }
     });
 
@@ -304,10 +301,30 @@ public class LoginTest {
     }
 
     @Test
+    // KEYCLOAK-2557
+    public void loginUserWithEmailAsUsername() {
+        KeycloakSession session = keycloakRule.startSession();
+
+        UserModel user = session.users().addUser(session.realms().getRealmByName("test"), "login@test.com");
+        user.setEnabled(true);
+        user.updateCredential(UserCredentialModel.password("password"));
+
+        keycloakRule.stopSession(session, true);
+
+        loginPage.open();
+        loginPage.login("login@test.com", "password");
+        
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
+    }
+
+    @Test
     public void loginSuccess() {
         loginPage.open();
         loginPage.login("login-test", "password");
-        
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 

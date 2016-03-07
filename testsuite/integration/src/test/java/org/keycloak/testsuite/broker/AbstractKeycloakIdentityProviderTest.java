@@ -19,6 +19,7 @@ package org.keycloak.testsuite.broker;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Set;
 
 import javax.mail.MessagingException;
@@ -39,9 +40,11 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.Urls;
+import org.keycloak.testsuite.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -461,74 +464,145 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_ON);
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
 
-        identityProviderModel.setStoreToken(true);
+        setStoreToken(identityProviderModel, true);
+        try {
+            authenticateWithIdentityProvider(identityProviderModel, "test-user", true);
 
-        authenticateWithIdentityProvider(identityProviderModel, "test-user", true);
+            brokerServerRule.stopSession(session, true);
+            session = brokerServerRule.startSession();
+
+            UserModel federatedUser = getFederatedUser();
+            RealmModel realm = getRealm();
+            Set<FederatedIdentityModel> federatedIdentities = this.session.users().getFederatedIdentities(federatedUser, realm);
+
+            assertFalse(federatedIdentities.isEmpty());
+            assertEquals(1, federatedIdentities.size());
+
+            FederatedIdentityModel identityModel = federatedIdentities.iterator().next();
+
+            assertNotNull(identityModel.getToken());
+
+            UserSessionStatusServlet.UserSessionStatus userSessionStatus = retrieveSessionStatus();
+            String accessToken = userSessionStatus.getAccessTokenString();
+            URI tokenEndpointUrl = Urls.identityProviderRetrieveToken(BASE_URI, getProviderId(), realm.getName());
+            final String authHeader = "Bearer " + accessToken;
+            ClientRequestFilter authFilter = new ClientRequestFilter() {
+                @Override
+                public void filter(ClientRequestContext requestContext) throws IOException {
+                    requestContext.getHeaders().add(HttpHeaders.AUTHORIZATION, authHeader);
+                }
+            };
+            Client client = ClientBuilder.newBuilder().register(authFilter).build();
+            WebTarget tokenEndpoint = client.target(tokenEndpointUrl);
+            Response response = tokenEndpoint.request().get();
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            assertNotNull(response.readEntity(String.class));
+            revokeGrant();
+
+
+            driver.navigate().to("http://localhost:8081/test-app/logout");
+            String currentUrl = this.driver.getCurrentUrl();
+            System.out.println("after logout currentUrl: " + currentUrl);
+            assertTrue(currentUrl.startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+
+            unconfigureUserRetrieveToken("test-user");
+            loginIDP("test-user");
+            //authenticateWithIdentityProvider(identityProviderModel, "test-user");
+            assertEquals("http://localhost:8081/test-app", driver.getCurrentUrl());
+
+            userSessionStatus = retrieveSessionStatus();
+            accessToken = userSessionStatus.getAccessTokenString();
+            final String authHeader2 = "Bearer " + accessToken;
+            ClientRequestFilter authFilter2 = new ClientRequestFilter() {
+                @Override
+                public void filter(ClientRequestContext requestContext) throws IOException {
+                    requestContext.getHeaders().add(HttpHeaders.AUTHORIZATION, authHeader2);
+                }
+            };
+            client = ClientBuilder.newBuilder().register(authFilter2).build();
+            tokenEndpoint = client.target(tokenEndpointUrl);
+            response = tokenEndpoint.request().get();
+
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+
+            revokeGrant();
+            driver.navigate().to("http://localhost:8081/test-app/logout");
+            driver.navigate().to("http://localhost:8081/test-app");
+
+            assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+        } finally {
+            setStoreToken(identityProviderModel, false);
+        }
+    }
+
+    private void setStoreToken(IdentityProviderModel identityProviderModel, boolean storeToken) {
+        identityProviderModel.setStoreToken(storeToken);
+        getRealm().updateIdentityProvider(identityProviderModel);
+
+        brokerServerRule.stopSession(session, storeToken);
+        session = brokerServerRule.startSession();
+    }
+
+    protected abstract void doAssertTokenRetrieval(String pageSource);
+
+    @Test
+    public void testWithLinkedFederationProvider() throws Exception {
+        // Add federationProvider to realm. It's configured with sync registrations
+        RealmModel realm = getRealm();
+        UserFederationProviderModel dummyModel = realm.addUserFederationProvider(DummyUserFederationProviderFactory.PROVIDER_NAME, new HashMap<String, String>(), 1, "test-dummy", -1, -1, 0);
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
 
         brokerServerRule.stopSession(session, true);
         session = brokerServerRule.startSession();
 
-        UserModel federatedUser = getFederatedUser();
-        RealmModel realm = getRealm();
-        Set<FederatedIdentityModel> federatedIdentities = this.session.users().getFederatedIdentities(federatedUser, realm);
+        try {
+            // Login as user "test-user" to account management.
+            authenticateWithIdentityProvider(getIdentityProviderModel(), "test-user", false);
+            changePasswordPage.realm("realm-with-broker");
+            changePasswordPage.open();
+            assertTrue(changePasswordPage.isCurrent());
 
-        assertFalse(federatedIdentities.isEmpty());
-        assertEquals(1, federatedIdentities.size());
+            // Assert changing password with old password "secret" as this is the password from federationProvider (See DummyUserFederationProvider)
+            changePasswordPage.changePassword("new-password", "new-password");
+            Assert.assertEquals("Please specify password.", accountUpdateProfilePage.getError());
 
-        FederatedIdentityModel identityModel = federatedIdentities.iterator().next();
+            changePasswordPage.changePassword("bad", "new-password", "new-password");
+            Assert.assertEquals("Invalid existing password.", accountUpdateProfilePage.getError());
 
-        assertNotNull(identityModel.getToken());
+            changePasswordPage.changePassword("secret", "new-password", "new-password");
+            Assert.assertEquals("Your password has been updated.", accountUpdateProfilePage.getSuccess());
 
-        UserSessionStatusServlet.UserSessionStatus userSessionStatus = retrieveSessionStatus();
-        String accessToken = userSessionStatus.getAccessTokenString();
-        URI tokenEndpointUrl = Urls.identityProviderRetrieveToken(BASE_URI, getProviderId(), realm.getName());
-        final String authHeader = "Bearer " + accessToken;
-        ClientRequestFilter authFilter = new ClientRequestFilter() {
-            @Override
-            public void filter(ClientRequestContext requestContext) throws IOException {
-                requestContext.getHeaders().add(HttpHeaders.AUTHORIZATION, authHeader);
-            }
-        };
-        Client client = ClientBuilder.newBuilder().register(authFilter).build();
-        WebTarget tokenEndpoint = client.target(tokenEndpointUrl);
-        Response response = tokenEndpoint.request().get();
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertNotNull(response.readEntity(String.class));
-        revokeGrant();
+            // Logout
+            driver.navigate().to("http://localhost:8081/test-app/logout");
 
 
-        driver.navigate().to("http://localhost:8081/test-app/logout");
-        String currentUrl = this.driver.getCurrentUrl();
-        System.out.println("after logout currentUrl: " + currentUrl);
-        assertTrue(currentUrl.startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+            // Login as user "test-user-noemail" .
+            authenticateWithIdentityProvider(getIdentityProviderModel(), "test-user-noemail", false);
+            changePasswordPage.open();
+            assertTrue(changePasswordPage.isCurrent());
 
-        unconfigureUserRetrieveToken("test-user");
-        loginIDP("test-user");
-        //authenticateWithIdentityProvider(identityProviderModel, "test-user");
-        assertEquals("http://localhost:8081/test-app", driver.getCurrentUrl());
+            //  Assert old password is not required as federationProvider doesn't have it for this user
+            changePasswordPage.changePassword("new-password", "new-password");
+            Assert.assertEquals("Your password has been updated.", accountUpdateProfilePage.getSuccess());
 
-        userSessionStatus = retrieveSessionStatus();
-        accessToken = userSessionStatus.getAccessTokenString();
-        final String authHeader2 = "Bearer " + accessToken;
-        ClientRequestFilter authFilter2 = new ClientRequestFilter() {
-            @Override
-            public void filter(ClientRequestContext requestContext) throws IOException {
-                requestContext.getHeaders().add(HttpHeaders.AUTHORIZATION, authHeader2);
-            }
-        };
-        client = ClientBuilder.newBuilder().register(authFilter2).build();
-        tokenEndpoint = client.target(tokenEndpointUrl);
-        response = tokenEndpoint.request().get();
+            // Now it is required as it's set on model
+            changePasswordPage.changePassword("new-password2", "new-password2");
+            Assert.assertEquals("Please specify password.", accountUpdateProfilePage.getError());
 
-        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            changePasswordPage.changePassword("new-password", "new-password2", "new-password2");
+            Assert.assertEquals("Your password has been updated.", accountUpdateProfilePage.getSuccess());
 
-        revokeGrant();
-        driver.navigate().to("http://localhost:8081/test-app/logout");
-        driver.navigate().to("http://localhost:8081/test-app");
+            // Logout
+            driver.navigate().to("http://localhost:8081/test-app/logout");
+        } finally {
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+            // remove dummy federation provider for this realm
+            realm = getRealm();
+            realm.removeUserFederationProvider(dummyModel);
+
+            brokerServerRule.stopSession(session, true);
+            session = brokerServerRule.startSession();
+        }
     }
-
-    protected abstract void doAssertTokenRetrieval(String pageSource);
 
 }

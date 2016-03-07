@@ -55,9 +55,7 @@ public class UserFederationManager implements UserProvider {
     }
 
     protected UserFederationProvider getFederationProvider(UserFederationProviderModel model) {
-        UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, model.getProviderName());
-        return factory.getInstance(session, model);
-
+        return KeycloakModelUtils.getFederationProviderInstance(session, model);
     }
 
     @Override

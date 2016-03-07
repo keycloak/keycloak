@@ -21,7 +21,7 @@ public class UsersTest extends AbstractUserTest {
     }
     
     public void createTestUsers(String usernamePrefix, int count) {
-//        Timer.time();
+//        Timer.DEFAULT.reset();
         for (int i = 0; i < count; i++) {
             String username = String.format("%s%03d", usernamePrefix, i);
             UserRepresentation u = createUserRepresentation(
@@ -30,13 +30,13 @@ public class UsersTest extends AbstractUserTest {
                     "First",
                     "Last",
                     true);
-            Timer.time();
+            Timer.DEFAULT.reset();
             Response r = testRealmResource().users().create(u);
             String id = getCreatedId(r);
             r.close();
-            Timer.time("create user");
+            Timer.DEFAULT.reset("create user");
         }
-//        Timer.time("create " + count + " users");
+//        Timer.DEFAULT.reset("create " + count + " users");
     }
     
     @Test

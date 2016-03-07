@@ -1,8 +1,8 @@
 package org.keycloak.client.registration.cli;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.util.SystemPropertiesJsonParserFactory;
 
@@ -16,8 +16,8 @@ public class Context {
 
     private static final ObjectMapper mapper = new ObjectMapper(new SystemPropertiesJsonParserFactory());
     static {
-        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
-        mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
     }
 
     private ClientRegistration reg;

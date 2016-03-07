@@ -41,7 +41,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class GroupAdapter implements GroupModel {
+public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     protected GroupEntity group;
     protected EntityManager em;
@@ -53,7 +53,7 @@ public class GroupAdapter implements GroupModel {
         this.realm = realm;
     }
 
-    public GroupEntity getGroup() {
+    public GroupEntity getEntity() {
         return group;
     }
 
@@ -88,7 +88,7 @@ public class GroupAdapter implements GroupModel {
 
     public static GroupEntity toEntity(GroupModel model, EntityManager em) {
         if (model instanceof GroupAdapter) {
-            return ((GroupAdapter)model).getGroup();
+            return ((GroupAdapter)model).getEntity();
         }
         return em.getReference(GroupEntity.class, model.getId());
     }
@@ -233,7 +233,7 @@ public class GroupAdapter implements GroupModel {
 
     protected TypedQuery<GroupRoleMappingEntity> getGroupRoleMappingEntityTypedQuery(RoleModel role) {
         TypedQuery<GroupRoleMappingEntity> query = em.createNamedQuery("groupHasRole", GroupRoleMappingEntity.class);
-        query.setParameter("group", getGroup());
+        query.setParameter("group", getEntity());
         query.setParameter("roleId", role.getId());
         return query;
     }
@@ -242,7 +242,7 @@ public class GroupAdapter implements GroupModel {
     public void grantRole(RoleModel role) {
         if (hasRole(role)) return;
         GroupRoleMappingEntity entity = new GroupRoleMappingEntity();
-        entity.setGroup(getGroup());
+        entity.setGroup(getEntity());
         entity.setRoleId(role.getId());
         em.persist(entity);
         em.flush();
@@ -269,7 +269,7 @@ public class GroupAdapter implements GroupModel {
         // we query ids only as the role might be cached and following the @ManyToOne will result in a load
         // even if we're getting just the id.
         TypedQuery<String> query = em.createNamedQuery("groupRoleMappingIds", String.class);
-        query.setParameter("group", getGroup());
+        query.setParameter("group", getEntity());
         List<String> ids = query.getResultList();
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (String roleId : ids) {

@@ -40,15 +40,9 @@
                 <a href="{{client.rootUrl}}{{client.baseUrl}}" target="_blank" data-ng-show="client.baseUrl">{{client.rootUrl}}{{client.baseUrl}}</a>
                 <span data-ng-hide="client.baseUrl">{{:: 'not-defined' | translate}}</span>
             </td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}">{{:: 'edit' | translate}}</button>
-            </td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="exportClient(client)">{{:: 'export' | translate}}</button>
-            </td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="removeClient(client)">{{:: 'delete' | translate}}</button>
-            </td>
+            <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}">{{:: 'edit' | translate}}</td>
+            <td class="kc-action-cell" data-ng-click="exportClient(client)">{{:: 'export' | translate}}</td>
+            <td class="kc-action-cell" data-ng-click="removeClient(client)">{{:: 'delete' | translate}}</td>
         </tr>
         <tr data-ng-show="(clients | filter:search).length == 0">
             <td class="text-muted" colspan="3" data-ng-show="search.clientId">{{:: 'no-results' | translate}}</td>

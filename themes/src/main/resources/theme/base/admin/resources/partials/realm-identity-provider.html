@@ -34,12 +34,8 @@
                         <td>{{identityProvider.providerId}}</td>
                         <td translate="{{identityProvider.enabled}}"></td>
                         <td>{{identityProvider.config.guiOrder}}</td>
-                        <td class="kc-action-cell">
-                            <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{:: 'edit' | translate}}</button>
-                        </td>
-                        <td class="kc-action-cell">
-                            <button class="btn btn-default btn-block btn-sm" data-ng-click="removeIdentityProvider(identityProvider)">{{:: 'delete' | translate}}</button>
-                        </td>
+                        <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{:: 'edit' | translate}}</td>
+                        <td class="kc-action-cell" data-ng-click="removeIdentityProvider(identityProvider)">{{:: 'delete' | translate}}</td>
                     </tr>
                     </tbody>
                 </table>

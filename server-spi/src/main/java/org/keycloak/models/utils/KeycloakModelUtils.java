@@ -35,6 +35,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationMapperModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CertificateRepresentation;
@@ -252,18 +254,21 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * Try to find user by given username. If it fails, then fallback to find him by email
+     * Try to find user by username or email
      *
      * @param realm    realm
      * @param username username or email of user
      * @return found user
      */
     public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
-        UserModel user = session.users().getUserByUsername(username, realm);
-        if (user == null && username.contains("@")) {
-            user = session.users().getUserByEmail(username, realm);
+        if (username.indexOf('@') != -1) {
+            UserModel user = session.users().getUserByEmail(username, realm);
+            if (user != null) {
+                return user;
+            }
         }
-        return user;
+
+        return session.users().getUserByUsername(username, realm);
     }
 
     /**
@@ -404,6 +409,12 @@ public final class KeycloakModelUtils {
         mapperModel.setConfig(configMap);
 
         return mapperModel;
+    }
+
+    public static UserFederationProvider getFederationProviderInstance(KeycloakSession session, UserFederationProviderModel model) {
+        UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, model.getProviderName());
+        return factory.getInstance(session, model);
+
     }
 
     // END USER FEDERATION RELATED STUFF

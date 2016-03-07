@@ -54,6 +54,13 @@
                 <module>eap7</module>
             </modules>
         </profile>
+        <profile>
+            <id>auth-server-eap7-cluster</id>
+            <modules>
+                <module>eap7</module>
+                <module>wildfly-balancer</module>
+            </modules>
+        </profile>
     </profiles>    
 
 </project>

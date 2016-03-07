@@ -1730,7 +1730,7 @@ module.controller('ClientTemplateTabCtrl', function(Dialog, $scope, Current, Not
 
 
 
-module.controller('ClientTemplateListCtrl', function($scope, realm, templates, ClientTemplate, serverInfo, $route, Dialog, Notifications) {
+module.controller('ClientTemplateListCtrl', function($scope, realm, templates, ClientTemplate, serverInfo, $route, Dialog, Notifications, $location) {
     $scope.realm = realm;
     $scope.templates = templates;
 

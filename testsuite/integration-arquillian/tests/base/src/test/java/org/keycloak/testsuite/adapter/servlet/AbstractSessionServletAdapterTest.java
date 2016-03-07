@@ -23,22 +23,29 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.adapter.page.SessionPortal;
+
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
+
 import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.Login;
+
 import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -156,9 +163,11 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
     public void testAdminApplicationLogout() {
         // login as bburke
         loginAndCheckSession(driver, testRealmLoginPage);
+
         // logout mposolda with admin client
-        findClientResourceByClientId(testRealmResource(), "session-portal")
-                .logoutUser("mposolda");
+        UserRepresentation mposolda = testRealmResource().users().search("mposolda", null, null, null, null, null).get(0);
+        testRealmResource().users().get(mposolda.getId()).logout();
+        
         // bburke should be still logged with original httpSession in our browser window
         sessionPortalPage.navigateTo();
         assertEquals(driver.getCurrentUrl(), sessionPortalPage.toString());

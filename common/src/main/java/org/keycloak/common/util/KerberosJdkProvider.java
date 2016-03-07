@@ -56,7 +56,7 @@ public abstract class KerberosJdkProvider {
         return kerberosTicketToGSSCredential(kerberosTicket, GSSCredential.DEFAULT_LIFETIME, GSSCredential.INITIATE_ONLY);
     }
 
-    // Actually same on both JDKs
+    // Actually can use same on both JDKs
     public GSSCredential kerberosTicketToGSSCredential(KerberosTicket kerberosTicket, final int lifetime, final int usage) {
         try {
             final GSSManager gssManager = GSSManager.getInstance();
@@ -85,7 +85,7 @@ public abstract class KerberosJdkProvider {
 
 
     public static KerberosJdkProvider getProvider() {
-        if (KerberosSerializationUtils.JAVA_INFO.contains("IBM")) {
+        if (Environment.IS_IBM_JAVA) {
             return new IBMJDKProvider();
         } else {
             return new SunJDKProvider();

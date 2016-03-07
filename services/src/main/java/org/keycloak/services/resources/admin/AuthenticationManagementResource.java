@@ -581,7 +581,7 @@ public class AuthenticationManagementResource {
     }
 
     public List<AuthenticationExecutionModel> getSortedExecutions(AuthenticationFlowModel parentFlow) {
-        List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(parentFlow.getId());
+        List<AuthenticationExecutionModel> executions = new LinkedList<>(realm.getAuthenticationExecutions(parentFlow.getId()));
         Collections.sort(executions, AuthenticationExecutionModel.ExecutionComparator.SINGLETON);
         return executions;
     }

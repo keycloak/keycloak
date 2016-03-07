@@ -30,6 +30,8 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.Response.StatusType;
 import org.apache.commons.lang.builder.EqualsBuilder;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
@@ -44,6 +46,11 @@ public class ApiUtil {
     
     public static String getCreatedId(Response response) {
         URI location = response.getLocation();
+        if (!response.getStatusInfo().equals(Status.CREATED)) {
+            StatusType statusInfo = response.getStatusInfo();
+            throw new RuntimeException("Create method returned status " + 
+                    statusInfo.getReasonPhrase() + " (Code: " + statusInfo.getStatusCode() + "); expected status: Created (201)");
+        }
         if (location == null) {
             return null;
         }
