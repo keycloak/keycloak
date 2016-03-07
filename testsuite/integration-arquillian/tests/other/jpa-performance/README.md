@@ -1,15 +1,26 @@
 # Keycloak JPA Performance Tests
 
+## Test Phases
+
+1. Create individual users
+2. Delete realm **Optional** 
+3. Re-import realm **Optional** 
+4. Delete individual users
+
+Phases 2 and 3 are activated by property `many.users.reimport=true|false`.
+
+
 ## How to run
 
 1. Build the Arquilian Base Testsuite module: `/testsuite/integration-arquillian/base`
 2. Run the test from this module using `mvn test` or `mvn clean test`.
 
 Optional parameters:
-```
--Dmany.users.count=10000
--Dmany.users.batch=1000
-```
+* `many.users.count` - Number of users to add/delete. Default: *10000*.
+* `many.users.batch` - Measurement batch size. Default: *1000*.
+* `many.users.reimport` - Switch for phases 2 and 3. Default: *false*.
+* `many.users.minTokenValidity` - Minimum validity of admin-client's access token. Default: *10000*. (ms)
+
 
 ### With MySQL
 
