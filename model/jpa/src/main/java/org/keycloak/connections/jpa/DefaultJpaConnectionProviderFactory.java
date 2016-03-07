@@ -184,13 +184,24 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 	                    emf = Persistence.createEntityManagerFactory(unitName, properties);
 	                    logger.trace("EntityManagerFactory created");
 
+                    } catch (Exception e) {
+                        // Safe rollback
+                        if (connection != null) {
+                            try {
+                                connection.rollback();
+                            } catch (SQLException e2) {
+                                logger.warn("Can't rollback connection", e2);
+                            }
+                        }
+
+                        throw e;
                     } finally {
 	                    // Close after creating EntityManagerFactory to prevent in-mem databases from closing
 	                    if (connection != null) {
 	                        try {
 	                            connection.close();
 	                        } catch (SQLException e) {
-	                            logger.warn(e);
+	                            logger.warn("Can't close connection", e);
 	                        }
 	                    }
                     }
