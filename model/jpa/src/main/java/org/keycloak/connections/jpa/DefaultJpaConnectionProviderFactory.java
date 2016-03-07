@@ -126,7 +126,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         properties.put("hibernate.dialect", driverDialect);
                     }
 
-                    String schema = config.get("schema");
+                    String schema = getSchema();
                     if (schema != null) {
                         properties.put(JpaUtils.HIBERNATE_DEFAULT_SCHEMA, schema);
                     }
@@ -167,7 +167,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 	                            }
 	
 	                            if (currentVersion == null || !JpaUpdaterProvider.LAST_VERSION.equals(currentVersion)) {
-	                                updater.update(session, connection, schema);
+	                                updater.update(connection, schema);
 	                            } else {
 	                                logger.debug("Database is up to date");
 	                            }
@@ -212,7 +212,8 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
   		}
   	}
 
-    private Connection getConnection() {
+    @Override
+    public Connection getConnection() {
         try {
             String dataSourceLookup = config.get("dataSource");
             if (dataSourceLookup != null) {
@@ -225,6 +226,11 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         } catch (Exception e) {
             throw new RuntimeException("Failed to connect to database", e);
         }
+    }
+
+    @Override
+    public String getSchema() {
+        return config.get("schema");
     }
     
     @Override

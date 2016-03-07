@@ -15,25 +15,30 @@
  * limitations under the License.
  */
 
-package org.keycloak.connections.jpa.updater;
+package org.keycloak.models.dblock;
 
 import org.keycloak.provider.Provider;
 
-import java.sql.Connection;
-
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * Global database lock to ensure that some actions in DB can be done just be one cluster node at a time.
+ *
+ *
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface JpaUpdaterProvider extends Provider {
+public interface DBLockProvider extends Provider {
 
-    public String FIRST_VERSION = "1.0.0.Final";
 
-    public String LAST_VERSION = "1.9.0";
+    /**
+     * Try to retrieve DB lock or wait if retrieve was unsuccessful. Throw exception if lock can't be retrieved within specified timeout (900 seconds by default)
+     */
+    void waitForLock();
 
-    public String getCurrentVersionSql(String defaultSchema);
 
-    public void update(Connection connection, String defaultSchema);
+    void releaseLock();
 
-    public void validate(Connection connection, String defaultSchema);
 
+    /**
+     * Will destroy whole state of DB lock (drop table/collection to track locking).
+     * */
+    void destroyLockInfo();
 }

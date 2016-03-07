@@ -25,6 +25,7 @@ import org.keycloak.Config;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.*;
+import org.keycloak.services.managers.DBLockManager;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -39,7 +40,6 @@ import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.scheduled.ClearExpiredEvents;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
-import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.services.util.JsonConfigProvider;
 import org.keycloak.services.util.ObjectMapperResolver;
 import org.keycloak.timer.TimerProvider;
@@ -91,44 +91,56 @@ public class KeycloakApplication extends Application {
 
         singletons.add(new ObjectMapperResolver(Boolean.parseBoolean(System.getProperty("keycloak.jsonPrettyPrint", "false"))));
 
-        migrateModel();
-
-        boolean bootstrapAdminUser = false;
-
-        KeycloakSession session = sessionFactory.create();
         ExportImportManager exportImportManager;
+
+        DBLockManager dbLockManager = new DBLockManager();
+        dbLockManager.checkForcedUnlock(sessionFactory);
+        dbLockManager.waitForLock(sessionFactory);
         try {
-            session.getTransaction().begin();
+            migrateModel();
 
-            ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-            exportImportManager = new ExportImportManager(session);
+            KeycloakSession session = sessionFactory.create();
+            try {
+                session.getTransaction().begin();
 
-            boolean createMasterRealm = applianceBootstrap.isNewInstall();
-            if (exportImportManager.isRunImport() && exportImportManager.isImportMasterIncluded()) {
-                createMasterRealm = false;
+                ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
+                exportImportManager = new ExportImportManager(session);
+
+                boolean createMasterRealm = applianceBootstrap.isNewInstall();
+                if (exportImportManager.isRunImport() && exportImportManager.isImportMasterIncluded()) {
+                    createMasterRealm = false;
+                }
+
+                if (createMasterRealm) {
+                    applianceBootstrap.createMasterRealm(contextPath);
+                }
+                session.getTransaction().commit();
+            } catch (RuntimeException re) {
+                if (session.getTransaction().isActive()) {
+                    session.getTransaction().rollback();
+                }
+                throw re;
+            } finally {
+                session.close();
             }
 
-            if (createMasterRealm) {
-                applianceBootstrap.createMasterRealm(contextPath);
+            if (exportImportManager.isRunImport()) {
+                exportImportManager.runImport();
+            } else {
+                importRealms();
             }
-            session.getTransaction().commit();
+
+            importAddUser();
         } finally {
-            session.close();
+            dbLockManager.releaseLock(sessionFactory);
         }
-
-        if (exportImportManager.isRunImport()) {
-            exportImportManager.runImport();
-        } else {
-            importRealms();
-        }
-
-        importAddUser();
 
         if (exportImportManager.isRunExport()) {
             exportImportManager.runExport();
         }
 
-        session = sessionFactory.create();
+        boolean bootstrapAdminUser = false;
+        KeycloakSession session = sessionFactory.create();
         try {
             session.getTransaction().begin();
             bootstrapAdminUser = new ApplianceBootstrap(session).isNoMasterUser();
