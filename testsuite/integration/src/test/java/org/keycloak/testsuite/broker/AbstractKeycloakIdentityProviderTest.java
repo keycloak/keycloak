@@ -547,10 +547,11 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
     @Test
     public void testWithLinkedFederationProvider() throws Exception {
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
+
         // Add federationProvider to realm. It's configured with sync registrations
         RealmModel realm = getRealm();
         UserFederationProviderModel dummyModel = realm.addUserFederationProvider(DummyUserFederationProviderFactory.PROVIDER_NAME, new HashMap<String, String>(), 1, "test-dummy", -1, -1, 0);
-        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
 
         brokerServerRule.stopSession(session, true);
         session = brokerServerRule.startSession();
