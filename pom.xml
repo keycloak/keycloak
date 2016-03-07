@@ -95,7 +95,7 @@
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.12</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
-        <selenium.version>2.35.0</selenium.version>
+        <selenium.version>2.52.0</selenium.version>
         <xml-apis.version>1.4.01</xml-apis.version>
 
         <!-- Maven Plugins -->
