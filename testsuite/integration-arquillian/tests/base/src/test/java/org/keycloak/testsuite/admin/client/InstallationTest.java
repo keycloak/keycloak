@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin.client;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -45,6 +46,12 @@ public class InstallationTest extends AbstractClientTest {
 
         createSamlClient(SAML_NAME);
         samlClient = findClientResource(SAML_NAME);
+    }
+
+    @After
+    public void tearDown() {
+        oidcClient.remove();
+        samlClient.remove();
     }
 
     private String authServerUrl() {

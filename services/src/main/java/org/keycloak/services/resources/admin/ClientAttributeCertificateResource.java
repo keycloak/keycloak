@@ -28,6 +28,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.common.util.PemUtils;
@@ -57,7 +58,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class ClientAttributeCertificateResource {
-    
+
     public static final String PRIVATE_KEY = "private.key";
     public static final String X509CERTIFICATE = "certificate";
 
@@ -112,7 +113,7 @@ public class ClientAttributeCertificateResource {
 
         client.setAttribute(privateAttribute, info.getPrivateKey());
         client.setAttribute(certificateAttribute, info.getCertificate());
-        
+
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
 
         return info;
@@ -223,64 +224,6 @@ public class ClientAttributeCertificateResource {
         }
 
         return info;
-    }
-
-
-    public static class KeyStoreConfig {
-        protected Boolean realmCertificate;
-        protected String storePassword;
-        protected String keyPassword;
-        protected String keyAlias;
-        protected String realmAlias;
-        protected String format;
-
-        public Boolean isRealmCertificate() {
-            return realmCertificate;
-        }
-
-        public void setRealmCertificate(Boolean realmCertificate) {
-            this.realmCertificate = realmCertificate;
-        }
-
-        public String getStorePassword() {
-            return storePassword;
-        }
-
-        public void setStorePassword(String storePassword) {
-            this.storePassword = storePassword;
-        }
-
-        public String getKeyPassword() {
-            return keyPassword;
-        }
-
-        public void setKeyPassword(String keyPassword) {
-            this.keyPassword = keyPassword;
-        }
-
-        public String getKeyAlias() {
-            return keyAlias;
-        }
-
-        public void setKeyAlias(String keyAlias) {
-            this.keyAlias = keyAlias;
-        }
-
-        public String getRealmAlias() {
-            return realmAlias;
-        }
-
-        public void setRealmAlias(String realmAlias) {
-            this.realmAlias = realmAlias;
-        }
-
-        public String getFormat() {
-            return format;
-        }
-
-        public void setFormat(String format) {
-            this.format = format;
-        }
     }
 
     /**
