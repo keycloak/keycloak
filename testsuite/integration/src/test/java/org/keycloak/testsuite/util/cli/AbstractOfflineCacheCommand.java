@@ -103,6 +103,34 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
         }
     }
 
+    // Just to check performance of multiple get calls. And comparing what's the change between the case when item is available locally or not.
+    public static class GetMultipleCommand extends AbstractOfflineCacheCommand {
+
+        @Override
+        public String getName() {
+            return "getMulti";
+        }
+
+        @Override
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+            String id = getArg(0);
+            int count = getIntArg(1);
+
+            long start = System.currentTimeMillis();
+            for (int i=0 ; i<count ; i++) {
+                UserSessionEntity userSession = (UserSessionEntity) cache.get(id);
+                //printSession(id, userSession);
+            }
+            long took = System.currentTimeMillis() - start;
+            log.infof("Took %d milliseconds", took);
+        }
+
+        @Override
+        public String printUsage() {
+            return getName() + " <user-session-id> <count-of-gets>";
+        }
+    }
+
 
     public static class RemoveCommand extends AbstractOfflineCacheCommand {
 
