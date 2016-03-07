@@ -96,7 +96,10 @@ public class UserFederationSyncResult {
         if (ignored) {
             return "Synchronization ignored as it's already in progress";
         } else {
-            String status = String.format("%d imported users, %d updated users, %d removed users", added, updated, removed);
+            String status = String.format("%d imported users, %d updated users", added, updated);
+            if (removed > 0) {
+                status += String.format(", %d removed users", removed);
+            }
             if (failed != 0) {
                 status += String.format(", %d users failed sync! See server log for more details", failed);
             }
