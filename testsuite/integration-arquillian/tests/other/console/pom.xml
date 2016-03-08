@@ -30,5 +30,33 @@
     <artifactId>integration-arquillian-tests-console</artifactId>
 
     <name>Admin Console UI Tests</name>
-    
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>copy-theme-files</id>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${keycloak.home}/themes</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>src/main/resources/themes</directory>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
 </project>
