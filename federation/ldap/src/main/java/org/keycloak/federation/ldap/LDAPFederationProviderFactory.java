@@ -354,7 +354,8 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
 
                                 // Update keycloak user
                                 Set<UserFederationMapperModel> federationMappers = currentRealm.getUserFederationMappersByFederationProvider(fedModel.getId());
-                                for (UserFederationMapperModel mapperModel : federationMappers) {
+                                List<UserFederationMapperModel> sortedMappers = ldapFedProvider.sortMappersDesc(federationMappers);
+                                for (UserFederationMapperModel mapperModel : sortedMappers) {
                                     LDAPFederationMapper ldapMapper = ldapFedProvider.getMapper(mapperModel);
                                     ldapMapper.onImportUserFromLDAP(mapperModel, ldapFedProvider, ldapUser, currentUser, currentRealm, false);
                                 }

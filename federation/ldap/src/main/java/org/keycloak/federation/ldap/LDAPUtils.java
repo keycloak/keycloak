@@ -19,6 +19,7 @@ package org.keycloak.federation.ldap;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -58,7 +59,8 @@ public class LDAPUtils {
         ldapUser.setObjectClasses(ldapConfig.getUserObjectClasses());
 
         Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(ldapProvider.getModel().getId());
-        for (UserFederationMapperModel mapperModel : federationMappers) {
+        List<UserFederationMapperModel> sortedMappers = ldapProvider.sortMappersAsc(federationMappers);
+        for (UserFederationMapperModel mapperModel : sortedMappers) {
             LDAPFederationMapper ldapMapper = ldapProvider.getMapper(mapperModel);
             ldapMapper.onRegisterUserToLDAP(mapperModel, ldapProvider, ldapUser, user, realm);
         }

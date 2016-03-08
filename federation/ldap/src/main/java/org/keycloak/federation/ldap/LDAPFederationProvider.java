@@ -27,6 +27,7 @@ import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilde
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -47,6 +48,7 @@ import org.keycloak.services.managers.UserManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -128,7 +130,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
         }
 
         Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(model.getId());
-        for (UserFederationMapperModel mapperModel : federationMappers) {
+        List<UserFederationMapperModel> sortedMappers = sortMappersAsc(federationMappers);
+        for (UserFederationMapperModel mapperModel : sortedMappers) {
             LDAPFederationMapper ldapMapper = getMapper(mapperModel);
             proxied = ldapMapper.proxy(mapperModel, this, ldapObject, proxied, realm);
         }
@@ -313,7 +316,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
         imported.setEnabled(true);
 
         Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(getModel().getId());
-        for (UserFederationMapperModel mapperModel : federationMappers) {
+        List<UserFederationMapperModel> sortedMappers = sortMappersDesc(federationMappers);
+        for (UserFederationMapperModel mapperModel : sortedMappers) {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
             }
@@ -516,5 +520,14 @@ public class LDAPFederationProvider implements UserFederationProvider {
         }
 
         return ldapMapper;
+    }
+
+
+    public List<UserFederationMapperModel> sortMappersAsc(Collection<UserFederationMapperModel> mappers) {
+        return LDAPMappersComparator.sortAsc(getLdapIdentityStore().getConfig(), mappers);
+    }
+
+    protected List<UserFederationMapperModel> sortMappersDesc(Collection<UserFederationMapperModel> mappers) {
+        return LDAPMappersComparator.sortDesc(getLdapIdentityStore().getConfig(), mappers);
     }
 }
