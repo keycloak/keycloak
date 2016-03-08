@@ -35,6 +35,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -118,26 +119,29 @@ public class DirImportProvider implements ImportProvider {
         // Import realm first
         FileInputStream is = new FileInputStream(realmFile);
         final RealmRepresentation realmRep = JsonSerialization.readValue(is, RealmRepresentation.class);
+        final AtomicBoolean realmImported = new AtomicBoolean();
 
         KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
             @Override
             public void runExportImportTask(KeycloakSession session) throws IOException {
-                ImportUtils.importRealm(session, realmRep, strategy);
+                boolean imported = ImportUtils.importRealm(session, realmRep, strategy);
+                realmImported.set(imported);
             }
 
         });
 
-        // Import users
-        for (File userFile : userFiles) {
-            final FileInputStream fis = new FileInputStream(userFile);
-            KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
-
-                @Override
-                protected void runExportImportTask(KeycloakSession session) throws IOException {
-                    ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
-                }
-            });
+        if (realmImported.get()) {
+            // Import users
+            for (File userFile : userFiles) {
+                final FileInputStream fis = new FileInputStream(userFile);
+                KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+                    @Override
+                    protected void runExportImportTask(KeycloakSession session) throws IOException {
+                        ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
+                    }
+                });
+            }
         }
     }
 
