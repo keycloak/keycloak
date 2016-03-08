@@ -117,11 +117,11 @@ public class RealmEntity {
     @Column(name="NOT_BEFORE")
     protected int notBefore;
 
-    @Column(name="PUBLIC_KEY", length = 2048)
+    @Column(name="PUBLIC_KEY", length = 4000)
     protected String publicKeyPem;
-    @Column(name="PRIVATE_KEY", length = 2048)
+    @Column(name="PRIVATE_KEY", length = 4000)
     protected String privateKeyPem;
-    @Column(name="CERTIFICATE", length = 2048)
+    @Column(name="CERTIFICATE", length = 4000)
     protected String certificatePem;
     @Column(name="CODE_SECRET", length = 255)
     protected String codeSecret;
