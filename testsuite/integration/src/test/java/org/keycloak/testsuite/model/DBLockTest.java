@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -63,7 +64,7 @@ public class DBLockTest extends AbstractModelTest {
         commit();
     }
 
-    @Test
+    // @Test // TODO: Running -Dtest=DBLockTest,UserModelTest might cause issues sometimes. Reenable this once DB lock is refactored.
     public void testLockConcurrently() throws Exception {
         long startupTime = System.currentTimeMillis();
 
