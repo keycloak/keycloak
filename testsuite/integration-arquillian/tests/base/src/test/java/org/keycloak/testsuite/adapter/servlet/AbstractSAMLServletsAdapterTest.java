@@ -478,4 +478,21 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
         employee2ServletPage.logout();
     }
+
+    @Test
+    public void idpInitiatedUnauthorizedLoginTest() {
+        samlidpInitiatedLogin.setAuthRealm(SAMLSERVLETDEMO);
+        samlidpInitiatedLogin.setUrlName("employee2");
+        samlidpInitiatedLogin.navigateTo();
+        samlidpInitiatedLogin.form().login("unauthorized","password");
+
+        assertFalse(driver.getPageSource().contains("principal="));
+        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
+
+        employee2ServletPage.navigateTo();
+        assertFalse(driver.getPageSource().contains("principal="));
+        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
+
+        employee2ServletPage.logout();
+    }
 }
