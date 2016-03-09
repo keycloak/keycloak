@@ -17,8 +17,10 @@
 
 package org.keycloak.testsuite.model;
 
+import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.Config;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -39,6 +41,8 @@ import java.util.Map;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class UserModelTest extends AbstractModelTest {
+
+    private static final Logger logger = Logger.getLogger(UserModelTest.class);
 
     @Test
     public void persistUser() {
@@ -209,6 +213,19 @@ public class UserModelTest extends AbstractModelTest {
         attrVals = user.getAttribute("key2");
         Assert.assertEquals(1, attrVals.size());
         Assert.assertEquals("val23", attrVals.get(0));
+    }
+
+    @Test
+    public void testSearchByString() {
+        logger.infof("Started testSearchByString");
+        RealmModel realm = realmManager.getRealmByName("test");
+        UserModel user1 = session.users().addUser(realm, "user1");
+        logger.infof("Added user1");
+
+        commit();
+
+        List<UserModel> users = session.users().searchForUser("user", realm, 0, 7);
+        Assert.assertTrue(users.contains(user1));
     }
 
     @Test
