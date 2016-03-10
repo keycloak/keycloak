@@ -31,11 +31,11 @@ import java.util.*;
 public class UserAdapter implements UserModel {
     protected UserModel updated;
     protected CachedUser cached;
-    protected CacheUserProvider userProviderCache;
+    protected UserCacheSession userProviderCache;
     protected KeycloakSession keycloakSession;
     protected RealmModel realm;
 
-    public UserAdapter(CachedUser cached, CacheUserProvider userProvider, KeycloakSession keycloakSession, RealmModel realm) {
+    public UserAdapter(CachedUser cached, UserCacheSession userProvider, KeycloakSession keycloakSession, RealmModel realm) {
         this.cached = cached;
         this.userProviderCache = userProvider;
         this.keycloakSession = keycloakSession;
@@ -44,7 +44,7 @@ public class UserAdapter implements UserModel {
 
     protected void getDelegateForUpdate() {
         if (updated == null) {
-            userProviderCache.registerUserInvalidation(realm, getId());
+            userProviderCache.registerUserInvalidation(realm, cached);
             updated = userProviderCache.getDelegate().getUserById(getId(), realm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
