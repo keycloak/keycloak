@@ -29,7 +29,7 @@
     
     <artifactId>integration-arquillian-auth-server-jboss</artifactId>
     
-    <name>Auth Server on JBoss (Wildfly/EAP)</name>
+    <name>Auth Server - JBoss (Wildfly/EAP)</name>
     
     <description>Keycloak Server on Wildfly/EAP</description>
 
