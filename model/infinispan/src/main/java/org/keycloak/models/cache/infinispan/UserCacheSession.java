@@ -123,33 +123,33 @@ public class UserCacheSession implements CacheUserProvider {
 
     @Override
     public UserModel getUserById(String id, RealmModel realm) {
-        logger.infov("getuserById {0}", id);
+        logger.tracev("getuserById {0}", id);
         if (isRegisteredForInvalidation(realm, id)) {
-            logger.info("registered for invalidation return delegate");
+            logger.trace("registered for invalidation return delegate");
             return getDelegate().getUserById(id, realm);
         }
 
         CachedUser cached = cache.get(id, CachedUser.class);
         if (cached == null) {
-            logger.info("not cached");
+            logger.trace("not cached");
             Long loaded = cache.getCurrentRevision(id);
             UserModel model = getDelegate().getUserById(id, realm);
             if (model == null) {
-                logger.info("delegate returning null");
+                logger.trace("delegate returning null");
                 return null;
             }
             if (managedUsers.containsKey(id)) {
-                logger.info("return managedusers");
+                logger.trace("return managedusers");
                 return managedUsers.get(id);
             }
             if (invalidations.contains(id)) return model;
             cached = new CachedUser(loaded, realm, model);
             cache.addRevisioned(cached, startupRevision);
         } else if (managedUsers.containsKey(id)) {
-            logger.info("return managedusers");
+            logger.trace("return managedusers");
             return managedUsers.get(id);
         }
-        logger.info("returning new cache adapter");
+        logger.trace("returning new cache adapter");
         UserAdapter adapter = new UserAdapter(cached, this, session, realm);
         managedUsers.put(id, adapter);
         return adapter;
@@ -165,26 +165,26 @@ public class UserCacheSession implements CacheUserProvider {
 
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
-        logger.infov("getUserByUsername: {0}", username);
+        logger.tracev("getUserByUsername: {0}", username);
         username = username.toLowerCase();
         if (realmInvalidations.contains(realm.getId())) {
-            logger.infov("realmInvalidations");
+            logger.tracev("realmInvalidations");
             return getDelegate().getUserByUsername(username, realm);
         }
         String cacheKey = getUserByUsernameCacheKey(realm.getId(), username);
         if (invalidations.contains(cacheKey)) {
-            logger.infov("invalidations");
+            logger.tracev("invalidations");
             return getDelegate().getUserByUsername(username, realm);
         }
         UserListQuery query = cache.get(cacheKey, UserListQuery.class);
 
         String userId = null;
         if (query == null) {
-            logger.infov("query null");
+            logger.tracev("query null");
             Long loaded = cache.getCurrentRevision(cacheKey);
             UserModel model = getDelegate().getUserByUsername(username, realm);
             if (model == null) {
-                logger.infov("model from delegate null");
+                logger.tracev("model from delegate null");
                 return null;
             }
             userId = model.getId();
@@ -192,7 +192,7 @@ public class UserCacheSession implements CacheUserProvider {
             cache.addRevisioned(query, startupRevision);
             if (invalidations.contains(userId)) return model;
             if (managedUsers.containsKey(userId)) {
-                logger.infov("return managed user");
+                logger.tracev("return managed user");
                 return managedUsers.get(userId);
             }
 
@@ -201,18 +201,18 @@ public class UserCacheSession implements CacheUserProvider {
                 cached = new CachedUser(loaded, realm, model);
                 cache.addRevisioned(cached, startupRevision);
             }
-            logger.info("return new cache adapter");
+            logger.trace("return new cache adapter");
             UserAdapter adapter = new UserAdapter(cached, this, session, realm);
             managedUsers.put(userId, adapter);
             return adapter;
         } else {
             userId = query.getUsers().iterator().next();
             if (invalidations.contains(userId)) {
-                logger.infov("invalidated cache return delegate");
+                logger.tracev("invalidated cache return delegate");
                 return getDelegate().getUserByUsername(username, realm);
 
             }
-            logger.info("return getUserById");
+            logger.trace("return getUserById");
             return getUserById(userId, realm);
         }
     }
