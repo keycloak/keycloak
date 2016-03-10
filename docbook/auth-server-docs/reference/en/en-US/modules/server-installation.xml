@@ -220,8 +220,8 @@ bin/add-user-keycloak.[sh|bat] -r master -u <username> -p <password>
                 <title>Tested databases</title>
                 <para>
                     Here is list of RDBMS databases and corresponding JDBC drivers, which were tested with Keycloak. Note that Hibernate dialect
-                    is usually set automatically according to your database, but in some cases, you must manually set the proper dialect,
-                    as the default dialect may not work correctly. You can setup dialect by adding property <literal>driverDialect</literal>
+                    is usually set automatically according to your database, but you have possibility to override if default dialect doesn't work correctly.
+                    You can setup dialect by adding property <literal>driverDialect</literal>
                     to the <literal>keycloak-server.json</literal> into <literal>connectionsJpa</literal> section (see above).
                     <table frame='all'><title>Tested databases</title>
                         <tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -261,7 +261,7 @@ bin/add-user-keycloak.[sh|bat] -r master -u <username> -p <password>
                                 <row>
                                     <entry>Microsoft SQL Server 2012</entry>
                                     <entry>Microsoft SQL Server JDBC Driver 4.0.2206.100</entry>
-                                    <entry>org.hibernate.dialect.SQLServer2008Dialect</entry>
+                                    <entry>auto</entry>
                                 </row>
                                 <row>
                                     <entry>IBM DB2 10.5</entry>
