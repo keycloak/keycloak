@@ -48,7 +48,6 @@ public class RealmCacheManager extends CacheManager {
 
     public RealmCacheManager(Cache<String, Revisioned> cache, Cache<String, Long> revisions) {
         super(cache, revisions);
-        this.cache.addListener(this);
     }
 
 

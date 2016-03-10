@@ -23,24 +23,26 @@ public abstract class CacheManager {
     protected static final Logger logger = Logger.getLogger(CacheManager.class);
     protected final Cache<String, Long> revisions;
     protected final Cache<String, Revisioned> cache;
+    protected final UpdateCounter counter = new UpdateCounter();
 
     public CacheManager(Cache<String, Revisioned> cache, Cache<String, Long> revisions) {
         this.cache = cache;
         this.revisions = revisions;
+        this.cache.addListener(this);
     }
 
     public Cache<String, Revisioned> getCache() {
         return cache;
     }
 
-    public Cache<String, Long> getRevisions() {
-        return revisions;
+    public long getCurrentCounter() {
+        return counter.current();
     }
 
     public Long getCurrentRevision(String id) {
         Long revision = revisions.get(id);
         if (revision == null) {
-            revision = UpdateCounter.current();
+            revision = counter.current();
         }
         // if you do cache.remove() on node 1 and the entry doesn't exist on node 2, node 2 never receives a invalidation event
         // so, we do this to force this.
@@ -85,7 +87,7 @@ public abstract class CacheManager {
     }
 
     protected void bumpVersion(String id) {
-        long next = UpdateCounter.next();
+        long next = counter.next();
         Object rev = revisions.put(id, next);
     }
 
@@ -97,7 +99,7 @@ public abstract class CacheManager {
             Long rev = revisions.get(id);
             if (rev == null) {
                 if (id.endsWith("realm.clients")) RealmCacheManager.logger.trace("addRevisioned rev == null realm.clients");
-                rev = UpdateCounter.current();
+                rev = counter.current();
                 revisions.put(id, rev);
             }
             revisions.startBatch();

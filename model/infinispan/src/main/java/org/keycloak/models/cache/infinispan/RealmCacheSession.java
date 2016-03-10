@@ -131,7 +131,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     public RealmCacheSession(RealmCacheManager cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
-        this.startupRevision = UpdateCounter.current();
+        this.startupRevision = cache.getCurrentCounter();
         session.getTransaction().enlistPrepare(getPrepareTransaction());
         session.getTransaction().enlistAfterCompletion(getAfterTransaction());
     }
@@ -380,6 +380,14 @@ public class RealmCacheSession implements CacheRealmProvider {
         return getDelegate().removeRealm(id);
     }
 
+    protected void invalidateClient(RealmModel realm, ClientModel client) {
+        invalidations.add(client.getId());
+        invalidations.add(getRealmClientsQueryCacheKey(realm.getId()));
+        invalidations.add(getClientByClientIdCacheKey(client.getClientId(), realm));
+        listInvalidations.add(realm.getId());
+    }
+
+
     @Override
     public ClientModel addClient(RealmModel realm, String clientId) {
         ClientModel client = getDelegate().addClient(realm, clientId);
@@ -395,8 +403,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     private ClientModel addedClient(RealmModel realm, ClientModel client) {
         logger.trace("added Client.....");
         // need to invalidate realm client query cache every time as it may not be loaded on this node, but loaded on another
-        invalidations.add(getRealmClientsQueryCacheKey(realm.getId()));
-        invalidations.add(client.getId());
+        invalidateClient(realm, client);
         cache.clientAdded(realm.getId(), client.getId(), invalidations);
         // this is needed so that a new client that hasn't been committed isn't cached in a query
         listInvalidations.add(realm.getId());
@@ -464,10 +471,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         ClientModel client = getClientById(id, realm);
         if (client == null) return false;
         // need to invalidate realm client query cache every time client list is changed
-        invalidations.add(getRealmClientsQueryCacheKey(realm.getId()));
-        invalidations.add(getClientByClientIdCacheKey(client.getClientId(), realm));
-        listInvalidations.add(realm.getId());
-        registerClientInvalidation(id);
+        invalidateClient(realm, client);
         cache.clientRemoval(realm.getId(), id, invalidations);
         for (RoleModel role : client.getRoles()) {
             cache.roleInvalidation(role.getId(), invalidations);
