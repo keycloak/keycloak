@@ -30,7 +30,7 @@
     </para>
     <para>
         To use this adapter, you must first configure an application (or client) through the <literal>Keycloak Admin Console</literal>.
-        You should select <literal>public</literal> for the <literal>Client Type</literal> field. As public clients can't
+        You should select <literal>public</literal> for the <literal>Access Type</literal> field. As public clients can't
         be verified with a client secret, you are required to configure one or more valid redirect uris.
         Once you've configured the application, click on the <literal>Installation</literal> tab and download the <literal>keycloak.json</literal>
         file. This file should be hosted on your web-server at the same root as your HTML pages. Alternatively, you can manually
