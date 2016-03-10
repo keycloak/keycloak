@@ -316,6 +316,18 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public int getSsoSessionMaxLifespanRememberMe() {
+        if (updated != null) return updated.getSsoSessionMaxLifespanRememberMe();
+        return cached.getSsoSessionMaxLifespanRememberMe();
+    }
+
+    @Override
+    public void setSsoSessionMaxLifespanRememberMe(int seconds) {
+        getDelegateForUpdate();
+        updated.setSsoSessionMaxLifespanRememberMe(seconds);
+    }
+
+    @Override
     public int getOfflineSessionIdleTimeout() {
         if (updated != null) return updated.getOfflineSessionIdleTimeout();
         return cached.getOfflineSessionIdleTimeout();
@@ -1389,7 +1401,5 @@ public class RealmAdapter implements RealmModel {
         if (updated != null) return updated.getClientTemplateById(id);
         return cacheSession.getClientTemplateById(id, this);
     }
-
-
 
 }

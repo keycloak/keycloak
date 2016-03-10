@@ -119,6 +119,9 @@ public interface RealmModel extends RoleContainerModel {
     int getSsoSessionMaxLifespan();
     void setSsoSessionMaxLifespan(int seconds);
 
+    int getSsoSessionMaxLifespanRememberMe();
+    void setSsoSessionMaxLifespanRememberMe(int seconds);
+
     int getOfflineSessionIdleTimeout();
     void setOfflineSessionIdleTimeout(int seconds);
 

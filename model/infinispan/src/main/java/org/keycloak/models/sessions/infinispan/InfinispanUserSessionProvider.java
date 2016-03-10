@@ -302,8 +302,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     private void removeExpiredUserSessions(RealmModel realm) {
         int expired = Time.currentTime() - realm.getSsoSessionMaxLifespan();
         int expiredRefresh = Time.currentTime() - realm.getSsoSessionIdleTimeout();
+        int expiredRememberMe = Time.currentTime() - realm.getSsoSessionMaxLifespanRememberMe();
 
-        Iterator<Map.Entry<String, SessionEntity>> itr = sessionCache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).expired(expired, expiredRefresh)).iterator();
+        Iterator<Map.Entry<String, SessionEntity>> itr = sessionCache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).expired(expired, expiredRefresh, expiredRememberMe)).iterator();
 
         while (itr.hasNext()) {
             UserSessionEntity entity = (UserSessionEntity) itr.next().getValue();
@@ -330,7 +331,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
         int expiredOffline = Time.currentTime() - realm.getOfflineSessionIdleTimeout();
 
-        Iterator<Map.Entry<String, SessionEntity>> itr = offlineSessionCache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).expired(null, expiredOffline)).iterator();
+        Iterator<Map.Entry<String, SessionEntity>> itr = offlineSessionCache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).expired(null, expiredOffline, null)).iterator();
         while (itr.hasNext()) {
             UserSessionEntity entity = (UserSessionEntity) itr.next().getValue();
             tx.remove(offlineSessionCache, entity.getId());

@@ -22,4 +22,9 @@
         <modifyDataType tableName="REALM" columnName="PUBLIC_KEY" newDataType="VARCHAR(4000)"/>
         <modifyDataType tableName="REALM" columnName="CERTIFICATE" newDataType="VARCHAR(4000)"/>
     </changeSet>
+    <changeSet author="csnyder@iland.com" id="1.9.1">
+        <addColumn tableName="REALM">
+            <column name="SSO_MAX_LIFESPAN_REMEMBER_ME" type="INT" defaultValueNumeric="3600"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

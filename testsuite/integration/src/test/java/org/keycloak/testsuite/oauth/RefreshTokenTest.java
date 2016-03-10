@@ -522,6 +522,51 @@ public class RefreshTokenTest {
         session.getTransaction().commit();
         session.close();
 
+        events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
+
+        events.clear();
+
+        Time.setOffset(0);
+    }
+    
+    @Test
+    public void refreshTokenUserSessionMaxLifespanWithRememberMe() throws Exception {
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.realms().getRealmByName("test");
+        boolean originalRememberMe = realm.isRememberMe();
+        realm.setRememberMe(true);
+        session.getTransaction().commit();
+        oauth.doRememberMeLogin("test-user@localhost", "password");
+
+        Event loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        events.poll();
+
+        String refreshId = oauth.verifyRefreshToken(tokenResponse.getRefreshToken()).getId();
+
+        session.getTransaction().begin();
+        int maxLifespan = realm.getSsoSessionMaxLifespanRememberMe();
+        realm.setSsoSessionMaxLifespanRememberMe(1);
+        session.getTransaction().commit();
+
+        Time.setOffset(1);
+
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertNull(tokenResponse.getAccessToken());
+        assertNull(tokenResponse.getRefreshToken());
+
+        session.getTransaction().begin();
+        realm.setSsoSessionMaxLifespanRememberMe(maxLifespan);
+        realm.setRememberMe(originalRememberMe);
+        session.getTransaction().commit();
+        session.close();
 
         events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
 

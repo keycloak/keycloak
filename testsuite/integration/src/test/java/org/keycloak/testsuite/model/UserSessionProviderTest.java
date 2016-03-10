@@ -268,11 +268,11 @@ public class UserSessionProviderTest {
             Set<String> expiredClientSessions = new HashSet<String>();
 
             Time.setOffset(-(realm.getSsoSessionMaxLifespan() + 1));
-            expired.add(session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null).getId());
+            expired.add(session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", false, null, null).getId());
             expiredClientSessions.add(session.sessions().createClientSession(realm, client).getId());
-
+            
             Time.setOffset(0);
-            UserSessionModel s = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.1", "form", true, null, null);
+            UserSessionModel s = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.1", "form", false, null, null);
             //s.setLastSessionRefresh(Time.currentTime() - (realm.getSsoSessionIdleTimeout() + 1));
             s.setLastSessionRefresh(0);
             expired.add(s.getId());
@@ -283,6 +283,58 @@ public class UserSessionProviderTest {
 
             Set<String> valid = new HashSet<String>();
             Set<String> validClientSessions = new HashSet<String>();
+
+            valid.add(session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", false, null, null).getId());
+            validClientSessions.add(session.sessions().createClientSession(realm, client).getId());
+
+            resetSession();
+
+            session.sessions().removeExpired(realm);
+            resetSession();
+
+            for (String e : expired) {
+                assertNull(session.sessions().getUserSession(realm, e));
+            }
+            for (String e : expiredClientSessions) {
+                assertNull(session.sessions().getClientSession(realm, e));
+            }
+
+            for (String v : valid) {
+                assertNotNull(session.sessions().getUserSession(realm, v));
+            }
+            for (String e : validClientSessions) {
+                assertNotNull(session.sessions().getClientSession(realm, e));
+            }
+        } finally {
+            Time.setOffset(0);
+        }
+    }
+    
+    @Test
+    public void testRemoveUserSessionsByExpiredWithRememberMe() {
+        session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm));
+        ClientModel client = realm.getClientByClientId("test-app");
+
+        try {
+            Set<String> expired = new HashSet<String>();
+            Set<String> expiredClientSessions = new HashSet<String>();
+
+            Time.setOffset(-(realm.getSsoSessionMaxLifespanRememberMe() + 1));
+            expired.add(session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null).getId());
+            expiredClientSessions.add(session.sessions().createClientSession(realm, client).getId());
+
+            Set<String> valid = new HashSet<String>();
+            Set<String> validClientSessions = new HashSet<String>();
+            
+            // session idle time should be ignored when remember me is set
+            Time.setOffset(0);
+            UserSessionModel s = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.1", "form", true, null, null);
+            s.setLastSessionRefresh(0);
+            valid.add(s.getId());
+
+            ClientSessionModel clSession = session.sessions().createClientSession(realm, client);
+            clSession.setUserSession(s);
+            validClientSessions.add(clSession.getId());
 
             valid.add(session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null).getId());
             validClientSessions.add(session.sessions().createClientSession(realm, client).getId());
