@@ -364,7 +364,7 @@ $ java -jar bin/launcher.jar [your-config.json]
             OIDC identity token it received for authentication.
             <variablelist>
                 <varlistentry>
-                    <term>KEYCLOAK-SUBJECT</term>
+                    <term>KEYCLOAK_SUBJECT</term>
                     <listitem>
                         <para>
                             User id. Corresponds to JWT <literal>sub</literal> and will be the user id Keycloak uses to store
@@ -373,7 +373,7 @@ $ java -jar bin/launcher.jar [your-config.json]
                     </listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term>KEYCLOAK-USERNAME</term>
+                    <term>KEYCLOAK_USERNAME</term>
                     <listitem>
                         <para>
                             Username. Corresponds to JWT <literal>preferred_username</literal>
@@ -381,7 +381,7 @@ $ java -jar bin/launcher.jar [your-config.json]
                     </listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term>KEYCLOAK-EMAIL</term>
+                    <term>KEYCLOAK_EMAIL</term>
                     <listitem>
                         <para>
                             Email address of user if set.
@@ -389,7 +389,7 @@ $ java -jar bin/launcher.jar [your-config.json]
                     </listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term>KEYCLOAK-NAME</term>
+                    <term>KEYCLOAK_NAME</term>
                     <listitem>
                         <para>
                             Full name of user if set.
@@ -397,7 +397,7 @@ $ java -jar bin/launcher.jar [your-config.json]
                     </listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term>KEYCLOAK-ACCESS-TOKEN</term>
+                    <term>KEYCLOAK_ACCESS_TOKEN</term>
                     <listitem>
                         <para>
                             Send the access token in this header if the proxy was configured to send it.  This token can
@@ -410,7 +410,7 @@ $ java -jar bin/launcher.jar [your-config.json]
             <programlisting><![CDATA[
 {
     "header-names" {
-        "keycloak-subject": "MY-SUBJECT"
+        "keycloak-subject": "MY_SUBJECT"
     }
 }
             ]]></programlisting>
