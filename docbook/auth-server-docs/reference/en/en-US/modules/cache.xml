@@ -23,11 +23,21 @@
     </para>
 
     <section>
+        <title>Eviction and Expiration</title>
+
+        <para>
+            By default the user cache contains a maximum of 10000 entries. This is not 10000 users, but 10000 entries in the cache. You can change the maximum
+            number of entries by editing the server configuration <literal>standalone.xml</literal> or <literal>standalone-ha.xml</literal>.
+            Locate the element <literal>cache-container name="keycloak"</literal> and change the eviction policy for the <literal>users</literal> cache. For
+            more information see <ulink url="https://docs.jboss.org/author/display/WFLY10/Infinispan+Subsystem">Infinispan Subsystem documentation</ulink>.
+        </para>
+    </section>
+
+    <section>
         <title>Disabling Caches</title>
         <para>
-            The realm and user caches can be cleared through the management console.  To
-            disable the realm or user cache, you must edit the <literal>keycloak-server.json</literal> file
-            in your distribution.  Here's what the config looks like initially.
+            To disable the realm or user cache, you must edit the <literal>keycloak-server.json</literal> file
+            in your distribution. Here's what the config looks like initially.
         </para>
         <para>
             <programlisting><![CDATA[
@@ -44,7 +54,7 @@
     },
 ]]></programlisting>
         </para>
-        <para>You must then change it to:
+        <para>To disable the cache set the enabled field to false for the cache you want to disable:
             <programlisting><![CDATA[
     "userCache": {
         "infinispan" : {
@@ -60,11 +70,12 @@
 ]]></programlisting>
         </para>
     </section>
+
     <section>
         <title>Clear Caches</title>
         <para>
-            To clear the realm or user cache, go to the Keycloak admin console Realm Settings->Cache Config page.  Disable the cache
-            you want. This will cause the cache to be cleared.
+            To clear the realm or user cache, go to the Keycloak admin console Realm Settings->Cache Config page. On this page you can clear the realm cache
+            or the user cache. This will clear the caches for all realms and not only the selected realm.
         </para>
     </section>
 </chapter>

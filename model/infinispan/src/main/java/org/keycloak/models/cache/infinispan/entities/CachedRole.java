@@ -20,7 +20,6 @@ package org.keycloak.models.cache.infinispan.entities;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
