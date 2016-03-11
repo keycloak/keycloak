@@ -274,11 +274,10 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
 
         final UserFederationSyncResult syncResult = new UserFederationSyncResult();
 
-        boolean pagination = Boolean.parseBoolean(fedModel.getConfig().get(LDAPConstants.PAGINATION));
+        LDAPConfig ldapConfig = new LDAPConfig(fedModel.getConfig());
+        boolean pagination = ldapConfig.isPagination();
         if (pagination) {
-
-            String pageSizeConfig = fedModel.getConfig().get(LDAPConstants.BATCH_SIZE_FOR_SYNC);
-            int pageSize = pageSizeConfig!=null ? Integer.parseInt(pageSizeConfig) : LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC;
+            int pageSize = ldapConfig.getBatchSizeForSync();
 
             boolean nextPage = true;
             while (nextPage) {
