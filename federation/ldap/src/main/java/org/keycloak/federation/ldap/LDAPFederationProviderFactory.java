@@ -34,6 +34,7 @@ import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.msad.MSADUserAccountControlMapperFactory;
+import org.keycloak.mappers.FederationConfigValidationException;
 import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -46,6 +47,7 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
+import org.keycloak.models.UserFederationValidatingProviderFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -59,7 +61,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class LDAPFederationProviderFactory extends UserFederationEventAwareProviderFactory {
+public class LDAPFederationProviderFactory extends UserFederationEventAwareProviderFactory implements UserFederationValidatingProviderFactory {
     private static final Logger logger = Logger.getLogger(LDAPFederationProviderFactory.class);
     public static final String PROVIDER_NAME = LDAPConstants.LDAP_PROVIDER;
 
@@ -74,6 +76,13 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
     public LDAPFederationProvider getInstance(KeycloakSession session, UserFederationProviderModel model) {
         LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(model);
         return new LDAPFederationProvider(this, session, model, ldapIdentityStore);
+    }
+
+    @Override
+    public void validateConfig(RealmModel realm, UserFederationProviderModel providerModel) throws FederationConfigValidationException {
+        LDAPConfig cfg = new LDAPConfig(providerModel.getConfig());
+        String customFilter = cfg.getCustomUserSearchFilter();
+        LDAPUtils.validateCustomLdapFilter(customFilter);
     }
 
     @Override

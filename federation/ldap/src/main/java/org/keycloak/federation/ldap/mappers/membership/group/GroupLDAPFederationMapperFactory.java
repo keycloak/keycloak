@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
+import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.mappers.AbstractLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.AbstractLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
@@ -33,7 +34,7 @@ import org.keycloak.federation.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.federation.ldap.mappers.membership.MembershipType;
 import org.keycloak.federation.ldap.mappers.membership.UserRolesRetrieveStrategy;
 import org.keycloak.federation.ldap.mappers.membership.role.RoleMapperConfig;
-import org.keycloak.mappers.MapperConfigValidationException;
+import org.keycloak.mappers.FederationConfigValidationException;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
@@ -185,7 +186,7 @@ public class GroupLDAPFederationMapperFactory extends AbstractLDAPFederationMapp
     }
 
     @Override
-    public void validateConfig(RealmModel realm, UserFederationMapperModel mapperModel) throws MapperConfigValidationException {
+    public void validateConfig(RealmModel realm, UserFederationMapperModel mapperModel) throws FederationConfigValidationException {
         checkMandatoryConfigAttribute(GroupMapperConfig.GROUPS_DN, "LDAP Groups DN", mapperModel);
         checkMandatoryConfigAttribute(GroupMapperConfig.MODE, "Mode", mapperModel);
 
@@ -193,8 +194,10 @@ public class GroupLDAPFederationMapperFactory extends AbstractLDAPFederationMapp
         MembershipType membershipType = mt==null ? MembershipType.DN : Enum.valueOf(MembershipType.class, mt);
         boolean preserveGroupInheritance = Boolean.parseBoolean(mapperModel.getConfig().get(GroupMapperConfig.PRESERVE_GROUP_INHERITANCE));
         if (preserveGroupInheritance && membershipType != MembershipType.DN) {
-            throw new MapperConfigValidationException("Not possible to preserve group inheritance and use UID membership type together");
+            throw new FederationConfigValidationException("ldapErrorCantPreserveGroupInheritanceWithUIDMembershipType");
         }
+
+        LDAPUtils.validateCustomLdapFilter(mapperModel.getConfig().get(GroupMapperConfig.GROUPS_LDAP_FILTER));
     }
 
     @Override

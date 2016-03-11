@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.federation.ldap.LDAPFederationProvider;
-import org.keycloak.mappers.MapperConfigValidationException;
+import org.keycloak.mappers.FederationConfigValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
@@ -77,14 +77,14 @@ public class HardcodedLDAPRoleMapperFactory extends AbstractLDAPFederationMapper
     }
 
     @Override
-    public void validateConfig(RealmModel realm, UserFederationMapperModel mapperModel) throws MapperConfigValidationException {
+    public void validateConfig(RealmModel realm, UserFederationMapperModel mapperModel) throws FederationConfigValidationException {
         String roleName = mapperModel.getConfig().get(HardcodedLDAPRoleMapper.ROLE);
         if (roleName == null) {
-            throw new MapperConfigValidationException("Role can't be null");
+            throw new FederationConfigValidationException("Role can't be null");
         }
         RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
         if (role == null) {
-            throw new MapperConfigValidationException("There is no role corresponding to configured value");
+            throw new FederationConfigValidationException("There is no role corresponding to configured value");
         }
     }
 
