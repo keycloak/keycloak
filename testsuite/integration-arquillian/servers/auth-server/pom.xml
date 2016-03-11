@@ -29,8 +29,19 @@
     <packaging>pom</packaging>
     <name>Auth Server</name>
 
-    <modules>
-        <module>jboss</module>
-    </modules>
+    <profiles>
+        <profile>
+            <id>auth-server-jboss</id>
+            <modules>
+                <module>jboss</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>auth-server-jboss-cluster</id>
+            <modules>
+                <module>jboss</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

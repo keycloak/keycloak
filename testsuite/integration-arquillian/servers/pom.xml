@@ -34,4 +34,13 @@
         <module>app-server</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>auth-server-jboss-cluster</id>
+            <modules>
+                <module>wildfly-balancer</module>
+            </modules>
+        </profile>
+    </profiles>
+    
 </project>
