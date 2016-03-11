@@ -31,7 +31,9 @@
     
     <properties>
         
-        <!-- NOTE: Doesn't work with JDK 8. Use: -Dapp.server.java.home=PATH_TO_JDK_7_HOME -->
+        <!-- NOTE: AS7 doesn't work with JDK 8. Use: -Dapp.server.java.home=PATH_TO_JDK_7_HOME -->
+        
+        <!-- NOTE: AS7 SSL configuration doesn't work. See: https://issues.jboss.org/browse/AS7-4698 -->
         
         <app.server.jboss.groupId>org.jboss.as</app.server.jboss.groupId>
         <app.server.jboss.artifactId>jboss-as-dist</app.server.jboss.artifactId>
