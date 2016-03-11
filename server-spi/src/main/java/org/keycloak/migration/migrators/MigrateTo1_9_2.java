@@ -15,19 +15,23 @@
  * limitations under the License.
  */
 
-package org.keycloak.migration;
+package org.keycloak.migration.migrators;
 
+import org.keycloak.migration.ModelVersion;
+import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 
-/**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
- */
-public interface MigrationModel {
-    /**
-     * Must have the form of major.minor.micro as the version is parsed and numbers are compared
-     */
-    String LATEST_VERSION = "1.9.2";
+public class MigrateTo1_9_2 {
 
-    String getStoredVersion();
-    void setStoredVersion(String version);
+    public static final ModelVersion VERSION = new ModelVersion("1.9.2");
+
+    public void migrate(KeycloakSession session) {
+        for (RealmModel realm : session.realms().getRealms()) {
+            if (realm.getBrowserSecurityHeaders() != null) {
+                realm.getBrowserSecurityHeaders().put("xFrameOptions", "nosniff");
+            }
+        }
+    }
+
 }
