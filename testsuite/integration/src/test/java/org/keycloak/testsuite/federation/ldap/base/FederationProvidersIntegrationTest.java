@@ -556,7 +556,7 @@ public class FederationProvidersIntegrationTest {
             keycloakRule.stopSession(session, true);
         }
 
-        
+
         // Assert changed user available in Keycloak
         session = keycloakRule.startSession();
         try {

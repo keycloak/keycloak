@@ -61,6 +61,7 @@ public class LDAPGroupMapper2WaySyncTest {
             Map<String,String> ldapConfig = ldapRule.getConfig();
             ldapConfig.put(LDAPConstants.SYNC_REGISTRATIONS, "true");
             ldapConfig.put(LDAPConstants.EDIT_MODE, UserFederationProvider.EditMode.WRITABLE.toString());
+            ldapConfig.put(LDAPConstants.BATCH_SIZE_FOR_SYNC, "4"); // Issues with pagination on ApacheDS
 
             ldapModel = appRealm.addUserFederationProvider(LDAPFederationProviderFactory.PROVIDER_NAME, ldapConfig, 0, "test-ldap", -1, -1, 0);
             LDAPFederationProvider ldapFedProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
