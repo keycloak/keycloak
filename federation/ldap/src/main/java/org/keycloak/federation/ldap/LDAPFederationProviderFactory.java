@@ -165,7 +165,8 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
                     // For read-only LDAP, we map "cn" as full name
                     mapperModel = KeycloakModelUtils.createUserFederationMapperModel("full name", newProviderModel.getId(), FullNameLDAPFederationMapperFactory.PROVIDER_ID,
                             FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, LDAPConstants.CN,
-                            UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
+                            FullNameLDAPFederationMapper.READ_ONLY, readOnly,
+                            FullNameLDAPFederationMapper.WRITE_ONLY, "false");
                     realm.addUserFederationMapper(mapperModel);
                 }
             }

@@ -43,12 +43,17 @@ public class FullNameLDAPFederationMapperFactory extends AbstractLDAPFederationM
 
     static {
         ProviderConfigProperty userModelAttribute = createConfigProperty(FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, "LDAP Full Name Attribute",
-                "Name of LDAP attribute, which contains fullName of user. In most cases it will be 'cn' ", ProviderConfigProperty.STRING_TYPE, null);
+                "Name of LDAP attribute, which contains fullName of user. Usually it will be 'cn' ", ProviderConfigProperty.STRING_TYPE, null);
         configProperties.add(userModelAttribute);
 
-        ProviderConfigProperty readOnly = createConfigProperty(UserAttributeLDAPFederationMapper.READ_ONLY, "Read Only",
+        ProviderConfigProperty readOnly = createConfigProperty(FullNameLDAPFederationMapper.READ_ONLY, "Read Only",
                 "For Read-only is data imported from LDAP to Keycloak DB, but it's not saved back to LDAP when user is updated in Keycloak.", ProviderConfigProperty.BOOLEAN_TYPE, null);
         configProperties.add(readOnly);
+
+        ProviderConfigProperty writeOnly = createConfigProperty(FullNameLDAPFederationMapper.WRITE_ONLY, "Write Only",
+                "For Write-only is data propagated to LDAP when user is created or updated in Keycloak. But this mapper is not used to propagate data from LDAP back into Keycloak. " +
+                        "This setting is useful if you configured separate firstName and lastName attribute mappers and you want to use those to read attribute from LDAP into Keycloak", ProviderConfigProperty.BOOLEAN_TYPE, null);
+        configProperties.add(writeOnly);
     }
 
     @Override
@@ -78,8 +83,11 @@ public class FullNameLDAPFederationMapperFactory extends AbstractLDAPFederationM
 
         defaultValues.put(FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, LDAPConstants.CN);
 
-        String readOnly = config.getEditMode() == UserFederationProvider.EditMode.WRITABLE ? "false" : "true";
-        defaultValues.put(UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
+        boolean readOnly = config.getEditMode() != UserFederationProvider.EditMode.WRITABLE;
+        defaultValues.put(FullNameLDAPFederationMapper.READ_ONLY, String.valueOf(readOnly));
+
+        String writeOnly = String.valueOf(!readOnly);
+        defaultValues.put(FullNameLDAPFederationMapper.WRITE_ONLY, writeOnly);
 
         return defaultValues;
     }
@@ -90,8 +98,21 @@ public class FullNameLDAPFederationMapperFactory extends AbstractLDAPFederationM
     }
 
     @Override
-    public void validateConfig(RealmModel realm, UserFederationMapperModel mapperModel) throws FederationConfigValidationException {
+    public void validateConfig(RealmModel realm, UserFederationProviderModel fedProviderModel, UserFederationMapperModel mapperModel) throws FederationConfigValidationException {
         checkMandatoryConfigAttribute(FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, "LDAP Full Name Attribute", mapperModel);
+
+        boolean readOnly = AbstractLDAPFederationMapper.parseBooleanParameter(mapperModel, FullNameLDAPFederationMapper.READ_ONLY);
+        boolean writeOnly = AbstractLDAPFederationMapper.parseBooleanParameter(mapperModel, FullNameLDAPFederationMapper.WRITE_ONLY);
+
+        LDAPConfig cfg = new LDAPConfig(fedProviderModel.getConfig());
+        UserFederationProvider.EditMode editMode = cfg.getEditMode();
+
+        if (writeOnly && cfg.getEditMode() != UserFederationProvider.EditMode.WRITABLE) {
+            throw new FederationConfigValidationException("ldapErrorCantWriteOnlyForReadOnlyLdap");
+        }
+        if (writeOnly && readOnly) {
+            throw new FederationConfigValidationException("ldapErrorCantWriteOnlyAndReadOnly");
+        }
     }
 
     @Override
