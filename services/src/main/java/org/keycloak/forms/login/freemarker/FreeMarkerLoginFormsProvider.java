@@ -61,8 +61,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.utils.MediaType;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -312,7 +312,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         try {
             String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
-            Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
+            Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML_UTF_8).entity(result);
             BrowserSecurityHeaderSetup.headers(builder, realm);
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
@@ -413,7 +413,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
         try {
             String result = freeMarker.processTemplate(attributes, form, theme);
-            Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
+            Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
             BrowserSecurityHeaderSetup.headers(builder, realm);
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());

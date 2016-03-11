@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -64,6 +63,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.utils.MediaType;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -209,7 +209,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
         try {
             String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
-            Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML).entity(result);
+            Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
             BrowserSecurityHeaderSetup.headers(builder, realm);
             return builder.build();
         } catch (FreeMarkerException e) {
