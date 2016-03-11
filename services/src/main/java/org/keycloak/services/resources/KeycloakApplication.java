@@ -82,7 +82,6 @@ public class KeycloakApplication extends Application {
         singletons.add(new ServerVersionResource());
         singletons.add(new RealmsResource());
         singletons.add(new AdminRoot());
-        singletons.add(new ModelExceptionMapper());
         classes.add(QRCodeResource.class);
         classes.add(ThemeResource.class);
         classes.add(JsResource.class);
