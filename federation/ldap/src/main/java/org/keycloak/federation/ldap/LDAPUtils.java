@@ -31,6 +31,7 @@ import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilde
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.membership.MembershipType;
+import org.keycloak.mappers.FederationConfigValidationException;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -225,5 +226,20 @@ public class LDAPUtils {
      */
     public static String getMemberValueOfChildObject(LDAPObject ldapUser, MembershipType membershipType) {
         return membershipType == MembershipType.DN ? ldapUser.getDn().toString() : ldapUser.getAttributeAsString(ldapUser.getRdnAttributeName());
+    }
+
+
+    public static void validateCustomLdapFilter(String customFilter) throws FederationConfigValidationException {
+        if (customFilter != null) {
+
+            customFilter = customFilter.trim();
+            if (customFilter.isEmpty()) {
+                return;
+            }
+
+            if (!customFilter.startsWith("(") || !customFilter.endsWith(")")) {
+                throw new FederationConfigValidationException("ldapErrorInvalidCustomFilter");
+            }
+        }
     }
 }

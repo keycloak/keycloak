@@ -16,12 +16,14 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -40,7 +42,7 @@ import javax.ws.rs.core.UriInfo;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.mappers.MapperConfigValidationException;
+import org.keycloak.mappers.FederationConfigValidationException;
 import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.mappers.UserFederationMapperFactory;
 import org.keycloak.models.KeycloakSession;
@@ -63,7 +65,6 @@ import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.UsersSyncManager;
-import org.keycloak.timer.TimerProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -105,6 +106,9 @@ public class UserFederationProviderResource {
         }
         UserFederationProviderModel model = new UserFederationProviderModel(rep.getId(), rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName,
                 rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
+
+        UserFederationProvidersResource.validateFederationProviderConfig(session, auth, realm, model);
+
         realm.updateUserFederationProvider(model);
         new UsersSyncManager().notifyToRefreshPeriodicSync(session, realm, model, false);
         boolean kerberosCredsAdded = UserFederationProvidersResource.checkKerberosCredential(session, realm, model);
@@ -370,8 +374,11 @@ public class UserFederationProviderResource {
         try {
             UserFederationMapperFactory mapperFactory = (UserFederationMapperFactory) session.getKeycloakSessionFactory().getProviderFactory(UserFederationMapper.class, model.getFederationMapperType());
             mapperFactory.validateConfig(realm, model);
-        } catch (MapperConfigValidationException ex) {
-            throw new ErrorResponseException("Validation error", ex.getMessage(), Response.Status.BAD_REQUEST);
+        } catch (FederationConfigValidationException ex) {
+            logger.error(ex.getMessage());
+            Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());
+            throw new ErrorResponseException(ex.getMessage(), MessageFormat.format(messages.getProperty(ex.getMessage(), ex.getMessage()), ex.getParameters()),
+                    Response.Status.BAD_REQUEST);
         }
     }
 

@@ -411,8 +411,12 @@ public final class KeycloakModelUtils {
         return mapperModel;
     }
 
+    public static UserFederationProviderFactory getFederationProviderFactory(KeycloakSession session, UserFederationProviderModel model) {
+        return (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, model.getProviderName());
+    }
+
     public static UserFederationProvider getFederationProviderInstance(KeycloakSession session, UserFederationProviderModel model) {
-        UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, model.getProviderName());
+        UserFederationProviderFactory factory = getFederationProviderFactory(session, model);
         return factory.getInstance(session, model);
 
     }

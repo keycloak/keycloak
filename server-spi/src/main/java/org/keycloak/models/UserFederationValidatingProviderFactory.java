@@ -15,18 +15,23 @@
  * limitations under the License.
  */
 
-package org.keycloak.mappers;
+package org.keycloak.models;
+
+import org.keycloak.mappers.FederationConfigValidationException;
 
 /**
+ * TODO: Merge with UserFederationProviderFactory and add "default" method validateConfig with empty body once we move to source level 1.8
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MapperConfigValidationException extends Exception {
+public interface UserFederationValidatingProviderFactory extends UserFederationProviderFactory {
 
-    public MapperConfigValidationException(String message) {
-        super(message);
-    }
-
-    public MapperConfigValidationException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    /**
+     * Called when instance of mapperModel is created for this factory through admin endpoint
+     *
+     * @param realm
+     * @param providerModel
+     * @throws FederationConfigValidationException if configuration provided in mapperModel is not valid
+     */
+    void validateConfig(RealmModel realm, UserFederationProviderModel providerModel) throws FederationConfigValidationException;
 }
