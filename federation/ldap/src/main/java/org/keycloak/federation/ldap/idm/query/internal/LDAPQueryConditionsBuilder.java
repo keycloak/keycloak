@@ -61,9 +61,6 @@ public class LDAPQueryConditionsBuilder {
 
     public Condition addCustomLDAPFilter(String filter) {
         filter = filter.trim();
-        if (!filter.startsWith("(") || !filter.endsWith(")")) {
-            throw new ModelException("Custom filter doesn't start with ( or doesn't end with ). ");
-        }
         return new CustomLDAPFilter(filter);
     }
 

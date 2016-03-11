@@ -24,7 +24,7 @@ import java.util.Map;
 
 import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
-import org.keycloak.mappers.MapperConfigValidationException;
+import org.keycloak.mappers.FederationConfigValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
@@ -101,7 +101,7 @@ public class UserAttributeLDAPFederationMapperFactory extends AbstractLDAPFedera
     }
 
     @Override
-    public void validateConfig(RealmModel realm, UserFederationMapperModel mapperModel) throws MapperConfigValidationException {
+    public void validateConfig(RealmModel realm, UserFederationProviderModel fedProviderModel, UserFederationMapperModel mapperModel) throws FederationConfigValidationException {
         checkMandatoryConfigAttribute(UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, "User Model Attribute", mapperModel);
         checkMandatoryConfigAttribute(UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, "LDAP Attribute", mapperModel);
     }

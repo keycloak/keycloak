@@ -49,6 +49,9 @@ public class LdapUserProviderForm extends Form {
     @FindBy(id = "ldapBindCredential")
     private WebElement ldapBindCredentialInput;
 
+    @FindBy(id = "customUserSearchFilter")
+    private WebElement customUserSearchFilterInput;
+
     @FindBy(id = "searchScope")
     private Select searchScopeSelect;
 
@@ -153,6 +156,10 @@ public class LdapUserProviderForm extends Form {
 
     public void setLdapBindCredentialInput(String ldapBindCredential) {
         setInputValue(ldapBindCredentialInput, ldapBindCredential);
+    }
+
+    public void setCustomUserSearchFilter(String customUserSearchFilter) {
+        setInputValue(customUserSearchFilterInput, customUserSearchFilter);
     }
 
     public void setKerberosRealmInput(String kerberosRealm) {
