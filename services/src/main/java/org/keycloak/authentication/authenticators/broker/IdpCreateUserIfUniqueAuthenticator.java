@@ -88,7 +88,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
                 federatedUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
             }
 
-            // TODO: Event
+            userRegisteredSuccess(context, federatedUser, serializedCtx, brokerContext);
 
             context.setUser(federatedUser);
             context.getClientSession().setNote(BROKER_REGISTERED_NEW_USER, "true");
@@ -137,6 +137,12 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
     protected String getUsername(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
         RealmModel realm = context.getRealm();
         return realm.isRegistrationEmailAsUsername() ? brokerContext.getEmail() : brokerContext.getModelUsername();
+    }
+
+
+    // Empty method by default. This exists, so subclass can override and add callback after new user is registered through social
+    protected void userRegisteredSuccess(AuthenticationFlowContext context, UserModel registeredUser, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
+
     }
 
 
