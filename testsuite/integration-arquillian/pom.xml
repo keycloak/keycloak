@@ -36,8 +36,54 @@
     
     <properties>
         <auth.server.jboss.classifier>wildfly</auth.server.jboss.classifier>
+        
+        <containers.home>${project.build.directory}/containers</containers.home>
+        
+        <!--component versions-->
+        <arquillian-core.version>1.1.11.Final</arquillian-core.version>
+        <selenium.version>2.52.0</selenium.version>
+        <arquillian-drone.version>2.0.0.Beta1</arquillian-drone.version>
+        <arquillian-graphene.version>2.1.0.Alpha3</arquillian-graphene.version>
+        <arquillian-wildfly-container.version>8.2.0.Final</arquillian-wildfly-container.version>
+        <version.shrinkwrap.resolvers>2.2.2</version.shrinkwrap.resolvers>
+        
+        <wildfly9.version>9.0.2.Final</wildfly9.version>
+        <wildfly8.version>8.2.1.Final</wildfly8.version>
+        <jboss.as.version>7.1.1.Final</jboss.as.version>
+        <eap6.version>7.5.6.Final-redhat-2</eap6.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.arquillian.selenium</groupId>
+                <artifactId>selenium-bom</artifactId>
+                <version>${selenium.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian</groupId>
+                <artifactId>arquillian-bom</artifactId>
+                <version>${arquillian-core.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.extension</groupId>
+                <artifactId>arquillian-drone-bom</artifactId>
+                <version>${arquillian-drone.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-arquillian-container-managed</artifactId>
+                <version>${arquillian-wildfly-container.version}</version>
+            </dependency>        
+        </dependencies>
+    </dependencyManagement>
+    
     <build>
         <pluginManagement>
             <plugins>

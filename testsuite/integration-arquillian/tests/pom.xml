@@ -41,7 +41,6 @@
     </modules>
     
     <properties>
-        <containers.home>${project.build.directory}/containers</containers.home>
         <examples.home>${project.build.directory}/examples</examples.home>
         <jboss.server.config.dir>${project.build.directory}/undertow-configuration</jboss.server.config.dir>
 
@@ -57,13 +56,6 @@
         <browser>phantomjs</browser>
         <firefox_binary>/usr/bin/firefox</firefox_binary>
 
-        <arquillian-core.version>1.1.11.Final</arquillian-core.version>
-        <selenium.version>2.52.0</selenium.version>
-        <arquillian-drone.version>2.0.0.Beta1</arquillian-drone.version>
-        <arquillian-graphene.version>2.1.0.Alpha3</arquillian-graphene.version>
-        <arquillian-wildfly-container.version>8.2.0.Final</arquillian-wildfly-container.version>
-        <version.shrinkwrap.resolvers>2.2.2</version.shrinkwrap.resolvers>
-        
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
         
@@ -71,37 +63,6 @@
         
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.jboss.arquillian.selenium</groupId>
-                <artifactId>selenium-bom</artifactId>
-                <version>${selenium.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian</groupId>
-                <artifactId>arquillian-bom</artifactId>
-                <version>${arquillian-core.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.extension</groupId>
-                <artifactId>arquillian-drone-bom</artifactId>
-                <version>${arquillian-drone.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-arquillian-container-managed</artifactId>
-                <version>${arquillian-wildfly-container.version}</version>
-            </dependency>        
-        </dependencies>
-    </dependencyManagement>
-    
     <build>
         <pluginManagement>
             <plugins>
