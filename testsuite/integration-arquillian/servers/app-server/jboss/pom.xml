@@ -370,7 +370,12 @@
                 <module>wildfly9</module>
             </modules>
         </profile>
-        
+        <profile>
+            <id>app-server-jboss-relative</id>
+            <modules>
+                <module>jboss-relative</module>
+            </modules>
+        </profile>        
     </profiles>    
 
 </project>
