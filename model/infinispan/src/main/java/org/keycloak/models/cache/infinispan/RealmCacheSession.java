@@ -40,7 +40,6 @@ import org.keycloak.models.cache.infinispan.entities.RealmListQuery;
 import org.keycloak.models.cache.infinispan.entities.RoleListQuery;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -107,12 +106,12 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class StreamCacheRealmProvider implements CacheRealmProvider {
-    protected static final Logger logger = Logger.getLogger(StreamCacheRealmProvider.class);
+public class RealmCacheSession implements CacheRealmProvider {
+    protected static final Logger logger = Logger.getLogger(RealmCacheSession.class);
     public static final String REALM_CLIENTS_QUERY_SUFFIX = ".realm.clients";
     public static final String ROLES_QUERY_SUFFIX = ".roles";
     public static final String ROLE_BY_NAME_QUERY_SUFFIX = ".role.by-name";
-    protected StreamRealmCache cache;
+    protected RealmCacheManager cache;
     protected KeycloakSession session;
     protected RealmProvider delegate;
     protected boolean transactionActive;
@@ -129,10 +128,10 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
     protected boolean clearAll;
     protected final long startupRevision;
 
-    public StreamCacheRealmProvider(StreamRealmCache cache, KeycloakSession session) {
+    public RealmCacheSession(RealmCacheManager cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
-        this.startupRevision = UpdateCounter.current();
+        this.startupRevision = cache.getCurrentCounter();
         session.getTransaction().enlistPrepare(getPrepareTransaction());
         session.getTransaction().enlistAfterCompletion(getAfterTransaction());
     }
@@ -381,6 +380,14 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
         return getDelegate().removeRealm(id);
     }
 
+    protected void invalidateClient(RealmModel realm, ClientModel client) {
+        invalidations.add(client.getId());
+        invalidations.add(getRealmClientsQueryCacheKey(realm.getId()));
+        invalidations.add(getClientByClientIdCacheKey(client.getClientId(), realm));
+        listInvalidations.add(realm.getId());
+    }
+
+
     @Override
     public ClientModel addClient(RealmModel realm, String clientId) {
         ClientModel client = getDelegate().addClient(realm, clientId);
@@ -396,8 +403,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
     private ClientModel addedClient(RealmModel realm, ClientModel client) {
         logger.trace("added Client.....");
         // need to invalidate realm client query cache every time as it may not be loaded on this node, but loaded on another
-        invalidations.add(getRealmClientsQueryCacheKey(realm.getId()));
-        invalidations.add(client.getId());
+        invalidateClient(realm, client);
         cache.clientAdded(realm.getId(), client.getId(), invalidations);
         // this is needed so that a new client that hasn't been committed isn't cached in a query
         listInvalidations.add(realm.getId());
@@ -465,10 +471,7 @@ public class StreamCacheRealmProvider implements CacheRealmProvider {
         ClientModel client = getClientById(id, realm);
         if (client == null) return false;
         // need to invalidate realm client query cache every time client list is changed
-        invalidations.add(getRealmClientsQueryCacheKey(realm.getId()));
-        invalidations.add(getClientByClientIdCacheKey(client.getClientId(), realm));
-        listInvalidations.add(realm.getId());
-        registerClientInvalidation(id);
+        invalidateClient(realm, client);
         cache.clientRemoval(realm.getId(), id, invalidations);
         for (RoleModel role : client.getRoles()) {
             cache.roleInvalidation(role.getId(), invalidations);

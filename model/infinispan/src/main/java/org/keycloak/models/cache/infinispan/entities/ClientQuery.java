@@ -1,7 +1,5 @@
 package org.keycloak.models.cache.infinispan.entities;
 
-import org.keycloak.models.cache.infinispan.entities.InRealm;
-
 import java.util.Set;
 
 /**

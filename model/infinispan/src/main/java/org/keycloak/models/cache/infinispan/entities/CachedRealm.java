@@ -18,6 +18,7 @@
 package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -29,19 +30,13 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.cache.infinispan.RealmCache;
-import org.keycloak.common.util.MultivaluedHashMap;
 
-import java.io.Serializable;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
