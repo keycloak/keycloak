@@ -288,29 +288,46 @@ public class GroupLDAPFederationMapper extends AbstractLDAPFederationMapper impl
         }
     }
 
-    // Override if better effectivity or different algorithm is needed
+
     protected GroupModel findKcGroupByLDAPGroup(LDAPObject ldapGroup) {
         String groupNameAttr = config.getGroupNameLdapAttribute();
         String groupName = ldapGroup.getAttributeAsString(groupNameAttr);
 
-        List<GroupModel> groups = realm.getGroups();
-        for (GroupModel group : groups) {
-            if (group.getName().equals(groupName)) {
-                return group;
+        if (config.isPreserveGroupsInheritance()) {
+            // Override if better effectivity or different algorithm is needed
+            List<GroupModel> groups = realm.getGroups();
+            for (GroupModel group : groups) {
+                if (group.getName().equals(groupName)) {
+                    return group;
+                }
             }
-        }
 
-        return null;
+            return null;
+        } else {
+            // Without preserved inheritance, it's always top-level group
+            return KeycloakModelUtils.findGroupByPath(realm, "/" + groupName);
+        }
     }
 
     protected GroupModel findKcGroupOrSyncFromLDAP(LDAPObject ldapGroup, UserModel user) {
         GroupModel kcGroup = findKcGroupByLDAPGroup(ldapGroup);
 
         if (kcGroup == null) {
-            // Sync groups from LDAP
-            if (!syncFromLDAPPerformedInThisTransaction) {
-                syncDataFromFederationProviderToKeycloak();
-                kcGroup = findKcGroupByLDAPGroup(ldapGroup);
+
+            if (config.isPreserveGroupsInheritance()) {
+
+                // Better to sync all groups from LDAP with preserved inheritance
+                if (!syncFromLDAPPerformedInThisTransaction) {
+                    syncDataFromFederationProviderToKeycloak();
+                    kcGroup = findKcGroupByLDAPGroup(ldapGroup);
+                }
+            } else {
+                String groupNameAttr = config.getGroupNameLdapAttribute();
+                String groupName = ldapGroup.getAttributeAsString(groupNameAttr);
+
+                kcGroup = realm.createGroup(groupName);
+                updateAttributesOfKCGroup(kcGroup, ldapGroup);
+                realm.moveGroup(kcGroup, null);
             }
 
             // Could theoretically happen on some LDAP servers if 'memberof' style is used and 'memberof' attribute of user references non-existing group
