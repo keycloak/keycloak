@@ -30,6 +30,8 @@
     <name>App Server - JBoss - EAP 6</name>
     
     <properties>
+        <app.server.jboss>eap6</app.server.jboss>
+        
         <app.server.jboss.groupId>org.jboss.as</app.server.jboss.groupId>
         <app.server.jboss.artifactId>jboss-as-dist</app.server.jboss.artifactId>
         <app.server.jboss.version>${eap6.version}</app.server.jboss.version>

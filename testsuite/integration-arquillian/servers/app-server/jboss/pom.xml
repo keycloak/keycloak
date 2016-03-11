@@ -33,7 +33,9 @@
         <script.suffix>sh</script.suffix>
         <common.config.resources>${project.parent.basedir}/common</common.config.resources>
         <app.server.jboss.home>${containers.home}/${app.server.jboss.unpacked.folder.name}</app.server.jboss.home>
+        <app.server.jboss.classifier/>
         <app.server.saml.adapter.supported>false</app.server.saml.adapter.supported>
+        <app.server.jboss.append.assembly.id>false</app.server.jboss.append.assembly.id>
         <app.server.java.home>${java.home}</app.server.java.home>
     </properties>
 
@@ -72,10 +74,11 @@
                                 <configuration>
                                     <rules>
                                         <requireProperty>
-                                            <property>app.server.jboss.classifier</property>
+                                            <property>app.server.jboss</property>
                                             <property>app.server.jboss.groupId</property>
                                             <property>app.server.jboss.artifactId</property>
                                             <property>app.server.jboss.version</property>
+                                            <property>app.server.jboss.classifier</property>
                                             <property>app.server.jboss.unpacked.folder.name</property>
                                             <property>app.server.oidc.adapter.artifactId</property>
                                         </requireProperty>
@@ -100,6 +103,7 @@
                                             <groupId>${app.server.jboss.groupId}</groupId>
                                             <artifactId>${app.server.jboss.artifactId}</artifactId>
                                             <version>${app.server.jboss.version}</version>
+                                            <classifier>${app.server.jboss.classifier}</classifier>
                                             <type>zip</type>
                                             <outputDirectory>${containers.home}</outputDirectory>
                                         </artifactItem>
@@ -161,7 +165,7 @@
                                         <!--runs from submodules, needs to access parent assembly.xml-->
                                         <descriptor>../assembly.xml</descriptor>
                                     </descriptors>
-                                    <appendAssemblyId>false</appendAssemblyId>
+                                    <appendAssemblyId>${app,server.jboss.append.assembly.id}</appendAssemblyId>
                                 </configuration>
                             </execution>
                         </executions>

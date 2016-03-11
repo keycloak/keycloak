@@ -17,7 +17,7 @@
 
 <assembly>
     
-    <id>app-server</id>
+    <id>${app.server.jboss}</id>
     
     <formats>
         <format>zip</format>
@@ -28,14 +28,14 @@
     <fileSets>
         <fileSet>
             <directory>${app.server.jboss.home}</directory>
-            <outputDirectory>app-server-${app.server.jboss.unpacked.folder.name}</outputDirectory>
+            <outputDirectory>app-server-${app.server.jboss}</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>${app.server.jboss.home}</directory>
-            <outputDirectory>app-server-${app.server.jboss.unpacked.folder.name}</outputDirectory>
+            <outputDirectory>app-server-${app.server.jboss}</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
             </includes>

@@ -35,6 +35,8 @@
         
         <!-- NOTE: AS7 SSL configuration doesn't work. See: https://issues.jboss.org/browse/AS7-4698 -->
         
+        <app.server.jboss>as7</app.server.jboss>
+        
         <app.server.jboss.groupId>org.jboss.as</app.server.jboss.groupId>
         <app.server.jboss.artifactId>jboss-as-dist</app.server.jboss.artifactId>
         <app.server.jboss.version>${jboss.as.version}</app.server.jboss.version>

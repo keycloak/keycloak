@@ -27,16 +27,21 @@
 
     <artifactId>integration-arquillian-servers-app-server-jboss-relative</artifactId>
     <packaging>pom</packaging>
-    <name>App Server - JBoss - Wildfly Relative</name>
+    <name>App Server - JBoss - JBoss Relative</name>
     
     <properties>
+        <app.server.jboss>jboss-relative</app.server.jboss>
+        
         <app.server.jboss.groupId>org.keycloak.testsuite</app.server.jboss.groupId>
         <app.server.jboss.artifactId>integration-arquillian-servers-auth-server-jboss</app.server.jboss.artifactId>
         <app.server.jboss.version>${project.version}</app.server.jboss.version>
-        <app.server.jboss.unpacked.folder.name>auth-server-wildfly</app.server.jboss.unpacked.folder.name>
+        <app.server.jboss.classifier>${auth.server.jboss.classifier}</app.server.jboss.classifier>
+        <app.server.jboss.unpacked.folder.name>auth-server-${auth.server.jboss.classifier}</app.server.jboss.unpacked.folder.name>
         
         <app.server.oidc.adapter.artifactId>keycloak-wildfly-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-wildfly-adapter-dist</app.server.saml.adapter.artifactId>
+
+        <app.server.jboss.append.assembly.id>true</app.server.jboss.append.assembly.id>
     </properties>
 
 </project>

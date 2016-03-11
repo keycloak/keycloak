@@ -30,6 +30,8 @@
     <name>App Server - JBoss - Wildfly 8</name>
     
     <properties>
+        <app.server.jboss>wildfly8</app.server.jboss>
+        
         <app.server.jboss.groupId>org.wildfly</app.server.jboss.groupId>
         <app.server.jboss.artifactId>wildfly-dist</app.server.jboss.artifactId>
         <app.server.jboss.version>${wildfly8.version}</app.server.jboss.version>

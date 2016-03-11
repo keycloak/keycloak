@@ -28,14 +28,14 @@
     <fileSets>
         <fileSet>
             <directory>${keycloak.server.home}</directory>
-            <outputDirectory>auth-server-${auth.server.jboss.classifier}-${project.version}</outputDirectory>
+            <outputDirectory>auth-server-${auth.server.jboss.classifier}</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>${keycloak.server.home}</directory>
-            <outputDirectory>auth-server-${auth.server.jboss.classifier}-${project.version}</outputDirectory>
+            <outputDirectory>auth-server-${auth.server.jboss.classifier}</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
             </includes>
