@@ -27,7 +27,6 @@ import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -281,7 +280,7 @@ public class AdminConsole {
         if (!uriInfo.getRequestUri().getPath().endsWith("/")) {
             return Response.status(302).location(uriInfo.getRequestUriBuilder().path("/").build()).build();
         } else {
-            Theme theme = getTheme();
+            Theme theme = AdminRoot.getTheme(session, realm);
 
             Map<String, Object> map = new HashMap<>();
 
@@ -303,11 +302,6 @@ public class AdminConsole {
         }
     }
 
-    private Theme getTheme() throws IOException {
-        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-        return themeProvider.getTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
-    }
-
     @GET
     @Path("{indexhtml: index.html}") // this expression is a hack to get around jaxdoclet generation bug.  Doesn't like index.html
     public Response getIndexHtmlRedirect() {
@@ -318,11 +312,7 @@ public class AdminConsole {
     @Path("messages.json")
     @Produces(MediaType.APPLICATION_JSON)
     public Properties getMessages(@QueryParam("lang") String lang) {
-        try {
-            Locale locale = lang != null ? Locale.forLanguageTag(lang) : Locale.ENGLISH;
-            return getTheme().getMessages("admin-messages", locale);
-        } catch (IOException e) {
-            throw new WebApplicationException("Failed to load message bundle", e);
-        }
+        return AdminRoot.getMessages(session, realm, "admin-messages", lang);
     }
+
 }
