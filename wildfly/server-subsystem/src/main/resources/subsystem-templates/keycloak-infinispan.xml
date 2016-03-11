@@ -26,7 +26,9 @@
         <replacement placeholder="CACHE-CONTAINERS">
             <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
                 <local-cache name="realms"/>
-                <local-cache name="users"/>
+                <local-cache name="users">
+                    <eviction max-entries="10000" strategy="LRU"/>
+                </local-cache>
                 <local-cache name="sessions"/>
                 <local-cache name="offlineSessions"/>
                 <local-cache name="loginFailures"/>
@@ -87,7 +89,9 @@
             <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
                 <transport lock-timeout="60000"/>
                 <invalidation-cache name="realms" mode="SYNC"/>
-                <invalidation-cache name="users" mode="SYNC"/>
+                <invalidation-cache name="users" mode="SYNC">
+                    <eviction max-entries="10000" strategy="LRU"/>
+                </invalidation-cache>
                 <distributed-cache name="sessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
