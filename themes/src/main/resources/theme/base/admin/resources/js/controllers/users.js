@@ -506,8 +506,8 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, RequiredA
                 $scope.password = null;
                 $scope.confirmPassword = null;
             }, function(response) {
-                if (response.data && response.data.errorMessage) {
-                    Notifications.error(response.data.errorMessage);
+                if (response.data && response.data['error_description']) {
+                    Notifications.error(response.data['error_description']);
                 } else {
                     Notifications.error("Failed to reset user password");
                 }
