@@ -11,7 +11,7 @@ ping 127.0.0.1 -n 3 > nul
 
 :wait_for_jboss
 ping 127.0.0.1 -n 1 > nul
-set I=%I%+1
+set /a I=%I%+1
 call %JBOSS_HOME%\bin\jboss-cli.bat -c --command=":read-attribute(name=server-state)" | findstr "running"
 if %I% gtr %TIMEOUT% (
     set ERROR=1
