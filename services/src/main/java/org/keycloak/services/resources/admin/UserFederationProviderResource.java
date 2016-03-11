@@ -373,7 +373,7 @@ public class UserFederationProviderResource {
     private void validateModel(UserFederationMapperModel model) {
         try {
             UserFederationMapperFactory mapperFactory = (UserFederationMapperFactory) session.getKeycloakSessionFactory().getProviderFactory(UserFederationMapper.class, model.getFederationMapperType());
-            mapperFactory.validateConfig(realm, model);
+            mapperFactory.validateConfig(realm, federationProviderModel, model);
         } catch (FederationConfigValidationException ex) {
             logger.error(ex.getMessage());
             Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());

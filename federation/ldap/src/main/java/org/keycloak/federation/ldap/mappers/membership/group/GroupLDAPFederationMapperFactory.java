@@ -186,7 +186,7 @@ public class GroupLDAPFederationMapperFactory extends AbstractLDAPFederationMapp
     }
 
     @Override
-    public void validateConfig(RealmModel realm, UserFederationMapperModel mapperModel) throws FederationConfigValidationException {
+    public void validateConfig(RealmModel realm, UserFederationProviderModel fedProviderModel, UserFederationMapperModel mapperModel) throws FederationConfigValidationException {
         checkMandatoryConfigAttribute(GroupMapperConfig.GROUPS_DN, "LDAP Groups DN", mapperModel);
         checkMandatoryConfigAttribute(GroupMapperConfig.MODE, "Mode", mapperModel);
 

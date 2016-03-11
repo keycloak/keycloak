@@ -53,10 +53,11 @@ public interface UserFederationMapperFactory extends ProviderFactory<UserFederat
      * Called when instance of mapperModel is created for this factory through admin endpoint
      *
      * @param realm
+     * @param fedProviderModel
      * @param mapperModel
      * @throws FederationConfigValidationException if configuration provided in mapperModel is not valid
      */
-    void validateConfig(RealmModel realm, UserFederationMapperModel mapperModel) throws FederationConfigValidationException;
+    void validateConfig(RealmModel realm, UserFederationProviderModel fedProviderModel, UserFederationMapperModel mapperModel) throws FederationConfigValidationException;
 
     /**
      * Used to detect what are default values for ProviderConfigProperties specified during mapper creation

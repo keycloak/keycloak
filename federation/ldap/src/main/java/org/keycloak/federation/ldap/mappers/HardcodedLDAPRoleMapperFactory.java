@@ -77,7 +77,7 @@ public class HardcodedLDAPRoleMapperFactory extends AbstractLDAPFederationMapper
     }
 
     @Override
-    public void validateConfig(RealmModel realm, UserFederationMapperModel mapperModel) throws FederationConfigValidationException {
+    public void validateConfig(RealmModel realm, UserFederationProviderModel fedProviderModel, UserFederationMapperModel mapperModel) throws FederationConfigValidationException {
         String roleName = mapperModel.getConfig().get(HardcodedLDAPRoleMapper.ROLE);
         if (roleName == null) {
             throw new FederationConfigValidationException("Role can't be null");
