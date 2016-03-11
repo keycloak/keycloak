@@ -29,20 +29,9 @@
     <packaging>pom</packaging>
     <name>Servers</name>
 
-    <profiles>
-        <profile>
-            <id>auth-server-jboss</id>
-            <modules>
-                <module>auth-server-jboss</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>auth-server-jboss-cluster</id>
-            <modules>
-                <module>auth-server-jboss</module>
-                <module>wildfly-balancer</module>
-            </modules>
-        </profile>
-    </profiles>    
+    <modules>
+        <module>auth-server</module>
+        <module>app-server</module>
+    </modules>
 
 </project>

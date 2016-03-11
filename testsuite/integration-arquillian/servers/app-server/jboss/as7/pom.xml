@@ -20,17 +20,26 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-servers</artifactId>
+        <artifactId>integration-arquillian-servers-app-server-jboss</artifactId>
         <version>2.0.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-app-server</artifactId>
+    <artifactId>integration-arquillian-servers-app-server-as7</artifactId>
     <packaging>pom</packaging>
-    <name>App Server</name>
-
-    <modules>
-        <module>jboss</module>
-    </modules>
+    <name>App Server - JBoss - JBossAS 7</name>
+    
+    <properties>
+        
+        <!-- NOTE: Doesn't work with JDK 8. Use: -Dapp.server.java.home=PATH_TO_JDK_7_HOME -->
+        
+        <app.server.jboss.groupId>org.jboss.as</app.server.jboss.groupId>
+        <app.server.jboss.artifactId>jboss-as-dist</app.server.jboss.artifactId>
+        <app.server.jboss.version>${jboss.as.version}</app.server.jboss.version>
+        <app.server.jboss.unpacked.folder.name>jboss-as-${jboss.as.version}</app.server.jboss.unpacked.folder.name>
+        
+        <app.server.oidc.adapter.artifactId>keycloak-as7-adapter-dist</app.server.oidc.adapter.artifactId>
+        <app.server.saml.adapter.artifactId>keycloak-saml-as7-adapter-dist</app.server.saml.adapter.artifactId>
+    </properties>
 
 </project>

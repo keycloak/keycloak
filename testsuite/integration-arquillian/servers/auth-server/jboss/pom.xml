@@ -20,14 +20,14 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-servers</artifactId>
+        <artifactId>integration-arquillian-servers-auth-server</artifactId>
         <version>2.0.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <packaging>pom</packaging>
     
-    <artifactId>integration-arquillian-auth-server-jboss</artifactId>
+    <artifactId>integration-arquillian-servers-auth-server-jboss</artifactId>
     
     <name>Auth Server - JBoss (Wildfly/EAP)</name>
     

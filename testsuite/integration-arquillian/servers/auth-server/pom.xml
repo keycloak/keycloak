@@ -25,9 +25,9 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-app-server</artifactId>
+    <artifactId>integration-arquillian-servers-auth-server</artifactId>
     <packaging>pom</packaging>
-    <name>App Server</name>
+    <name>Auth Server</name>
 
     <modules>
         <module>jboss</module>
