@@ -26,12 +26,14 @@ import java.util.Map;
 
 import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
+import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.mappers.AbstractLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.AbstractLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.federation.ldap.mappers.membership.MembershipType;
 import org.keycloak.federation.ldap.mappers.membership.UserRolesRetrieveStrategy;
-import org.keycloak.mappers.MapperConfigValidationException;
+import org.keycloak.federation.ldap.mappers.membership.group.GroupMapperConfig;
+import org.keycloak.mappers.FederationConfigValidationException;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
@@ -178,7 +180,7 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
     }
 
     @Override
-    public void validateConfig(RealmModel realm, UserFederationMapperModel mapperModel) throws MapperConfigValidationException {
+    public void validateConfig(RealmModel realm, UserFederationProviderModel fedProviderModel, UserFederationMapperModel mapperModel) throws FederationConfigValidationException {
         checkMandatoryConfigAttribute(RoleMapperConfig.ROLES_DN, "LDAP Roles DN", mapperModel);
         checkMandatoryConfigAttribute(RoleMapperConfig.MODE, "Mode", mapperModel);
 
@@ -187,14 +189,11 @@ public class RoleLDAPFederationMapperFactory extends AbstractLDAPFederationMappe
         if (!useRealmMappings) {
             String clientId = mapperModel.getConfig().get(RoleMapperConfig.CLIENT_ID);
             if (clientId == null || clientId.trim().isEmpty()) {
-                throw new MapperConfigValidationException("Client ID needs to be provided in config when Realm Roles Mapping is not used");
+                throw new FederationConfigValidationException("ldapErrorMissingClientId");
             }
         }
 
-        String customLdapFilter = mapperModel.getConfig().get(RoleMapperConfig.ROLES_LDAP_FILTER);
-        if ((customLdapFilter != null && customLdapFilter.trim().length() > 0) && (!customLdapFilter.startsWith("(") || !customLdapFilter.endsWith(")"))) {
-            throw new MapperConfigValidationException("Custom Roles LDAP filter must starts with '(' and ends with ')'");
-        }
+        LDAPUtils.validateCustomLdapFilter(mapperModel.getConfig().get(RoleMapperConfig.ROLES_LDAP_FILTER));
     }
 
     @Override

@@ -40,6 +40,8 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     public static final String LDAP_FULL_NAME_ATTRIBUTE = "ldap.full.name.attribute";
     public static final String READ_ONLY = "read.only";
+    public static final String WRITE_ONLY = "write.only";
+
 
     public FullNameLDAPFederationMapper(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, RealmModel realm) {
         super(mapperModel, ldapProvider, realm);
@@ -47,6 +49,10 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     @Override
     public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, boolean isCreate) {
+        if (isWriteOnly()) {
+            return;
+        }
+
         String ldapFullNameAttrName = getLdapFullNameAttrName();
         String fullName = ldapUser.getAttributeAsString(ldapFullNameAttrName);
         if (fullName == null) {
@@ -117,6 +123,10 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     @Override
     public void beforeLDAPQuery(LDAPQuery query) {
+        if (isWriteOnly()) {
+            return;
+        }
+
         String ldapFullNameAttrName = getLdapFullNameAttrName();
         query.addReturningLdapAttribute(ldapFullNameAttrName);
 
@@ -177,5 +187,9 @@ public class FullNameLDAPFederationMapper extends AbstractLDAPFederationMapper {
 
     private boolean isReadOnly() {
         return parseBooleanParameter(mapperModel, READ_ONLY);
+    }
+
+    private boolean isWriteOnly() {
+        return parseBooleanParameter(mapperModel, WRITE_ONLY);
     }
 }
