@@ -29,7 +29,7 @@
 
     <artifactId>integration-arquillian-tests-adapters</artifactId>
 
-    <packaging>pom</packaging>
+    <!--<packaging>pom</packaging>-->
 
     <name>Adapter Tests</name>
     
