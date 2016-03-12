@@ -187,6 +187,25 @@
             </build>
         </profile>
         
+        <profile>
+            <id>app-server-karaf3</id>
+            <modules>
+                <module>karaf3</module>
+            </modules>
+        </profile>        
+        <profile>
+            <id>app-server-fuse61</id>
+            <modules>
+                <module>fuse61</module>
+            </modules>
+        </profile>        
+        <profile>
+            <id>app-server-fuse62</id>
+            <modules>
+                <module>fuse62</module>
+            </modules>
+        </profile>        
+        
     </profiles>
 
 </project>
