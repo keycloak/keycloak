@@ -24,6 +24,10 @@ goto wait_for_karaf
 
 :install_features
 echo "Server is reachable. Installing features."
+if "%UNINSTALL_PAX%" == "true" (
+    call client.bat %CLIENT_AUTH% -f uninstall-pax.cli
+    if %ERRORLEVEL% neq 0 set ERROR=%ERRORLEVEL%
+)
 call client.bat %CLIENT_AUTH% -f install-features.cli
 if %ERRORLEVEL% neq 0 set ERROR=%ERRORLEVEL%
 
