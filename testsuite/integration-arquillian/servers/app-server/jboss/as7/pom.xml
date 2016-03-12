@@ -44,6 +44,30 @@
         
         <app.server.oidc.adapter.artifactId>keycloak-as7-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-as7-adapter-dist</app.server.saml.adapter.artifactId>
+        
+        <app.server.java.home>${java7.home}</app.server.java.home>
     </properties>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireProperty>
+                                    <property>java7.home</property>
+                                </requireProperty>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
