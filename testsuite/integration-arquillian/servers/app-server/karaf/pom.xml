@@ -64,6 +64,10 @@
                                             <property>app.server.karaf.version</property>
                                             <property>app.server.karaf.unpacked.folder.name</property>
                                         </requireProperty>
+                                        <requireOS>
+                                            <family>!windows</family>
+                                            <message>Automated Kara/Fuse adapter configuration currently doesn't work on Windows.</message>
+                                        </requireOS>
                                     </rules>
                                 </configuration>
                             </execution>
