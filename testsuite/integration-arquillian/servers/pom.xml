@@ -35,6 +35,8 @@
         <!--app container versions-->        
         <wildfly9.version>9.0.2.Final</wildfly9.version>
         <wildfly8.version>8.2.1.Final</wildfly8.version>
+        <eap.version>7.0.0.ER6-redhat-1</eap.version>
+        <eap6.version>7.5.6.Final-redhat-2</eap6.version>
         <jboss.as.version>7.1.1.Final</jboss.as.version>
         <eap6.version>7.5.6.Final-redhat-2</eap6.version>
         <tomcat7.version>7.0.68</tomcat7.version>
