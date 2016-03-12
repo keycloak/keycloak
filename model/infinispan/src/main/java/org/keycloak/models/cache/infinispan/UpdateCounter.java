@@ -9,13 +9,13 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class UpdateCounter {
 
-    private static final AtomicLong counter = new AtomicLong();
+    private final AtomicLong counter = new AtomicLong();
 
-    public static long current() {
+    public long current() {
         return counter.get();
     }
 
-    public static long next() {
+    public long next() {
         return counter.incrementAndGet();
     }
 

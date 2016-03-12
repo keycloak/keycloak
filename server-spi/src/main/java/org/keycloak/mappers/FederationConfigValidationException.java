@@ -15,35 +15,33 @@
  * limitations under the License.
  */
 
-package org.keycloak.messages;
-
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
+package org.keycloak.mappers;
 
 /**
- * @author <a href="mailto:leonardo.zanivan@gmail.com">Leonardo Zanivan</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MessagesSpi implements Spi {
+public class FederationConfigValidationException extends Exception {
 
-    @Override
-    public boolean isInternal() {
-        return true;
+    private Object[] parameters;
+
+    public FederationConfigValidationException(String message) {
+        super(message);
     }
 
-    @Override
-    public String getName() {
-        return "messages";
+    public FederationConfigValidationException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    @Override
-    public Class<? extends Provider> getProviderClass() {
-        return MessagesProvider.class;
+    public FederationConfigValidationException(String message, Object ... parameters) {
+        super(message);
+        this.parameters = parameters;
     }
 
-    @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return MessagesProviderFactory.class;
+    public Object[] getParameters() {
+        return parameters;
     }
 
+    public void setParameters(Object[] parameters) {
+        this.parameters = parameters;
+    }
 }

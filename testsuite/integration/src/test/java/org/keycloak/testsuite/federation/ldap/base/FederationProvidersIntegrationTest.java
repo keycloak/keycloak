@@ -29,6 +29,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
+import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
@@ -521,7 +522,7 @@ public class FederationProvidersIntegrationTest {
 
             UserFederationMapperModel fullNameMapperModel = KeycloakModelUtils.createUserFederationMapperModel("full name", ldapModel.getId(), FullNameLDAPFederationMapperFactory.PROVIDER_ID,
                     FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, ldapFirstNameAttributeName,
-                    UserAttributeLDAPFederationMapper.READ_ONLY, "false");
+                    FullNameLDAPFederationMapper.READ_ONLY, "false");
             appRealm.addUserFederationMapper(fullNameMapperModel);
         } finally {
             keycloakRule.stopSession(session, true);
@@ -533,6 +534,36 @@ public class FederationProvidersIntegrationTest {
 
             // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
             FederationTestUtils.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578");
+
+            // change mapper to writeOnly
+            UserFederationMapperModel fullNameMapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "full name");
+            fullNameMapperModel.getConfig().put(FullNameLDAPFederationMapper.WRITE_ONLY, "true");
+            appRealm.updateUserFederationMapper(fullNameMapperModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+
+        // Assert changing user in Keycloak will change him in LDAP too...
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);
+            fullnameUser.setFirstName("James2");
+            fullnameUser.setLastName("Dee2");
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+
+        // Assert changed user available in Keycloak
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
+            FederationTestUtils.assertUserImported(session.users(), appRealm, "fullname", "James2", "Dee2", "fullname@email.org", "4578");
 
             // Remove "fullnameUser" to assert he is removed from LDAP. Revert mappers to previous state
             UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);

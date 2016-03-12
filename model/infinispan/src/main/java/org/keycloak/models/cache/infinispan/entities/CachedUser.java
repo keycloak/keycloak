@@ -34,8 +34,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedUser implements Serializable {
-    private String id;
+public class CachedUser extends AbstractRevisioned implements InRealm  {
     private String realm;
     private String username;
     private Long createdTimestamp;
@@ -53,8 +52,10 @@ public class CachedUser implements Serializable {
     private Set<String> roleMappings = new HashSet<>();
     private Set<String> groups = new HashSet<>();
 
-    public CachedUser(RealmModel realm, UserModel user) {
-        this.id = user.getId();
+
+
+    public CachedUser(Long revision, RealmModel realm, UserModel user) {
+        super(revision, user.getId());
         this.realm = realm.getId();
         this.username = user.getUsername();
         this.createdTimestamp = user.getCreatedTimestamp();
@@ -78,10 +79,6 @@ public class CachedUser implements Serializable {
                 groups.add(group.getId());
             }
         }
-    }
-
-    public String getId() {
-        return id;
     }
 
     public String getRealm() {

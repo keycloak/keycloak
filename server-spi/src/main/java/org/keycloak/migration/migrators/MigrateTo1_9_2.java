@@ -15,13 +15,23 @@
  * limitations under the License.
  */
 
-package org.keycloak.messages;
+package org.keycloak.migration.migrators;
 
-import org.keycloak.provider.ProviderFactory;
+import org.keycloak.migration.ModelVersion;
+import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 
-/**
- * @author <a href="mailto:leonardo.zanivan@gmail.com">Leonardo Zanivan</a>
- */
-public interface MessagesProviderFactory extends ProviderFactory<MessagesProvider> {
+public class MigrateTo1_9_2 {
+
+    public static final ModelVersion VERSION = new ModelVersion("1.9.2");
+
+    public void migrate(KeycloakSession session) {
+        for (RealmModel realm : session.realms().getRealms()) {
+            if (realm.getBrowserSecurityHeaders() != null) {
+                realm.getBrowserSecurityHeaders().put("xFrameOptions", "nosniff");
+            }
+        }
+    }
 
 }

@@ -9,18 +9,25 @@
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
         <fieldset class="border-top">
             <div class="form-group">
-                <label class="col-md-2 control-label" for="xFrameOptions"><a href="http://tools.ietf.org/html/rfc7034">{{:: 'x-frame-options' | translate}}</a></label>
+                <label class="col-md-2 control-label" for="xFrameOptions"><a href="http://tools.ietf.org/html/rfc7034" target="_blank">{{:: 'x-frame-options' | translate}}</a></label>
                 <div class="col-sm-6">
                     <input class="form-control" id="xFrameOptions" type="text" ng-model="realm.browserSecurityHeaders.xFrameOptions">
                 </div>
-                <kc-tooltip>{{:: 'click-label-for-info' | translate}}</kc-tooltip>
+                <kc-tooltip>{{:: 'x-frame-options-tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="contentSecurityPolicy"><a href="http://www.w3.org/TR/CSP/">{{:: 'content-sec-policy' | translate}}</a></label>
+                <label class="col-md-2 control-label" for="contentSecurityPolicy"><a href="http://www.w3.org/TR/CSP/" target="_blank">{{:: 'content-sec-policy' | translate}}</a></label>
                 <div class="col-sm-6">
                     <input class="form-control" id="contentSecurityPolicy" type="text" ng-model="realm.browserSecurityHeaders.contentSecurityPolicy">
                 </div>
-                <kc-tooltip>{{:: 'click-label-for-info' | translate}}</kc-tooltip>
+                <kc-tooltip>{{:: 'content-sec-policy-tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="xContentTypeOptions"><a href="https://www.owasp.org/index.php/List_of_useful_HTTP_headers">{{:: 'content-type-options' | translate}}</a></label>
+                <div class="col-sm-6">
+                    <input class="form-control" id="xContentTypeOptions" type="text" ng-model="realm.browserSecurityHeaders.xContentTypeOptions">
+                </div>
+                <kc-tooltip>{{:: 'content-type-options-tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
         <div class="form-group" data-ng-show="access.manageRealm">
