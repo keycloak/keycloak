@@ -10,14 +10,15 @@ ping 127.0.0.1 -n 3 > nul
 
 
 :wait_for_jboss
+call %JBOSS_HOME%\bin\jboss-cli.bat -c --command=":read-attribute(name=server-state)" | findstr "running"
+if %ERRORLEVEL% equ 0 goto install_adapters
 ping 127.0.0.1 -n 1 > nul
 set /a I=%I%+1
-call %JBOSS_HOME%\bin\jboss-cli.bat -c --command=":read-attribute(name=server-state)" | findstr "running"
 if %I% gtr %TIMEOUT% (
     set ERROR=1
     goto shutdown_jboss
 )
-if %ERRORLEVEL% neq 0 goto wait_for_jboss
+goto wait_for_jboss
 
 
 :install_adapters

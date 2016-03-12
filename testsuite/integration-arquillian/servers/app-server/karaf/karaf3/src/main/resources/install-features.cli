@@ -1,0 +1,5 @@
+feature:repo-add mvn:org.apache.camel.karaf/apache-camel/2.15.1/xml/features
+feature:repo-add mvn:org.apache.cxf.karaf/apache-cxf/3.0.4/xml/features
+feature:repo-add mvn:org.keycloak/keycloak-osgi-features/${project.version}/xml/features
+feature:repo-add mvn:org.keycloak.example.demo/keycloak-fuse-example-features/${project.version}/xml/features
+feature:install keycloak-fuse-example

@@ -20,22 +20,21 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-servers</artifactId>
+        <artifactId>integration-arquillian-servers-app-server-karaf</artifactId>
         <version>2.0.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-app-server</artifactId>
+    <artifactId>integration-arquillian-servers-app-server-karaf3</artifactId>
     <packaging>pom</packaging>
-    <name>App Server</name>
+    <name>App Server - Karaf - Karaf 3</name>
 
     <properties>
-        <app.server.java.home>${java.home}</app.server.java.home>
-        <app.server.saml.adapter.supported>false</app.server.saml.adapter.supported>
+        <app.server.karaf>karaf3</app.server.karaf>
+        <app.server.karaf.groupId>org.apache.karaf</app.server.karaf.groupId>
+        <app.server.karaf.artifactId>apache-karaf-minimal</app.server.karaf.artifactId>
+        <app.server.karaf.version>${karaf3.version}</app.server.karaf.version>
+        <app.server.karaf.unpacked.folder.name>apache-karaf-minimal-${karaf3.version}</app.server.karaf.unpacked.folder.name>
     </properties>
-
-    <modules>
-        <module>jboss</module>
-    </modules>
 
 </project>

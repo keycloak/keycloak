@@ -29,6 +29,10 @@
     <packaging>pom</packaging>
     <name>Servers</name>
 
+    <properties>
+        <script.suffix>sh</script.suffix>
+    </properties>
+
     <modules>
         <module>auth-server</module>
         <module>app-server</module>
@@ -41,6 +45,19 @@
                 <module>wildfly-balancer</module>
             </modules>
         </profile>
+        
+        <profile>
+            <id>win</id>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <properties>        
+                <script.suffix>bat</script.suffix>
+            </properties>
+        </profile>
+
     </profiles>
     
 </project>

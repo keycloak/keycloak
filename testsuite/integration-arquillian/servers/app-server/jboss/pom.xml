@@ -30,28 +30,13 @@
     <name>App Server - JBoss</name>
 
     <properties>
-        <script.suffix>sh</script.suffix>
         <common.config.resources>${project.parent.basedir}/common</common.config.resources>
         <app.server.jboss.home>${containers.home}/${app.server.jboss.unpacked.folder.name}</app.server.jboss.home>
         <app.server.jboss.classifier/>
-        <app.server.saml.adapter.supported>false</app.server.saml.adapter.supported>
         <app.server.jboss.append.assembly.id>false</app.server.jboss.append.assembly.id>
-        <app.server.java.home>${java.home}</app.server.java.home>
     </properties>
 
     <profiles>
-        
-        <profile>
-            <id>win</id>
-            <activation>
-                <os>
-                    <family>Windows</family>
-                </os>
-            </activation>
-            <properties>        
-                <script.suffix>bat</script.suffix>
-            </properties>
-        </profile>
         
         <profile>
             <id>app-server-jboss-submodules</id>
@@ -67,7 +52,6 @@
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>enforce-auth-server-jboss-profile</id>
                                 <goals>
                                     <goal>enforce</goal>
                                 </goals>
@@ -191,7 +175,6 @@
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>enforce-auth-server-jboss-profile</id>
                                 <goals>
                                     <goal>enforce</goal>
                                 </goals>

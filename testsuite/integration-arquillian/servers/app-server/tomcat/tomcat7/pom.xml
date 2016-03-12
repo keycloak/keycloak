@@ -20,22 +20,25 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-servers</artifactId>
+        <artifactId>integration-arquillian-servers-app-server-tomcat</artifactId>
         <version>2.0.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-app-server</artifactId>
+    <artifactId>integration-arquillian-servers-app-server-tomcat7</artifactId>
     <packaging>pom</packaging>
-    <name>App Server</name>
+    <name>App Server - Tomcat - Tomcat 7</name>
 
     <properties>
-        <app.server.java.home>${java.home}</app.server.java.home>
-        <app.server.saml.adapter.supported>false</app.server.saml.adapter.supported>
+        <app.server.tomcat>tomcat7</app.server.tomcat>
+        
+        <app.server.tomcat.groupId>org.apache.tomcat</app.server.tomcat.groupId>
+        <app.server.tomcat.artifactId>tomcat</app.server.tomcat.artifactId>
+        <app.server.tomcat.version>${tomcat7.version}</app.server.tomcat.version>
+        <app.server.tomcat.unpacked.folder.name>apache-tomcat-${tomcat7.version}</app.server.tomcat.unpacked.folder.name>
+        
+        <app.server.oidc.adapter.artifactId>keycloak-tomcat7-adapter-dist</app.server.oidc.adapter.artifactId>
+        <app.server.saml.adapter.artifactId>keycloak-saml-tomcat7-adapter-dist</app.server.saml.adapter.artifactId>
     </properties>
-
-    <modules>
-        <module>jboss</module>
-    </modules>
 
 </project>
