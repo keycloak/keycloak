@@ -30,10 +30,9 @@
     <name>App Server - JBoss</name>
 
     <properties>
-        <common.config.resources>${project.parent.basedir}/common</common.config.resources>
+        <common.resources>${project.parent.basedir}/common</common.resources>
+        <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
         <app.server.jboss.home>${containers.home}/${app.server.jboss.unpacked.folder.name}</app.server.jboss.home>
-        <app.server.jboss.classifier/>
-        <app.server.jboss.append.assembly.id>false</app.server.jboss.append.assembly.id>
     </properties>
 
     <profiles>
@@ -62,7 +61,6 @@
                                             <property>app.server.jboss.groupId</property>
                                             <property>app.server.jboss.artifactId</property>
                                             <property>app.server.jboss.version</property>
-                                            <property>app.server.jboss.classifier</property>
                                             <property>app.server.jboss.unpacked.folder.name</property>
                                             <property>app.server.oidc.adapter.artifactId</property>
                                         </requireProperty>
@@ -87,7 +85,6 @@
                                             <groupId>${app.server.jboss.groupId}</groupId>
                                             <artifactId>${app.server.jboss.artifactId}</artifactId>
                                             <version>${app.server.jboss.version}</version>
-                                            <classifier>${app.server.jboss.classifier}</classifier>
                                             <type>zip</type>
                                             <outputDirectory>${containers.home}</outputDirectory>
                                         </artifactItem>
@@ -121,7 +118,7 @@
                                             <includes>
                                                 <include>standalone.xml</include>
                                             </includes>
-                                            <stylesheet>${common.config.resources}/add-adapter-log-level.xsl</stylesheet>
+                                            <stylesheet>${common.resources}/add-adapter-log-level.xsl</stylesheet>
                                             <outputDir>${app.server.jboss.home}/standalone/configuration</outputDir>
                                         </transformationSet>
                                     </transformationSets>
@@ -146,10 +143,9 @@
                                 </goals>
                                 <configuration>
                                     <descriptors>
-                                        <!--runs from submodules, needs to access parent assembly.xml-->
-                                        <descriptor>../assembly.xml</descriptor>
+                                        <descriptor>${assembly.xml}</descriptor>
                                     </descriptors>
-                                    <appendAssemblyId>${app,server.jboss.append.assembly.id}</appendAssemblyId>
+                                    <appendAssemblyId>false</appendAssemblyId>
                                 </configuration>
                             </execution>
                         </executions>
@@ -239,7 +235,7 @@
                                 </execution>
                             </executions>
                             <configuration>
-                                <executable>${common.config.resources}/install-adapters.${script.suffix}</executable>
+                                <executable>${common.resources}/install-adapters.${script.suffix}</executable>
                                 <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                                 <environmentVariables>
                                     <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
@@ -286,7 +282,7 @@
                                                 <includes>
                                                     <include>standalone.xml</include>
                                                 </includes>
-                                                <stylesheet>${common.config.resources}/security.xsl</stylesheet>
+                                                <stylesheet>${common.resources}/security.xsl</stylesheet>
                                                 <outputDir>${app.server.jboss.home}/standalone/configuration</outputDir>
                                             </transformationSet>
                                         </transformationSets>
@@ -307,7 +303,7 @@
                                         <outputDirectory>${app.server.jboss.home}/standalone/configuration</outputDirectory>
                                         <resources>
                                             <resource>
-                                                <directory>${common.config.resources}/keystore</directory>
+                                                <directory>${common.resources}/keystore</directory>
                                                 <includes>
                                                     <include>adapter.jks</include>
                                                     <include>keycloak.truststore</include>
@@ -364,9 +360,9 @@
             </modules>
         </profile>
         <profile>
-            <id>app-server-jboss-relative</id>
+            <id>app-server-relative</id>
             <modules>
-                <module>jboss-relative</module>
+                <module>relative</module>
             </modules>
         </profile>        
     </profiles>    

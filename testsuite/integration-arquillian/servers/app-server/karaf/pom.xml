@@ -30,7 +30,8 @@
     <name>App Server - Karaf</name>
     
     <properties>
-        <common.config.resources>${project.parent.basedir}/common</common.config.resources>
+        <common.resources>${project.parent.basedir}/common</common.resources>
+        <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
         <app.server.karaf.home>${containers.home}/${app.server.karaf.unpacked.folder.name}</app.server.karaf.home>
         <app.server.karaf.client.auth>-u karaf</app.server.karaf.client.auth>
         <app.server.karaf.uninstall.pax>false</app.server.karaf.uninstall.pax>
@@ -155,7 +156,7 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <executable>${common.config.resources}/install-features.${script.suffix}</executable>
+                            <executable>${common.resources}/install-features.${script.suffix}</executable>
                             <workingDirectory>${app.server.karaf.home}/bin</workingDirectory>
                             <environmentVariables>
                                 <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
@@ -175,8 +176,7 @@
                                 </goals>
                                 <configuration>
                                     <descriptors>
-                                        <!--runs from submodules, needs to access parent assembly.xml-->
-                                        <descriptor>../assembly.xml</descriptor>
+                                        <descriptor>${assembly.xml}</descriptor>
                                     </descriptors>
                                     <appendAssemblyId>false</appendAssemblyId>
                                 </configuration>

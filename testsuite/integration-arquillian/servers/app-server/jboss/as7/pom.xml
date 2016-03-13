@@ -33,7 +33,7 @@
         
         <!-- NOTE: AS7 doesn't work with JDK 8. Use: -Dapp.server.java.home=PATH_TO_JDK_7_HOME -->
         
-        <!-- NOTE: AS7 SSL configuration doesn't work. See: https://issues.jboss.org/browse/AS7-4698 -->
+        <!-- NOTE: SSL configuration doesn't work for AS 7.1.1. See: https://issues.jboss.org/browse/AS7-4698 -->
         
         <app.server.jboss>as7</app.server.jboss>
         

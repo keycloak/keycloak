@@ -35,7 +35,6 @@
     <name>Keycloak Arquillian Integration TestSuite</name>
     
     <properties>
-        <auth.server.jboss.classifier>wildfly</auth.server.jboss.classifier>
         
         <containers.home>${project.build.directory}/containers</containers.home>
         
@@ -101,15 +100,6 @@
             </plugins>
         </pluginManagement>
     </build>
-    
-    <profiles>
-        <profile>
-            <id>auth-server-jboss-eap7</id>
-            <properties>
-                <auth.server.jboss.classifier>eap7</auth.server.jboss.classifier>
-            </properties>
-        </profile>
-    </profiles>
     
     <modules>
         <module>servers</module>

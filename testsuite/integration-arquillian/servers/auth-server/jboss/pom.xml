@@ -29,23 +29,22 @@
     
     <artifactId>integration-arquillian-servers-auth-server-jboss</artifactId>
     
-    <name>Auth Server - JBoss (Wildfly/EAP)</name>
+    <name>Auth Server - JBoss</name>
     
-    <description>Keycloak Server on Wildfly/EAP</description>
-
     <properties>
-        <xslt.resources>src/main/xslt/${auth.server.jboss.classifier}</xslt.resources>
+        <common.resources>${project.parent.basedir}/common</common.resources>
+        <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
         
         <!--server-dist-->
-        <keycloak.server.dist.groupId>org.keycloak</keycloak.server.dist.groupId>
-        <keycloak.server.dist.artifactId>keycloak-server-dist</keycloak.server.dist.artifactId>
-        <keycloak.server.dist.version>${project.version}</keycloak.server.dist.version>
-        <keycloak.server.dist.unpacked.folder.name>keycloak-${keycloak.server.dist.version}</keycloak.server.dist.unpacked.folder.name>
+        <auth.server.dist.groupId>org.keycloak</auth.server.dist.groupId>
+        <auth.server.dist.artifactId>keycloak-server-dist</auth.server.dist.artifactId>
+        <auth.server.dist.version>${project.version}</auth.server.dist.version>
+        <auth.server.dist.unpacked.folder.name>keycloak-${auth.server.dist.version}</auth.server.dist.unpacked.folder.name>
         
         <!--server-overlay-->
-        <keycloak.server.overlay.groupId>org.keycloak</keycloak.server.overlay.groupId>
-        <keycloak.server.overlay.artifactId>keycloak-server-overlay</keycloak.server.overlay.artifactId>
-        <keycloak.server.overlay.version>${project.version}</keycloak.server.overlay.version>
+        <auth.server.overlay.groupId>org.keycloak</auth.server.overlay.groupId>
+        <auth.server.overlay.artifactId>keycloak-server-overlay</auth.server.overlay.artifactId>
+        <auth.server.overlay.version>${project.version}</auth.server.overlay.version>
 
         <overlaid.container.groupId>org.wildfly</overlaid.container.groupId>
         <overlaid.container.artifactId>wildfly-dist</overlaid.container.artifactId>
@@ -53,102 +52,82 @@
         <overlaid.container.unpacked.folder.name>wildfly-${overlaid.container.version}</overlaid.container.unpacked.folder.name>
                                 
         <!--actual unpacked artifact: server-dist by default, overriden in server-overlay profile-->
-        <unpacked.artifact.groupId>${keycloak.server.dist.groupId}</unpacked.artifact.groupId>
-        <unpacked.artifact.artifactId>${keycloak.server.dist.artifactId}</unpacked.artifact.artifactId>
-        <unpacked.artifact.version>${keycloak.server.dist.version}</unpacked.artifact.version>
-        <keycloak.server.home>${project.build.directory}/unpacked/${keycloak.server.dist.unpacked.folder.name}</keycloak.server.home>
+        <unpacked.artifact.groupId>${auth.server.dist.groupId}</unpacked.artifact.groupId>
+        <unpacked.artifact.artifactId>${auth.server.dist.artifactId}</unpacked.artifact.artifactId>
+        <unpacked.artifact.version>${auth.server.dist.version}</unpacked.artifact.version>
+        
+        <auth.server.home>${project.build.directory}/unpacked/${auth.server.dist.unpacked.folder.name}</auth.server.home>
     </properties>
                         
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>create-zip</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>assembly.xml</descriptor>
-                            </descriptors>
-                            <appendAssemblyId>true</appendAssemblyId>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>unpack-server-or-overlay</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>${unpacked.artifact.groupId}</groupId>
-                                    <artifactId>${unpacked.artifact.artifactId}</artifactId>
-                                    <version>${unpacked.artifact.version}</version>
-                                    <type>zip</type>
-                                    <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-    
     <profiles>
 
-        <!-- OPT-IN -->
         <profile>
-            <id>auth-server-jboss-eap7</id>
-            <properties>
-                <!--server-dist-->
-                <keycloak.server.dist.version>${product.version}</keycloak.server.dist.version>
-                <keycloak.server.dist.unpacked.folder.name>${product.unpacked.folder.name}</keycloak.server.dist.unpacked.folder.name>
-
-                <!--server-overlay-->
-                <keycloak.server.overlay.version>${product.version}</keycloak.server.overlay.version>
-                <overlaid.container.groupId>org.jboss.eap</overlaid.container.groupId>
-                <overlaid.container.version>${eap.version}</overlaid.container.version>
-                <overlaid.container.unpacked.folder.name>jboss-eap-7.0</overlaid.container.unpacked.folder.name>
-            </properties>
+            <id>auth-server-jboss-submodules</id>
+            <activation>
+                <file>
+                    <exists>src</exists>
+                </file>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>enforce-auth-server-jboss-profile</id>
+                                <id>unpack-server-or-overlay</id>
+                                <phase>generate-resources</phase>
                                 <goals>
-                                    <goal>enforce</goal>
+                                    <goal>unpack</goal>
                                 </goals>
                                 <configuration>
-                                    <rules>
-                                        <requireProperty>
-                                            <property>product.version</property>
-                                        </requireProperty>
-                                        <requireProperty>
-                                            <property>product.unpacked.folder.name</property>
-                                        </requireProperty>
-                                    </rules>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>${unpacked.artifact.groupId}</groupId>
+                                            <artifactId>${unpacked.artifact.artifactId}</artifactId>
+                                            <version>${unpacked.artifact.version}</version>
+                                            <type>zip</type>
+                                            <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>create-zip</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>${assembly.xml}</descriptor>
+                                    </descriptors>
+                                    <appendAssemblyId>false</appendAssemblyId>
                                 </configuration>
                             </execution>
                         </executions>
@@ -156,6 +135,7 @@
                 </plugins>
             </build>
         </profile>
+
         
         <!-- OPT-IN -->
         <profile>
@@ -167,58 +147,60 @@
             </activation>
             <properties>
                 <!--override default unpacked artifact with server-overlay-->
-                <unpacked.artifact.groupId>${keycloak.server.overlay.groupId}</unpacked.artifact.groupId>
-                <unpacked.artifact.artifactId>${keycloak.server.overlay.artifactId}</unpacked.artifact.artifactId>
-                <unpacked.artifact.version>${keycloak.server.overlay.version}</unpacked.artifact.version>
-                <keycloak.server.home>${project.build.directory}/unpacked/${overlaid.container.unpacked.folder.name}</keycloak.server.home>
+                <unpacked.artifact.groupId>${auth.server.overlay.groupId}</unpacked.artifact.groupId>
+                <unpacked.artifact.artifactId>${auth.server.overlay.artifactId}</unpacked.artifact.artifactId>
+                <unpacked.artifact.version>${auth.server.overlay.version}</unpacked.artifact.version>
+                <auth.server.home>${project.build.directory}/unpacked/${overlaid.container.unpacked.folder.name}</auth.server.home>
             </properties>
             <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>unpack-overlaid-container</id>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>${overlaid.container.groupId}</groupId>
-                                            <artifactId>${overlaid.container.artifactId}</artifactId>
-                                            <version>${overlaid.container.version}</version>
-                                            <type>zip</type>
-                                            <outputDirectory>${keycloak.server.home}</outputDirectory>
-                                        </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.8</version>
-                        <executions>
-                            <execution>
-                                <id>move-standalone-keycloak-xml</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                                <configuration>
-                                    <tasks>
-                                        <move file="${keycloak.server.home}/standalone/configuration/standalone-keycloak.xml" 
-                                              tofile="${keycloak.server.home}/standalone/configuration/standalone.xml"/>
-                                    </tasks>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-overlaid-container</id>
+                                    <phase>generate-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>${overlaid.container.groupId}</groupId>
+                                                <artifactId>${overlaid.container.artifactId}</artifactId>
+                                                <version>${overlaid.container.version}</version>
+                                                <type>zip</type>
+                                                <outputDirectory>${auth.server.home}</outputDirectory>
+                                            </artifactItem>
+                                        </artifactItems>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-antrun-plugin</artifactId>
+                            <version>1.8</version>
+                            <executions>
+                                <execution>
+                                    <id>move-standalone-keycloak-xml</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>run</goal>
+                                    </goals>
+                                    <configuration>
+                                        <tasks>
+                                            <move file="${auth.server.home}/standalone/configuration/standalone-keycloak.xml" 
+                                                  tofile="${auth.server.home}/standalone/configuration/standalone.xml"/>
+                                        </tasks>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
             </build>
         </profile>
         
@@ -230,199 +212,203 @@
                 </property>
             </activation>
             <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>configure-adapter-subsystem-security</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <transformationSet>
-                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                            </includes>
-                                            <stylesheet>${xslt.resources}/security.xsl</stylesheet>
-                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-keystore</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${keycloak.server.home}/standalone/configuration</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>src/main/keystore</directory>
-                                            <includes>
-                                                <include>keycloak.jks</include>
-                                                <include>keycloak.truststore</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>xml-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>configure-adapter-subsystem-security</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>transform</goal>
+                                    </goals>
+                                    <configuration>
+                                        <transformationSets>
+                                            <transformationSet>
+                                                <dir>${auth.server.home}/standalone/configuration</dir>
+                                                <includes>
+                                                    <include>standalone.xml</include>
+                                                </includes>
+                                                <stylesheet>${common.resources}/security.xsl</stylesheet>
+                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
+                                            </transformationSet>
+                                        </transformationSets>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <artifactId>maven-resources-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>copy-keystore</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>copy-resources</goal>
+                                    </goals>
+                                    <configuration>
+                                        <outputDirectory>${auth.server.home}/standalone/configuration</outputDirectory>
+                                        <resources>
+                                            <resource>
+                                                <directory>${common.resources}/keystore</directory>
+                                                <includes>
+                                                    <include>keycloak.jks</include>
+                                                    <include>keycloak.truststore</include>
+                                                </includes>
+                                            </resource>
+                                        </resources>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
             </build>
         </profile>
         
         <profile>
             <id>jpa</id>
             <properties>
-                <jdbc.mvn.driver.deployment.dir>${keycloak.server.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
+                <jdbc.mvn.driver.deployment.dir>${auth.server.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
             </properties>
             <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>enforce-properties</id>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <requireProperty>
-                                            <property>jdbc.mvn.groupId</property>
-                                        </requireProperty>
-                                        <requireProperty>
-                                            <property>jdbc.mvn.artifactId</property>
-                                        </requireProperty>
-                                        <requireProperty>
-                                            <property>jdbc.mvn.version</property>
-                                        </requireProperty>
-                                        <requireProperty>
-                                            <property>keycloak.connectionsJpa.url</property>
-                                        </requireProperty>
-                                        <requireProperty>
-                                            <property>keycloak.connectionsJpa.user</property>
-                                        </requireProperty>
-                                        <requireProperty>
-                                            <property>keycloak.connectionsJpa.password</property>
-                                        </requireProperty>
-                                    </rules>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>jdbc-driver</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>copy</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>${jdbc.mvn.groupId}</groupId>
-                                            <artifactId>${jdbc.mvn.artifactId}</artifactId>        
-                                            <version>${jdbc.mvn.version}</version>
-                                            <type>jar</type>
-                                        </artifactItem>
-                                    </artifactItems>
-                                    <outputDirectory>${jdbc.mvn.driver.deployment.dir}</outputDirectory>
-                                    <overWriteIfNewer>true</overWriteIfNewer>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>configure-wildfly-datasource</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <!-- create module.xml in modules -->
-                                        <transformationSet>
-                                            <dir>${keycloak.server.home}/modules/system/layers/base/com/h2database/h2/main</dir>
-                                            <stylesheet>${xslt.resources}/module.xsl</stylesheet>
-                                            <includes>
-                                                <include>module.xml</include>
-                                            </includes>
-                                            <outputDir>${jdbc.mvn.driver.deployment.dir}</outputDir>
-                                            <parameters>
-                                                <parameter>
-                                                    <name>database</name>
-                                                    <value>${jdbc.mvn.artifactId}</value>
-                                                </parameter>
-                                                <parameter>
-                                                    <name>version</name>
-                                                    <value>${jdbc.mvn.version}</value>
-                                                </parameter>
-                                            </parameters>
-                                        </transformationSet>
-                                        <!-- add datasource to standalone.xml -->
-                                        <transformationSet>
-                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
-                                            <stylesheet>${xslt.resources}/datasource.xsl</stylesheet>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                            </includes>
-                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
-                                            <parameters>
-                                                <parameter>
-                                                    <name>jdbc.url</name>
-                                                    <value>${keycloak.connectionsJpa.url}</value>
-                                                </parameter>
-                                                <parameter>
-                                                    <name>driver</name>
-                                                    <value>${jdbc.mvn.artifactId}</value>
-                                                </parameter>
-                                                <parameter>
-                                                    <name>username</name>
-                                                    <value>${keycloak.connectionsJpa.user}</value>
-                                                </parameter>
-                                                <parameter>
-                                                    <name>password</name>
-                                                    <value>${keycloak.connectionsJpa.password}</value>
-                                                </parameter>
-                                            </parameters>
-                                        </transformationSet>
-                                        <!-- add logger for org.hibernate.dialect.Dialect -->
-                                        <transformationSet>
-                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
-                                            <stylesheet>${xslt.resources}/add-dialect-logger.xsl</stylesheet>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                            </includes>
-                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-enforcer-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>enforce-properties</id>
+                                    <goals>
+                                        <goal>enforce</goal>
+                                    </goals>
+                                    <configuration>
+                                        <rules>
+                                            <requireProperty>
+                                                <property>jdbc.mvn.groupId</property>
+                                            </requireProperty>
+                                            <requireProperty>
+                                                <property>jdbc.mvn.artifactId</property>
+                                            </requireProperty>
+                                            <requireProperty>
+                                                <property>jdbc.mvn.version</property>
+                                            </requireProperty>
+                                            <requireProperty>
+                                                <property>keycloak.connectionsJpa.url</property>
+                                            </requireProperty>
+                                            <requireProperty>
+                                                <property>keycloak.connectionsJpa.user</property>
+                                            </requireProperty>
+                                            <requireProperty>
+                                                <property>keycloak.connectionsJpa.password</property>
+                                            </requireProperty>
+                                        </rules>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>jdbc-driver</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>copy</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>${jdbc.mvn.groupId}</groupId>
+                                                <artifactId>${jdbc.mvn.artifactId}</artifactId>        
+                                                <version>${jdbc.mvn.version}</version>
+                                                <type>jar</type>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <outputDirectory>${jdbc.mvn.driver.deployment.dir}</outputDirectory>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>xml-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>configure-wildfly-datasource</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>transform</goal>
+                                    </goals>
+                                    <configuration>
+                                        <transformationSets>
+                                            <!-- create module.xml in modules -->
+                                            <transformationSet>
+                                                <dir>${auth.server.home}/modules/system/layers/base/com/h2database/h2/main</dir>
+                                                <stylesheet>src/main/resources/module.xsl</stylesheet>
+                                                <includes>
+                                                    <include>module.xml</include>
+                                                </includes>
+                                                <outputDir>${jdbc.mvn.driver.deployment.dir}</outputDir>
+                                                <parameters>
+                                                    <parameter>
+                                                        <name>database</name>
+                                                        <value>${jdbc.mvn.artifactId}</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>version</name>
+                                                        <value>${jdbc.mvn.version}</value>
+                                                    </parameter>
+                                                </parameters>
+                                            </transformationSet>
+                                            <!-- add datasource to standalone.xml -->
+                                            <transformationSet>
+                                                <dir>${auth.server.home}/standalone/configuration</dir>
+                                                <stylesheet>${common.resources}/datasource.xsl</stylesheet>
+                                                <includes>
+                                                    <include>standalone.xml</include>
+                                                </includes>
+                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
+                                                <parameters>
+                                                    <parameter>
+                                                        <name>jdbc.url</name>
+                                                        <value>${keycloak.connectionsJpa.url}</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>driver</name>
+                                                        <value>${jdbc.mvn.artifactId}</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>username</name>
+                                                        <value>${keycloak.connectionsJpa.user}</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>password</name>
+                                                        <value>${keycloak.connectionsJpa.password}</value>
+                                                    </parameter>
+                                                </parameters>
+                                            </transformationSet>
+                                            <!-- add logger for org.hibernate.dialect.Dialect -->
+                                            <transformationSet>
+                                                <dir>${auth.server.home}/standalone/configuration</dir>
+                                                <stylesheet>${common.resources}/add-dialect-logger.xsl</stylesheet>
+                                                <includes>
+                                                    <include>standalone.xml</include>
+                                                </includes>
+                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
+                                            </transformationSet>
+                                        </transformationSets>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
             </build>
         </profile>        
         
@@ -434,67 +420,94 @@
                 <login.failure.cache.owners>1</login.failure.cache.owners>
             </properties>
             <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>configure-wildfly-datasource</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <!-- point KeycloakDS datasource to H2 running on TCP port -->
-                                        <transformationSet>
-                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone-ha.xml</include>
-                                            </includes>
-                                            <stylesheet>${xslt.resources}/datasource-jdbc-url.xsl</stylesheet>
-                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
-                                            <parameters>
-                                                <parameter>
-                                                    <name>pool.name</name>
-                                                    <value>KeycloakDS</value>
-                                                </parameter>
-                                                <parameter>
-                                                    <name>jdbc.url</name>
-                                                    <value>jdbc:h2:tcp://${jboss.bind.address:localhost}:9092/mem:keycloak;DB_CLOSE_DELAY=-1</value>
-                                                </parameter>
-                                            </parameters>
-                                        </transformationSet>
-                                        <transformationSet>
-                                            <dir>${keycloak.server.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone-ha.xml</include>
-                                            </includes>
-                                            <stylesheet>${xslt.resources}/ispn-cache-owners.xsl</stylesheet>
-                                            <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
-                                            <parameters>
-                                                <parameter>
-                                                    <name>sessionCacheOwners</name>
-                                                    <value>${session.cache.owners}</value>
-                                                </parameter>
-                                                <parameter>
-                                                    <name>offlineSessionCacheOwners</name>
-                                                    <value>${offline.session.cache.owners}</value>
-                                                </parameter>
-                                                <parameter>
-                                                    <name>loginFailureCacheOwners</name>
-                                                    <value>${login.failure.cache.owners}</value>
-                                                </parameter>
-                                            </parameters>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>xml-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>configure-wildfly-datasource</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>transform</goal>
+                                    </goals>
+                                    <configuration>
+                                        <transformationSets>
+                                            <!-- point KeycloakDS datasource to H2 running on TCP port -->
+                                            <transformationSet>
+                                                <dir>${auth.server.home}/standalone/configuration</dir>
+                                                <includes>
+                                                    <include>standalone-ha.xml</include>
+                                                </includes>
+                                                <stylesheet>${common.resources}/datasource-jdbc-url.xsl</stylesheet>
+                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
+                                                <parameters>
+                                                    <parameter>
+                                                        <name>pool.name</name>
+                                                        <value>KeycloakDS</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>jdbc.url</name>
+                                                        <value>jdbc:h2:tcp://${jboss.bind.address:localhost}:9092/mem:keycloak;DB_CLOSE_DELAY=-1</value>
+                                                    </parameter>
+                                                </parameters>
+                                            </transformationSet>
+                                            <transformationSet>
+                                                <dir>${auth.server.home}/standalone/configuration</dir>
+                                                <includes>
+                                                    <include>standalone-ha.xml</include>
+                                                </includes>
+                                                <stylesheet>${common.resources}/ispn-cache-owners.xsl</stylesheet>
+                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
+                                                <parameters>
+                                                    <parameter>
+                                                        <name>sessionCacheOwners</name>
+                                                        <value>${session.cache.owners}</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>offlineSessionCacheOwners</name>
+                                                        <value>${offline.session.cache.owners}</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>loginFailureCacheOwners</name>
+                                                        <value>${login.failure.cache.owners}</value>
+                                                    </parameter>
+                                                </parameters>
+                                            </transformationSet>
+                                        </transformationSets>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
             </build>
+        </profile>
+        
+        <profile>
+            <id>auth-server-wildfly</id>
+            <activation>
+                <property>
+                    <name>auth.server</name>
+                    <value>wildfly</value>
+                </property>
+            </activation>
+            <modules>
+                <module>wildfly</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>auth-server-eap</id>
+            <activation>
+                <property>
+                    <name>auth.server</name>
+                    <value>eap</value>
+                </property>
+            </activation>
+            <modules>
+                <module>eap</module>
+            </modules>
         </profile>
         
     </profiles>

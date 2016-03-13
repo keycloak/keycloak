@@ -59,10 +59,10 @@
         <configuration>
             <property name="enabled">${auth.server.jboss}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
-            <property name="jbossHome">${keycloak.home}</property>
+            <property name="jbossHome">${auth.server.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Djboss.bind.address=0.0.0.0 -Xms64m -Xmx512m -XX:MaxPermSize=256m ${adapter.test.props}</property>
             <property name="managementPort">${auth.server.management.port}</property>
-            <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+            <property name="startupTimeoutInSeconds">${auth.server.startup.timeout}</property>
             <property name="javaHome">${auth.server.java.home}</property>
         </configuration>
     </container>
@@ -82,7 +82,7 @@
                 </property>
                 <property name="outputToConsole">${frontend.console.output}</property>
                 <property name="managementPort">${auth.server.management.port}</property>
-                <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+                <property name="startupTimeoutInSeconds">${auth.server.startup.timeout}</property>
             </configuration>
         </container>
         <container qualifier="auth-server-jboss-backend1" mode="manual" >
@@ -102,7 +102,7 @@
                 </property>
                 <property name="outputToConsole">${backends.console.output}</property>
                 <property name="managementPort">${auth.server.backend1.management.port}</property>
-                <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+                <property name="startupTimeoutInSeconds">${auth.server.startup.timeout}</property>
             </configuration>
         </container>
         <container qualifier="auth-server-jboss-backend2" mode="manual" >
@@ -122,7 +122,7 @@
                 </property>
                 <property name="outputToConsole">${backends.console.output}</property>
                 <property name="managementPort">${auth.server.backend2.management.port}</property>
-                <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+                <property name="startupTimeoutInSeconds">${auth.server.startup.timeout}</property>
             </configuration>
         </container>
     </group>
@@ -144,7 +144,7 @@
                 -Xms64m -Xmx512m -XX:MaxPermSize=256m
             </property>
             <property name="managementPort">${auth.server.management.port}</property>
-            <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+            <property name="startupTimeoutInSeconds">${auth.server.startup.timeout}</property>
         </configuration>
     </container>
     
@@ -163,7 +163,7 @@
                 -Xms64m -Xmx512m -XX:MaxPermSize=256m
             </property>
             <property name="managementPort">${auth.server.management.port}</property>
-            <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+            <property name="startupTimeoutInSeconds">${auth.server.startup.timeout}</property>
         </configuration>
     </container>
     
@@ -174,7 +174,7 @@
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
             <property name="managementPort">${auth.server.management.port}</property>
-            <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+            <property name="startupTimeoutInSeconds">${auth.server.startup.timeout}</property>
         </configuration>
     </container>
     
@@ -185,7 +185,7 @@
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
             <property name="managementPort">${auth.server.management.port}</property>
-            <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+            <property name="startupTimeoutInSeconds">${auth.server.startup.timeout}</property>
         </configuration>
     </container>
     
@@ -196,7 +196,7 @@
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">-Djboss.socket.binding.port-offset=${auth.server.port.offset} -Xms64m -Xmx512m -XX:MaxPermSize=256m</property>
             <property name="managementPort">${auth.server.management.port}</property>
-            <property name="startupTimeoutInSeconds">${startup.timeout.sec}</property>
+            <property name="startupTimeoutInSeconds">${auth.server.startup.timeout}</property>
         </configuration>
     </container>
     

@@ -17,7 +17,7 @@
 
 <assembly>
     
-    <id>${auth.server.jboss.classifier}</id>
+    <id>${auth.server.jboss}</id>
 
     <formats>
         <format>zip</format>
@@ -27,15 +27,15 @@
 
     <fileSets>
         <fileSet>
-            <directory>${keycloak.server.home}</directory>
-            <outputDirectory>auth-server-${auth.server.jboss.classifier}</outputDirectory>
+            <directory>${auth.server.home}</directory>
+            <outputDirectory>auth-server-${auth.server.jboss}</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${keycloak.server.home}</directory>
-            <outputDirectory>auth-server-${auth.server.jboss.classifier}</outputDirectory>
+            <directory>${auth.server.home}</directory>
+            <outputDirectory>auth-server-${auth.server.jboss}</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
             </includes>

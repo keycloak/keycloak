@@ -108,19 +108,19 @@ public class AppServerTestEnricher {
         }
     }
 
-    public void installAdapterLibs(@Observes BeforeDeploy event) {
-        log.debug("BEFORE DEPLOY - INSTALL ADAPTER LIBS");
-        if (testContext.isAdapterTest()) {
-            // install adapter libs on JBoss-based container via CLI
-            if (testContext.getAppServerInfo().isJBossBased()) {
-                try {
-                    installAdapterLibsUsingJBossCLIClient(testContext.getAppServerInfo());
-                } catch (InterruptedException | IOException ex) {
-                    throw new RuntimeException("Failed to install adapter libs.", ex);
-                }
-            }
-        }
-    }
+//    public void installAdapterLibs(@Observes BeforeDeploy event) {
+//        log.debug("BEFORE DEPLOY - INSTALL ADAPTER LIBS");
+//        if (testContext.isAdapterTest()) {
+//            // install adapter libs on JBoss-based container via CLI
+//            if (testContext.getAppServerInfo().isJBossBased()) {
+//                try {
+//                    installAdapterLibsUsingJBossCLIClient(testContext.getAppServerInfo());
+//                } catch (InterruptedException | IOException ex) {
+//                    throw new RuntimeException("Failed to install adapter libs.", ex);
+//                }
+//            }
+//        }
+//    }
 
     private void installAdapterLibsUsingJBossCLIClient(ContainerInfo appServerInfo) throws InterruptedException, IOException {
         if (!appServerInfo.isAdapterLibsInstalled()) {
@@ -192,7 +192,7 @@ public class AppServerTestEnricher {
 
     public static String getAdapterLibsLocationProperty(Class testClass) {
         Class<? extends AuthServerTestEnricher> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AdapterLibsLocationProperty.class);
-        return (annotatedClass == null ? null
+        return (annotatedClass == null ? "adapter.libs.home"
                 : annotatedClass.getAnnotation(AdapterLibsLocationProperty.class).value());
     }
 
