@@ -77,6 +77,12 @@ public class KeycloakSessionServletFilter implements Filter {
         try {
             filterChain.doFilter(servletRequest, servletResponse);
         } finally {
+            // KeycloakTransactionCommitter is responsible for committing the transaction, but if an exception is thrown it's not invoked and transaction
+            // should be rolled back
+            if (session.getTransaction() != null && session.getTransaction().isActive()) {
+                session.getTransaction().rollback();
+            }
+
             session.close();
             ResteasyProviderFactory.clearContextData();
         }

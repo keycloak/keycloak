@@ -27,5 +27,4 @@ import org.keycloak.models.UserProvider;
 public interface CacheUserProvider extends UserProvider {
     void clear();
     UserProvider getDelegate();
-    void registerUserInvalidation(RealmModel realm, String id);
 }

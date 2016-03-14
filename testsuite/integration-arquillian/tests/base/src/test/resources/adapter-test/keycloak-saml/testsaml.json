@@ -299,7 +299,8 @@
             ],
             "adminUrl": "http://localhost:8080/employee2",
             "attributes": {
-                "saml.authnstatement": "true"
+                "saml.authnstatement": "true",
+                "saml_idp_initiated_sso_url_name" : "employee2"
             },
             "protocolMappers": [
                 {

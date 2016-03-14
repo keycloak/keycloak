@@ -93,7 +93,7 @@ public class OAuthClient {
 
     public AuthorizationCodeResponse doLogin(String username, String password) {
         openLoginForm();
-
+        String src = driver.getPageSource();
         driver.findElement(By.id("username")).sendKeys(username);
         driver.findElement(By.id("password")).sendKeys(password);
         driver.findElement(By.name("login")).click();
@@ -203,6 +203,10 @@ public class OAuthClient {
 
     public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username,  String password) throws Exception {
         return doGrantAccessTokenRequest(realm, username, password, null, clientId, clientSecret);
+    }
+
+    public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username,  String password, String otp) throws Exception {
+        return doGrantAccessTokenRequest(realm, username, password, otp, clientId, clientSecret);
     }
 
     public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,

@@ -86,7 +86,7 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProviderFactory, 
             byte[] key = getSecretKeyFactory().generateSecret(spec).getEncoded();
             return Base64.encodeBytes(key);
         } catch (InvalidKeySpecException e) {
-            throw new RuntimeException("Credential could not be encoded");
+            throw new RuntimeException("Credential could not be encoded", e);
         }
     }
 
@@ -101,7 +101,7 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProviderFactory, 
         try {
             return SecretKeyFactory.getInstance(PBKDF2_ALGORITHM);
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("PBKDF2 algorithm not found");
+            throw new RuntimeException("PBKDF2 algorithm not found", e);
         }
     }
 

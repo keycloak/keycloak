@@ -646,6 +646,23 @@ public class UserTest extends AbstractClientTest {
         assertEquals("Keycloak Account Management", driver.getTitle());
     }
 
+    @Test
+    public void resetUserInvalidPassword() {
+        String userId = createUser("user1", "user1@localhost");
+
+        try {
+            CredentialRepresentation cred = new CredentialRepresentation();
+            cred.setType(CredentialRepresentation.PASSWORD);
+            cred.setValue(" ");
+            cred.setTemporary(false);
+            realm.users().get(userId).resetPassword(cred);
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+            e.getResponse().close();
+        }
+    }
+
     private void switchEditUsernameAllowedOn() {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setEditUsernameAllowed(true);

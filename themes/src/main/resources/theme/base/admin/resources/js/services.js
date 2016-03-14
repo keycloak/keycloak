@@ -952,19 +952,6 @@ module.factory('ClientOfflineSessions', function($resource) {
     });
 });
 
-module.factory('ClientLogoutAll', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients/:client/logout-all', {
-        realm : '@realm',
-        client : "@client"
-    });
-});
-module.factory('ClientLogoutUser', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients/:client/logout-user/:user', {
-        realm : '@realm',
-        client : "@client",
-        user : "@user"
-    });
-});
 module.factory('RealmLogoutAll', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/logout-all', {
         realm : '@realm'
@@ -1315,10 +1302,9 @@ module.factory('PasswordPolicy', function() {
         if (!policies || policies.length == 0) {
             return "";
         }
-
         var policyString = "";
 
-        for (var i in policies){
+        for (var i = 0; i < policies.length; i++) {
             policyString += policies[i].name;
             if ( policies[i].value ){
                 policyString += '(' + policies[i].value + ')';

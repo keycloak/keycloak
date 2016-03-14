@@ -270,7 +270,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public void removeUserSession(RealmModel realm, UserSessionModel session) {
         UserSessionEntity entity = getUserSessionEntity(session, false);
-        removeUserSession(realm, entity, false);
+        if (entity != null) {
+            removeUserSession(realm, entity, false);
+        }
     }
 
     @Override
@@ -553,7 +555,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             return ((UserSessionAdapter) userSession).getEntity();
         } else {
             Cache<String, SessionEntity> cache = getCache(offline);
-            return (UserSessionEntity) cache.get(userSession.getId());
+            return cache != null ? (UserSessionEntity) cache.get(userSession.getId()) : null;
         }
     }
 
@@ -578,7 +580,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public void removeOfflineUserSession(RealmModel realm, UserSessionModel userSession) {
         UserSessionEntity userSessionEntity = getUserSessionEntity(userSession, true);
-        removeUserSession(realm, userSessionEntity, true);
+        if (userSessionEntity != null) {
+            removeUserSession(realm, userSessionEntity, true);
+        }
     }
 
     @Override

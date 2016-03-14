@@ -260,7 +260,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
         resultList.get(0).findElement(By.xpath(".//td[text()='REVOKE_GRANT']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='account']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1']"));
+        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='revoked_client']/../td[text()='customer-portal']"));
 
         loginEventsPage.table().reset();
@@ -272,7 +272,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
         resultList.get(0).findElement(By.xpath(".//td[text()='LOGIN']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='customer-portal']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1']"));
+        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='username']/../td[text()='bburke@redhat.com']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='consent']/../td[text()='consent_granted']"));
     }
@@ -317,7 +317,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
         resultList.get(0).findElement(By.xpath(".//td[text()='LOGOUT']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1']"));
+        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
 
         loginEventsPage.table().reset();
         loginEventsPage.table().filterForm().addEventType("LOGIN");
@@ -328,7 +328,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
         resultList.get(0).findElement(By.xpath(".//td[text()='LOGIN']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='customer-portal']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1']"));
+        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='username']/../td[text()='bburke@redhat.com']"));
 
         loginEventsPage.table().reset();
@@ -339,7 +339,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         assertEquals(1, resultList.size());
         resultList.get(0).findElement(By.xpath(".//td[text()='CODE_TO_TOKEN']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='customer-portal']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1']"));
+        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='refresh_token_type']/../td[text()='Refresh']"));
 
         String serverLogPath = null;

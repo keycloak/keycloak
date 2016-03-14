@@ -32,8 +32,9 @@ public class BrowserSecurityHeaderSetup {
     public static Response.ResponseBuilder headers(Response.ResponseBuilder builder, RealmModel realm) {
         for (Map.Entry<String, String> entry : realm.getBrowserSecurityHeaders().entrySet()) {
             String headerName = BrowserSecurityHeaders.headerAttributeMap.get(entry.getKey());
-            if (headerName == null) continue;
-            builder.header(headerName, entry.getValue());
+            if (headerName != null && entry.getValue() != null && entry.getValue().length() > 0) {
+                builder.header(headerName, entry.getValue());
+            }
         }
         return builder;
     }

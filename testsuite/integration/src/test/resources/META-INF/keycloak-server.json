@@ -86,7 +86,7 @@
     "connectionsInfinispan": {
         "default": {
             "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
-            "async": "${keycloak.connectionsInfinispan.async:true}",
+            "async": "${keycloak.connectionsInfinispan.async:false}",
             "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:2}"
         }
     }

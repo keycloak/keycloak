@@ -38,12 +38,8 @@
             <td><a href="#/realms/{{realm.realm}}/roles/{{role.id}}">{{role.name}}</a></td>
             <td translate="{{role.composite}}"></td>
             <td>{{role.description}}</td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/roles/{{role.id}}">{{:: 'edit' | translate}}</button>
-            </td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="removeRole(role)">{{:: 'delete' | translate}}</button>
-            </td>
+            <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/roles/{{role.id}}">{{:: 'edit' | translate}}</td>
+            <td class="kc-action-cell" data-ng-click="removeRole(role)">{{:: 'delete' | translate}}</td>
         </tr>
         <tr data-ng-show="(roles | filter:{name: searchQuery}).length == 0">
             <td class="text-muted" colspan="3" data-ng-show="searchQuery">{{:: 'no-results' | translate}}</td>

@@ -122,9 +122,9 @@ public class RoleLDAPFederationMapper extends AbstractLDAPFederationMapper imple
 
         logger.debugf("Syncing roles from LDAP into Keycloak DB. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getDisplayName());
 
-        // Send LDAP query
-        LDAPQuery ldapQuery = createRoleQuery();
-        List<LDAPObject> ldapRoles = ldapQuery.getResultList();
+        // Send LDAP query to load all roles
+        LDAPQuery ldapRoleQuery = createRoleQuery();
+        List<LDAPObject> ldapRoles = LDAPUtils.loadAllLDAPObjects(ldapRoleQuery, ldapProvider);
 
         RoleContainerModel roleContainer = getTargetRoleContainer();
         String rolesRdnAttr = config.getRoleNameLdapAttribute();

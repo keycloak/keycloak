@@ -34,6 +34,7 @@ import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.msad.MSADUserAccountControlMapperFactory;
+import org.keycloak.mappers.FederationConfigValidationException;
 import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -46,6 +47,7 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
+import org.keycloak.models.UserFederationValidatingProviderFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -59,7 +61,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class LDAPFederationProviderFactory extends UserFederationEventAwareProviderFactory {
+public class LDAPFederationProviderFactory extends UserFederationEventAwareProviderFactory implements UserFederationValidatingProviderFactory {
     private static final Logger logger = Logger.getLogger(LDAPFederationProviderFactory.class);
     public static final String PROVIDER_NAME = LDAPConstants.LDAP_PROVIDER;
 
@@ -74,6 +76,13 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
     public LDAPFederationProvider getInstance(KeycloakSession session, UserFederationProviderModel model) {
         LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(model);
         return new LDAPFederationProvider(this, session, model, ldapIdentityStore);
+    }
+
+    @Override
+    public void validateConfig(RealmModel realm, UserFederationProviderModel providerModel) throws FederationConfigValidationException {
+        LDAPConfig cfg = new LDAPConfig(providerModel.getConfig());
+        String customFilter = cfg.getCustomUserSearchFilter();
+        LDAPUtils.validateCustomLdapFilter(customFilter);
     }
 
     @Override
@@ -156,7 +165,8 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
                     // For read-only LDAP, we map "cn" as full name
                     mapperModel = KeycloakModelUtils.createUserFederationMapperModel("full name", newProviderModel.getId(), FullNameLDAPFederationMapperFactory.PROVIDER_ID,
                             FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, LDAPConstants.CN,
-                            UserAttributeLDAPFederationMapper.READ_ONLY, readOnly);
+                            FullNameLDAPFederationMapper.READ_ONLY, readOnly,
+                            FullNameLDAPFederationMapper.WRITE_ONLY, "false");
                     realm.addUserFederationMapper(mapperModel);
                 }
             }
@@ -274,11 +284,10 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
 
         final UserFederationSyncResult syncResult = new UserFederationSyncResult();
 
-        boolean pagination = Boolean.parseBoolean(fedModel.getConfig().get(LDAPConstants.PAGINATION));
+        LDAPConfig ldapConfig = new LDAPConfig(fedModel.getConfig());
+        boolean pagination = ldapConfig.isPagination();
         if (pagination) {
-
-            String pageSizeConfig = fedModel.getConfig().get(LDAPConstants.BATCH_SIZE_FOR_SYNC);
-            int pageSize = pageSizeConfig!=null ? Integer.parseInt(pageSizeConfig) : LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC;
+            int pageSize = ldapConfig.getBatchSizeForSync();
 
             boolean nextPage = true;
             while (nextPage) {
@@ -354,7 +363,8 @@ public class LDAPFederationProviderFactory extends UserFederationEventAwareProvi
 
                                 // Update keycloak user
                                 Set<UserFederationMapperModel> federationMappers = currentRealm.getUserFederationMappersByFederationProvider(fedModel.getId());
-                                for (UserFederationMapperModel mapperModel : federationMappers) {
+                                List<UserFederationMapperModel> sortedMappers = ldapFedProvider.sortMappersDesc(federationMappers);
+                                for (UserFederationMapperModel mapperModel : sortedMappers) {
                                     LDAPFederationMapper ldapMapper = ldapFedProvider.getMapper(mapperModel);
                                     ldapMapper.onImportUserFromLDAP(mapperModel, ldapFedProvider, ldapUser, currentUser, currentRealm, false);
                                 }

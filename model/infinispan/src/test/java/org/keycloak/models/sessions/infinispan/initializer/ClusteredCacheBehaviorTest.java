@@ -9,9 +9,11 @@ import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntriesEvicted;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryCreated;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntryInvalidated;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntryRemoved;
 import org.infinispan.notifications.cachelistener.event.CacheEntriesEvictedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntryCreatedEvent;
 import org.infinispan.notifications.cachelistener.event.CacheEntryInvalidatedEvent;
 import org.infinispan.notifications.cachelistener.event.CacheEntryRemovedEvent;
 import org.junit.Ignore;
@@ -61,6 +63,11 @@ public class ClusteredCacheBehaviorTest {
         }
 
 
+        @CacheEntryCreated
+        public void created(CacheEntryCreatedEvent event) {
+
+            System.out.println("Listener '" + name + "' entry created  " + event.getKey() + " isPre: " + event.isPre());
+        }
 
         @CacheEntryRemoved
         public void removed(CacheEntryRemovedEvent<String, Object> event) {
@@ -91,6 +98,8 @@ public class ClusteredCacheBehaviorTest {
 
         System.out.println("node1 create entry");
         node1Cache.put("key", "node1");
+        System.out.println("node1 create entry");
+        node1Cache.put("key", "node111");
         System.out.println("node2 create entry");
         node2Cache.put("key", "node2");
         System.out.println("node1 remove entry");

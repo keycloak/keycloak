@@ -35,28 +35,8 @@ import javax.xml.stream.events.XMLEvent;
 public abstract class AbstractDescriptorParser extends AbstractParser {
 
     protected XMLEventReader filterWhiteSpaceCharacters(XMLEventReader xmlEventReader) throws ParsingException {
-
-        XMLInputFactory xmlInputFactory = getXMLInputFactory();
-
         try {
-            xmlEventReader = xmlInputFactory.createFilteredReader(xmlEventReader, new EventFilter() {
-                public boolean accept(XMLEvent xmlEvent) {
-                    // We are going to disregard characters that are new line and whitespace
-                    if (xmlEvent.isCharacters()) {
-                        Characters chars = xmlEvent.asCharacters();
-                        String data = chars.getData();
-                        data = valid(data) ? data.trim() : null;
-                        return valid(data);
-                    } else {
-                        return xmlEvent.isStartElement() || xmlEvent.isEndElement();
-                    }
-                }
-
-                private boolean valid(String str) {
-                    return str != null && str.length() > 0;
-                }
-            });
-            return xmlEventReader;
+            return filterWhitespaces(xmlEventReader);
         } catch (XMLStreamException e) {
             throw new ParsingException(e);
         }

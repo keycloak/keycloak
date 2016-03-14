@@ -990,13 +990,54 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
     };
 });
 
-module.controller('RealmKeysDetailCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications) {
-    $scope.realm = realm;
+module.controller('RealmKeysDetailCtrl', function($scope, Realm, realm, $http, $route, $location, Dialog, Notifications) {
+    $scope.realm = angular.copy(realm);
+    $scope.enableUpload = false;
+
+    $scope.$watch('realm', function () {
+        if (!angular.equals($scope.realm, realm)) {
+            if ($scope.realm.privateKey && $scope.realm.publicKey != realm.publicKey) {
+                $scope.enableUpload = true;
+            } else if ($scope.realm.certificate != realm.certificate) {
+                $scope.enableUpload = true;
+            } else {
+                $scope.enableUpload = false;
+            }
+        }
+    }, true);
 
     $scope.generate = function() {
         Dialog.confirmGenerateKeys($scope.realm.realm, 'realm', function() {
                 Realm.update({ realm: realm.realm, publicKey : 'GENERATE' }, function () {
                 Notifications.success('New keys generated for realm.');
+                Realm.get({ id : realm.realm }, function(updated) {
+                    $scope.realm = updated;
+                })
+            });
+        });
+    };
+
+    $scope.cancel = function() {
+        $route.reload();
+    }
+
+    $scope.save = function() {
+        var title = 'Upload keys for realm';
+        var msg = 'Are you sure you want to upload keys for ' + $scope.realm.realm + '?';
+        var btns = {
+            ok: {
+                label: 'Upload Keys',
+                cssClass: 'btn btn-danger'
+            },
+            cancel: {
+                label: 'Cancel',
+                cssClass: 'btn btn-default'
+            }
+        };
+
+        Dialog.open(title, msg, btns, function() {
+                Realm.update($scope.realm, function () {
+                Notifications.success('Keys uploaded for realm.');
                 Realm.get({ id : realm.realm }, function(updated) {
                     $scope.realm = updated;
                 })

@@ -39,9 +39,11 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -52,7 +54,6 @@ public class JpaRealmProvider implements RealmProvider {
     protected static final Logger logger = Logger.getLogger(JpaRealmProvider.class);
     private final KeycloakSession session;
     protected EntityManager em;
-
 
     public JpaRealmProvider(KeycloakSession session, EntityManager em) {
         this.session = session;
@@ -76,21 +77,22 @@ public class JpaRealmProvider implements RealmProvider {
         realm.setId(id);
         em.persist(realm);
         em.flush();
-        final RealmModel model = new RealmAdapter(session, em, realm);
+        final RealmModel adapter = new RealmAdapter(session, em, realm);
         session.getKeycloakSessionFactory().publish(new RealmModel.RealmCreationEvent() {
             @Override
             public RealmModel getCreatedRealm() {
-                return model;
+                return adapter;
             }
         });
-        return model;
+        return adapter;
     }
 
     @Override
     public RealmModel getRealm(String id) {
         RealmEntity realm = em.find(RealmEntity.class, id);
         if (realm == null) return null;
-        return new RealmAdapter(session, em, realm);
+        RealmAdapter adapter = new RealmAdapter(session, em, realm);
+        return adapter;
     }
 
     @Override
@@ -124,6 +126,7 @@ public class JpaRealmProvider implements RealmProvider {
         if (realm == null) {
             return false;
         }
+        em.refresh(realm);
         RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
         int num = em.createNamedQuery("deleteGroupRoleMappingsByRealm")
@@ -174,7 +177,8 @@ public class JpaRealmProvider implements RealmProvider {
         entity.setRealmId(realm.getId());
         em.persist(entity);
         em.flush();
-        return new RoleAdapter(session, realm, em, entity);
+        RoleAdapter adapter = new RoleAdapter(session, realm, em, entity);
+        return adapter;
 
     }
 
@@ -203,7 +207,8 @@ public class JpaRealmProvider implements RealmProvider {
         roleEntity.setRealmId(realm.getId());
         em.persist(roleEntity);
         em.flush();
-        return new RoleAdapter(session, realm, em, roleEntity);
+        RoleAdapter adapter = new RoleAdapter(session, realm, em, roleEntity);
+        return adapter;
     }
 
     @Override
@@ -247,11 +252,11 @@ public class JpaRealmProvider implements RealmProvider {
     @Override
     public boolean removeRole(RealmModel realm, RoleModel role) {
         session.users().preRemove(realm, role);
-        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
         RoleContainerModel container = role.getContainer();
         if (container.getDefaultRoles().contains(role.getName())) {
             container.removeDefaultRoles(role.getName());
         }
+        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
         em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
@@ -260,7 +265,6 @@ public class JpaRealmProvider implements RealmProvider {
 
         em.remove(roleEntity);
         em.flush();
-
         return true;
 
     }
@@ -270,7 +274,8 @@ public class JpaRealmProvider implements RealmProvider {
         RoleEntity entity = em.find(RoleEntity.class, id);
         if (entity == null) return null;
         if (!realm.getId().equals(entity.getRealmId())) return null;
-        return new RoleAdapter(session, realm, em, entity);
+        RoleAdapter adapter = new RoleAdapter(session, realm, em, entity);
+        return adapter;
     }
 
     @Override
@@ -278,7 +283,8 @@ public class JpaRealmProvider implements RealmProvider {
         GroupEntity groupEntity = em.find(GroupEntity.class, id);
         if (groupEntity == null) return null;
         if (!groupEntity.getRealm().getId().equals(realm.getId())) return null;
-        return new GroupAdapter(realm, em, groupEntity);
+        GroupAdapter adapter =  new GroupAdapter(realm, em, groupEntity);
+        return adapter;
     }
 
     @Override
@@ -361,7 +367,8 @@ public class JpaRealmProvider implements RealmProvider {
         groupEntity.setRealm(realmEntity);
         em.persist(groupEntity);
 
-        return new GroupAdapter(realm, em, groupEntity);
+        GroupAdapter adapter = new GroupAdapter(realm, em, groupEntity);
+        return adapter;
     }
 
     @Override
@@ -391,6 +398,7 @@ public class JpaRealmProvider implements RealmProvider {
         em.persist(entity);
         em.flush();
         final ClientModel resource = new ClientAdapter(realm, em, session, entity);
+
         em.flush();
         session.getKeycloakSessionFactory().publish(new RealmModel.ClientCreationEvent() {
             @Override
@@ -416,14 +424,14 @@ public class JpaRealmProvider implements RealmProvider {
 
     }
 
-
     @Override
     public ClientModel getClientById(String id, RealmModel realm) {
         ClientEntity app = em.find(ClientEntity.class, id);
-
         // Check if application belongs to this realm
         if (app == null || !realm.getId().equals(app.getRealm().getId())) return null;
-        return new ClientAdapter(realm, em, session, app);
+        ClientAdapter client = new ClientAdapter(realm, em, session, app);
+        return client;
+
     }
 
     @Override
@@ -468,6 +476,7 @@ public class JpaRealmProvider implements RealmProvider {
 
         // Check if application belongs to this realm
         if (app == null || !realm.getId().equals(app.getRealm().getId())) return null;
-        return new ClientTemplateAdapter(realm, em, session, app);
+        ClientTemplateAdapter adapter = new ClientTemplateAdapter(realm, em, session, app);
+        return adapter;
     }
 }

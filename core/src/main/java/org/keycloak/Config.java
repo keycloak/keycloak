@@ -135,7 +135,11 @@ public class Config {
         @Override
         public Boolean getBoolean(String key, Boolean defaultValue) {
             String v = get(key, null);
-            return v != null ? Boolean.parseBoolean(v) : defaultValue;
+            if (v != null) {
+                return Boolean.parseBoolean(v);
+            } else {
+                return defaultValue;
+            }
         }
 
         @Override

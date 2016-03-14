@@ -110,6 +110,14 @@ public class AbstractOAuthClient {
         this.publicClient = publicClient;
     }
 
+    public boolean isSecure() {
+        return isSecure;
+    }
+
+    public void setSecure(boolean secure) {
+        isSecure = secure;
+    }
+
     public RelativeUrlsUsed getRelativeUrlsUsed() {
         return relativeUrlsUsed;
     }

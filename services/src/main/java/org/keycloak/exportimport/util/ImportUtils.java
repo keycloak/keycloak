@@ -68,7 +68,7 @@ public class ImportUtils {
      * @param strategy specifies whether to overwrite or ignore existing realm or user entries
      * @return newly imported realm (or existing realm if ignoreExisting is true and realm of this name already exists)
      */
-    public static void importRealm(KeycloakSession session, RealmRepresentation rep, Strategy strategy) {
+    public static boolean importRealm(KeycloakSession session, RealmRepresentation rep, Strategy strategy) {
         String realmName = rep.getRealm();
         RealmProvider model = session.realms();
         RealmModel realm = model.getRealmByName(realmName);
@@ -76,7 +76,7 @@ public class ImportUtils {
         if (realm != null) {
             if (strategy == Strategy.IGNORE_EXISTING) {
                 logger.infof("Realm '%s' already exists. Import skipped", realmName);
-                return;
+                return false;
             } else {
                 logger.infof("Realm '%s' already exists. Removing it before import", realmName);
                 if (Config.getAdminRealm().equals(realm.getId())) {
@@ -91,13 +91,13 @@ public class ImportUtils {
         }
 
         RealmImporter realmManager = session.getContext().getRealmManager();
-        realm = realmManager.importRealm(rep);
+        realmManager.importRealm(rep);
 
         if (System.getProperty(ExportImportConfig.ACTION) != null) {
             logger.infof("Realm '%s' imported", realmName);
         }
         
-        return;
+        return true;
     }
 
     /**

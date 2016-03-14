@@ -25,6 +25,7 @@ import org.keycloak.admin.client.resource.ServerInfoResource;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -32,6 +33,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.Collections;
@@ -50,6 +52,10 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class RealmTest extends AbstractClientTest {
+
+    public static final String PRIVATE_KEY = "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=";
+    public static final String PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
+    public static final String CERTIFICATE = "MIICsTCCAZkCBgFTLB5bhDANBgkqhkiG9w0BAQsFADAcMRowGAYDVQQDDBFhZG1pbi1jbGllbnQtdGVzdDAeFw0xNjAyMjkwODIwMDBaFw0yNjAyMjgwODIxNDBaMBwxGjAYBgNVBAMMEWFkbWluLWNsaWVudC10ZXN0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAquzJtpAlpTFnJzILjTOHW+SOWav1eIsCtlAqiFTvBskbod6b4BtVaR3FVrQm8rFiwDOIEWT3IG3ZIz0LKYxnqvuffyLHGHjiroqrR63kY9Wa9B790lSEWVaGeNOMnKleqKu5QUNfL3wVebUh/C/QfxZ29R1EIbxNe2ThN8yuIca8Ltn43D5VlyatptojffxpCYiYqAmIwQDaq1um2cQ+4rPBLxC5jM9UBvYOMUP4u0caNSaPI1o9lHVKgTtWcdQzUeMmAGsnLV26XGhA/OwRduUxksumR1kh/KSqowasjgSrpVqtF/uo5TY57s7drD+zKG58cdHLreclB9AQNvNwZwIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQBh4iwg8GnadeQP52pV5vKJ4Z8A1R2aYCzoW7Lc3FI/pXWX9Af5dKILX5O2j/daamPS+WtDWxIuwvZC5drrkvJn/r8e4KstnXQzPQggIJbI9v3wfIX3VlFvwvZVGiuE5PSLSWb0L57PEojZVpIU5bLchq4yRSD2zK4dWX8Y6I/D40a74KDvPOlEL8405/T1iW7ytKT9awNJW04N91owoI+kdUL+DMnnGzIxDAoYAeZI/1vcwoaH24zyTLGItkzpKxqLOdB05cnxn5jCWY2Hyd1zqtRkadhgZaqu4lcDHAHEMDp6dEjLZW8ym8bnlto+MD2y//CsyPCzyCLlA726vrli";
 
     @Test
     public void getRealms() {
@@ -329,6 +335,82 @@ public class RealmTest extends AbstractClientTest {
             Assert.assertEquals(realm.getBrowserSecurityHeaders(), storedRealm.getBrowserSecurityHeaders());
         }
 
+    }
+
+    @Test
+    public void uploadRealmKeys() throws Exception {
+        String originalPublicKey = realm.toRepresentation().getPublicKey();
+
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setPrivateKey("INVALID");
+        rep.setPublicKey(PUBLIC_KEY);
+
+        try {
+            realm.update(rep);
+            fail("Expected BadRequestException");
+        } catch (BadRequestException e) {
+        }
+
+        rep.setPrivateKey(PRIVATE_KEY);
+        rep.setPublicKey("INVALID");
+
+        try {
+            realm.update(rep);
+            fail("Expected BadRequestException");
+        } catch (BadRequestException e) {
+        }
+
+        assertEquals(originalPublicKey, realm.toRepresentation().getPublicKey());
+
+        rep.setPublicKey(PUBLIC_KEY);
+        realm.update(rep);
+
+        assertEquals(PUBLIC_KEY, rep.getPublicKey());
+
+        String privateKey2048 = IOUtils.toString(getClass().getResourceAsStream("/keys/private2048.pem"));
+        String publicKey2048 = IOUtils.toString(getClass().getResourceAsStream("/keys/public2048.pem"));
+
+        rep.setPrivateKey(privateKey2048);
+
+        try {
+            realm.update(rep);
+            fail("Expected BadRequestException");
+        } catch (BadRequestException e) {
+        }
+
+        assertEquals(PUBLIC_KEY, realm.toRepresentation().getPublicKey());
+
+        rep.setPublicKey(publicKey2048);
+
+        realm.update(rep);
+
+        assertEquals(publicKey2048, realm.toRepresentation().getPublicKey());
+
+        String privateKey4096 = IOUtils.toString(getClass().getResourceAsStream("/keys/private4096.pem"));
+        String publicKey4096 = IOUtils.toString(getClass().getResourceAsStream("/keys/public4096.pem"));
+        rep.setPrivateKey(privateKey4096);
+        rep.setPublicKey(publicKey4096);
+
+        realm.update(rep);
+
+        assertEquals(publicKey4096, realm.toRepresentation().getPublicKey());
+    }
+
+    @Test
+    public void uploadCertificate() throws IOException {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setCertificate(CERTIFICATE);
+
+        realm.update(rep);
+
+        assertEquals(CERTIFICATE, rep.getCertificate());
+
+        String certificate = IOUtils.toString(getClass().getResourceAsStream("/keys/certificate.pem"));
+        rep.setCertificate(certificate);
+
+        realm.update(rep);
+
+        assertEquals(certificate, rep.getCertificate());
     }
 
 }

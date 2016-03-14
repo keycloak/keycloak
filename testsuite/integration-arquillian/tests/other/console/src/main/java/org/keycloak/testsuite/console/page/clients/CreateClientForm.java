@@ -72,9 +72,9 @@ public class CreateClientForm extends Form {
     }
 
     public void setProtocol(String protocol) {
-        Timer.time();
+        Timer.DEFAULT.reset();
         protocolSelect.selectByVisibleText(protocol);
-        Timer.time("clientSettings.setProtocol()");
+        Timer.DEFAULT.reset("clientSettings.setProtocol()");
     }
 
     public class SAMLClientSettingsForm extends Form {

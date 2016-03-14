@@ -109,8 +109,25 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().save();
         assertAlertDanger();
         createLdapUserProvider.form().setLdapBindCredentialInput("secret");
+
+        createLdapUserProvider.form().setCustomUserSearchFilter("foo");
+        createLdapUserProvider.form().save();
+        assertAlertDanger();
+        createLdapUserProvider.form().setCustomUserSearchFilter("");
         createLdapUserProvider.form().save();
         assertAlertSuccess();
+
+        // Try updating invalid Custom LDAP Filter
+        createLdapUserProvider.form().setCustomUserSearchFilter("(foo=bar");
+        createLdapUserProvider.form().save();
+        assertAlertDanger();
+        createLdapUserProvider.form().setCustomUserSearchFilter("foo=bar)");
+        createLdapUserProvider.form().save();
+        assertAlertDanger();
+        createLdapUserProvider.form().setCustomUserSearchFilter("(foo=bar)");
+        createLdapUserProvider.form().save();
+        assertAlertSuccess();
+
     }
 
     @Test

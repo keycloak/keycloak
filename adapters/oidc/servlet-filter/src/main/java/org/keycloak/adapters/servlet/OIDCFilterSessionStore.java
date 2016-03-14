@@ -89,6 +89,7 @@ public class OIDCFilterSessionStore extends FilterSessionStore implements Adapte
 
     protected void cleanSession(HttpSession session) {
         session.removeAttribute(KeycloakAccount.class.getName());
+        session.removeAttribute(KeycloakSecurityContext.class.getName());
         clearSavedRequest(session);
     }
 
@@ -160,6 +161,7 @@ public class OIDCFilterSessionStore extends FilterSessionStore implements Adapte
         SerializableKeycloakAccount sAccount = new SerializableKeycloakAccount(roles, account.getPrincipal(), securityContext);
         HttpSession httpSession = request.getSession();
         httpSession.setAttribute(KeycloakAccount.class.getName(), sAccount);
+        httpSession.setAttribute(KeycloakSecurityContext.class.getName(), sAccount.getKeycloakSecurityContext());
         if (idMapper != null) idMapper.map(account.getKeycloakSecurityContext().getToken().getClientSession(),  account.getPrincipal().getName(), httpSession.getId());
         //String username = securityContext.getToken().getSubject();
         //log.fine("userSessionManagement.login: " + username);

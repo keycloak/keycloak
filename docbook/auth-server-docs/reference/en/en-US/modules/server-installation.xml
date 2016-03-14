@@ -128,7 +128,13 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
 ]]></programlisting>
                 Then restart the server.
             </para>
-        </section>
+            <para>
+                For <literal>keycloak-overlay</literal>, please make sure to use:
+<programlisting><![CDATA[
+bin/add-user-keycloak.[sh|bat] -r master -u <username> -p <password>
+]]></programlisting>
+            </para>
+            </section>
 
         <section>
             <title>Relational Database Configuration</title>
@@ -214,8 +220,8 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
                 <title>Tested databases</title>
                 <para>
                     Here is list of RDBMS databases and corresponding JDBC drivers, which were tested with Keycloak. Note that Hibernate dialect
-                    is usually set automatically according to your database, but in some cases, you must manually set the proper dialect,
-                    as the default dialect may not work correctly. You can setup dialect by adding property <literal>driverDialect</literal>
+                    is usually set automatically according to your database, but you have possibility to override if default dialect doesn't work correctly.
+                    You can setup dialect by adding property <literal>driverDialect</literal>
                     to the <literal>keycloak-server.json</literal> into <literal>connectionsJpa</literal> section (see above).
                     <table frame='all'><title>Tested databases</title>
                         <tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -255,7 +261,7 @@ bin/add-user.[sh|bat] -r master -u <username> -p <password>
                                 <row>
                                     <entry>Microsoft SQL Server 2012</entry>
                                     <entry>Microsoft SQL Server JDBC Driver 4.0.2206.100</entry>
-                                    <entry>org.hibernate.dialect.SQLServer2008Dialect</entry>
+                                    <entry>auto</entry>
                                 </row>
                                 <row>
                                     <entry>IBM DB2 10.5</entry>
@@ -832,7 +838,7 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
             <link linkend='themes'>Themes</link> sections for more information on how to do this.
         </para>
     </section>
-    
+
     <section>
         <title>Installing Keycloak Server as Root Context</title>
         <para>
@@ -855,11 +861,11 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
              <note>
                  If you have run your server before altering the root context, your database
                  will contain references to the old /auth context. Your clients may also have incorrect
-                 references.  To fix this on the server side, you will need to <link linkend="export-import">export 
-                 your database to json, make corrections, and then import.</link>  Client-side keycloak.json 
+                 references.  To fix this on the server side, you will need to <link linkend="export-import">export
+                 your database to json, make corrections, and then import.</link>  Client-side keycloak.json
                  files will need to be updated manually as well.
              </note>
         </para>
-        
+
     </section>
 </chapter>

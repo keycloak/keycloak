@@ -212,6 +212,17 @@ public class UserModelTest extends AbstractModelTest {
     }
 
     @Test
+    public void testSearchByString() {
+        RealmModel realm = realmManager.createRealm("original");
+        UserModel user1 = session.users().addUser(realm, "user1");
+
+        commit();
+
+        List<UserModel> users = session.users().searchForUser("user", realm, 0, 7);
+        Assert.assertTrue(users.contains(user1));
+    }
+
+    @Test
     public void testSearchByUserAttribute() throws Exception {
         RealmModel realm = realmManager.createRealm("original");
         UserModel user1 = session.users().addUser(realm, "user1");

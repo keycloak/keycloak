@@ -78,22 +78,19 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
 
     private static final Logger logger = Logger.getLogger(DefaultMongoConnectionFactoryProvider.class);
 
-    private volatile MongoClient client;
+    private static final int STATE_BEFORE_INIT = 0;   // Even before MongoClient is created
+    private static final int STATE_BEFORE_UPDATE = 1; // Mongo client was created, but DB is not yet updated to last version
+    private static final int STATE_AFTER_UPDATE = 2;  // Mongo client was created and DB updated. DB is fully initialized now
+
+    private volatile int state = STATE_BEFORE_INIT;
+
+    private MongoClient client;
 
     private MongoStore mongoStore;
     private DB db;
     protected Config.Scope config;
     
     private Map<String,String> operationalInfo;
-
-    @Override
-    public MongoConnectionProvider create(KeycloakSession session) {
-        lazyInit(session);
-
-        TransactionMongoStoreInvocationContext invocationContext = new TransactionMongoStoreInvocationContext(mongoStore);
-        session.getTransaction().enlist(new MongoKeycloakTransaction(invocationContext));
-        return new DefaultMongoConnectionProvider(db, mongoStore, invocationContext);
-    }
 
     @Override
     public void init(Config.Scope config) {
@@ -105,33 +102,22 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
 
     }
 
+    @Override
+    public DB getDBBeforeUpdate() {
+        lazyInitBeforeUpdate();
+        return db;
+    }
 
-    private void lazyInit(KeycloakSession session) {
-        if (client == null) {
+    private void lazyInitBeforeUpdate() {
+        if (state == STATE_BEFORE_INIT) {
             synchronized (this) {
-                if (client == null) {
+                if (state == STATE_BEFORE_INIT) {
                     try {
                         this.client = createMongoClient();
-
                         String dbName = config.get("db", "keycloak");
                         this.db = client.getDB(dbName);
 
-                        String databaseSchema = config.get("databaseSchema");
-                        if (databaseSchema != null) {
-                            if (databaseSchema.equals("update")) {
-                                MongoUpdaterProvider mongoUpdater = session.getProvider(MongoUpdaterProvider.class);
-
-                                if (mongoUpdater == null) {
-                                    throw new RuntimeException("Can't update database: Mongo updater provider not found");
-                                }
-
-                                mongoUpdater.update(session, db);
-                            } else {
-                                throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
-                            }
-                        }
-
-                        this.mongoStore = new MongoStoreImpl(db, getManagedEntities());
+                        state = STATE_BEFORE_UPDATE;
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -139,6 +125,53 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             }
         }
     }
+
+
+    @Override
+    public MongoConnectionProvider create(KeycloakSession session) {
+        lazyInit(session);
+
+        TransactionMongoStoreInvocationContext invocationContext = new TransactionMongoStoreInvocationContext(mongoStore);
+        session.getTransaction().enlist(new MongoKeycloakTransaction(invocationContext));
+        return new DefaultMongoConnectionProvider(db, mongoStore, invocationContext);
+    }
+
+    private void lazyInit(KeycloakSession session) {
+        lazyInitBeforeUpdate();
+
+        if (state == STATE_BEFORE_UPDATE) {
+            synchronized (this) {
+                if (state == STATE_BEFORE_UPDATE) {
+                    try {
+                        update(session);
+                        this.mongoStore = new MongoStoreImpl(db, getManagedEntities());
+
+                        state = STATE_AFTER_UPDATE;
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
+    }
+
+    private void update(KeycloakSession session) {
+        String databaseSchema = config.get("databaseSchema");
+        if (databaseSchema != null) {
+            if (databaseSchema.equals("update")) {
+                MongoUpdaterProvider mongoUpdater = session.getProvider(MongoUpdaterProvider.class);
+
+                if (mongoUpdater == null) {
+                    throw new RuntimeException("Can't update database: Mongo updater provider not found");
+                }
+
+                mongoUpdater.update(session, db);
+            } else {
+                throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
+            }
+        }
+    }
+
 
     private Class[] getManagedEntities() throws ClassNotFoundException {
        Class[] entityClasses = new Class[entities.length];
@@ -159,6 +192,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
     public String getId() {
         return "default";
     }
+
 
     /**
      * Override this method if you want more possibility to configure Mongo client. It can be also used to inject mongo client
@@ -205,7 +239,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
 
             MongoClient client;
             if (user != null && password != null) {
-                MongoCredential credential = MongoCredential.createMongoCRCredential(user, dbName, password.toCharArray());
+                MongoCredential credential = MongoCredential.createCredential(user, dbName, password.toCharArray());
                 client = new MongoClient(new ServerAddress(host, port), Collections.singletonList(credential), clientOptions);
             } else {
                 client = new MongoClient(new ServerAddress(host, port), clientOptions);

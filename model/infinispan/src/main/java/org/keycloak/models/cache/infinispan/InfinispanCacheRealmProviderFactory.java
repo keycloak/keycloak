@@ -35,12 +35,12 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
 
     private static final Logger log = Logger.getLogger(InfinispanCacheRealmProviderFactory.class);
 
-    protected volatile StreamRealmCache realmCache;
+    protected volatile RealmCacheManager realmCache;
 
     @Override
     public CacheRealmProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new StreamCacheRealmProvider(realmCache, session);
+        return new RealmCacheSession(realmCache, session);
     }
 
     private void lazyInit(KeycloakSession session) {
@@ -49,7 +49,7 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
                 if (realmCache == null) {
                     Cache<String, Revisioned> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
                     Cache<String, Long> revisions = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.VERSION_CACHE_NAME);
-                    realmCache = new StreamRealmCache(cache, revisions);
+                    realmCache = new RealmCacheManager(cache, revisions);
                 }
             }
         }

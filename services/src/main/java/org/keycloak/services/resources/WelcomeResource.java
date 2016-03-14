@@ -17,17 +17,27 @@
 package org.keycloak.services.resources;
 
 import org.keycloak.Config;
-import org.keycloak.theme.FreeMarkerUtil;
-import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.common.util.MimeTypeUtil;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.theme.FreeMarkerUtil;
+import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeProvider;
+import org.keycloak.utils.MediaType;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -64,7 +74,7 @@ public class WelcomeResource {
      * @throws URISyntaxException
      */
     @GET
-    @Produces("text/html")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response getWelcomePage() throws URISyntaxException {
         checkBootstrap();
 
@@ -127,7 +137,7 @@ public class WelcomeResource {
      */
     @GET
     @Path("/welcome-content/{path}")
-    @Produces("text/html")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response getResource(@PathParam("path") String path) {
         try {
             InputStream resource = getTheme().getResourceAsStream(path);

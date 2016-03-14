@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.logging.Logger;
+import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPDn;
@@ -41,9 +42,11 @@ import org.keycloak.federation.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.federation.ldap.mappers.membership.MembershipType;
 import org.keycloak.federation.ldap.mappers.membership.UserRolesRetrieveStrategy;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -149,8 +152,7 @@ public class GroupLDAPFederationMapper extends AbstractLDAPFederationMapper impl
         logger.debugf("Syncing groups from LDAP into Keycloak DB. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getDisplayName());
 
         // Get all LDAP groups
-        LDAPQuery ldapQuery = createGroupQuery();
-        List<LDAPObject> ldapGroups = ldapQuery.getResultList();
+        List<LDAPObject> ldapGroups = getAllLDAPGroups();
 
         // Convert to internal format
         Map<String, LDAPObject> ldapGroupsMap = new HashMap<>();
@@ -286,29 +288,46 @@ public class GroupLDAPFederationMapper extends AbstractLDAPFederationMapper impl
         }
     }
 
-    // Override if better effectivity or different algorithm is needed
+
     protected GroupModel findKcGroupByLDAPGroup(LDAPObject ldapGroup) {
         String groupNameAttr = config.getGroupNameLdapAttribute();
         String groupName = ldapGroup.getAttributeAsString(groupNameAttr);
 
-        List<GroupModel> groups = realm.getGroups();
-        for (GroupModel group : groups) {
-            if (group.getName().equals(groupName)) {
-                return group;
+        if (config.isPreserveGroupsInheritance()) {
+            // Override if better effectivity or different algorithm is needed
+            List<GroupModel> groups = realm.getGroups();
+            for (GroupModel group : groups) {
+                if (group.getName().equals(groupName)) {
+                    return group;
+                }
             }
-        }
 
-        return null;
+            return null;
+        } else {
+            // Without preserved inheritance, it's always top-level group
+            return KeycloakModelUtils.findGroupByPath(realm, "/" + groupName);
+        }
     }
 
     protected GroupModel findKcGroupOrSyncFromLDAP(LDAPObject ldapGroup, UserModel user) {
         GroupModel kcGroup = findKcGroupByLDAPGroup(ldapGroup);
 
         if (kcGroup == null) {
-            // Sync groups from LDAP
-            if (!syncFromLDAPPerformedInThisTransaction) {
-                syncDataFromFederationProviderToKeycloak();
-                kcGroup = findKcGroupByLDAPGroup(ldapGroup);
+
+            if (config.isPreserveGroupsInheritance()) {
+
+                // Better to sync all groups from LDAP with preserved inheritance
+                if (!syncFromLDAPPerformedInThisTransaction) {
+                    syncDataFromFederationProviderToKeycloak();
+                    kcGroup = findKcGroupByLDAPGroup(ldapGroup);
+                }
+            } else {
+                String groupNameAttr = config.getGroupNameLdapAttribute();
+                String groupName = ldapGroup.getAttributeAsString(groupNameAttr);
+
+                kcGroup = realm.createGroup(groupName);
+                updateAttributesOfKCGroup(kcGroup, ldapGroup);
+                realm.moveGroup(kcGroup, null);
             }
 
             // Could theoretically happen on some LDAP servers if 'memberof' style is used and 'memberof' attribute of user references non-existing group
@@ -319,6 +338,12 @@ public class GroupLDAPFederationMapper extends AbstractLDAPFederationMapper impl
         }
 
         return kcGroup;
+    }
+
+    // Send LDAP query to retrieve all groups
+    protected List<LDAPObject> getAllLDAPGroups() {
+        LDAPQuery ldapGroupQuery = createGroupQuery();
+        return LDAPUtils.loadAllLDAPObjects(ldapGroupQuery, ldapProvider);
     }
 
 
