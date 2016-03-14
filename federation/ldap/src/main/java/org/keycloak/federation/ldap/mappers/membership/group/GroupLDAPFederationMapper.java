@@ -343,28 +343,7 @@ public class GroupLDAPFederationMapper extends AbstractLDAPFederationMapper impl
     // Send LDAP query to retrieve all groups
     protected List<LDAPObject> getAllLDAPGroups() {
         LDAPQuery ldapGroupQuery = createGroupQuery();
-
-        LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
-        boolean pagination = ldapConfig.isPagination();
-        if (pagination) {
-            // For now reuse globally configured batch size in LDAP provider page
-            int pageSize = ldapConfig.getBatchSizeForSync();
-
-            List<LDAPObject> result = new LinkedList<>();
-            boolean nextPage = true;
-
-            while (nextPage) {
-                ldapGroupQuery.setLimit(pageSize);
-                final List<LDAPObject> currentPageGroups = ldapGroupQuery.getResultList();
-                result.addAll(currentPageGroups);
-                nextPage = ldapGroupQuery.getPaginationContext() != null;
-            }
-
-            return result;
-        } else {
-            // LDAP pagination not available. Do everything in single transaction
-            return ldapGroupQuery.getResultList();
-        }
+        return LDAPUtils.loadAllLDAPObjects(ldapGroupQuery, ldapProvider);
     }
 
 
