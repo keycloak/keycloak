@@ -46,6 +46,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
     public static final String REGISTRATION_FORM_ACTION = "registration_form";
     public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
+    public static final String INVALID_NEW_PASSWORD = "invalidNewPassword";
 
     @Override
     public void action(AuthenticationFlowContext context) {
@@ -71,6 +72,11 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     protected Response invalidCredentials(AuthenticationFlowContext context) {
         return context.form()
                 .setError(Messages.INVALID_USER).createLogin();
+    }
+
+    protected Response invalidNewPassword(AuthenticationFlowContext context) {
+        return context.form()
+                .setError(INVALID_NEW_PASSWORD).createLogin();
     }
 
     protected Response setDuplicateUserChallenge(AuthenticationFlowContext context, String eventError, String loginFormError, AuthenticationFlowError authenticatorError) {
@@ -168,9 +174,16 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         credentials.add(UserCredentialModel.password(password));
         boolean valid = context.getSession().users().validCredentials(context.getSession(), context.getRealm(), user, credentials);
         if (!valid) {
+            final Response challengeResponse;
             context.getEvent().user(user);
-            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = invalidCredentials(context);
+            if (user.getAttribute("ERROR_CONDITION").contains("ACCOUNT_LOCKED")) {
+                user.removeAttribute("ERROR_CONDITION");
+                context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
+                challengeResponse = temporarilyDisabledUser(context);
+            } else {
+                context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
+                challengeResponse = invalidCredentials(context);
+            }
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             context.clearUser();
             return false;
