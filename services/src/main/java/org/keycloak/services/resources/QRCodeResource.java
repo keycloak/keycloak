@@ -22,6 +22,7 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import org.keycloak.services.util.CacheControlUtil;
 
 import javax.servlet.ServletException;
 import javax.ws.rs.GET;
@@ -29,6 +30,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
@@ -87,7 +89,18 @@ public class QRCodeResource {
             }
         };
 
-        return Response.ok(stream).build();
-    }
+        /*
+         * This response is served with extra headers that tell the browser to not do any caching.
+         * The reason is that this page will include a QR code that can give an attacker access to
+         * the time based tokens, so it's best to take precautions and make sure there are no copies
+         * of the QR code lost in a cache.
+         */
+        CacheControl cacheControl = CacheControlUtil.noCache();
 
+        return Response.ok(stream) //
+                .cacheControl(cacheControl) //
+                .header("Pragma","no-cache") //
+                .header("Expires", "0") //
+                .build();
+    }
 }
