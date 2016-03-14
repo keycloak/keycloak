@@ -294,8 +294,24 @@
             We have an example, which is showing LDAP integration and set of base mappers and sample mappers (mappers for street and postalCode) . It's in <literal>examples/ldap</literal>
             in the Keycloak example distribution or demo distribution download. You can also check the example sources directly <ulink url="https://github.com/keycloak/keycloak/blob/master/examples/ldap">here</ulink> .
         </para>
+        <section>
+            <title>Writing your own LDAP Mapper</title>
+            <para>
+                For the more advanced usecases, you have the possibility to create your own implementation of LDAP mapper or just subclass from
+                some already existing mapper implementation. You will need to implement <literal>UserFederationMapperFactory</literal> interface. In most cases, instead of
+                creating <literal>UserFederationMapperFactory</literal> from scratch, you can create subclasses of <literal>AbstractLDAPFederationMapperFactory</literal>, which itself
+                implements <literal>UserFederationMapperFactory</literal>. Then you need to create mapper implementation, which will be subclass of
+                <literal>AbstractLDAPFederationMapper</literal> (this mapper implementation will be returned by <literal>YourAbstractLDAPFederationMapperFactorySubclass.createMapper</literal> method).
+            </para>
+            <para>
+                After your code is written you must package up all your classes within a JAR file. This jar file must contain a file called
+                <literal>org.keycloak.mappers.UserFederationMapperFactory</literal> within the <literal>META-INF/services directory</literal> of the JAR. This file is a list of fully
+                qualified classnames of all implementations of <literal>UserFederationMapperFactory</literal>. For more details, look at section for
+                <link linkend="write_federation_provider">Write your own federation provider</link> and at <link linkend="providers">Providers and SPI</link> section.
+            </para>
+        </section>
     </section>
-    <section>
+    <section id="write_federation_provider">
         <title>Writing your own User Federation Provider</title>
         <para>
             The keycloak examples directory contains an example of a simple User Federation Provider backed by
