@@ -34,7 +34,8 @@
     <name>Adapter Tests - Karaf</name>
         
     <properties>
-                
+        <common.resources>${project.parent.basedir}/common</common.resources>
+
         <!--fuse examples expect auth server on 8080-->
         <auth.server.port.offset>0</auth.server.port.offset>
         <auth.server.http.port>8080</auth.server.http.port>

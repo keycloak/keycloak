@@ -33,6 +33,9 @@
         
     <properties>
         <app.server>fuse61</app.server>
+
+        <app.server.management.user>admin</app.server.management.user>
+        <app.server.management.password>admin</app.server.management.password>
     </properties>
     
 </project>

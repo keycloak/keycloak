@@ -34,33 +34,21 @@
     <name>Adapter Tests - JBoss - Relative</name>
     
     <properties>
+        <auth.server.skip.unpack>true</auth.server.skip.unpack>
+        <auth.server.home>${app.server.home}</auth.server.home>
         <common.resources>${project.parent.parent.basedir}/common</common.resources>
-        <auth.server.container>app-server-${app.server}</auth.server.container>
-        <auth.server.artifactId>${app.server.artifactId}</auth.server.artifactId>
         <app.server.http.port>${auth.server.http.port}</app.server.http.port>
     </properties>
     
     <profiles>
         <profile>
             <id>auth-server-wildfly</id>
-            <activation>
-                <property>
-                    <name>auth.server</name>
-                    <value>wildfly</value>
-                </property>
-            </activation>
             <modules>
                 <module>wildfly</module>
             </modules>
         </profile>
         <profile>
             <id>auth-server-eap</id>
-            <activation>
-                <property>
-                    <name>auth.server</name>
-                    <value>eap</value>
-                </property>
-            </activation>
             <modules>
                 <module>eap</module>
             </modules>

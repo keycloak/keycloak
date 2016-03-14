@@ -30,7 +30,6 @@
     <name>App Server</name>
 
     <properties>
-        <app.server.java.home>${java.home}</app.server.java.home>
         <app.server.saml.adapter.supported>false</app.server.saml.adapter.supported>
     </properties>
 

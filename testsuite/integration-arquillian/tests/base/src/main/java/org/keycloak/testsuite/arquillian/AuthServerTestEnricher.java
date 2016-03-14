@@ -106,11 +106,14 @@ public class AuthServerTestEnricher {
         String migratedAuthServerQualifier = getMigratedAuthServerQualifier();
 
         // init authServerInfo and authServerBackendsInfo
-        if (authServerQualifier.startsWith("auth-server-")) {
+//        if (authServerQualifier.startsWith("auth-server-")) {
 
             boolean authServerCluster = authServerQualifier.endsWith("-cluster");
 
-            String authServerType = authServerQualifier.replaceAll("auth-server-", "").replaceAll("-cluster", "");
+            String authServerType = authServerQualifier
+                    .replaceAll("auth-server-", "")
+                    .replaceAll("app-server-", "")
+                    .replaceAll("-cluster", "");
 
             log.info("authServerType:" + authServerType);
 
@@ -140,9 +143,9 @@ public class AuthServerTestEnricher {
                 throw new RuntimeException(String.format("No cluster backend nodes activated. Containers matching '%sN' need to be enabled in arquillian.xml.", authServerBackend));
             }
 
-        } else {
-            throw new IllegalArgumentException(String.format("Value of %s should start with 'auth-server-' prefix.", AUTH_SERVER_CONTAINER_PROPERTY));
-        }
+//        } else {
+//            throw new IllegalArgumentException(String.format("Value of %s should start with 'auth-server-' prefix.", AUTH_SERVER_CONTAINER_PROPERTY));
+//        }
 
         if (migratedAuthServerQualifier != null) {
             // init migratedAuthServerInfo

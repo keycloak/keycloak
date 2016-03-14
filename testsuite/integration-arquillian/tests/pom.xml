@@ -44,7 +44,6 @@
         <examples.home>${project.build.directory}/examples</examples.home>
         <jboss.server.config.dir>${project.build.directory}/undertow-configuration</jboss.server.config.dir>
 
-        <auth.server.container>auth-server-undertow</auth.server.container>
         <auth.server.port.offset>100</auth.server.port.offset>
         <auth.server.http.port>8180</auth.server.http.port>
         <auth.server.https.port>8543</auth.server.https.port>
@@ -53,15 +52,22 @@
         <auth.server.ssl.required>false</auth.server.ssl.required>
         <auth.server.startup.timeout>60</auth.server.startup.timeout>
         
+        <auth.server>undertow</auth.server>
+        <auth.server.container>auth-server-${auth.server}</auth.server.container>
+
+        <auth.server.undertow>true</auth.server.undertow>
+        <auth.server.jboss>true</auth.server.jboss>
+        
+        <auth.server.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.artifactId>
+        <auth.server.skip.unpack>${auth.server.undertow}</auth.server.skip.unpack>
+                
+        <adapter.test.props/>
+                
         <browser>phantomjs</browser>
         <firefox_binary>/usr/bin/firefox</firefox_binary>
 
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
-        
-        <auth.server.java.home>${java.home}</auth.server.java.home>
-        
-        <auth.server.undertow>false</auth.server.undertow>
     </properties>
 
     <build>
@@ -69,35 +75,29 @@
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <configuration>
-                        <systemPropertyVariables>
-                            <project.build.directory>${project.build.directory}</project.build.directory>
-                            <browser>${browser}</browser>
-                            <firefox_binary>${firefox_binary}</firefox_binary>
-                            <shouldDeploy>false</shouldDeploy>
-                            <auth.server.container>${auth.server.container}</auth.server.container>
-                            <auth.server.undertow>${auth.server.undertow}</auth.server.undertow>
-                            <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
-                            <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
-                            <auth.server.https.port>${auth.server.https.port}</auth.server.https.port>
-                            <auth.server.management.port>${auth.server.management.port}</auth.server.management.port>
-                            <auth.server.management.port.jmx>${auth.server.management.port.jmx}</auth.server.management.port.jmx>
-                            <auth.server.ssl.required>${auth.server.ssl.required}</auth.server.ssl.required>
-                            <auth.server.java.home>${auth.server.java.home}</auth.server.java.home>
-                            <auth.server.startup.timeout>${auth.server.startup.timeout}</auth.server.startup.timeout>
-                            <jboss.server.config.dir>${jboss.server.config.dir}</jboss.server.config.dir>
-                            <frontend.console.output>${frontend.console.output}</frontend.console.output>
-                            <backends.console.output>${backend.console.output}</backends.console.output>
-                        </systemPropertyVariables>
-                        <properties>
-                            <property>
-                                <name>listener</name>
-                                <value>org.keycloak.testsuite.util.TestEventsLogger</value>
-                            </property>
-                        </properties>
-                        <failIfNoTests>false</failIfNoTests>
-                    </configuration>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>unpack-auth-server-jboss</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                            <configuration>
+                                <artifactItems>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>${auth.server.artifactId}</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>zip</type>
+                                    </artifactItem>
+                                </artifactItems>
+                                <outputDirectory>${containers.home}</outputDirectory>
+                                <overWriteIfNewer>true</overWriteIfNewer>
+                                <skip>${auth.server.skip.unpack}</skip>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -123,6 +123,48 @@
                             </configuration>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <systemPropertyVariables>
+                            <project.build.directory>${project.build.directory}</project.build.directory>
+                            <arquillian.xml>${project.build.directory}/dependency/arquillian.xml</arquillian.xml>
+                            <browser>${browser}</browser>
+                            <firefox_binary>${firefox_binary}</firefox_binary>
+                            <shouldDeploy>false</shouldDeploy>
+                            
+                            <!--<auth.server>${auth.server}</auth.server>-->
+                            <auth.server.container>${auth.server.container}</auth.server.container>
+
+                            <auth.server.undertow>${auth.server.undertow}</auth.server.undertow>
+                            <auth.server.jboss>${auth.server.jboss}</auth.server.jboss>
+                            
+                            <auth.server.home>${auth.server.home}</auth.server.home>
+
+                            <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
+                            <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
+                            <auth.server.https.port>${auth.server.https.port}</auth.server.https.port>
+                            <auth.server.management.port>${auth.server.management.port}</auth.server.management.port>
+                            <auth.server.management.port.jmx>${auth.server.management.port.jmx}</auth.server.management.port.jmx>
+                            <auth.server.ssl.required>${auth.server.ssl.required}</auth.server.ssl.required>
+                            <auth.server.java.home>${auth.server.java.home}</auth.server.java.home>
+                            <auth.server.startup.timeout>${auth.server.startup.timeout}</auth.server.startup.timeout>
+                            <jboss.server.config.dir>${jboss.server.config.dir}</jboss.server.config.dir>
+                            <frontend.console.output>${frontend.console.output}</frontend.console.output>
+                            <backends.console.output>${backend.console.output}</backends.console.output>
+                            
+                            <adapter.test.props>${adapter.test.props}</adapter.test.props>
+                        </systemPropertyVariables>
+                        <properties>
+                            <property>
+                                <name>listener</name>
+                                <value>org.keycloak.testsuite.util.TestEventsLogger</value>
+                            </property>
+                        </properties>
+                        <failIfNoTests>false</failIfNoTests>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>        
@@ -255,6 +297,12 @@
 
                 <dependency>
                     <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-dependencies-server-all</artifactId>
+                    <type>pom</type>
+                </dependency>
+
+                <dependency>
+                    <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-core</artifactId>
                 </dependency>
                 <dependency>
@@ -278,54 +326,14 @@
                     <artifactId>keycloak-adapter-spi</artifactId>
                 </dependency>
 
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>               
-                    </plugin> 
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.liquibase</groupId>
-                        <artifactId>liquibase-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>            
-        </profile>
-        
-        <!--UNDERTOW-->
+                <!--UNDERTOW-->
 
-        <profile>
-            <id>auth-server-undertow</id>
-            <activation>
-                <property>
-                    <name>!auth.server</name>
-                </property>
-            </activation>
-            <properties>
-                <auth.server.undertow>true</auth.server.undertow>
-            </properties>
-            <dependencies>
                 <dependency>
                     <groupId>org.keycloak.testsuite</groupId>
                     <artifactId>integration-arquillian-servers-auth-server-undertow</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-dependencies-server-all</artifactId>
-                    <type>pom</type>
-                </dependency>
-
                 <dependency>
                     <groupId>org.jboss.arquillian.container</groupId>
                     <artifactId>undertow-embedded</artifactId>
@@ -423,25 +431,40 @@
                     <artifactId>postgresql</artifactId>
                     <version>${postgresql.version}</version>
                 </dependency>
+
             </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>               
+                    </plugin> 
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.liquibase</groupId>
+                        <artifactId>liquibase-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>            
         </profile>
         
-        <!--JBOSS-->
-        
         <profile>
-            <id>auth-server-jb</id>
-            <activation>
-                <property>
-                    <name>auth.server</name>
-                </property>
-            </activation>
+            <id>auth-server-wildfly</id>
             <properties>
-                <auth.server.container>auth-server-jboss</auth.server.container>
+                <auth.server>wildfly</auth.server>
+                <auth.server.jboss>true</auth.server.jboss>
+                <auth.server.undertow>false</auth.server.undertow>
                 <auth.server.home>${containers.home}/auth-server-${auth.server}</auth.server.home>
                 <auth.server.startup.timeout>300</auth.server.startup.timeout>
                 <jboss.server.config.dir>${auth.server.home}/standalone/configuration</jboss.server.config.dir>
                 <h2.version>1.3.173</h2.version>
-                <adapter.test.props/>
             </properties>
             <dependencies>
                 <dependency>
@@ -449,91 +472,44 @@
                     <artifactId>wildfly-arquillian-container-managed</artifactId>
                 </dependency>
             </dependencies>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-surefire-plugin</artifactId>
-                            <configuration>
-                                <systemPropertyVariables>
-                                    <auth.server.jboss>true</auth.server.jboss>
-                                    <auth.server.undertow>false</auth.server.undertow>
-                                    <auth.server.home>${auth.server.home}</auth.server.home>
-                                    <adapter.test.props>${adapter.test.props}</adapter.test.props>
-                                </systemPropertyVariables>
-                            </configuration>
-                        </plugin>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-dependency-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>unpack-auth-server-jboss</id>
-                                    <phase>generate-test-resources</phase>
-                                    <goals>
-                                        <goal>unpack</goal>
-                                    </goals>
-                                    <configuration>
-                                        <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>${auth.server.artifact.id}</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                            </artifactItem>
-                                        </artifactItems>
-                                        <outputDirectory>${containers.home}</outputDirectory>
-                                        <overWriteIfNewer>true</overWriteIfNewer>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
-            <id>auth-server-wildfly</id>
-            <activation>
-                <property>
-                    <name>auth.server</name>
-                    <value>wildfly</value>
-                </property>
-            </activation>
-            <properties>
-                <auth.server.artifact.id>integration-arquillian-servers-auth-server-wildfly</auth.server.artifact.id>
-            </properties>
         </profile>
         <profile>
             <id>auth-server-eap</id>
-            <activation>
-                <property>
-                    <name>auth.server</name>
-                    <value>eap</value>
-                </property>
-            </activation>
             <properties>
-                <auth.server.artifact.id>integration-arquillian-servers-auth-server-eap</auth.server.artifact.id>
+                <auth.server>eap</auth.server>
+                <auth.server.jboss>true</auth.server.jboss>
+                <auth.server.undertow>false</auth.server.undertow>
+                <auth.server.home>${containers.home}/auth-server-${auth.server}</auth.server.home>
+                <auth.server.startup.timeout>300</auth.server.startup.timeout>
+                <jboss.server.config.dir>${auth.server.home}/standalone/configuration</jboss.server.config.dir>
+                <h2.version>1.3.173</h2.version>
             </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                </dependency>
+            </dependencies>
         </profile>
-                
+        
         <profile>
             <id>auth-server-cluster</id>
             <properties>
+                <auth.server.arquillian.xsl>${common.resources}/xslt/arquillian-jboss-cluster.xsl</auth.server.arquillian.xsl>
+                
                 <!--disable exclusion pattern for cluster test which is enabled by default in base/pom.xml-->
                 <exclude.cluster>-</exclude.cluster>
                 
-                <auth.server.container>auth-server-jboss-cluster</auth.server.container>
+                <auth.server.container>auth-server-${auth.server}-cluster</auth.server.container>
                 <auth.server.startup.timeout>300</auth.server.startup.timeout>
                 <adapter.test.props/>
                 <h2.version>1.3.173</h2.version>
 
-                <keycloak.balancer.home>${containers.home}/balancer/wildfly-balancer-${project.version}</keycloak.balancer.home>
-                <keycloak.backend1.home>${containers.home}/node1/auth-server-${auth.server}</keycloak.backend1.home>
-                <keycloak.backend2.home>${containers.home}/node2/auth-server-${auth.server}</keycloak.backend2.home>
+                <auth.server.balancer.home>${containers.home}/balancer/wildfly-balancer-${project.version}</auth.server.balancer.home>
+                <auth.server.backend1.home>${containers.home}/node1/auth-server-${auth.server}</auth.server.backend1.home>
+                <auth.server.backend2.home>${containers.home}/node2/auth-server-${auth.server}</auth.server.backend2.home>
 
-                <auth.server.home>${keycloak.backend1.home}</auth.server.home>
+                <auth.server.home>${auth.server.backend1.home}</auth.server.home>
                 <jboss.server.config.dir>${auth.server.home}/standalone/configuration</jboss.server.config.dir>
             </properties>
             <dependencies>
@@ -556,9 +532,9 @@
                                     <auth.server.undertow>false</auth.server.undertow>
                                     <adapter.test.props>${adapter.test.props}</adapter.test.props>
                                     
-                                    <keycloak.balancer.home>${keycloak.balancer.home}</keycloak.balancer.home>
-                                    <keycloak.backend1.home>${keycloak.backend1.home}</keycloak.backend1.home>
-                                    <keycloak.backend2.home>${keycloak.backend2.home}</keycloak.backend2.home>
+                                    <auth.server.balancer.home>${auth.server.balancer.home}</auth.server.balancer.home>
+                                    <auth.server.backend1.home>${auth.server.backend1.home}</auth.server.backend1.home>
+                                    <auth.server.backend2.home>${auth.server.backend2.home}</auth.server.backend2.home>
 
                                     <!--100-->
                                     <auth.server.backend1.port.offset>101</auth.server.backend1.port.offset>
@@ -599,14 +575,14 @@
                                             </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>${auth.server.artifact.id}</artifactId>
+                                                <artifactId>${auth.server.artifactId}</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
                                                 <outputDirectory>${containers.home}/node1</outputDirectory>
                                             </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>${auth.server.artifact.id}</artifactId>
+                                                <artifactId>${auth.server.artifactId}</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
                                                 <outputDirectory>${containers.home}/node2</outputDirectory>

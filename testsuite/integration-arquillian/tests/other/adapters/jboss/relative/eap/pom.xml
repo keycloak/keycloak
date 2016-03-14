@@ -46,9 +46,10 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <requireActiveProfile>
-                                    <profiles>auth-server-eap</profiles>
-                                </requireActiveProfile>
+                                <requireProperty>
+                                    <property>auth.server</property>
+                                    <regex>eap</regex>
+                                </requireProperty>
                             </rules>
                         </configuration>
                     </execution>

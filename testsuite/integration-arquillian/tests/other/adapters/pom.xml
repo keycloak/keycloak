@@ -35,12 +35,14 @@
     
     <properties>
         
+        <app.server.arquillian.xsl>${common.resources}/xslt/arquillian.xsl</app.server.arquillian.xsl>
+        
         <app.server.artifactId>integration-arquillian-servers-app-server-${app.server}</app.server.artifactId>
         
         <app.server.port.offset>200</app.server.port.offset>
         <app.server.http.port>8280</app.server.http.port>
         <app.server.https.port>8643</app.server.https.port>
-        <app.server.management.protocol>remote+http</app.server.management.protocol>
+        <app.server.management.protocol>http-remoting</app.server.management.protocol>
         <app.server.management.port>10190</app.server.management.port>
         <app.server.management.port.jmx>10199</app.server.management.port.jmx>
         <app.server.startup.timeout>60</app.server.startup.timeout>
@@ -90,7 +92,7 @@
                                             <includes>
                                                 <include>arquillian.xml</include>
                                             </includes>
-                                            <stylesheet>${arquillian.xml.stylesheet}</stylesheet>
+                                            <stylesheet>${app.server.arquillian.xsl}</stylesheet>
                                             <parameters>
                                                 <parameter>
                                                     <name>keycloak.version</name>
@@ -141,6 +143,8 @@
                                 <app.server.http.port>${app.server.http.port}</app.server.http.port>
                                 <app.server.https.port>${app.server.https.port}</app.server.https.port>
                                 <app.server.management.protocol>${app.server.management.protocol}</app.server.management.protocol>
+                                <app.server.management.user>${app.server.management.user}</app.server.management.user>
+                                <app.server.management.password>${app.server.management.password}</app.server.management.password>
                                 <app.server.management.port>${app.server.management.port}</app.server.management.port>
                                 <app.server.management.port.jmx>${app.server.management.port.jmx}</app.server.management.port.jmx>
                                 <app.server.ssl.required>${app.server.ssl.required}</app.server.ssl.required>

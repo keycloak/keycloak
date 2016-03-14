@@ -35,7 +35,6 @@
     
     <properties>
         <common.resources>${project.parent.basedir}/common</common.resources>
-        <arquillian.xml.stylesheet>${common.resources}/xslt/arquillian.xsl</arquillian.xml.stylesheet>
         <adapter.libs.home>${app.server.home}/modules/system/add-ons/keycloak</adapter.libs.home>
     </properties>
     

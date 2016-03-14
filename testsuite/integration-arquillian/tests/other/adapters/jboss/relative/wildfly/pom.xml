@@ -35,7 +35,7 @@
         <app.server>relative-wildfly</app.server>
     </properties>
     
-    <build>
+<!--    <build>
         <plugins>
             <plugin>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -46,27 +46,16 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <requireActiveProfile>
-                                    <profiles>auth-server-wildfly</profiles>
-                                </requireActiveProfile>
+                                <requireProperty>
+                                    <property>auth.server</property>
+                                    <regex>wildfly</regex>
+                                </requireProperty>
                             </rules>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
-    </build>
-    
-    <profiles>
-        <profile>
-            <id>auth-server-wildfly</id>
-            <activation>
-                <property>
-                    <name>auth.server</name>
-                    <value>wildfly</value>
-                </property>
-            </activation>
-        </profile>
-    </profiles>
+    </build>-->
     
 </project>

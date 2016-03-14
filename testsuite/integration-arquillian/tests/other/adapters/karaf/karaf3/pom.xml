@@ -33,6 +33,9 @@
         
     <properties>
         <app.server>karaf3</app.server>
+        
+        <app.server.management.user>karaf</app.server.management.user>
+        <app.server.management.password>karaf</app.server.management.password>
     </properties>
     
 </project>

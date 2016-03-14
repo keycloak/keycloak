@@ -34,6 +34,7 @@
     <name>Adapter Tests - Tomcat</name>
     
     <properties>
+        <common.resources>${project.parent.basedir}/common</common.resources>
         <!--TODO: implement "port offset" for tomcat-->
         <app.server.port.offset>0</app.server.port.offset>
         <app.server.http.port>8080</app.server.http.port>
