@@ -38,6 +38,7 @@ public abstract class AbstractExampleAdapterTest extends AbstractAdapterTest {
     public static final String EXAMPLES_HOME;
     public static final String EXAMPLES_VERSION_SUFFIX;
     public static final String EXAMPLES_HOME_DIR;
+    public static final String TEST_APPS_HOME_DIR;
     public static final String EXAMPLES_WEB_XML;
 
     static {
@@ -49,7 +50,13 @@ public abstract class AbstractExampleAdapterTest extends AbstractAdapterTest {
         Assert.assertNotNull("Property ${examples.version.suffix} must bet set.", EXAMPLES_VERSION_SUFFIX);
         System.out.println(EXAMPLES_VERSION_SUFFIX);
 
-        EXAMPLES_HOME_DIR = EXAMPLES_HOME + "/keycloak-examples-" + EXAMPLES_VERSION_SUFFIX;
+        if (!System.getProperty("unpacked.container.folder.name","").isEmpty()) {
+            EXAMPLES_HOME_DIR = EXAMPLES_HOME + "/" + System.getProperty("unpacked.container.folder.name","") + "-examples";
+            TEST_APPS_HOME_DIR = EXAMPLES_HOME + "/" + System.getProperty("unpacked.container.folder.name","") + "-test-apps";
+        } else {
+            EXAMPLES_HOME_DIR = EXAMPLES_HOME + "/keycloak-examples-" + EXAMPLES_VERSION_SUFFIX;
+            TEST_APPS_HOME_DIR = EXAMPLES_HOME + "/Keycloak-" + EXAMPLES_VERSION_SUFFIX + "-test-apps";
+        }
 
         EXAMPLES_WEB_XML = EXAMPLES_HOME + "/web.xml";
     }

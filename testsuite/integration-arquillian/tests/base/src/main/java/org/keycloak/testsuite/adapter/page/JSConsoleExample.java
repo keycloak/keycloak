@@ -22,6 +22,7 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.Select;
 
 import java.net.URL;
 
@@ -32,7 +33,7 @@ import java.net.URL;
 public class JSConsoleExample extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "js-console-example";
-    public static final String CLIENT_ID = "js-console";
+    public static final String CLIENT_ID = "integration-arquillian-test-apps-js-console";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)
@@ -45,6 +46,8 @@ public class JSConsoleExample extends AbstractPageWithInjectedUrl {
         return fixedUrl != null ? fixedUrl : url;
     }
 
+    @FindBy(xpath = "//button[text() = 'Init']")
+    private WebElement initButton;
     @FindBy(xpath = "//button[text() = 'Login']")
     private WebElement logInButton;
     @FindBy(xpath = "//button[text() = 'Logout']")
@@ -67,6 +70,17 @@ public class JSConsoleExample extends AbstractPageWithInjectedUrl {
     @FindBy(xpath = "//button[text() = 'Show Details']")
     private WebElement showDetailsButton;
 
+    @FindBy(id = "flowSelect")
+    private Select flowSelect;
+    @FindBy(id = "responseModeSelect")
+    private Select responseModeSelect;
+
+    @FindBy(id = "output")
+    private WebElement outputArea;
+
+    @FindBy(id = "events")
+    private WebElement eventsArea;
+
     public void logIn() {
         logInButton.click();
     }
@@ -87,4 +101,23 @@ public class JSConsoleExample extends AbstractPageWithInjectedUrl {
         getProfileButton.click();
     }
 
+    public void setFlow(String value) {
+        flowSelect.selectByValue(value);
+    }
+
+    public void init() {
+        initButton.click();
+    }
+
+    public void setResponseMode(String value) {
+        responseModeSelect.selectByValue(value);
+    }
+
+    public String getOutputText() {
+        return outputArea.getText();
+    }
+
+    public String getEventsText() {
+        return eventsArea.getText();
+    }
 }
