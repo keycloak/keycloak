@@ -405,6 +405,17 @@
                     </para>
                 </listitem>
             </varlistentry>
+            <varlistentry>
+                <term>proxy-url</term>
+                <listitem>
+                    <para>
+                        Defines the proxy to use for requests sent to the auth-server-url.
+                        This is <emphasis>OPTIONAL</emphasis>. Note that only the <emphasis>scheme</emphasis>,
+                        <emphasis>host</emphasis> and <emphasis>port</emphasis> of the proxy URL are used.
+                        Proxies that require authentication are currently not supported.
+                    </para>
+                </listitem>
+            </varlistentry>
         </variablelist>
     </para>
 </section>
