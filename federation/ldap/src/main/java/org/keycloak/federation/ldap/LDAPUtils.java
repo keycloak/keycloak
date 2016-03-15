@@ -19,6 +19,7 @@ package org.keycloak.federation.ldap;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -229,6 +230,45 @@ public class LDAPUtils {
     }
 
 
+    /**
+     * Load all LDAP objects corresponding to given query. We will load them paginated, so we allow to bypass the limitation of 1000
+     * maximum loaded objects in single query in MSAD
+     *
+     * @param ldapQuery
+     * @param ldapProvider
+     * @return
+     */
+    public static List<LDAPObject> loadAllLDAPObjects(LDAPQuery ldapQuery, LDAPFederationProvider ldapProvider) {
+        LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
+        boolean pagination = ldapConfig.isPagination();
+        if (pagination) {
+            // For now reuse globally configured batch size in LDAP provider page
+            int pageSize = ldapConfig.getBatchSizeForSync();
+
+            List<LDAPObject> result = new LinkedList<>();
+            boolean nextPage = true;
+
+            while (nextPage) {
+                ldapQuery.setLimit(pageSize);
+                final List<LDAPObject> currentPageGroups = ldapQuery.getResultList();
+                result.addAll(currentPageGroups);
+                nextPage = ldapQuery.getPaginationContext() != null;
+            }
+
+            return result;
+        } else {
+            // LDAP pagination not available. Do everything in single transaction
+            return ldapQuery.getResultList();
+        }
+    }
+
+
+    /**
+     * Validate configured customFilter matches the requested format
+     *
+     * @param customFilter
+     * @throws FederationConfigValidationException
+     */
     public static void validateCustomLdapFilter(String customFilter) throws FederationConfigValidationException {
         if (customFilter != null) {
 

@@ -500,6 +500,8 @@ public class FederationProvidersIntegrationTest {
         }
     }
 
+
+    // TODO: Rather separate test for fullNameMapper to better test all the possibilities
     @Test
     public void testFullNameMapper() {
         KeycloakSession session = keycloakRule.startSession();
@@ -691,7 +693,7 @@ public class FederationProvidersIntegrationTest {
 
             }
 
-            Assert.assertFalse(session.users().removeUser(appRealm, user));
+            Assert.assertTrue(session.users().removeUser(appRealm, user));
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -826,8 +828,12 @@ public class FederationProvidersIntegrationTest {
             LDAPObject ldapUser = ldapProvider.loadLDAPUserByUsername(appRealm, "johnkeycloak");
             ldapProvider.getLdapIdentityStore().validatePassword(ldapUser, "Password1");
 
-            // ATM it's not permitted to delete user in unsynced mode. Should be user deleted just locally instead?
-            Assert.assertFalse(session.users().removeUser(appRealm, user));
+            // User is deleted just locally
+            Assert.assertTrue(session.users().removeUser(appRealm, user));
+
+            // Assert user not available locally, but will be reimported from LDAP once searched
+            Assert.assertNull(session.userStorage().getUserByUsername("johnkeycloak", appRealm));
+            Assert.assertNotNull(session.users().getUserByUsername("johnkeycloak", appRealm));
         } finally {
             keycloakRule.stopSession(session, false);
         }

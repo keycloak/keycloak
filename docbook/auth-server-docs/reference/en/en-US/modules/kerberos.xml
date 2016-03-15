@@ -154,7 +154,7 @@ ktadd -k /tmp/http.keytab HTTP/www.mydomain.org@MYDOMAIN.ORG
             </listitem>
             <listitem>
                 <para>
-                    Finally run Keycloak server and configure SPNEGO/Kerberos authentication in Keycloak admin console. Keycloak supports Kerberos authentication
+                    Run Keycloak server and configure SPNEGO/Kerberos authentication in Keycloak admin console. Keycloak supports Kerberos authentication
                     through <link linkend='user_federation'>Federation provider SPI</link> . We have 2 federation providers with Kerberos authentication support:
                     <variablelist>
                         <varlistentry>
@@ -183,6 +183,20 @@ ktadd -k /tmp/http.keytab HTTP/www.mydomain.org@MYDOMAIN.ORG
                             </listitem>
                         </varlistentry>
                     </variablelist>
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Finally you may need to check the Kerberos authenticator correctly configured. You can go to <literal>Authentication</literal> tab in
+                    admin console and select <literal>Browser</literal> flow. Here you will see <literal>Kerberos</literal> authenticator, which is used by Keycloak for SPNEGO
+                    handshake with client (exchange <literal>Negotiate</literal> header etc.). By default it's disabled, so Keycloak doesn't ask for Negotiate header, however once you
+                    configured federation provider in previous step, it's automatically switched to <literal>ALTERNATIVE</literal>. So defacto you don't need to do anything, just
+                    check that it's really switched to Alternative.
+                </para>
+                <para>
+                    Alternative means that Keycloak tries to ask browser for Negotiate header, but if it's not available, it will continue on next authenticator (which usually means
+                    displaying username/password form to user). You can switch to <literal>REQUIRED</literal> if you want to enforce login with
+                    kerberos ticket and not allow fallback to username/password form.
                 </para>
             </listitem>
         </itemizedlist>

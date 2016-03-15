@@ -88,9 +88,9 @@ public class GroupLDAPFederationMapperFactory extends AbstractLDAPFederationMapp
         for (MembershipType membershipType : MembershipType.values()) {
             membershipTypes.add(membershipType.toString());
         }
-        ProviderConfigProperty membershipType = createConfigProperty(RoleMapperConfig.MEMBERSHIP_ATTRIBUTE_TYPE, "Membership Attribute Type",
-                "DN means that LDAP role has it's members declared in form of their full DN. For example 'member: uid=john,ou=users,dc=example,dc=com' . " +
-                        "UID means that LDAP role has it's members declared in form of pure user uids. For example 'memberUid: john' .",
+        ProviderConfigProperty membershipType = createConfigProperty(GroupMapperConfig.MEMBERSHIP_ATTRIBUTE_TYPE, "Membership Attribute Type",
+                "DN means that LDAP group has it's members declared in form of their full DN. For example 'member: uid=john,ou=users,dc=example,dc=com' . " +
+                        "UID means that LDAP group has it's members declared in form of pure user uids. For example 'memberUid: john' .",
                 ProviderConfigProperty.LIST_TYPE, membershipTypes);
         configProperties.add(membershipType);
 
@@ -165,6 +165,7 @@ public class GroupLDAPFederationMapperFactory extends AbstractLDAPFederationMapp
 
         defaultValues.put(GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true");
         defaultValues.put(GroupMapperConfig.MEMBERSHIP_LDAP_ATTRIBUTE, LDAPConstants.MEMBER);
+        defaultValues.put(GroupMapperConfig.MEMBERSHIP_ATTRIBUTE_TYPE, MembershipType.DN.toString());
 
         String mode = config.getEditMode() == UserFederationProvider.EditMode.WRITABLE ? LDAPGroupMapperMode.LDAP_ONLY.toString() : LDAPGroupMapperMode.READ_ONLY.toString();
         defaultValues.put(GroupMapperConfig.MODE, mode);

@@ -179,8 +179,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
         if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) {
-            logger.warnf("User '%s' can't be deleted in LDAP as editMode is '%s'", user.getUsername(), editMode.toString());
-            return false;
+            logger.warnf("User '%s' can't be deleted in LDAP as editMode is '%s'. Deleting user just from Keycloak DB, but he will be re-imported from LDAP again once searched in Keycloak", user.getUsername(), editMode.toString());
+            return true;
         }
 
         LDAPObject ldapObject = loadAndValidateUser(realm, user);
