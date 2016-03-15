@@ -120,7 +120,7 @@ public abstract class AbstractKeycloakTest {
         setDefaultPageUriParameters();
 
         driverSettings();
-        
+
         TestEventsLogger.setDriver(driver);
 
         if (!suiteContext.isAdminPasswordUpdated()) {
@@ -216,18 +216,6 @@ public abstract class AbstractKeycloakTest {
         return adminClient.realms();
     }
 
-    private void loadConstantsProperties() throws ConfigurationException {
-        constantsProperties = new PropertiesConfiguration("test-constants.properties");
-        constantsProperties.setThrowExceptionOnMissing(true);
-    }
-
-    protected PropertiesConfiguration getConstantsProperties() throws ConfigurationException {
-        if (constantsProperties == null) {
-            loadConstantsProperties();
-        }
-        return constantsProperties;
-    }
-
     public void createRealm(String realm) {
         try {
             RealmResource realmResource = adminClient.realms().realm(realm);
@@ -285,6 +273,18 @@ public abstract class AbstractKeycloakTest {
         }
 
         userResource.update(userRepresentation);
+    }
+
+    private void loadConstantsProperties() throws ConfigurationException {
+        constantsProperties = new PropertiesConfiguration(System.getProperty("testsuite.constants"));
+        constantsProperties.setThrowExceptionOnMissing(true);
+    }
+
+    protected PropertiesConfiguration getConstantsProperties() throws ConfigurationException {
+        if (constantsProperties == null) {
+            loadConstantsProperties();
+        }
+        return constantsProperties;
     }
 
 }
