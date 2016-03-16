@@ -28,7 +28,7 @@
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
             
-            <container qualifier="auth-server-jboss" mode="suite" >
+            <container qualifier="auth-server-${{auth.server}}" mode="suite" >
                 <configuration>
                     <property name="enabled">true</property>
                     <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>

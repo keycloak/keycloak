@@ -28,7 +28,7 @@
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
             
-            <container qualifier="auth-server-undertow" mode="suite" >
+            <container qualifier="auth-server-undertow" mode="manual" >
                 <configuration>
                     <property name="enabled">true</property>
                     <property name="bindAddress">localhost</property>
@@ -36,7 +36,7 @@
                     <property name="bindHttpPort">${auth.server.http.port}</property>
                 </configuration>
             </container>
-            
+                        
         </xsl:copy>
     </xsl:template>
 

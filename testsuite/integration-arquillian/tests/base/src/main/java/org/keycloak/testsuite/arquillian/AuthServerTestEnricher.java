@@ -34,6 +34,7 @@ import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.annotation.SuiteScoped;
+import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
@@ -93,6 +94,14 @@ public class AuthServerTestEnricher {
                 : "http://localhost:" + (httpPort + clusterPortOffset);
     }
 
+//    public void startAuthServer(@Observes BeforeSuite event) {
+//        startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
+//    }
+//    
+//    public void stopAuthServer(@Observes AfterSuite event) {
+//        containerController.get().stop(suiteContext.getAuthServerInfo().getQualifier());
+//    }
+//    
     public void initializeSuiteContext(@Observes(precedence = 2) BeforeSuite event) {
 
         Set<ContainerInfo> containers = new LinkedHashSet<>();
