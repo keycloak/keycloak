@@ -352,10 +352,10 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
 
     function updateSupported() {
         if ($scope.realm.internationalizationEnabled) {
-            var accountLocales = localeForTheme('account', $scope.realm.loginTheme);
-            var adminLocales = localeForTheme('admin', $scope.realm.loginTheme);
+            var accountLocales = localeForTheme('account', $scope.realm.accountTheme);
+            var adminLocales = localeForTheme('admin', $scope.realm.adminTheme);
             var loginLocales = localeForTheme('login', $scope.realm.loginTheme);
-            var emailLocales = localeForTheme('email', $scope.realm.loginTheme);
+            var emailLocales = localeForTheme('email', $scope.realm.emailTheme);
 
             var supportedLocales = [];
             for (var i = 0; i < accountLocales.length; i++) {
@@ -371,7 +371,7 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
                 $scope.realm.supportedLocales = supportedLocales;
             } else {
                 for (var i = 0; i < $scope.realm.supportedLocales.length; i++) {
-                    if ($scope.realm.supportedLocales.indexOf($scope.realm.supportedLocales[i]) == -1) {
+                    if (supportedLocales.indexOf($scope.realm.supportedLocales[i]) == -1) {
                         $scope.realm.supportedLocales = supportedLocales;
                     }
                 }
@@ -386,6 +386,7 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
     $scope.$watch('realm.loginTheme', updateSupported);
     $scope.$watch('realm.accountTheme', updateSupported);
     $scope.$watch('realm.emailTheme', updateSupported);
+    $scope.$watch('realm.adminTheme', updateSupported);
     $scope.$watch('realm.internationalizationEnabled', updateSupported);
 });
 
