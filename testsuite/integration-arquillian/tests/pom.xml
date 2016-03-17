@@ -104,7 +104,7 @@
                     <artifactId>xml-maven-plugin</artifactId>
                     <executions>
                         <execution>
-                            <id>add-app-server-to-arquillian-xml</id>
+                            <id>add-auth-server-to-arquillian-xml</id>
                             <phase>process-resources</phase>
                             <goals>
                                 <goal>transform</goal>
