@@ -34,7 +34,14 @@ public class LDAPDn {
 
     public static LDAPDn fromString(String dnString) {
         LDAPDn dn = new LDAPDn();
-
+        
+        // In certain OpenLDAP implementations the uniqueMember attribute is mandatory
+        // Thus, if a new group is created, it will contain an empty uniqueMember attribute
+        // Later on, when adding members, this empty attribute will be kept
+        // Keycloak must be able to process it, properly, w/o throwing an ArrayIndexOutOfBoundsException
+        if(dnString.trim().isEmpty())
+            return dn;
+        
         String[] rdns = dnString.split("(?<!\\\\),");
         for (String entryStr : rdns) {
             String[] rdn = entryStr.split("(?<!\\\\)=");
