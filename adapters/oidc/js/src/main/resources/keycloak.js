@@ -163,6 +163,8 @@
                         }
                     } else if (initOptions.onLoad) {
                         onLoad();
+                    } else {
+                        initPromise.setSuccess();
                     }
                 } else {
                     initPromise.setSuccess();
