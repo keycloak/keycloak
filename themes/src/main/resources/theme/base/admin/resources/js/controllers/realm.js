@@ -353,14 +353,13 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
     function updateSupported() {
         if ($scope.realm.internationalizationEnabled) {
             var accountLocales = localeForTheme('account', $scope.realm.accountTheme);
-            var adminLocales = localeForTheme('admin', $scope.realm.adminTheme);
             var loginLocales = localeForTheme('login', $scope.realm.loginTheme);
             var emailLocales = localeForTheme('email', $scope.realm.emailTheme);
 
             var supportedLocales = [];
             for (var i = 0; i < accountLocales.length; i++) {
                 var l = accountLocales[i];
-                if (adminLocales.indexOf(l) >= 0 && loginLocales.indexOf(l) >= 0 && emailLocales.indexOf(l) >= 0) {
+                if (loginLocales.indexOf(l) >= 0 && emailLocales.indexOf(l) >= 0) {
                     supportedLocales.push(l);
                 }
             }
@@ -386,7 +385,6 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
     $scope.$watch('realm.loginTheme', updateSupported);
     $scope.$watch('realm.accountTheme', updateSupported);
     $scope.$watch('realm.emailTheme', updateSupported);
-    $scope.$watch('realm.adminTheme', updateSupported);
     $scope.$watch('realm.internationalizationEnabled', updateSupported);
 });
 
