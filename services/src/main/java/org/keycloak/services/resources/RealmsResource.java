@@ -116,7 +116,7 @@ public class RealmsResource {
      * @param realmName
      * @param clientId
      * @return
-     * @since 1.9
+     * @since 2.0
      */
     @GET
     @Path("{realm}/clients/{client_id}/redirect")
@@ -134,14 +134,19 @@ public class RealmsResource {
             return null;
         }
 
-        if (client.getRootUrl() == null) {
-
-            URI targetUri = KeycloakUriBuilder.fromUri(ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), client.getRootUrl(), client.getBaseUrl())).build();
-
-            return Response.temporaryRedirect(targetUri).build();
+        if (client.getRootUrl() == null && client.getBaseUrl() == null) {
+            return null;
         }
 
-        return Response.temporaryRedirect(URI.create(client.getRootUrl() + client.getBaseUrl())).build();
+
+        URI targetUri;
+        if (client.getRootUrl() != null && (client.getBaseUrl() == null || client.getBaseUrl().isEmpty())) {
+            targetUri = KeycloakUriBuilder.fromUri(client.getRootUrl()).build();
+        } else {
+            targetUri = KeycloakUriBuilder.fromUri(ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), client.getRootUrl(), client.getBaseUrl())).build();
+        }
+
+        return Response.temporaryRedirect(targetUri).build();
     }
 
     @Path("{realm}/login-actions")

@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-public class RealmResourceTest {
+public class ClientRedirectTest {
 
     @ClassRule
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {

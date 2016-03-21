@@ -19,13 +19,13 @@
     <title>Clients</title>
 
     <para>
-        Keycloak provides support for managing OAuth clients.
+        Keycloak provides support for managing Clients.
     </para>
 
     <section id="client-config">
         <title>Client Config</title>
         <para>
-            Keycloak supports flexible configuration of OAuth Clients.
+            Keycloak supports flexible configuration of Clients.
         </para>
 
         <section>
