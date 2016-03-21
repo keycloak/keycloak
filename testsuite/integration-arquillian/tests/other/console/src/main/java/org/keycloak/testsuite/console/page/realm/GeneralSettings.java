@@ -18,7 +18,6 @@
 
 package org.keycloak.testsuite.console.page.realm;
 
-import org.keycloak.testsuite.model.Theme;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -58,19 +57,19 @@ public class GeneralSettings extends RealmSettings {
         saveButton.click();
     }
     
-    public void selectLoginTheme(Theme theme) {
-        loginThemeSelect.selectByVisibleText(theme.getName());
+    public void selectLoginTheme(String theme) {
+        loginThemeSelect.selectByVisibleText(theme);
     }
     
-    public void selecAccountTheme(Theme theme) {
-        accountThemeSelect.selectByVisibleText(theme.getName());
+    public void selecAccountTheme(String theme) {
+        accountThemeSelect.selectByVisibleText(theme);
     }
     
-    public void selectAdminTheme(Theme theme) {
-        adminThemeSelect.selectByVisibleText(theme.getName());
+    public void selectAdminTheme(String theme) {
+        adminThemeSelect.selectByVisibleText(theme);
     }
     
-    public void selectEmailTheme(Theme theme) {
-        emailThemeSelect.selectByVisibleText(theme.getName());
+    public void selectEmailTheme(String theme) {
+        emailThemeSelect.selectByVisibleText(theme);
     }
 }

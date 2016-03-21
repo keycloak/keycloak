@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.keycloak.testsuite.arquillian.TestContext;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -102,6 +104,8 @@ public abstract class AbstractKeycloakTest {
     protected WelcomePage welcomePage;
 
     protected UserRepresentation adminUser;
+
+    private PropertiesConfiguration constantsProperties;
 
     @Before
     public void beforeAbstractKeycloakTest() {
@@ -209,6 +213,18 @@ public abstract class AbstractKeycloakTest {
         return adminClient.realms();
     }
 
+    private void loadConstantsProperties() throws ConfigurationException {
+        constantsProperties = new PropertiesConfiguration("test-constants.properties");
+        constantsProperties.setThrowExceptionOnMissing(true);
+    }
+
+    protected PropertiesConfiguration getConstantsProperties() throws ConfigurationException {
+        if (constantsProperties == null) {
+            loadConstantsProperties();
+        }
+        return constantsProperties;
+    }
+
     public void createRealm(String realm) {
         try {
             RealmResource realmResource = adminClient.realms().realm(realm);
@@ -221,7 +237,7 @@ public abstract class AbstractKeycloakTest {
             realmRepresentation.setEnabled(true);
             realmRepresentation.setRegistrationAllowed(true);
             adminClient.realms().create(realmRepresentation);
-            
+
 //            List<RequiredActionProviderRepresentation> requiredActions = adminClient.realm(realm).flows().getRequiredActions();
 //            for (RequiredActionProviderRepresentation a : requiredActions) {
 //                a.setEnabled(false);
@@ -230,28 +246,28 @@ public abstract class AbstractKeycloakTest {
 //            }
         }
     }
-    
+
     public String createUser(String realm, String username, String password, String ... requiredActions) {
         List<String> requiredUserActions = Arrays.asList(requiredActions);
-        
+
         UserRepresentation homer = new UserRepresentation();
         homer.setEnabled(true);
         homer.setUsername(username);
         homer.setRequiredActions(requiredUserActions);
-        
+
         return ApiUtil.createUserAndResetPasswordWithAdminClient(adminClient.realm(realm), homer, password);
     }
-    
+
     public void setRequiredActionEnabled(String realm, String requiredAction, boolean enabled, boolean defaultAction) {
         AuthenticationManagementResource managementResource = adminClient.realm(realm).flows();
-        
+
         RequiredActionProviderRepresentation action = managementResource.getRequiredAction(requiredAction);
         action.setEnabled(enabled);
         action.setDefaultAction(defaultAction);
-      
+
         managementResource.updateRequiredAction(requiredAction, action);
     }
-    
+
     public void setRequiredActionEnabled(String realm, String userId, String requiredAction, boolean enabled) {
         UsersResource usersResource = adminClient.realm(realm).users();
 
@@ -264,8 +280,8 @@ public abstract class AbstractKeycloakTest {
         } else if (!enabled && requiredActions.contains(requiredAction)) {
             requiredActions.remove(requiredAction);
         }
-        
+
         userResource.update(userRepresentation);
     }
-    
+
 }
