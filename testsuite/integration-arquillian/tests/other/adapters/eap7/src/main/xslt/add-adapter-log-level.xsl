@@ -17,7 +17,7 @@
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xalan="http://xml.apache.org/xalan"
-                xmlns:j="urn:jboss:domain:4.0"
+                xmlns:j="urn:jboss:domain:4.1"
                 xmlns:ds="urn:jboss:domain:datasources:4.0"
                 xmlns:k="urn:jboss:domain:keycloak:1.1"
                 xmlns:sec="urn:jboss:domain:security:1.2"
