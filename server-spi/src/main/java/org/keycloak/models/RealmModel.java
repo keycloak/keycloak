@@ -181,20 +181,11 @@ public interface RealmModel extends RoleContainerModel {
 
     RoleModel getRoleById(String id);
 
-    List<String> getDefaultRoles();
-
-    void addDefaultRole(String name);
-
-    void updateDefaultRoles(String[] defaultRoles);
-
     List<GroupModel> getDefaultGroups();
 
     void addDefaultGroup(GroupModel group);
 
     void removeDefaultGroup(GroupModel group);
-
-    // Key is clientId
-    Map<String, ClientModel> getClientNameMap();
 
     List<ClientModel> getClients();
 

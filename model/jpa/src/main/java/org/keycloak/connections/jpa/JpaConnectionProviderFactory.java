@@ -17,11 +17,18 @@
 
 package org.keycloak.connections.jpa;
 
+import java.sql.Connection;
+
 import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface JpaConnectionProviderFactory extends ProviderFactory<JpaConnectionProvider> {
+
+    // Caller is responsible for closing connection
+    Connection getConnection();
+
+    String getSchema();
 
 }

@@ -51,8 +51,14 @@ import org.keycloak.provider.Spi;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
-import org.keycloak.representations.info.*;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.representations.info.ClientInstallationRepresentation;
+import org.keycloak.representations.info.MemoryInfoRepresentation;
+import org.keycloak.representations.info.ProviderRepresentation;
+import org.keycloak.representations.info.ServerInfoRepresentation;
+import org.keycloak.representations.info.SpiInfoRepresentation;
+import org.keycloak.representations.info.SystemInfoRepresentation;
+import org.keycloak.representations.info.ThemeInfoRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

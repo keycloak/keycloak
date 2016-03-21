@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc;
 
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -193,9 +194,9 @@ public class TokenManager {
         int currentTime = Time.currentTime();
 
         if (realm.isRevokeRefreshToken()) {
-            int serverStartupTime = (int)(session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
+            int clusterStartupTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
 
-            if (refreshToken.getIssuedAt() < validation.clientSession.getTimestamp() && (serverStartupTime != validation.clientSession.getTimestamp())) {
+            if (refreshToken.getIssuedAt() < validation.clientSession.getTimestamp() && (clusterStartupTime != validation.clientSession.getTimestamp())) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
             }
 

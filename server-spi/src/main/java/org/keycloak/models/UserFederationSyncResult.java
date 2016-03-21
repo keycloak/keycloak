@@ -22,10 +22,20 @@ package org.keycloak.models;
  */
 public class UserFederationSyncResult {
 
+    private boolean ignored;
+
     private int added;
     private int updated;
     private int removed;
     private int failed;
+
+    public boolean isIgnored() {
+        return ignored;
+    }
+
+    public void setIgnored(boolean ignored) {
+        this.ignored = ignored;
+    }
 
     public int getAdded() {
         return added;
@@ -83,11 +93,18 @@ public class UserFederationSyncResult {
     }
 
     public String getStatus() {
-        String status = String.format("%d imported users, %d updated users, %d removed users", added, updated, removed);
-        if (failed != 0) {
-            status += String.format(", %d users failed sync! See server log for more details", failed);
+        if (ignored) {
+            return "Synchronization ignored as it's already in progress";
+        } else {
+            String status = String.format("%d imported users, %d updated users", added, updated);
+            if (removed > 0) {
+                status += String.format(", %d removed users", removed);
+            }
+            if (failed != 0) {
+                status += String.format(", %d users failed sync! See server log for more details", failed);
+            }
+            return status;
         }
-        return status;
     }
 
     @Override
@@ -97,5 +114,11 @@ public class UserFederationSyncResult {
 
     public static UserFederationSyncResult empty() {
         return new UserFederationSyncResult();
+    }
+
+    public static UserFederationSyncResult ignored() {
+        UserFederationSyncResult result = new UserFederationSyncResult();
+        result.setIgnored(true);
+        return result;
     }
 }

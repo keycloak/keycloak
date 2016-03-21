@@ -19,6 +19,7 @@ package org.keycloak.testsuite.account;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -61,6 +62,7 @@ public class ResetCredentialsTest extends AbstractAccountManagementTest {
         }
         
         testRealmAccountManagementPage.navigateTo();
+        assertTrue("Reset password should be allowed.", testRealmResource().toRepresentation().isResetPasswordAllowed());
         testRealmLoginPage.form().forgotPassword();
     }
     

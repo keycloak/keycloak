@@ -61,12 +61,8 @@
                     <tr ng-repeat="node in nodeRegistrations">
                         <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/clustering/{{node.host}}">{{node.host}}</a></td>
                         <td>{{node.lastRegistration}}</td>
-                        <td class="kc-action-cell">
-                            <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}/clustering/{{node.host}}">{{:: 'edit' | translate}}</button>
-                        </td>
-                        <td class="kc-action-cell">
-                            <button class="btn btn-default btn-block btn-sm" data-ng-click="removeNode(node)">{{:: 'delete' | translate}}</button>
-                        </td>
+                        <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}/clustering/{{node.host}}">{{:: 'edit' | translate}}</td>
+                        <td class="kc-action-cell" data-ng-click="removeNode(node)">{{:: 'delete' | translate}}</td>
                     </tr>
                     <tr data-ng-show="!nodeRegistrations || nodeRegistrations.length == 0">
                         <td class="text-muted">{{:: 'no-registered-cluster-nodes' | translate}}</td>

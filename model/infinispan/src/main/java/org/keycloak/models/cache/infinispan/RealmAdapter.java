@@ -21,8 +21,7 @@ import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.RealmCache;
-import org.keycloak.models.cache.entities.CachedRealm;
+import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.security.Key;
@@ -415,6 +414,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public PublicKey getPublicKey() {
+        if (updated != null) return updated.getPublicKey();
+        if (publicKey != null) return publicKey;
+        publicKey = cached.getPublicKey();
         if (publicKey != null) return publicKey;
         publicKey = KeycloakModelUtils.getPublicKey(getPublicKeyPem());
         return publicKey;
@@ -429,6 +431,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public X509Certificate getCertificate() {
+        if (updated != null) return updated.getCertificate();
+        if (certificate != null) return certificate;
+        certificate = cached.getCertificate();
         if (certificate != null) return certificate;
         certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
         return certificate;
@@ -456,7 +461,14 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public PrivateKey getPrivateKey() {
-        if (privateKey != null) return privateKey;
+        if (updated != null) return updated.getPrivateKey();
+        if (privateKey != null) {
+            return privateKey;
+        }
+        privateKey = cached.getPrivateKey();
+        if (privateKey != null) {
+            return privateKey;
+        }
         privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
         return privateKey;
     }
@@ -489,11 +501,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
-
-        List<RequiredCredentialModel> copy = new LinkedList<RequiredCredentialModel>();
-        if (updated != null) copy.addAll(updated.getRequiredCredentials());
-        else copy.addAll(cached.getRequiredCredentials());
-        return copy;
+        if (updated != null) return updated.getRequiredCredentials();
+        return cached.getRequiredCredentials();
     }
 
     @Override
@@ -535,11 +544,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<GroupModel> getDefaultGroups() {
+        if (updated != null) return updated.getDefaultGroups();
+
         List<GroupModel> defaultGroups = new LinkedList<>();
         for (String id : cached.getDefaultGroups()) {
             defaultGroups.add(cacheSession.getGroupById(id, this));
         }
-        return defaultGroups;
+        return Collections.unmodifiableList(defaultGroups);
 
     }
 
@@ -570,61 +581,37 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public void updateDefaultRoles(String[] defaultRoles) {
+    public void updateDefaultRoles(String... defaultRoles) {
         getDelegateForUpdate();
         updated.updateDefaultRoles(defaultRoles);
     }
 
     @Override
-    public Map<String, ClientModel> getClientNameMap() {
-        if (updated != null) return updated.getClientNameMap();
-        Map<String, ClientModel> map = new HashMap<String, ClientModel>();
-        for (String id : cached.getClients().values()) {
-            ClientModel model = cacheSession.getClientById(id, this);
-            if (model == null) {
-                throw new IllegalStateException("Cached application not found: " + id);
-            }
-            map.put(model.getClientId(), model);
-        }
-        return map;
+    public void removeDefaultRoles(String... defaultRoles) {
+        getDelegateForUpdate();
+        updated.removeDefaultRoles(defaultRoles);
+
     }
 
     @Override
     public List<ClientModel> getClients() {
-        if (updated != null) return updated.getClients();
-        List<ClientModel> apps = new LinkedList<ClientModel>();
-        for (String id : cached.getClients().values()) {
-            ClientModel model = cacheSession.getClientById(id, this);
-            if (model == null) {
-                throw new IllegalStateException("Cached application not found: " + id);
-            }
-            apps.add(model);
-        }
-        return apps;
+        return cacheSession.getClients(this);
 
     }
 
     @Override
     public ClientModel addClient(String name) {
-        getDelegateForUpdate();
-        ClientModel app = updated.addClient(name);
-        cacheSession.registerApplicationInvalidation(app.getId());
-        return app;
+        return cacheSession.addClient(this, name);
     }
 
     @Override
     public ClientModel addClient(String id, String clientId) {
-        getDelegateForUpdate();
-        ClientModel app =  updated.addClient(id, clientId);
-        cacheSession.registerApplicationInvalidation(app.getId());
-        return app;
+        return cacheSession.addClient(this, id, clientId);
     }
 
     @Override
     public boolean removeClient(String id) {
-        cacheSession.registerApplicationInvalidation(id);
-        getDelegateForUpdate();
-        return updated.removeClient(id);
+        return cacheSession.removeClient(id, this);
     }
 
     @Override
@@ -635,10 +622,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ClientModel getClientByClientId(String clientId) {
-        if (updated != null) return updated.getClientByClientId(clientId);
-        String id = cached.getClients().get(clientId);
-        if (id == null) return null;
-        return getClientById(id);
+        return cacheSession.getClientByClientId(clientId, this);
     }
 
     @Override
@@ -681,6 +665,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public IdentityProviderModel getIdentityProviderByAlias(String alias) {
+        if (updated != null) return updated.getIdentityProviderByAlias(alias);
         for (IdentityProviderModel identityProviderModel : getIdentityProviders()) {
             if (identityProviderModel.getAlias().equals(alias)) {
                 return identityProviderModel;
@@ -892,11 +877,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRole(String name) {
-        if (updated != null) return updated.getRole(name);
-        String id = cached.getRealmRoles().get(name);
-        if (id == null) return null;
-        return cacheSession.getRoleById(id, this);
+        for (RoleModel role : getRoles()) {
+            if (role.getName().equals(name)) return role;
+        }
+        return null;
     }
+
+    @Override
+    public Set<RoleModel> getRoles() {
+        return cacheSession.getRealmRoles(this);
+    }
+
 
     @Override
     public RoleModel addRole(String name) {
@@ -921,18 +912,6 @@ public class RealmAdapter implements RealmModel {
         return updated.removeRole(role);
     }
 
-    @Override
-    public Set<RoleModel> getRoles() {
-        if (updated != null) return updated.getRoles();
-
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String id : cached.getRealmRoles().values()) {
-            RoleModel roleById = cacheSession.getRoleById(id, this);
-            if (roleById == null) continue;
-            roles.add(roleById);
-        }
-        return roles;
-    }
 
     @Override
     public boolean isIdentityFederationEnabled() {
@@ -993,13 +972,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public Set<IdentityProviderMapperModel> getIdentityProviderMappers() {
         if (updated != null) return updated.getIdentityProviderMappers();
-        Set<IdentityProviderMapperModel> mappings = new HashSet<>();
-        for (List<IdentityProviderMapperModel> models : cached.getIdentityProviderMappers().values()) {
-            for (IdentityProviderMapperModel model : models) {
-                mappings.add(model);
-            }
-        }
-        return mappings;
+        return cached.getIdentityProviderMapperSet();
     }
 
     @Override
@@ -1010,7 +983,7 @@ public class RealmAdapter implements RealmModel {
         for (IdentityProviderMapperModel entity : list) {
             mappings.add(entity);
         }
-        return mappings;
+        return Collections.unmodifiableSet(mappings);
     }
 
     @Override
@@ -1056,13 +1029,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public Set<UserFederationMapperModel> getUserFederationMappers() {
         if (updated != null) return updated.getUserFederationMappers();
-        Set<UserFederationMapperModel> mappers = new HashSet<UserFederationMapperModel>();
-        for (List<UserFederationMapperModel> models : cached.getUserFederationMappers().values()) {
-            for (UserFederationMapperModel model : models) {
-                mappers.add(model);
-            }
-        }
-        return mappers;
+        return cached.getUserFederationMapperSet();
     }
 
     @Override
@@ -1073,7 +1040,7 @@ public class RealmAdapter implements RealmModel {
         for (UserFederationMapperModel entity : list) {
             mappers.add(entity);
         }
-        return mappers;
+        return Collections.unmodifiableSet(mappers);
     }
 
     @Override
@@ -1182,9 +1149,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
         if (updated != null) return updated.getAuthenticationFlows();
-        List<AuthenticationFlowModel> models = new ArrayList<>();
-        models.addAll(cached.getAuthenticationFlows().values());
-        return models;
+        return cached.getAuthenticationFlowList();
     }
 
     @Override
@@ -1271,7 +1236,7 @@ public class RealmAdapter implements RealmModel {
         if (updated != null) return updated.getAuthenticatorConfigs();
         List<AuthenticatorConfigModel> models = new ArrayList<>();
         models.addAll(cached.getAuthenticatorConfigs().values());
-        return models;
+        return Collections.unmodifiableList(models);
     }
 
     @Override
@@ -1303,9 +1268,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<RequiredActionProviderModel> getRequiredActionProviders() {
         if (updated != null) return updated.getRequiredActionProviders();
-        List<RequiredActionProviderModel> models = new ArrayList<>();
-        models.addAll(cached.getRequiredActionProviders().values());
-        return models;
+        return cached.getRequiredActionProviderList();
     }
 
     @Override
@@ -1341,80 +1304,60 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public GroupModel getGroupById(String id) {
-        if (updated != null) return updated.getGroupById(id);
-        return cacheSession.getGroupById(id, this);
-    }
-
-    @Override
-    public List<GroupModel> getGroups() {
-        if (updated != null) return updated.getGroups();
-        if (cached.getGroups().isEmpty()) return Collections.EMPTY_LIST;
-        List<GroupModel> list = new LinkedList<>();
-        for (String id : cached.getGroups()) {
-            GroupModel group = cacheSession.getGroupById(id, this);
-            if (group == null) continue;
-            list.add(group);
-        }
-        return list;
-    }
-
-    @Override
-    public List<GroupModel> getTopLevelGroups() {
-        List<GroupModel> all = getGroups();
-        Iterator<GroupModel> it = all.iterator();
-        while (it.hasNext()) {
-            GroupModel group = it.next();
-            if (group.getParent() != null) {
-                it.remove();
-            }
-        }
-        return all;
-    }
-
-    @Override
-    public boolean removeGroup(GroupModel group) {
-        getDelegateForUpdate();
-        return updated.removeGroup(group);
-    }
-
-    @Override
     public GroupModel createGroup(String name) {
-        getDelegateForUpdate();
-        return updated.createGroup(name);
+        return cacheSession.createGroup(this, name);
     }
 
     @Override
     public GroupModel createGroup(String id, String name) {
-        getDelegateForUpdate();
-        return updated.createGroup(id, name);
+        return cacheSession.createGroup(this, id, name);
     }
 
     @Override
     public void addTopLevelGroup(GroupModel subGroup) {
-        getDelegateForUpdate();
-        updated.addTopLevelGroup(subGroup);
+        cacheSession.addTopLevelGroup(this, subGroup);
 
     }
 
     @Override
     public void moveGroup(GroupModel group, GroupModel toParent) {
-        getDelegateForUpdate();
-        updated.moveGroup(group, toParent);
+        cacheSession.moveGroup(this, group, toParent);
+    }
+
+    @Override
+    public GroupModel getGroupById(String id) {
+        return cacheSession.getGroupById(id, this);
+    }
+
+    @Override
+    public List<GroupModel> getGroups() {
+        return cacheSession.getGroups(this);
+    }
+
+    @Override
+    public List<GroupModel> getTopLevelGroups() {
+        return cacheSession.getTopLevelGroups(this);
+    }
+
+    @Override
+    public boolean removeGroup(GroupModel group) {
+        return cacheSession.removeGroup(this, group);
     }
 
     @Override
     public List<ClientTemplateModel> getClientTemplates() {
         if (updated != null) return updated.getClientTemplates();
+        List<String> clientTemplates = cached.getClientTemplates();
+        if (clientTemplates.isEmpty()) return Collections.EMPTY_LIST;
         List<ClientTemplateModel> apps = new LinkedList<ClientTemplateModel>();
-        for (String id : cached.getClientTemplates()) {
+        for (String id : clientTemplates) {
             ClientTemplateModel model = cacheSession.getClientTemplateById(id, this);
             if (model == null) {
                 throw new IllegalStateException("Cached clientemplate not found: " + id);
             }
             apps.add(model);
         }
-        return apps;
+        return Collections.unmodifiableList(apps);
 
     }
 

@@ -17,6 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -33,7 +34,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -54,21 +54,6 @@ public interface ClientResource {
     @DELETE
     public void remove();
 
-    @GET
-    @Path("allowed-origins")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Set<String> getAllowedOrigins();
-
-    @PUT
-    @Path("allowed-origins")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void updateAllowedOrigins(Set<String> allowedOrigins);
-
-    @DELETE
-    @Path("allowed-origins")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void removeAllowedOrigins(Set<String> originsToRemove);
-
     @POST
     @Path("client-secret")
     @Produces(MediaType.APPLICATION_JSON)
@@ -79,23 +64,30 @@ public interface ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public CredentialRepresentation getSecret();
 
-    @GET
-    @Path("installation/jboss")
-    @Produces(MediaType.APPLICATION_XML)
-    public String getInstallationJbossXml();
-
-    @GET
-    @Path("installation/json")
+    /**
+     * Generate a new registration access token for the client
+     *
+     * @return
+     */
+    @Path("registration-access-token")
+    @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public String getInstallationJson();
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ClientRepresentation regenerateRegistrationAccessToken();
 
-    @POST
-    @Path("logout-all")
-    public void logoutAllUsers();
+    /**
+     * Get representation of certificate resource
+     *
+     * @param attributePrefix
+     * @return
+     */
+    @Path("certificates/{attr}")
+    public ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix);
 
-    @POST
-    @Path("logout-user/{username}")
-    public void logoutUser(@PathParam("username") String username);
+    @GET
+    @NoCache
+    @Path("installation/providers/{providerId}")
+    public String getInstallationProvider(@PathParam("providerId") String providerId);
 
     @Path("session-count")
     @GET

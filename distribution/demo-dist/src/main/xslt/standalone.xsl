@@ -89,6 +89,10 @@
                 <local-cache name="sessions"/>
                 <local-cache name="offlineSessions"/>
                 <local-cache name="loginFailures"/>
+                <local-cache name="work"/>
+                <local-cache name="realmVersions">
+                    <transaction mode="BATCH" locking="PESSIMISTIC"/>
+                </local-cache>
             </cache-container>
             <xsl:apply-templates select="node()|@*"/>
         </xsl:copy>

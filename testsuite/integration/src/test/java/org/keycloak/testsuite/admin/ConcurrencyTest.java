@@ -18,18 +18,23 @@
 package org.keycloak.testsuite.admin;
 
 import org.jboss.logging.Logger;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -39,19 +44,56 @@ import static org.junit.Assert.*;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Ignore
 public class ConcurrencyTest extends AbstractClientTest {
 
     private static final Logger log = Logger.getLogger(ConcurrencyTest.class);
 
-    private static final int DEFAULT_THREADS = 3;
-    private static final int DEFAULT_ITERATIONS = 10;
+    private static final int DEFAULT_THREADS = 5;
+    private static final int DEFAULT_ITERATIONS = 20;
 
     // If enabled only one request is allowed at the time. Useful for checking that test is working.
     private static final boolean SYNCHRONIZED = false;
 
+    boolean passedCreateClient = false;
+    boolean passedCreateRole = false;
+
+    //@Test
+    public void testAllConcurrently() throws Throwable {
+        Thread client = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    createClient();
+                    passedCreateClient = true;
+                } catch (Throwable throwable) {
+                    throw new RuntimeException(throwable);
+                }
+            }
+        });
+        Thread role = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    createRole();
+                    passedCreateRole = true;
+                } catch (Throwable throwable) {
+                    throw new RuntimeException(throwable);
+                }
+            }
+        });
+
+        client.start();
+        role.start();
+        client.join();
+        role.join();
+        Assert.assertTrue(passedCreateClient);
+        Assert.assertTrue(passedCreateRole);
+    }
+
     @Test
     public void createClient() throws Throwable {
+        System.out.println("***************************");
+        long start = System.currentTimeMillis();
         run(new KeycloakRunnable() {
             @Override
             public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
@@ -62,7 +104,8 @@ public class ConcurrencyTest extends AbstractClientTest {
                 String id = ApiUtil.getCreatedId(response);
                 response.close();
 
-                assertNotNull(realm.clients().get(id));
+                c = realm.clients().get(id).toRepresentation();
+                assertNotNull(c);
                 boolean found = false;
                 for (ClientRepresentation r : realm.clients().findAll()) {
                     if (r.getClientId().equals(name)) {
@@ -75,10 +118,99 @@ public class ConcurrencyTest extends AbstractClientTest {
                 }
             }
         });
+        long end = System.currentTimeMillis() - start;
+        System.out.println("createClient took " + end);
+
     }
 
     @Test
+    public void createGroup() throws Throwable {
+        System.out.println("***************************");
+        long start = System.currentTimeMillis();
+        run(new KeycloakRunnable() {
+            @Override
+            public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
+                String name = "c-" + threadNum + "-" + iterationNum;
+                GroupRepresentation c = new GroupRepresentation();
+                c.setName(name);
+                Response response = realm.groups().add(c);
+                String id = ApiUtil.getCreatedId(response);
+                response.close();
+
+                c = realm.groups().group(id).toRepresentation();
+                assertNotNull(c);
+                boolean found = false;
+                for (GroupRepresentation r : realm.groups().groups()) {
+                    if (r.getName().equals(name)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    fail("Group " + name + " not found in group list");
+                }
+            }
+        });
+        long end = System.currentTimeMillis() - start;
+        System.out.println("createGroup took " + end);
+
+    }
+
+    @Test
+    @Ignore
+    public void createRemoveClient() throws Throwable {
+        // FYI< this will fail as HSQL seems to be trying to perform table locks.
+        System.out.println("***************************");
+        long start = System.currentTimeMillis();
+        run(new KeycloakRunnable() {
+            @Override
+            public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
+                String name = "c-" + threadNum + "-" + iterationNum;
+                ClientRepresentation c = new ClientRepresentation();
+                c.setClientId(name);
+                Response response = realm.clients().create(c);
+                String id = ApiUtil.getCreatedId(response);
+                response.close();
+
+                c = realm.clients().get(id).toRepresentation();
+                assertNotNull(c);
+                boolean found = false;
+                for (ClientRepresentation r : realm.clients().findAll()) {
+                    if (r.getClientId().equals(name)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    fail("Client " + name + " not found in client list");
+                }
+                realm.clients().get(id).remove();
+                try {
+                    c = realm.clients().get(id).toRepresentation();
+                    fail("Client " + name + " should not be found.  Should throw a 404");
+                } catch (NotFoundException e) {
+
+                }
+                found = false;
+                for (ClientRepresentation r : realm.clients().findAll()) {
+                    if (r.getClientId().equals(name)) {
+                        found = true;
+                        break;
+                    }
+                }
+                Assert.assertFalse("Client " + name + " should not be in client list", found);
+
+            }
+        });
+        long end = System.currentTimeMillis() - start;
+        System.out.println("createClient took " + end);
+
+    }
+
+
+    @Test
     public void createRole() throws Throwable {
+        long start = System.currentTimeMillis();
         run(new KeycloakRunnable() {
             @Override
             public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
@@ -88,15 +220,21 @@ public class ConcurrencyTest extends AbstractClientTest {
                 assertNotNull(realm.roles().get(name).toRepresentation());
             }
         });
+        long end = System.currentTimeMillis() - start;
+        System.out.println("createRole took " + end);
+
     }
 
     @Test
     public void createClientRole() throws Throwable {
+        long start = System.currentTimeMillis();
         ClientRepresentation c = new ClientRepresentation();
         c.setClientId("client");
         Response response = realm.clients().create(c);
         final String clientId = ApiUtil.getCreatedId(response);
         response.close();
+
+        System.out.println("*********************************************");
 
         run(new KeycloakRunnable() {
             @Override
@@ -110,6 +248,10 @@ public class ConcurrencyTest extends AbstractClientTest {
                 assertNotNull(client.roles().get(name).toRepresentation());
             }
         });
+        long end = System.currentTimeMillis() - start;
+        System.out.println("createClientRole took " + end);
+        System.out.println("*********************************************");
+
     }
 
     private void run(final KeycloakRunnable runnable) throws Throwable {

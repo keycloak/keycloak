@@ -38,6 +38,8 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
+import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeProvider;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -47,6 +49,9 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
+import java.util.Locale;
+import java.util.Properties;
 
 /**
  * Root resource for admin console and admin REST API
@@ -262,6 +267,33 @@ public class AdminRoot {
             logger.debug("Cors admin pre-flight");
             Response response = Cors.add(request, Response.ok()).preflight().allowedMethods("GET", "PUT", "POST", "DELETE").auth().build();
             throw new NoLogWebApplicationException(response);
+        }
+    }
+
+    public static Theme getTheme(KeycloakSession session, RealmModel realm) throws IOException {
+        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
+        return themeProvider.getTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
+    }
+
+    public static Properties getMessages(KeycloakSession session, RealmModel realm, String lang) {
+        try {
+            Theme theme = getTheme(session, realm);
+            Locale locale = lang != null ? Locale.forLanguageTag(lang) : Locale.ENGLISH;
+            return theme.getMessages(locale);
+        } catch (IOException e) {
+            logger.error("Failed to load messages from theme", e);
+            return new Properties();
+        }
+    }
+
+    public static Properties getMessages(KeycloakSession session, RealmModel realm, String bundle, String lang) {
+        try {
+            Theme theme = getTheme(session, realm);
+            Locale locale = lang != null ? Locale.forLanguageTag(lang) : Locale.ENGLISH;
+            return theme.getMessages(bundle, locale);
+        } catch (IOException e) {
+            logger.error("Failed to load messages from theme", e);
+            return new Properties();
         }
     }
 

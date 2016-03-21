@@ -41,7 +41,7 @@ import static org.junit.Assert.*;
 public class SecurityDefensesTest extends AbstractRealmTest {
     
     public static final String INVALID_PWD_MSG = "Invalid username or password.";
-    public static final String ACC_DISABLED_MSG = "Account is temporarily disabled, contact admin or try again later.";
+    public static final String ACC_DISABLED_MSG = "Invalid username or password.";
     public static final short ATTEMPTS_BAD_PWD = 2;
     public static final short ATTEMPTS_GOOD_PWD = 1;
 
@@ -173,7 +173,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
     }
 
     private void assertFeedbackText(String text) {
-        waitUntilElement(feedbackTextElement);
+        waitUntilElement(feedbackTextElement).is().present();
         assertEquals(text, feedbackTextElement.getText());
     }
 

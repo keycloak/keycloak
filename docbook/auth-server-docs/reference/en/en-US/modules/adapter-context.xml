@@ -1,0 +1,12 @@
+<chapter>
+    <title>KeycloakSecurityContext</title>
+    <para>
+        The <literal>KeycloakSecurityContext</literal> interface is available if you need to look at the access token directly.  This context is also useful if you need to
+        get the encoded access token so you can make additional REST invocations.  In servlet environments it is available in secured invocations as an attribute in HttpServletRequest.
+        Or, it is available in secure and insecure requests in the HttpSession for browser apps.
+        <programlisting>
+            httpServletRequest.getAttribute(KeycloakSecurityContext.class.getName());
+            httpServletRequest.getSession().getAttribute(KeycloakSecurityContext.class.getName());
+        </programlisting>
+    </para>
+</chapter>

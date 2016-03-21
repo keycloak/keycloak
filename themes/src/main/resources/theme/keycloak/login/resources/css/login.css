@@ -1,6 +1,6 @@
 .login-pf body {
     background: #0f0f0f url("../img/keycloak-bg.png") top left no-repeat;
-    background-size: 100% auto;
+    background-size: cover;
 }
 
 .alert-error {
@@ -79,8 +79,19 @@ a#kc-current-locale-link::after {
     background-image: url("../img/keycloak-logo.png");
     background-repeat: no-repeat;
 
-    height: 37px;
-    width: 154px;
+    height: 57px;
+    width: 125px;
+}
+
+div.kc-logo-text {
+    background-image: url("../img/keycloak-logo-text.png");
+    background-repeat: no-repeat;
+    width: 250px;
+    height: 38px;
+}
+
+div.kc-logo-text span {
+    display: none;
 }
 
 #kc-header {

@@ -30,6 +30,7 @@ import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.federation.ldap.mappers.AbstractLDAPFederationMapper;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationMapperModel;
@@ -48,6 +49,7 @@ public class MSADUserAccountControlMapper extends AbstractLDAPFederationMapper {
     private static final Logger logger = Logger.getLogger(MSADUserAccountControlMapper.class);
 
     private static final Pattern AUTH_EXCEPTION_REGEX = Pattern.compile(".*AcceptSecurityContext error, data ([0-9a-f]*), v.*");
+    private static final Pattern AUTH_INVALID_NEW_PASSWORD = Pattern.compile(".*error code ([0-9a-f]+) .*WILL_NOT_PERFORM.*");
 
     public MSADUserAccountControlMapper(UserFederationMapperModel mapperModel, LDAPFederationProvider ldapProvider, RealmModel realm) {
         super(mapperModel, ldapProvider, realm);
@@ -94,7 +96,7 @@ public class MSADUserAccountControlMapper extends AbstractLDAPFederationMapper {
     }
 
     protected boolean processAuthErrorCode(String errorCode, UserModel user) {
-        logger.debugf("MSAD Error code is '%s' after failed LDAP login of user", errorCode, user.getUsername());
+        logger.debugf("MSAD Error code is '%s' after failed LDAP login of user '%s'", errorCode, user.getUsername());
 
         if (ldapProvider.getEditMode() == UserFederationProvider.EditMode.WRITABLE) {
             if (errorCode.equals("532") || errorCode.equals("773")) {
@@ -105,10 +107,28 @@ public class MSADUserAccountControlMapper extends AbstractLDAPFederationMapper {
                 // User is disabled in MSAD. Set him to disabled in KC as well
                 user.setEnabled(false);
                 return true;
+            } else if (errorCode.equals("775")) {
+                logger.warnf("Locked user '%s' attempt to login", user.getUsername());
             }
         }
 
         return false;
+    }
+
+
+    protected ModelException processFailedPasswordUpdateException(ModelException e) {
+        String exceptionMessage = e.getCause().getMessage().replace('\n', ' ');
+        Matcher m = AUTH_INVALID_NEW_PASSWORD.matcher(exceptionMessage);
+        if (m.matches()) {
+            String errorCode = m.group(1);
+            if (errorCode.equals("53")) {
+                ModelException me = new ModelException("invalidPasswordRegexPatternMessage", e);
+                me.setParameters(new Object[]{"passwordConstraintViolation"});
+                return me;
+            }
+        }
+
+        return e;
     }
 
 
@@ -156,7 +176,12 @@ public class MSADUserAccountControlMapper extends AbstractLDAPFederationMapper {
         @Override
         public void updateCredential(UserCredentialModel cred) {
             // Update LDAP password first
-            super.updateCredential(cred);
+            try {
+                super.updateCredential(cred);
+            } catch (ModelException me) {
+                me = processFailedPasswordUpdateException(me);
+                throw me;
+            }
 
             if (ldapProvider.getEditMode() == UserFederationProvider.EditMode.WRITABLE && cred.getType().equals(UserCredentialModel.PASSWORD)) {
                 logger.debugf("Going to update userAccountControl for ldap user '%s' after successful password update", ldapUser.getDn().toString());

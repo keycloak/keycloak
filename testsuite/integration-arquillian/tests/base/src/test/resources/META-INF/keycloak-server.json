@@ -26,19 +26,18 @@
         "provider": "${keycloak.userSessionPersister.provider:jpa}"
     },
 
-    "userSessions": {
-        "provider" : "${keycloak.userSessions.provider:infinispan}"
-    },
-
-    "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:infinispan}"
-    },
-
     "userCache": {
-        "provider": "${keycloak.user.cache.provider:infinispan}",
+        "provider": "${keycloak.user.cache.provider:default}",
+        "default" : {
+            "enabled": true
+        },
         "mem": {
             "maxSize": 20000
         }
+    },
+
+    "userSessions": {
+        "provider" : "${keycloak.userSessions.provider:infinispan}"
     },
 
     "timer": {
@@ -46,7 +45,6 @@
     },
 
     "theme": {
-        "default": "keycloak",
         "staticMaxAge": "${keycloak.theme.staticMaxAge:2592000}",
         "cacheTemplates": "${keycloak.theme.cacheTemplates:true}",
         "cacheThemes": "${keycloak.theme.cacheThemes:true}",
@@ -98,6 +96,22 @@
             "connectionsPerHost": "${keycloak.connectionsMongo.connectionsPerHost:100}"
         }
     },
+
+    "realmCache": {
+        "provider": "${keycloak.realm.cache.provider:default}",
+        "default" : {
+            "enabled": true
+        }
+    },
+
+    "connectionsInfinispan": {
+        "default": {
+            "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
+            "async": "${keycloak.connectionsInfinispan.async:true}",
+            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:2}"
+        }
+    },
+
 
     "truststore": {
         "file": {

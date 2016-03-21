@@ -16,6 +16,7 @@
  */
 package org.keycloak.saml.common.parsers;
 
+import org.keycloak.common.util.Environment;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -29,6 +30,8 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.XMLEvent;
+import javax.xml.stream.util.EventReaderDelegate;
+
 import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -83,28 +86,10 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
         if (configStream == null)
             throw logger.nullArgumentError("InputStream");
 
-        XMLInputFactory xmlInputFactory = getXMLInputFactory();
-
         XMLEventReader xmlEventReader = StaxParserUtil.getXMLEventReader(configStream);
 
         try {
-            xmlEventReader = xmlInputFactory.createFilteredReader(xmlEventReader, new EventFilter() {
-                public boolean accept(XMLEvent xmlEvent) {
-                    // We are going to disregard characters that are new line and whitespace
-                    if (xmlEvent.isCharacters()) {
-                        Characters chars = xmlEvent.asCharacters();
-                        String data = chars.getData();
-                        data = valid(data) ? data.trim() : null;
-                        return valid(data);
-                    } else {
-                        return xmlEvent.isStartElement() || xmlEvent.isEndElement();
-                    }
-                }
-
-                private boolean valid(String str) {
-                    return str != null && str.length() > 0;
-                }
-            });
+            xmlEventReader = filterWhitespaces(xmlEventReader);
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
         }
@@ -135,6 +120,50 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
         } else {
             Thread.currentThread().setContextClassLoader(paramCl);
         }
+    }
+
+    protected XMLEventReader filterWhitespaces(XMLEventReader xmlEventReader) throws XMLStreamException {
+        XMLInputFactory xmlInputFactory = getXMLInputFactory();
+
+        xmlEventReader = xmlInputFactory.createFilteredReader(xmlEventReader, new EventFilter() {
+            public boolean accept(XMLEvent xmlEvent) {
+                // We are going to disregard characters that are new line and whitespace
+                if (xmlEvent.isCharacters()) {
+                    Characters chars = xmlEvent.asCharacters();
+                    String data = chars.getData();
+                    data = valid(data) ? data.trim() : null;
+                    return valid(data);
+                } else {
+                    return xmlEvent.isStartElement() || xmlEvent.isEndElement();
+                }
+            }
+
+            private boolean valid(String str) {
+                return str != null && str.length() > 0;
+            }
+
+        });
+
+        // Handle IBM JDK bug with Stax parsing when EventReader presented
+        if (Environment.IS_IBM_JAVA) {
+            final XMLEventReader origReader = xmlEventReader;
+
+            xmlEventReader = new EventReaderDelegate(origReader) {
+
+                @Override
+                public boolean hasNext() {
+                    boolean hasNext = super.hasNext();
+                    try {
+                        return hasNext && (origReader.peek() != null);
+                    } catch (XMLStreamException xse) {
+                        throw new IllegalStateException(xse);
+                    }
+                }
+
+            };
+        }
+
+        return xmlEventReader;
     }
 
 }

@@ -20,9 +20,9 @@
 
     <parent>
         <groupId>org.keycloak</groupId>
-        <artifactId>keycloak-parent</artifactId>
-        <version>1.9.0.Final-SNAPSHOT</version>
-        <relativePath>../../../../pom.xml</relativePath>
+        <artifactId>keycloak-as7-integration-pom</artifactId>
+        <version>2.0.0.CR1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>keycloak-as7-subsystem</artifactId>

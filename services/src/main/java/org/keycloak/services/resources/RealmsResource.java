@@ -16,18 +16,7 @@
  */
 package org.keycloak.services.resources;
 
-import java.util.List;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-
+import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
@@ -38,14 +27,21 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.provider.ProviderFactory;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resources.spi.RealmResourceProvider;
-import org.keycloak.services.resources.spi.RealmResourceProviderFactory;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.wellknown.WellKnownProvider;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.*;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -60,6 +56,9 @@ public class RealmsResource {
 
     @Context
     protected ClientConnection clientConnection;
+
+    @Context
+    private HttpRequest request;
 
     public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
         UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
@@ -145,7 +144,7 @@ public class RealmsResource {
     public AccountService getAccountService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
 
-        ClientModel client = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         if (client == null || !client.isEnabled()) {
             logger.debug("account management not enabled");
             throw new NotFoundException("account management not enabled");
@@ -186,34 +185,9 @@ public class RealmsResource {
         init(name);
 
         WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, providerName);
-        return Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.getDefaultCacheControl()).build();
+
+        ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.getDefaultCacheControl());
+        return Cors.add(request, responseBuilder).allowedOrigins("*").build();
     }
 
-    /**
-     * Extension point where an SPI can provide a custom implementation for a certain REST path.
-     *
-     * @param realmName the realm
-     * @param path the (unmapped) path name
-     * @return the rest resource or null if no implementation found
-     */
-    @Path("{realm}/{unmapped_path}")
-    public Object resolveUnknowPath(@PathParam("realm") String realmName, @PathParam("unmapped_path") String path) {
-        List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(RealmResourceProvider.class);
-
-        RealmModel realm = init(realmName);
-
-        for (ProviderFactory factory : factories) {
-            RealmResourceProviderFactory realmResourceFactory = (RealmResourceProviderFactory) factory;
-            RealmResourceProvider provider = realmResourceFactory.create(session, realm);
-            Object resource = provider.getResource(path);
-
-            // If the provider returns a non-null resource, use that one.
-            if (resource != null) {
-                return resource;
-            }
-        }
-
-        // No provider supplied a resource, so no resource available.
-        return null;
-    }
 }

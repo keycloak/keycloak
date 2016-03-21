@@ -19,6 +19,8 @@ package org.keycloak.federation.ldap;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -30,6 +32,7 @@ import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilde
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.membership.MembershipType;
+import org.keycloak.mappers.FederationConfigValidationException;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -58,7 +61,8 @@ public class LDAPUtils {
         ldapUser.setObjectClasses(ldapConfig.getUserObjectClasses());
 
         Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(ldapProvider.getModel().getId());
-        for (UserFederationMapperModel mapperModel : federationMappers) {
+        List<UserFederationMapperModel> sortedMappers = ldapProvider.sortMappersAsc(federationMappers);
+        for (UserFederationMapperModel mapperModel : sortedMappers) {
             LDAPFederationMapper ldapMapper = ldapProvider.getMapper(mapperModel);
             ldapMapper.onRegisterUserToLDAP(mapperModel, ldapProvider, ldapUser, user, realm);
         }
@@ -223,5 +227,59 @@ public class LDAPUtils {
      */
     public static String getMemberValueOfChildObject(LDAPObject ldapUser, MembershipType membershipType) {
         return membershipType == MembershipType.DN ? ldapUser.getDn().toString() : ldapUser.getAttributeAsString(ldapUser.getRdnAttributeName());
+    }
+
+
+    /**
+     * Load all LDAP objects corresponding to given query. We will load them paginated, so we allow to bypass the limitation of 1000
+     * maximum loaded objects in single query in MSAD
+     *
+     * @param ldapQuery
+     * @param ldapProvider
+     * @return
+     */
+    public static List<LDAPObject> loadAllLDAPObjects(LDAPQuery ldapQuery, LDAPFederationProvider ldapProvider) {
+        LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
+        boolean pagination = ldapConfig.isPagination();
+        if (pagination) {
+            // For now reuse globally configured batch size in LDAP provider page
+            int pageSize = ldapConfig.getBatchSizeForSync();
+
+            List<LDAPObject> result = new LinkedList<>();
+            boolean nextPage = true;
+
+            while (nextPage) {
+                ldapQuery.setLimit(pageSize);
+                final List<LDAPObject> currentPageGroups = ldapQuery.getResultList();
+                result.addAll(currentPageGroups);
+                nextPage = ldapQuery.getPaginationContext() != null;
+            }
+
+            return result;
+        } else {
+            // LDAP pagination not available. Do everything in single transaction
+            return ldapQuery.getResultList();
+        }
+    }
+
+
+    /**
+     * Validate configured customFilter matches the requested format
+     *
+     * @param customFilter
+     * @throws FederationConfigValidationException
+     */
+    public static void validateCustomLdapFilter(String customFilter) throws FederationConfigValidationException {
+        if (customFilter != null) {
+
+            customFilter = customFilter.trim();
+            if (customFilter.isEmpty()) {
+                return;
+            }
+
+            if (!customFilter.startsWith("(") || !customFilter.endsWith(")")) {
+                throw new FederationConfigValidationException("ldapErrorInvalidCustomFilter");
+            }
+        }
     }
 }

@@ -21,14 +21,41 @@ import org.infinispan.Cache;
 import org.infinispan.CacheStream;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientInitialAccessModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.entities.*;
-import org.keycloak.models.sessions.infinispan.stream.*;
+import org.keycloak.models.sessions.infinispan.entities.ClientInitialAccessEntity;
+import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.stream.ClientInitialAccessPredicate;
+import org.keycloak.models.sessions.infinispan.stream.ClientSessionPredicate;
+import org.keycloak.models.sessions.infinispan.stream.Comparators;
+import org.keycloak.models.sessions.infinispan.stream.Mappers;
+import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
+import org.keycloak.models.sessions.infinispan.stream.UserLoginFailurePredicate;
+import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmInfoUtil;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -242,7 +269,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSession(RealmModel realm, UserSessionModel session) {
-        removeUserSession(realm, session.getId(), false);
+        UserSessionEntity entity = getUserSessionEntity(session, false);
+        if (entity != null) {
+            removeUserSession(realm, entity, false);
+        }
     }
 
     @Override
@@ -253,9 +283,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     protected void removeUserSessions(RealmModel realm, UserModel user, boolean offline) {
         Cache<String, SessionEntity> cache = getCache(offline);
 
-        Iterator<String> itr = cache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).user(user.getId())).map(Mappers.sessionId()).iterator();
+        Iterator<SessionEntity> itr = cache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).user(user.getId())).map(Mappers.sessionEntity()).iterator();
         while (itr.hasNext()) {
-            removeUserSession(realm, itr.next(), offline);
+            UserSessionEntity userSessionEntity = (UserSessionEntity) itr.next();
+            removeUserSession(realm, userSessionEntity, offline);
         }
     }
 
@@ -459,12 +490,11 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
     }
 
-    protected void removeUserSession(RealmModel realm, String userSessionId, boolean offline) {
+    protected void removeUserSession(RealmModel realm, UserSessionEntity sessionEntity, boolean offline) {
         Cache<String, SessionEntity> cache = getCache(offline);
 
-        tx.remove(cache, userSessionId);
+        tx.remove(cache, sessionEntity.getId());
 
-        UserSessionEntity sessionEntity = (UserSessionEntity) cache.get(userSessionId);
         if (sessionEntity.getClientSessions() != null) {
             for (String clientSessionId : sessionEntity.getClientSessions()) {
                 tx.remove(cache, clientSessionId);
@@ -520,6 +550,15 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return models;
     }
 
+    UserSessionEntity getUserSessionEntity(UserSessionModel userSession, boolean offline) {
+        if (userSession instanceof UserSessionAdapter) {
+            return ((UserSessionAdapter) userSession).getEntity();
+        } else {
+            Cache<String, SessionEntity> cache = getCache(offline);
+            return cache != null ? (UserSessionEntity) cache.get(userSession.getId()) : null;
+        }
+    }
+
 
     @Override
     public UserSessionModel createOfflineUserSession(UserSessionModel userSession) {
@@ -539,8 +578,11 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public void removeOfflineUserSession(RealmModel realm, String userSessionId) {
-        removeUserSession(realm, userSessionId, true);
+    public void removeOfflineUserSession(RealmModel realm, UserSessionModel userSession) {
+        UserSessionEntity userSessionEntity = getUserSessionEntity(userSession, true);
+        if (userSessionEntity != null) {
+            removeUserSession(realm, userSessionEntity, true);
+        }
     }
 
     @Override

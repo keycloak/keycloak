@@ -135,6 +135,23 @@
                 </variablelist>
             </para>
         </section>
+        <section>
+            <title>Connect to LDAP over SSL</title>
+            <para>
+                When you configure secured connection URL to LDAP (for example <literal>ldaps://myhost.com:636</literal> ) the Keycloak will
+                use SSL for the communication with LDAP server. The important thing is to properly configure truststore on the Keycloak server side,
+                because SSL won't work if Keycloak can't trust the SSL connection with LDAP (Keycloak acts as the <literal>client</literal> here, when LDAP acts as server).
+            </para>
+            <para>
+                The global truststore for the Keycloak can be configured with Truststore SPI in the <literal>keycloak-server.json</literal> file and it's described in the details <link linkend="truststore">here</link>.
+                If you don't configure truststore SPI, the truststore will fallback to the default mechanism provided by Java (either the file provided by system property <literal>javax.net.ssl.trustStore</literal> or finally
+                the cacerts file from JDK if even the system property is not set).
+            </para>
+            <para>There is configuration property <literal>Use Truststore SPI</literal> in the LDAP federation provider configuration, where you can choose
+                whether Truststore SPI is used. By default, the value is <literal>ldaps only</literal>, which is fine for most of deployments, because attempt
+                to use Truststore SPI is done just if connection to LDAP starts with <literal>ldaps</literal> .
+            </para>
+        </section>
     </section>
     <section>
         <title>Sync of LDAP users to Keycloak</title>
@@ -277,8 +294,24 @@
             We have an example, which is showing LDAP integration and set of base mappers and sample mappers (mappers for street and postalCode) . It's in <literal>examples/ldap</literal>
             in the Keycloak example distribution or demo distribution download. You can also check the example sources directly <ulink url="https://github.com/keycloak/keycloak/blob/master/examples/ldap">here</ulink> .
         </para>
+        <section>
+            <title>Writing your own LDAP Mapper</title>
+            <para>
+                For the more advanced usecases, you have the possibility to create your own implementation of LDAP mapper or just subclass from
+                some already existing mapper implementation. You will need to implement <literal>UserFederationMapperFactory</literal> interface. In most cases, instead of
+                creating <literal>UserFederationMapperFactory</literal> from scratch, you can create subclasses of <literal>AbstractLDAPFederationMapperFactory</literal>, which itself
+                implements <literal>UserFederationMapperFactory</literal>. Then you need to create mapper implementation, which will be subclass of
+                <literal>AbstractLDAPFederationMapper</literal> (this mapper implementation will be returned by <literal>YourAbstractLDAPFederationMapperFactorySubclass.createMapper</literal> method).
+            </para>
+            <para>
+                After your code is written you must package up all your classes within a JAR file. This jar file must contain a file called
+                <literal>org.keycloak.mappers.UserFederationMapperFactory</literal> within the <literal>META-INF/services directory</literal> of the JAR. This file is a list of fully
+                qualified classnames of all implementations of <literal>UserFederationMapperFactory</literal>. For more details, look at section for
+                <link linkend="write_federation_provider">Write your own federation provider</link> and at <link linkend="providers">Providers and SPI</link> section.
+            </para>
+        </section>
     </section>
-    <section>
+    <section id="write_federation_provider">
         <title>Writing your own User Federation Provider</title>
         <para>
             The keycloak examples directory contains an example of a simple User Federation Provider backed by

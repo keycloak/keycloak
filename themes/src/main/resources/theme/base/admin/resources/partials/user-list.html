@@ -53,15 +53,9 @@
             <td class="clip">{{user.email}}</td>
             <td class="clip">{{user.lastName}}</td>
             <td class="clip">{{user.firstName}}</td>
-            <td class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">{{:: 'edit' | translate}}</button>
-            </td>
-            <td data-ng-show="access.impersonation" class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="impersonate(user.id)">{{:: 'impersonate' | translate}}</button>
-            </td>
-            <td data-ng-show="access.manageUsers" class="kc-action-cell">
-                <button class="btn btn-default btn-block btn-sm" data-ng-click="removeUser(user)">{{:: 'delete' | translate}}</button>
-            </td>
+            <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">{{:: 'edit' | translate}}</td>
+            <td data-ng-show="access.impersonation" class="kc-action-cell" data-ng-click="impersonate(user.id)">{{:: 'impersonate' | translate}}</td>
+            <td data-ng-show="access.manageUsers" class="kc-action-cell" data-ng-click="removeUser(user)">{{:: 'delete' | translate}}</td>
         </tr>
         <tr data-ng-show="!users || users.length == 0">
             <td class="text-muted" data-ng-show="!users">{{:: 'users.instruction' | translate}}</td>

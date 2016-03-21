@@ -35,7 +35,7 @@ public abstract class AbstractCommand {
     protected List<String> args;
     protected KeycloakSessionFactory sessionFactory;
 
-    public void injectProperties(List<String> args, InfinispanCLI cli, KeycloakSessionFactory sessionFactory) {
+    public void injectProperties(List<String> args, TestsuiteCLI cli, KeycloakSessionFactory sessionFactory) {
         this.args = args;
         this.sessionFactory = sessionFactory;
     }

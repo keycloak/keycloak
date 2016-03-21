@@ -58,9 +58,8 @@ public class LDAPConfig {
         }
     }
 
-    public String getSecurityProtocol() {
-        // hardcoded for now
-        return config.get(LDAPConstants.SECURITY_PROTOCOL);
+    public String getUseTruststoreSpi() {
+        return config.get(LDAPConstants.USE_TRUSTSTORE_SPI);
     }
 
     public String getUsersDn() {
@@ -132,7 +131,12 @@ public class LDAPConfig {
 
     public boolean isPagination() {
         String pagination = config.get(LDAPConstants.PAGINATION);
-        return pagination==null ? false : Boolean.parseBoolean(pagination);
+        return Boolean.parseBoolean(pagination);
+    }
+
+    public int getBatchSizeForSync() {
+        String pageSizeConfig = config.get(LDAPConstants.BATCH_SIZE_FOR_SYNC);
+        return pageSizeConfig!=null ? Integer.parseInt(pageSizeConfig) : LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC;
     }
 
     public String getUsernameLdapAttribute() {

@@ -1,9 +1,12 @@
 package org.keycloak.testsuite.console.federation;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -12,6 +15,7 @@ import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.federation.CreateLdapUserProvider;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
+import org.openqa.selenium.WebElement;
 
 /**
  * @author fkiss, pdrozd
@@ -41,7 +45,7 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().setLdapBindDnInput("KEYCLOAK/Administrator");
         createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
         createLdapUserProvider.form().setLdapBindCredentialInput("secret");
-        createLdapUserProvider.form().setAccountAfterPasswordUpdateEnabled(false);
+//        createLdapUserProvider.form().setAccountAfterPasswordUpdateEnabled(false);
         // enable kerberos
         createLdapUserProvider.form().setAllowKerberosAuthEnabled(true);
         createLdapUserProvider.form().setKerberosRealmInput("KEYCLOAK.ORG");
@@ -105,8 +109,25 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().save();
         assertAlertDanger();
         createLdapUserProvider.form().setLdapBindCredentialInput("secret");
+
+        createLdapUserProvider.form().setCustomUserSearchFilter("foo");
+        createLdapUserProvider.form().save();
+        assertAlertDanger();
+        createLdapUserProvider.form().setCustomUserSearchFilter("");
         createLdapUserProvider.form().save();
         assertAlertSuccess();
+
+        // Try updating invalid Custom LDAP Filter
+        createLdapUserProvider.form().setCustomUserSearchFilter("(foo=bar");
+        createLdapUserProvider.form().save();
+        assertAlertDanger();
+        createLdapUserProvider.form().setCustomUserSearchFilter("foo=bar)");
+        createLdapUserProvider.form().save();
+        assertAlertDanger();
+        createLdapUserProvider.form().setCustomUserSearchFilter("(foo=bar)");
+        createLdapUserProvider.form().save();
+        assertAlertSuccess();
+
     }
 
     @Test
@@ -119,7 +140,7 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().setLdapBindDnInput("uid=admin,ou=system");
         createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
         createLdapUserProvider.form().setLdapBindCredentialInput("secret");
-        createLdapUserProvider.form().setAccountAfterPasswordUpdateEnabled(true);
+//        createLdapUserProvider.form().setAccountAfterPasswordUpdateEnabled(true);
         createLdapUserProvider.form().save();
         assertAlertSuccess();
         LDAPEmbeddedServer ldapServer = null;
@@ -141,6 +162,21 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         }
     }
 
+    @Test
+    public void checkVendors() throws ConfigurationException {
+        createLdapUserProvider.navigateTo();
+
+        List<String> vendorsExpected = (List<String>) (List<?>) getConstantsProperties().getList("ldap-vendors");
+        List<String> vendorsActual = createLdapUserProvider.form().getVendors();
+
+        int vendorsExpectedSize = vendorsExpected.size();
+        int vendorsActualSize = vendorsActual.size();
+        assertTrue("Expected vendors count: " + vendorsExpectedSize + "; actual count: " + vendorsActualSize,
+                vendorsExpectedSize == vendorsActualSize);
+
+        assertTrue("Vendors list doesn't match", vendorsExpected.containsAll(vendorsActual));
+    }
+
     private void assertLdapProviderSetting(UserFederationProviderRepresentation ufpr, String name, int priority,
             String editMode, String syncRegistrations, String vendor, String searchScope, String connectionPooling,
             String pagination, String enableAccountAfterPasswordUpdate) {
@@ -152,7 +188,7 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         assertEquals(searchScope, ufpr.getConfig().get("searchScope"));
         assertEquals(connectionPooling, ufpr.getConfig().get("connectionPooling"));
         assertEquals(pagination, ufpr.getConfig().get("pagination"));
-        assertEquals(enableAccountAfterPasswordUpdate, ufpr.getConfig().get("userAccountControlsAfterPasswordUpdate"));
+//        assertEquals(enableAccountAfterPasswordUpdate, ufpr.getConfig().get("userAccountControlsAfterPasswordUpdate"));
     }
 
     private void assertLdapBasicMapping(UserFederationProviderRepresentation ufpr, String usernameLdapAttribute,

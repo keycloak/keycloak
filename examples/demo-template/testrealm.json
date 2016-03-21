@@ -69,7 +69,8 @@
             ],
             "realmRoles": [ "user","admin" ],
             "clientRoles": {
-                "realm-management": [ "realm-admin" ]
+                "realm-management": [ "realm-admin" ],
+                "account": [ "manage-account" ]
             }
         },
         {
@@ -146,6 +147,15 @@
             "baseUrl": "/angular-product/index.html",
             "redirectUris": [
                 "/angular-product/*"
+            ]
+        },
+		{
+            "clientId": "angular2-product",
+            "enabled": true,
+            "publicClient": true,
+            "baseUrl": "/angular2-product/index.html",
+            "redirectUris": [
+                "/angular2-product/*"
             ]
         },
         {

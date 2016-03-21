@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.9.0.Final-SNAPSHOT</version>
+        <version>2.0.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -57,7 +57,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.servlet</groupId>
-            <artifactId>jboss-servlet-api_3.1_spec</artifactId>
+            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.ws.rs</groupId>
@@ -235,6 +235,16 @@
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-undertow</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
         </dependency>
 
     </dependencies>
@@ -466,41 +476,6 @@
                 </plugins>
             </build>
 
-        </profile>
-
-        <!-- MySQL -->
-        <profile>
-            <activation>
-                <property>
-                    <name>keycloak.connectionsJpa.driver</name>
-                    <value>com.mysql.jdbc.Driver</value>
-                </property>
-            </activation>
-            <id>mysql</id>
-            <dependencies>
-                <dependency>
-                    <groupId>mysql</groupId>
-                    <artifactId>mysql-connector-java</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <!-- PostgreSQL -->
-        <profile>
-            <activation>
-                <property>
-                    <name>keycloak.connectionsJpa.driver</name>
-                    <value>org.postgresql.Driver</value>
-                </property>
-            </activation>
-            <id>postgresql</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.postgresql</groupId>
-                    <artifactId>postgresql</artifactId>
-                    <version>${postgresql.version}</version>
-                </dependency>
-            </dependencies>
         </profile>
 
         <profile>

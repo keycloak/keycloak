@@ -99,6 +99,14 @@
         <section>
             <title>Migrating to 1.9.0</title>
             <simplesect>
+                <title>Themes and providers directory moved</title>
+                <para>
+                    We've moved the themes and providers directories from <literal>standalone/configuration/themes</literal> and <literal>standalone/configuration/providers</literal>
+                    to <literal>themes</literal> and <literal>providers</literal> respectively. If you have added custom themes and providers you need
+                    to move them to the new location. You also need to update <literal>keycloak-server.json</literal> as it's changed due to this.
+                </para>
+            </simplesect>
+            <simplesect>
                 <title>Adapter Subsystems only bring in dependencies if keycloak is on</title>
                 <para>
                     Previously, if you had installed our saml or oidc keycloak subsystem adapters into Wildfly or JBoss EAP, we would
@@ -111,6 +119,13 @@
                 <title>Client Registration service endpoints moved</title>
                 <para>
                     The Client Registration service endpoints have been moved from <literal>{realm}/clients</literal> to <literal>{realm}/clients-registrations</literal>.
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>Session state parameter in authentication response renamed</title>
+                <para>
+                    In the OpenID Connect authentication response we used to return the session state as <literal>session-state</literal> this is not
+                    correct according to the specification and has been renamed to <literal>session_state</literal>.
                 </para>
             </simplesect>
             <simplesect>

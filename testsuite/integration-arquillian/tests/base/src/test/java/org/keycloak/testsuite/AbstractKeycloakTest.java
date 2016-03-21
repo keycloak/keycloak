@@ -16,8 +16,11 @@
  */
 package org.keycloak.testsuite;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.keycloak.testsuite.arquillian.TestContext;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.NotFoundException;
@@ -31,12 +34,16 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.auth.page.WelcomePage;
@@ -50,8 +57,8 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
-import org.keycloak.testsuite.util.Timer;
 import org.keycloak.testsuite.util.WaitUtils;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 
 /**
  *
@@ -98,6 +105,8 @@ public abstract class AbstractKeycloakTest {
 
     protected UserRepresentation adminUser;
 
+    private PropertiesConfiguration constantsProperties;
+
     @Before
     public void beforeAbstractKeycloakTest() {
         adminClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
@@ -124,7 +133,6 @@ public abstract class AbstractKeycloakTest {
     public void afterAbstractKeycloakTest() {
 //        removeTestRealms(); // keeping test realms after test to be able to inspect failures, instead deleting existing realms before import
 //        keycloak.close(); // keeping admin connection open
-        Timer.printStats();
     }
 
     private void updateMasterAdminPassword() {
@@ -203,6 +211,77 @@ public abstract class AbstractKeycloakTest {
     
     public RealmsResource realmsResouce() {
         return adminClient.realms();
+    }
+
+    public void createRealm(String realm) {
+        try {
+            RealmResource realmResource = adminClient.realms().realm(realm);
+            // Throws NotFoundException in case the realm does not exist! Ugly but there
+            // does not seem to be a way to this just by asking.
+            RealmRepresentation realmRepresentation = realmResource.toRepresentation();
+        } catch (NotFoundException ex) {
+            RealmRepresentation realmRepresentation = new RealmRepresentation();
+            realmRepresentation.setRealm(realm);
+            realmRepresentation.setEnabled(true);
+            realmRepresentation.setRegistrationAllowed(true);
+            adminClient.realms().create(realmRepresentation);
+
+//            List<RequiredActionProviderRepresentation> requiredActions = adminClient.realm(realm).flows().getRequiredActions();
+//            for (RequiredActionProviderRepresentation a : requiredActions) {
+//                a.setEnabled(false);
+//                a.setDefaultAction(false);
+//                adminClient.realm(realm).flows().updateRequiredAction(a.getAlias(), a);
+//            }
+        }
+    }
+
+    public String createUser(String realm, String username, String password, String ... requiredActions) {
+        List<String> requiredUserActions = Arrays.asList(requiredActions);
+
+        UserRepresentation homer = new UserRepresentation();
+        homer.setEnabled(true);
+        homer.setUsername(username);
+        homer.setRequiredActions(requiredUserActions);
+
+        return ApiUtil.createUserAndResetPasswordWithAdminClient(adminClient.realm(realm), homer, password);
+    }
+
+    public void setRequiredActionEnabled(String realm, String requiredAction, boolean enabled, boolean defaultAction) {
+        AuthenticationManagementResource managementResource = adminClient.realm(realm).flows();
+
+        RequiredActionProviderRepresentation action = managementResource.getRequiredAction(requiredAction);
+        action.setEnabled(enabled);
+        action.setDefaultAction(defaultAction);
+
+        managementResource.updateRequiredAction(requiredAction, action);
+    }
+
+    public void setRequiredActionEnabled(String realm, String userId, String requiredAction, boolean enabled) {
+        UsersResource usersResource = adminClient.realm(realm).users();
+
+        UserResource userResource = usersResource.get(userId);
+        UserRepresentation userRepresentation = userResource.toRepresentation();
+
+        List<String> requiredActions = userRepresentation.getRequiredActions();
+        if (enabled && !requiredActions.contains(requiredAction)) {
+            requiredActions.add(requiredAction);
+        } else if (!enabled && requiredActions.contains(requiredAction)) {
+            requiredActions.remove(requiredAction);
+        }
+
+        userResource.update(userRepresentation);
+    }
+
+    private void loadConstantsProperties() throws ConfigurationException {
+        constantsProperties = new PropertiesConfiguration("test-constants.properties");
+        constantsProperties.setThrowExceptionOnMissing(true);
+    }
+
+    protected PropertiesConfiguration getConstantsProperties() throws ConfigurationException {
+        if (constantsProperties == null) {
+            loadConstantsProperties();
+        }
+        return constantsProperties;
     }
 
 }

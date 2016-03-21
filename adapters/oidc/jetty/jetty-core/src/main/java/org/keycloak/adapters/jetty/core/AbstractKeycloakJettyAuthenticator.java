@@ -18,6 +18,8 @@
 package org.keycloak.adapters.jetty.core;
 
 import org.eclipse.jetty.security.DefaultUserIdentity;
+import org.eclipse.jetty.security.IdentityService;
+import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.ServerAuthException;
 import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.security.authentication.DeferredAuthentication;
@@ -135,10 +137,44 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         return new DefaultUserIdentity(theSubject, principal, theRoles);
     }
 
+    private class DummyLoginService implements LoginService {
+        @Override
+        public String getName() {
+            return null;
+        }
+
+        @Override
+        public UserIdentity login(String username, Object credentials) {
+            return null;
+        }
+
+        @Override
+        public boolean validate(UserIdentity user) {
+            return false;
+        }
+
+        @Override
+        public IdentityService getIdentityService() {
+            return null;
+        }
+
+        @Override
+        public void setIdentityService(IdentityService service) {
+
+        }
+
+        @Override
+        public void logout(UserIdentity user) {
+
+        }
+    }
+
     @Override
     public void setConfiguration(AuthConfiguration configuration) {
         //super.setConfiguration(configuration);
         initializeKeycloak();
+        // need this so that getUserPrincipal does not throw NPE
+        _loginService = new DummyLoginService();
         String error = configuration.getInitParameter(FormAuthenticator.__FORM_ERROR_PAGE);
         setErrorPage(error);
     }

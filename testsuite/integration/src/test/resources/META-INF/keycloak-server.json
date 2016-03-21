@@ -27,13 +27,7 @@
     },
 
     "userCache": {
-        "infinispan" : {
-            "enabled": true
-        }
-    },
-
-    "realmCache": {
-        "infinispan" : {
+        "default" : {
             "enabled": true
         }
     },
@@ -43,7 +37,6 @@
     },
 
     "theme": {
-        "default": "keycloak",
         "staticMaxAge": "${keycloak.theme.staticMaxAge:2592000}",
         "cacheTemplates": "${keycloak.theme.cacheTemplates:true}",
         "cacheThemes": "${keycloak.theme.cacheThemes:true}",
@@ -84,10 +77,16 @@
         }
     },
 
+    "realmCache": {
+        "default" : {
+            "enabled": true
+        }
+    },
+
     "connectionsInfinispan": {
         "default": {
             "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
-            "async": "${keycloak.connectionsInfinispan.async:true}",
+            "async": "${keycloak.connectionsInfinispan.async:false}",
             "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:2}"
         }
     }

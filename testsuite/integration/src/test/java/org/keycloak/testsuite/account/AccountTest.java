@@ -73,7 +73,7 @@ public class AccountTest {
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
 
-            ClientModel accountApp = appRealm.getClientNameMap().get(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            ClientModel accountApp = appRealm.getClientByClientId(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
 
             UserModel user2 = manager.getSession().users().addUser(appRealm, "test-user-no-access@localhost");
             user2.setEnabled(true);

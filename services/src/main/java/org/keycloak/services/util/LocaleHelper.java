@@ -61,16 +61,6 @@ public class LocaleHelper {
             }
         }
 
-        // User profile
-        if (user != null && user.getAttributes().containsKey(UserModel.LOCALE)) {
-            String localeString = user.getFirstAttribute(UserModel.LOCALE);
-            Locale locale = findLocale(realm.getSupportedLocales(), localeString);
-            if (locale != null) {
-                updateLocaleCookie(session, realm, localeString);
-                return locale;
-            }
-        }
-
         // Locale cookie
         if (httpHeaders != null && httpHeaders.getCookies().containsKey(LOCALE_COOKIE)) {
             String localeString = httpHeaders.getCookies().get(LOCALE_COOKIE).getValue();
@@ -79,6 +69,16 @@ public class LocaleHelper {
                 if (user != null) {
                     updateUsersLocale(user, localeString);
                 }
+                return locale;
+            }
+        }
+
+        // User profile
+        if (user != null && user.getAttributes().containsKey(UserModel.LOCALE)) {
+            String localeString = user.getFirstAttribute(UserModel.LOCALE);
+            Locale locale = findLocale(realm.getSupportedLocales(), localeString);
+            if (locale != null) {
+                updateLocaleCookie(session, realm, localeString);
                 return locale;
             }
         }

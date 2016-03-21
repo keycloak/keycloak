@@ -27,8 +27,8 @@
 
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/modules/system/layers/base</directory>
-            <outputDirectory>modules/system/layers/base</outputDirectory>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/modules/system/layers/keycloak</directory>
+            <outputDirectory>modules/system/add-ons/keycloak</outputDirectory>
             <includes>
                 <include>com/google/zxing/**</include>
                 <include>org/freemarker/**</include>
@@ -45,15 +45,15 @@
             <outputDirectory></outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/themes</directory>
-            <outputDirectory>standalone/configuration/themes</outputDirectory>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/themes</directory>
+            <outputDirectory>themes</outputDirectory>
             <includes>
                 <include>**/**</include>
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/providers</directory>
-            <outputDirectory>standalone/configuration/providers</outputDirectory>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/providers</directory>
+            <outputDirectory>providers</outputDirectory>
             <includes>
                 <include>**/**</include>
             </includes>

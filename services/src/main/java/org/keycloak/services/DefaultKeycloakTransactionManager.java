@@ -18,7 +18,6 @@ package org.keycloak.services;
 
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
-import org.keycloak.services.ServicesLogger;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -30,6 +29,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     public static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
+    private List<KeycloakTransaction> prepare = new LinkedList<KeycloakTransaction>();
     private List<KeycloakTransaction> transactions = new LinkedList<KeycloakTransaction>();
     private List<KeycloakTransaction> afterCompletion = new LinkedList<KeycloakTransaction>();
     private boolean active;
@@ -54,6 +54,15 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
     }
 
     @Override
+    public void enlistPrepare(KeycloakTransaction transaction) {
+        if (active && !transaction.isActive()) {
+            transaction.begin();
+        }
+
+        prepare.add(transaction);
+    }
+
+    @Override
     public void begin() {
         if (active) {
              throw new IllegalStateException("Transaction already active");
@@ -69,6 +78,17 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
     @Override
     public void commit() {
         RuntimeException exception = null;
+        for (KeycloakTransaction tx : prepare) {
+            try {
+                tx.commit();
+            } catch (RuntimeException e) {
+                exception = exception == null ? e : exception;
+            }
+        }
+        if (exception != null) {
+            rollback(exception);
+            return;
+        }
         for (KeycloakTransaction tx : transactions) {
             try {
                 tx.commit();
@@ -105,6 +125,10 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
     @Override
     public void rollback() {
         RuntimeException exception = null;
+        rollback(exception);
+    }
+
+    protected void rollback(RuntimeException exception) {
         for (KeycloakTransaction tx : transactions) {
             try {
                 tx.rollback();

@@ -18,6 +18,7 @@ package org.keycloak.saml.processing.core.util;
 
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.constants.WSTrustConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
@@ -376,7 +377,19 @@ public class XMLSignatureUtil {
         if (publicKey == null)
             throw logger.nullValueError("Public Key");
 
+        int signedAssertions = 0;
+        String assertionNameSpaceUri = null;
+
         for (int i = 0; i < nl.getLength(); i++) {
+            Node signatureNode = nl.item(i);
+            Node parent = signatureNode.getParentNode();
+            if (parent != null && JBossSAMLConstants.ASSERTION.get().equals(parent.getLocalName())) {
+                ++signedAssertions;
+                if (assertionNameSpaceUri == null) {
+                    assertionNameSpaceUri = parent.getNamespaceURI();
+                }
+            }
+
             DOMValidateContext valContext = new DOMValidateContext(publicKey, nl.item(i));
             XMLSignature signature = fac.unmarshalXMLSignature(valContext);
 
@@ -395,6 +408,16 @@ public class XMLSignatureUtil {
 
                 return false;
             }
+        }
+
+        NodeList assertions = signedDoc.getElementsByTagNameNS(assertionNameSpaceUri, JBossSAMLConstants.ASSERTION.get());
+
+        if (signedAssertions > 0 && assertions != null && assertions.getLength() != signedAssertions) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("SAML Response document may contain malicious assertions. Signature validation will fail.");
+            }
+            // there are unsigned assertions mixed with signed ones
+            return false;
         }
 
         return true;

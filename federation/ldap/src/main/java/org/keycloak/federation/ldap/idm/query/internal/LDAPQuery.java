@@ -153,7 +153,8 @@ public class LDAPQuery {
     public List<LDAPObject> getResultList() {
 
         // Apply mappers now
-        for (UserFederationMapperModel mapperModel : mappers) {
+        List<UserFederationMapperModel> sortedMappers = ldapFedProvider.sortMappersAsc(mappers);
+        for (UserFederationMapperModel mapperModel : sortedMappers) {
             LDAPFederationMapper fedMapper = ldapFedProvider.getMapper(mapperModel);
             fedMapper.beforeLDAPQuery(mapperModel, this);
         }

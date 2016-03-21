@@ -59,6 +59,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.keycloak.representations.idm.UserRepresentation;
 
 /**
  * Tests Undertow Adapter
@@ -138,6 +139,12 @@ public class AdapterTestStrategy extends ExternalResource {
         String pageSource = driver.getPageSource();
         System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("parameter=hello"));
+        // test that user principal and KeycloakSecurityContext available
+        driver.navigate().to(APP_SERVER_BASE_URL + "/input-portal/insecure");
+        System.out.println("insecure: ");
+        System.out.println(driver.getPageSource());
+        Assert.assertTrue(driver.getPageSource().contains("Insecure Page"));
+        if (System.getProperty("insecure.user.principal.unsupported") == null) Assert.assertTrue(driver.getPageSource().contains("UserPrincipal"));
 
         // test logout
 
@@ -592,7 +599,8 @@ public class AdapterTestStrategy extends ExternalResource {
 
         // logout mposolda with admin client
         Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
-        ApiUtil.findClientByClientId(keycloakAdmin.realm("demo"), "session-portal").logoutUser("mposolda");
+        UserRepresentation mposolda = keycloakAdmin.realm("demo").users().search("mposolda", null, null, null, null, null).get(0);
+        keycloakAdmin.realm("demo").users().get(mposolda.getId()).logout();
 
         // bburke should be still logged with original httpSession in our browser window
         driver.navigate().to(APP_SERVER_BASE_URL + "/session-portal");

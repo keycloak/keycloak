@@ -30,7 +30,7 @@ public class LiquibaseJpaUpdaterProviderFactory implements JpaUpdaterProviderFac
 
     @Override
     public JpaUpdaterProvider create(KeycloakSession session) {
-        return new LiquibaseJpaUpdaterProvider();
+        return new LiquibaseJpaUpdaterProvider(session);
     }
 
     @Override

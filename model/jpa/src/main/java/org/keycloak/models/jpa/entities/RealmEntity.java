@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -47,12 +49,13 @@ import java.util.Set;
 @Table(name="REALM")
 @Entity
 @NamedQueries({
-        @NamedQuery(name="getAllRealms", query="select realm from RealmEntity realm"),
-        @NamedQuery(name="getRealmByName", query="select realm from RealmEntity realm where realm.name = :name"),
+        @NamedQuery(name="getAllRealmIds", query="select realm.id from RealmEntity realm"),
+        @NamedQuery(name="getRealmIdByName", query="select realm.id from RealmEntity realm where realm.name = :name"),
 })
 public class RealmEntity {
     @Id
     @Column(name="ID", length = 36)
+    @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     protected String id;
 
     @Column(name="NAME", unique = true)
@@ -114,11 +117,11 @@ public class RealmEntity {
     @Column(name="NOT_BEFORE")
     protected int notBefore;
 
-    @Column(name="PUBLIC_KEY", length = 2048)
+    @Column(name="PUBLIC_KEY", length = 4000)
     protected String publicKeyPem;
-    @Column(name="PRIVATE_KEY", length = 2048)
+    @Column(name="PRIVATE_KEY", length = 4000)
     protected String privateKeyPem;
-    @Column(name="CERTIFICATE", length = 2048)
+    @Column(name="CERTIFICATE", length = 4000)
     protected String certificatePem;
     @Column(name="CODE_SECRET", length = 255)
     protected String codeSecret;
@@ -138,23 +141,14 @@ public class RealmEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="FED_PROVIDERS", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name = "USERFEDERATIONPROVIDERS_ID") })
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<UserFederationMapperEntity> userFederationMappers = new ArrayList<UserFederationMapperEntity>();
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="REALM_CLIENT", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="CLIENT_ID") })
-    Collection<ClientEntity> clients = new ArrayList<>();
-
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="REALM_CLIENT_TEMPLATE", joinColumns={ @JoinColumn(name="REALM_ID") }, inverseJoinColumns={ @JoinColumn(name="CLIENT_TEMPLATE_ID") })
-    Collection<ClientTemplateEntity> clientTemplates = new ArrayList<>();
-
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
+    Collection<ClientTemplateEntity> clientTemplates = new ArrayList<>();
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
@@ -191,7 +185,7 @@ public class RealmEntity {
     @Column(name="ADMIN_EVENTS_DETAILS_ENABLED")
     protected boolean adminEventsDetailsEnabled;
     
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="MASTER_ADMIN_CLIENT")
     protected ClientEntity masterAdminClient;
 
@@ -421,30 +415,6 @@ public class RealmEntity {
     public void setRequiredCredentials(Collection<RequiredCredentialEntity> requiredCredentials) {
         this.requiredCredentials = requiredCredentials;
     }
-
-    public Collection<ClientEntity> getClients() {
-        return clients;
-    }
-
-    public void setClients(Collection<ClientEntity> clients) {
-        this.clients = clients;
-    }
-
-    public Collection<RoleEntity> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Collection<RoleEntity> roles) {
-        this.roles = roles;
-    }
-
-    public void addRole(RoleEntity role) {
-        if (roles == null) {
-            roles = new ArrayList<RoleEntity>();
-        }
-        roles.add(role);
-    }
-
     public Map<String, String> getSmtpConfig() {
         return smtpConfig;
     }

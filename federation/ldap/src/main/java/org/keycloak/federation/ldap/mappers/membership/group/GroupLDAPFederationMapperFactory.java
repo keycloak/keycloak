@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
+import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.mappers.AbstractLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.AbstractLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
@@ -33,7 +34,7 @@ import org.keycloak.federation.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.federation.ldap.mappers.membership.MembershipType;
 import org.keycloak.federation.ldap.mappers.membership.UserRolesRetrieveStrategy;
 import org.keycloak.federation.ldap.mappers.membership.role.RoleMapperConfig;
-import org.keycloak.mappers.MapperConfigValidationException;
+import org.keycloak.mappers.FederationConfigValidationException;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
@@ -87,9 +88,9 @@ public class GroupLDAPFederationMapperFactory extends AbstractLDAPFederationMapp
         for (MembershipType membershipType : MembershipType.values()) {
             membershipTypes.add(membershipType.toString());
         }
-        ProviderConfigProperty membershipType = createConfigProperty(RoleMapperConfig.MEMBERSHIP_ATTRIBUTE_TYPE, "Membership Attribute Type",
-                "DN means that LDAP role has it's members declared in form of their full DN. For example 'member: uid=john,ou=users,dc=example,dc=com' . " +
-                        "UID means that LDAP role has it's members declared in form of pure user uids. For example 'memberUid: john' .",
+        ProviderConfigProperty membershipType = createConfigProperty(GroupMapperConfig.MEMBERSHIP_ATTRIBUTE_TYPE, "Membership Attribute Type",
+                "DN means that LDAP group has it's members declared in form of their full DN. For example 'member: uid=john,ou=users,dc=example,dc=com' . " +
+                        "UID means that LDAP group has it's members declared in form of pure user uids. For example 'memberUid: john' .",
                 ProviderConfigProperty.LIST_TYPE, membershipTypes);
         configProperties.add(membershipType);
 
@@ -164,6 +165,7 @@ public class GroupLDAPFederationMapperFactory extends AbstractLDAPFederationMapp
 
         defaultValues.put(GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true");
         defaultValues.put(GroupMapperConfig.MEMBERSHIP_LDAP_ATTRIBUTE, LDAPConstants.MEMBER);
+        defaultValues.put(GroupMapperConfig.MEMBERSHIP_ATTRIBUTE_TYPE, MembershipType.DN.toString());
 
         String mode = config.getEditMode() == UserFederationProvider.EditMode.WRITABLE ? LDAPGroupMapperMode.LDAP_ONLY.toString() : LDAPGroupMapperMode.READ_ONLY.toString();
         defaultValues.put(GroupMapperConfig.MODE, mode);
@@ -185,7 +187,7 @@ public class GroupLDAPFederationMapperFactory extends AbstractLDAPFederationMapp
     }
 
     @Override
-    public void validateConfig(RealmModel realm, UserFederationMapperModel mapperModel) throws MapperConfigValidationException {
+    public void validateConfig(RealmModel realm, UserFederationProviderModel fedProviderModel, UserFederationMapperModel mapperModel) throws FederationConfigValidationException {
         checkMandatoryConfigAttribute(GroupMapperConfig.GROUPS_DN, "LDAP Groups DN", mapperModel);
         checkMandatoryConfigAttribute(GroupMapperConfig.MODE, "Mode", mapperModel);
 
@@ -193,8 +195,10 @@ public class GroupLDAPFederationMapperFactory extends AbstractLDAPFederationMapp
         MembershipType membershipType = mt==null ? MembershipType.DN : Enum.valueOf(MembershipType.class, mt);
         boolean preserveGroupInheritance = Boolean.parseBoolean(mapperModel.getConfig().get(GroupMapperConfig.PRESERVE_GROUP_INHERITANCE));
         if (preserveGroupInheritance && membershipType != MembershipType.DN) {
-            throw new MapperConfigValidationException("Not possible to preserve group inheritance and use UID membership type together");
+            throw new FederationConfigValidationException("ldapErrorCantPreserveGroupInheritanceWithUIDMembershipType");
         }
+
+        LDAPUtils.validateCustomLdapFilter(mapperModel.getConfig().get(GroupMapperConfig.GROUPS_LDAP_FILTER));
     }
 
     @Override

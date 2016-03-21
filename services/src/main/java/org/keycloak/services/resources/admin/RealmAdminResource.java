@@ -16,15 +16,55 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.PatternSyntaxException;
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.BadRequestException;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.KeyPairVerifier;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.events.Event;
+import org.keycloak.events.EventQuery;
+import org.keycloak.events.EventStoreProvider;
+import org.keycloak.events.EventType;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AdminEventQuery;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.exportimport.ClientDescriptionConverter;
+import org.keycloak.exportimport.ClientDescriptionConverterFactory;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.cache.CacheUserProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.adapters.action.GlobalRequestResult;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.PartialImportRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.LDAPConnectionTestManager;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.UsersSyncManager;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.timer.TimerProvider;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -39,55 +79,21 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.BadRequestException;
-import org.jboss.resteasy.spi.NotFoundException;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.events.Event;
-import org.keycloak.events.EventQuery;
-import org.keycloak.events.EventStoreProvider;
-import org.keycloak.events.EventType;
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.AdminEventQuery;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.exportimport.ClientDescriptionConverter;
-import org.keycloak.exportimport.ClientDescriptionConverterFactory;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.CacheUserProvider;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.models.utils.RepresentationToModel;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.PatternSyntaxException;
 import org.keycloak.partialimport.PartialImportManager;
-import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.representations.adapters.action.GlobalRequestResult;
-import org.keycloak.representations.idm.AdminEventRepresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.PartialImportRepresentation;
-import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.LDAPConnectionTestManager;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.ResourceAdminManager;
-import org.keycloak.services.managers.UsersSyncManager;
-import org.keycloak.services.resources.admin.spi.RealmAdminResourceProvider;
-import org.keycloak.services.resources.admin.spi.RealmAdminResourceProviderFactory;
-import org.keycloak.timer.TimerProvider;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -238,13 +244,21 @@ public class RealmAdminResource {
 
         logger.debug("updating realm: " + realm.getName());
         try {
+            if (!"GENERATE".equals(rep.getPublicKey()) && (rep.getPrivateKey() != null && rep.getPublicKey() != null)) {
+                try {
+                    KeyPairVerifier.verify(rep.getPrivateKey(), rep.getPublicKey());
+                } catch (VerificationException e) {
+                    return ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+                }
+            }
+
             RepresentationToModel.updateRealm(rep, realm);
 
             // Refresh periodic sync tasks for configured federationProviders
             List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
             UsersSyncManager usersSyncManager = new UsersSyncManager();
             for (final UserFederationProviderModel fedProvider : federationProviders) {
-                usersSyncManager.refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, realm.getId());
+                usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
             }
 
             adminEvent.operation(OperationType.UPDATE).representation(rep).success();
@@ -255,7 +269,7 @@ public class RealmAdminResource {
             throw e;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            return ErrorResponse.error("Failed to update " + rep.getRealm() + " Realm.", Response.Status.INTERNAL_SERVER_ERROR);
+            return ErrorResponse.error("Failed to update realm", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -654,10 +668,11 @@ public class RealmAdminResource {
     @GET
     @NoCache
     public Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
-                                       @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential) {
+                                       @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential,
+                                       @QueryParam("useTruststoreSpi") String useTruststoreSpi) {
         auth.init(RealmAuth.Resource.REALM).requireManage();
 
-        boolean result = new LDAPConnectionTestManager().testLDAP(action, connectionUrl, bindDn, bindCredential);
+        boolean result = new LDAPConnectionTestManager().testLDAP(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi);
         return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
     }
 
@@ -775,28 +790,4 @@ public class RealmAdminResource {
         }
     }
 
-    /**
-     * Extension point where an SPI can provide a custom implementation for a certain admin REST path.
-     *
-     * @param path the (unmapped) path name
-     * @return the rest resource or null if no implementation found
-     */
-    @Path("{unmapped_path}")
-    public Object resolveUnknowPath(@PathParam("unmapped_path") String path) {
-        List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(RealmAdminResourceProvider.class);
-
-        for (ProviderFactory factory : factories) {
-            RealmAdminResourceProviderFactory realmAdminResourceFactory = (RealmAdminResourceProviderFactory) factory;
-            RealmAdminResourceProvider provider = realmAdminResourceFactory.create(session, auth.getAuth());
-            Object resource = provider.getResource(path);
-
-            // If the provider returns a non-null resource, use that one.
-            if (resource != null) {
-                return resource;
-            }
-        }
-
-        // No provider supplied a resource, so no resource available.
-        return null;
-    }
 }

@@ -18,17 +18,19 @@
 package org.keycloak.admin.client.resource;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.PartialImportRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
-import org.keycloak.representations.idm.AdminEventRepresentation;
-import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -141,5 +143,15 @@ public interface RealmResource {
 
     @Path("clients-initial-access")
     ClientInitialAccessResource clientInitialAccess();
+
+    @Path("partialImport")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response partialImport(PartialImportRepresentation rep);
+
+    @Path("authentication")
+    @Consumes(MediaType.APPLICATION_JSON)
+    AuthenticationManagementResource flows();
 
 }

@@ -27,6 +27,7 @@ import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilde
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -47,6 +48,7 @@ import org.keycloak.services.managers.UserManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -128,7 +130,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
         }
 
         Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(model.getId());
-        for (UserFederationMapperModel mapperModel : federationMappers) {
+        List<UserFederationMapperModel> sortedMappers = sortMappersAsc(federationMappers);
+        for (UserFederationMapperModel mapperModel : sortedMappers) {
             LDAPFederationMapper ldapMapper = getMapper(mapperModel);
             proxied = ldapMapper.proxy(mapperModel, this, ldapObject, proxied, realm);
         }
@@ -176,8 +179,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
         if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) {
-            logger.warnf("User '%s' can't be deleted in LDAP as editMode is '%s'", user.getUsername(), editMode.toString());
-            return false;
+            logger.warnf("User '%s' can't be deleted in LDAP as editMode is '%s'. Deleting user just from Keycloak DB, but he will be re-imported from LDAP again once searched in Keycloak", user.getUsername(), editMode.toString());
+            return true;
         }
 
         LDAPObject ldapObject = loadAndValidateUser(realm, user);
@@ -313,7 +316,8 @@ public class LDAPFederationProvider implements UserFederationProvider {
         imported.setEnabled(true);
 
         Set<UserFederationMapperModel> federationMappers = realm.getUserFederationMappersByFederationProvider(getModel().getId());
-        for (UserFederationMapperModel mapperModel : federationMappers) {
+        List<UserFederationMapperModel> sortedMappers = sortMappersDesc(federationMappers);
+        for (UserFederationMapperModel mapperModel : sortedMappers) {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
             }
@@ -516,5 +520,14 @@ public class LDAPFederationProvider implements UserFederationProvider {
         }
 
         return ldapMapper;
+    }
+
+
+    public List<UserFederationMapperModel> sortMappersAsc(Collection<UserFederationMapperModel> mappers) {
+        return LDAPMappersComparator.sortAsc(getLdapIdentityStore().getConfig(), mappers);
+    }
+
+    protected List<UserFederationMapperModel> sortMappersDesc(Collection<UserFederationMapperModel> mappers) {
+        return LDAPMappersComparator.sortDesc(getLdapIdentityStore().getConfig(), mappers);
     }
 }

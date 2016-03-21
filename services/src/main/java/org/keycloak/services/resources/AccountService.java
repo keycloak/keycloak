@@ -30,16 +30,20 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -298,7 +302,7 @@ public class AccountService extends AbstractSecuredLocalService {
     @GET
     public Response passwordPage() {
         if (auth != null) {
-            account.setPasswordSet(isPasswordSet(auth.getUser()));
+            account.setPasswordSet(isPasswordSet(session, realm, auth.getUser()));
         }
 
         return forwardToPage("password", AccountPages.PASSWORD);
@@ -601,7 +605,7 @@ public class AccountService extends AbstractSecuredLocalService {
         csrfCheck(formData);
         UserModel user = auth.getUser();
 
-        boolean requireCurrent = isPasswordSet(user);
+        boolean requireCurrent = isPasswordSet(session, realm, user);
         account.setPasswordSet(requireCurrent);
 
         String password = formData.getFirst("password");
@@ -621,7 +625,7 @@ public class AccountService extends AbstractSecuredLocalService {
             }
         }
 
-        if (Validation.isEmpty(passwordNew)) {
+        if (Validation.isBlank(passwordNew)) {
             setReferrerOnPage();
             return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         }
@@ -723,7 +727,7 @@ public class AccountService extends AbstractSecuredLocalService {
                 if (link != null) {
 
                     // Removing last social provider is not possible if you don't have other possibility to authenticate
-                    if (session.users().getFederatedIdentities(user, realm).size() > 1 || user.getFederationLink() != null || isPasswordSet(user)) {
+                    if (session.users().getFederatedIdentities(user, realm).size() > 1 || user.getFederationLink() != null || isPasswordSet(session, realm, user)) {
                         session.users().removeFederatedIdentity(realm, user, providerId);
 
                         logger.debugv("Social provider {0} removed successfully from user {1}", providerId, user.getUsername());
@@ -758,11 +762,25 @@ public class AccountService extends AbstractSecuredLocalService {
         return Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName());
     }
 
-    public static boolean isPasswordSet(UserModel user) {
+    public static boolean isPasswordSet(KeycloakSession session, RealmModel realm, UserModel user) {
         boolean passwordSet = false;
 
+        // See if password is set for user on linked UserFederationProvider
         if (user.getFederationLink() != null) {
-            passwordSet = true;
+
+            UserFederationProvider federationProvider = null;
+            for (UserFederationProviderModel fedProviderModel : realm.getUserFederationProviders()) {
+                if (fedProviderModel.getId().equals(user.getFederationLink())) {
+                    federationProvider = KeycloakModelUtils.getFederationProviderInstance(session, fedProviderModel);
+                }
+            }
+
+            if (federationProvider != null) {
+                Set<String> supportedCreds = federationProvider.getSupportedCredentialTypes(user);
+                if (supportedCreds.contains(UserCredentialModel.PASSWORD)) {
+                    passwordSet = true;
+                }
+            }
         }
 
         for (UserCredentialValueModel c : user.getCredentialsDirectly()) {

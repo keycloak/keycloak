@@ -211,10 +211,11 @@ public class RealmManager implements RealmImporter {
     public boolean removeRealm(RealmModel realm) {
         List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
 
+        ClientModel masterAdminClient = realm.getMasterAdminClient();
         boolean removed = model.removeRealm(realm.getId());
         if (removed) {
-            if (realm.getMasterAdminClient() != null) {
-                new ClientManager(this).removeClient(getKeycloakAdminstrationRealm(), realm.getMasterAdminClient());
+            if (masterAdminClient != null) {
+                new ClientManager(this).removeClient(getKeycloakAdminstrationRealm(), masterAdminClient);
             }
 
             UserSessionProvider sessions = session.sessions();
@@ -230,7 +231,7 @@ public class RealmManager implements RealmImporter {
             // Remove all periodic syncs for configured federation providers
             UsersSyncManager usersSyncManager = new UsersSyncManager();
             for (final UserFederationProviderModel fedProvider : federationProviders) {
-                usersSyncManager.removePeriodicSyncForProvider(session.getProvider(TimerProvider.class), fedProvider);
+                usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, true);
             }
         }
         return removed;
@@ -326,7 +327,7 @@ public class RealmManager implements RealmImporter {
 
 
     private void setupAccountManagement(RealmModel realm) {
-        ClientModel client = realm.getClientNameMap().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         if (client == null) {
             client = KeycloakModelUtils.createClient(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
             client.setName("${client_" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "}");
@@ -351,7 +352,7 @@ public class RealmManager implements RealmImporter {
     }
 
     public void setupBrokerService(RealmModel realm) {
-        ClientModel client = realm.getClientNameMap().get(Constants.BROKER_SERVICE_CLIENT_ID);
+        ClientModel client = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
         if (client == null) {
             client = KeycloakModelUtils.createClient(realm, Constants.BROKER_SERVICE_CLIENT_ID);
             client.setEnabled(true);
@@ -433,7 +434,7 @@ public class RealmManager implements RealmImporter {
         List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
         UsersSyncManager usersSyncManager = new UsersSyncManager();
         for (final UserFederationProviderModel fedProvider : federationProviders) {
-            usersSyncManager.refreshPeriodicSyncForProvider(session.getKeycloakSessionFactory(), session.getProvider(TimerProvider.class), fedProvider, realm.getId());
+            usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
         }
         return realm;
     }

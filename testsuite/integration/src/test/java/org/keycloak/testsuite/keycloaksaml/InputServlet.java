@@ -17,6 +17,9 @@
 
 package org.keycloak.testsuite.keycloaksaml;
 
+import org.junit.Assert;
+import org.keycloak.KeycloakSecurityContext;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -34,6 +37,16 @@ public class InputServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String appBase = System.getProperty("app.server.base.url", "http://localhost:8081");
+        if (req.getRequestURI().endsWith("insecure")) {
+            if (System.getProperty("insecure.user.principal.unsupported") == null) Assert.assertNotNull(req.getUserPrincipal());
+            resp.setContentType("text/html");
+            PrintWriter pw = resp.getWriter();
+            pw.printf("<html><head><title>%s</title></head><body>", "Insecure Page");
+            if (req.getUserPrincipal() != null) pw.printf("UserPrincipal: " + req.getUserPrincipal().getName());
+            pw.print("</body></html>");
+            pw.flush();
+            return;
+        }
         String actionUrl = appBase + "/input-portal/secured/post";
 
 

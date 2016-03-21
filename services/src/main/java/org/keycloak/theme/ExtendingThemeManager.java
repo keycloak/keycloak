@@ -19,6 +19,7 @@ package org.keycloak.theme;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Version;
 import org.keycloak.models.KeycloakSession;
 
 import java.io.IOException;
@@ -42,7 +43,7 @@ public class ExtendingThemeManager implements ThemeProvider {
     public ExtendingThemeManager(KeycloakSession session, ConcurrentHashMap<ExtendingThemeManagerFactory.ThemeKey, Theme> themeCache) {
         this.session = session;
         this.themeCache = themeCache;
-        this.defaultTheme = Config.scope("theme").get("default", "keycloak");
+        this.defaultTheme = Config.scope("theme").get("default", Version.NAME.toLowerCase());
     }
 
     private List<ThemeProvider> getProviders() {

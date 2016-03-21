@@ -23,6 +23,9 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.transaction.LockingMode;
+import org.infinispan.transaction.TransactionMode;
+import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
@@ -37,11 +40,11 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     protected static final Logger logger = Logger.getLogger(DefaultInfinispanConnectionProviderFactory.class);
 
-    private Config.Scope config;
+    protected Config.Scope config;
 
-    private EmbeddedCacheManager cacheManager;
+    protected EmbeddedCacheManager cacheManager;
 
-    private boolean containerManaged;
+    protected boolean containerManaged;
 
     @Override
     public InfinispanConnectionProvider create(KeycloakSession session) {
@@ -73,7 +76,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     }
 
-    private void lazyInit() {
+    protected void lazyInit() {
         if (cacheManager == null) {
             synchronized (this) {
                 if (cacheManager == null) {
@@ -88,7 +91,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
     }
 
-    private void initContainerManaged(String cacheContainerLookup) {
+    protected void initContainerManaged(String cacheContainerLookup) {
         try {
             cacheManager = (EmbeddedCacheManager) new InitialContext().lookup(cacheContainerLookup);
             containerManaged = true;
@@ -99,7 +102,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
     }
 
-    private void initEmbedded() {
+    protected void initEmbedded() {
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
 
         boolean clustered = config.getBoolean("clustered", false);
@@ -145,6 +148,22 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, sessionCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, sessionCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfiguration);
+
+        ConfigurationBuilder replicationConfigBuilder = new ConfigurationBuilder();
+        if (clustered) {
+            replicationConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
+        }
+        Configuration replicationCacheConfiguration = replicationConfigBuilder.build();
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.WORK_CACHE_NAME, replicationCacheConfiguration);
+
+        ConfigurationBuilder counterConfigBuilder = new ConfigurationBuilder();
+        counterConfigBuilder.invocationBatching().enable()
+                .transaction().transactionMode(TransactionMode.TRANSACTIONAL);
+        counterConfigBuilder.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+        counterConfigBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
+        Configuration counterCacheConfiguration = counterConfigBuilder.build();
+
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.VERSION_CACHE_NAME, counterCacheConfiguration);
     }
 
 }

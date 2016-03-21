@@ -26,11 +26,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class PartialImportResult {
 
-    private final Action action;
-    private final ResourceType resourceType;
-    private final String resourceName;
-    private final String id;
-    private final Object representation;
+    private Action action;
+    private ResourceType resourceType;
+    private String resourceName;
+    private String id;
+    private Object representation;
+
+    private PartialImportResult() {};
 
     private PartialImportResult(Action action, ResourceType resourceType, String resourceName, String id, Object representation) {
         this.action = action;
@@ -56,16 +58,32 @@ public class PartialImportResult {
         return action;
     }
 
+    public void setAction(Action action) {
+        this.action = action;
+    }
+
     public ResourceType getResourceType() {
         return resourceType;
+    }
+
+    public void setResourceType(ResourceType resourceType) {
+        this.resourceType = resourceType;
     }
 
     public String getResourceName() {
         return resourceName;
     }
 
+    public void setResourceName(String resourceName) {
+        this.resourceName = resourceName;
+    }
+
     public String getId() {
         return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     @JsonIgnore

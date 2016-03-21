@@ -24,8 +24,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.RealmCache;
-import org.keycloak.models.cache.entities.CachedClientTemplate;
+import org.keycloak.models.cache.infinispan.entities.CachedClientTemplate;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,14 +38,12 @@ import java.util.Set;
 public class ClientTemplateAdapter implements ClientTemplateModel {
     protected CacheRealmProvider cacheSession;
     protected RealmModel cachedRealm;
-    protected RealmCache cache;
 
     protected ClientTemplateModel updated;
     protected CachedClientTemplate cached;
 
-    public ClientTemplateAdapter(RealmModel cachedRealm, CachedClientTemplate cached, CacheRealmProvider cacheSession, RealmCache cache) {
+    public ClientTemplateAdapter(RealmModel cachedRealm, CachedClientTemplate cached, CacheRealmProvider cacheSession) {
         this.cachedRealm = cachedRealm;
-        this.cache = cache;
         this.cacheSession = cacheSession;
         this.cached = cached;
     }

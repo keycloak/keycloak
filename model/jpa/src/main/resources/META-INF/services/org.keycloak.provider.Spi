@@ -16,5 +16,6 @@
 #
 
 org.keycloak.connections.jpa.JpaConnectionSpi
-org.keycloak.connections.jpa.updater.JpaUpdaterSpi
 org.keycloak.connections.jpa.entityprovider.JpaEntitySpi
+org.keycloak.connections.jpa.updater.JpaUpdaterSpi
+org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionSpi

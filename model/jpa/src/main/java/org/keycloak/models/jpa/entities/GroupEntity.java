@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -37,8 +39,10 @@ import java.util.Collection;
  */
 @NamedQueries({
         @NamedQuery(name="getAllGroupsByRealm", query="select u from GroupEntity u where u.realm = :realm order by u.name"),
+        @NamedQuery(name="getAllGroupIdsByRealm", query="select u.id from GroupEntity u where u.realm.id = :realm order by u.name"),
         @NamedQuery(name="getGroupById", query="select u from GroupEntity u where u.id = :id and u.realm = :realm"),
         @NamedQuery(name="getGroupIdsByParent", query="select u.id from GroupEntity u where u.parent = :parent"),
+        @NamedQuery(name="getTopLevelGroupIds", query="select u.id from GroupEntity u where u.parent is null and u.realm.id = :realm"),
         @NamedQuery(name="getGroupCount", query="select count(u) from GroupEntity u where u.realm = :realm"),
         @NamedQuery(name="deleteGroupsByRealm", query="delete from GroupEntity u where u.realm = :realm")
 })
@@ -47,6 +51,7 @@ import java.util.Collection;
 public class GroupEntity {
     @Id
     @Column(name="ID", length = 36)
+    @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     protected String id;
 
     @Column(name = "NAME")
@@ -60,7 +65,9 @@ public class GroupEntity {
     @JoinColumn(name = "REALM_ID")
     private RealmEntity realm;
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="group")
+    @OneToMany(
+            cascade = CascadeType.REMOVE,
+            orphanRemoval = true, mappedBy="group")
     protected Collection<GroupAttributeEntity> attributes = new ArrayList<GroupAttributeEntity>();
 
     public String getId() {

@@ -48,7 +48,9 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
@@ -65,13 +67,13 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.common.util.UriUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -83,7 +85,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import org.keycloak.representations.idm.RolesRepresentation;
 
 public class RepresentationToModel {
 
@@ -233,12 +234,12 @@ public class RepresentationToModel {
 
         // Now that all possible roles and clients are created, create scope mappings
 
-        Map<String, ClientModel> appMap = newRealm.getClientNameMap();
+        //Map<String, ClientModel> appMap = newRealm.getClientNameMap();
 
         if (rep.getClientScopeMappings() != null) {
 
             for (Map.Entry<String, List<ScopeMappingRepresentation>> entry : rep.getClientScopeMappings().entrySet()) {
-                ClientModel app = appMap.get(entry.getKey());
+                ClientModel app = newRealm.getClientByClientId(entry.getKey());
                 if (app == null) {
                     throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
                 }
@@ -319,7 +320,7 @@ public class RepresentationToModel {
 
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {
-                UserModel user = createUser(session, newRealm, userRep, appMap);
+                UserModel user = createUser(session, newRealm, userRep);
             }
         }
 
@@ -382,14 +383,13 @@ public class RepresentationToModel {
         List<GroupRepresentation> groups = rep.getGroups();
         if (groups == null) return;
 
-        Map<String, ClientModel> clientMap = realm.getClientNameMap();
         GroupModel parent = null;
         for (GroupRepresentation group : groups) {
-            importGroup(realm, clientMap, parent, group);
+            importGroup(realm, parent, group);
         }
     }
 
-    public static void importGroup(RealmModel realm, Map<String, ClientModel> clientMap, GroupModel parent, GroupRepresentation group) {
+    public static void importGroup(RealmModel realm, GroupModel parent, GroupRepresentation group) {
         GroupModel newGroup = realm.createGroup(group.getId(), group.getName());
         if (group.getAttributes() != null) {
             for (Map.Entry<String, List<String>> attr : group.getAttributes().entrySet()) {
@@ -409,7 +409,7 @@ public class RepresentationToModel {
         }
         if (group.getClientRoles() != null) {
             for (Map.Entry<String, List<String>> entry : group.getClientRoles().entrySet()) {
-                ClientModel client = clientMap.get(entry.getKey());
+                ClientModel client = realm.getClientByClientId(entry.getKey());
                 if (client == null) {
                     throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
                 }
@@ -426,7 +426,7 @@ public class RepresentationToModel {
         }
         if (group.getSubGroups() != null) {
             for (GroupRepresentation subGroup : group.getSubGroups()) {
-                importGroup(realm, clientMap, newGroup, subGroup);
+                importGroup(realm, newGroup, subGroup);
             }
         }
     }
@@ -442,11 +442,13 @@ public class RepresentationToModel {
             }
             for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                 AuthenticationFlowModel model = toModel(flowRep);
+                // make sure new id is generated for new AuthenticationFlowModel instance
+                model.setId(null);
                 model = newRealm.addAuthenticationFlow(model);
             }
             for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                 AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
-                for (AuthenticationExecutionRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
+                for (AuthenticationExecutionExportRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
                     AuthenticationExecutionModel execution = toModel(newRealm, exeRep);
                     execution.setParentFlow(model.getId());
                     newRealm.addAuthenticatorExecution(execution);
@@ -693,6 +695,16 @@ public class RepresentationToModel {
 
         if ("GENERATE".equals(rep.getPublicKey())) {
             KeycloakModelUtils.generateRealmKeys(realm);
+        } else {
+            if (rep.getPrivateKey() != null && rep.getPublicKey() != null) {
+                realm.setPrivateKeyPem(rep.getPrivateKey());
+                realm.setPublicKeyPem(rep.getPublicKey());
+                realm.setCodeSecret(KeycloakModelUtils.generateCodeSecret());
+            }
+
+            if (rep.getCertificate() != null) {
+                realm.setCertificatePem(rep.getCertificate());
+            }
         }
 
         if(rep.isInternationalizationEnabled() != null){
@@ -1177,7 +1189,7 @@ public class RepresentationToModel {
 
     // Users
 
-    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep, Map<String, ClientModel> clientMap) {
+    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep) {
         convertDeprecatedSocialProviders(userRep);
 
         // Import users just to user storage. Don't federate
@@ -1225,7 +1237,7 @@ public class RepresentationToModel {
         }
         if (userRep.getServiceAccountClientId() != null) {
             String clientId = userRep.getServiceAccountClientId();
-            ClientModel client = clientMap.get(clientId);
+            ClientModel client = newRealm.getClientByClientId(clientId);
             if (client == null) {
                 throw new RuntimeException("Unable to find client specified for service account link. Client: " + clientId);
             }
@@ -1313,9 +1325,8 @@ public class RepresentationToModel {
             }
         }
         if (userRep.getClientRoles() != null) {
-            Map<String, ClientModel> clientMap = realm.getClientNameMap();
             for (Map.Entry<String, List<String>> entry : userRep.getClientRoles().entrySet()) {
-                ClientModel client = clientMap.get(entry.getKey());
+                ClientModel client = realm.getClientByClientId(entry.getKey());
                 if (client == null) {
                     throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
                 }
@@ -1464,6 +1475,7 @@ public class RepresentationToModel {
 
     public static AuthenticationFlowModel toModel(AuthenticationFlowRepresentation rep) {
         AuthenticationFlowModel model = new AuthenticationFlowModel();
+        model.setId(rep.getId());
         model.setBuiltIn(rep.isBuiltIn());
         model.setTopLevel(rep.isTopLevel());
         model.setProviderId(rep.getProviderId());
@@ -1473,7 +1485,7 @@ public class RepresentationToModel {
 
     }
 
-    public static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationExecutionRepresentation rep) {
+    public static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationExecutionExportRepresentation rep) {
         AuthenticationExecutionModel model = new AuthenticationExecutionModel();
         if (rep.getAuthenticatorConfig() != null) {
             AuthenticatorConfigModel config = realm.getAuthenticatorConfigByAlias(rep.getAuthenticatorConfig());
@@ -1487,6 +1499,24 @@ public class RepresentationToModel {
         }
         model.setPriority(rep.getPriority());
         model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
+        return model;
+    }
+
+    public static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationExecutionRepresentation rep) {
+        AuthenticationExecutionModel model = new AuthenticationExecutionModel();
+        model.setId(rep.getId());
+        model.setFlowId(rep.getFlowId());
+
+        model.setAuthenticator(rep.getAuthenticator());
+        model.setPriority(rep.getPriority());
+        model.setParentFlow(rep.getParentFlow());
+        model.setAuthenticatorFlow(rep.isAutheticatorFlow());
+        model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
+
+        if (rep.getAuthenticatorConfig() != null) {
+            AuthenticatorConfigModel cfg = realm.getAuthenticatorConfigByAlias(rep.getAuthenticatorConfig());
+            model.setAuthenticatorConfig(cfg.getId());
+        }
         return model;
     }
 

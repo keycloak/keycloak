@@ -6,11 +6,11 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.util.URLAssert;
 
-import javax.xml.transform.TransformerException;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  * @author mhajas
@@ -22,28 +22,71 @@ public class ModAuthMellonTest extends AbstractAuthTest {
     @Page
     private ModAuthMellonUnprotectedResource modAuthMellonUnprotectedResourcePage;
 
+    @Page
+    private ModAuthMellonProtectedResource2 modAuthMellonProtectedResourcePage2;
+
+    @Page
+    private ModAuthMellonUnprotectedResource2 modAuthMellonUnprotectedResourcePage2;
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(loadRealm("/mellon-realm.json"));
     }
 
-    @Test
-    public void modAuthMellonTest() throws TransformerException {
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
         testRealmPage.setAuthRealm("mellon-test");
-        testRealmSAMLLoginPage.setAuthRealm("mellon-test");
+        testRealmSAMLRedirectLoginPage.setAuthRealm("mellon-test");
+    }
 
-        modAuthMellonUnprotectedResourcePage.navigateTo();
-        assertTrue(driver.getPageSource().contains("Unprotected resource"));
-
+    @Test
+    public void singleLoginAndLogoutTest() {
         modAuthMellonProtectedResourcePage.navigateTo();
-        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLLoginPage);
-        testRealmSAMLLoginPage.form().login(bburkeUser);
+        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
+        testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
         assertTrue(driver.getPageSource().contains("Protected resource"));
 
-        modAuthMellonProtectedResourcePage.logout();
-        assertTrue(driver.getPageSource().contains("Unprotected resource"));
+        modAuthMellonProtectedResourcePage2.navigateTo();
+        assertTrue(driver.getPageSource().contains("Protected resource 2"));
+
+        modAuthMellonProtectedResourcePage2.logout();
+        assertTrue(driver.getPageSource().contains("Unprotected resource 2"));
+
+        modAuthMellonProtectedResourcePage2.navigateTo();
+        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
+
+        pause(2000); //session length
 
         modAuthMellonProtectedResourcePage.navigateTo();
-        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLLoginPage);
+        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
+    }
+
+    @Test
+    public void unauthorizedSSO() {
+        modAuthMellonProtectedResourcePage2.navigateTo();
+        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
+        testRealmSAMLRedirectLoginPage.form().login("unauthorized", "password");
+        assertTrue(driver.getPageSource().contains("Forbidden"));
+
+        modAuthMellonProtectedResourcePage.navigateTo();
+        assertTrue(driver.getPageSource().contains("Protected resource"));
+        modAuthMellonProtectedResourcePage.logout();
+    }
+
+    @Test
+    public void sessionExpiration() {
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        realm.setSsoSessionIdleTimeout(2);
+        testRealmResource().update(realm);
+
+        modAuthMellonProtectedResourcePage.navigateTo();
+        testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
+        assertTrue(driver.getPageSource().contains("Protected resource"));
+
+        pause(2000); //session length
+
+        modAuthMellonProtectedResourcePage.navigateTo();
+        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
     }
 }

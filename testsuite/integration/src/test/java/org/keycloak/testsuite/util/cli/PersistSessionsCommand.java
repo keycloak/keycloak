@@ -43,10 +43,32 @@ public class PersistSessionsCommand extends AbstractCommand {
     @Override
     public void doRunCommand(KeycloakSession sess) {
         final int count = getIntArg(0);
+        final int batchCount = getIntArg(1);
+
+        int remaining = count;
+
+        while (remaining > 0) {
+            int createInThisBatch = Math.min(batchCount, remaining);
+            createSessionsBatch(createInThisBatch);
+            remaining = remaining - createInThisBatch;
+        }
+
+        // Write some summary
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+
+            @Override
+            public void run(KeycloakSession session) {
+                UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+                log.info("Command finished. Total number of sessions in persister: " + persister.getUserSessionsCount(true));
+            }
+
+        });
+    }
+
+    private void createSessionsBatch(final int countInThisBatch) {
         final List<String> userSessionIds = new LinkedList<>();
         final List<String> clientSessionIds = new LinkedList<>();
 
-        // Create sessions in separate transaction first
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
             @Override
@@ -56,7 +78,7 @@ public class PersistSessionsCommand extends AbstractCommand {
                 ClientModel testApp = realm.getClientByClientId("security-admin-console");
                 UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
-                for (int i = 0; i < count; i++) {
+                for (int i = 0; i < countInThisBatch; i++) {
                     UserSessionModel userSession = session.sessions().createUserSession(realm, john, "john-doh@localhost", "127.0.0.2", "form", true, null, null);
                     ClientSessionModel clientSession = session.sessions().createClientSession(realm, testApp);
                     clientSession.setUserSession(userSession);
@@ -69,9 +91,10 @@ public class PersistSessionsCommand extends AbstractCommand {
 
         });
 
-        log.info("Sessions created in infinispan storage");
+        log.infof("%d sessions created in infinispan storage", countInThisBatch);
 
         // Persist them now
+
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
             @Override
@@ -84,35 +107,17 @@ public class PersistSessionsCommand extends AbstractCommand {
                     counter++;
                     UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
                     persister.createUserSession(userSession, true);
-                    if (counter%1000 == 0) {
-                        log.infof("%d user sessions persisted. Continue", counter);
-                    }
                 }
 
-                log.infof("All %d user sessions persisted", counter);
+                log.infof("%d user sessions persisted. Continue", counter);
 
                 counter = 0;
                 for (String clientSessionId : clientSessionIds) {
                     counter++;
                     ClientSessionModel clientSession = session.sessions().getClientSession(realm, clientSessionId);
                     persister.createClientSession(clientSession, true);
-                    if (counter%1000 == 0) {
-                        log.infof("%d client sessions persisted. Continue", counter);
-                    }
                 }
-
-                log.infof("All %d client sessions persisted", counter);
-            }
-
-        });
-
-        // Persist them now
-        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-
-            @Override
-            public void run(KeycloakSession session) {
-                UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-                log.info("Total number of sessions in persister: " + persister.getUserSessionsCount(true));
+                log.infof("%d client sessions persisted. Continue", counter);
             }
 
         });
@@ -120,6 +125,6 @@ public class PersistSessionsCommand extends AbstractCommand {
 
     @Override
     public String printUsage() {
-        return super.printUsage() + " <sessions-count>";
+        return super.printUsage() + " <sessions-count> <sessions-count-per-each-transaction>";
     }
 }

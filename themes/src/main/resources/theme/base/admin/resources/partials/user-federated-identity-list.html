@@ -29,9 +29,7 @@
                 <td>{{identity.identityProvider}}</td>
                 <td>{{identity.userId}}</td>
                 <td>{{identity.userName}}</td>
-                <td class="kc-action-cell">
-                    <button class="btn btn-default btn-block btn-sm" ng-click="removeProviderLink(identity)">{{:: 'remove' | translate}}</button>
-                </td>
+                <td class="kc-action-cell" ng-click="removeProviderLink(identity)">{{:: 'remove' | translate}}</td>
             </tr>
             <tr data-ng-show="federatedIdentities.length == 0">
                 <td>{{:: 'no-identity-provider-links-available' | translate}}</td>

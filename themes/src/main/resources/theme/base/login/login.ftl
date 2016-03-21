@@ -27,7 +27,7 @@
                     </div>
 
                     <div class="${properties.kcInputWrapperClass!}">
-                        <input id="password" class="${properties.kcInputClass!}" name="password" type="password" />
+                        <input id="password" class="${properties.kcInputClass!}" name="password" type="password" autocomplete="off" />
                     </div>
                 </div>
 
