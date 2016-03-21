@@ -21,7 +21,7 @@
                 xmlns:ds="urn:jboss:domain:datasources:4.0"
                 xmlns:k="urn:jboss:domain:keycloak:1.1"
                 xmlns:sec="urn:jboss:domain:security:1.2"
-                xmlns:u="urn:jboss:domain:undertow:3.0"
+                xmlns:u="urn:jboss:domain:undertow:3.1"
                 version="2.0"
                 exclude-result-prefixes="xalan j ds k sec">
 
