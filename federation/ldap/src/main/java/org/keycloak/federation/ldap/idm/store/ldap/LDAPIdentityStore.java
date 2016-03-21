@@ -220,6 +220,8 @@ public class LDAPIdentityStore implements IdentityStore {
                 mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, mod0);
 
                 operationManager.modifyAttribute(userDN, mod0);
+            } catch (ModelException me) {
+                throw me;
             } catch (Exception e) {
                 throw new ModelException("Error updating password.", e);
             }
@@ -240,6 +242,8 @@ public class LDAPIdentityStore implements IdentityStore {
             modItems.add(new ModificationItem(DirContext.REPLACE_ATTRIBUTE, unicodePwd));
 
             operationManager.modifyAttributes(userDN, modItems.toArray(new ModificationItem[] {}));
+        } catch (ModelException me) {
+            throw me;
         } catch (Exception e) {
             throw new ModelException(e);
         }

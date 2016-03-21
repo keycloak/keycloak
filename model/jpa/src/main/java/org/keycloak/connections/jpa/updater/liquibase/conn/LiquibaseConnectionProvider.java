@@ -15,13 +15,19 @@
  * limitations under the License.
  */
 
-package org.keycloak.messages;
+package org.keycloak.connections.jpa.updater.liquibase.conn;
 
-import org.keycloak.provider.ProviderFactory;
+import java.sql.Connection;
+
+import liquibase.Liquibase;
+import liquibase.exception.LiquibaseException;
+import org.keycloak.provider.Provider;
 
 /**
- * @author <a href="mailto:leonardo.zanivan@gmail.com">Leonardo Zanivan</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface MessagesProviderFactory extends ProviderFactory<MessagesProvider> {
+public interface LiquibaseConnectionProvider extends Provider {
+
+    Liquibase getLiquibase(Connection connection, String defaultSchema) throws LiquibaseException;
 
 }

@@ -15,35 +15,30 @@
  * limitations under the License.
  */
 
-package org.keycloak.messages;
+package org.keycloak.models.dblock;
 
 import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
 
 /**
- * @author <a href="mailto:leonardo.zanivan@gmail.com">Leonardo Zanivan</a>
+ * Global database lock to ensure that some actions in DB can be done just be one cluster node at a time.
+ *
+ *
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MessagesSpi implements Spi {
+public interface DBLockProvider extends Provider {
 
-    @Override
-    public boolean isInternal() {
-        return true;
-    }
 
-    @Override
-    public String getName() {
-        return "messages";
-    }
+    /**
+     * Try to retrieve DB lock or wait if retrieve was unsuccessful. Throw exception if lock can't be retrieved within specified timeout (900 seconds by default)
+     */
+    void waitForLock();
 
-    @Override
-    public Class<? extends Provider> getProviderClass() {
-        return MessagesProvider.class;
-    }
 
-    @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return MessagesProviderFactory.class;
-    }
+    void releaseLock();
 
+
+    /**
+     * Will destroy whole state of DB lock (drop table/collection to track locking).
+     * */
+    void destroyLockInfo();
 }

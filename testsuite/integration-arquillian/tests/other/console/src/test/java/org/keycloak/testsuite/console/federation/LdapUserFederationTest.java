@@ -1,9 +1,12 @@
 package org.keycloak.testsuite.console.federation;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -12,6 +15,7 @@ import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.federation.CreateLdapUserProvider;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
+import org.openqa.selenium.WebElement;
 
 /**
  * @author fkiss, pdrozd
@@ -105,8 +109,25 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().save();
         assertAlertDanger();
         createLdapUserProvider.form().setLdapBindCredentialInput("secret");
+
+        createLdapUserProvider.form().setCustomUserSearchFilter("foo");
+        createLdapUserProvider.form().save();
+        assertAlertDanger();
+        createLdapUserProvider.form().setCustomUserSearchFilter("");
         createLdapUserProvider.form().save();
         assertAlertSuccess();
+
+        // Try updating invalid Custom LDAP Filter
+        createLdapUserProvider.form().setCustomUserSearchFilter("(foo=bar");
+        createLdapUserProvider.form().save();
+        assertAlertDanger();
+        createLdapUserProvider.form().setCustomUserSearchFilter("foo=bar)");
+        createLdapUserProvider.form().save();
+        assertAlertDanger();
+        createLdapUserProvider.form().setCustomUserSearchFilter("(foo=bar)");
+        createLdapUserProvider.form().save();
+        assertAlertSuccess();
+
     }
 
     @Test
@@ -139,6 +160,21 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
                 ldapServer.stop();
             }
         }
+    }
+
+    @Test
+    public void checkVendors() throws ConfigurationException {
+        createLdapUserProvider.navigateTo();
+
+        List<String> vendorsExpected = (List<String>) (List<?>) getConstantsProperties().getList("ldap-vendors");
+        List<String> vendorsActual = createLdapUserProvider.form().getVendors();
+
+        int vendorsExpectedSize = vendorsExpected.size();
+        int vendorsActualSize = vendorsActual.size();
+        assertTrue("Expected vendors count: " + vendorsExpectedSize + "; actual count: " + vendorsActualSize,
+                vendorsExpectedSize == vendorsActualSize);
+
+        assertTrue("Vendors list doesn't match", vendorsExpected.containsAll(vendorsActual));
     }
 
     private void assertLdapProviderSetting(UserFederationProviderRepresentation ufpr, String name, int priority,

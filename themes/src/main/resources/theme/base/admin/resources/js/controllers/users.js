@@ -506,8 +506,8 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, RequiredA
                 $scope.password = null;
                 $scope.confirmPassword = null;
             }, function(response) {
-                if (response.data && response.data.errorMessage) {
-                    Notifications.error(response.data.errorMessage);
+                if (response.data && response.data['error_description']) {
+                    Notifications.error(response.data['error_description']);
                 } else {
                     Notifications.error("Failed to reset user password");
                 }
@@ -705,6 +705,10 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
 
                 $location.url("/realms/" + realm.realm + "/user-federation/providers/" + $scope.instance.providerName + "/" + id);
                 Notifications.success("The provider has been created.");
+            }, function (errorResponse) {
+                if (errorResponse.data && errorResponse.data['error_description']) {
+                    Notifications.error(errorResponse.data['error_description']);
+                }
             });
         } else {
             UserFederationInstances.update({realm: realm.realm,
@@ -713,6 +717,10 @@ module.controller('GenericUserFederationCtrl', function($scope, $location, Notif
                 $scope.instance,  function () {
                     $route.reload();
                     Notifications.success("The provider has been updated.");
+                }, function (errorResponse) {
+                    if (errorResponse.data && errorResponse.data['error_description']) {
+                        Notifications.error(errorResponse.data['error_description']);
+                    }
                 });
         }
     };
@@ -909,6 +917,10 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
 
                 $location.url("/realms/" + realm.realm + "/user-federation/providers/" + $scope.instance.providerName + "/" + id);
                 Notifications.success("The provider has been created.");
+            }, function (errorResponse) {
+                if (errorResponse.data && errorResponse.data['error_description']) {
+                    Notifications.error(errorResponse.data['error_description']);
+                }
             });
         } else {
             UserFederationInstances.update({realm: realm.realm,
@@ -917,8 +929,11 @@ module.controller('LDAPCtrl', function($scope, $location, $route, Notifications,
                 $scope.instance,  function () {
                 $route.reload();
                 Notifications.success("The provider has been updated.");
+            }, function (errorResponse) {
+                if (errorResponse.data && errorResponse.data['error_description']) {
+                    Notifications.error(errorResponse.data['error_description']);
+                }
             });
-
         }
     };
 
@@ -1041,7 +1056,7 @@ module.controller('UserFederationMapperCtrl', function($scope, realm,  provider,
             Notifications.success("Your changes have been saved.");
         }, function(error) {
             if (error.status == 400 && error.data.error_description) {
-                Notifications.error('Error in configuration of mapper: ' + error.data.error_description);
+                Notifications.error(error.data.error_description);
             } else {
                 Notifications.error('Unexpected error when creating mapper');
             }
@@ -1113,7 +1128,7 @@ module.controller('UserFederationMapperCreateCtrl', function($scope, realm, prov
             Notifications.success("Mapper has been created.");
         }, function(error) {
             if (error.status == 400 && error.data.error_description) {
-                Notifications.error('Error in configuration of mapper: ' + error.data.error_description);
+                Notifications.error(error.data.error_description);
             } else {
                 Notifications.error('Unexpected error when creating mapper');
             }

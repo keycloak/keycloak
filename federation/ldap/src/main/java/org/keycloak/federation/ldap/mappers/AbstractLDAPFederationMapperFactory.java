@@ -20,7 +20,7 @@ package org.keycloak.federation.ldap.mappers;
 import org.keycloak.Config;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
-import org.keycloak.mappers.MapperConfigValidationException;
+import org.keycloak.mappers.FederationConfigValidationException;
 import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.mappers.UserFederationMapperFactory;
 import org.keycloak.models.KeycloakSession;
@@ -85,10 +85,10 @@ public abstract class AbstractLDAPFederationMapperFactory implements UserFederat
         return configProperty;
     }
 
-    protected void checkMandatoryConfigAttribute(String name, String displayName, UserFederationMapperModel mapperModel) throws MapperConfigValidationException {
+    protected void checkMandatoryConfigAttribute(String name, String displayName, UserFederationMapperModel mapperModel) throws FederationConfigValidationException {
         String attrConfigValue = mapperModel.getConfig().get(name);
         if (attrConfigValue == null || attrConfigValue.trim().isEmpty()) {
-            throw new MapperConfigValidationException("Missing configuration for '" + displayName + "'");
+            throw new FederationConfigValidationException("Missing configuration for '" + displayName + "'");
         }
     }
 

@@ -15,28 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.cache.infinispan;
+package org.keycloak.connections.jpa.updater.liquibase.lock;
 
-import org.keycloak.models.cache.infinispan.entities.CachedUser;
+import liquibase.exception.LockException;
+import liquibase.lockservice.StandardLockService;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * Dummy lock service injected to Liquibase. Doesn't need to do anything as we already have a lock when Liquibase update is called.
+ *
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface UserCache {
+public class DummyLockService extends StandardLockService {
 
-    void clear();
+    @Override
+    public void waitForLock() throws LockException {
+    }
 
-    CachedUser getCachedUser(String realmId, String id);
-
-    void addCachedUser(String realmId, CachedUser user);
-
-    CachedUser getCachedUserByUsername(String realmId, String name);
-
-    CachedUser getCachedUserByEmail(String realmId, String name);
-
-    void invalidateCachedUserById(String realmId, String id);
-
-    void invalidateRealmUsers(String realmId);
+    @Override
+    public void releaseLock() throws LockException {
+    }
 
 }

@@ -190,6 +190,7 @@ public class LDAPGroupMapperTest {
     public void test02_readOnlyGroupMappings() {
         KeycloakSession session = keycloakRule.startSession();
         try {
+            System.out.println("starting test02_readOnlyGroupMappings");
             RealmModel appRealm = session.realms().getRealmByName("test");
 
             UserFederationMapperModel mapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "groupsMapper");
@@ -221,6 +222,7 @@ public class LDAPGroupMapperTest {
             Assert.assertTrue(maryGroups.contains(group12));
 
             // Assert that access through DB will have just DB mapped groups
+            System.out.println("******");
             UserModel maryDB = session.userStorage().getUserByUsername("marykeycloak", appRealm);
             Set<GroupModel> maryDBGroups = maryDB.getGroups();
             Assert.assertFalse(maryDBGroups.contains(group1));

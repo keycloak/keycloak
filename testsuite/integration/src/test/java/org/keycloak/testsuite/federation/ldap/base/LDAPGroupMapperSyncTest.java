@@ -19,6 +19,7 @@ package org.keycloak.testsuite.federation.ldap.base;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,6 +47,7 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.federation.ldap.FederationTestUtils;
@@ -253,6 +255,55 @@ public class LDAPGroupMapperSyncTest {
             Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(realm, "/group1/group12"));
             Assert.assertNull(KeycloakModelUtils.findGroupByPath(realm, "/model1"));
             Assert.assertNull(KeycloakModelUtils.findGroupByPath(realm, "/group1/model2"));
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
+    }
+
+
+
+    @Test
+    public void test04_syncNoPreserveGroupInheritanceWithLazySync() throws Exception {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserFederationMapperModel mapperModel = realm.getUserFederationMapperByName(ldapModel.getId(), "groupsMapper");
+            LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            GroupLDAPFederationMapper groupMapper = FederationTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
+
+            // Update group mapper to skip preserve inheritance
+            FederationTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            realm.updateUserFederationMapper(mapperModel);
+
+            // Add user to LDAP and put him as member of group11
+            FederationTestUtils.removeAllLDAPUsers(ldapProvider, realm);
+            LDAPObject johnLdap = FederationTestUtils.addLDAPUser(ldapProvider, realm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
+            FederationTestUtils.updateLDAPPassword(ldapProvider, johnLdap, "Password1");
+            groupMapper.addGroupMappingInLDAP("group11", johnLdap);
+
+            // Assert groups not yet imported to Keycloak DB
+            Assert.assertNull(KeycloakModelUtils.findGroupByPath(realm, "/group1"));
+            Assert.assertNull(KeycloakModelUtils.findGroupByPath(realm, "/group11"));
+            Assert.assertNull(KeycloakModelUtils.findGroupByPath(realm, "/group12"));
+
+            // Load user from LDAP to Keycloak DB
+            UserModel john = session.users().getUserByUsername("johnkeycloak", realm);
+            Set<GroupModel> johnGroups = john.getGroups();
+
+            // Assert just those groups, which john was memberOf exists because they were lazily created
+            GroupModel group1 = KeycloakModelUtils.findGroupByPath(realm, "/group1");
+            GroupModel group11 = KeycloakModelUtils.findGroupByPath(realm, "/group11");
+            GroupModel group12 = KeycloakModelUtils.findGroupByPath(realm, "/group12");
+            Assert.assertNull(group1);
+            Assert.assertNotNull(group11);
+            Assert.assertNull(group12);
+
+            Assert.assertEquals(1, johnGroups.size());
+            Assert.assertTrue(johnGroups.contains(group11));
+
+            // Delete group mapping
+            john.leaveGroup(group11);
+
         } finally {
             keycloakRule.stopSession(session, false);
         }

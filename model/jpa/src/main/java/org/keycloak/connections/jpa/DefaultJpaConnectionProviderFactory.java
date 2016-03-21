@@ -121,12 +121,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         }
                     }
 
-                    String driverDialect = config.get("driverDialect");
-                    if (driverDialect != null && driverDialect.length() > 0) {
-                        properties.put("hibernate.dialect", driverDialect);
-                    }
-
-                    String schema = config.get("schema");
+                    String schema = getSchema();
                     if (schema != null) {
                         properties.put(JpaUtils.HIBERNATE_DEFAULT_SCHEMA, schema);
                     }
@@ -147,6 +142,11 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                     connection = getConnection();
                     try{ 
 	                    prepareOperationalInfo(connection);
+
+                        String driverDialect = detectDialect(connection);
+                        if (driverDialect != null) {
+                            properties.put("hibernate.dialect", driverDialect);
+                        }
 	                    
 	                    if (databaseSchema != null) {
 	                        logger.trace("Updating database");
@@ -167,7 +167,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 	                            }
 	
 	                            if (currentVersion == null || !JpaUpdaterProvider.LAST_VERSION.equals(currentVersion)) {
-	                                updater.update(session, connection, schema);
+	                                updater.update(connection, schema);
 	                            } else {
 	                                logger.debug("Database is up to date");
 	                            }
@@ -184,13 +184,24 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 	                    emf = Persistence.createEntityManagerFactory(unitName, properties);
 	                    logger.trace("EntityManagerFactory created");
 
+                    } catch (Exception e) {
+                        // Safe rollback
+                        if (connection != null) {
+                            try {
+                                connection.rollback();
+                            } catch (SQLException e2) {
+                                logger.warn("Can't rollback connection", e2);
+                            }
+                        }
+
+                        throw e;
                     } finally {
 	                    // Close after creating EntityManagerFactory to prevent in-mem databases from closing
 	                    if (connection != null) {
 	                        try {
 	                            connection.close();
 	                        } catch (SQLException e) {
-	                            logger.warn(e);
+	                            logger.warn("Can't close connection", e);
 	                        }
 	                    }
                     }
@@ -198,7 +209,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             }
         }
     }
-    
+
     protected void prepareOperationalInfo(Connection connection) {
   		try {
   			operationalInfo = new LinkedHashMap<>();
@@ -207,12 +218,51 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
   			operationalInfo.put("databaseUser", md.getUserName());
   			operationalInfo.put("databaseProduct", md.getDatabaseProductName() + " " + md.getDatabaseProductVersion());
   			operationalInfo.put("databaseDriver", md.getDriverName() + " " + md.getDriverVersion());
+
+            logger.debugf("Database info: %s", operationalInfo.toString());
   		} catch (SQLException e) {
   			logger.warn("Unable to prepare operational info due database exception: " + e.getMessage());
   		}
   	}
 
-    private Connection getConnection() {
+
+    protected String detectDialect(Connection connection) {
+        String driverDialect = config.get("driverDialect");
+        if (driverDialect != null && driverDialect.length() > 0) {
+            return driverDialect;
+        } else {
+            try {
+                String dbProductName = connection.getMetaData().getDatabaseProductName();
+                String dbProductVersion = connection.getMetaData().getDatabaseProductVersion();
+
+                // For MSSQL2014, we may need to fix the autodetected dialect by hibernate
+                if (dbProductName.equals("Microsoft SQL Server")) {
+                    String topVersionStr = dbProductVersion.split("\\.")[0];
+                    boolean shouldSet2012Dialect = true;
+                    try {
+                        int topVersion = Integer.parseInt(topVersionStr);
+                        if (topVersion < 12) {
+                            shouldSet2012Dialect = false;
+                        }
+                    } catch (NumberFormatException nfe) {
+                    }
+                    if (shouldSet2012Dialect) {
+                        String sql2012Dialect = "org.hibernate.dialect.SQLServer2012Dialect";
+                        logger.debugf("Manually override hibernate dialect to %s", sql2012Dialect);
+                        return sql2012Dialect;
+                    }
+                }
+            } catch (SQLException e) {
+                logger.warnf("Unable to detect hibernate dialect due database exception : %s", e.getMessage());
+            }
+
+            return null;
+        }
+    }
+
+
+    @Override
+    public Connection getConnection() {
         try {
             String dataSourceLookup = config.get("dataSource");
             if (dataSourceLookup != null) {
@@ -225,6 +275,11 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         } catch (Exception e) {
             throw new RuntimeException("Failed to connect to database", e);
         }
+    }
+
+    @Override
+    public String getSchema() {
+        return config.get("schema");
     }
     
     @Override

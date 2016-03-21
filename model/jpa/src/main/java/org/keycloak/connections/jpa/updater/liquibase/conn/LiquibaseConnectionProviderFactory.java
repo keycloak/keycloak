@@ -15,18 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.mappers;
+package org.keycloak.connections.jpa.updater.liquibase.conn;
+
+import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MapperConfigValidationException extends Exception {
-
-    public MapperConfigValidationException(String message) {
-        super(message);
-    }
-
-    public MapperConfigValidationException(String message, Throwable cause) {
-        super(message, cause);
-    }
+public interface LiquibaseConnectionProviderFactory extends ProviderFactory<LiquibaseConnectionProvider> {
 }

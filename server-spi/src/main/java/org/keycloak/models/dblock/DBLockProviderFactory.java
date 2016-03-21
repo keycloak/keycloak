@@ -15,15 +15,17 @@
  * limitations under the License.
  */
 
-package org.keycloak.messages;
+package org.keycloak.models.dblock;
 
-import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 
 /**
- * @author <a href="mailto:leonardo.zanivan@gmail.com">Leonardo Zanivan</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface MessagesProvider extends Provider {
+public interface DBLockProviderFactory extends ProviderFactory<DBLockProvider> {
 
-    String getMessage(String messageKey, Object... parameters);
-
+    /**
+     * Useful for testing to override provided configuration
+     */
+    void setTimeouts(long lockRecheckTimeMillis, long lockWaitTimeoutMillis);
 }

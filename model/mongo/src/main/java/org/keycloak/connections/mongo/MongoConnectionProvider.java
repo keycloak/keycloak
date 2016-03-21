@@ -27,6 +27,9 @@ import org.keycloak.provider.Provider;
  */
 public interface MongoConnectionProvider extends Provider {
 
+    /**
+     * @return Fully updated and initialized DB
+     */
     DB getDB();
 
     MongoStore getMongoStore();

@@ -1,0 +1,237 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.connections.jpa.updater.liquibase.conn;
+
+import java.sql.Connection;
+
+import liquibase.Liquibase;
+import liquibase.changelog.ChangeSet;
+import liquibase.changelog.DatabaseChangeLog;
+import liquibase.database.Database;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.core.DB2Database;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.exception.LiquibaseException;
+import liquibase.lockservice.LockService;
+import liquibase.lockservice.LockServiceFactory;
+import liquibase.logging.LogFactory;
+import liquibase.logging.LogLevel;
+import liquibase.resource.ClassLoaderResourceAccessor;
+import liquibase.servicelocator.ServiceLocator;
+import liquibase.sqlgenerator.SqlGeneratorFactory;
+import org.jboss.logging.Logger;
+import org.keycloak.Config;
+import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
+import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
+import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
+import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService;
+import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+
+/**
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ */
+public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionProviderFactory, LiquibaseConnectionProvider {
+
+    private static final Logger logger = Logger.getLogger(DefaultLiquibaseConnectionProvider.class);
+
+    private volatile boolean initialized = false;
+
+    @Override
+    public LiquibaseConnectionProvider create(KeycloakSession session) {
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    baseLiquibaseInitialization();
+                    initialized = true;
+                }
+            }
+        }
+        return this;
+    }
+
+    protected void baseLiquibaseInitialization() {
+        ServiceLocator sl = ServiceLocator.getInstance();
+
+        if (!System.getProperties().containsKey("liquibase.scan.packages")) {
+            if (sl.getPackages().remove("liquibase.core")) {
+                sl.addPackageToScan("liquibase.core.xml");
+            }
+
+            if (sl.getPackages().remove("liquibase.parser")) {
+                sl.addPackageToScan("liquibase.parser.core.xml");
+            }
+
+            if (sl.getPackages().remove("liquibase.serializer")) {
+                sl.addPackageToScan("liquibase.serializer.core.xml");
+            }
+
+            sl.getPackages().remove("liquibase.ext");
+            sl.getPackages().remove("liquibase.sdk");
+        }
+
+        LogFactory.setInstance(new LogWrapper());
+
+        // Adding PostgresPlus support to liquibase
+        DatabaseFactory.getInstance().register(new PostgresPlusDatabase());
+
+        // Change command for creating lock and drop DELETE lock record from it
+        SqlGeneratorFactory.getInstance().register(new CustomInsertLockRecordGenerator());
+    }
+
+
+    @Override
+    public void init(Config.Scope config) {
+
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+
+    }
+
+    @Override
+    public void close() {
+    }
+
+    @Override
+    public String getId() {
+        return "default";
+    }
+
+    @Override
+    public Liquibase getLiquibase(Connection connection, String defaultSchema) throws LiquibaseException {
+        Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
+        if (defaultSchema != null) {
+            database.setDefaultSchemaName(defaultSchema);
+        }
+
+        String changelog = (database instanceof DB2Database) ? LiquibaseJpaUpdaterProvider.DB2_CHANGELOG :  LiquibaseJpaUpdaterProvider.CHANGELOG;
+        logger.debugf("Using changelog file: %s", changelog);
+
+        // We wrap liquibase update in CustomLockService provided by DBLockProvider. No need to lock inside liquibase itself.
+        // NOTE: This can't be done in baseLiquibaseInitialization() as liquibase always restarts lock service
+        LockServiceFactory.getInstance().register(new DummyLockService());
+
+        return new Liquibase(changelog, new ClassLoaderResourceAccessor(getClass().getClassLoader()), database);
+    }
+
+    private static class LogWrapper extends LogFactory {
+
+        private liquibase.logging.Logger logger = new liquibase.logging.Logger() {
+            @Override
+            public void setName(String name) {
+            }
+
+            @Override
+            public void setLogLevel(String level) {
+            }
+
+            @Override
+            public void setLogLevel(LogLevel level) {
+            }
+
+            @Override
+            public void setLogLevel(String logLevel, String logFile) {
+            }
+
+            @Override
+            public void severe(String message) {
+                DefaultLiquibaseConnectionProvider.logger.error(message);
+            }
+
+            @Override
+            public void severe(String message, Throwable e) {
+                DefaultLiquibaseConnectionProvider.logger.error(message, e);
+            }
+
+            @Override
+            public void warning(String message) {
+                // Ignore this warning as cascaded drops doesn't work anyway with all DBs, which we need to support
+                if ("Database does not support drop with cascade".equals(message)) {
+                    DefaultLiquibaseConnectionProvider.logger.debug(message);
+                } else {
+                    DefaultLiquibaseConnectionProvider.logger.warn(message);
+                }
+            }
+
+            @Override
+            public void warning(String message, Throwable e) {
+                DefaultLiquibaseConnectionProvider.logger.warn(message, e);
+            }
+
+            @Override
+            public void info(String message) {
+                DefaultLiquibaseConnectionProvider.logger.debug(message);
+            }
+
+            @Override
+            public void info(String message, Throwable e) {
+                DefaultLiquibaseConnectionProvider.logger.debug(message, e);
+            }
+
+            @Override
+            public void debug(String message) {
+                if (DefaultLiquibaseConnectionProvider.logger.isTraceEnabled()) {
+                    DefaultLiquibaseConnectionProvider.logger.trace(message);
+                }
+            }
+
+            @Override
+            public LogLevel getLogLevel() {
+                if (DefaultLiquibaseConnectionProvider.logger.isTraceEnabled()) {
+                    return LogLevel.DEBUG;
+                } else if (DefaultLiquibaseConnectionProvider.logger.isDebugEnabled()) {
+                    return LogLevel.INFO;
+                } else {
+                    return LogLevel.WARNING;
+                }
+            }
+
+            @Override
+            public void debug(String message, Throwable e) {
+                DefaultLiquibaseConnectionProvider.logger.trace(message, e);
+            }
+
+            @Override
+            public void setChangeLog(DatabaseChangeLog databaseChangeLog) {
+            }
+
+            @Override
+            public void setChangeSet(ChangeSet changeSet) {
+            }
+
+            @Override
+            public int getPriority() {
+                return 0;
+            }
+        };
+
+        @Override
+        public liquibase.logging.Logger getLog(String name) {
+            return logger;
+        }
+
+        @Override
+        public liquibase.logging.Logger getLog() {
+            return logger;
+        }
+
+    }
+}

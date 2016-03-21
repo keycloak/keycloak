@@ -17,10 +17,10 @@
  */
 package org.keycloak.testsuite.console.realm;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.testsuite.model.Theme;
 import org.keycloak.testsuite.console.page.realm.ThemeSettings;
 
 /**
@@ -41,8 +41,10 @@ public class ThemeSettingsTest extends AbstractRealmTest {
     }
 
     @Test
-    public void changeLoginThemeTest() {
-        themeSettingsPage.changeLoginTheme(Theme.BASE.getName());
+    public void changeLoginThemeTest() throws ConfigurationException {
+        testRealmLoginPage.setKeycloakThemeCssName(getConstantsProperties().getString("theme-default-css-name"));
+
+        themeSettingsPage.changeLoginTheme("base");
         themeSettingsPage.saveTheme();
 
         testRealmAdminConsolePage.navigateTo();
@@ -51,7 +53,7 @@ public class ThemeSettingsTest extends AbstractRealmTest {
         testRealmAdminConsolePage.logOut();
 
         themeSettingsPage.navigateTo();
-        themeSettingsPage.changeLoginTheme(Theme.KEYCLOAK.getName());
+        themeSettingsPage.changeLoginTheme(getConstantsProperties().getString("theme-default-name"));
         themeSettingsPage.saveTheme();
 
         testRealmAdminConsolePage.navigateTo();

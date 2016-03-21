@@ -15,25 +15,34 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.model;
+package org.keycloak.connections.jpa.updater.liquibase.conn;
+
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
 /**
- *
- * @author Petr Mensik
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public enum Theme {
-    
-    BASE("base"), KEYCLOAK("keycloak"), PATTERNFLY("patternfly");
-    
-    private final String name;
-    
-    private Theme(String name) {
-        this.name = name;
+public class LiquibaseConnectionSpi implements Spi {
+
+    @Override
+    public boolean isInternal() {
+        return true;
     }
 
+    @Override
     public String getName() {
-        return name;
+        return "connectionsLiquibase";
     }
 
-    
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return LiquibaseConnectionProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return LiquibaseConnectionProviderFactory.class;
+    }
 }

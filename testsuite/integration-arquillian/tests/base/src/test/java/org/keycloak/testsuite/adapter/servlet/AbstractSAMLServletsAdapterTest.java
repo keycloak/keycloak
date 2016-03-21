@@ -224,7 +224,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
 
         salesPostPassiveServletPage.navigateTo();
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>"));
+        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().contains("<body><pre></pre></body>"));
 
         salesPostSigEmailServletPage.navigateTo();
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
@@ -371,7 +371,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     public void salesPostPassiveTest() {
         salesPostPassiveServletPage.navigateTo();
         //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>"));
+        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().contains("<body><pre></pre></body>"));
 
         salesPostServletPage.navigateTo();
         testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
@@ -382,7 +382,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         salesPostPassiveServletPage.logout();
         salesPostPassiveServletPage.navigateTo();
         //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>"));
+        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().contains("<body><pre></pre></body>"));
 
         salesPostServletPage.navigateTo();
         testRealmSAMLRedirectLoginPage.form().login("unauthorized", "password");
@@ -475,6 +475,23 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
         salesPostSigServletPage.navigateTo();
         assertTrue(driver.getPageSource().contains("principal=bburke"));
+
+        employee2ServletPage.logout();
+    }
+
+    @Test
+    public void idpInitiatedUnauthorizedLoginTest() {
+        samlidpInitiatedLogin.setAuthRealm(SAMLSERVLETDEMO);
+        samlidpInitiatedLogin.setUrlName("employee2");
+        samlidpInitiatedLogin.navigateTo();
+        samlidpInitiatedLogin.form().login("unauthorized","password");
+
+        assertFalse(driver.getPageSource().contains("principal="));
+        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
+
+        employee2ServletPage.navigateTo();
+        assertFalse(driver.getPageSource().contains("principal="));
+        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
 
         employee2ServletPage.logout();
     }
