@@ -27,6 +27,8 @@ import java.util.*;
  * @version $Revision: 1 $
  */
 public class ProxyConfig {
+    private static final boolean SEND_NAME_DEFAULT = true;
+
     @JsonProperty("bind-address")
     protected String bindAddress = "localhost";
     @JsonProperty("http-port")
@@ -53,6 +55,8 @@ public class ProxyConfig {
     protected String targetUrl;
     @JsonProperty("send-access-token")
     protected boolean sendAccessToken;
+    @JsonProperty("send-name")
+    private Boolean sendName;
     @JsonProperty("applications")
     protected List<Application> applications = new LinkedList<Application>();
     @JsonProperty("header-names")
@@ -168,6 +172,14 @@ public class ProxyConfig {
 
     public void setSendAccessToken(boolean sendAccessToken) {
         this.sendAccessToken = sendAccessToken;
+    }
+
+    public boolean isSendName() {
+        return sendName == null ? SEND_NAME_DEFAULT : sendName;
+    }
+
+    public void setSendName(boolean sendName) {
+        this.sendName = sendName;
     }
 
     public void setHeaderNames(Map<String, String> headerNames) {

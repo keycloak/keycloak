@@ -42,11 +42,13 @@ public class ConstraintAuthorizationHandler implements HttpHandler {
     protected HttpHandler next;
     protected String errorPage;
     protected boolean sendAccessToken;
+    protected boolean sendName;
 
-    public ConstraintAuthorizationHandler(HttpHandler next, String errorPage, boolean sendAccessToken, Map<String, String> headerNames) {
+    public ConstraintAuthorizationHandler(HttpHandler next, String errorPage, boolean sendAccessToken, boolean sendName, Map<String, String> headerNames) {
         this.next = next;
         this.errorPage = errorPage;
         this.sendAccessToken = sendAccessToken;
+        this.sendName = sendName;
 
         this.httpHeaderNames = new HashMap<>();
         this.httpHeaderNames.put(KEYCLOAK_SUBJECT, new HttpString(getOrDefault(headerNames, "keycloak-subject", KEYCLOAK_SUBJECT)));
@@ -112,7 +114,7 @@ public class ConstraintAuthorizationHandler implements HttpHandler {
             if (idToken.getEmail() != null) {
                 exchange.getRequestHeaders().put(httpHeaderNames.get(KEYCLOAK_EMAIL), idToken.getEmail());
             }
-            if (idToken.getName() != null) {
+            if (sendName && idToken.getName() != null) {
                 exchange.getRequestHeaders().put(httpHeaderNames.get(KEYCLOAK_NAME), idToken.getName());
             }
             if (sendAccessToken) {
