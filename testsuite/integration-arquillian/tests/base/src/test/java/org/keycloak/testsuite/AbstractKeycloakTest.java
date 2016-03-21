@@ -59,6 +59,7 @@ import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.util.WaitUtils;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import org.keycloak.testsuite.util.TestEventsLogger;
 
 /**
  *
@@ -119,6 +120,8 @@ public abstract class AbstractKeycloakTest {
         setDefaultPageUriParameters();
 
         driverSettings();
+        
+        TestEventsLogger.setDriver(driver);
 
         if (!suiteContext.isAdminPasswordUpdated()) {
             log.debug("updating admin password");

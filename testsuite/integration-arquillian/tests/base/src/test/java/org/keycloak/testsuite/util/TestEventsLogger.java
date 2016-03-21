@@ -14,13 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.util;
 
+import java.io.File;
+import java.io.IOException;
+import org.apache.commons.io.FileUtils;
 import org.jboss.logging.Logger;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
+import org.openqa.selenium.WebDriver;
 
 /**
  *
@@ -29,6 +32,13 @@ import org.junit.runner.notification.RunListener;
  */
 public class TestEventsLogger extends RunListener {
 
+    
+    private static WebDriver driver;
+    
+    public static void setDriver(WebDriver driver) {
+        TestEventsLogger.driver = driver;
+    }
+    
     private Logger log(Description d) {
         return Logger.getLogger(d.getClassName());
     }
@@ -45,6 +55,7 @@ public class TestEventsLogger extends RunListener {
     @Override
     public void testFailure(Failure f) throws Exception {
         Description d = f.getDescription();
+        createPageSrcFile(d);
         log(d).error(getMessage(d, "FAILED"));
     }
 
@@ -58,4 +69,11 @@ public class TestEventsLogger extends RunListener {
         log(d).info(getMessage(d, "FINISHED\n\n"));
     }
 
+    private void createPageSrcFile(Description d) throws IOException {
+        if (driver != null && driver.getPageSource() != null) {
+            String pageSourceLocation = System.getProperty("page.source.location", "target/failed-tests/page-source/");
+            FileUtils.writeStringToFile(new File(pageSourceLocation + d.getTestClass().getSimpleName() + "/" + d.getMethodName() + ".html"), 
+                    driver.getPageSource());
+        }
+    }
 }
