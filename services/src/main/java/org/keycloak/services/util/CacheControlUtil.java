@@ -46,9 +46,14 @@ public class CacheControlUtil {
     }
 
     public static CacheControl noCache() {
+
         CacheControl cacheControl = new CacheControl();
+        cacheControl.setMustRevalidate(true);
         cacheControl.setNoCache(true);
+        cacheControl.setNoStore(true);
+
         return cacheControl;
     }
+
 
 }
