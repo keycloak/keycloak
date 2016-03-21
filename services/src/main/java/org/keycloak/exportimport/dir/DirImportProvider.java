@@ -133,12 +133,13 @@ public class DirImportProvider implements ImportProvider {
 
         if (realmImported.get()) {
             // Import users
-            for (File userFile : userFiles) {
+            for (final File userFile : userFiles) {
                 final FileInputStream fis = new FileInputStream(userFile);
                 KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
                     @Override
                     protected void runExportImportTask(KeycloakSession session) throws IOException {
                         ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
+                        logger.infof("Imported users from %s", userFile.getAbsolutePath());
                     }
                 });
             }
