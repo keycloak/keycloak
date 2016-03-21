@@ -20,6 +20,7 @@ package org.keycloak.models.cache.infinispan;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -28,10 +29,13 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
+import org.keycloak.models.cache.infinispan.entities.CachedUserConsent;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -392,16 +396,28 @@ public class UserAdapter implements UserModel {
 
     @Override
     public UserConsentModel getConsentByClient(String clientId) {
-        // TODO: caching?
-        getDelegateForUpdate();
-        return updated.getConsentByClient(clientId);
+        if (updated != null) return updated.getConsentByClient(clientId);
+        CachedUserConsent cachedConsent = cached.getConsents().get(clientId);
+        if (cachedConsent == null) {
+            return null;
+        }
+
+        return toConsentModel(cachedConsent);
     }
 
     @Override
     public List<UserConsentModel> getConsents() {
-        // TODO: caching?
-        getDelegateForUpdate();
-        return updated.getConsents();
+        if (updated != null) return updated.getConsents();
+        Collection<CachedUserConsent> cachedConsents = cached.getConsents().values();
+
+        List<UserConsentModel> result = new LinkedList<>();
+        for (CachedUserConsent cachedConsent : cachedConsents) {
+            UserConsentModel consent = toConsentModel(cachedConsent);
+            if (consent != null) {
+                result.add(consent);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -414,6 +430,26 @@ public class UserAdapter implements UserModel {
     public boolean revokeConsentForClient(String clientId) {
         getDelegateForUpdate();
         return updated.revokeConsentForClient(clientId);
+    }
+
+    private UserConsentModel toConsentModel(CachedUserConsent cachedConsent) {
+        ClientModel client = keycloakSession.realms().getClientById(cachedConsent.getClientDbId(), realm);
+        if (client == null) {
+            return null;
+        }
+
+        UserConsentModel consentModel = new UserConsentModel(client);
+
+        for (String roleId : cachedConsent.getRoleIds()) {
+            RoleModel role = keycloakSession.realms().getRoleById(roleId, realm);
+            if (role != null) {
+                consentModel.addGrantedRole(role);
+            }
+        }
+        for (ProtocolMapperModel protocolMapper : cachedConsent.getProtocolMappers()) {
+            consentModel.addGrantedProtocolMapper(protocolMapper);
+        }
+        return consentModel;
     }
 
     @Override

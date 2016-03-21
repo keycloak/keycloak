@@ -21,12 +21,15 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -50,6 +53,7 @@ public class CachedUser extends AbstractRevisioned implements InRealm {
     private Set<String> requiredActions = new HashSet<>();
     private Set<String> roleMappings = new HashSet<>();
     private Set<String> groups = new HashSet<>();
+    private Map<String, CachedUserConsent> consents = new HashMap<>(); // Key is client DB Id
 
 
 
@@ -76,6 +80,13 @@ public class CachedUser extends AbstractRevisioned implements InRealm {
         if (groupMappings != null) {
             for (GroupModel group : groupMappings) {
                 groups.add(group.getId());
+            }
+        }
+
+        List<UserConsentModel> consents = user.getConsents();
+        if (consents != null) {
+            for (UserConsentModel consent : consents) {
+                this.consents.put(consent.getClient().getId(), new CachedUserConsent(consent));
             }
         }
     }
@@ -142,5 +153,9 @@ public class CachedUser extends AbstractRevisioned implements InRealm {
 
     public Set<String> getGroups() {
         return groups;
+    }
+
+    public Map<String, CachedUserConsent> getConsents() {
+        return consents;
     }
 }
