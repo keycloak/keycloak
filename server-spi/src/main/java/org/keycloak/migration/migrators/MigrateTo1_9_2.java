@@ -18,9 +18,12 @@
 package org.keycloak.migration.migrators;
 
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MigrateTo1_9_2 {
 
@@ -29,7 +32,11 @@ public class MigrateTo1_9_2 {
     public void migrate(KeycloakSession session) {
         for (RealmModel realm : session.realms().getRealms()) {
             if (realm.getBrowserSecurityHeaders() != null) {
-                realm.getBrowserSecurityHeaders().put("xFrameOptions", "nosniff");
+
+                Map<String, String> browserSecurityHeaders = new HashMap<>(realm.getBrowserSecurityHeaders());
+                browserSecurityHeaders.put("xFrameOptions", "nosniff");
+
+                realm.setBrowserSecurityHeaders(Collections.unmodifiableMap(browserSecurityHeaders));
             }
         }
     }
