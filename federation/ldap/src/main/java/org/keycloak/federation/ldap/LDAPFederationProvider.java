@@ -229,7 +229,9 @@ public class LDAPFederationProvider implements UserFederationProvider {
         List<UserModel> result = new ArrayList<>();
         for (String username : usernames) {
             UserModel kcUser = session.users().getUserByUsername(username, realm);
-            if (!model.getId().equals(kcUser.getFederationLink())) {
+            if (kcUser == null) {
+                logger.warnf("User '%s' referenced by membership wasn't found in LDAP", username);
+            } else if (!model.getId().equals(kcUser.getFederationLink())) {
                 logger.warnf("Incorrect federation provider of user %s" + kcUser.getUsername());
             } else {
                 result.add(kcUser);
