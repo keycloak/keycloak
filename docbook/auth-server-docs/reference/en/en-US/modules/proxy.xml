@@ -120,6 +120,16 @@ $ java -jar bin/launcher.jar [your-config.json]
                     </listitem>
                 </varlistentry>
                 <varlistentry>
+                    <term>send-name</term>
+                    <listitem>
+                        <para>
+                            Boolean flag.  If true, this will send full name of the user via the KEYCLOAK_NAME header to the
+                            proxied server. Note that if name contains non-ASCII characters, proxied server may have problems
+                            decoding the request. <emphasis>OPTIONAL.</emphasis>. Default is true.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
                     <term>bind-address</term>
                     <listitem>
                         <para>

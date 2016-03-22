@@ -89,6 +89,7 @@ public class ProxyServerBuilder {
     protected PathHandler root = new PathHandler(NOT_FOUND);
     protected HttpHandler proxyHandler;
     protected boolean sendAccessToken;
+    protected boolean sendName;
 
     protected Map<String, String> headerNameConfig;
 
@@ -112,6 +113,11 @@ public class ProxyServerBuilder {
 
     public ProxyServerBuilder sendAccessToken(boolean flag) {
         this.sendAccessToken = flag;
+        return this;
+    }
+
+    public ProxyServerBuilder sendName(boolean flag) {
+        this.sendName = flag;
         return this;
     }
 
@@ -249,7 +255,7 @@ public class ProxyServerBuilder {
                     errorPage = base + "/" + errorPage;
                 }
             }
-            handler = new ConstraintAuthorizationHandler(handler, errorPage, sendAccessToken, headerNameConfig);
+            handler = new ConstraintAuthorizationHandler(handler, errorPage, sendAccessToken, sendName, headerNameConfig);
             handler = new ProxyAuthenticationCallHandler(handler);
             handler = new ConstraintMatcherHandler(matches, handler, toWrap, errorPage);
             final List<AuthenticationMechanism> mechanisms = new LinkedList<AuthenticationMechanism>();
@@ -411,6 +417,7 @@ public class ProxyServerBuilder {
 
     public static void initOptions(ProxyConfig config, ProxyServerBuilder builder) {
         builder.sendAccessToken(config.isSendAccessToken());
+        builder.sendName(config.isSendName());
         builder.headerNameConfig(config.getHeaderNames());
         if (config.getBufferSize() != null) builder.setBufferSize(config.getBufferSize());
         if (config.getBuffersPerRegion() != null) builder.setBuffersPerRegion(config.getBuffersPerRegion());
