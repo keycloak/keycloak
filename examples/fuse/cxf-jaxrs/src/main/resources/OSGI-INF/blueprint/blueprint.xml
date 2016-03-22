@@ -69,8 +69,8 @@
     <bean id="defaultCxfReregistration" class="org.keycloak.adapters.osgi.ServletReregistrationService" depends-on="cxfKeycloakPaxWebIntegration"
           init-method="start" destroy-method="stop">
         <property name="bundleContext" ref="blueprintBundleContext" />
-        <property name="servletReference">
-            <reference interface="javax.servlet.Servlet" filter="(alias=/cxf)" timeout="5000" />
+        <property name="managedServiceReference">
+            <reference interface="org.osgi.service.cm.ManagedService" filter="(service.pid=org.apache.cxf.osgi)" timeout="5000"  />
         </property>
     </bean>
 
