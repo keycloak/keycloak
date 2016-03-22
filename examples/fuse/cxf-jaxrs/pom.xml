@@ -31,7 +31,6 @@
     <name>CXF JAXRS Example - Secured in Karaf/Fuse</name>
 
     <properties>
-        <cxf.version>3.0.4</cxf.version>
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
@@ -40,9 +39,11 @@
             org.apache.cxf.transport.http;version="[2.7,3.2)",
             org.apache.cxf.*;version="[2.7,3.2)",
             com.fasterxml.jackson.jaxrs.json;version="${jackson.version}",
+            org.eclipse.jetty.security;version="[8,10)",
+            org.eclipse.jetty.util.security;version="[8,10)",
+            org.keycloak.*;version="${project.version}",
             org.keycloak.adapters.jetty;version="${project.version}",
-            org.keycloak.adapters;version="${project.version}",
-            *
+            *;resolution:=optional
         </keycloak.osgi.import>
         <keycloak.osgi.private>
             org.keycloak.example.rs.*

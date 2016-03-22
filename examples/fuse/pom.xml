@@ -29,7 +29,10 @@
 
     <artifactId>keycloak-examples-fuse-parent</artifactId>
     <packaging>pom</packaging>
-
+    <properties>
+        <cxf.version>3.1.5</cxf.version>
+        <camel.version>2.16.1</camel.version>
+    </properties>
     <modules>
         <module>customer-app-fuse</module>
         <module>product-app-fuse</module>

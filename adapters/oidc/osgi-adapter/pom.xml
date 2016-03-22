@@ -31,15 +31,19 @@
     <packaging>jar</packaging>
 
     <properties>
+
+        <cxf.version>3.1.5</cxf.version>
         <jetty9.version>8.1.17.v20150415</jetty9.version>
         <keycloak.osgi.export>
             org.keycloak.adapters.osgi.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
-            org.ops4j.pax.web.*;version="[3.0,4)",
+            org.ops4j.pax.web.*;version="[3.0,5)",
             javax.servlet.*;version="[2.5,4)";resolution:=optional,
             org.eclipse.jetty.*;version="[8.1,10)";resolution:=optional,
             org.keycloak.*;version="${project.version}",
+            org.apache.cxf.transport.http;resolution:=optional;version="[3,4)",
+            org.apache.cxf.transport.servlet;resolution:=optional;version="[3,4)",
             *;resolution:=optional
         </keycloak.osgi.import>
     </properties>
@@ -66,9 +70,20 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.ops4j.pax.web</groupId>
+            <artifactId>pax-web-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-security</artifactId>
             <version>${jetty9.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-transports-http</artifactId>
+            <version>${cxf.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
