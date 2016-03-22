@@ -939,7 +939,14 @@ public class UsersResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
-        if (user.isMemberOf(group)) user.leaveGroup(group);
+
+        try {
+            if (user.isMemberOf(group)) user.leaveGroup(group);
+        } catch (ModelException me) {
+            Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());
+            throw new ErrorResponseException(me.getMessage(), MessageFormat.format(messages.getProperty(me.getMessage(), me.getMessage()), me.getParameters()),
+                    Response.Status.BAD_REQUEST);
+        }
     }
 
     @PUT
