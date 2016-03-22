@@ -18,6 +18,7 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
@@ -297,6 +298,13 @@ public class UserCacheSession implements CacheUserProvider {
 
     @Override
     public UserModel getUserByServiceAccountClient(ClientModel client) {
+        // Just an attempt to find the user from cache by default serviceAccount username
+        String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId();
+        UserModel user = getUserByUsername(username, client.getRealm());
+        if (user != null && user.getServiceAccountClientLink() != null && user.getServiceAccountClientLink().equals(client.getId())) {
+            return user;
+        }
+
         return getDelegate().getUserByServiceAccountClient(client);
     }
 
