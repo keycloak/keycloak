@@ -18,15 +18,22 @@
 package org.keycloak.adapters.osgi;
 
 import java.util.Arrays;
+import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Properties;
 
 import javax.servlet.Servlet;
 
+import org.apache.cxf.transport.http.DestinationRegistry;
+import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.jboss.logging.Logger;
 import org.ops4j.pax.web.service.WebContainer;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.http.HttpContext;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
@@ -42,13 +49,15 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
  */
 public class ServletReregistrationService {
 
+    private static final String CXF_SERVLET_PREFIX = "org.apache.cxf.servlet.";
     protected static final Logger log = Logger.getLogger(ServletReregistrationService.class);
 
     private static final List<String> FILTERED_PROPERTIES = Arrays.asList("objectClass", "service.id");
 
     private BundleContext bundleContext;
-    private ServiceReference servletReference;
+    private ServiceReference managedServiceReference;
     private ServiceTracker webContainerTracker;
+    private String alias;
 
     public BundleContext getBundleContext() {
         return bundleContext;
@@ -58,24 +67,18 @@ public class ServletReregistrationService {
         this.bundleContext = bundleContext;
     }
 
-    public ServiceReference getServletReference() {
-        return servletReference;
-    }
-
-    public void setServletReference(ServiceReference servletReference) {
-        this.servletReference = servletReference;
-    }
-
-    protected ServiceTracker getWebContainerTracker() {
-        return webContainerTracker;
-    }
 
     public void start() {
-        if (servletReference == null) {
-            throw new IllegalStateException("No servlet reference provided");
+        if ( managedServiceReference == null) {
+            return;
         }
 
-        final Servlet servlet = (Servlet) bundleContext.getService(servletReference);
+        Dictionary properties = obtainProperties();
+        alias = (String)getProp(properties, CXF_SERVLET_PREFIX + "context", "/cxf");
+        if(alias == null){
+            alias = "/cxf";
+        }
+
         WebContainer externalWebContainer = findExternalWebContainer();
         if (externalWebContainer == null) {
             return;
@@ -83,18 +86,19 @@ public class ServletReregistrationService {
 
         // Unregister servlet from external container now
         try {
-            externalWebContainer.unregisterServlet(servlet);
+            externalWebContainer.unregister(alias);
             log.debug("Original servlet with alias " + getAlias() + " unregistered successfully from external web container.");
         } catch (IllegalStateException e) {
             log.warn("Can't unregister servlet due to: " + e.getMessage());
         }
 
+        final Dictionary finalProperties = properties;
         ServiceTrackerCustomizer trackerCustomizer = new ServiceTrackerCustomizer() {
 
             @Override
             public Object addingService(ServiceReference webContainerServiceReference) {
                 WebContainer ourWebContainer = (WebContainer) bundleContext.getService(webContainerServiceReference);
-                registerServlet(ourWebContainer, servlet);
+                registerServlet(ourWebContainer, finalProperties);
                 log.debugv("Servlet with alias " + getAlias() + " registered to secured web container");
                 return ourWebContainer;
             }
@@ -122,28 +126,82 @@ public class ServletReregistrationService {
 
         // Re-register servlet back to original context
         WebContainer externalWebContainer = findExternalWebContainer();
-        Servlet servlet = (Servlet) bundleContext.getService(servletReference);
-        registerServlet(externalWebContainer, servlet);
+        registerServlet(externalWebContainer,  obtainProperties());
         log.debug("Servlet with alias " + getAlias() + " registered back to external web container");
     }
 
     private String getAlias() {
-        return (String) servletReference.getProperty("alias");
+        return alias;
     }
 
-    protected void registerServlet(WebContainer webContainer, Servlet servlet) {
+    /**
+     * Code comes from org.apache.cxf.transport.http.osgi.ServletExporter#updated(java.util.Dictionary)
+     * @param webContainer
+     * @param properties
+     */
+    protected void registerServlet(WebContainer webContainer, Dictionary properties) {
+        HttpContext httpContext = webContainer.createDefaultHttpContext();
+
+        ServiceReference destinationServiceServiceReference = bundleContext.getServiceReference("org.apache.cxf.transport.http.DestinationRegistry");
+        DestinationRegistry destinationRegistry = (DestinationRegistry) bundleContext.getService(destinationServiceServiceReference);
+
+        Servlet servlet = new CXFNonSpringServlet(destinationRegistry, false);
         try {
+            if (properties == null) {
+                properties = new Properties();
+            }
+            Properties sprops = new Properties();
+            sprops.put("init-prefix",
+                    getProp(properties, CXF_SERVLET_PREFIX + "init-prefix", ""));
+            sprops.put("servlet-name",
+                    getProp(properties, CXF_SERVLET_PREFIX + "name", "cxf-osgi-transport-servlet"));
+            sprops.put("hide-service-list-page",
+                    getProp(properties, CXF_SERVLET_PREFIX + "hide-service-list-page", "false"));
+            sprops.put("disable-address-updates",
+                    getProp(properties, CXF_SERVLET_PREFIX + "disable-address-updates", "true"));
+            sprops.put("base-address",
+                    getProp(properties, CXF_SERVLET_PREFIX + "base-address", ""));
+            sprops.put("service-list-path",
+                    getProp(properties, CXF_SERVLET_PREFIX + "service-list-path", ""));
+            sprops.put("static-resources-list",
+                    getProp(properties, CXF_SERVLET_PREFIX + "static-resources-list", ""));
+            sprops.put("redirects-list",
+                    getProp(properties, CXF_SERVLET_PREFIX + "redirects-list", ""));
+            sprops.put("redirect-servlet-name",
+                    getProp(properties, CXF_SERVLET_PREFIX + "redirect-servlet-name", ""));
+            sprops.put("redirect-servlet-path",
+                    getProp(properties, CXF_SERVLET_PREFIX + "redirect-servlet-path", ""));
+            sprops.put("service-list-all-contexts",
+                    getProp(properties, CXF_SERVLET_PREFIX + "service-list-all-contexts", ""));
+            sprops.put("service-list-page-authenticate",
+                    getProp(properties, CXF_SERVLET_PREFIX + "service-list-page-authenticate", "false"));
+            sprops.put("service-list-page-authenticate-realm",
+                    getProp(properties, CXF_SERVLET_PREFIX + "service-list-page-authenticate-realm", "karaf"));
+            sprops.put("use-x-forwarded-headers",
+                    getProp(properties, CXF_SERVLET_PREFIX + "use-x-forwarded-headers", "false"));
+
+            // Accept extra properties by default, can be disabled if it is really needed
+            if (Boolean.valueOf(getProp(properties, CXF_SERVLET_PREFIX + "support.extra.properties", "true").toString())) {
+                Enumeration keys = properties.keys();
+                while (keys.hasMoreElements()) {
+                    String nextKey = keys.nextElement().toString();
+                    if (!nextKey.startsWith(CXF_SERVLET_PREFIX)) {
+                        sprops.put(nextKey, properties.get(nextKey));
+                    }
+                }
+            }
+
             Hashtable<String, Object> servletInitParams = new Hashtable<String, Object>();
-            String[] propNames = servletReference.getPropertyKeys();
-            for (String propName : propNames) {
+            Enumeration keys = sprops.keys();
+
+            while(keys.hasMoreElements()){
+                String propName = (String) keys.nextElement();
                 if (!FILTERED_PROPERTIES.contains(propName)) {
-                    servletInitParams.put(propName, servletReference.getProperty(propName));
+                    servletInitParams.put(propName, sprops.getProperty(propName));
                 }
             }
 
             // Try to register servlet in given web container now
-            HttpContext httpContext = webContainer.createDefaultHttpContext();
-            String alias = (String) servletReference.getProperty("alias");
             webContainer.registerServlet(alias, servlet, servletInitParams, httpContext);
         } catch (Exception e) {
             log.error("Can't register servlet in web container", e);
@@ -156,7 +214,7 @@ public class ServletReregistrationService {
      * @return web container or null
      */
     protected WebContainer findExternalWebContainer() {
-        BundleContext servletBundleContext = servletReference.getBundle().getBundleContext();
+        BundleContext servletBundleContext = managedServiceReference.getBundle().getBundleContext();
         ServiceReference webContainerReference = servletBundleContext.getServiceReference(WebContainer.class.getName());
         if (webContainerReference == null) {
             log.warn("Not found webContainer reference for bundle " + servletBundleContext);
@@ -166,4 +224,32 @@ public class ServletReregistrationService {
         }
     }
 
+    private Dictionary obtainProperties(){
+        Dictionary properties = null;
+        ServiceReference reference = bundleContext.getServiceReference(ConfigurationAdmin.class.getName());
+        ConfigurationAdmin admin = (ConfigurationAdmin) bundleContext.getService(reference);
+        try {
+            Configuration configuration = admin.getConfiguration("org.apache.cxf.osgi");
+            properties = configuration.getProperties();
+        } catch (Exception e){
+            log.warn("Unable to obtain cxf osgi configadmin reference.", e);
+        }
+        return properties;
+    }
+
+    private Object getProp(Dictionary properties, String key, Object defaultValue) {
+        Object value = null;
+        if(properties != null){
+            value = properties.get(key);
+        }
+        return value == null ? defaultValue : value;
+    }
+
+    public ServiceReference getManagedServiceReference() {
+        return managedServiceReference;
+    }
+
+    public void setManagedServiceReference(ServiceReference managedServiceReference) {
+        this.managedServiceReference = managedServiceReference;
+    }
 }
