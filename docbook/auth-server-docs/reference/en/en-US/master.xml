@@ -42,6 +42,7 @@
                 <!ENTITY JAAS SYSTEM "modules/jaas.xml">
                 <!ENTITY IdentityBroker SYSTEM "modules/identity-broker.xml">
                 <!ENTITY Themes SYSTEM "modules/themes.xml">
+                <!ENTITY Clients SYSTEM "modules/clients.xml">
                 <!ENTITY Migration SYSTEM "modules/MigrationFromOlderVersions.xml">
                 <!ENTITY Email SYSTEM "modules/email.xml">
                 <!ENTITY Roles SYSTEM "modules/roles.xml">
@@ -140,6 +141,7 @@ This one is short
 
     &IdentityBroker;
     &Themes;
+    &Clients;
     &Recaptcha;
 
     <chapter>
