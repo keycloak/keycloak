@@ -33,6 +33,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CacheUserProvider;
+import org.keycloak.models.cache.infinispan.entities.CachedFederatedIdentityLinks;
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.cache.infinispan.entities.UserListQuery;
 
@@ -85,6 +86,7 @@ public class UserCacheSession implements CacheUserProvider {
         invalidations.add(user.getId());
         if (user.getEmail() != null) invalidations.add(getUserByEmailCacheKey(realm.getId(), user.getEmail()));
         invalidations.add(getUserByUsernameCacheKey(realm.getId(), user.getUsername()));
+        if (realm.isIdentityFederationEnabled()) invalidations.add(getFederatedIdentityLinksCacheKey(user.getId()));
     }
 
     protected void runInvalidations() {
@@ -178,6 +180,14 @@ public class UserCacheSession implements CacheUserProvider {
 
     public String getUserByEmailCacheKey(String realmId, String email) {
         return realmId + ".email." + email;
+    }
+
+    public String getUserByFederatedIdentityCacheKey(String realmId, FederatedIdentityModel socialLink) {
+        return realmId + ".idp." + socialLink.getIdentityProvider() + "." + socialLink.getUserId();
+    }
+
+    public String getFederatedIdentityLinksCacheKey(String userId) {
+        return userId + ".idplinks";
     }
 
     @Override
@@ -283,7 +293,46 @@ public class UserCacheSession implements CacheUserProvider {
 
     @Override
     public UserModel getUserByFederatedIdentity(FederatedIdentityModel socialLink, RealmModel realm) {
-        return getDelegate().getUserByFederatedIdentity(socialLink, realm);
+        if (socialLink == null) return null;
+        if (!realm.isIdentityFederationEnabled()) return null;
+
+        if (realmInvalidations.contains(realm.getId())) {
+            return getDelegate().getUserByFederatedIdentity(socialLink, realm);
+        }
+        String cacheKey = getUserByFederatedIdentityCacheKey(realm.getId(), socialLink);
+        if (invalidations.contains(cacheKey)) {
+            return getDelegate().getUserByFederatedIdentity(socialLink, realm);
+        }
+        UserListQuery query = cache.get(cacheKey, UserListQuery.class);
+
+        String userId = null;
+        if (query == null) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            UserModel model = getDelegate().getUserByFederatedIdentity(socialLink, realm);
+            if (model == null) return null;
+            userId = model.getId();
+            query = new UserListQuery(loaded, cacheKey, realm, userId);
+            cache.addRevisioned(query, startupRevision);
+            if (invalidations.contains(userId)) return model;
+            if (managedUsers.containsKey(userId)) return managedUsers.get(userId);
+
+            CachedUser cached = cache.get(userId, CachedUser.class);
+            if (cached == null) {
+                cached = new CachedUser(loaded, realm, model);
+                cache.addRevisioned(cached, startupRevision);
+            }
+            UserAdapter adapter = new UserAdapter(cached, this, session, realm);
+            managedUsers.put(userId, adapter);
+            return adapter;
+        } else {
+            userId = query.getUsers().iterator().next();
+            if (invalidations.contains(userId)) {
+                invalidations.add(cacheKey);
+                return getDelegate().getUserByFederatedIdentity(socialLink, realm);
+
+            }
+            return getUserById(userId, realm);
+        }
     }
 
     @Override
@@ -350,19 +399,49 @@ public class UserCacheSession implements CacheUserProvider {
 
     @Override
     public Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm) {
-        return getDelegate().getFederatedIdentities(user, realm);
+        logger.tracev("getFederatedIdentities: {0}", user.getUsername());
+
+        String cacheKey = getFederatedIdentityLinksCacheKey(user.getId());
+        if (realmInvalidations.contains(realm.getId()) || invalidations.contains(user.getId()) || invalidations.contains(cacheKey)) {
+            return getDelegate().getFederatedIdentities(user, realm);
+        }
+
+        CachedFederatedIdentityLinks cachedLinks = cache.get(cacheKey, CachedFederatedIdentityLinks.class);
+
+        if (cachedLinks == null) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            Set<FederatedIdentityModel> federatedIdentities = getDelegate().getFederatedIdentities(user, realm);
+            cachedLinks = new CachedFederatedIdentityLinks(loaded, cacheKey, realm, federatedIdentities);
+            cache.addRevisioned(cachedLinks, startupRevision);
+            return federatedIdentities;
+        } else {
+            return new HashSet<>(cachedLinks.getFederatedIdentities());
+        }
     }
 
     @Override
     public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
-        return getDelegate().getFederatedIdentity(user, socialProvider, realm);
+        logger.tracev("getFederatedIdentity: {0} {1}", user.getUsername(), socialProvider);
+
+        String cacheKey = getFederatedIdentityLinksCacheKey(user.getId());
+        if (realmInvalidations.contains(realm.getId()) || invalidations.contains(user.getId()) || invalidations.contains(cacheKey)) {
+            return getDelegate().getFederatedIdentity(user, socialProvider, realm);
+        }
+
+        Set<FederatedIdentityModel> federatedIdentities = getFederatedIdentities(user, realm);
+        for (FederatedIdentityModel socialLink : federatedIdentities) {
+            if (socialLink.getIdentityProvider().equals(socialProvider)) {
+                return socialLink;
+            }
+        }
+        return null;
     }
 
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
         UserModel user = getDelegate().addUser(realm, id, username, addDefaultRoles, addDefaultRoles);
         // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
-        invalidateUser(realm, user);
+        invalidateUser(realm, user, false);
         managedUsers.put(user.getId(), user);
         return user;
     }
@@ -371,37 +450,60 @@ public class UserCacheSession implements CacheUserProvider {
     public UserModel addUser(RealmModel realm, String username) {
         UserModel user = getDelegate().addUser(realm, username);
         // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
-        invalidateUser(realm, user);
+        invalidateUser(realm, user, false);
         managedUsers.put(user.getId(), user);
         return user;
     }
 
-    protected void invalidateUser(RealmModel realm, UserModel user) {
+    protected void invalidateUser(RealmModel realm, UserModel user, boolean invalidateUserLookupsByFederatedIdentity) {
         // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
+
+        if (realm.isIdentityFederationEnabled()) {
+            // Invalidate federationLinks of user
+            invalidations.add(getFederatedIdentityLinksCacheKey(user.getId()));
+
+            // Invalidate all keys for lookup this user by any identityProvider link
+            if (invalidateUserLookupsByFederatedIdentity) {
+                Set<FederatedIdentityModel> federatedIdentities = getFederatedIdentities(user, realm);
+                for (FederatedIdentityModel socialLink : federatedIdentities) {
+                    String fedIdentityCacheKey = getUserByFederatedIdentityCacheKey(realm.getId(), socialLink);
+                    invalidations.add(fedIdentityCacheKey);
+                }
+            }
+        }
+
         invalidations.add(user.getId());
         if (user.getEmail() != null) invalidations.add(getUserByEmailCacheKey(realm.getId(), user.getEmail()));
         invalidations.add(getUserByUsernameCacheKey(realm.getId(), user.getUsername()));
-
     }
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        invalidateUser(realm, user);
+        invalidateUser(realm, user, true);
         return getDelegate().removeUser(realm, user);
     }
 
     @Override
     public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink) {
+        invalidations.add(getFederatedIdentityLinksCacheKey(user.getId()));
         getDelegate().addFederatedIdentity(realm, user, socialLink);
     }
 
     @Override
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
+        invalidations.add(getFederatedIdentityLinksCacheKey(federatedUser.getId()));
         getDelegate().updateFederatedIdentity(realm, federatedUser, federatedIdentityModel);
     }
 
     @Override
     public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
+        // Needs to invalidate both directions
+        FederatedIdentityModel socialLink = getFederatedIdentity(user, socialProvider, realm);
+        invalidations.add(getFederatedIdentityLinksCacheKey(user.getId()));
+        if (socialLink != null) {
+            invalidations.add(getUserByFederatedIdentityCacheKey(realm.getId(), socialLink));
+        }
+
         return getDelegate().removeFederatedIdentity(realm, user, socialProvider);
     }
 
