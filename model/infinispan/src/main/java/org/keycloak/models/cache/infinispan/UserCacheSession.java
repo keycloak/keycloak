@@ -18,7 +18,20 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.*;
+import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.CredentialValidationOutput;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.cache.infinispan.entities.UserListQuery;
@@ -281,6 +294,13 @@ public class UserCacheSession implements CacheUserProvider {
 
     @Override
     public UserModel getUserByServiceAccountClient(ClientModel client) {
+        // Just an attempt to find the user from cache by default serviceAccount username
+        String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId();
+        UserModel user = getUserByUsername(username, client.getRealm());
+        if (user != null && user.getServiceAccountClientLink() != null && user.getServiceAccountClientLink().equals(client.getId())) {
+            return user;
+        }
+
         return getDelegate().getUserByServiceAccountClient(client);
     }
 
