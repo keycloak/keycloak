@@ -59,6 +59,12 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
                     $scope.selectedClientMappings = [];
                 }
                 Notifications.success("Role mappings updated.");
+            }).error(function(response) {
+                if (response && response['error_description']) {
+                    Notifications.error(response['error_description']);
+                } else {
+                    Notifications.error("Failed to remove role mapping");
+                }
             });
     };
 
@@ -87,6 +93,12 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
                 $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 Notifications.success("Role mappings updated.");
+            }).error(function(response) {
+                if (response && response['error_description']) {
+                    Notifications.error(response['error_description']);
+                } else {
+                    Notifications.error("Failed to remove role mapping");
+                }
             });
     };
 
@@ -1170,6 +1182,12 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
         UserGroupMapping.remove({realm: realm.realm, userId: user.id, groupId: $scope.selectedGroup.id}, function() {
             Notifications.success('Removed group membership');
             $route.reload();
+        }, function(response) {
+            if (response.data && response.data['error_description']) {
+                Notifications.error(response.data['error_description']);
+            } else {
+                Notifications.error("Failed to leave group");
+            }
         });
 
     };

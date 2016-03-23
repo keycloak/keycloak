@@ -561,7 +561,7 @@ public class Base64
         while( raw.hasRemaining() ){
             int rem = Math.min(3,raw.remaining());
             raw.get(raw3,0,rem);
-            Base64.encode3to4(enc4, raw3, rem, Base64.NO_OPTIONS );
+            Base64.encode3to4(enc4, raw3, rem, Base64.NO_OPTIONS);
             encoded.put(enc4);
         }   // end input remaining
     }
@@ -1282,7 +1282,12 @@ public class Base64
 
                 }   // end try
                 catch( java.io.IOException e ) {
-                    e.printStackTrace();
+                    if (e.getMessage().equals("Unsupported compression method")) {
+                        System.out.println("Base64 decoding: Ignoring GZIP header and just returning originally-decoded bytes."); // Better to log as debug, but jboss logging not available in the module :/
+                    } else {
+                        e.printStackTrace();
+                    }
+
                     // Just return originally-decoded bytes
                 }   // end catch
                 finally {

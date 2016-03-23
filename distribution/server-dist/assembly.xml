@@ -42,9 +42,11 @@
                 <exclude>**/module.xml</exclude>
                 <exclude>welcome-content/**</exclude>
                 <exclude>appclient</exclude>
-                <exclude>appclient/*</exclude>
+                <exclude>appclient/**</exclude>
                 <exclude>standalone/deployments</exclude>
                 <exclude>standalone/deployments/*</exclude>
+                <exclude>copyright.txt</exclude>
+                <exclude>README.txt</exclude>
             </excludes>
         </fileSet>
         <fileSet>
