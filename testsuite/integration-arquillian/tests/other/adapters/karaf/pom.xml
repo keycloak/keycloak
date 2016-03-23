@@ -88,6 +88,29 @@
                     <version>3.0.3</version>
                 </dependency>  
             </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>auth.server</property>
+                                            <regex>(wildfly)|(eap)</regex>
+                                            <regexMessage>Karaf/Fuse adapter tests require activation of profile "auth-server-wildfly" or "auth-server-eap".</regexMessage>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         
         
