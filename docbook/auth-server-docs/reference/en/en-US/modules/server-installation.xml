@@ -207,6 +207,15 @@ bin/add-user-keycloak.[sh|bat] -r master -u <username> -p <password>
                         </listitem>
                     </varlistentry>
                     <varlistentry>
+                        <term>globalStatsInterval</term>
+                        <listitem>
+                            <para>
+                                Will log global statistics from Hibernate about executed DB queries and other things. Statistics are always reported
+                                to server log at specified interval (in seconds) and are cleared after each report.
+                            </para>
+                        </listitem>
+                    </varlistentry>
+                    <varlistentry>
                         <term>schema</term>
                         <listitem>
                             <para>
