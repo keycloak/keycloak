@@ -38,6 +38,9 @@
         <app.server.arquillian.xsl>${common.resources}/xslt/arquillian.xsl</app.server.arquillian.xsl>
         
         <app.server.artifactId>integration-arquillian-servers-app-server-${app.server}</app.server.artifactId>
+        <app.server.skip.unpack>false</app.server.skip.unpack>
+        
+        <app.server.mode>manual</app.server.mode>
         
         <app.server.port.offset>200</app.server.port.offset>
         <app.server.http.port>8280</app.server.http.port>
@@ -107,7 +110,6 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
@@ -126,18 +128,20 @@
                                         </artifactItem>
                                     </artifactItems>
                                     <outputDirectory>${containers.home}</outputDirectory>
+                                    <skip>${app.server.skip.unpack}</skip>
                                 </configuration>
                             </execution>
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
                                 <app.server>${app.server}</app.server>
                                 <app.server.home>${app.server.home}</app.server.home>
                                 <app.server.java.home>${app.server.java.home}</app.server.java.home>
+                            
+                                <app.server.mode>${app.server.mode}</app.server.mode>
                             
                                 <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
                                 <app.server.http.port>${app.server.http.port}</app.server.http.port>
@@ -187,7 +191,6 @@
                 <pluginManagement>
                     <plugins>
                         <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-dependency-plugin</artifactId>
                             <executions>
                                 <execution>
@@ -292,7 +295,6 @@
                             </executions>
                         </plugin>            
                         <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>

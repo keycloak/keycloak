@@ -56,7 +56,7 @@
 
     <profiles>
         <profile>
-            <id>auth-server-jboss-cluster</id>
+            <id>auth-server-cluster</id>
             <modules>
                 <module>wildfly-balancer</module>
             </modules>

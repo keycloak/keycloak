@@ -6,7 +6,7 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  *
  * @author tkyjovsk
  */
-@AppServerContainer("app-server-eap7")
+@AppServerContainer("app-server-eap")
 //@AdapterLibsLocationProperty("adapter.libs.eap7")
 public class EAPBasicAuthExampleAdapterTest extends AbstractBasicAuthExampleAdapterTest {
 

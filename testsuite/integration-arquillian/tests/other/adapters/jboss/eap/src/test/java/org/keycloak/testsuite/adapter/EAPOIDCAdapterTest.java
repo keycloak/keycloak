@@ -8,9 +8,9 @@ import org.keycloak.testsuite.adapter.servlet.AbstractDemoServletsAdapterTest;
  *
  * @author tkyjovsk
  */
-@AppServerContainer("app-server-eap7")
+@AppServerContainer("app-server-eap")
 //@AdapterLibsLocationProperty("adapter.libs.eap7")
-@Ignore //failing tests
+//@Ignore //failing tests
 public class EAPOIDCAdapterTest extends AbstractDemoServletsAdapterTest {
 
 }

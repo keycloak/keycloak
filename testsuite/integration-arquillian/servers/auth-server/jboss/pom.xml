@@ -71,14 +71,12 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-deploy-plugin</artifactId>
                         <configuration>
                             <skip>true</skip>
                         </configuration>
                     </plugin>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
@@ -156,7 +154,6 @@
                 <pluginManagement>
                     <plugins>
                         <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-dependency-plugin</artifactId>
                             <executions>
                                 <execution>
@@ -180,7 +177,6 @@
                             </executions>
                         </plugin>
                         <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-antrun-plugin</artifactId>
                             <version>1.8</version>
                             <executions>
@@ -277,7 +273,6 @@
                 <pluginManagement>
                     <plugins>
                         <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-enforcer-plugin</artifactId>
                             <executions>
                                 <execution>
@@ -311,7 +306,6 @@
                             </executions>
                         </plugin>
                         <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-dependency-plugin</artifactId>
                             <executions>
                                 <execution>
@@ -413,7 +407,7 @@
         </profile>        
         
         <profile>
-            <id>auth-server-jboss-cluster</id>
+            <id>auth-server-cluster</id>
             <properties>
                 <session.cache.owners>1</session.cache.owners>
                 <offline.session.cache.owners>1</offline.session.cache.owners>
@@ -487,24 +481,12 @@
         
         <profile>
             <id>auth-server-wildfly</id>
-            <activation>
-                <property>
-                    <name>auth.server</name>
-                    <value>wildfly</value>
-                </property>
-            </activation>
             <modules>
                 <module>wildfly</module>
             </modules>
         </profile>
         <profile>
             <id>auth-server-eap</id>
-            <activation>
-                <property>
-                    <name>auth.server</name>
-                    <value>eap</value>
-                </property>
-            </activation>
             <modules>
                 <module>eap</module>
             </modules>

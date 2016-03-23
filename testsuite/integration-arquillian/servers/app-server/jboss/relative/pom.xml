@@ -46,24 +46,12 @@
     <profiles>
         <profile>
             <id>auth-server-wildfly</id>
-            <activation>
-                <property>
-                    <name>auth.server</name>
-                    <value>wildfly</value>
-                </property>
-            </activation>
             <modules>
                 <module>wildfly</module>
             </modules>
         </profile>
         <profile>
             <id>auth-server-eap</id>
-            <activation>
-                <property>
-                    <name>auth.server</name>
-                    <value>eap</value>
-                </property>
-            </activation>
             <modules>
                 <module>eap</module>
             </modules>

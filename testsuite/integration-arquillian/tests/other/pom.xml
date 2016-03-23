@@ -44,7 +44,6 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <executions>
                         <execution>
@@ -68,7 +67,6 @@
                     </executions>
                 </plugin> 
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
                     <executions>
                         <execution>
@@ -78,7 +76,7 @@
                                 <goal>copy-resources</goal>
                             </goals>
                             <configuration>
-                                <outputDirectory>${jboss.server.config.dir}</outputDirectory>
+                                <outputDirectory>${auth.server.config.dir}</outputDirectory>
                                 <resources>
                                     <resource>
                                         <directory>${project.build.directory}/dependency</directory>

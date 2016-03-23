@@ -57,6 +57,9 @@ import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.util.WaitUtils;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 
 /**
  *

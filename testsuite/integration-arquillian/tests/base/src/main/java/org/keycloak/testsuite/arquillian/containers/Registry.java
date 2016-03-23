@@ -67,7 +67,7 @@ public class Registry implements ContainerRegistry {
         Validate.notNull(definition, "Definition must be specified");
 
         try {
-            logger.log(Level.INFO, "Registering container: {0}", definition.getContainerName());
+            logger.log(Level.FINE, "Registering container: {0}", definition.getContainerName());
 
             @SuppressWarnings("rawtypes")
             Collection<DeployableContainer> containerAdapters = loader.all(DeployableContainer.class);

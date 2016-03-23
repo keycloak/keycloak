@@ -28,7 +28,7 @@
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
             
-            <container qualifier="app-server-${{app.server}}" mode="manual" >
+            <container qualifier="app-server-${{app.server}}" mode="${{app.server.mode}}" >
                 <configuration>
                     <property name="enabled">true</property>
                     <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>

@@ -94,11 +94,6 @@
                     <artifactId>xml-maven-plugin</artifactId>
                     <version>1.0.1</version>
                 </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.10</version>
-                </plugin>
             </plugins>
         </pluginManagement>
     </build>
