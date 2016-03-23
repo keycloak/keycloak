@@ -66,9 +66,7 @@ public class ManyUsersTest extends AbstractUserTest {
         }
 
         realmTimer.reset("create realm before test");
-        RealmRepresentation realm = new RealmRepresentation();
-        realm.setRealm(REALM);
-        realmsResouce().create(realm);
+        createRealm(REALM);
 
         refreshToken();
     }

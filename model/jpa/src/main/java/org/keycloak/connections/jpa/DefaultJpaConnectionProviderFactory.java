@@ -40,6 +40,8 @@ import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.services.scheduled.ScheduledTaskRunner;
+import org.keycloak.timer.TimerProvider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -179,10 +181,19 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 	
 	                        logger.trace("Database update completed");
 	                    }
-	
+
+                        int globalStatsInterval = config.getInt("globalStatsInterval", -1);
+                        if (globalStatsInterval != -1) {
+                            properties.put("hibernate.generate_statistics", true);
+                        }
+
 	                    logger.trace("Creating EntityManagerFactory");
 	                    emf = Persistence.createEntityManagerFactory(unitName, properties);
 	                    logger.trace("EntityManagerFactory created");
+
+                        if (globalStatsInterval != -1) {
+                            startGlobalStats(session, globalStatsInterval);
+                        }
 
                     } catch (Exception e) {
                         // Safe rollback
@@ -258,6 +269,12 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
             return null;
         }
+    }
+
+    protected void startGlobalStats(KeycloakSession session, int globalStatsIntervalSecs) {
+        logger.debugf("Started Hibernate statistics with the interval %s seconds", globalStatsIntervalSecs);
+        TimerProvider timer = session.getProvider(TimerProvider.class);
+        timer.schedule(new ScheduledTaskRunner(session.getKeycloakSessionFactory(), new HibernateStatsReporter(emf)), globalStatsIntervalSecs * 1000, "ReportHibernateGlobalStats");
     }
 
 
