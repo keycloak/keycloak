@@ -76,7 +76,7 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
 
     @Override
     public String getHelpText() {
-        return "Map a built in user property to a token claim.";
+        return "Map a built in user property (email, firstName, lastName) to a token claim.";
     }
 
     @Override
@@ -104,10 +104,10 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,
-                                      String userAttribute,
-                                      String tokenClaimName, String claimType,
-                                      boolean consentRequired, String consentText,
-                                      boolean accessToken, boolean idToken) {
+                                                        String userAttribute,
+                                                        String tokenClaimName, String claimType,
+                                                        boolean consentRequired, String consentText,
+                                                        boolean accessToken, boolean idToken) {
         return OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
                 tokenClaimName, claimType,
                 consentRequired, consentText,
