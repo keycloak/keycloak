@@ -76,21 +76,21 @@ public class JpaUserProvider implements UserProvider {
         entity.setRealmId(realm.getId());
         em.persist(entity);
         em.flush();
-        UserModel userModel = new UserAdapter(session, realm, em, entity);
+        UserAdapter userModel = new UserAdapter(session, realm, em, entity);
 
         if (addDefaultRoles) {
             for (String r : realm.getDefaultRoles()) {
-                userModel.grantRole(realm.getRole(r));
+                userModel.grantRoleImpl(realm.getRole(r)); // No need to check if user has role as it's new user
             }
 
             for (ClientModel application : realm.getClients()) {
                 for (String r : application.getDefaultRoles()) {
-                    userModel.grantRole(application.getRole(r));
+                    userModel.grantRoleImpl(application.getRole(r)); // No need to check if user has role as it's new user
                 }
             }
 
             for (GroupModel g : realm.getDefaultGroups()) {
-                userModel.joinGroup(g);
+                userModel.joinGroupImpl(g); // No need to check if user has group as it's new user
             }
         }
 
