@@ -42,6 +42,7 @@ import javax.ws.rs.core.UriBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -81,6 +82,7 @@ public class UserTest extends AbstractClientTest {
         UserRepresentation user = new UserRepresentation();
         user.setUsername(username);
         user.setEmail(email);
+        user.setRequiredActions(Collections.<String>emptyList());
         user.setEnabled(true);
 
         Response response = realm.users().create(user);
@@ -662,6 +664,27 @@ public class UserTest extends AbstractClientTest {
             e.getResponse().close();
         }
     }
+
+    @Test
+    public void testDefaultRequiredActionAdded() {
+        // Add UPDATE_PASSWORD as default required action
+        RequiredActionProviderRepresentation updatePasswordReqAction = realm.flows().getRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+        updatePasswordReqAction.setDefaultAction(true);
+        realm.flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePasswordReqAction);
+
+        // Create user
+        String userId = createUser("user1", "user1@localhost");
+
+        UserRepresentation userRep = realm.users().get(userId).toRepresentation();
+        Assert.assertEquals(1, userRep.getRequiredActions().size());
+        Assert.assertEquals(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), userRep.getRequiredActions().get(0));
+
+        // Remove UPDATE_PASSWORD default action
+        updatePasswordReqAction = realm.flows().getRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+        updatePasswordReqAction.setDefaultAction(true);
+        realm.flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePasswordReqAction);
+    }
+
 
     private void switchEditUsernameAllowedOn() {
         RealmRepresentation rep = realm.toRepresentation();
