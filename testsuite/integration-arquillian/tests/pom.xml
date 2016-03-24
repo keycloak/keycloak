@@ -161,7 +161,6 @@
                                 <value>org.keycloak.testsuite.util.TestEventsLogger</value>
                             </property>
                         </properties>
-                        <failIfNoTests>false</failIfNoTests>
                     </configuration>
                 </plugin>
             </plugins>
