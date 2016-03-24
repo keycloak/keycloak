@@ -29,7 +29,6 @@ import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 import org.keycloak.testsuite.arquillian.h2.H2TestEnricher;
 import org.keycloak.testsuite.arquillian.migration.MigrationTestExecutionDecider;
-import org.keycloak.testsuite.arquillian.undertow.CustomUndertowContainer;
 
 /**
  *
@@ -52,9 +51,6 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .observer(AuthServerTestEnricher.class)
                 .observer(AppServerTestEnricher.class)
                 .observer(H2TestEnricher.class);
-
-        builder
-                .service(DeployableContainer.class, CustomUndertowContainer.class);
 
         builder
                 .service(TestExecutionDecider.class, MigrationTestExecutionDecider.class);

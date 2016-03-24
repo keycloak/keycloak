@@ -35,7 +35,6 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
                     <executions>
                         <execution>
@@ -45,7 +44,7 @@
                                 <goal>copy-resources</goal>
                             </goals>
                             <configuration>
-                                <outputDirectory>${keycloak.home}/themes</outputDirectory>
+                                <outputDirectory>${auth.server.home}/themes</outputDirectory>
                                 <resources>
                                     <resource>
                                         <directory>src/main/resources/themes</directory>

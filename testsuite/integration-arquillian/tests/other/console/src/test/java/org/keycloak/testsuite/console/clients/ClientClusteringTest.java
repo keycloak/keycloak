@@ -26,7 +26,8 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
-import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
+import static org.keycloak.testsuite.console.clients.AbstractClientTest.createOidcClientRep;
+import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.CONFIDENTIAL;
 import org.keycloak.testsuite.console.page.clients.clustering.ClientClustering;
 
 /**
@@ -43,7 +44,7 @@ public class ClientClusteringTest extends AbstractClientTest {
     
     @Before
     public void before() {
-        newClient = createClientRep(TEST_CLIENT_ID, OIDC);
+        newClient = createOidcClientRep(CONFIDENTIAL, TEST_CLIENT_ID, TEST_REDIRECT_URIS);
         testRealmResource().clients().create(newClient).close();
         
         found = findClientByClientId(TEST_CLIENT_ID);
