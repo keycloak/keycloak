@@ -140,6 +140,21 @@
             }
         },
         {
+            "alias" : "kc-saml-idp-property-mappers",
+            "providerId" : "saml",
+            "enabled": true,
+            "trustEmail" : false,
+            "addReadTokenRoleOnCreate": true,
+            "config": {
+                "singleSignOnServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-idp-property-mappers/protocol/saml",
+                "singleLogoutServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-idp-property-mappers/protocol/saml",
+                "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+                "forceAuthn": true,
+                "postBindingResponse": true,
+                "postBindingAuthnRequest": true
+            }
+        },
+        {
             "alias" : "model-oidc-idp",
             "providerId" : "oidc",
             "enabled": false,
@@ -233,7 +248,46 @@
                 "user.attribute": "mobile",
                 "attribute.name": "mobile"
             }
+        },
+        {
+            "name": "email-mapper",
+            "identityProviderAlias": "kc-saml-idp-property-mappers",
+            "identityProviderMapper": "saml-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "email",
+                "attribute.name": "email"
+            }
+        },
+        {
+            "name": "firstName-mapper",
+            "identityProviderAlias": "kc-saml-idp-property-mappers",
+            "identityProviderMapper": "saml-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "firstName",
+                "attribute.name": "firstName"
+            }
+        },
+        {
+            "name": "lastName-mapper",
+            "identityProviderAlias": "kc-saml-idp-property-mappers",
+            "identityProviderMapper": "saml-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "lastName",
+                "attribute.name": "lastName"
+            }
+        },
+        {
+            "name": "manager-mapper",
+            "identityProviderAlias": "kc-saml-idp-property-mappers",
+            "identityProviderMapper": "saml-role-idp-mapper",
+            "config": {
+                "role": "manager",
+                "attribute.name": "Role",
+                "attribute.value": "manager"
+            }
+
         }
+
     ],
     "users": [
         {

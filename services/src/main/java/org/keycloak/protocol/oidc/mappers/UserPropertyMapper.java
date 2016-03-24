@@ -76,7 +76,7 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
 
     @Override
     public String getHelpText() {
-        return "Map a built in user property to a token claim.";
+        return "Map a built in user property (email, firstName, lastName) to a token claim.";
     }
 
     @Override

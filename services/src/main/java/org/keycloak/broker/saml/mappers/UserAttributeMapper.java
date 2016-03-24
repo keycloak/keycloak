@@ -64,7 +64,7 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
         property = new ProviderConfigProperty();
         property.setName(USER_ATTRIBUTE);
         property.setLabel("User Attribute Name");
-        property.setHelpText("User attribute name to store saml attribute.");
+        property.setHelpText("User attribute name to store saml attribute.  Use email, lastName, and firstName to map to those predefined user properties.");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
     }
@@ -99,9 +99,17 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
     @Override
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
-        Object value = getAttribute(mapperModel, context);
+        String value = getAttribute(mapperModel, context);
         if (value != null) {
-            context.setUserAttribute(attribute, value.toString());
+            if (attribute.equalsIgnoreCase("email")) {
+                context.setEmail(value);
+            } else if (attribute.equalsIgnoreCase("firstName")) {
+                context.setFirstName(value);
+            } else if (attribute.equalsIgnoreCase("lastName")) {
+                context.setLastName(value);
+            } else {
+                context.setUserAttribute(attribute, value);
+            }
         }
     }
 
@@ -128,19 +136,29 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
-        Object value = getAttribute(mapperModel, context);
-        String current = user.getFirstAttribute(attribute);
-        if (value != null && !value.equals(current)) {
-            user.setSingleAttribute(attribute, value.toString());
-        } else if (value == null) {
-            user.removeAttribute(attribute);
+        String value = getAttribute(mapperModel, context);
+        if (attribute.equalsIgnoreCase("email")) {
+            user.setEmail(value);
+        } else if (attribute.equalsIgnoreCase("firstName")) {
+            user.setFirstName(value);
+        } else if (attribute.equalsIgnoreCase("lastName")) {
+            user.setLastName(value);
+        } else {
+            String current = user.getFirstAttribute(attribute);
+            if (value != null && !value.equals(current)) {
+                user.setSingleAttribute(attribute, value.toString());
+            } else if (value == null) {
+                user.removeAttribute(attribute);
+            }
         }
+
+
 
     }
 
     @Override
     public String getHelpText() {
-        return "Import declared saml attribute if it exists in assertion into the specified user attribute.";
+        return "Import declared saml attribute if it exists in assertion into the specified user property or attribute.";
     }
 
 }
