@@ -191,10 +191,6 @@ public class LdapUserProviderForm extends Form {
         vendorSelect.selectByVisibleText(vendor);
     }
 
-    public void selectVendor(int index) {
-        vendorSelect.selectByIndex(index);
-    }
-
     public List<String> getVendors() {
         waitUntilElement(By.id("vendor")).is().present();
 

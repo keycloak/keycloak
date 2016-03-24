@@ -22,7 +22,6 @@
 package org.keycloak.testsuite.console.page.clients.credentials;
 
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -69,7 +68,6 @@ public class ClientCredentialsGeneratePrivateKeysForm extends Form {
     }
     
     public void clickGenerateAndDownload() {
-        waitUntilElement(generateAndDownloadButton).is().present();
         generateAndDownloadButton.click();
     }    
 }
