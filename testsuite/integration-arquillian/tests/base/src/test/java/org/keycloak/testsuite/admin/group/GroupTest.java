@@ -15,89 +15,64 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.model;
+package org.keycloak.testsuite.admin.group;
 
 import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.events.Details;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
-import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
-import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
-
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class GroupTest {
+public class GroupTest extends AbstractGroupTest {
 
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
-        @Override
-        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ClientModel app = KeycloakModelUtils.createClient(appRealm, "resource-owner");
-            app.setDirectAccessGrantsEnabled(true);
-            app.setSecret("secret");
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        RealmRepresentation testRealmRep = loadTestRealm(testRealms);
 
-            app = appRealm.getClientByClientId("test-app");
-            app.setDirectAccessGrantsEnabled(true);
+        testRealmRep.setEventsEnabled(true);
 
-            UserModel user = session.users().addUser(appRealm, "direct-login");
-            user.setEmail("direct-login@localhost");
-            user.setEnabled(true);
+        List<UserRepresentation> users = testRealmRep.getUsers();
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("direct-login");
+        user.setEmail("direct-login@localhost");
+        user.setEnabled(true);
+        List<CredentialRepresentation> credentials = new LinkedList<>();
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue("password");
+        credentials.add(credential);
+        user.setCredentials(credentials);
+        users.add(user);
 
 
-            session.users().updateCredential(appRealm, user, UserCredentialModel.password("password"));
-            keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
-        }
-    });
+        List<ClientRepresentation> clients = testRealmRep.getClients();
 
-    protected static Keycloak keycloak;
-
-    @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
-
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
-    protected OAuthClient oauth;
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("resource-owner");
+        client.setDirectAccessGrantsEnabled(true);
+        client.setSecret("secret");
+        clients.add(client);
+    }
 
     @Test
     public void createAndTestGroups() throws Exception {
-        RealmResource realm = keycloak.realms().realm("test");
+        RealmResource realm = adminClient.realms().realm("test");
         {
             RoleRepresentation groupRole = new RoleRepresentation();
             groupRole.setName("topRole");
@@ -207,73 +182,5 @@ public class GroupTest {
         realm.removeDefaultGroup(level3Group.getId());
         defaultGroups = realm.getDefaultGroups();
         Assert.assertEquals(0, defaultGroups.size());
-
     }
-
-    @Test
-    public void testGroupMappers() throws Exception {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                ClientModel app = appRealm.getClientByClientId("test-app");
-                app.addProtocolMapper(GroupMembershipMapper.create("groups", "groups", false, null, true, true));
-                app.addProtocolMapper(UserAttributeMapper.createClaimMapper("topAttribute", "topAttribute", "topAttribute", ProviderConfigProperty.STRING_TYPE, false, null, true, true, false));
-                app.addProtocolMapper(UserAttributeMapper.createClaimMapper("level2Attribute", "level2Attribute", "level2Attribute", ProviderConfigProperty.STRING_TYPE, false, null, true, true, false));
-            }
-        }, "test");
-        RealmResource realm = keycloak.realms().realm("test");
-        {
-            UserRepresentation user = realm.users().search("topGroupUser", -1, -1).get(0);
-
-            AccessToken token = login(user.getUsername(), "test-app", "password", user.getId());
-            Assert.assertTrue(token.getRealmAccess().getRoles().contains("user"));
-            List<String> groups = (List<String>) token.getOtherClaims().get("groups");
-            Assert.assertNotNull(groups);
-            Assert.assertTrue(groups.size() == 1);
-            Assert.assertEquals("topGroup", groups.get(0));
-            Assert.assertEquals("true", token.getOtherClaims().get("topAttribute"));
-        }
-        {
-            UserRepresentation user = realm.users().search("level2GroupUser", -1, -1).get(0);
-
-            AccessToken token = login(user.getUsername(), "test-app", "password", user.getId());
-            Assert.assertTrue(token.getRealmAccess().getRoles().contains("user"));
-            Assert.assertTrue(token.getRealmAccess().getRoles().contains("admin"));
-            Assert.assertTrue(token.getResourceAccess("test-app").getRoles().contains("customer-user"));
-            List<String> groups = (List<String>) token.getOtherClaims().get("groups");
-            Assert.assertNotNull(groups);
-            Assert.assertTrue(groups.size() == 1);
-            Assert.assertEquals("level2group", groups.get(0));
-            Assert.assertEquals("true", token.getOtherClaims().get("topAttribute"));
-            Assert.assertEquals("true", token.getOtherClaims().get("level2Attribute"));
-        }
-
-    }
-
-    protected AccessToken login(String login, String clientId, String clientSecret, String userId) throws Exception {
-        oauth.clientId(clientId);
-
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, login, "password");
-
-        assertEquals(200, response.getStatusCode());
-
-        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        RefreshToken refreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
-
-        events.expectLogin()
-                .client(clientId)
-                .user(userId)
-                .session(accessToken.getSessionState())
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .detail(Details.TOKEN_ID, accessToken.getId())
-                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, login)
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
-        return accessToken;
-    }
-
-
 }
