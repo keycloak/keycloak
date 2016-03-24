@@ -29,6 +29,8 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import static org.keycloak.testsuite.auth.page.login.Login.SAML;
+import static org.keycloak.testsuite.console.clients.AbstractClientTest.createClientRep;
 import org.keycloak.testsuite.console.page.clients.mappers.ClientMapper;
 import org.keycloak.testsuite.console.page.clients.mappers.ClientMappers;
 import org.keycloak.testsuite.console.page.clients.mappers.CreateClientMappers;
@@ -52,7 +54,7 @@ public class ClientMappersSAMLTest extends AbstractClientTest {
     
     @Before
     public void beforeClientMappersTest() {
-        ClientRepresentation newClient = createSamlClientRep(TEST_CLIENT_ID);
+        ClientRepresentation newClient = createClientRep(TEST_CLIENT_ID, SAML);
         testRealmResource().clients().create(newClient).close();
         
         id = findClientByClientId(TEST_CLIENT_ID).getId();
