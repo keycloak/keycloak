@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.scheduled;
+package org.keycloak.timer;
 
 import org.keycloak.models.KeycloakSession;
 
