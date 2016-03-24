@@ -34,6 +34,7 @@
             <Attribute name="Role"/>
         </RoleIdentifiers>
         <IDP entityID="idp"
+             signatureAlgorithm="RSA_SHA256"
              signaturesRequired="true">
         <SingleSignOnService requestBinding="POST"
                              bindingUrl="http://localhost:8081/auth/realms/demo/protocol/saml"
