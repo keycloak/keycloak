@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.console.page.authentication;
 
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -28,6 +29,8 @@ public class RequiredActions extends Authentication {
     }
 
     private void setRequiredActionValue(String id, boolean value) {
+        WaitUtils.waitUntilElement(requiredActionTable).is().present();
+
         WebElement checkbox = requiredActionTable.findElement(By.id(id));
 
         if (checkbox.isSelected() != value) {

@@ -32,6 +32,7 @@ import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicy;
 import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicyForm.Digits;
 import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicyForm.OTPHashAlg;
 import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicyForm.OTPType;
+import org.keycloak.testsuite.util.WaitUtils;
 
 /**
  *
@@ -45,6 +46,7 @@ public class OTPPolicyTest extends AbstractConsoleTest {
     @Before
     public void beforeOTPPolicyTest() {
         otpPolicyPage.navigateTo();
+        WaitUtils.pause(1000); // wait for the form to fully render
     }
     
     @Test
