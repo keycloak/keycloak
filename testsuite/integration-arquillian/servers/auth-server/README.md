@@ -6,19 +6,17 @@
 
 ### Modules
 
-#### Wildfly 10 `wildfly`
+* __`wildfly` Wildfly 10__
+ - Builds keycloak server on top of latest Wildfly.
+ - Activated by __`-Pauth-server-wildfly`__
 
-- Builds keycloak server on top of latest Wildfly.
-- Activated by __`-Pauth-server-wildfly`__
-
-#### EAP 7 `eap`
-
-- Builds keycloak server on top of latest EAP.
-- Activated by __`-Pauth-server-eap`__
-- Requires access to product repo.
-- Requires additional properties:
- - `product.version`
- - `product.unpacked.folder.name`
+* __`eap` EAP 7__
+ - Builds keycloak server on top of latest EAP.
+ - Activated by __`-Pauth-server-eap`__
+ - Requires access to product repo.
+ - Requires additional properties:
+  - `product.version`
+  - `product.unpacked.folder.name`
 
 ### Server dist vs overlay
 

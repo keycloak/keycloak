@@ -6,7 +6,7 @@
 
 JBoss-based container with installed and configured Keycloak adapter.
 
-Submodules are enabled by profiles: `-Papp-server-MODULE`
+Submodules are enabled with profiles: `-Papp-server-MODULE`
 
 ### Modules
 
@@ -34,21 +34,16 @@ Submodules are enabled by profiles: `-Papp-server-MODULE`
 
 Configures SSL in `standalone.xml`. See profile `ssl`.
 
-### Cluster
-
-In `standalone-ha.xml` configures:
-- h2 datasource over TCP (standalone h2 shared between multiple cluster nodes)
-- parameters of Keycloak Infinispan caches
-
-See profile `auth-server-cluster`.
-
 
 ## App Server - Karaf
+Submodules are enabled with profiles: `-Papp-server-MODULE`
 ### Modules
 * __`karaf3` Karaf 3__
 * __`fuse61` JBoss Fuse 6.1__
 * __`fuse62` JBoss Fuse 6.2__
 
 ## App Server - Tomcat
+Submodules are enabled with profiles: `-Papp-server-MODULE`
+### Modules
 * __`tomcat7` Tomcat 7__
 * __`tomcat8` Tomcat 8__
