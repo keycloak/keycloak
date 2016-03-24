@@ -27,7 +27,7 @@ import org.hibernate.stat.QueryStatistics;
 import org.hibernate.stat.Statistics;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.scheduled.ScheduledTask;
+import org.keycloak.timer.ScheduledTask;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

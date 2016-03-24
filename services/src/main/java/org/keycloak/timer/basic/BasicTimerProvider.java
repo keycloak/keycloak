@@ -18,6 +18,9 @@
 package org.keycloak.timer.basic;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.scheduled.ScheduledTaskRunner;
+import org.keycloak.timer.ScheduledTask;
 import org.keycloak.timer.TimerProvider;
 
 import java.util.Timer;
@@ -30,16 +33,18 @@ public class BasicTimerProvider implements TimerProvider {
 
     private static final Logger logger = Logger.getLogger(BasicTimerProvider.class);
 
+    private final KeycloakSession session;
     private final Timer timer;
     private final BasicTimerProviderFactory factory;
 
-    public BasicTimerProvider(Timer timer, BasicTimerProviderFactory factory) {
+    public BasicTimerProvider(KeycloakSession session, Timer timer, BasicTimerProviderFactory factory) {
+        this.session = session;
         this.timer = timer;
         this.factory = factory;
     }
 
     @Override
-    public void schedule(final Runnable runnable, final long interval, String taskName) {
+    public void schedule(final Runnable runnable, final long intervalMillis, String taskName) {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
@@ -53,8 +58,14 @@ public class BasicTimerProvider implements TimerProvider {
             existingTask.cancel();
         }
 
-        logger.debugf("Starting task '%s' with interval '%d'", taskName, interval);
-        timer.schedule(task, interval, interval);
+        logger.debugf("Starting task '%s' with interval '%d'", taskName, intervalMillis);
+        timer.schedule(task, intervalMillis, intervalMillis);
+    }
+
+    @Override
+    public void scheduleTask(ScheduledTask scheduledTask, long intervalMillis, String taskName) {
+        ScheduledTaskRunner scheduledTaskRunner = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), scheduledTask);
+        this.schedule(scheduledTaskRunner, intervalMillis, taskName);
     }
 
     @Override
