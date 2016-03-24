@@ -39,7 +39,7 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
 
     @Override
     public TimerProvider create(KeycloakSession session) {
-        return new BasicTimerProvider(timer, this);
+        return new BasicTimerProvider(session, timer, this);
     }
 
     @Override

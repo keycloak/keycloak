@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
-  ~ and other contributors as indicated by the @author tags.
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
 
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -29,38 +29,51 @@
     <packaging>pom</packaging>
     <name>Servers</name>
 
-    <!--<modules>-->
-        <!--<module>migration</module>-->
-    <!--</modules>-->
-    
+    <properties>
+        <script.suffix>sh</script.suffix>
+        
+        <!--app container versions-->        
+        <wildfly9.version>9.0.2.Final</wildfly9.version>
+        <wildfly8.version>8.2.1.Final</wildfly8.version>
+        <eap.version>7.0.0.ER6-redhat-1</eap.version>
+        <eap6.version>7.5.6.Final-redhat-2</eap6.version>
+        <jboss.as.version>7.1.1.Final</jboss.as.version>
+        <eap6.version>7.5.6.Final-redhat-2</eap6.version>
+        <tomcat7.version>7.0.68</tomcat7.version>
+        <tomcat8.version>8.0.32</tomcat8.version>
+        <tomcat9.version>9.0.0.M3</tomcat9.version>
+        <karaf3.version>3.0.3</karaf3.version>
+        <fuse61.version>6.1.0.redhat-379</fuse61.version>
+        <!--<fuse62.version>6.2.0.redhat-133</fuse62.version>-->
+        <fuse62.version>6.2.1.redhat-084</fuse62.version>
+        
+    </properties>
+
+    <modules>
+        <module>auth-server</module>
+        <module>app-server</module>
+    </modules>
+
     <profiles>
         <profile>
-            <id>auth-server-wildfly</id>
+            <id>auth-server-cluster</id>
             <modules>
-                <module>wildfly</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>auth-server-wildfly-cluster</id>
-            <modules>
-                <module>wildfly</module>
                 <module>wildfly-balancer</module>
             </modules>
         </profile>
         
         <profile>
-            <id>auth-server-eap7</id>
-            <modules>
-                <module>eap7</module>
-            </modules>
+            <id>win</id>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <properties>        
+                <script.suffix>bat</script.suffix>
+            </properties>
         </profile>
-        <profile>
-            <id>auth-server-eap7-cluster</id>
-            <modules>
-                <module>eap7</module>
-                <module>wildfly-balancer</module>
-            </modules>
-        </profile>
-    </profiles>    
 
+    </profiles>
+    
 </project>

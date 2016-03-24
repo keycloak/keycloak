@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.console.page.fragment;
 
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -89,7 +90,7 @@ public class DataTable {
     }
 
     public void clickRowActionButton(WebElement row, String buttonText) {
-        row.findElement(xpath(".//td[contains(@class, 'kc-action-cell') and text()='" + buttonText + "']")).click();
+        row.findElement(xpath(".//button[text()='" + buttonText + "']")).click();
     }
     
 }

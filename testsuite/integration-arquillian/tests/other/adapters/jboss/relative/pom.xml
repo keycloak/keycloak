@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<!--
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
+
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian-tests-adapters-jboss</artifactId>
+        <version>2.0.0.CR1-SNAPSHOT</version>
+    </parent>
+    
+    <packaging>pom</packaging>
+
+    <artifactId>integration-arquillian-tests-adapters-jboss-relative</artifactId>
+
+    <name>Adapter Tests - JBoss - Relative</name>
+    
+    <properties>
+        <common.resources>${project.parent.parent.basedir}/common</common.resources>
+        
+        <app.server.skip.unpack>true</app.server.skip.unpack>
+        
+        <auth.server.jboss>false</auth.server.jboss>
+        <auth.server.container>app-server-${app.server}</auth.server.container>
+        <auth.server.jboss.artifactId>${app.server.artifactId}</auth.server.jboss.artifactId>
+        
+        <app.server.mode>suite</app.server.mode>
+        
+        <app.server.port.offset>${auth.server.port.offset}</app.server.port.offset>
+        <app.server.http.port>${auth.server.http.port}</app.server.http.port>
+        <app.server.https.port>${auth.server.https.port}</app.server.https.port>
+        <app.server.management.port>${auth.server.management.port}</app.server.management.port>
+
+        <app.server.startup.timeout>${auth.server.jboss.startup.timeout}</app.server.startup.timeout>
+        <app.server.memory.settings>${auth.server.memory.settings}</app.server.memory.settings>
+        <app.server.ssl.required>${auth.server.ssl.required}</app.server.ssl.required>        
+    </properties>
+    
+    <profiles>
+        <profile>
+            <id>auth-server-wildfly</id>
+            <modules>
+                <module>wildfly</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>auth-server-eap</id>
+            <modules>
+                <module>eap</module>
+            </modules>
+        </profile>
+    </profiles>
+        
+</project>

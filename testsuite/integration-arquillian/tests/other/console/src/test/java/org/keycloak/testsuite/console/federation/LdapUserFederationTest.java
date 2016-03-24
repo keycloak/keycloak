@@ -133,7 +133,7 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
     @Test
     public void testConnection() throws Exception {
         createLdapUserProvider.navigateTo();
-        createLdapUserProvider.form().selectVendor(1);
+        createLdapUserProvider.form().selectVendor("Other");
         createLdapUserProvider.form().setConsoleDisplayNameInput("ldap");
         createLdapUserProvider.form().selectEditMode(WRITABLE);
         createLdapUserProvider.form().setLdapConnectionUrlInput("ldap://localhost:10389");

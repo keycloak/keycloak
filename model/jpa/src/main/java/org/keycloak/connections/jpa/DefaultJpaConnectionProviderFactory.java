@@ -40,7 +40,6 @@ import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
-import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.timer.TimerProvider;
 
 /**
@@ -274,7 +273,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     protected void startGlobalStats(KeycloakSession session, int globalStatsIntervalSecs) {
         logger.debugf("Started Hibernate statistics with the interval %s seconds", globalStatsIntervalSecs);
         TimerProvider timer = session.getProvider(TimerProvider.class);
-        timer.schedule(new ScheduledTaskRunner(session.getKeycloakSessionFactory(), new HibernateStatsReporter(emf)), globalStatsIntervalSecs * 1000, "ReportHibernateGlobalStats");
+        timer.scheduleTask(new HibernateStatsReporter(emf), globalStatsIntervalSecs * 1000, "ReportHibernateGlobalStats");
     }
 
 

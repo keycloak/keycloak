@@ -276,7 +276,7 @@ public abstract class AbstractKeycloakTest {
     }
 
     private void loadConstantsProperties() throws ConfigurationException {
-        constantsProperties = new PropertiesConfiguration(System.getProperty("testsuite.constants"));
+        constantsProperties = new PropertiesConfiguration("test-constants.properties");
         constantsProperties.setThrowExceptionOnMissing(true);
     }
 

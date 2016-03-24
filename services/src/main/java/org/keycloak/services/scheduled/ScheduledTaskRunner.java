@@ -17,13 +17,10 @@
 
 package org.keycloak.services.scheduled;
 
-import java.util.concurrent.Callable;
-
-import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.timer.ScheduledTask;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

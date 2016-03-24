@@ -1,0 +1,5 @@
+features:uninstall pax-war
+features:uninstall pax-http-whiteboard 
+features:uninstall pax-http
+features:uninstall pax-jetty
+features:removeurl mvn:org.ops4j.pax.web/pax-web-features/3.0.6/xml/features

@@ -57,10 +57,15 @@ public class AuthServerTestEnricher {
     @Inject
     private Event<StartContainer> startContainerEvent;
 
-    private static final String AUTH_SERVER_CONTAINER_PROPERTY = "auth.server.container";
     private static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
+    private static final String AUTH_SERVER_CONTAINER_PROPERTY = "auth.server.container";
+    public static final String AUTH_SERVER_CONTAINER = System.getProperty(AUTH_SERVER_CONTAINER_PROPERTY, AUTH_SERVER_CONTAINER_DEFAULT);
+
+    private static final String AUTH_SERVER_CLUSTER_PROPERTY = "auth.server.cluster";
+    public static final boolean AUTH_SERVER_CLUSTER = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CLUSTER_PROPERTY, "false"));
 
     private static final String MIGRATED_AUTH_SERVER_CONTAINER_PROPERTY = "migrated.auth.server.container";
+    public static final String MIGRATED_AUTH_SERVER_CONTAINER = System.getProperty(MIGRATED_AUTH_SERVER_CONTAINER_PROPERTY); // == null if migration not enabled
 
     @Inject
     @SuiteScoped
@@ -70,14 +75,6 @@ public class AuthServerTestEnricher {
     @Inject
     @ClassScoped
     private InstanceProducer<TestContext> testContextProducer;
-
-    public static String getAuthServerQualifier() {
-        return System.getProperty(AUTH_SERVER_CONTAINER_PROPERTY, AUTH_SERVER_CONTAINER_DEFAULT);
-    }
-
-    public static String getMigratedAuthServerQualifier() {
-        return System.getProperty(MIGRATED_AUTH_SERVER_CONTAINER_PROPERTY); // == null if migration not enabled
-    }
 
     public static String getAuthServerContextRoot() {
         return getAuthServerContextRoot(0);
@@ -102,54 +99,38 @@ public class AuthServerTestEnricher {
 
         suiteContext = new SuiteContext(containers);
 
-        String authServerQualifier = getAuthServerQualifier();
-        String migratedAuthServerQualifier = getMigratedAuthServerQualifier();
-
-        // init authServerInfo and authServerBackendsInfo
-        if (authServerQualifier.startsWith("auth-server-")) {
-
-            boolean authServerCluster = authServerQualifier.endsWith("-cluster");
-
-            String authServerType = authServerQualifier.replaceAll("auth-server-", "").replaceAll("-cluster", "");
-
-            log.info("authServerType:" + authServerType);
-
-            String authServerFrontend = authServerCluster
-                    ? "auth-server-" + authServerType + "-balancer" // in cluster mode the load-balancer container serves as auth server frontend
-                    : authServerQualifier; // single-node mode
-            String authServerBackend = "auth-server-" + authServerType + "-backend";
-            int backends = 0;
-            for (ContainerInfo container : suiteContext.getContainers()) {
-                // frontend
-                if (container.getQualifier().equals(authServerFrontend)) {
-                    updateWithAuthServerInfo(container);
-                    suiteContext.setAuthServerInfo(container);
-                }
-                // backends
-                if (container.getQualifier().startsWith(authServerBackend)) {
-                    updateWithAuthServerInfo(container, ++backends);
-                    suiteContext.getAuthServerBackendsInfo().add(container);
-                }
+        String authServerFrontend = AUTH_SERVER_CLUSTER
+                ? "auth-server-balancer-wildfly" // if cluster mode enabled, load-balancer is the frontend
+                : AUTH_SERVER_CONTAINER; // single-node mode
+        String authServerBackend = AUTH_SERVER_CONTAINER + "-backend";
+        int backends = 0;
+        for (ContainerInfo container : suiteContext.getContainers()) {
+            // frontend
+            if (container.getQualifier().equals(authServerFrontend)) {
+                updateWithAuthServerInfo(container);
+                suiteContext.setAuthServerInfo(container);
             }
-
-            // validate auth server setup
-            if (suiteContext.getAuthServerInfo() == null) {
-                throw new RuntimeException(String.format("No auth server activated. A container matching '%s' needs to be enabled in arquillian.xml.", authServerFrontend));
+            // backends
+            if (AUTH_SERVER_CLUSTER && container.getQualifier().startsWith(authServerBackend)) {
+                updateWithAuthServerInfo(container, ++backends);
+                suiteContext.getAuthServerBackendsInfo().add(container);
             }
-            if (authServerCluster && suiteContext.getAuthServerBackendsInfo().isEmpty()) {
-                throw new RuntimeException(String.format("No cluster backend nodes activated. Containers matching '%sN' need to be enabled in arquillian.xml.", authServerBackend));
-            }
-
-        } else {
-            throw new IllegalArgumentException(String.format("Value of %s should start with 'auth-server-' prefix.", AUTH_SERVER_CONTAINER_PROPERTY));
         }
 
-        if (migratedAuthServerQualifier != null) {
+        // validate auth server setup
+        if (suiteContext.getAuthServerInfo() == null) {
+            throw new RuntimeException(String.format("No auth server container matching '%s' found in arquillian.xml.", authServerFrontend));
+        }
+        if (AUTH_SERVER_CLUSTER && suiteContext.getAuthServerBackendsInfo().isEmpty()) {
+            throw new RuntimeException(String.format("No auth server container matching '%sN' found in arquillian.xml.", authServerBackend));
+        }
+
+        if (MIGRATED_AUTH_SERVER_CONTAINER != null) {
             // init migratedAuthServerInfo
-            if (migratedAuthServerQualifier.startsWith("migrated-auth-server-")) {
+            if (MIGRATED_AUTH_SERVER_CONTAINER.startsWith("migrated-auth-server-")) {
                 for (ContainerInfo container : suiteContext.getContainers()) {
                     // migrated auth server
-                    if (container.getQualifier().equals(migratedAuthServerQualifier)) {
+                    if (container.getQualifier().equals(MIGRATED_AUTH_SERVER_CONTAINER)) {
                         updateWithAuthServerInfo(container);
                         suiteContext.setMigratedAuthServerInfo(container);
                     }
@@ -160,7 +141,7 @@ public class AuthServerTestEnricher {
             // validate setup
             if (suiteContext.getMigratedAuthServerInfo() == null) {
                 throw new RuntimeException(String.format("Migration test was enabled but no auth server from which to migrate was activated. "
-                        + "A container matching '%s' needs to be enabled in arquillian.xml.", migratedAuthServerQualifier));
+                        + "A container matching '%s' needs to be enabled in arquillian.xml.", MIGRATED_AUTH_SERVER_CONTAINER));
             }
         }
 
@@ -201,6 +182,14 @@ public class AuthServerTestEnricher {
             LogChecker.checkJBossServerLog(jbossHomePath);
         }
     }
+//
+//    public void startAuthServerContainer(@Observes BeforeSuite event) {
+//        startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
+//    }
+//
+//    public void stopAuthServerContainer(@Observes AfterSuite event) {
+//        containerController.get().stop(suiteContext.getAuthServerInfo().getQualifier());
+//    }
 
     public void initializeTestContext(@Observes(precedence = 2) BeforeClass event) {
         TestContext testContext = new TestContext(suiteContext, event.getTestClass().getJavaClass());

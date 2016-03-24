@@ -2,7 +2,6 @@ package org.keycloak.testsuite.console.page.clients.mappers;
 
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -110,7 +109,6 @@ public class CreateClientMappersForm extends Form {
                 realmAvailable.selectByVisibleText(roleName);
             }
             selectRealmRoleButton.click();
-            pause(500); // wait for the modal dialog to fade out
         }
         
         public void selectClientRole(String clientName, String roleName) {
@@ -119,7 +117,6 @@ public class CreateClientMappersForm extends Form {
                 clientAvailable.selectByVisibleText(roleName);
             }
             selectClientRoleButton.click();
-            pause(500); // wait for the modal dialog to fade out
         }
     }
     

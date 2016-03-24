@@ -60,7 +60,7 @@
     <xsl:template match="//s:socket-binding-group[@name='standard-sockets']">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
-            <socket-binding name="modcluster" port="23364" multicast-address="224.0.1.105"/>
+            <socket-binding name="modcluster" port="${{modcluster.port:23364}}" multicast-address="${{modcluster.multicast-address:224.0.1.105}}"/>
         </xsl:copy>
     </xsl:template>
 
