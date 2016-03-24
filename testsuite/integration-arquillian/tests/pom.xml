@@ -48,6 +48,7 @@
         
         <auth.server.port.offset>100</auth.server.port.offset>
         <auth.server.http.port>8180</auth.server.http.port>
+        <auth.server.events.http.port>8089</auth.server.events.http.port>
         <auth.server.https.port>8543</auth.server.https.port>
         <auth.server.management.port>10090</auth.server.management.port>
         <auth.server.management.port.jmx>10099</auth.server.management.port.jmx>
@@ -140,6 +141,7 @@
 
                             <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
                             <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
+                            <auth.server.events.http.port>${auth.server.events.http.port}</auth.server.events.http.port>
                             <auth.server.https.port>${auth.server.https.port}</auth.server.https.port>
                             <auth.server.management.port>${auth.server.management.port}</auth.server.management.port>
                             <auth.server.management.port.jmx>${auth.server.management.port.jmx}</auth.server.management.port.jmx>
