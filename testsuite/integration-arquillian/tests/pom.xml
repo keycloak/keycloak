@@ -68,6 +68,8 @@
         <backends.console.output>true</backends.console.output>
         
         <auth.server.java.home>${java.home}</auth.server.java.home>
+
+        <testsuite.constants>test-constants.properties</testsuite.constants>
         
     </properties>
 
@@ -127,6 +129,7 @@
                             <jboss.server.config.dir>${jboss.server.config.dir}</jboss.server.config.dir>
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
+                            <testsuite.constants>${testsuite.constants}</testsuite.constants>
                         </systemPropertyVariables>
                         <properties>
                             <property>
