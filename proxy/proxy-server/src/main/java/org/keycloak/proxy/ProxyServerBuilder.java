@@ -240,8 +240,7 @@ public class ProxyServerBuilder {
         }
 
         private HttpHandler addSecurity(final HttpHandler toWrap) {
-            HttpHandler handler = toWrap;
-            handler = new UndertowAuthenticatedActionsHandler(deploymentContext, toWrap);
+            HttpHandler handler = new UndertowAuthenticatedActionsHandler(deploymentContext, toWrap);
             if (errorPage != null) {
                 if (base.endsWith("/")) {
                     errorPage = base + errorPage;
@@ -249,6 +248,7 @@ public class ProxyServerBuilder {
                     errorPage = base + "/" + errorPage;
                 }
             }
+            handler = new TokenRequestPreHandler(handler);
             handler = new ConstraintAuthorizationHandler(handler, errorPage, sendAccessToken, headerNameConfig);
             handler = new ProxyAuthenticationCallHandler(handler);
             handler = new ConstraintMatcherHandler(matches, handler, toWrap, errorPage);
