@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
-  ~ and other contributors as indicated by the @author tags.
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
 
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -34,10 +34,52 @@
 
     <name>Keycloak Arquillian Integration TestSuite</name>
     
-    <modules>
-        <module>servers</module>
-        <module>tests</module>
-    </modules>
+    <properties>
+        
+        <containers.home>${project.build.directory}/containers</containers.home>
+        <auth.server.java.home>${java.home}</auth.server.java.home>
+        <app.server.java.home>${java.home}</app.server.java.home>
+        
+        <!--component versions-->
+        <arquillian-core.version>1.1.11.Final</arquillian-core.version>
+        <selenium.version>2.52.0</selenium.version>
+        <arquillian-drone.version>2.0.0.Beta1</arquillian-drone.version>
+        <arquillian-graphene.version>2.1.0.Alpha3</arquillian-graphene.version>
+        <arquillian-wildfly-container.version>8.2.0.Final</arquillian-wildfly-container.version>
+        <version.shrinkwrap.resolvers>2.2.2</version.shrinkwrap.resolvers>
+
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.arquillian.selenium</groupId>
+                <artifactId>selenium-bom</artifactId>
+                <version>${selenium.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian</groupId>
+                <artifactId>arquillian-bom</artifactId>
+                <version>${arquillian-core.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.extension</groupId>
+                <artifactId>arquillian-drone-bom</artifactId>
+                <version>${arquillian-drone.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-arquillian-container-managed</artifactId>
+                <version>${arquillian-wildfly-container.version}</version>
+            </dependency>        
+        </dependencies>
+    </dependencyManagement>
     
     <build>
         <pluginManagement>
@@ -52,13 +94,13 @@
                     <artifactId>xml-maven-plugin</artifactId>
                     <version>1.0.1</version>
                 </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.10</version>
-                </plugin>
             </plugins>
         </pluginManagement>
     </build>
+    
+    <modules>
+        <module>servers</module>
+        <module>tests</module>
+    </modules>
     
 </project>

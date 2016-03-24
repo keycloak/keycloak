@@ -17,7 +17,7 @@
 
 <assembly>
     
-    <id>wildfly-balancer</id>
+    <id>balancer-wildfly</id>
 
     <formats>
         <format>zip</format>
@@ -28,14 +28,14 @@
     <fileSets>
         <fileSet>
             <directory>${wildfly.balancer.home}</directory>
-            <outputDirectory>wildfly-balancer-${project.version}</outputDirectory>
+            <outputDirectory>balancer-wildfly</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>${wildfly.balancer.home}</directory>
-            <outputDirectory>wildfly-balancer-${project.version}</outputDirectory>
+            <outputDirectory>balancer-wildfly</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
             </includes>

@@ -1,7 +1,6 @@
 package org.keycloak.testsuite.console.page.authentication;
 
 import org.jboss.arquillian.graphene.findby.ByJQuery;
-import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -15,7 +14,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
  * @author Petr Mensik
  * @author tkyjovsk
  * @author mhajas
- * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class PasswordPolicy extends Authentication {
 
@@ -30,10 +28,10 @@ public class PasswordPolicy extends Authentication {
     @FindBy(tagName = "select")
     private WebElement addPolicySelectElement;
 
-    @FindBy(tagName = "table")
-    private WebElement table;
+    @FindBy(css = "tr.ng-scope")
+    private List<WebElement> allRows;
 
-    public void addPolicy(Type policy, String value) {
+    public void addPolicy(PasswordPolicy.Type policy, String value) {
         waitUntilElement(addPolicySelectElement).is().present();
         addPolicySelect.selectByVisibleText(policy.getName());
         setPolicyValue(policy, value);
@@ -41,36 +39,45 @@ public class PasswordPolicy extends Authentication {
     }
 
 
-    public void addPolicy(Type policy, int value) {
+    public void addPolicy(PasswordPolicy.Type policy, int value) {
         addPolicy(policy, String.valueOf(value));
     }
 
-    public void addPolicy(Type policy) {
+    public void addPolicy(PasswordPolicy.Type policy) {
         addPolicySelect.selectByVisibleText(policy.getName());
         primaryButton.click();
     }
 
-    public void removePolicy(Type policy) {
-        getPolicyRow(policy).findElement(By.cssSelector("td.kc-action-cell")).click();
+    public void removePolicy(PasswordPolicy.Type policy) {
+        int policyInputLocation = findPolicy(policy);
+        allRows.get(policyInputLocation).findElements(By.tagName("button")).get(0).click();
         primaryButton.click();
     }
 
-    public void editPolicy(Type policy, int value) {
+    public void editPolicy(PasswordPolicy.Type policy, int value) {
         editPolicy(policy, String.valueOf(value));
     }
 
-    public void editPolicy(Type policy, String value) {
+    public void editPolicy(PasswordPolicy.Type policy, String value) {
         setPolicyValue(policy, value);
         primaryButton.click();
     }
 
-    private void setPolicyValue(Type policy, String value) {
-        WebElement input = getPolicyRow(policy).findElement(By.tagName("input"));
-        Form.setInputValue(input, value);
+    private void setPolicyValue(PasswordPolicy.Type policy, String value) {
+        int policyInputLocation = findPolicy(policy);
+        WebElement input = allRows.get(policyInputLocation).findElement(By.tagName("input"));
+        input.clear();
+        input.sendKeys(value);
     }
 
-    private WebElement getPolicyRow(Type policy) {
-        return table.findElement(By.xpath("//tr[td[text()='" + policy.getName() + "']]"));
+    private int findPolicy(PasswordPolicy.Type policy) {
+        for (int i = 0; i < allRows.size(); i++) {
+            String policyName = allRows.get(i).findElement(ByJQuery.selector("td:eq(0)")).getText();
+            if (policyName.equals(policy.getName())) {
+                return i;
+            }
+        }
+        return 0;
     }
 
     public enum Type {
