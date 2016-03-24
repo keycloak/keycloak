@@ -186,9 +186,65 @@
                 "defaultScope": "email profile",
                 "backchannelSupported": "true"
             }
+        },
+        {
+            "alias" : "kc-oidc-idp-property-mappers",
+            "providerId" : "keycloak-oidc",
+            "enabled": true,
+            "storeToken" : true,
+            "addReadTokenRoleOnCreate": true,
+            "config": {
+                "clientId": "broker-app",
+                "clientSecret": "secret",
+                "prompt": "login",
+                "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/auth",
+                "tokenUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/token",
+                "userInfoUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/userinfo",
+                "logoutUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/logout",
+                "defaultScope": "email profile",
+                "backchannelSupported": "true"
+            }
         }
     ],
     "identityProviderMappers": [
+        {
+            "name": "manager-mapper",
+            "identityProviderAlias": "kc-oidc-idp-property-mappers",
+            "identityProviderMapper": "oidc-role-idp-mapper",
+            "config": {
+                "role": "manager",
+                "claim": "realm_access.roles",
+                "claim.value": "manager"
+            }
+
+        },
+        {
+            "name": "email-mapper",
+            "identityProviderAlias": "kc-oidc-idp-property-mappers",
+            "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "email",
+                "claim": "email"
+            }
+        },
+        {
+            "name": "first-mapper",
+            "identityProviderAlias": "kc-oidc-idp-property-mappers",
+            "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "firstName",
+                "claim": "given_name"
+            }
+        },
+        {
+            "name": "last-mapper",
+            "identityProviderAlias": "kc-oidc-idp-property-mappers",
+            "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "lastName",
+                "claim": "family_name"
+            }
+        },
         {
             "name": "manager-mapper",
             "identityProviderAlias": "kc-oidc-idp",
