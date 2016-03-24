@@ -35,7 +35,6 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
-import static org.jgroups.util.Util.assertTrue;
 
 /**
  *

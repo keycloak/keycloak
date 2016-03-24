@@ -62,7 +62,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>2.2</version>
                 <executions>
@@ -75,7 +74,6 @@
             </plugin>
             
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <excludes>
@@ -92,13 +90,32 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>copy-arquillian-xml</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/dependency</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/test/resources</directory>
+                                    <includes>
+                                        <include>arquillian.xml</include>
+                                    </includes>
+                                    <!--<filtering>true</filtering>-->
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>copy-admin-user-json-file</id>
                         <phase>process-resources</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${jboss.server.config.dir}</outputDirectory>
+                            <outputDirectory>${auth.server.config.dir}</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>src/test/resources</directory>
