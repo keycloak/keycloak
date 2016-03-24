@@ -18,14 +18,27 @@
 package org.keycloak.testsuite.util;
 
 import javax.ws.rs.core.UriBuilder;
+
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.junit.Assert;
 import org.keycloak.testsuite.page.AbstractPage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.ExpectedCondition;
-import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.net.URI;
+import java.nio.charset.Charset;
 
 /**
  *
@@ -104,9 +117,68 @@ public class URLAssert {
     public static void assertCurrentUrlStartsWithLoginUrlOf(PageWithLoginUrl page) {
         assertCurrentUrlStartsWithLoginUrlOf(page.getDriver(), page);
     }
-    
+
     public static void assertCurrentUrlStartsWithLoginUrlOf(WebDriver driver, PageWithLoginUrl page) {
         assertCurrentUrlStartsWith(driver, page.getOIDCLoginUrl().toString());
     }
 
+    public static void assertGetURL(URI url, String accessToken, AssertResponseHandler handler) {
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+        try {
+            HttpGet get = new HttpGet(url);
+            get.setHeader("Authorization", "Bearer " + accessToken);
+
+            CloseableHttpResponse response = httpclient.execute(get);
+
+            if (response.getStatusLine().getStatusCode() != 200) {
+                throw new RuntimeException("Response status error: " + response.getStatusLine().getStatusCode() + ": " + url);
+            }
+
+            handler.assertResponse(response);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        finally {
+            try {
+                httpclient.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public interface AssertResponseHandler {
+        void assertResponse(CloseableHttpResponse response) throws IOException;
+    }
+
+    public static abstract class AssertJSONResponseHandler implements AssertResponseHandler {
+
+        @Override
+        public void assertResponse(CloseableHttpResponse response) throws IOException {
+            HttpEntity entity = response.getEntity();
+            Header contentType = entity.getContentType();
+            Assert.assertEquals("application/json", contentType.getValue());
+
+            char [] buf = new char[8192];
+            StringWriter out = new StringWriter();
+            Reader in = new InputStreamReader(entity.getContent(), Charset.forName("utf-8"));
+            int rc = 0;
+            try {
+                while ((rc = in.read(buf)) != -1) {
+                    out.write(buf, 0, rc);
+                }
+            } finally {
+                try {
+                    in.close();
+                } catch (Exception ignored) {}
+
+                out.close();
+            }
+
+            assertResponseBody(out.toString());
+        }
+
+        protected abstract void assertResponseBody(String body) throws IOException;
+    }
 }

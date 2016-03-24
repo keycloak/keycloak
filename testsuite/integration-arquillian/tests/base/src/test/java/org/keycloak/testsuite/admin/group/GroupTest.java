@@ -27,12 +27,16 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.URLAssert;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 
 
 /**
@@ -107,6 +111,21 @@ public class GroupTest extends AbstractGroupTest {
         level2Group.setName("level2");
         response = realm.groups().group(topGroup.getId()).subGroup(level2Group);
         response.close();
+
+        URI location = response.getLocation();
+        final String level2Id = ApiUtil.getCreatedId(response);
+        final GroupRepresentation level2GroupById = realm.groups().group(level2Id).toRepresentation();
+        Assert.assertEquals(level2Id, level2GroupById.getId());
+        Assert.assertEquals(level2Group.getName(), level2GroupById.getName());
+
+        URLAssert.assertGetURL(location, adminClient.tokenManager().getAccessTokenString(), new URLAssert.AssertJSONResponseHandler() {
+            @Override
+            protected void assertResponseBody(String body) throws IOException {
+                GroupRepresentation level2 = JsonSerialization.readValue(body, GroupRepresentation.class);
+                Assert.assertEquals(level2Id, level2.getId());
+            }
+        });
+
         level2Group = realm.getGroupByPath("/top/level2");
         Assert.assertNotNull(level2Group);
         roles.clear();
