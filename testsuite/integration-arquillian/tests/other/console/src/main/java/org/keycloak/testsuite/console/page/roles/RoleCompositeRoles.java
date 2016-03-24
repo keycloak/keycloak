@@ -11,9 +11,12 @@ import java.util.Map;
 import java.util.Set;
 import org.keycloak.representations.idm.RoleRepresentation.Composites;
 import org.keycloak.testsuite.page.Form;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.logging.LogEntries;
+import org.openqa.selenium.logging.LogEntry;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
@@ -106,6 +109,7 @@ public class RoleCompositeRoles extends Form {
                     select.selectByVisibleText(role);
                 }
             }
+            waitUntilElement(button).is().enabled();
             button.click();
         }
     }
