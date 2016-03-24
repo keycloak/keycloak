@@ -129,7 +129,7 @@ public class GroupResource {
             child = realm.createGroup(rep.getName());
             updateGroup(rep, child);
             URI uri = uriInfo.getBaseUriBuilder()
-                                           .path(uriInfo.getMatchedURIs().get(1))
+                                           .path(uriInfo.getMatchedURIs().get(2))
                                            .path(child.getId()).build();
             builder.status(201).location(uri);
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
