@@ -1,153 +1,65 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
-  ~ and other contributors as indicated by the @author tags.
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
 
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters</artifactId>
         <version>1.9.2.Final-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-adapters-tomcat</artifactId>
-    <name>Adapter Tests on Tomcat</name>
+    <artifactId>integration-arquillian-tests-adapters-tomcat</artifactId>
+
+    <packaging>pom</packaging>
+
+    <name>Adapter Tests - Tomcat</name>
     
     <properties>
-        <tomcat.version>8.0.23</tomcat.version>
-        <tomcat.home>${containers.home}/apache-tomcat-${tomcat.version}</tomcat.home>
-        <!-- FIXME disabled port-offset because tomcat doesn't support it -->
+        <common.resources>${project.parent.basedir}/common</common.resources>
+        <!--TODO: implement "port offset" for tomcat-->
         <app.server.port.offset>0</app.server.port.offset>
         <app.server.http.port>8080</app.server.http.port>
         <app.server.management.port>9990</app.server.management.port>
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-tomcat-managed-7</artifactId>
-            <version>1.0.0.CR7</version>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.10</version>
-                <executions>
-                    <execution>
-                        <id>unpack-tomcat-and-adapter</id>
-                        <phase>generate-test-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.apache.tomcat</groupId>
-                                    <artifactId>tomcat</artifactId>
-                                    <version>${tomcat.version}</version>
-                                    <type>zip</type>
-                                    <outputDirectory>${containers.home}</outputDirectory>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-tomcat8-adapter-dist</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>zip</type>
-                                    <outputDirectory>${tomcat.home}/lib</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                            <overWriteIfNewer>true</overWriteIfNewer>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>libs-for-tomcat</id>
-                        <phase>generate-test-resources</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.jboss.resteasy</groupId>
-                                    <artifactId>resteasy-client</artifactId>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.jboss.spec.javax.ws.rs</groupId>
-                                    <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
-                                </artifactItem>                                        
-                                <artifactItem>
-                                    <groupId>org.jboss.resteasy</groupId>
-                                    <artifactId>resteasy-jaxrs</artifactId>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>commons-io</groupId>
-                                    <artifactId>commons-io</artifactId>
-                                    <version>1.4</version>
-                                </artifactItem>
-                            </artifactItems>
-                            <outputDirectory>${tomcat.home}/lib</outputDirectory>
-                            <overWriteIfNewer>true</overWriteIfNewer>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>xml-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>add-tomcat-manager-user</id>
-                        <phase>process-test-resources</phase>
-                        <goals>
-                            <goal>transform</goal>
-                        </goals>
-                        <configuration>
-                            <transformationSets>
-                                <transformationSet>
-                                    <dir>${tomcat.home}/conf</dir>
-                                    <stylesheet>src/main/xslt/tomcat-users.xsl</stylesheet>
-                                    <includes>
-                                        <include>tomcat-users.xml</include>
-                                    </includes>
-                                    <outputDir>${tomcat.home}/conf</outputDir>
-                                </transformationSet>
-                            </transformationSets>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <systemPropertyVariables>
-                        <app.server.tomcat>true</app.server.tomcat>
-                        <tomcat.home>${tomcat.home}</tomcat.home>
-                        <!-- TODO: implement port-offset for tomcat server.xml so we can shift from 8080 -->
-                        <app.server.management.port.tomcat>8089</app.server.management.port.tomcat>
-                    </systemPropertyVariables>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <profiles>
+        <profile>
+            <id>app-server-tomcat7</id>
+            <modules>
+                <module>tomcat7</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>app-server-tomcat8</id>
+            <modules>
+                <module>tomcat8</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>app-server-tomcat9</id>
+            <modules>
+                <module>tomcat9</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>
