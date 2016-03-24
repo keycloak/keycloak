@@ -30,6 +30,7 @@
     <name>Auth Server</name>
 
     <modules>
+        <module>services</module>
         <module>jboss</module>
         <module>undertow</module>
     </modules>
