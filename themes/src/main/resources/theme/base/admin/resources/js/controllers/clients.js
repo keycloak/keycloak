@@ -1112,6 +1112,9 @@ module.controller('CreateClientCtrl', function($scope, realm, client, templates,
             realm: realm.realm
         }, fileContent, function (data) {
             $scope.client = data;
+            if (data.protocol) {
+                $scope.protocol = data.protocol;
+            }
             $scope.importing = true;
         });
     };
