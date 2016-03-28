@@ -117,6 +117,15 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
             attributes.put(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, assertionConsumerServiceRedirectBinding);
             redirectUris.add(assertionConsumerServiceRedirectBinding);
         }
+        if (spDescriptorType.getNameIDFormat() != null) {
+            for (String format : spDescriptorType.getNameIDFormat()) {
+                String attribute = SamlClient.samlNameIDFormatToClientAttribute(format);
+                if (attribute != null) {
+                    attributes.put(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, attribute);
+                    break;
+                }
+            }
+        }
 
         for (KeyDescriptorType keyDescriptor : spDescriptorType.getKeyDescriptor()) {
             X509Certificate cert = null;
