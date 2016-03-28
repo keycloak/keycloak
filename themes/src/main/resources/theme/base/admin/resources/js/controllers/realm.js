@@ -2117,6 +2117,7 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
     $scope.overwrite = false;
     $scope.skip = false;
     $scope.importUsers = false;
+    $scope.importGroups = false;
     $scope.importClients = false;
     $scope.importIdentityProviders = false;
     $scope.importRealmRoles = false;
@@ -2147,11 +2148,7 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
         }
         
         $scope.importing = true;
-        $scope.importUsers = $scope.hasArray('users');
-        $scope.importClients = $scope.hasArray('clients');
-        $scope.importIdentityProviders = $scope.hasArray('identityProviders');
-        $scope.importRealmRoles = $scope.hasRealmRoles();
-        $scope.importClientRoles = $scope.hasClientRoles();
+        setOnOffSwitchDefaults();
         $scope.results = {};
         if (!$scope.hasResources()) {
             $scope.nothingToImport();
@@ -2178,6 +2175,15 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
         var endIndex = startIndex() + pageSize;
         if (endIndex > length) endIndex = length;
         return endIndex;
+    }
+    
+    function setOnOffSwitchDefaults() {
+        $scope.importUsers = $scope.hasArray('users');
+        $scope.importGroups = $scope.hasArray('groups');
+        $scope.importClients = $scope.hasArray('clients');
+        $scope.importIdentityProviders = $scope.hasArray('identityProviders');
+        $scope.importRealmRoles = $scope.hasRealmRoles();
+        $scope.importClientRoles = $scope.hasClientRoles();
     }
     
     $scope.setFirstPage = function() {
@@ -2256,6 +2262,7 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
     
     $scope.hasResources = function() {
         return ($scope.importUsers && $scope.hasArray('users')) ||
+               ($scope.importGroups && $scope.hasArray('groups')) ||
                ($scope.importClients && $scope.hasArray('clients')) ||
                ($scope.importIdentityProviders && $scope.hasArray('identityProviders')) ||
                ($scope.importRealmRoles && $scope.hasRealmRoles()) ||
@@ -2270,6 +2277,7 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
         if (!angular.equals($scope.fileContent, oldCopy)) {
             $scope.changed = true;
         }
+        setOnOffSwitchDefaults();
     }, true);
     
     $scope.successMessage = function() {
@@ -2287,6 +2295,7 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
         var json = angular.copy($scope.fileContent);
         json.ifResourceExists = $scope.ifResourceExists;
         if (!$scope.importUsers) delete json.users;
+        if (!$scope.importGroups) delete json.groups;
         if (!$scope.importIdentityProviders) delete json.identityProviders;
         if (!$scope.importClients) delete json.clients;
         

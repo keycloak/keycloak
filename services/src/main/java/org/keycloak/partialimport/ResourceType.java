@@ -23,7 +23,7 @@ package org.keycloak.partialimport;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public enum ResourceType {
-    USER, CLIENT, IDP, REALM_ROLE, CLIENT_ROLE;
+    USER, GROUP, CLIENT, IDP, REALM_ROLE, CLIENT_ROLE;
 
     /**
      * Used to create the admin path in events.
@@ -33,6 +33,7 @@ public enum ResourceType {
     public String getPath() {
         switch(this) {
             case USER: return "users";
+            case GROUP: return "groups";
             case CLIENT: return "clients";
             case IDP: return "identity-provider-settings";
             case REALM_ROLE: return "realms";
@@ -45,6 +46,7 @@ public enum ResourceType {
     public String toString() {
         switch(this) {
             case USER: return "User";
+            case GROUP: return "Group";
             case CLIENT: return "Client";
             case IDP: return "Identity Provider";
             case REALM_ROLE: return "Realm Role";
