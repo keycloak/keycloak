@@ -50,6 +50,7 @@ public class PartialImportManager {
         partialImports.add(new ClientsPartialImport());
         partialImports.add(new RolesPartialImport());
         partialImports.add(new IdentityProvidersPartialImport());
+        partialImports.add(new GroupsPartialImport());
         partialImports.add(new UsersPartialImport());
     }
 
@@ -78,8 +79,8 @@ public class PartialImportManager {
 
         for (PartialImportResult result : results.getResults()) {
             switch (result.getAction()) {
-                case ADDED : addedEvent(result); break;
-                case OVERWRITTEN: overwrittenEvent(result); break;
+                case ADDED : fireCreatedEvent(result); break;
+                case OVERWRITTEN: fireUpdateEvent(result); break;
             }
         }
 
@@ -90,14 +91,14 @@ public class PartialImportManager {
         return Response.ok(results).build();
     }
 
-    private void addedEvent(PartialImportResult result) {
+    private void fireCreatedEvent(PartialImportResult result) {
         adminEvent.operation(OperationType.CREATE)
                   .resourcePath(result.getResourceType().getPath(), result.getId())
                   .representation(result.getRepresentation())
                   .success();
     };
 
-    private void overwrittenEvent(PartialImportResult result) {
+    private void fireUpdateEvent(PartialImportResult result) {
         adminEvent.operation(OperationType.UPDATE)
                   .resourcePath(result.getResourceType().getPath(), result.getId())
                   .representation(result.getRepresentation())
