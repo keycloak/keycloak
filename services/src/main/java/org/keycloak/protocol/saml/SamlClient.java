@@ -74,6 +74,22 @@ public class SamlClient extends ClientConfigResolver {
         return nameIdFormat;
 
     }
+
+    public static String samlNameIDFormatToClientAttribute(String nameIdFormat) {
+        if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())) {
+            return "email";
+        } else if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get())) {
+            return "persistent";
+        } else if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get())) {
+            return "transient";
+        } else if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get())) {
+            return "username";
+        }
+        return null;
+
+    }
+
+
     public void setNameIDFormat(String format) {
         client.setAttribute(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, format);
     }
