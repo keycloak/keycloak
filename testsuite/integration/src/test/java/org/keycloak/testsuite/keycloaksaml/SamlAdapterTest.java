@@ -17,16 +17,23 @@
 
 package org.keycloak.testsuite.keycloaksaml;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -189,6 +196,27 @@ public class SamlAdapterTest {
         client.close();
 
     }
+
+    /**
+     * Test KEYCLOAK-2718
+     */
+    @Test
+    public void testNameIDFormatImport() throws Exception {
+        String resourcePath = "/keycloak-saml/sp-metadata-email-nameid.xml";
+        Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID, null);
+        RealmResource admin = keycloak.realm("demo");
+
+        admin.toRepresentation();
+
+        ClientRepresentation clientRep = admin.convertClientDescription(IOUtils.toString(SamlAdapterTestStrategy.class.getResourceAsStream(resourcePath)));
+        assertEquals("email", clientRep.getAttributes().get("saml_name_id_format"));
+
+
+        keycloak.close();
+
+
+    }
+
 
 
 }
