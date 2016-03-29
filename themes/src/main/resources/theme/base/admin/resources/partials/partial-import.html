@@ -39,6 +39,13 @@
                 </div>
             </div>
 
+            <div class="form-group" data-ng-show="importing && hasArray('groups') && !hasResults()">
+                <label class="col-md-2 control-label" for="importGroups">{{:: 'import-groups' | translate}} ({{itemCount('groups')}})</label>
+                <div class="col-sm-6">
+                    <input ng-model="importGroups" name="importGroups" id="importGroups" onoffswitch on-text="{{:: 'onText'| translate}}" off-text="{{:: 'offText'| translate}}"/>
+                </div>
+            </div>
+            
             <div class="form-group" data-ng-show="importing && hasArray('clients') && !hasResults()">
                 <label class="col-md-2 control-label" for="importClients">{{:: 'import-clients' | translate}} ({{itemCount('clients')}})</label>
                 <div class="col-sm-6">
