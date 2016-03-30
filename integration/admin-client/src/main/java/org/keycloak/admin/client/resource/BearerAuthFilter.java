@@ -21,14 +21,18 @@ import org.keycloak.admin.client.token.TokenManager;
 
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.client.ClientResponseContext;
+import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
  */
-public class BearerAuthFilter implements ClientRequestFilter {
+public class BearerAuthFilter implements ClientRequestFilter, ClientResponseFilter {
 
+    public static final String AUTH_HEADER_PREFIX = "Bearer ";
     private final String tokenString;
     private final TokenManager tokenManager;
 
@@ -45,9 +49,27 @@ public class BearerAuthFilter implements ClientRequestFilter {
 
     @Override
     public void filter(ClientRequestContext requestContext) throws IOException {
-        String authHeader = "Bearer " + (tokenManager != null ? tokenManager.getAccessTokenString() : tokenString);
+        String authHeader = AUTH_HEADER_PREFIX + (tokenManager != null ? tokenManager.getAccessTokenString() : tokenString);
 
         requestContext.getHeaders().add(HttpHeaders.AUTHORIZATION, authHeader);
     }
 
+    @Override
+    public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
+        if (responseContext.getStatus() == 401 && tokenManager != null) {
+            List<Object> authHeaders = requestContext.getHeaders().get(HttpHeaders.AUTHORIZATION);
+            if (authHeaders == null) {
+                return;
+            }
+            for (Object authHeader : authHeaders) {
+                if (authHeader instanceof String) {
+                    String headerValue = (String) authHeader;
+                    if (headerValue.startsWith(AUTH_HEADER_PREFIX)) {
+                        String token = headerValue.substring( AUTH_HEADER_PREFIX.length() );
+                        tokenManager.invalidate( token );
+                    }
+                }
+            }
+        }
+    }
 }
