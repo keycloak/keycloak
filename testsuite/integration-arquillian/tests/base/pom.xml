@@ -57,6 +57,11 @@
             <artifactId>commons-configuration</artifactId>
             <version>1.10</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-event-queue</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
     
     <build>
