@@ -32,6 +32,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -56,9 +57,10 @@ import org.keycloak.testsuite.admin.ApiUtil;
  */
 public class PartialImportTest extends AbstractAuthTest {
 
-    private static final int NUM_RESOURCE_TYPES = 5;
+    private static final int NUM_RESOURCE_TYPES = 6;
     private static final String CLIENT_ROLES_CLIENT = "clientRolesClient";
     private static final String USER_PREFIX = "user";
+    private static final String GROUP_PREFIX = "group";
     private static final String CLIENT_PREFIX = "client";
     private static final String REALM_ROLE_PREFIX = "realmRole";
     private static final String CLIENT_ROLE_PREFIX = "clientRole";
@@ -91,6 +93,14 @@ public class PartialImportTest extends AbstractAuthTest {
         List<UserRepresentation> toRemove = testRealmResource().users().search(USER_PREFIX, 0, NUM_ENTITIES);
         for (UserRepresentation user : toRemove) {
             testRealmResource().users().get(user.getId()).remove();
+        }
+    }
+
+    @Before
+    public void removeGroups() {
+        List<GroupRepresentation> toRemove = testRealmResource().groups().groups();
+        for (GroupRepresentation group: toRemove) {
+            testRealmResource().groups().group(group.getId()).remove();
         }
     }
 
@@ -162,6 +172,19 @@ public class PartialImportTest extends AbstractAuthTest {
         }
 
         piRep.setUsers(users);
+    }
+
+    private void addGroups() {
+        List<GroupRepresentation> groups = new ArrayList<>();
+
+        for (int i=0; i < NUM_ENTITIES; i++) {
+            GroupRepresentation group = new GroupRepresentation();
+            group.setName(GROUP_PREFIX + i);
+            group.setPath("/" + GROUP_PREFIX + i);
+            groups.add(group);
+        }
+
+        piRep.setGroups(groups);
     }
 
     private void addClients() {
@@ -323,6 +346,12 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
+    public void testAddGroupsFail() {
+        addGroups();
+        testFail();
+    }
+
+    @Test
     public void testAddClientsFail() {
         addClients();
         testFail();
@@ -358,6 +387,12 @@ public class PartialImportTest extends AbstractAuthTest {
     @Test
     public void testAddUsersSkip() {
         addUsers();
+        testSkip();
+    }
+
+    @Test
+    public void testAddGroupsSkip() {
+        addGroups();
         testSkip();
     }
 
@@ -401,6 +436,12 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
+    public void testAddGroupsOverwrite() {
+        addGroups();
+        testOverwrite();
+    }
+
+    @Test
     public void testAddClientsOverwrite() {
         addClients();
         testOverwrite();
@@ -427,6 +468,7 @@ public class PartialImportTest extends AbstractAuthTest {
 
     private void importEverything() {
         addUsers();
+        addGroups();
         addClients();
         addProviders();
         addRealmRoles();
