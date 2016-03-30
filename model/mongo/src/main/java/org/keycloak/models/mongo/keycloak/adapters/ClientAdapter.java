@@ -583,8 +583,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
 
     @Override
     public boolean removeRole(RoleModel role) {
-        session.users().preRemove(getRealm(), role);
-        return getMongoStore().removeEntity(MongoRoleEntity.class, role.getId(), invocationContext);
+        return session.realms().removeRole(realm, role);
     }
 
     @Override
