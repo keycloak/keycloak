@@ -125,7 +125,7 @@ public class AuthenticationManager {
             if (brokerId != null) {
                 IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
                 try {
-                    identityProvider.backchannelLogout(userSession, uriInfo, realm);
+                    identityProvider.backchannelLogout(session, userSession, uriInfo, realm);
                 } catch (Exception e) {
                 }
             }
@@ -221,7 +221,7 @@ public class AuthenticationManager {
         String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
         if (brokerId != null) {
             IdentityProvider identityProvider = IdentityBrokerService.getIdentityProvider(session, realm, brokerId);
-            Response response = identityProvider.keycloakInitiatedBrowserLogout(userSession, uriInfo, realm);
+            Response response = identityProvider.keycloakInitiatedBrowserLogout(session, userSession, uriInfo, realm);
             if (response != null) return response;
         }
         return finishBrowserLogout(session, realm, userSession, uriInfo, connection, headers);

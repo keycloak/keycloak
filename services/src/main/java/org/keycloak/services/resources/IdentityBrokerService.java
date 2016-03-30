@@ -227,7 +227,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
                     this.event.success();
 
-                    return corsResponse(identityProvider.retrieveToken(identity), clientModel);
+                    return corsResponse(identityProvider.retrieveToken(session, identity), clientModel);
                 }
 
                 return corsResponse(badRequest("Identity Provider [" + providerId + "] does not support this operation."), clientModel);

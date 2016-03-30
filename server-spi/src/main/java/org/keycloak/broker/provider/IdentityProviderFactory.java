@@ -47,7 +47,6 @@ public interface IdentityProviderFactory<T extends IdentityProvider> extends Pro
      * <p>Creates an {@link IdentityProvider} based on the configuration from
      * <code>inputStream</code>.</p>
      *
-     * @param model The model containing the common abd basic configuration for an identity provider.
      * @param inputStream The input stream from where configuration will be loaded from..
      * @return
      */

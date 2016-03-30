@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthenticatorFactory;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -115,6 +116,8 @@ public abstract class AbstractIdentityProviderTest {
 
     protected KeycloakSession session;
 
+    protected int logoutTimeOffset = 0;
+
     @Before
     public void onBefore() {
         this.session = brokerServerRule.startSession();
@@ -160,11 +163,26 @@ public abstract class AbstractIdentityProviderTest {
         assertEquals(getProviderId(), federatedIdentityModel.getIdentityProvider());
         assertEquals(federatedUser.getUsername(), federatedIdentityModel.getUserName());
 
-        driver.navigate().to("http://localhost:8081/test-app/logout");
+        // test access token timeot on logout
+        if (logoutTimeOffset > 0) {
+            Time.setOffset(logoutTimeOffset);
+        }
+        try {
+            driver.navigate().to("http://localhost:8081/test-app/logout");
+        } finally {
+            Time.setOffset(0);
+        }
+
+        String afterLogoutUrl = driver.getCurrentUrl();
+        String afterLogoutPageSource = driver.getPageSource();
+        System.out.println("afterLogoutUrl: " + afterLogoutUrl);
+        //System.out.println("after logout page source: " + afterLogoutPageSource);
+
         driver.navigate().to("http://localhost:8081/test-app");
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
         return federatedUser;
+
     }
 
 
