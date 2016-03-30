@@ -107,4 +107,18 @@ public class TokenManager {
         return (Time.currentTime() + minTokenValidity) >= expirationTime;
     }
 
+    /**
+     * Invalidates the current token, but only when it is equal to the token passed as an argument.
+     *
+     * @param token the token to invalidate (cannot be null).
+     */
+    public void invalidate(String token) {
+        if (currentToken == null) {
+            return; // There's nothing to invalidate.
+        }
+        if (token.equals(currentToken.getToken())) {
+            // When used next, this cause a refresh attempt, that in turn will cause a grant attempt if refreshing fails.
+            expirationTime = -1;
+        }
+    }
 }
