@@ -20,10 +20,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.oidc.util.JsonSimpleHttp;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -31,6 +33,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
@@ -41,8 +44,8 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.common.util.PemUtils;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -51,7 +54,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-
 import java.io.IOException;
 import java.security.PublicKey;
 
@@ -130,9 +132,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    public void backchannelLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
+    public void backchannelLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("") || !getConfig().isBackchannelSupported()) return;
-        String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
+        String idToken = getIDTokenForLogout(session, userSession);
         if (idToken == null) return;
         backchannelLogout(userSession, idToken);
     }
@@ -156,9 +158,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
 
     @Override
-    public Response keycloakInitiatedBrowserLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
+    public Response keycloakInitiatedBrowserLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("")) return null;
-        String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
+        String idToken = getIDTokenForLogout(session, userSession);
         if (idToken != null && getConfig().isBackchannelSupported()) {
             backchannelLogout(userSession, idToken);
             return null;
@@ -174,6 +176,47 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             logoutUri.queryParam("post_logout_redirect_uri", redirect);
             Response response = Response.status(302).location(logoutUri.build()).build();
             return response;
+        }
+    }
+
+    /**
+     * Returns access token response as a string from a refresh token invocation on the remote OIDC broker
+     *
+     * @param session
+     * @param userSession
+     * @return
+     */
+    public String refreshToken(KeycloakSession session, UserSessionModel userSession) {
+        String refreshToken = userSession.getNote(FEDERATED_REFRESH_TOKEN);
+        JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
+        try {
+            return SimpleHttp.doPost(getConfig().getTokenUrl())
+                    .param("refresh_token", refreshToken)
+                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN)
+                    .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
+                    .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
+                    .sslFactory(configurator.getSSLSocketFactory())
+                    .hostnameVerifier(configurator.getHostnameVerifier()).asString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String getIDTokenForLogout(KeycloakSession session, UserSessionModel userSession) {
+        long exp = Long.parseLong(userSession.getNote(FEDERATED_TOKEN_EXPIRATION));
+        int currentTime = Time.currentTime();
+        if (exp > 0 && currentTime > exp) {
+            String response = refreshToken(session, userSession);
+            AccessTokenResponse tokenResponse = null;
+            try {
+                tokenResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            return tokenResponse.getIdToken();
+        } else {
+            return userSession.getNote(FEDERATED_ID_TOKEN);
+
         }
     }
 
@@ -322,6 +365,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     public void attachUserSession(UserSessionModel userSession, ClientSessionModel clientSession, BrokeredIdentityContext context) {
         AccessTokenResponse tokenResponse = (AccessTokenResponse)context.getContextData().get(FEDERATED_ACCESS_TOKEN_RESPONSE);
+        int currentTime = Time.currentTime();
+        long expiration = tokenResponse.getExpiresIn() > 0 ? tokenResponse.getExpiresIn() + currentTime : 0;
+        userSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(expiration));
+        userSession.setNote(FEDERATED_REFRESH_TOKEN, tokenResponse.getRefreshToken());
         userSession.setNote(FEDERATED_ACCESS_TOKEN, tokenResponse.getToken());
         userSession.setNote(FEDERATED_ID_TOKEN, tokenResponse.getIdToken());
     }

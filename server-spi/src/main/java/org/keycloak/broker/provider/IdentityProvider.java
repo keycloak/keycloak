@@ -73,15 +73,15 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
     Response performLogin(AuthenticationRequest request);
 
     /**
-     * <p>Returns a {@link javax.ws.rs.core.Response} containing the token previously stored during the authentication process for a
+     * <p>Returns a {@link Response} containing the token previously stored during the authentication process for a
      * specific user.</p>
      *
      * @param identity
      * @return
      */
-    Response retrieveToken(FederatedIdentityModel identity);
+    Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity);
 
-    void backchannelLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm);
+    void backchannelLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm);
 
     /**
      * Called when a Keycloak application initiates a logout through the browser.  This is expected to do a logout
@@ -92,7 +92,7 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
      * @param realm
      * @return null if this is not supported by this provider
      */
-    Response keycloakInitiatedBrowserLogout(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm);
+    Response keycloakInitiatedBrowserLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm);
 
     /**
      * Export a representation of the IdentityProvider in a specific format.  For example, a SAML EntityDescriptor
