@@ -20,6 +20,7 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 
 import javax.ws.rs.core.Response;
 
@@ -38,7 +39,7 @@ public class CustomIdentityProvider extends AbstractIdentityProvider<IdentityPro
     }
 
     @Override
-    public Response retrieveToken(FederatedIdentityModel identity) {
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
         return null;
     }
 }
