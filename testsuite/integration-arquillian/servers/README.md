@@ -1,6 +1,9 @@
-# Keycloak Arquillian Integration TestSuite
+# Keycloak Arquillian Integration TestSuite - Test Servers
 
-[Keycloak Arquillian Integration TestSuite](../README.md)
+- [Keycloak Arquillian Integration TestSuite](../README.md)
+- Keycloak Arquillian Integration TestSuite - Test Servers
+- [Keycloak Arquillian Integration TestSuite - Test Servers - Auth Server](auth-server/README.md)
+- [Keycloak Arquillian Integration TestSuite - Test Servers - App Servers](app-server/README.md)
 
 ## Test Servers
 
@@ -13,8 +16,6 @@ The artifacts are used by the Arquillian TestSuite.
  - Wildfly 10
  - EAP 7
 - Undertow
-
-[Details...](auth-server/README.md)
 
 
 ### App Server
@@ -30,7 +31,6 @@ The artifacts are used by the Arquillian TestSuite.
 - Tomcat
  - Tomcat 7, 8
 
-[Details...](app-server/README.md)
 
 ### Load Balancer
 

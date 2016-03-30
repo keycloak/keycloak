@@ -11,7 +11,8 @@
         "jboss-logging" : {
             "success-level": "debug",
             "error-level": "warn"
-        }
+        },
+        "event-queue": {}
     },
 
     "realm": {

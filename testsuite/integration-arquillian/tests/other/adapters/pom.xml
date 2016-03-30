@@ -220,8 +220,8 @@
                                                 <type>war</type>
                                             </artifactItem>       
                                             <artifactItem>
-                                                <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>js-console</artifactId>        
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-js-console</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
@@ -283,6 +283,13 @@
                                             <artifactItem>
                                                 <groupId>org.keycloak</groupId>
                                                 <artifactId>keycloak-examples-dist</artifactId>        
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                                <includes>**/*realm.json,**/testsaml.json</includes>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-dist</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
                                                 <includes>**/*realm.json,**/testsaml.json</includes>

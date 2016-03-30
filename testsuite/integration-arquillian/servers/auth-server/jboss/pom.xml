@@ -57,6 +57,9 @@
         <unpacked.artifact.version>${auth.server.dist.version}</unpacked.artifact.version>
         
         <auth.server.home>${project.build.directory}/unpacked/${auth.server.dist.unpacked.folder.name}</auth.server.home>
+        
+        <!--used in profile auth-server-cluster. profile jpa sets this to true-->
+        <skip.h2.tcp>false</skip.h2.tcp>
     </properties>
                         
     <profiles>
@@ -97,13 +100,102 @@
                                     </artifactItems>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>copy-event-queue-provider</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.testsuite</groupId>
+                                            <artifactId>integration-arquillian-event-queue</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>jar</type>
+                                            <overWrite>false</overWrite>
+                                            <outputDirectory>${auth.server.home}/modules/org/keycloak/testsuite/integration-arquillian-event-queue/main</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>install-event-queue-module</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.testsuite</groupId>
+                                            <artifactId>integration-arquillian-event-queue</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>jar</type>
+                                            <outputDirectory>${auth.server.home}/modules</outputDirectory>
+                                            <includes>**/module.xml</includes>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
                     <plugin>
-                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.8</version>
+                        <executions>
+                            <execution>
+                                <id>inject-into-keycloak-server-json</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <ant antfile="../build.xml" inheritRefs="true">
+                                            <target name="inject-provider"/>
+                                        </ant>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <dependencies>
+                            <dependency>
+                                <groupId>ant-contrib</groupId>
+                                <artifactId>ant-contrib</artifactId>
+                                <version>1.0b3</version>
+                                <exclusions>
+                                    <exclusion>
+                                        <groupId>ant</groupId>
+                                        <artifactId>ant</artifactId>
+                                    </exclusion>
+                                </exclusions>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.apache.ant</groupId>
+                                <artifactId>ant-apache-bsf</artifactId>
+                                <version>1.9.3</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.apache.bsf</groupId>
+                                <artifactId>bsf-api</artifactId>
+                                <version>3.1</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>rhino</groupId>
+                                <artifactId>js</artifactId>
+                                <version>1.7R2</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.keycloak</groupId>
+                                <artifactId>keycloak-core</artifactId>
+                                <version>${project.version}</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                     <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
@@ -268,6 +360,7 @@
             <id>jpa</id>
             <properties>
                 <jdbc.mvn.driver.deployment.dir>${auth.server.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
+                <skip.h2.tcp>true</skip.h2.tcp>
             </properties>
             <build>
                 <pluginManagement>
@@ -344,7 +437,7 @@
                                             <!-- create module.xml in modules -->
                                             <transformationSet>
                                                 <dir>${auth.server.home}/modules/system/layers/base/com/h2database/h2/main</dir>
-                                                <stylesheet>src/main/resources/module.xsl</stylesheet>
+                                                <stylesheet>src/main/resources/xslt/module.xsl</stylesheet>
                                                 <includes>
                                                     <include>module.xml</include>
                                                 </includes>
@@ -366,6 +459,7 @@
                                                 <stylesheet>${common.resources}/datasource.xsl</stylesheet>
                                                 <includes>
                                                     <include>standalone.xml</include>
+                                                    <include>standalone-ha.xml</include>
                                                 </includes>
                                                 <outputDir>${auth.server.home}/standalone/configuration</outputDir>
                                                 <parameters>
@@ -421,14 +515,13 @@
                             <artifactId>xml-maven-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>configure-wildfly-datasource</id>
+                                    <id>jpa-h2-tcp</id>
                                     <phase>process-resources</phase>
                                     <goals>
                                         <goal>transform</goal>
                                     </goals>
                                     <configuration>
                                         <transformationSets>
-                                            <!-- point KeycloakDS datasource to H2 running on TCP port -->
                                             <transformationSet>
                                                 <dir>${auth.server.home}/standalone/configuration</dir>
                                                 <includes>
@@ -447,6 +540,18 @@
                                                     </parameter>
                                                 </parameters>
                                             </transformationSet>
+                                        </transformationSets>
+                                        <skip>${skip.h2.tcp}</skip>
+                                    </configuration>
+                                </execution>
+                                <execution>
+                                    <id>keycloak-ispn-caches</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>transform</goal>
+                                    </goals>
+                                    <configuration>
+                                        <transformationSets>
                                             <transformationSet>
                                                 <dir>${auth.server.home}/standalone/configuration</dir>
                                                 <includes>
