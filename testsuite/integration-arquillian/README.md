@@ -1,33 +1,36 @@
 # Keycloak Arquillian Integration Testsuite
 
+## Overview
+
+For overview see the **Modules Overview** section at the bottom of this README.
+
+
 ## Container Lifecycles
 
-### Keycloak Auth Server
+### Auth Server
 
-There is only one instance of Keycloak server running during a single test run.
-It is automatically started by Arquillian on the `BeforeSuite` event and stopped `AfterSuite`.
+Keycloak server is automatically started by the testsuite on the `BeforeSuite` event and stopped on `AfterSuite` event.
 
-The type of container can be determined by property `-Dauth.server.container`. Default value is `auth-server-undertow`, 
-other options are: `auth-server-wildfly` and `auth-server-eap7`. The values correspond to Arquillian *container qualifiers* in `arquillian.xml` config file.
+By default the server runs in embedded Undertow.
 
-**Note 1:** For the non-default options it's necessary to build a corresponding server module prior to running any of the test modules.
-This can be done by building the server module directly (from `servers/wildfly`/`servers/eap7`), 
-or by activating `auth-server-wildfly`/`auth-server-eap7` profile when building from the top level module.
+#### Wildfly/EAP
 
-**Note 2:** Most server-side configurations are done during the build of the server module
-and included in the output artifact - which is then consumed by the test modules( if a corresponding profile is activated).
-To reflect a change in server config in the test (e.g. a datasource) it's necessary to rebuild the server module after each change.
+Testsuite supports running server on Wildfly/EAP. For this it's necessary to:
+- build the project including the `distribution` module
+ (artifact `keycloak-server-dist`/`-overlay` needs to be available before running the testsuite),
+- activate profile `auth-server-wildfly` or `auth-server-eap7`.
 
-#### Migration
-
-Migration tests can be enabled by setting `-Dmigrated.auth.server.version` property. Supported versions can be found at the bottom of `tests/pom.xml`.
-When enabled, the `AuthServerTestEnricher` class will start and stop the selected migrated instance 
-*before* the current auth server instance is started.
+[More details...](servers/auth-server/README.md)
 
 #### Cluster Setup
 
-Cluster setup can be enabled with profile `auth-server-wildfly-cluster`.
-(It is also necessary to build the server modules with this profile before running the test. See *Notes 1 and 2* above.)
+The cluster setup for server can be enabled by activating profile `auth-server-cluster`.
+
+The cluster setup is not supported for server on Undetow. Profile `auth-server-wildfly` or `auth-server-eap` needs to be activated.
+
+The setup includes:
+- a `mod_cluster` load balancer on Wildfly
+- two clustered nodes of Keycloak server on Wildfly/EAP
 
 Clustering tests require MULTICAST to be enabled on machine's `loopback` network interface.
 This can be done by running the following commands under root privileges:
@@ -36,20 +39,20 @@ route add -net 224.0.0.0 netmask 240.0.0.0 dev lo
 ifconfig lo multicast
 ```
 
-### App Servers
+### App Servers / Adapter Tests
 
 Lifecycle of application server is always tied to a particular TestClass.
 
 Each *adapter* test class is annotated by `@AppServerContainer("app-server-*")` annotation 
 that links it to a particular Arquillian container in `arquillian.xml`.
-The `AppServerTestEnricher` then ensures the server is started before and stopped after all tests methods in the class.
+The `AppServerTestEnricher` then ensures the server is started during `BeforeClass` event and stopped during `AfterClass` event for that particular test class. 
 In case the `@AppServerContainer` annotation has no value it's assumed that the application container 
-is the same as the auth server container (a relative adapter test scenario).
+is the same as the auth server container - a "relative" adapter test scenario.
 
-Adapter tests are separated into submodules because different app containers require different configurations 
-(installation of adapter libs, etc.).
-Container entries of app servers are not present in the main `arquillian.xml` in the `base` module.
-Each adapter submodule adds it's own entry before it runs the tests.
+The app-servers with installed Keycloak adapter are prepared in `servers/app-server` submodules, activated by `-Papp-server-MODULE`.
+[More details.](servers/app-server/README.md)
+
+The corresponding adapter test modules are in `tests/other/adapters` submodules, and are activated by the same profiles.
 
 ## SuiteContext and TestContext
 
@@ -130,32 +133,6 @@ It automatically modifies imported test realms and deployments' adapter configs 
 2. **Bundled** - In the deployed war in `/WEB-INF/keycloak.json`. **Default.**
 
 
-## Maven Modules Structure
-
-```
-integration-arquillian
-│
-├──servers
-│  ├──wildfly   (activated by -Pauth-server-wildfly)
-│  └──eap7      (activated by -Pauth-server-eap7)
-│
-└──tests   (common settings for all test modules)
-   ├──base    (custom ARQ extensions + base functional tests)
-   └──other   (common settings for all modules dependent on base)
-      │
-      ├──adapters         (common settings for all adapter submodules)
-      │  ├──wildfly           (activated by -Papp-server-wildfly)
-      │  ├──wildfly-relative  (activated by -Papp-server-wildfly-relative,auth-server-wildfly)
-      │  ├──...
-      │  ├──tomcat            (activated by -Papp-server-tomcat)
-      │  └──karaf             (activated by -Papp-server-karaf)
-      │
-      ├──console          (activated by -Pconsole-ui-tests)
-      ├──mod_auth_mellon  (activated by -Pmod_auth_mellon)
-      ├──console_no_users (activated by -Pconsole-ui-no-users-tests)
-      └──...
-```
-
 ## Custom Arquillian Extensions
 
 Custom extensions are registered in `META-INF/services/org.jboss.arquillian.core.spi.LoadableExtension`.
@@ -173,6 +150,37 @@ Custom extensions are registered in `META-INF/services/org.jboss.arquillian.core
  * `DeploymentTargetModifier` - Ensures all test app deployments are targeted at app server containers.
  * `URLProvider` - Fixes URLs injected by Arquillian Graphene which contain value `127.0.0.1` instead of required `localhost`.
  
-### CustomKarafContainerExtension
+## Modules Overview
 
-Extension for executing karaf commands after container is started. Used for installation of bundles (test apps and adapter libs).
+```
+integration-arquillian
+│
+├──servers   (preconfigured test servers)
+│  │
+│  ├──auth-server
+│  │  ├──jboss (wildfly/eap)
+│  │  └──undertow (arq. extension)
+│  │
+│  ├──app-server
+│  │  ├──jboss (wildfly/eap/as)
+│  │  ├──tomcat
+│  │  └──karaf
+│  │
+│  └──wildfly-balancer
+│
+└──tests   (common settings for all test modules)
+   │
+   ├──base    (custom ARQ extensions + base functional tests)
+   │
+   └──other   (common settings for all test modules dependent on base)
+      │
+      ├──adapters         (common settings for all adapter test modules)
+      │  ├──jboss
+      │  ├──tomcat
+      │  └──karaf
+      │
+      ├──console          
+      ├──console_no_users 
+      └──...
+```
+
