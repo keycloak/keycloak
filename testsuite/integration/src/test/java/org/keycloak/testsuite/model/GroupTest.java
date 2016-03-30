@@ -36,6 +36,7 @@ import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -49,7 +50,6 @@ import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
-
 import java.util.LinkedList;
 import java.util.List;
 
@@ -94,6 +94,35 @@ public class GroupTest {
 
     @WebResource
     protected OAuthClient oauth;
+
+    /**
+     * KEYCLOAK-2716
+     * @throws Exception
+     */
+    @Test
+    public void testClientRemoveWithClientRoleGroupMapping() throws Exception {
+        RealmResource realm = keycloak.realms().realm("test");
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("foo");
+        client.setRootUrl("http://foo");
+        client.setProtocol("openid-connect");
+        Response response = realm.clients().create(client);
+        response.close();
+        client = realm.clients().findByClientId("foo").get(0);
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName("foo-role");
+        realm.clients().get(client.getId()).roles().create(role);
+        role = realm.clients().get(client.getId()).roles().get("foo-role").toRepresentation();
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("2716");
+        realm.groups().add(group).close();
+        group = realm.getGroupByPath("/2716");
+        List<RoleRepresentation> list = new LinkedList<>();
+        list.add(role);
+        realm.groups().group(group.getId()).roles().clientLevel(client.getId()).add(list);
+        realm.clients().get(client.getId()).remove();
+
+    }
 
     @Test
     public void createAndTestGroups() throws Exception {

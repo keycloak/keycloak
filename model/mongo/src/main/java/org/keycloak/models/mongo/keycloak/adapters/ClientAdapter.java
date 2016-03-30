@@ -17,8 +17,6 @@
 
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import com.mongodb.DBObject;
-import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
@@ -48,7 +46,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
 
     protected final MongoClientEntity clientEntity;
     private final RealmModel realm;
-    protected  KeycloakSession session;
+    protected KeycloakSession session;
 
     public ClientAdapter(KeycloakSession session, RealmModel realm, MongoClientEntity clientEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
@@ -583,8 +581,7 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
 
     @Override
     public boolean removeRole(RoleModel role) {
-        session.users().preRemove(getRealm(), role);
-        return getMongoStore().removeEntity(MongoRoleEntity.class, role.getId(), invocationContext);
+        return session.realms().removeRole(realm, role);
     }
 
     @Override

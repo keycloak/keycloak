@@ -36,11 +36,11 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,26 +71,36 @@ public class ClientsResource {
      * Get clients belonging to the realm
      *
      * Returns a list of clients belonging to the realm
+     *
+     * @param clientId filter by clientId
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<ClientRepresentation> getClients() {
+    public List<ClientRepresentation> getClients(@QueryParam("clientId") String clientId) {
         auth.requireAny();
 
         List<ClientRepresentation> rep = new ArrayList<>();
-        List<ClientModel> clientModels = realm.getClients();
 
-        boolean view = auth.hasView();
-        for (ClientModel clientModel : clientModels) {
-            if (view) {
-                rep.add(ModelToRepresentation.toRepresentation(clientModel));
-            } else {
-                ClientRepresentation client = new ClientRepresentation();
-                client.setId(clientModel.getId());
-                client.setClientId(clientModel.getClientId());
-                client.setDescription(clientModel.getDescription());
-                rep.add(client);
+        if (clientId == null) {
+            List<ClientModel> clientModels = realm.getClients();
+
+            boolean view = auth.hasView();
+            for (ClientModel clientModel : clientModels) {
+                if (view) {
+                    rep.add(ModelToRepresentation.toRepresentation(clientModel));
+                } else {
+                    ClientRepresentation client = new ClientRepresentation();
+                    client.setId(clientModel.getId());
+                    client.setClientId(clientModel.getClientId());
+                    client.setDescription(clientModel.getDescription());
+                    rep.add(client);
+                }
+            }
+        } else {
+            ClientModel client = realm.getClientByClientId(clientId);
+            if (client != null) {
+                rep.add(ModelToRepresentation.toRepresentation(client));
             }
         }
         return rep;
