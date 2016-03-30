@@ -17,6 +17,9 @@
 
 package org.keycloak.admin.client;
 
+import static org.keycloak.OAuth2Constants.CLIENT_CREDENTIALS;
+import static org.keycloak.OAuth2Constants.PASSWORD;
+
 /**
  * @author rodrigo.sasaki@icarros.com.br
  */
@@ -28,14 +31,21 @@ public class Config {
     private String password;
     private String clientId;
     private String clientSecret;
+    private String grantType;
 
     public Config(String serverUrl, String realm, String username, String password, String clientId, String clientSecret) {
+        this(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD);
+    }
+
+    public Config(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType) {
         this.serverUrl = serverUrl;
         this.realm = realm;
         this.username = username;
         this.password = password;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
+        this.grantType = grantType;
+        checkGrantType(grantType);
     }
 
     public String getServerUrl() {
@@ -86,8 +96,23 @@ public class Config {
         this.clientSecret = clientSecret;
     }
 
-    public boolean isPublicClient(){
+    public boolean isPublicClient() {
         return clientSecret == null;
     }
 
+    public String getGrantType() {
+        return grantType;
+    }
+
+    public void setGrantType(String grantType) {
+        this.grantType = grantType;
+        checkGrantType(grantType);
+    }
+
+    public static void checkGrantType(String grantType) {
+        if (!PASSWORD.equals(grantType) && !CLIENT_CREDENTIALS.equals(grantType)) {
+            throw new IllegalArgumentException("Unsupported grantType: " + grantType +
+                    " (only " + PASSWORD + " and " + CLIENT_CREDENTIALS + " are supported)");
+        }
+    }
 }
