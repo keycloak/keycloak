@@ -73,7 +73,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation jsConsoleRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/js-console/example-realm.json"));
+        RealmRepresentation jsConsoleRealm = loadRealm(new File(TEST_APPS_HOME_DIR + "/js-console/example-realm.json"));
 
         fixClientUrisUsingDeploymentUrl(jsConsoleRealm,
                 JSConsoleExample.CLIENT_ID, jsConsoleExamplePage.buildUri().toASCIIString());
@@ -96,6 +96,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         pause(1000);
 
+        jsConsoleExamplePage.init();
         jsConsoleExamplePage.logIn();
         testRealmLoginPage.form().login("user", "invalid-password");
         assertCurrentUrlDoesntStartWith(jsConsoleExamplePage);
@@ -105,14 +106,17 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
-        assertTrue(driver.getPageSource().contains("Init Success (Authenticated)"));
-        assertTrue(driver.getPageSource().contains("Auth Success"));
+        jsConsoleExamplePage.init();
+        assertTrue(jsConsoleExamplePage.getOutputText().contains("Init Success (Authenticated)"));
+        assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Success"));
 
         pause(1000);
 
         jsConsoleExamplePage.logOut();
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
-        assertTrue(driver.getPageSource().contains("Init Success (Not Authenticated)"));
+        jsConsoleExamplePage.init();
+
+        assertTrue(jsConsoleExamplePage.getOutputText().contains("Init Success (Not Authenticated)"));
     }
 
     @Test
@@ -120,38 +124,41 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         jsConsoleExamplePage.navigateTo();
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
 
+        jsConsoleExamplePage.init();
         jsConsoleExamplePage.refreshToken();
-        assertTrue(driver.getPageSource().contains("Failed to refresh token"));
+        assertTrue(jsConsoleExamplePage.getOutputText().contains("Failed to refresh token"));
 
         jsConsoleExamplePage.logIn();
         testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
-        assertTrue(driver.getPageSource().contains("Auth Success"));
+        jsConsoleExamplePage.init();
+        assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Success"));
 
         jsConsoleExamplePage.refreshToken();
-        assertTrue(driver.getPageSource().contains("Auth Refresh Success"));
+        assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Refresh Success"));
     }
 
     @Test
     public void testRefreshTokenIfUnder30s() {
         jsConsoleExamplePage.navigateTo();
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
-
+        jsConsoleExamplePage.init();
         jsConsoleExamplePage.refreshToken();
-        assertTrue(driver.getPageSource().contains("Failed to refresh token"));
+        assertTrue(jsConsoleExamplePage.getOutputText().contains("Failed to refresh token"));
 
         jsConsoleExamplePage.logIn();
         testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
-        assertTrue(driver.getPageSource().contains("Auth Success"));
+        jsConsoleExamplePage.init();
+        assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Success"));
 
         jsConsoleExamplePage.refreshTokenIfUnder30s();
-        assertTrue(driver.getPageSource().contains("Token not refreshed, valid for"));
+        assertTrue(jsConsoleExamplePage.getOutputText().contains("Token not refreshed, valid for"));
 
         pause((TOKEN_LIFESPAN_LEEWAY + 2) * 1000);
 
         jsConsoleExamplePage.refreshTokenIfUnder30s();
-        assertTrue(driver.getPageSource().contains("Auth Refresh Success"));
+        assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Refresh Success"));
     }
 
     @Test
@@ -159,17 +166,18 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         jsConsoleExamplePage.navigateTo();
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
 
+        jsConsoleExamplePage.init();
         jsConsoleExamplePage.getProfile();
-        assertTrue(driver.getPageSource().contains("Failed to load profile"));
+        assertTrue(jsConsoleExamplePage.getOutputText().contains("Failed to load profile"));
 
         jsConsoleExamplePage.logIn();
         testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
-        assertTrue(driver.getPageSource().contains("Auth Success"));
+        jsConsoleExamplePage.init();
+        assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Success"));
 
         jsConsoleExamplePage.getProfile();
-        assertTrue(driver.getPageSource().contains("Failed to load profile"));
-        assertTrue(driver.getPageSource().contains("\"username\": \"user\""));
+        assertTrue(jsConsoleExamplePage.getOutputText().contains("\"username\": \"user\""));
     }
 
     @Test
@@ -194,6 +202,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         testRealmResource().update(realm);
 
         jsConsoleExamplePage.navigateTo();
+        jsConsoleExamplePage.init();
         jsConsoleExamplePage.logIn();
 
         testRealmLoginPage.form().login("user", "password");
@@ -201,12 +210,14 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue(oAuthGrantPage.isCurrent());
         oAuthGrantPage.accept();
 
-        assertTrue(driver.getPageSource().contains("Init Success (Authenticated)"));
+        jsConsoleExamplePage.init();
+        assertTrue(jsConsoleExamplePage.getOutputText().contains("Init Success (Authenticated)"));
 
         applicationsPage.navigateTo();
         applicationsPage.revokeGrantForApplication("js-console");
 
         jsConsoleExamplePage.navigateTo();
+        jsConsoleExamplePage.init();
         jsConsoleExamplePage.logIn();
 
         assertTrue(oAuthGrantPage.isCurrent());
@@ -223,7 +234,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         resultList.get(0).findElement(By.xpath(".//td[text()='REVOKE_GRANT']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='account']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1']"));
+        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='revoked_client']/../td[text()='js-console']"));
 
         loginEventsPage.table().reset();
@@ -235,9 +246,87 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         resultList.get(0).findElement(By.xpath(".//td[text()='LOGIN']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='js-console']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1']"));
+        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='username']/../td[text()='user']"));
         resultList.get(0).findElement(By.xpath(".//td[text()='consent']/../td[text()='consent_granted']"));
+    }
+
+
+    @Test
+    public void implicitFlowTest() {
+        jsConsoleExamplePage.navigateTo();
+        jsConsoleExamplePage.setFlow("implicit");
+        jsConsoleExamplePage.init();
+
+        jsConsoleExamplePage.logIn();
+        assertTrue(driver.getPageSource().contains("Implicit flow is disabled for the client"));
+
+        setImplicitFlowFroClient();
+
+        jsConsoleExamplePage.navigateTo();
+        jsConsoleExamplePage.init();
+        jsConsoleExamplePage.logIn();
+        assertTrue(driver.getPageSource().contains("Standard flow is disabled for the client"));
+
+        logInAndInit("implicit");
+
+        assertTrue(jsConsoleExamplePage.getOutputText().contains("Init Success (Authenticated)"));
+    }
+
+    @Test
+    public void implicitFlowQueryTest() {
+        setImplicitFlowFroClient();
+
+        jsConsoleExamplePage.navigateTo();
+        jsConsoleExamplePage.setFlow("implicit");
+        jsConsoleExamplePage.setResponseMode("query");
+        jsConsoleExamplePage.init();
+        jsConsoleExamplePage.logIn();
+        assertTrue(driver.getPageSource().contains("Invalid parameter: response_mode"));
+    }
+
+    @Test
+    public void implicitFlowRefreshTokenTest() {
+        setImplicitFlowFroClient();
+
+        logInAndInit("implicit");
+
+        jsConsoleExamplePage.refreshToken();
+
+        assertTrue(jsConsoleExamplePage.getOutputText().contains("Failed to refresh token"));
+    }
+
+    @Test
+    public void implicitFlowOnTokenExpireTest() {
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        realm.setAccessTokenLifespanForImplicitFlow(5);
+        testRealmResource().update(realm);
+
+        setImplicitFlowFroClient();
+
+        logInAndInit("implicit");
+
+        pause(5000);
+
+        assertTrue(jsConsoleExamplePage.getEventsText().contains("Access token expired"));
+    }
+
+    private void setImplicitFlowFroClient() {
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "js-console");
+        ClientRepresentation client = clientResource.toRepresentation();
+        client.setImplicitFlowEnabled(true);
+        client.setStandardFlowEnabled(false);
+        clientResource.update(client);
+    }
+
+    private void logInAndInit(String flow) {
+        jsConsoleExamplePage.navigateTo();
+        jsConsoleExamplePage.setFlow(flow);
+        jsConsoleExamplePage.init();
+        jsConsoleExamplePage.logIn();
+        testRealmLoginPage.form().login("user", "password");
+        jsConsoleExamplePage.setFlow(flow);
+        jsConsoleExamplePage.init();
     }
 
 }
