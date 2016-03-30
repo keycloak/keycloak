@@ -1829,11 +1829,28 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 
     $scope.removeFlow = function() {
         console.log('Remove flow:' + $scope.flow.alias);
-        AuthenticationFlows.remove({realm: realm.realm, flow: $scope.flow.id}, function() {
-            $location.url("/realms/" + realm.realm + '/authentication/flows');
-            Notifications.success("Flow removed");
+        if (realm.browserFlow == $scope.flow.alias) {
+            Notifications.error("Cannot remove flow, it is currently being used as the browser flow.");
 
-        })
+        }  else if (realm.registrationFlow == $scope.flow.alias) {
+            Notifications.error("Cannot remove flow, it is currently being used as the registration flow.");
+
+        } else if (realm.directGrantFlow == $scope.flow.alias) {
+            Notifications.error("Cannot remove flow, it is currently being used as the direct grant flow.");
+
+        } else if (realm.resetCredentialsFlow == $scope.flow.alias) {
+            Notifications.error("Cannot remove flow, it is currently being used as the reset credentials flow.");
+
+        } else if (realm.clientAuthenticationFlow == $scope.flow.alias) {
+            Notifications.error("Cannot remove flow, it is currently being used as the client authentication flow.");
+
+        } else {
+            AuthenticationFlows.remove({realm: realm.realm, flow: $scope.flow.id}, function () {
+                $location.url("/realms/" + realm.realm + '/authentication/flows');
+                Notifications.success("Flow removed");
+
+            })
+        }
 
     };
 
