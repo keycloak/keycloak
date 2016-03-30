@@ -1,6 +1,9 @@
-# Keycloak Arquillian Integration TestSuite - Test Servers
+# Keycloak Arquillian Integration TestSuite - Test Servers - App Servers
 
-[Up...](../README.md)
+- [Keycloak Arquillian Integration TestSuite](../../README.md)
+- [Keycloak Arquillian Integration TestSuite - Test Servers](../README.md)
+- [Keycloak Arquillian Integration TestSuite - Test Servers - Auth Server](../auth-server/README.md)
+- Keycloak Arquillian Integration TestSuite - Test Servers - App Servers
 
 ## App Server - JBoss
 
