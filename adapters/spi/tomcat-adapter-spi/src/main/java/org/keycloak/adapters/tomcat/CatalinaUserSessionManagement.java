@@ -71,9 +71,9 @@ public class CatalinaUserSessionManagement implements SessionListener {
 
     protected void logoutSession(Session session) {
         try {
-            session.expire();
+            if (session != null) session.expire();
         } catch (Exception e) {
-            log.warn("Session not present or already invalidated.", e);
+            log.debug("Session not present or already invalidated.", e);
         }
     }
 
