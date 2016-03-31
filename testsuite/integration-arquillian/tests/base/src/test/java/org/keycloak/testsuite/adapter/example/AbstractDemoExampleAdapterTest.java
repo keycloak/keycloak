@@ -344,16 +344,8 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
         String serverLogPath = null;
 
-        if (System.getProperty("app.server.wildfly", "false").equals("true")) {
-            serverLogPath = System.getProperty("app.server.wildfly.home") + "/standalone/log/server.log";
-        }
-
-        if (System.getProperty("app.server.eap6", "false").equals("true")) {
-            serverLogPath = System.getProperty("app.server.eap6.home") + "/standalone/log/server.log";
-        }
-
-        if (System.getProperty("app.server.eap7", "false").equals("true")) {
-            serverLogPath = System.getProperty("app.server.eap7.home") + "/standalone/log/server.log";
+        if (System.getProperty("app.server").equals("wildfly") || System.getProperty("app.server").equals("eap6") || System.getProperty("app.server").equals("eap")) {
+            serverLogPath = System.getProperty("app.server.home") + "/standalone/log/server.log";
         }
 
         String appServerUrl;
@@ -364,6 +356,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
         }
 
         if (serverLogPath != null) {
+            log.info("Checking app server log at: " + serverLogPath);
             File serverLog = new File(serverLogPath);
             String serverLogContent = FileUtils.readFileToString(serverLog);
             UserRepresentation bburke = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com");
@@ -373,6 +366,8 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
             assertTrue(matcher.find());
             assertTrue(serverLogContent.contains("User '" + bburke.getId() + "' invoking '" + appServerUrl + "database/customers' on client 'database-service'"));
+        } else {
+            log.info("Checking app server log on app-server: \"" + System.getProperty("app.server") + "\" is not supported.");
         }
     }
 }
