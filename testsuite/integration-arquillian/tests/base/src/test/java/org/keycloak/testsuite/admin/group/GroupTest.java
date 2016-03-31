@@ -74,6 +74,36 @@ public class GroupTest extends AbstractGroupTest {
         clients.add(client);
     }
 
+    /**
+     * KEYCLOAK-2716
+     * @throws Exception
+     */
+    @Test
+    public void testClientRemoveWithClientRoleGroupMapping() throws Exception {
+        RealmResource realm = adminClient.realms().realm("test");
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("foo");
+        client.setRootUrl("http://foo");
+        client.setProtocol("openid-connect");
+        Response response = realm.clients().create(client);
+        response.close();
+        client = realm.clients().findByClientId("foo").get(0);
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName("foo-role");
+        realm.clients().get(client.getId()).roles().create(role);
+        role = realm.clients().get(client.getId()).roles().get("foo-role").toRepresentation();
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("2716");
+        realm.groups().add(group).close();
+        group = realm.getGroupByPath("/2716");
+        List<RoleRepresentation> list = new LinkedList<>();
+        list.add(role);
+        realm.groups().group(group.getId()).roles().clientLevel(client.getId()).add(list);
+        realm.clients().get(client.getId()).remove();
+
+    }
+
+
     @Test
     public void createAndTestGroups() throws Exception {
         RealmResource realm = adminClient.realms().realm("test");

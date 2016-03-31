@@ -17,7 +17,6 @@
 
 package org.keycloak.models.jpa;
 
-import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
@@ -627,26 +626,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public boolean removeRole(RoleModel roleModel) {
-        if (roleModel == null) {
-            return false;
-        }
-        if (!roleModel.getContainer().equals(this)) return false;
-
-        session.users().preRemove(getRealm(), roleModel);
-        RoleEntity role = RoleAdapter.toRoleEntity(roleModel, em);
-        if (!role.isClientRole()) return false;
-
-        entity.getDefaultRoles().remove(role);
-        String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
-        em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", role).executeUpdate();
-        em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", role).executeUpdate();
-        em.createNamedQuery("deleteTemplateScopeMappingByRole").setParameter("role", role).executeUpdate();
-        role.setClient(null);
-        em.flush();
-        em.remove(role);
-        em.flush();
-
-        return true;
+        return session.realms().removeRole(realm, roleModel);
     }
 
     @Override
