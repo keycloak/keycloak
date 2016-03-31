@@ -20,6 +20,10 @@ Optional parameters:
 * `many.users.batch` - Measurement batch size. Default: *1000*.
 * `many.users.reimport` - Switch for phases 2 and 3. Default: *false*.
 * `many.users.minTokenValidity` - Minimum validity of admin-client's access token. Default: *10000*. (ms)
+* `many.users.read.after.create` - If true, then additional request to read user is send always after the user is created. Default: *false*
+* `many.users.create.objects` - If true, then some additional objects will be added to each user (2 attributes, password credential, 2 group mappings, 1 required action) Default: *false*
+* `many.users.create.social.links` - If true, then one social (identityProvider) link will be added to each user and then later read. Default: *false*
+* `keycloak.connectionsJpa.globalStatsInterval` - Interval in seconds to log Hibernate statistics into log. Default: *-1* (which means statistics are disabled) 
 
 
 ### With MySQL

@@ -4,12 +4,29 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.ws.rs.core.Response;
+
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.authentication.requiredactions.UpdatePassword;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.Timer;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -25,6 +42,16 @@ public class ManyUsersTest extends AbstractUserTest {
 
     private static final int COUNT = Integer.parseInt(System.getProperty("many.users.count", "10000"));
     private static final int BATCH = Integer.parseInt(System.getProperty("many.users.batch", "1000"));
+
+    // When true, then it will always send another request to GET user after he is created (this trigger some DB queries and cache user on Keycloak side)
+    private static final boolean READ_USER_AFTER_CREATE = Boolean.parseBoolean(System.getProperty("many.users.read.after.create", "false"));
+
+    // When true, then each user will be updated with password, 2 additional attributes, 2 default groups and some required action
+    private static final boolean CREATE_OBJECTS = Boolean.parseBoolean(System.getProperty("many.users.create.objects", "false"));
+
+    // When true, then each user will be updated with 2 federated identity links
+    private static final boolean CREATE_SOCIAL_LINKS = Boolean.parseBoolean(System.getProperty("many.users.create.social.links", "false"));
+
     private static final boolean REIMPORT = Boolean.parseBoolean(System.getProperty("many.users.reimport", "false"));
 
     private static final String REALM = "realm_with_many_users";
@@ -60,23 +87,88 @@ public class ManyUsersTest extends AbstractUserTest {
 
     @Before
     public void before() {
+        log.infof("Reading users after create is %s", READ_USER_AFTER_CREATE ? "ENABLED" : "DISABLED");
+
         users = new LinkedList<>();
         for (int i = 0; i < COUNT; i++) {
             users.add(createUserRep("user" + i));
         }
 
         realmTimer.reset("create realm before test");
-        RealmRepresentation realm = new RealmRepresentation();
-        realm.setRealm(REALM);
-        realmsResouce().create(realm);
+        createRealm(REALM);
+
+        if (CREATE_OBJECTS) {
+
+            // Assuming default groups and required action already created
+            if (realmResource().getDefaultGroups().size() == 0) {
+                log.infof("Creating default groups 'group1' and 'group2'.");
+                setDefaultGroup("group1");
+                setDefaultGroup("group2");
+
+                RequiredActionProviderRepresentation updatePassword = realmResource().flows().getRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+                updatePassword.setDefaultAction(true);
+                realmResource().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePassword);
+            }
+        }
 
         refreshToken();
     }
+
+    private void setDefaultGroup(String groupName) {
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName(groupName);
+        Response resp = realmResource().groups().add(group);
+        String groupId = ApiUtil.getCreatedId(resp);
+        resp.close();
+        realmResource().addDefaultGroup(groupId);
+    }
+
+
 
     @After
     public void after() {
         realmTimer.clearStats(true, true, false);
         usersTimer.clearStats();
+    }
+
+
+    @Override
+    public UserRepresentation createUser(UsersResource users, UserRepresentation user) {
+        // Add some additional attributes to user
+        if (CREATE_OBJECTS) {
+            Map<String, Object> attrs = new HashMap<>();
+            attrs.put("attr1", Collections.singletonList("val1"));
+            attrs.put("attr2", Collections.singletonList("val2"));
+            user.setAttributes(attrs);
+        }
+
+        UserRepresentation userRep = super.createUser(users, user);
+
+        // Add password
+        if (CREATE_OBJECTS) {
+            CredentialRepresentation password = new CredentialRepresentation();
+            password.setType(CredentialRepresentation.PASSWORD);
+            password.setValue("password");
+            password.setTemporary(false);
+            users.get(userRep.getId()).resetPassword(password);
+        }
+
+        // Add social link
+        if (CREATE_SOCIAL_LINKS) {
+            createSocialLink("facebook", users, userRep.getId());
+        }
+
+        return userRep;
+    }
+
+    private void createSocialLink(String provider, UsersResource users, String userId) {
+        String uuid = UUID.randomUUID().toString();
+
+        FederatedIdentityRepresentation link = new FederatedIdentityRepresentation();
+        link.setIdentityProvider(provider);
+        link.setUserId(uuid);
+        link.setUserName(uuid);
+        users.get(userId).addFederatedIdentity(provider, link);
     }
 
     @Test
@@ -90,7 +182,19 @@ public class ManyUsersTest extends AbstractUserTest {
         int i = 0;
         for (UserRepresentation user : users) {
             refreshTokenIfMinValidityExpired();
-            createUser(realmResource().users(), user);
+            UserRepresentation createdUser = createUser(realmResource().users(), user);
+
+            // Send additional request to read every user after he is created
+            if (READ_USER_AFTER_CREATE) {
+                UserRepresentation returned = realmResource().users().get(createdUser.getId()).toRepresentation();
+                Assert.assertEquals(returned.getId(), createdUser.getId());
+            }
+
+            // Send additional request to read social links of user
+            if (CREATE_SOCIAL_LINKS) {
+                List<FederatedIdentityRepresentation> fedIdentities = realmResource().users().get(createdUser.getId()).getFederatedIdentity();
+            }
+
             if (++i % BATCH == 0) {
                 usersTimer.reset();
                 log.info("Created users: " + i + " / " + users.size());
