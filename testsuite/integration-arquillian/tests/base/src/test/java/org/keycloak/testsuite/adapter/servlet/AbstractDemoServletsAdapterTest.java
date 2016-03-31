@@ -25,7 +25,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Version;
-import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.VersionRepresentation;
@@ -49,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  *
@@ -226,7 +226,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         demoRealmRep.setSsoSessionIdleTimeout(1);
         testRealmResource().update(demoRealmRep);
 
-//		Thread.sleep(2000);
+		pause(2000);
+
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
@@ -253,16 +254,16 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         demoRealmRep.setSsoSessionIdleTimeout(1);
         testRealmResource().update(demoRealmRep);
 
-        Time.setOffset(2);
+        pause(2000);
 
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
         // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
         demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
+        testRealmResource().update(demoRealmRep);
         // note: sessions invalidated after each test, see: AbstractKeycloakTest.afterAbstractKeycloakTest()
 
-        Time.setOffset(0);
     }
 
     @Test
