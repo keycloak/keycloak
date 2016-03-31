@@ -1154,6 +1154,19 @@ module.controller('UserFederationMapperCreateCtrl', function($scope, realm, prov
 
 });
 
+function removeGroupMember(groups, member) {
+    for (var j = 0; j < groups.length; j++) {
+        //console.log('checking: ' + groups[j].path);
+        if (member.path == groups[j].path) {
+            groups.splice(j, 1);
+            break;
+        }
+        if (groups[j].subGroups && groups[j].subGroups.length > 0) {
+            //console.log('going into subgroups');
+            removeGroupMember(groups[j].subGroups, member);
+        }
+    }
+}
 module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, groups, user, UserGroupMembership, UserGroupMapping, Notifications, $location, Dialog) {
     $scope.realm = realm;
     $scope.user = user;
@@ -1163,8 +1176,14 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
 
     UserGroupMembership.query({realm: realm.realm, userId: user.id}, function(data) {
         $scope.groupMemberships = data;
+        for (var i = 0; i < data.length; i++) {
+            var member = data[i];
+            removeGroupMember(groups, member);
+        }
 
     });
+
+
 
     $scope.joinGroup = function() {
         if (!$scope.tree.currentNode) {
@@ -1179,6 +1198,10 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
     };
 
     $scope.leaveGroup = function() {
+        if (!$scope.selectedGroup) {
+            return;
+
+        }
         UserGroupMapping.remove({realm: realm.realm, userId: user.id, groupId: $scope.selectedGroup.id}, function() {
             Notifications.success('Removed group membership');
             $route.reload();
@@ -1219,5 +1242,4 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
     }
 
 });
-
 
