@@ -24,5 +24,39 @@
             <column name="EMAIL" type="VARCHAR(255)"/>
         </createIndex>
 
+        <!-- Indexes for foreign keys are available by default on some RDBMS (for example MySQL) but not on some others (for example PostgreSQL), so explicitly creating them here -->
+        <createIndex indexName="IDX_USER_ROLE_MAPPING" tableName="USER_ROLE_MAPPING">
+            <column name="USER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_USER_GROUP_MAPPING" tableName="USER_GROUP_MEMBERSHIP">
+            <column name="USER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_USER_CONSENT" tableName="USER_CONSENT">
+            <column name="USER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_CONSENT_PROTMAPPER" tableName="USER_CONSENT_PROT_MAPPER">
+            <column name="USER_CONSENT_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_CONSENT_ROLE" tableName="USER_CONSENT_ROLE">
+            <column name="USER_CONSENT_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+        <createIndex indexName="IDX_USER_ATTRIBUTE" tableName="USER_ATTRIBUTE">
+            <column name="USER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_USER_CREDENTIAL" tableName="CREDENTIAL">
+            <column name="USER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_USER_REQACTIONS" tableName="USER_REQUIRED_ACTION">
+            <column name="USER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+        <createIndex indexName="IDX_FEDIDENTITY_USER" tableName="FEDERATED_IDENTITY">
+            <column name="USER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_FEDIDENTITY_FEDUSER" tableName="FEDERATED_IDENTITY">
+            <column name="FEDERATED_USER_ID" type="VARCHAR(255)"/>
+        </createIndex>
+
     </changeSet>
 </databaseChangeLog>
