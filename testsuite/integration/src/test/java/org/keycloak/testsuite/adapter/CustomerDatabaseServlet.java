@@ -36,6 +36,9 @@ public class CustomerDatabaseServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // test that bearer token auth never has an HTTP session created
+        Assert.assertNull(req.getSession(false));
+
         resp.setContentType("text/html");
         PrintWriter pw = resp.getWriter();
         Principal principal = req.getUserPrincipal();
