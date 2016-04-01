@@ -333,8 +333,7 @@ bin/add-user-keycloak.[sh|bat] -r master -u <username> -p <password>
         "host": "127.0.0.1",
         "port": "27017",
         "db": "keycloak",
-        "connectionsPerHost": 100,
-        "databaseSchema": "update"
+        "connectionsPerHost": 100
     }
 }
 ]]></programlisting>

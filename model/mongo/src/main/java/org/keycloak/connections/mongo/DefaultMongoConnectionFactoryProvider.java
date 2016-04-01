@@ -156,20 +156,13 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
     }
 
     private void update(KeycloakSession session) {
-        String databaseSchema = config.get("databaseSchema");
-        if (databaseSchema != null) {
-            if (databaseSchema.equals("update")) {
-                MongoUpdaterProvider mongoUpdater = session.getProvider(MongoUpdaterProvider.class);
+        MongoUpdaterProvider mongoUpdater = session.getProvider(MongoUpdaterProvider.class);
 
-                if (mongoUpdater == null) {
-                    throw new RuntimeException("Can't update database: Mongo updater provider not found");
-                }
-
-                mongoUpdater.update(session, db);
-            } else {
-                throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
-            }
+        if (mongoUpdater == null) {
+            throw new RuntimeException("Can't update database: Mongo updater provider not found");
         }
+
+        mongoUpdater.update(session, db);
     }
 
 
