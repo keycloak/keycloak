@@ -232,7 +232,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
             if (kcUser == null) {
                 logger.warnf("User '%s' referenced by membership wasn't found in LDAP", username);
             } else if (!model.getId().equals(kcUser.getFederationLink())) {
-                logger.warnf("Incorrect federation provider of user %s" + kcUser.getUsername());
+                logger.warnf("Incorrect federation provider of user '%s'", kcUser.getUsername());
             } else {
                 result.add(kcUser);
             }
