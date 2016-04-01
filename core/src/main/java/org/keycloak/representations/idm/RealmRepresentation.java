@@ -121,6 +121,8 @@ public class RealmRepresentation {
     protected String resetCredentialsFlow;
     protected String clientAuthenticationFlow;
 
+    protected String keycloakVersion;
+
     @Deprecated
     protected Boolean social;
     @Deprecated
@@ -812,6 +814,14 @@ public class RealmRepresentation {
 
     public void setClientAuthenticationFlow(String clientAuthenticationFlow) {
         this.clientAuthenticationFlow = clientAuthenticationFlow;
+    }
+
+    public String getKeycloakVersion() {
+        return keycloakVersion;
+    }
+
+    public void setKeycloakVersion(String keycloakVersion) {
+        this.keycloakVersion = keycloakVersion;
     }
 
     public List<GroupRepresentation> getGroups() {
