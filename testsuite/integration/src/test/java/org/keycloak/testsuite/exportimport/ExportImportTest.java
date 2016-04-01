@@ -166,8 +166,8 @@ public class ExportImportTest {
 
         testFullExportImport();
 
-        // There should be 6 files in target directory (3 realm, 3 user, 1 version)
-        Assert.assertEquals(7, new File(targetDirPath).listFiles().length);
+        // There should be 6 files in target directory (3 realm, 3 user)
+        Assert.assertEquals(6, new File(targetDirPath).listFiles().length);
     }
 
     @Test
@@ -180,9 +180,9 @@ public class ExportImportTest {
 
         testRealmExportImport();
 
-        // There should be 3 files in target directory (1 realm, 3 user, 1 version)
+        // There should be 3 files in target directory (1 realm, 3 user)
         File[] files = new File(targetDirPath).listFiles();
-        Assert.assertEquals(5, files.length);
+        Assert.assertEquals(4, files.length);
     }
 
     @Test

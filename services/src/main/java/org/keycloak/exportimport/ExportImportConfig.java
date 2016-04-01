@@ -28,26 +28,24 @@ public class ExportImportConfig {
     public static final String ACTION_IMPORT = "import";
 
     public static final String PROVIDER = PREFIX + "provider";
-    public static final String PROVIDER_DEFAULT = "zip";
+    public static final String PROVIDER_DEFAULT = "dir";
 
     // Name of the realm to export. If null, then full export will be triggered
     public static final String REALM_NAME = PREFIX + "realmName";
 
     // used for "dir" provider
     public static final String DIR = PREFIX + "dir";
-    // used for "zip" provider
-    public static final String ZIP_FILE = PREFIX + "zipFile";
-    public static final String ZIP_PASSWORD = PREFIX + "zipPassword";
+
     // used for "singleFile" provider
     public static final String FILE = PREFIX + "file";
 
-    // How to export users when realm export is requested for "dir" and "zip" provider
+    // How to export users when realm export is requested for "dir" provider
     public static final String USERS_EXPORT_STRATEGY = PREFIX + "usersExportStrategy";
     public static final UsersExportStrategy DEFAULT_USERS_EXPORT_STRATEGY = UsersExportStrategy.DIFFERENT_FILES;
 
-    // Number of users per file used in "dir" and "zip" providers. Used if usersExportStrategy is DIFFERENT_FILES
+    // Number of users per file used in "dir" provider. Used if usersExportStrategy is DIFFERENT_FILES
     public static final String USERS_PER_FILE = PREFIX + "usersPerFile";
-    public static final Integer DEFAULT_USERS_PER_FILE = 5000;
+    public static final Integer DEFAULT_USERS_PER_FILE = 50;
 
     // Strategy used during import data
     public static final String STRATEGY = PREFIX + "strategy";
@@ -87,22 +85,6 @@ public class ExportImportConfig {
 
     public static String setDir(String dir) {
         return System.setProperty(DIR, dir);
-    }
-
-    public static String getZipFile() {
-        return System.getProperty(ZIP_FILE);
-    }
-
-    public static void setZipFile(String exportImportZipFile) {
-        System.setProperty(ZIP_FILE, exportImportZipFile);
-    }
-
-    public static String getZipPassword() {
-        return System.getProperty(ZIP_PASSWORD);
-    }
-
-    public static void setZipPassword(String exportImportZipPassword) {
-        System.setProperty(ZIP_PASSWORD, exportImportZipPassword);
     }
 
     public static String getFile() {
