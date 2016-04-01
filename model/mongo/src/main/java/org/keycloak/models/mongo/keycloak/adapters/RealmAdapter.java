@@ -32,6 +32,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -1558,6 +1559,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void removeAuthenticationFlow(AuthenticationFlowModel model) {
+        if (KeycloakModelUtils.isFlowUsed(this, model)) {
+            throw new ModelException("Cannot remove authentication flow, it is currently in use");
+        }
         AuthenticationFlowEntity toDelete = getFlowEntity(model.getId());
         if (toDelete == null) return;
         getMongoEntity().getAuthenticationFlows().remove(toDelete);
@@ -2032,6 +2036,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         ClientTemplateModel client = getClientTemplateById(id);
         if (client == null) return false;
 
+        if (KeycloakModelUtils.isClientTemplateUsed(this, client)) {
+            throw new ModelException("Cannot remove client template, it is currently in use");
+        }
 
         return getMongoStore().removeEntity(MongoClientTemplateEntity.class, id, invocationContext);
     }
