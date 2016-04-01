@@ -31,7 +31,8 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.CONFIDENTIAL;
+import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
+import static org.keycloak.testsuite.console.clients.AbstractClientTest.createClientRep;
 import org.keycloak.testsuite.console.page.clients.mappers.ClientMapper;
 import org.keycloak.testsuite.console.page.clients.mappers.ClientMappers;
 import org.keycloak.testsuite.console.page.clients.mappers.CreateClientMappers;
@@ -55,7 +56,7 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
     
     @Before
     public void beforeClientMappersTest() {
-        ClientRepresentation newClient = createOidcClientRep(CONFIDENTIAL, TEST_CLIENT_ID, TEST_REDIRECT_URIS);
+        ClientRepresentation newClient = createClientRep(TEST_CLIENT_ID, OIDC);
         testRealmResource().clients().create(newClient).close();
         
         id = findClientByClientId(TEST_CLIENT_ID).getId();
