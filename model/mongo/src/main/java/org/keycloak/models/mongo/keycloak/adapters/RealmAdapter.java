@@ -19,9 +19,8 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
-
-import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -32,6 +31,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -53,7 +53,6 @@ import org.keycloak.models.entities.UserFederationMapperEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientTemplateEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoGroupEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -1558,6 +1557,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void removeAuthenticationFlow(AuthenticationFlowModel model) {
+        if (KeycloakModelUtils.isFlowUsed(this, model)) {
+            throw new ModelException("Cannot remove authentication flow, it is currently in use");
+        }
         AuthenticationFlowEntity toDelete = getFlowEntity(model.getId());
         if (toDelete == null) return;
         getMongoEntity().getAuthenticationFlows().remove(toDelete);
@@ -2032,6 +2034,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         ClientTemplateModel client = getClientTemplateById(id);
         if (client == null) return false;
 
+        if (KeycloakModelUtils.isClientTemplateUsed(this, client)) {
+            throw new ModelException("Cannot remove client template, it is currently in use");
+        }
 
         return getMongoStore().removeEntity(MongoClientTemplateEntity.class, id, invocationContext);
     }
