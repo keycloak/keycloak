@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
+import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
@@ -109,6 +110,9 @@ public class LDAPGroupMapperTest {
 
             LDAPObject rob = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "robkeycloak", "Rob", "Brown", "rob@email.org", null, "8910");
             FederationTestUtils.updateLDAPPassword(ldapFedProvider, rob, "Password1");
+
+            LDAPObject james = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "jameskeycloak", "James", "Brown", "james@email.org", null, "8910");
+            FederationTestUtils.updateLDAPPassword(ldapFedProvider, james, "Password1");
 
         }
     });
@@ -309,6 +313,12 @@ public class LDAPGroupMapperTest {
     public void test04_groupReferencingNonExistentMember() {
         KeycloakSession session = keycloakRule.startSession();
         try {
+            // Ignoring this test on ActiveDirectory as it's not allowed to have LDAP group referencing nonexistent member. KEYCLOAK-2682 was related to OpenLDAP TODO: Better solution than programmatic...
+            LDAPConfig config = FederationTestUtils.getLdapProvider(session, ldapModel).getLdapIdentityStore().getConfig();
+            if (config.isActiveDirectory()) {
+                return;
+            }
+
             RealmModel appRealm = session.realms().getRealmByName("test");
 
             UserFederationMapperModel mapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "groupsMapper");
@@ -321,12 +331,12 @@ public class LDAPGroupMapperTest {
             LDAPObject group2 = FederationTestUtils.createLDAPGroup(session, appRealm, ldapModel, "group2", descriptionAttrName, "group2 - description");
 
             // 2 - Add one existing user rob to LDAP group
-            LDAPObject robLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "robkeycloak");
-            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, group2, robLdap, false);
+            LDAPObject jamesLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "jameskeycloak");
+            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, group2, jamesLdap, false);
 
             // 3 - Add non-existing user to LDAP group
             LDAPDn nonExistentDn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getUsersDn());
-            nonExistentDn.addFirst(robLdap.getRdnAttributeName(), "nonexistent");
+            nonExistentDn.addFirst(jamesLdap.getRdnAttributeName(), "nonexistent");
             LDAPObject nonExistentLdapUser = new LDAPObject();
             nonExistentLdapUser.setDn(nonExistentDn);
             LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, group2, nonExistentLdapUser, true);
@@ -337,7 +347,7 @@ public class LDAPGroupMapperTest {
             List<UserModel> groupUsers = session.users().getGroupMembers(appRealm, kcGroup2, 0, 5);
             Assert.assertEquals(1, groupUsers.size());
             UserModel rob = groupUsers.get(0);
-            Assert.assertEquals("robkeycloak", rob.getUsername());
+            Assert.assertEquals("jameskeycloak", rob.getUsername());
 
         } finally {
             keycloakRule.stopSession(session, false);

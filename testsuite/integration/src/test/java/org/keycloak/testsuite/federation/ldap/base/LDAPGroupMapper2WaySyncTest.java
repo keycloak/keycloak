@@ -21,8 +21,10 @@ import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.mappers.membership.LDAPGroupMapperMode;
@@ -45,6 +47,7 @@ import org.keycloak.testsuite.rule.LDAPRule;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LDAPGroupMapper2WaySyncTest {
 
     @ClassRule
