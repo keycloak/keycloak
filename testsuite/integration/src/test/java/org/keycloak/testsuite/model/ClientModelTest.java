@@ -21,6 +21,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -99,6 +101,24 @@ public class ClientModelTest extends AbstractModelTest {
         commit();
         client = realmManager.getRealm(realm.getId()).getClientById("app-123");
         Assert.assertNotNull(client);
+    }
+
+    @Test
+    public void testCannotRemoveBoundClientTemplate() {
+        ClientModel client = realm.addClient("templatized");
+        ClientTemplateModel template = realm.addClientTemplate("template");
+        client.setClientTemplate(template);
+        commit();
+        realm = realmManager.getRealmByName("original");
+        try {
+            realm.removeClientTemplate(template.getId());
+            Assert.fail();
+        } catch (ModelException e) {
+
+        }
+        realm.removeClient(client.getId());
+        realm.removeClientTemplate(template.getId());
+        commit();
     }
 
 
