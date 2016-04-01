@@ -49,12 +49,12 @@ public class ExportImportManager {
         if (ExportImportConfig.ACTION_EXPORT.equals(exportImportAction)) {
             exportProvider = session.getProvider(ExportProvider.class, providerId);
             if (exportProvider == null) {
-                throw new RuntimeException("Export provider not found");
+                throw new RuntimeException("Export provider '" + providerId + "' not found");
             }
         } else if (ExportImportConfig.ACTION_IMPORT.equals(exportImportAction)) {
             importProvider = session.getProvider(ImportProvider.class, providerId);
             if (importProvider == null) {
-                throw new RuntimeException("Import provider not found");
+                throw new RuntimeException("Import provider '" + providerId + "' not found");
             }
         }
     }
