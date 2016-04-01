@@ -1284,7 +1284,15 @@ public class RepresentationToModel {
             if (cred.getDigits() != null) hashedCred.setDigits(cred.getDigits());
 
             if (cred.getAlgorithm() != null) {
-                hashedCred.setAlgorithm(cred.getAlgorithm());
+
+                // Could happen when migrating from some early version
+                if ((UserCredentialModel.PASSWORD.equals(cred.getType()) || UserCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) &&
+                        (cred.getAlgorithm().equals(HmacOTP.HMAC_SHA1))) {
+                    hashedCred.setAlgorithm(Pbkdf2PasswordHashProvider.ID);
+                } else {
+                    hashedCred.setAlgorithm(cred.getAlgorithm());
+                }
+
             } else {
                 if (UserCredentialModel.PASSWORD.equals(cred.getType()) || UserCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) {
                     hashedCred.setAlgorithm(Pbkdf2PasswordHashProvider.ID);
