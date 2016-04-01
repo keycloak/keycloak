@@ -305,6 +305,7 @@ public class FilterSessionStore implements AdapterSessionStore {
 
                 @Override
                 public Principal getUserPrincipal() {
+                    if (account == null) return null;
                     return account.getPrincipal();
                 }
 

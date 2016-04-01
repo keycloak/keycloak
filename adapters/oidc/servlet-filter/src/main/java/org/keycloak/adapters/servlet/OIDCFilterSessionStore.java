@@ -19,12 +19,12 @@ package org.keycloak.adapters.servlet;
 
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.spi.HttpFacade;
-import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.adapters.spi.SessionIdMapper;
 
 import javax.servlet.http.HttpServletRequest;
@@ -51,10 +51,16 @@ public class OIDCFilterSessionStore extends FilterSessionStore implements Adapte
     }
 
     public HttpServletRequestWrapper buildWrapper() {
-        HttpSession session = request.getSession();
-        KeycloakAccount account = (KeycloakAccount)session.getAttribute(KeycloakAccount.class.getName());
+        HttpSession session = request.getSession(false);
+        KeycloakAccount account = null;
+        if (session != null) {
+            account = (KeycloakAccount) session.getAttribute(KeycloakAccount.class.getName());
+            if (account == null) {
+                account = (KeycloakAccount) request.getAttribute(KeycloakAccount.class.getName());
+            }
+        }
         if (account == null) {
-            account = (KeycloakAccount)request.getAttribute(KeycloakAccount.class.getName());
+            account = (KeycloakAccount) request.getAttribute(KeycloakAccount.class.getName());
         }
         return buildWrapper(session, account);
     }
