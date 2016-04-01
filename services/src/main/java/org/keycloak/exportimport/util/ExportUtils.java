@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -38,6 +39,9 @@ public class ExportUtils {
 
     public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, boolean includeUsers) {
         RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, true);
+
+        // Project/product version
+        rep.setKeycloakVersion(Version.VERSION);
 
         // Client Templates
         List<ClientTemplateModel> templates = realm.getClientTemplates();
