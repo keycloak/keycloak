@@ -17,7 +17,6 @@
 
 package org.keycloak.exportimport.dir;
 
-import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.exportimport.util.MultipleStepsExportProvider;
 import org.keycloak.models.KeycloakSession;
@@ -84,13 +83,6 @@ public class DirExportProvider extends MultipleStepsExportProvider {
         File file = new File(this.rootDirectory, fileName);
         FileOutputStream os = new FileOutputStream(file);
         ExportUtils.exportUsersToStream(session, realm, users, JsonSerialization.prettyMapper, os);
-    }
-
-    @Override
-    protected void writeVersion(String fileName, VersionRepresentation version) throws IOException {
-        File file = new File(this.rootDirectory, fileName);
-        FileOutputStream stream = new FileOutputStream(file);
-        JsonSerialization.prettyMapper.writeValue(stream, version);
     }
 
     @Override
