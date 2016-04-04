@@ -17,11 +17,20 @@
 package org.keycloak.services.resources;
 
 import org.keycloak.Config;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.MimeTypeUtil;
+import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.CookieHelper;
+import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
@@ -35,8 +44,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,13 +68,20 @@ public class WelcomeResource {
 
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
+    private static final String KEYCLOAK_STATE_CHECKER = "KEYCLOAK_STATE_CHECKER";
+
     private boolean bootstrap;
+
+    @Context
+    protected HttpHeaders headers;
 
     @Context
     private UriInfo uriInfo;
 
     @Context
-    protected KeycloakSession session;
+    private KeycloakSession session;
+
+    private String stateChecker;
 
     public WelcomeResource(boolean bootstrap) {
         this.bootstrap = bootstrap;
@@ -98,6 +118,9 @@ public class WelcomeResource {
                 logger.rejectedNonLocalAttemptToCreateInitialUser(session.getContext().getConnection().getRemoteAddr());
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
+
+            String stateChecker = formData.getFirst("stateChecker");
+            csrfCheck(stateChecker);
 
             String username = formData.getFirst("username");
             String password = formData.getFirst("password");
@@ -159,6 +182,9 @@ public class WelcomeResource {
             map.put("bootstrap", bootstrap);
             if (bootstrap) {
                 map.put("localUser", isLocal());
+
+                updateCsrfChecks();
+                map.put("stateChecker", stateChecker);
             }
             if (successMessage != null) {
                 map.put("successMessage", successMessage);
@@ -168,7 +194,12 @@ public class WelcomeResource {
             }
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", getTheme());
-            return Response.status(errorMessage == null ? Response.Status.OK : Response.Status.BAD_REQUEST).entity(result).cacheControl(CacheControlUtil.noCache()).build();
+
+            ResponseBuilder rb = Response.status(errorMessage == null ? Status.OK : Status.BAD_REQUEST)
+                    .entity(result)
+                    .cacheControl(CacheControlUtil.noCache());
+            BrowserSecurityHeaderSetup.headers(rb, BrowserSecurityHeaders.defaultHeaders);
+            return rb.build();
         } catch (Exception e) {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }
@@ -196,6 +227,25 @@ public class WelcomeResource {
             return inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress();
         } catch (UnknownHostException e) {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private void updateCsrfChecks() {
+        RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
+        Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
+        if (cookie != null) {
+            stateChecker = cookie.getValue();
+        } else {
+            stateChecker = KeycloakModelUtils.generateSecret();
+            String cookiePath = uriInfo.getPath();
+            boolean secureOnly = uriInfo.getRequestUri().getScheme().equalsIgnoreCase("https");
+            CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);
+        }
+    }
+
+    private void csrfCheck(String stateChecker) {
+        if (!this.stateChecker.equals(stateChecker)) {
+            throw new ForbiddenException();
         }
     }
 
