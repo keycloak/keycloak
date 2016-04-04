@@ -53,7 +53,7 @@
 ]]></programlisting>
         To specify the location of the keycloak.json file:
 <programlisting><![CDATA[
-var keycloak = Keycloak('http://localhost:8080/myapp/keycloak.json'));
+var keycloak = Keycloak('http://localhost:8080/myapp/keycloak.json');
 ]]></programlisting>
         Or finally to manually configure the adapter:
         <programlisting><![CDATA[
