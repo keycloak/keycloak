@@ -21,6 +21,7 @@ import liquibase.Contexts;
 import liquibase.Liquibase;
 import liquibase.changelog.ChangeSet;
 import liquibase.changelog.RanChangeSet;
+import liquibase.exception.LiquibaseException;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
@@ -96,16 +97,27 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
     @Override
     public void validate(Connection connection, String defaultSchema) {
+        logger.debug("Validating if database is updated");
+
         try {
             Liquibase liquibase = getLiquibase(connection, defaultSchema);
 
-            liquibase.validate();
-        } catch (Exception e) {
+            List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null);
+            if (!changeSets.isEmpty()) {
+                List<RanChangeSet> ranChangeSets = liquibase.getDatabase().getRanChangeSetList();
+                String errorMessage = String.format("Failed to validate database schema. Schema needs updating database from %s to %s. Please change databaseSchema to 'update' or use other database",
+                        ranChangeSets.get(ranChangeSets.size() - 1).getId(), changeSets.get(changeSets.size() - 1).getId());
+                throw new RuntimeException(errorMessage);
+            } else {
+                logger.debug("Validation passed. Database is up-to-date");
+            }
+
+        } catch (LiquibaseException e) {
             throw new RuntimeException("Failed to validate database", e);
         }
     }
 
-    private Liquibase getLiquibase(Connection connection, String defaultSchema) throws Exception {
+    private Liquibase getLiquibase(Connection connection, String defaultSchema) throws LiquibaseException {
         LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
         return liquibaseProvider.getLiquibase(connection, defaultSchema);
     }

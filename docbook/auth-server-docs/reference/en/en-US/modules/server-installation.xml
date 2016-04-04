@@ -186,7 +186,8 @@ bin/add-user-keycloak.[sh|bat] -r master -u <username> -p <password>
                         <term>databaseSchema</term>
                         <listitem>
                             <para>
-                                Specify if schema should be updated or validated. Valid values are "update" and "validate" ("update is default).
+                                Specify if schema should be updated or validated. Valid values are "update" and "validate". Value "update is default and means that DB schema will be updated to latest version.
+                                Value "validate" won't touch database schema, but it will fail to start if schema is not updated to latest version.
                             </para>
                         </listitem>
                     </varlistentry>
