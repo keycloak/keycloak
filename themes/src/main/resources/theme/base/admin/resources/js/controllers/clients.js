@@ -1873,7 +1873,7 @@ module.controller('ClientTemplateProtocolMapperListCtrl', function($scope, realm
 });
 
 module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, serverInfo, template, mapper, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
-
+    $scope.realm = realm;
     if (template.protocol == null) {
         template.protocol = 'openid-connect';
     }
@@ -1940,6 +1940,7 @@ module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, se
 });
 
 module.controller('ClientTemplateProtocolMapperCreateCtrl', function($scope, realm, serverInfo, template, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
+    $scope.realm = realm;
     if (template.protocol == null) {
         template.protocol = 'openid-connect';
     }
