@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.migrated.admin;
 
+import org.keycloak.testsuite.MigratedOAuthClient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -50,7 +51,7 @@ public abstract class AbstractClientTest extends AbstractKeycloakTest  {
 
     protected Keycloak keycloak;
     protected RealmResource realm;
-    protected OAuthClient oauth;
+    protected MigratedOAuthClient oauth;
 
     @Before
     public void setUpKeycloakAlias() {
@@ -59,7 +60,7 @@ public abstract class AbstractClientTest extends AbstractKeycloakTest  {
 
     @Before
     public void setUpOAuthClient() {
-        oauth = new OAuthClient(driver);
+        oauth = new MigratedOAuthClient(driver);
     }
 
     // old testsuite expects this realm to be removed at the end of the test

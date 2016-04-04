@@ -14,14 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.migrated.admin;
+package org.keycloak.testsuite;
 
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class Constants {
+public class MigratedConstants {
 
     public static String SERVER_ROOT = AuthServerTestEnricher.getAuthServerContextRoot();
     public static String AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";

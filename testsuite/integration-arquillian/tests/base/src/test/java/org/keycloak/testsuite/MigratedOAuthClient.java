@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.migrated.admin;
+package org.keycloak.testsuite;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
@@ -56,11 +56,11 @@ import java.util.Map;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class OAuthClient {
+public class MigratedOAuthClient {
 
     private WebDriver driver;
 
-    private String baseUrl = Constants.AUTH_SERVER_ROOT;
+    private String baseUrl = MigratedConstants.AUTH_SERVER_ROOT;
 
     private String realm = "test";
 
@@ -80,7 +80,7 @@ public class OAuthClient {
 
     private String clientSessionHost;
 
-    public OAuthClient(WebDriver driver) {
+    public MigratedOAuthClient(WebDriver driver) {
         this.driver = driver;
 
         try {
@@ -488,46 +488,46 @@ public class OAuthClient {
         return b.build(realm).toString();
     }
 
-    public OAuthClient realm(String realm) {
+    public MigratedOAuthClient realm(String realm) {
         this.realm = realm;
         return this;
     }
-    public OAuthClient realmPublicKey(PublicKey key) {
+    public MigratedOAuthClient realmPublicKey(PublicKey key) {
         this.realmPublicKey = key;
         return this;
     }
 
-    public OAuthClient clientId(String clientId) {
+    public MigratedOAuthClient clientId(String clientId) {
         this.clientId = clientId;
         return this;
     }
 
-    public OAuthClient redirectUri(String redirectUri) {
+    public MigratedOAuthClient redirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
         return this;
     }
 
-    public OAuthClient state(String state) {
+    public MigratedOAuthClient state(String state) {
         this.state = state;
         return this;
     }
 
-    public OAuthClient scope(String scope) {
+    public MigratedOAuthClient scope(String scope) {
         this.scope = scope;
         return this;
     }
 
-    public OAuthClient uiLocales(String uiLocales){
+    public MigratedOAuthClient uiLocales(String uiLocales){
         this.uiLocales = uiLocales;
         return this;
     }
 
-    public OAuthClient clientSessionState(String client_session_state) {
+    public MigratedOAuthClient clientSessionState(String client_session_state) {
         this.clientSessionState = client_session_state;
         return this;
     }
 
-    public OAuthClient clientSessionHost(String client_session_host) {
+    public MigratedOAuthClient clientSessionHost(String client_session_host) {
         this.clientSessionHost = client_session_host;
         return this;
     }
@@ -543,9 +543,7 @@ public class OAuthClient {
         private String state;
         private String error;
 
-        public AuthorizationCodeResponse(OAuthClient client) {
-            String currReq = client.getCurrentRequest();
-            Map<String, String> currQuery = client.getCurrentQuery();
+        public AuthorizationCodeResponse(MigratedOAuthClient client) {
             isRedirected = client.getCurrentRequest().equals(client.getRedirectUri());
             code = client.getCurrentQuery().get(OAuth2Constants.CODE);
             state = client.getCurrentQuery().get(OAuth2Constants.STATE);
