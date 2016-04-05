@@ -63,6 +63,7 @@
         <jboss.logging.tools.wf8.version>1.2.0.Final</jboss.logging.tools.wf8.version>
         <jboss-jaxrs-api_2.0_spec>1.0.0.Final</jboss-jaxrs-api_2.0_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>1.0.4.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>
+        <org.json.version>20080701</org.json.version>
         <log4j.version>1.2.16</log4j.version>
         <resteasy.version>3.0.14.Final</resteasy.version>
         <slf4j.version>1.7.7</slf4j.version>
@@ -257,6 +258,11 @@
                 <groupId>org.jboss.spec.javax.xml.bind</groupId>
                 <artifactId>jboss-jaxb-api_2.2_spec</artifactId>
                 <version>${jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>${org.json.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
