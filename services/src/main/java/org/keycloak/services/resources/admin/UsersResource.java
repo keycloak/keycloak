@@ -681,6 +681,16 @@ public class UsersResource {
         return results;
     }
 
+    @Path("count")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Integer> getUsersCount() {
+        auth.requireView();
+
+        return Collections.singletonMap("count", session.users().getUsersCount(realm));
+    }
+
     @Path("{id}/role-mappings")
     public RoleMapperResource getRoleMappings(@PathParam("id") String id) {
 
