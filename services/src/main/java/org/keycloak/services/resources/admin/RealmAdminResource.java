@@ -64,6 +64,10 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.services.resource.RealmResourceProviderFactory;
+import org.keycloak.services.resource.admin.RealmAdminResourceProvider;
+import org.keycloak.services.resource.admin.RealmAdminResourceProviderFactory;
 import org.keycloak.timer.TimerProvider;
 
 import javax.ws.rs.Consumes;
@@ -788,6 +792,32 @@ public class RealmAdminResource {
         if (cache != null) {
             cache.clear();
         }
+    }
+
+    /**
+     * A JAX-RS sub-resource locator that uses the {@link org.keycloak.services.resource.admin.RealmAdminResourceSPI} to resolve
+     * sub-resources instances given an <code>unknownPath</code>.
+     *
+     * @param unknownPath a path that is unknown to the server
+     * @return a JAX-RS sub-resource instance that maps to the given <code>unknownPath</code>. Otherwise null is returned.
+     */
+    @Path("{unknow_path}")
+    public Object resolveUnknowPath(@PathParam("unknow_path") String unknownPath) {
+        List<ProviderFactory> factory = this.session.getKeycloakSessionFactory().getProviderFactories(RealmAdminResourceProvider.class);
+
+        if (factory != null) {
+            for (ProviderFactory providerFactory : factory) {
+                RealmAdminResourceProviderFactory realmFactory = (RealmAdminResourceProviderFactory) providerFactory;
+                RealmAdminResourceProvider resourceProvider = realmFactory.create(realm, this.session);
+                Object resource = resourceProvider.getResource(unknownPath);
+
+                if (resource != null) {
+                    return resource;
+                }
+            }
+        }
+
+        return null;
     }
 
 }
