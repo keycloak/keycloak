@@ -52,7 +52,7 @@ public class TokenManager {
         return getAccessToken().getToken();
     }
 
-    public AccessTokenResponse getAccessToken(){
+    public synchronized AccessTokenResponse getAccessToken(){
         if(currentToken == null){
             grantToken();
         }else if(tokenExpired()){
@@ -78,9 +78,10 @@ public class TokenManager {
         TokenService tokenService = target.proxy(TokenService.class);
 
         int requestTime = Time.currentTime();
-        currentToken = tokenService.grantToken(config.getRealm(), form.asMap());
-        expirationTime = requestTime + currentToken.getExpiresIn();
-
+        synchronized (this) {
+            currentToken = tokenService.grantToken( config.getRealm(), form.asMap() );
+            expirationTime = requestTime + currentToken.getExpiresIn();
+        }
         return currentToken;
     }
 
@@ -101,20 +102,22 @@ public class TokenManager {
 
         try {
             int requestTime = Time.currentTime();
-            currentToken = tokenService.refreshToken(config.getRealm(), form.asMap());
-            expirationTime = requestTime + currentToken.getExpiresIn();
 
+            synchronized (this) {
+                currentToken = tokenService.refreshToken( config.getRealm(), form.asMap() );
+                expirationTime = requestTime + currentToken.getExpiresIn();
+            }
             return currentToken;
         } catch (BadRequestException e) {
             return grantToken();
         }
     }
 
-    public void setMinTokenValidity(long minTokenValidity) {
+    public synchronized void setMinTokenValidity(long minTokenValidity) {
         this.minTokenValidity = minTokenValidity;
     }
 
-    private boolean tokenExpired() {
+    private synchronized boolean tokenExpired() {
         return (Time.currentTime() + minTokenValidity) >= expirationTime;
     }
 
