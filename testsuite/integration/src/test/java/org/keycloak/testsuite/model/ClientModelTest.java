@@ -46,7 +46,6 @@ public class ClientModelTest extends AbstractModelTest {
     @Override
     public void before() throws Exception {
         super.before();
-        appManager = new ClientManager(realmManager);
 
         realm = realmManager.createRealm("original");
         client = realm.addClient("application");
