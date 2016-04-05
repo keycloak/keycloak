@@ -19,7 +19,6 @@
   "connection-pool-size": 20,
   "disable-trust-manager": true,
   "allow-any-hostname": true,
-  "auth-server-url-for-backend-requests": "https://backend:8443/auth",
   "always-refresh-token": true,
   "register-node-at-startup": true,
   "register-node-period": 1000,
