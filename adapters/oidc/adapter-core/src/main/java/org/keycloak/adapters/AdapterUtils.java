@@ -38,17 +38,6 @@ public class AdapterUtils {
         return UUID.randomUUID().toString();
     }
 
-    /**
-     * Find origin for REST request calls from web UI application to REST application (assuming the REST application
-     * is deployed on same host like current UI application)
-     *
-     * @param browserRequestURL
-     * @return
-     */
-    public static String getOriginForRestCalls(String browserRequestURL) {
-        return UriUtils.getOrigin(browserRequestURL);
-    }
-
     public static Set<String> getRolesFromSecurityContext(RefreshableKeycloakSecurityContext session) {
         Set<String> roles = null;
         AccessToken accessToken = session.getToken();
