@@ -26,6 +26,8 @@ import org.keycloak.provider.Provider;
  */
 public interface MongoUpdaterProvider extends Provider {
 
-    public void update(KeycloakSession session, DB db);
+    void update(KeycloakSession session, DB db);
+
+    void validate(KeycloakSession session, DB db);
 
 }
