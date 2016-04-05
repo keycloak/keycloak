@@ -23,7 +23,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.util.JsonSerialization;
