@@ -232,6 +232,14 @@ public class UserTest extends AbstractClientTest {
     }
 
     @Test
+    public void count() {
+        createUsers();
+
+        Integer count = realm.users().count().get("count");
+        assertEquals(9, count.intValue());
+    }
+
+    @Test
     public void searchPaginated() {
         createUsers();
 
