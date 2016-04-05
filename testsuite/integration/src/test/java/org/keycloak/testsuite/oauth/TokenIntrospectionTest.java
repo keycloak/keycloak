@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Event;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -31,6 +32,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
@@ -41,6 +43,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 
 import static org.junit.Assert.*;
@@ -206,5 +209,91 @@ public class TokenIntrospectionTest {
         assertNull(rep.getSubject());
 
         events.clear();
+    }
+
+    @Test
+    public void testIntrospectAccessToken() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        Event loginEvent = events.expectLogin().assertEvent();
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
+        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+
+        assertTrue(rep.isActive());
+        assertEquals("test-user@localhost", rep.getUserName());
+        assertEquals("test-app", rep.getClientId());
+        assertEquals(loginEvent.getUserId(), rep.getSubject());
+
+        events.clear();
+    }
+
+    @Test
+    public void testIntrospectAccessTokenSessionInvalid() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+        oauth.doLogout(accessTokenResponse.getRefreshToken(), "password");
+
+        String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
+        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+
+        assertFalse(rep.isActive());
+        assertNull(rep.getUserName());
+        assertNull(rep.getClientId());
+        assertNull(rep.getSubject());
+
+        events.clear();
+    }
+
+    @Test
+    public void testIntrospectAccessTokenUserDisabled() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        Event loginEvent = events.expectLogin().assertEvent();
+
+        UserRepresentation userRep = new UserRepresentation();
+        try {
+            userRep.setEnabled(false);
+            keycloak.realm(oauth.getRealm()).users().get(loginEvent.getUserId()).update(userRep);
+
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
+            TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+
+            assertFalse(rep.isActive());
+            assertNull(rep.getUserName());
+            assertNull(rep.getClientId());
+            assertNull(rep.getSubject());
+
+            events.clear();
+        } finally {
+            userRep.setEnabled(true);
+            keycloak.realm(oauth.getRealm()).users().get(loginEvent.getUserId()).update(userRep);
+        }
+    }
+
+    @Test
+    public void testIntrospectAccessTokenExpired() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        try {
+            Time.setOffset(keycloak.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan() + 1);
+
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
+            TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+
+            assertFalse(rep.isActive());
+            assertNull(rep.getUserName());
+            assertNull(rep.getClientId());
+            assertNull(rep.getSubject());
+
+            events.clear();
+        } finally {
+            Time.setOffset(0);
+        }
     }
 }
