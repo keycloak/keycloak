@@ -31,6 +31,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.TokenManager.TokenValidation;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
@@ -106,7 +107,8 @@ public class TokenIntrospectionEndpoint {
             AccessToken toIntrospect = toAccessToken(tokenTypeHint, token);
             ObjectNode tokenMetadata;
 
-            if (toIntrospect.isActive()) {
+            boolean active = tokenManager.isTokenValid(session, realm, toIntrospect);
+            if (active) {
                 tokenMetadata = JsonSerialization.createObjectNode(toIntrospect);
                 tokenMetadata.put("client_id", toIntrospect.getIssuedFor());
                 tokenMetadata.put("username", toIntrospect.getPreferredUsername());
@@ -114,7 +116,7 @@ public class TokenIntrospectionEndpoint {
                 tokenMetadata = JsonSerialization.createObjectNode();
             }
 
-            tokenMetadata.put("active", toIntrospect.isActive());
+            tokenMetadata.put("active", active);
 
             this.event.success();
 

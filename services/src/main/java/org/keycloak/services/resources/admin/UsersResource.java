@@ -166,7 +166,7 @@ public class UsersResource {
                 attrsToRemove = Collections.emptySet();
             }
 
-            if (rep.isEnabled() != null && rep.isEnabled()) {
+            if (rep.isEnabled() != null && rep.isEnabled() && rep.getUsername() != null) {
                 UsernameLoginFailureModel failureModel = session.sessions().getUserLoginFailure(realm, rep.getUsername().toLowerCase());
                 if (failureModel != null) {
                     failureModel.clearFailures();
