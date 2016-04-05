@@ -33,6 +33,7 @@ import org.keycloak.services.managers.ClientManager;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -72,6 +73,77 @@ public class ClientModelTest extends AbstractModelTest {
 
         client.updateClient();
     }
+
+    @Test
+    public void testClientRoleRemovalAndClientScope() throws Exception {
+        // Client "from" has a role.  Assign this role to a scope to client "scoped".  Delete the role and make sure
+        // cache gets cleared
+        ClientModel from = realm.addClient("from");
+        RoleModel role = from.addRole("clientRole");
+        String roleId = role.getId();
+        ClientModel scoped = realm.addClient("scoped");
+        String idOfClient = scoped.getId();
+        scoped.setFullScopeAllowed(false);
+        scoped.addScopeMapping(role);
+        commit();
+        realm = session.realms().getRealmByName("original");
+        scoped = realm.getClientByClientId("scoped");
+        from = realm.getClientByClientId("from");
+        role = session.realms().getRoleById(roleId, realm);
+        from.removeRole(role);
+        commit();
+        realm = session.realms().getRealmByName("original");
+        scoped = realm.getClientByClientId("scoped");
+        Set<RoleModel> scopeMappings = scoped.getScopeMappings();
+        Assert.assertEquals(0, scopeMappings.size());  // used to throw an NPE
+
+    }
+
+    @Test
+    public void testClientRoleRemovalAndClientScopeSameTx() throws Exception {
+        // Client "from" has a role.  Assign this role to a scope to client "scoped".  Delete the role and make sure
+        // cache gets cleared
+        ClientModel from = realm.addClient("from");
+        RoleModel role = from.addRole("clientRole");
+        String roleId = role.getId();
+        ClientModel scoped = realm.addClient("scoped");
+        String idOfClient = scoped.getId();
+        scoped.setFullScopeAllowed(false);
+        scoped.addScopeMapping(role);
+        commit();
+        realm = session.realms().getRealmByName("original");
+        scoped = realm.getClientByClientId("scoped");
+        from = realm.getClientByClientId("from");
+        role = session.realms().getRoleById(roleId, realm);
+        from.removeRole(role);
+        Set<RoleModel> scopeMappings = scoped.getScopeMappings();
+        Assert.assertEquals(0, scopeMappings.size());  // used to throw an NPE
+
+    }
+
+    @Test
+    public void testRealmRoleRemovalAndClientScope() throws Exception {
+        // Client "from" has a role.  Assign this role to a scope to client "scoped".  Delete the role and make sure
+        // cache gets cleared
+        RoleModel role = realm.addRole("clientRole");
+        String roleId = role.getId();
+        ClientModel scoped = realm.addClient("scoped");
+        String idOfClient = scoped.getId();
+        scoped.setFullScopeAllowed(false);
+        scoped.addScopeMapping(role);
+        commit();
+        realm = session.realms().getRealmByName("original");
+        scoped = realm.getClientByClientId("scoped");
+        role = session.realms().getRoleById(roleId, realm);
+        realm.removeRole(role);
+        commit();
+        realm = session.realms().getRealmByName("original");
+        scoped = realm.getClientByClientId("scoped");
+        Set<RoleModel> scopeMappings = scoped.getScopeMappings();
+        Assert.assertEquals(0, scopeMappings.size());  // used to throw an NPE
+
+    }
+
 
     @Test
     public void persist() {

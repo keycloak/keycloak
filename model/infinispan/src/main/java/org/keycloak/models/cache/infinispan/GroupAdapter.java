@@ -23,7 +23,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.infinispan.entities.CachedGroup;
 
 import java.util.HashSet;
@@ -38,11 +37,11 @@ import java.util.Set;
 public class GroupAdapter implements GroupModel {
     protected GroupModel updated;
     protected CachedGroup cached;
-    protected CacheRealmProvider cacheSession;
+    protected RealmCacheSession cacheSession;
     protected KeycloakSession keycloakSession;
     protected RealmModel realm;
 
-    public GroupAdapter(CachedGroup cached, CacheRealmProvider cacheSession, KeycloakSession keycloakSession, RealmModel realm) {
+    public GroupAdapter(CachedGroup cached, RealmCacheSession cacheSession, KeycloakSession keycloakSession, RealmModel realm) {
         this.cached = cached;
         this.cacheSession = cacheSession;
         this.keycloakSession = keycloakSession;
@@ -51,11 +50,25 @@ public class GroupAdapter implements GroupModel {
 
     protected void getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerGroupInvalidation(getId());
-            updated = cacheSession.getDelegate().getGroupById(getId(), realm);
+            cacheSession.registerGroupInvalidation(cached.getId());
+            updated = cacheSession.getDelegate().getGroupById(cached.getId(), realm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
+
+    protected boolean invalidated;
+    public void invalidate() {
+        invalidated = true;
+    }
+
+    protected boolean isUpdated() {
+        if (updated != null) return true;
+        if (!invalidated) return false;
+        updated = cacheSession.getDelegate().getGroupById(cached.getId(), realm);
+        if (updated == null) throw new IllegalStateException("Not found in database");
+        return true;
+    }
+
 
     @Override
     public boolean equals(Object o) {
@@ -76,13 +89,13 @@ public class GroupAdapter implements GroupModel {
 
     @Override
     public String getId() {
-        if (updated != null) return updated.getId();
+        if (isUpdated()) return updated.getId();
         return cached.getId();
     }
 
     @Override
     public String getName() {
-        if (updated != null) return updated.getName();
+        if (isUpdated()) return updated.getName();
         return cached.getName();
     }
 
@@ -114,7 +127,7 @@ public class GroupAdapter implements GroupModel {
 
     @Override
     public String getFirstAttribute(String name) {
-        if (updated != null) return updated.getFirstAttribute(name);
+        if (isUpdated()) return updated.getFirstAttribute(name);
         return cached.getAttributes().getFirst(name);
     }
 
@@ -132,7 +145,7 @@ public class GroupAdapter implements GroupModel {
 
     @Override
     public Set<RoleModel> getRealmRoleMappings() {
-        if (updated != null) return updated.getRealmRoleMappings();
+        if (isUpdated()) return updated.getRealmRoleMappings();
         Set<RoleModel> roleMappings = getRoleMappings();
         Set<RoleModel> realmMappings = new HashSet<RoleModel>();
         for (RoleModel role : roleMappings) {
@@ -148,7 +161,7 @@ public class GroupAdapter implements GroupModel {
 
     @Override
     public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        if (updated != null) return updated.getClientRoleMappings(app);
+        if (isUpdated()) return updated.getClientRoleMappings(app);
         Set<RoleModel> roleMappings = getRoleMappings();
         Set<RoleModel> appMappings = new HashSet<RoleModel>();
         for (RoleModel role : roleMappings) {
@@ -164,7 +177,7 @@ public class GroupAdapter implements GroupModel {
 
     @Override
     public boolean hasRole(RoleModel role) {
-        if (updated != null) return updated.hasRole(role);
+        if (isUpdated()) return updated.hasRole(role);
         if (cached.getRoleMappings().contains(role.getId())) return true;
 
         Set<RoleModel> mappings = getRoleMappings();
@@ -182,7 +195,7 @@ public class GroupAdapter implements GroupModel {
 
     @Override
     public Set<RoleModel> getRoleMappings() {
-        if (updated != null) return updated.getRoleMappings();
+        if (isUpdated()) return updated.getRoleMappings();
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (String id : cached.getRoleMappings()) {
             RoleModel roleById = keycloakSession.realms().getRoleById(id, realm);
@@ -205,20 +218,20 @@ public class GroupAdapter implements GroupModel {
 
     @Override
     public GroupModel getParent() {
-        if (updated != null) return updated.getParent();
+        if (isUpdated()) return updated.getParent();
         if (cached.getParentId() == null) return null;
         return keycloakSession.realms().getGroupById(cached.getParentId(), realm);
     }
 
     @Override
     public String getParentId() {
-        if (updated != null) return updated.getParentId();
+        if (isUpdated()) return updated.getParentId();
         return cached.getParentId();
     }
 
     @Override
     public Set<GroupModel> getSubGroups() {
-        if (updated != null) return updated.getSubGroups();
+        if (isUpdated()) return updated.getSubGroups();
         Set<GroupModel> subGroups = new HashSet<>();
         for (String id : cached.getSubGroups()) {
             GroupModel subGroup = keycloakSession.realms().getGroupById(id, realm);
