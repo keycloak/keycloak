@@ -45,6 +45,7 @@ public class Form {
 
     public void save() {
 //        guardAjax(save).click();
+        waitUntilElement(save).is().present();
         save.click();
     }
 
