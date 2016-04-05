@@ -96,6 +96,23 @@
 
     <section>
         <title>Version specific migration</title>
+
+        <section>
+            <title>Migrating to 1.9.2</title>
+            <simplesect>
+                <title>Adapter option auth-server-url-for-backend-requests removed</title>
+                <para>
+                    We've removed the option <literal>auth-server-url-for-backend-requests</literal> as there were issues in some scenarios when it was used.
+                    In more details, it was possible to access the Keycloak server from 2 different contexts (internal and external), which was
+                    causing issues in token validations etc.
+                </para>
+                <para>
+                    If you still want to use the optimization of network, which this option provided (avoid the application to send backchannel requests
+                    through loadbalancer but send them to local Keycloak server directly) you may need to handle it at hosts configuration (DNS) level.
+                </para>
+            </simplesect>
+        </section>
+
         <section>
             <title>Migrating to 1.9.0</title>
             <simplesect>
