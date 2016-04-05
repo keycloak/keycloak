@@ -53,7 +53,7 @@ public class ModalDialog {
         waitUntilElement(deleteButton).is().present();
         deleteButton.click();
         waitUntilElement(root).is().not().present();
-        pause(100);
+        pause(200);
     }
 
     public void cancel() {

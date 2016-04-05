@@ -26,6 +26,7 @@ public class InternationalizationTest extends AbstractRealmTest {
 
     @Before
     public void beforeInternationalizationTest() {
+        realmSettingsPage.navigateTo();
         tabs().themes();
         themeSettingsPage.setInternatEnabled(true);
         themeSettingsPage.saveTheme();
