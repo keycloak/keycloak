@@ -41,7 +41,6 @@ import java.util.Set;
 public class ClientModelTest extends AbstractModelTest {
     private ClientModel client;
     private RealmModel realm;
-    private ClientManager appManager;
 
     @Before
     @Override
