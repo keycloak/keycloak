@@ -30,6 +30,10 @@ public class Time {
         return ((int) (System.currentTimeMillis() / 1000)) + offset;
     }
 
+    public static long currentTimeMillis() {
+        return System.currentTimeMillis() + (offset * 1000);
+    }
+
     public static Date toDate(int time) {
         return new Date(((long) time ) * 1000);
     }

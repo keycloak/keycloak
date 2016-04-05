@@ -90,6 +90,8 @@
                     <input id="passwordConfirmation" name="passwordConfirmation" type="password" />
                 </p>
 
+                <input id="stateChecker" name="stateChecker" type="hidden" value="${stateChecker}" />
+
                 <button id="create-button" type="submit">Create</button>
             </form>
         </#if>

@@ -34,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "connection-pool-size",
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
-        "auth-server-url-for-backend-requests", "always-refresh-token",
+        "always-refresh-token",
         "register-node-at-startup", "register-node-period", "token-store", "principal-attribute"
 })
 public class AdapterConfig extends BaseAdapterConfig {
@@ -55,8 +55,6 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected String clientKeyPassword;
     @JsonProperty("connection-pool-size")
     protected int connectionPoolSize = 20;
-    @JsonProperty("auth-server-url-for-backend-requests")
-    protected String authServerUrlForBackendRequests;
     @JsonProperty("always-refresh-token")
     protected boolean alwaysRefreshToken = false;
     @JsonProperty("register-node-at-startup")
@@ -132,14 +130,6 @@ public class AdapterConfig extends BaseAdapterConfig {
 
     public void setConnectionPoolSize(int connectionPoolSize) {
         this.connectionPoolSize = connectionPoolSize;
-    }
-
-    public String getAuthServerUrlForBackendRequests() {
-        return authServerUrlForBackendRequests;
-    }
-
-    public void setAuthServerUrlForBackendRequests(String authServerUrlForBackendRequests) {
-        this.authServerUrlForBackendRequests = authServerUrlForBackendRequests;
     }
 
     public boolean isAlwaysRefreshToken() {

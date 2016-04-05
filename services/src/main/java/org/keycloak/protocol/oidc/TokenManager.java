@@ -174,8 +174,31 @@ public class TokenManager {
         verifyAccess(oldToken, newToken);
 
         return new TokenValidation(user, userSession, clientSession, newToken);
+    }
 
+    public boolean isTokenValid(KeycloakSession session, RealmModel realm, AccessToken token) throws OAuthErrorException {
+        if (!token.isActive()) {
+            return false;
+        }
 
+        if (token.getIssuedAt() < realm.getNotBefore()) {
+            return false;
+        }
+
+        UserModel user = session.users().getUserById(token.getSubject(), realm);
+        if (user == null) {
+            return false;
+        }
+        if (!user.isEnabled()) {
+            return false;
+        }
+
+        UserSessionModel userSession =  session.sessions().getUserSession(realm, token.getSessionState());
+        if (!AuthenticationManager.isSessionValid(realm, userSession)) {
+            return false;
+        }
+
+        return true;
     }
 
     public RefreshResult refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient, String encodedRefreshToken, EventBuilder event, HttpHeaders headers) throws OAuthErrorException {

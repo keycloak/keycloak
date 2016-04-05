@@ -102,39 +102,6 @@
         </para>
     </section>
 
-    <section id="relative-uri-optimization">
-        <title>Relative URI optimization</title>
-        <para>
-            In many deployment scenarios will be Keycloak and secured applications deployed on same cluster hosts. For this case Keycloak
-            already provides option to use relative URI as value of option <emphasis>auth-server-url</emphasis> in <literal>WEB-INF/keycloak.json</literal> .
-            In this case, the URI of Keycloak server is resolved from the URI of current request.
-        </para>
-        <para>
-            For example if your loadbalancer is on <emphasis>https://loadbalancer.com/myapp</emphasis> and auth-server-url is <emphasis>/auth</emphasis>,
-            then relative URI of Keycloak is resolved to be  <emphasis>https://loadbalancer.com/auth</emphasis> .
-        </para>
-        <para>
-            For cluster setup, it may be even better to use option <emphasis>auth-server-url-for-backend-request</emphasis> . This allows to configure
-            that backend requests between Keycloak and your application will be sent directly to same cluster host without additional
-            round-trip through loadbalancer. So for this, it's good to configure values in <literal>WEB-INF/keycloak.json</literal> like this:
-<programlisting>
-<![CDATA[
-"auth-server-url": "/auth",
-"auth-server-url-for-backend-requests": "http://${jboss.host.name}:8080/auth"
-]]>
-</programlisting>
-        </para>
-        <para>
-            This would mean that browser requests (like redirecting to Keycloak login screen) will be still resolved relatively
-            to current request URI like <emphasis>https://loadbalancer.com/myapp</emphasis>, but backend (out-of-bound) requests between keycloak
-            and your app are sent always to same cluster host with application .
-        </para>
-        <para>
-            Note that additionally to network optimization,
-            you may not need "https" in this case as application and keycloak are communicating directly within same cluster host.
-        </para>
-    </section>
-
     <section id="admin-url-configuration">
         <title>Admin URL configuration</title>
             <para>

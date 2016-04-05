@@ -60,14 +60,5 @@
         <module>stress</module>
         <module>integration-arquillian</module>
     </modules>
-
-    <profiles>
-        <profile>
-            <id>jboss-release</id>
-            <modules>
-                <module>docker-cluster</module>
-            </modules>
-        </profile>
-    </profiles>
         
 </project>

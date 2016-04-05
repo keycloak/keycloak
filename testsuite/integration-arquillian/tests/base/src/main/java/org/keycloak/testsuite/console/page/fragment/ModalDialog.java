@@ -18,6 +18,9 @@
 package org.keycloak.testsuite.console.page.fragment;
 
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+
+import org.jboss.arquillian.graphene.fragment.Root;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -26,6 +29,9 @@ import org.openqa.selenium.support.FindBy;
  * @author tkyjovsk
  */
 public class ModalDialog {
+
+    @Root
+    private WebElement root;
 
     @FindBy(xpath = ".//button[text()='Cancel']")
     private WebElement cancelButton;
@@ -40,16 +46,20 @@ public class ModalDialog {
     public void ok() {
         waitUntilElement(okButton).is().present();
         okButton.click();
+        waitUntilElement(root).is().not().present();
     }
     
     public void confirmDeletion() {
         waitUntilElement(deleteButton).is().present();
         deleteButton.click();
+        waitUntilElement(root).is().not().present();
+        pause(200);
     }
 
     public void cancel() {
         waitUntilElement(cancelButton).is().present();
         cancelButton.click();
+        waitUntilElement(root).is().not().present();
     }
 
     public void setName(String name) {

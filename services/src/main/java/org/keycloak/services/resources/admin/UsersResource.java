@@ -166,7 +166,7 @@ public class UsersResource {
                 attrsToRemove = Collections.emptySet();
             }
 
-            if (rep.isEnabled() != null && rep.isEnabled()) {
+            if (rep.isEnabled() != null && rep.isEnabled() && rep.getUsername() != null) {
                 UsernameLoginFailureModel failureModel = session.sessions().getUserLoginFailure(realm, rep.getUsername().toLowerCase());
                 if (failureModel != null) {
                     failureModel.clearFailures();
@@ -679,6 +679,16 @@ public class UsersResource {
             results.add(ModelToRepresentation.toRepresentation(user));
         }
         return results;
+    }
+
+    @Path("count")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Integer> getUsersCount() {
+        auth.requireView();
+
+        return Collections.singletonMap("count", session.users().getUsersCount(realm));
     }
 
     @Path("{id}/role-mappings")

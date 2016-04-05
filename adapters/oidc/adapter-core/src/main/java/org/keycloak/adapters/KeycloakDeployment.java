@@ -111,39 +111,17 @@ public class KeycloakDeployment {
 
     public void setAuthServerBaseUrl(AdapterConfig config) {
         this.authServerBaseUrl = config.getAuthServerUrl();
-        String authServerURLForBackendReqs = config.getAuthServerUrlForBackendRequests();
-        if (authServerBaseUrl == null && authServerURLForBackendReqs == null) return;
+        if (authServerBaseUrl == null) return;
 
-        URI authServerUri = null;
-        if (authServerBaseUrl != null) {
-            authServerUri = URI.create(authServerBaseUrl);
-        }
+        URI authServerUri = URI.create(authServerBaseUrl);
 
-        if (authServerUri == null || authServerUri.getHost() == null) {
-            if (authServerURLForBackendReqs != null) {
-                relativeUrls = RelativeUrlsUsed.BROWSER_ONLY;
-
-                KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(authServerURLForBackendReqs);
-                if (serverBuilder.getHost() == null || serverBuilder.getScheme() == null) {
-                    throw new IllegalStateException("Relative URL not supported for auth-server-url-for-backend-requests option. URL used: "
-                            + authServerURLForBackendReqs + ", Client: " + config.getResource());
-                }
-                resolveNonBrowserUrls(serverBuilder);
-            } else {
-                relativeUrls = RelativeUrlsUsed.ALL_REQUESTS;
-            }
+        if (authServerUri.getHost() == null) {
+            relativeUrls = RelativeUrlsUsed.ALWAYS;
         } else {
             // We have absolute URI in config
             relativeUrls = RelativeUrlsUsed.NEVER;
             KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
-            resolveBrowserUrls(serverBuilder);
-
-            if (authServerURLForBackendReqs == null) {
-                resolveNonBrowserUrls(serverBuilder);
-            } else {
-                serverBuilder = KeycloakUriBuilder.fromUri(authServerURLForBackendReqs);
-                resolveNonBrowserUrls(serverBuilder);
-            }
+            resolveUrls(serverBuilder);
         }
     }
 
@@ -152,23 +130,14 @@ public class KeycloakDeployment {
     /**
      * @param authUrlBuilder absolute URI
      */
-    protected void resolveBrowserUrls(KeycloakUriBuilder authUrlBuilder) {
+    protected void resolveUrls(KeycloakUriBuilder authUrlBuilder) {
         if (log.isDebugEnabled()) {
-            log.debug("resolveBrowserUrls");
+            log.debug("resolveUrls");
         }
 
         String login = authUrlBuilder.clone().path(ServiceUrlConstants.AUTH_PATH).build(getRealm()).toString();
         authUrl = KeycloakUriBuilder.fromUri(login);
         realmInfoUrl = authUrlBuilder.clone().path(ServiceUrlConstants.REALM_INFO_PATH).build(getRealm()).toString();
-    }
-
-    /**
-     * @param authUrlBuilder absolute URI
-     */
-    protected void resolveNonBrowserUrls(KeycloakUriBuilder authUrlBuilder) {
-        if (log.isDebugEnabled()) {
-            log.debug("resolveNonBrowserUrls");
-        }
 
         tokenUrl = authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_PATH).build(getRealm()).toString();
         logoutUrl = KeycloakUriBuilder.fromUri(authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH).build(getRealm()).toString());

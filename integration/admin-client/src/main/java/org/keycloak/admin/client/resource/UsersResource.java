@@ -29,6 +29,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.Map;
 
 public interface UsersResource {
 
@@ -50,6 +51,11 @@ public interface UsersResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     Response create(UserRepresentation userRepresentation);
+
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, Integer> count();
 
     @Path("{id}")
     UserResource get(@PathParam("id") String id);

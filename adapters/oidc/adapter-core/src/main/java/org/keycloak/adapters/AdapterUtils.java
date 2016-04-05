@@ -38,37 +38,6 @@ public class AdapterUtils {
         return UUID.randomUUID().toString();
     }
 
-    /**
-     * Best effort to find origin for REST request calls from web UI application to REST application. In case of relative or absolute
-     * "auth-server-url" is returned the URL from request. In case of "auth-server-url-for-backend-request" used in configuration, it returns
-     * the origin of auth server.
-     *
-     * This may be the optimization in cluster, so if you have keycloak and applications on same host, the REST request doesn't need to
-     * go through loadbalancer, but can be sent directly to same host.
-     *
-     * @param browserRequestURL
-     * @param session
-     * @return
-     */
-    public static String getOriginForRestCalls(String browserRequestURL, KeycloakSecurityContext session) {
-        if (session instanceof RefreshableKeycloakSecurityContext) {
-            KeycloakDeployment deployment = ((RefreshableKeycloakSecurityContext)session).getDeployment();
-            switch (deployment.getRelativeUrls()) {
-                case ALL_REQUESTS:
-                case NEVER:
-                    // Resolve baseURI from the request
-                    return UriUtils.getOrigin(browserRequestURL);
-                case BROWSER_ONLY:
-                    // Resolve baseURI from the codeURL (This is already non-relative and based on our hostname)
-                    return UriUtils.getOrigin(deployment.getTokenUrl());
-                default:
-                    return "";
-            }
-        } else {
-            return UriUtils.getOrigin(browserRequestURL);
-        }
-    }
-
     public static Set<String> getRolesFromSecurityContext(RefreshableKeycloakSecurityContext session) {
         Set<String> roles = null;
         AccessToken accessToken = session.getToken();

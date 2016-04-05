@@ -95,8 +95,6 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
                     Connection connection = null;
 
-                    String databaseSchema = config.get("databaseSchema");
-
                     Map<String, Object> properties = new HashMap<String, Object>();
 
                     String unitName = "keycloak-default";
@@ -127,14 +125,18 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         properties.put(JpaUtils.HIBERNATE_DEFAULT_SCHEMA, schema);
                     }
 
-                    if (databaseSchema != null) {
-                        if (databaseSchema.equals("development-update")) {
-                            properties.put("hibernate.hbm2ddl.auto", "update");
-                            databaseSchema = null;
-                        } else if (databaseSchema.equals("development-validate")) {
-                            properties.put("hibernate.hbm2ddl.auto", "validate");
-                            databaseSchema = null;
-                        }
+
+                    String databaseSchema = config.get("databaseSchema");
+                    if (databaseSchema == null) {
+                        throw new RuntimeException("Property 'databaseSchema' needs to be specified in the configuration");
+                    }
+                    
+                    if (databaseSchema.equals("development-update")) {
+                        properties.put("hibernate.hbm2ddl.auto", "update");
+                        databaseSchema = null;
+                    } else if (databaseSchema.equals("development-validate")) {
+                        properties.put("hibernate.hbm2ddl.auto", "validate");
+                        databaseSchema = null;
                     }
 
                     properties.put("hibernate.show_sql", config.getBoolean("showSql", false));

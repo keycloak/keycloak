@@ -32,7 +32,7 @@
     <artifactId>integration-arquillian-tests</artifactId>
 
     <name>Tests</name>
-    
+
     <modules>
         <module>base</module>
         <module>other</module>
@@ -45,7 +45,7 @@
         <auth.server.container>auth-server-${auth.server}</auth.server.container>
         <auth.server.home>${containers.home}/${auth.server.container}</auth.server.home>
         <auth.server.config.dir>${auth.server.home}</auth.server.config.dir>
-        
+
         <auth.server.port.offset>100</auth.server.port.offset>
         <auth.server.http.port>8180</auth.server.http.port>
         <auth.server.events.http.port>8089</auth.server.events.http.port>
@@ -55,19 +55,21 @@
         <auth.server.ssl.required>false</auth.server.ssl.required>
         <auth.server.jboss.startup.timeout>60</auth.server.jboss.startup.timeout>
         <auth.server.memory.settings>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</auth.server.memory.settings>
-                
+
         <auth.server.jboss.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.jboss.artifactId>
         <auth.server.jboss.skip.unpack>${auth.server.undertow}</auth.server.jboss.skip.unpack>
         <auth.server.jboss.startup.timeout>300</auth.server.jboss.startup.timeout>
-        
+
         <adapter.test.props/>
         <examples.home>${project.build.directory}/examples</examples.home>
-                
+
         <browser>phantomjs</browser>
         <firefox_binary>/usr/bin/firefox</firefox_binary>
 
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
+
+        <testsuite.constants>test-constants.properties</testsuite.constants>
     </properties>
 
     <build>
@@ -128,14 +130,14 @@
                         <systemPropertyVariables>
                             <project.build.directory>${project.build.directory}</project.build.directory>
                             <arquillian.xml>${project.build.directory}/dependency/arquillian.xml</arquillian.xml>
-                            
+
                             <auth.server>${auth.server}</auth.server>
                             <auth.server.container>${auth.server.container}</auth.server.container>
-                            
+
                             <auth.server.undertow>${auth.server.undertow}</auth.server.undertow>
                             <auth.server.jboss>${auth.server.jboss}</auth.server.jboss>
                             <auth.server.memory.settings>${auth.server.memory.settings}</auth.server.memory.settings>
-                            
+
                             <auth.server.home>${auth.server.home}</auth.server.home>
                             <auth.server.java.home>${auth.server.java.home}</auth.server.java.home>
 
@@ -150,8 +152,10 @@
                             <auth.server.config.dir>${auth.server.config.dir}</auth.server.config.dir>
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
-                            
+
                             <adapter.test.props>${adapter.test.props}</adapter.test.props>
+
+                            <testsuite.constants>${testsuite.constants}</testsuite.constants>
 
                             <browser>${browser}</browser>
                             <firefox_binary>${firefox_binary}</firefox_binary>
@@ -166,7 +170,7 @@
                     </configuration>
                 </plugin>
             </plugins>
-        </pluginManagement>        
+        </pluginManagement>
     </build>
 
     <profiles>
@@ -187,7 +191,7 @@
                 </dependency>
             </dependencies>
         </profile>
-        
+
         <profile>
             <id>auth-server-eap</id>
             <properties>
@@ -204,13 +208,13 @@
                 </dependency>
             </dependencies>
         </profile>
-        
+
         <profile>
             <id>auth-server-cluster</id>
             <properties>
                 <!--disable exclusion pattern for cluster test which is enabled by default in base/pom.xml-->
                 <exclude.cluster>-</exclude.cluster>
-                
+
                 <auth.server.balancer.home>${containers.home}/auth-server-balancer-wildfly</auth.server.balancer.home>
                 <auth.server.backend1.home>${containers.home}/auth-server-${auth.server}-backend1</auth.server.backend1.home>
                 <auth.server.backend2.home>${containers.home}/auth-server-${auth.server}-backend2</auth.server.backend2.home>
@@ -303,7 +307,7 @@
 
                                     <auth.server.jboss>false</auth.server.jboss>
                                     <auth.server.cluster>true</auth.server.cluster>
-                                    
+
                                     <auth.server.balancer.home>${auth.server.balancer.home}</auth.server.balancer.home>
                                     <auth.server.backend1.home>${auth.server.backend1.home}</auth.server.backend1.home>
                                     <auth.server.backend2.home>${auth.server.backend2.home}</auth.server.backend2.home>
@@ -364,7 +368,7 @@
                     </plugins>
                 </pluginManagement>
             </build>
-        </profile>        
+        </profile>
 
         <!-- Profiles for migration tests-->
         
@@ -577,9 +581,9 @@
             </build>
         </profile>
 
-                
-                                
-                                                
+
+
+
         <profile>
             <id>no-account</id>
             <properties>
@@ -599,7 +603,7 @@
                 <exclude.client>**/client/**/*Test.java</exclude.client>
             </properties>
         </profile>
-                
+
         <profile>
             <id>common-test-dependencies</id>
             <activation>
@@ -644,19 +648,19 @@
                         </exclusion>
                     </exclusions>
                 </dependency>
-                
+
                 <dependency>
                     <groupId>jfree</groupId>
                     <artifactId>jfreechart</artifactId>
                     <version>1.0.13</version>
                 </dependency>
-                
+
                 <!--                <dependency>
                     <groupId>org.arquillian.extension</groupId>
                     <artifactId>arquillian-recorder-reporter-impl</artifactId>
                     <version>1.1.0.Final</version>
                 </dependency>-->
-                
+
                 <dependency>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
@@ -682,13 +686,13 @@
                     <version>1.9.2</version>
                     <type>jar</type>
                 </dependency>
-        
+
                 <dependency>
                     <groupId>com.h2database</groupId>
                     <artifactId>h2</artifactId>
                     <scope>compile</scope>
                 </dependency>
-                
+
                 <!-- Email Test Server -->
                 <dependency>
                     <groupId>com.icegreen</groupId>
@@ -700,7 +704,7 @@
                         </exclusion>
                     </exclusions>
                 </dependency>
-                        
+
                 <!-- Keycloak deps for tests -->
 
                 <dependency>
@@ -741,13 +745,13 @@
                     <artifactId>integration-arquillian-servers-auth-server-undertow</artifactId>
                     <version>${project.version}</version>
                 </dependency>
-                
+
                 <dependency>
                     <groupId>org.jboss.arquillian.container</groupId>
                     <artifactId>undertow-embedded</artifactId>
                     <version>1.0.0.Alpha1-SNAPSHOT</version>
                 </dependency>
-        
+
                 <dependency>
                     <groupId>org.jboss.spec.javax.ws.rs</groupId>
                     <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
@@ -803,7 +807,7 @@
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-annotations</artifactId>
                 </dependency>
-        
+
                 <dependency>
                     <groupId>org.hibernate.javax.persistence</groupId>
                     <artifactId>hibernate-jpa-2.1-api</artifactId>
@@ -847,8 +851,8 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <artifactId>maven-dependency-plugin</artifactId>               
-                    </plugin> 
+                        <artifactId>maven-dependency-plugin</artifactId>
+                    </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>xml-maven-plugin</artifactId>
@@ -858,9 +862,9 @@
                         <artifactId>liquibase-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
-            </build>            
+            </build>
         </profile>
-                                                                                
+
     </profiles>
     
 </project>
