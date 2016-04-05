@@ -114,8 +114,11 @@ public class DefaultMongoUpdaterProvider implements MongoUpdaterProvider {
         List<Update> updatesToRun = getUpdatesToRun(executed);
 
         if (!updatesToRun.isEmpty()) {
-            String errorMessage = String.format("Failed to validate Mongo database schema. Schema needs updating database from %s to %s. Please change databaseSchema to 'update'",
+            String errorMessage = (executed.isEmpty())
+                    ? "Failed to validate Mongo database schema. Database is empty. Please change databaseSchema to 'update'"
+                    : String.format("Failed to validate Mongo database schema. Schema needs updating database from %s to %s. Please change databaseSchema to 'update'",
                     executed.get(executed.size() - 1), updatesToRun.get(updatesToRun.size() - 1).getId());
+
             throw new RuntimeException(errorMessage);
         } else {
             log.debug("Validation passed. Database is up to date");
