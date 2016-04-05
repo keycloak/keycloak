@@ -23,7 +23,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.AdapterUtils;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.http.HttpServletRequest;
@@ -57,7 +57,7 @@ public class ProductDatabaseClient
 
         HttpClient client = new DefaultHttpClient();
         try {
-            HttpGet get = new HttpGet(AdapterUtils.getOriginForRestCalls(req.getRequestURL().toString(), session) + "/database/products");
+            HttpGet get = new HttpGet(UriUtils.getOrigin(req.getRequestURL().toString()) + "/database/products");
             get.addHeader("Authorization", "Bearer " + session.getTokenString());
             try {
                 HttpResponse response = client.execute(get);

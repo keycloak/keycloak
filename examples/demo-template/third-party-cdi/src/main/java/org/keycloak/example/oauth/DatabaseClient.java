@@ -24,7 +24,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.AdapterUtils;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.servlet.ServletOAuthClient;
 import org.keycloak.util.JsonSerialization;
 
@@ -123,7 +123,7 @@ public class DatabaseClient {
 
     public String getBaseUrl() {
         KeycloakSecurityContext session = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
-        return AdapterUtils.getOriginForRestCalls(request.getRequestURL().toString(), session);
+        return UriUtils.getOrigin(request.getRequestURL().toString());
     }
 
 }

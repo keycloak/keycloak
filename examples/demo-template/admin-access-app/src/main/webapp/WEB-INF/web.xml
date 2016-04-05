@@ -23,9 +23,4 @@
 
     <module-name>admin-access</module-name>
 
-    <context-param>
-        <param-name>useHostname</param-name>
-        <param-value>false</param-value>
-    </context-param>
-
 </web-app>
