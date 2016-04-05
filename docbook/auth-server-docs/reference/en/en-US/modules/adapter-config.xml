@@ -47,6 +47,7 @@
    "client-keystore" : "path/to/client-keystore.jks",
    "client-keystore-password" : "geheim",
    "client-key-password" : "geheim"
+   "token-minimum-time-to-live" : 60
 }]]>
 
 </programlisting>
@@ -401,7 +402,20 @@
                 <listitem>
                     <para>
                         The session id is changed by default on a successful login on some platforms to plug a security attack vector (Tomcat 8, Jetty9, Undertow/Wildfly).  Change this to true if you want to turn this off
+                        This is especially useful in when the access token is sent to another client where it could expire before being evaluated.
+                        This value should never exceed the realm's access token lifespan.
                         This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>token-minimum-time-to-live</term>
+                <listitem>
+                    <para>
+                        Amount of time, in seconds, to preemptively refresh an active access token with the Keycloak server before it expires.
+                        This is especially useful in when the access token is sent to another client where it could expire before being evaluated.
+                        This value should never exceed the realm's access token lifespan.
+                        This is <emphasis>OPTIONAL</emphasis>.  The default value is <literal>0</literal> seconds.
                     </para>
                 </listitem>
             </varlistentry>

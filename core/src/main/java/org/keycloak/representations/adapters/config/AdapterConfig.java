@@ -35,7 +35,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
         "auth-server-url-for-backend-requests", "always-refresh-token",
-        "register-node-at-startup", "register-node-period", "token-store", "principal-attribute"
+        "register-node-at-startup", "register-node-period", "token-store", "principal-attribute",
+        "token-minimum-time-to-live"
 })
 public class AdapterConfig extends BaseAdapterConfig {
 
@@ -69,6 +70,8 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected String principalAttribute;
     @JsonProperty("turn-off-change-session-id-on-login")
     protected Boolean turnOffChangeSessionIdOnLogin;
+    @JsonProperty("token-minimum-time-to-live")
+    protected int tokenMinimumTimeToLive = 0;
 
     public boolean isAllowAnyHostname() {
         return allowAnyHostname;
@@ -189,4 +192,13 @@ public class AdapterConfig extends BaseAdapterConfig {
     public void setTurnOffChangeSessionIdOnLogin(Boolean turnOffChangeSessionIdOnLogin) {
         this.turnOffChangeSessionIdOnLogin = turnOffChangeSessionIdOnLogin;
     }
+
+    public int getTokenMinimumTimeToLive() {
+        return tokenMinimumTimeToLive;
+    }
+
+    public void setTokenMinimumTimeToLive(final int tokenMinimumTimeToLive) {
+        this.tokenMinimumTimeToLive = tokenMinimumTimeToLive;
+    }
+
 }

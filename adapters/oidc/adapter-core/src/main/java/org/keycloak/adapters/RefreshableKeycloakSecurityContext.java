@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -77,6 +78,10 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         return token != null && this.token.isActive() && this.token.getIssuedAt() > deployment.getNotBefore();
     }
 
+    public boolean isTokenTimeToLiveSufficient(AccessToken token) {
+        return token != null && (token.getExpiration() - this.deployment.getTokenMinimumTimeToLive()) > Time.currentTime();
+    }
+
     public KeycloakDeployment getDeployment() {
         return deployment;
     }
@@ -95,7 +100,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             if (log.isTraceEnabled()) {
                 log.trace("checking whether to refresh.");
             }
-            if (isActive()) return true;
+            if (isActive() && isTokenTimeToLiveSufficient(this.token)) return true;
         }
 
         if (this.deployment == null || refreshToken == null) return false; // Might be serialized in HttpSession?
@@ -130,6 +135,13 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             log.error("failed verification of token");
             return false;
         }
+
+        // If the TTL is greater-or-equal to the expire time on the refreshed token, have to abort or go into an infinite refresh loop
+        if (!isTokenTimeToLiveSufficient(token)) {
+            log.error("failed to refresh the token with a longer time-to-live than the minimum");
+            return false;
+        }
+
         if (response.getNotBeforePolicy() > deployment.getNotBefore()) {
             deployment.setNotBefore(response.getNotBeforePolicy());
         }
