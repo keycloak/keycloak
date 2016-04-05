@@ -28,9 +28,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.services.resource.RealmResourceProviderFactory;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.wellknown.WellKnownProvider;
@@ -42,6 +45,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import java.net.URI;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -236,4 +240,30 @@ public class RealmsResource {
         return Cors.add(request, responseBuilder).allowedOrigins("*").build();
     }
 
+    /**
+     * A JAX-RS sub-resource locator that uses the {@link org.keycloak.services.resource.RealmResourceSPI} to resolve sub-resources instances given an <code>unknownPath</code>.
+     *
+     * @param unknownPath a path that is unknown to the server
+     * @return a JAX-RS sub-resource instance that maps to the given <code>unknownPath</code>. Otherwise null is returned.
+     */
+    @Path("{realm}/{unknow_path}")
+    public Object resolveUnknowPath(@PathParam("realm") String realmName, @PathParam("unknow_path") String unknownPath) {
+        List<ProviderFactory> factory = this.session.getKeycloakSessionFactory().getProviderFactories(RealmResourceProvider.class);
+
+        if (factory != null) {
+            RealmModel realm = init(realmName);
+
+            for (ProviderFactory providerFactory : factory) {
+                RealmResourceProviderFactory realmFactory = (RealmResourceProviderFactory) providerFactory;
+                RealmResourceProvider resourceProvider = realmFactory.create(realm, this.session);
+                Object resource = resourceProvider.getResource(unknownPath);
+
+                if (resource != null) {
+                    return resource;
+                }
+            }
+        }
+
+        return null;
+    }
 }
