@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!--
   ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -16,14 +15,12 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <module xmlns="urn:jboss:module:1.3" name="org.jboss.as.product" slot="keycloak">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
 
     <resources>
         <resource-root path="dir"/>
-        <!-- Insert resources here -->
     </resources>
-
-    <dependencies>
-    </dependencies>
 </module>
