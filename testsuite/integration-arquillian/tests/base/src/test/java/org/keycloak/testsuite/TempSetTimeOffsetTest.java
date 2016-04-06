@@ -15,39 +15,25 @@
  * limitations under the License.
  */
 
-package org.keycloak.common.util;
+package org.keycloak.testsuite;
 
-import java.util.Date;
+import org.junit.Test;
+import org.keycloak.representations.idm.RealmRepresentation;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class Time {
+public class TempSetTimeOffsetTest extends AbstractKeycloakTest {
 
-    private static int offset;
-
-    public static int currentTime() {
-        return ((int) (System.currentTimeMillis() / 1000)) + offset;
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
     }
 
-    public static long currentTimeMillis() {
-        return System.currentTimeMillis() + (offset * 1000);
-    }
-
-    public static Date toDate(int time) {
-        return new Date(((long) time ) * 1000);
-    }
-
-    public static long toMillis(int time) {
-        return ((long) time) * 1000;
-    }
-
-    public static int getOffset() {
-        return offset;
-    }
-
-    public static void setOffset(int offset) {
-        Time.offset = offset;
+    @Test
+    public void test() {
+        setTimeOffset(60);
     }
 
 }
