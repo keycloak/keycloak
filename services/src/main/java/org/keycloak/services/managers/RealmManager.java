@@ -293,7 +293,7 @@ public class RealmManager implements RealmImporter {
             createRealmRole.setDescription("${role_" + AdminRoles.CREATE_REALM + "}");
             createRealmRole.setScopeParamRequired(false);
         } else {
-            adminRealm = model.getRealmByName(Config.getAdminRealm());
+            adminRealm = model.getRealm(Config.getAdminRealm());
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);
         }
         adminRole.setDescription("${role_"+AdminRoles.ADMIN+"}");
