@@ -15,39 +15,39 @@
  * limitations under the License.
  */
 
-package org.keycloak.common.util;
+package org.keycloak.testsuite.rest;
 
-import java.util.Date;
+import org.keycloak.Config.Scope;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.services.resource.RealmResourceProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class Time {
+public class TimeOffsetResourceProviderFactory implements RealmResourceProviderFactory {
 
-    private static int offset;
-
-    public static int currentTime() {
-        return ((int) (System.currentTimeMillis() / 1000)) + offset;
+    @Override
+    public RealmResourceProvider create(KeycloakSession session) {
+        return new TimeOffsetResourceProvider();
     }
 
-    public static long currentTimeMillis() {
-        return System.currentTimeMillis() + (offset * 1000);
+    @Override
+    public void init(Scope config) {
     }
 
-    public static Date toDate(int time) {
-        return new Date(((long) time ) * 1000);
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
     }
 
-    public static long toMillis(int time) {
-        return ((long) time) * 1000;
+    @Override
+    public void close() {
     }
 
-    public static int getOffset() {
-        return offset;
-    }
-
-    public static void setOffset(int offset) {
-        Time.offset = offset;
+    @Override
+    public String getId() {
+        return "time-offset";
     }
 
 }
