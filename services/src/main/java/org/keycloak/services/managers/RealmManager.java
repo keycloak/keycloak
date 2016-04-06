@@ -38,6 +38,8 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
@@ -111,6 +113,7 @@ public class RealmManager implements RealmImporter {
         setupAccountManagement(realm);
         setupBrokerService(realm);
         setupAdminConsole(realm);
+        setupAdminConsoleLocaleMapper(realm);
         setupAdminCli(realm);
         setupImpersonationService(realm);
         setupAuthenticationFlows(realm);
@@ -143,9 +146,6 @@ public class RealmManager implements RealmImporter {
         adminConsole.addRedirectUri(baseUrl + "/*");
         adminConsole.setFullScopeAllowed(false);
 
-        ProtocolMapperModel localeMapper = ProtocolMapperUtils.findLocaleMapper(session);
-        if (localeMapper != null) adminConsole.addProtocolMapper(localeMapper);
-
         RoleModel adminRole;
         if (realm.getName().equals(Config.getAdminRealm())) {
             adminRole = realm.getRole(AdminRoles.ADMIN);
@@ -155,6 +155,18 @@ public class RealmManager implements RealmImporter {
             adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
         }
         adminConsole.addScopeMapping(adminRole);
+    }
+
+    protected void setupAdminConsoleLocaleMapper(RealmModel realm) {
+        ClientModel adminConsole = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+        ProtocolMapperModel localeMapper = adminConsole.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, OIDCLoginProtocolFactory.LOCALE);
+
+        if (localeMapper == null) {
+            localeMapper = ProtocolMapperUtils.findLocaleMapper(session);
+            if (localeMapper != null) {
+                adminConsole.addProtocolMapper(localeMapper);
+            }
+        }
     }
 
     public void setupAdminCli(RealmModel realm) {
@@ -254,6 +266,7 @@ public class RealmManager implements RealmImporter {
         }
     }
 
+
     private void setupMasterAdminManagement(RealmModel realm) {
         // Need to refresh masterApp for current realm
         String adminRealmId = Config.getAdminRealm();
@@ -262,11 +275,11 @@ public class RealmManager implements RealmImporter {
         if (masterApp != null) {
             realm.setMasterAdminClient(masterApp);
         }  else {
-            createMasterAdminManagement(model, realm);
+            createMasterAdminManagement(realm);
         }
     }
 
-    private void createMasterAdminManagement(RealmProvider model, RealmModel realm) {
+    private void createMasterAdminManagement(RealmModel realm) {
         RealmModel adminRealm;
         RoleModel adminRole;
 
@@ -300,10 +313,22 @@ public class RealmManager implements RealmImporter {
         }
     }
 
+    private void checkMasterAdminManagementRoles(RealmModel realm) {
+        RealmModel adminRealm = model.getRealmByName(Config.getAdminRealm());
+        RoleModel adminRole = adminRealm.getRole(AdminRoles.ADMIN);
+
+        ClientModel masterAdminClient = realm.getMasterAdminClient();
+        for (String r : AdminRoles.ALL_REALM_ROLES) {
+            RoleModel found = masterAdminClient.getRole(r);
+            if (found == null) {
+                addAndSetAdminRole(r, masterAdminClient, adminRole);
+            }
+        }
+    }
+
+
     private void setupRealmAdminManagement(RealmModel realm) {
         if (realm.getName().equals(Config.getAdminRealm())) { return; } // don't need to do this for master realm
-
-        ClientManager clientManager = new ClientManager(new RealmManager(session));
 
         String realmAdminClientId = getRealmAdminClientId(realm);
         ClientModel realmAdminClient = realm.getClientByClientId(realmAdminClientId);
@@ -318,10 +343,30 @@ public class RealmManager implements RealmImporter {
         realmAdminClient.setFullScopeAllowed(false);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
-            RoleModel role = realmAdminClient.addRole(r);
-            role.setDescription("${role_"+r+"}");
-            role.setScopeParamRequired(false);
-            adminRole.addCompositeRole(role);
+            addAndSetAdminRole(r, realmAdminClient, adminRole);
+        }
+    }
+
+    private void addAndSetAdminRole(String roleName, ClientModel parentClient, RoleModel parentRole) {
+        RoleModel role = parentClient.addRole(roleName);
+        role.setDescription("${role_" + roleName + "}");
+        role.setScopeParamRequired(false);
+        parentRole.addCompositeRole(role);
+    }
+
+
+    private void checkRealmAdminManagementRoles(RealmModel realm) {
+        if (realm.getName().equals(Config.getAdminRealm())) { return; } // don't need to do this for master realm
+
+        String realmAdminClientId = getRealmAdminClientId(realm);
+        ClientModel realmAdminClient = realm.getClientByClientId(realmAdminClientId);
+        RoleModel adminRole = realmAdminClient.getRole(AdminRoles.REALM_ADMIN);
+
+        for (String r : AdminRoles.ALL_REALM_ROLES) {
+            RoleModel found = realmAdminClient.getRole(r);
+            if (found == null) {
+                addAndSetAdminRole(r, realmAdminClient, adminRole);
+            }
         }
     }
 
@@ -389,13 +434,12 @@ public class RealmManager implements RealmImporter {
         if (!hasAccountManagementClient(rep)) setupAccountManagement(realm);
 
         boolean postponeImpersonationSetup = false;
-        if (!hasImpersonationServiceClient(rep)) {
-            if (hasRealmAdminManagementClient(rep)) {
-                postponeImpersonationSetup = true;
-            } else {
-                setupImpersonationService(realm);
-            }
+        if (hasRealmAdminManagementClient(rep)) {
+            postponeImpersonationSetup = true;
+        } else {
+            setupImpersonationService(realm);
         }
+
 
         if (!hasBrokerClient(rep)) setupBrokerService(realm);
         if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
@@ -413,9 +457,15 @@ public class RealmManager implements RealmImporter {
 
         RepresentationToModel.importRealm(session, rep, realm);
 
+        setupAdminConsoleLocaleMapper(realm);
+
         if (postponeMasterClientSetup) {
             setupMasterAdminManagement(realm);
         }
+
+        // Assert all admin roles are available once import took place. This is needed due to import from previous version where JSON file may not contain all admin roles
+        checkMasterAdminManagementRoles(realm);
+        checkRealmAdminManagementRoles(realm);
 
         // Could happen when migrating from older version and I have exported JSON file, which contains "realm-management" client but not "impersonation" client
         // I need to postpone impersonation because it needs "realm-management" client and its roles set
@@ -455,9 +505,7 @@ public class RealmManager implements RealmImporter {
     private boolean hasAccountManagementClient(RealmRepresentation rep) {
         return hasClient(rep, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
     }
-    private boolean hasImpersonationServiceClient(RealmRepresentation rep) {
-        return hasClient(rep, Constants.IMPERSONATION_SERVICE_CLIENT_ID);
-    }
+
     private boolean hasBrokerClient(RealmRepresentation rep) {
         return hasClient(rep, Constants.BROKER_SERVICE_CLIENT_ID);
     }

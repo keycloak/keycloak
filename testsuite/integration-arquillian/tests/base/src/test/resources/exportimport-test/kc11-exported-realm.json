@@ -1,0 +1,494 @@
+[ {
+  "id" : "master",
+  "realm" : "master",
+  "notBefore" : 0,
+  "accessTokenLifespan" : 60,
+  "ssoSessionIdleTimeout" : 1800,
+  "ssoSessionMaxLifespan" : 36000,
+  "accessCodeLifespan" : 60,
+  "accessCodeLifespanUserAction" : 300,
+  "enabled" : true,
+  "sslRequired" : "external",
+  "passwordCredentialGrantAllowed" : false,
+  "registrationAllowed" : false,
+  "rememberMe" : false,
+  "verifyEmail" : false,
+  "resetPasswordAllowed" : false,
+  "social" : false,
+  "updateProfileOnInitialSocialLogin" : false,
+  "bruteForceProtected" : false,
+  "maxFailureWaitSeconds" : 900,
+  "minimumQuickLoginWaitSeconds" : 60,
+  "waitIncrementSeconds" : 60,
+  "quickLoginCheckMilliSeconds" : 1000,
+  "maxDeltaTimeSeconds" : 43200,
+  "failureFactor" : 30,
+  "privateKey" : "MIICXQIBAAKBgQC5lddWO92keqWg+QmMUj/jxA2kwH22UZ0iE9454Ail9JnOvwOTXSP8M92JN7D7DSJM/J45E2Kju5RrQ/QM8bBwYPk/vZlQkJcKbnrkQFtUdBrjoaMQlDvoaqIx1u4irSj2phRPR8teT72A867JGnW2clIwScl2dznZs2Br+jCN3QIDAQABAoGBAKdfFMqnyRfKqM+JaewMTaR7rxZTp8yixET0iCnH++S3uXM03+OqT4bnu7dB67IuwS2Pcp7k9cPWq18l9NcrrcPQCS5knpoNzDO2RuLfXDUCGG/N3MMmthRAeILHun8/CBSfBbcdJESn67g4RV5AldWf8dSgwUcwN4RxbnfUdIbdAkEA9ko38bhfszg9VRea/XVNIpUBQZXpsHt951GoL1Sz0u5iUADyDc/lLgV+eNA9mclvBpg+S+2jcAWMY1rN34wU5wJBAMDm78sYQK8ert+bJV8OSl+6Rpu3cLSdBWNnHZWBpDUHO9JlD2GQblDR3MoL+2j0W/F+7MLhT/LZPQkvMCM+KpsCQGoS+RlQcVc9B51Yd1ZmaPxV9J6MtINgDI/OKYOJFZHpPcp7PcUZHvm9QAVEmuNbUEgk1d/Zz6R1n0tDVpvLN00CQQCH0tNq3DPHWkJlXXdN2+EQUDehMuOfuKPvns5c08CMOgCsHs5asviJ3YqplRA7kTsf6m/ItB637rAkRF6PohkbAkBi9CUTSy32o0AKBuhPDVJOgTqfvlNqmraa/0V65IDhactJ3hmgJXpUI7F0u42NU0uXgU5QMFwHet1sSWxnGcaa",
+  "publicKey" : "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC5lddWO92keqWg+QmMUj/jxA2kwH22UZ0iE9454Ail9JnOvwOTXSP8M92JN7D7DSJM/J45E2Kju5RrQ/QM8bBwYPk/vZlQkJcKbnrkQFtUdBrjoaMQlDvoaqIx1u4irSj2phRPR8teT72A867JGnW2clIwScl2dznZs2Br+jCN3QIDAQAB",
+  "certificate" : "MIIBlTCB/wIGAVPnGdy9MA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMTBm1hc3RlcjAeFw0xNjA0MDUxNTQ0MDVaFw0yNjA0MDUxNTQ1NDVaMBExDzANBgNVBAMTBm1hc3RlcjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAuZXXVjvdpHqloPkJjFI/48QNpMB9tlGdIhPeOeAIpfSZzr8Dk10j/DPdiTew+w0iTPyeORNio7uUa0P0DPGwcGD5P72ZUJCXCm565EBbVHQa46GjEJQ76GqiMdbuIq0o9qYUT0fLXk+9gPOuyRp1tnJSMEnJdnc52bNga/owjd0CAwEAATANBgkqhkiG9w0BAQsFAAOBgQBqQFaqBy50CddfEHPhlf5YDUmTwZIoX/rh74vTESl7thzRQpQ6LhKVI3hfBNI91Xcr58J1WEA3Lm93T7yC5/ShsGbDJi8RJTDhQYY6LBhxT2ZSq+RLFaWyloFLa5V7hTY4F73yml4IM5mKLMmvcxr4xIZvPkKsvR0C+y9yb4dEzg==",
+  "codeSecret" : "8669f9cf-6715-48f0-929d-ec5d66a6efcf",
+  "roles" : {
+    "realm" : [ {
+      "id" : "db49ad9b-6784-4eb8-bedd-07ff716098c0",
+      "name" : "admin",
+      "composite" : true,
+      "composites" : {
+        "realm" : [ "create-realm" ],
+        "application" : {
+          "foo11-realm" : [ "view-events", "view-realm", "manage-events", "manage-clients", "manage-realm", "view-clients", "view-users", "manage-applications", "manage-users", "view-applications" ],
+          "master-realm" : [ "view-realm", "manage-applications", "manage-realm", "manage-users", "view-events", "manage-events", "view-applications", "view-users", "view-clients", "manage-clients" ]
+        }
+      }
+    }, {
+      "id" : "f6b11ea0-0287-4631-9ce1-df4c5998f840",
+      "name" : "create-realm",
+      "composite" : false
+    } ],
+    "application" : {
+      "security-admin-console" : [ ],
+      "foo11-realm" : [ {
+        "id" : "90a00c88-2ad5-4b38-81b2-3ba4583c67c9",
+        "name" : "manage-clients",
+        "composite" : false
+      }, {
+        "id" : "d103fd4a-55f2-409f-8357-5f9645463ac3",
+        "name" : "view-events",
+        "composite" : false
+      }, {
+        "id" : "76952522-6671-4abb-90a9-e6256386b8d3",
+        "name" : "manage-realm",
+        "composite" : false
+      }, {
+        "id" : "973ebcfb-37b2-43ce-af5a-acbc48429c86",
+        "name" : "view-clients",
+        "composite" : false
+      }, {
+        "id" : "b32deca4-a345-4fb6-a6ce-f8666e653c16",
+        "name" : "view-users",
+        "composite" : false
+      }, {
+        "id" : "f030bd3b-3ef8-496c-9c75-f370f19f7a56",
+        "name" : "manage-applications",
+        "composite" : false
+      }, {
+        "id" : "b196345c-07ca-4dea-8a35-84f5aa41f177",
+        "name" : "view-realm",
+        "composite" : false
+      }, {
+        "id" : "747c7af4-60a0-4be4-9c7a-33969572f3e1",
+        "name" : "manage-users",
+        "composite" : false
+      }, {
+        "id" : "ff468d9b-4d5a-4a03-9640-24b0a94a238f",
+        "name" : "manage-events",
+        "composite" : false
+      }, {
+        "id" : "61f9766c-44c2-4195-b9b8-c23d63409c16",
+        "name" : "view-applications",
+        "composite" : false
+      } ],
+      "master-realm" : [ {
+        "id" : "21866bbb-60de-4248-879f-ceb11a75f4e6",
+        "name" : "view-applications",
+        "composite" : false
+      }, {
+        "id" : "267071a5-170f-4438-b333-3d00a0ec268f",
+        "name" : "view-realm",
+        "composite" : false
+      }, {
+        "id" : "53a53160-92b3-43a4-9ba1-a0c19eaf1ad9",
+        "name" : "manage-applications",
+        "composite" : false
+      }, {
+        "id" : "2ce8b8ba-5e15-4a04-bedb-96d74784fd54",
+        "name" : "manage-realm",
+        "composite" : false
+      }, {
+        "id" : "d7045c16-29cb-4e88-bd61-7d6fd77e6c7d",
+        "name" : "manage-users",
+        "composite" : false
+      }, {
+        "id" : "6f933ebd-bbf5-4fea-b4e1-ace854667b9b",
+        "name" : "view-events",
+        "composite" : false
+      }, {
+        "id" : "3588ffcb-96cc-4263-8244-1b71d441202a",
+        "name" : "view-users",
+        "composite" : false
+      }, {
+        "id" : "5a4bcd8f-8cc9-4a01-94d1-3b8a86e228af",
+        "name" : "view-clients",
+        "composite" : false
+      }, {
+        "id" : "5c42606c-f3ec-4abd-aad0-9ec98d6fa39f",
+        "name" : "manage-events",
+        "composite" : false
+      }, {
+        "id" : "678d5c25-b5b0-4447-95c1-b3dc14fa0e3f",
+        "name" : "manage-clients",
+        "composite" : false
+      } ],
+      "account" : [ {
+        "id" : "700d3f40-8e11-47d7-b3f1-14d07a7da647",
+        "name" : "manage-account",
+        "composite" : false
+      }, {
+        "id" : "a9d81246-ec6c-4b71-912a-7a1518ec64d5",
+        "name" : "view-profile",
+        "composite" : false
+      } ]
+    }
+  },
+  "requiredCredentials" : [ "password" ],
+  "users" : [ {
+    "id" : "d678f579-29f4-46d5-a124-8bcdbeeeb55d",
+    "username" : "admin",
+    "enabled" : true,
+    "totp" : false,
+    "emailVerified" : false,
+    "credentials" : [ {
+      "type" : "password",
+      "hashedSaltedValue" : "VIw4dTFMrU8aw3xvsI6Kqh2gA5Y0P2TJEyEmgplkColwuXUC2G+RTsahsOgqwG9yIgyrFS9Fe+GlPNUQWxO1Sw==",
+      "salt" : "5IsVTxiv9At7xTHoTN17+g==",
+      "hashIterations" : 1,
+      "temporary" : false
+    } ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "admin" ],
+    "applicationRoles" : {
+      "account" : [ "manage-account", "view-profile" ]
+    }
+  } ],
+  "scopeMappings" : [ {
+    "client" : "security-admin-console",
+    "roles" : [ "admin" ]
+  } ],
+  "applications" : [ {
+    "id" : "4fe35549-1d84-440e-83c6-48cad624aba4",
+    "name" : "master-realm",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "secret" : "0da9f8c5-ee7a-4d4b-9c93-944ac72b7ef0",
+    "redirectUris" : [ ],
+    "webOrigins" : [ ],
+    "claims" : {
+      "name" : true,
+      "username" : true,
+      "profile" : true,
+      "picture" : true,
+      "website" : true,
+      "email" : true,
+      "gender" : true,
+      "locale" : true,
+      "address" : true,
+      "phone" : true
+    },
+    "notBefore" : 0,
+    "bearerOnly" : true,
+    "publicClient" : false,
+    "attributes" : { },
+    "fullScopeAllowed" : true,
+    "nodeReRegistrationTimeout" : 0
+  }, {
+    "id" : "5b2a2ae8-f0b9-40cc-a586-4adf46379a49",
+    "name" : "account",
+    "baseUrl" : "/auth/realms/master/account",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "secret" : "f055644e-e59e-462f-98fd-9a5b7c22e03a",
+    "defaultRoles" : [ "view-profile", "manage-account" ],
+    "redirectUris" : [ "/auth/realms/master/account/*" ],
+    "webOrigins" : [ ],
+    "claims" : {
+      "name" : true,
+      "username" : true,
+      "profile" : true,
+      "picture" : true,
+      "website" : true,
+      "email" : true,
+      "gender" : true,
+      "locale" : true,
+      "address" : true,
+      "phone" : true
+    },
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "publicClient" : false,
+    "attributes" : { },
+    "fullScopeAllowed" : false,
+    "nodeReRegistrationTimeout" : 0
+  }, {
+    "id" : "22ed594d-8c21-43f0-a080-c8879a411f94",
+    "name" : "security-admin-console",
+    "baseUrl" : "/auth/admin/master/console/index.html",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "secret" : "bf9b9f8b-0a85-42da-bc14-befab4305298",
+    "redirectUris" : [ "/auth/admin/master/console/*" ],
+    "webOrigins" : [ ],
+    "claims" : {
+      "name" : true,
+      "username" : true,
+      "profile" : true,
+      "picture" : true,
+      "website" : true,
+      "email" : true,
+      "gender" : true,
+      "locale" : true,
+      "address" : true,
+      "phone" : true
+    },
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "publicClient" : true,
+    "attributes" : { },
+    "fullScopeAllowed" : false,
+    "nodeReRegistrationTimeout" : 0
+  }, {
+    "id" : "c9c3bd5f-b69d-4640-8b27-45d4f3866a36",
+    "name" : "foo11-realm",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "secret" : "aba746f8-fafd-4d6d-af65-e0bb669b1afc",
+    "redirectUris" : [ ],
+    "webOrigins" : [ ],
+    "claims" : {
+      "name" : true,
+      "username" : true,
+      "profile" : true,
+      "picture" : true,
+      "website" : true,
+      "email" : true,
+      "gender" : true,
+      "locale" : true,
+      "address" : true,
+      "phone" : true
+    },
+    "notBefore" : 0,
+    "bearerOnly" : true,
+    "publicClient" : false,
+    "attributes" : { },
+    "fullScopeAllowed" : true,
+    "nodeReRegistrationTimeout" : 0
+  } ],
+  "oauthClients" : [ ],
+  "browserSecurityHeaders" : {
+    "xFrameOptions" : "SAMEORIGIN",
+    "contentSecurityPolicy" : "frame-src 'self'"
+  },
+  "socialProviders" : { },
+  "smtpServer" : { },
+  "eventsEnabled" : false,
+  "eventsListeners" : [ ]
+}, {
+  "id" : "14e6923c-f5fb-44aa-8982-35d4976c56c5",
+  "realm" : "foo11",
+  "notBefore" : 0,
+  "accessTokenLifespan" : 300,
+  "ssoSessionIdleTimeout" : 1800,
+  "ssoSessionMaxLifespan" : 36000,
+  "accessCodeLifespan" : 60,
+  "accessCodeLifespanUserAction" : 300,
+  "enabled" : true,
+  "sslRequired" : "external",
+  "passwordCredentialGrantAllowed" : false,
+  "registrationAllowed" : false,
+  "rememberMe" : false,
+  "verifyEmail" : false,
+  "resetPasswordAllowed" : false,
+  "social" : false,
+  "updateProfileOnInitialSocialLogin" : false,
+  "bruteForceProtected" : false,
+  "maxFailureWaitSeconds" : 900,
+  "minimumQuickLoginWaitSeconds" : 60,
+  "waitIncrementSeconds" : 60,
+  "quickLoginCheckMilliSeconds" : 1000,
+  "maxDeltaTimeSeconds" : 43200,
+  "failureFactor" : 30,
+  "privateKey" : "MIICXQIBAAKBgQC05JPgp3F/lxuKMmf6TNs5YtumvoFL88eQ9UPhYn768CHc/PDNRBu3VN8GxwgbkUEX/I5s+nTWo8bKJAxdDyGRlAYItanJxH5iCe152cuEAY0kkHunDvsgAKx7snUztYJ7kC1b+B8I+9a6D0yXwwAZMHlOvF+QXKIiDzB8Cvww+QIDAQABAoGAIW/G7dXFowH5czgSBDBErXzagR3hpHpxPxg27ehY9GWCvOh8UlTukpq7hvMvSnk1AQwL/5TkF/C6BA9ZwbHUUFZduRFuut/Dsm8FtT5MiwdjmBBbcoQNZ6MlC4meHZBR/cRvu5ABQa2ChR6csMDISSHSh2lliPticfvZWZyKvAECQQDylYgBDeL6/0q+GCS1lO2FIncg/sRVqINZI7Ald+C3+VHtWlvPqbMvUDBKFBQMV4qH+JOUkvVLgXITbZHGAaK5AkEAvuWhpdzbR9CdxMsOeVb6Jg5MJGSbZBNY+e/diqwbnSNtt1VYqrPEeaOwFLm7g7/ODbwsDBh2sw68898zr7DgQQJATaRuk2fObmenlJBFr5irLSGK35SrYn89CxrRFiz4T+oMvttc52p5X3ta+VrTz991B3AYTEV9HV2hFXbMYYPEgQJBAKtmy4l9kHYe3knAeLKCYgChfcR/gPaOWKmxsZ29gt3I3c5rFz3OQ29khclWKwPUyFKUzofdv1ZuuUHO+z2Y9wECQQC/AJmkiMWGp9Ol3gbM7KhLS8CFLxFlPdBav5EqOxPmFUQQvSStUq3zoLpuYJKlXC5D5tbd7pNf5b1XycEtbRXH",
+  "publicKey" : "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC05JPgp3F/lxuKMmf6TNs5YtumvoFL88eQ9UPhYn768CHc/PDNRBu3VN8GxwgbkUEX/I5s+nTWo8bKJAxdDyGRlAYItanJxH5iCe152cuEAY0kkHunDvsgAKx7snUztYJ7kC1b+B8I+9a6D0yXwwAZMHlOvF+QXKIiDzB8Cvww+QIDAQAB",
+  "certificate" : "MIIBkzCB/QIGAVPnGn2KMA0GCSqGSIb3DQEBCwUAMBAxDjAMBgNVBAMTBWZvbzExMB4XDTE2MDQwNTE1NDQ0NloXDTI2MDQwNTE1NDYyNlowEDEOMAwGA1UEAxMFZm9vMTEwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALTkk+CncX+XG4oyZ/pM2zli26a+gUvzx5D1Q+FifvrwIdz88M1EG7dU3wbHCBuRQRf8jmz6dNajxsokDF0PIZGUBgi1qcnEfmIJ7XnZy4QBjSSQe6cO+yAArHuydTO1gnuQLVv4Hwj71roPTJfDABkweU68X5BcoiIPMHwK/DD5AgMBAAEwDQYJKoZIhvcNAQELBQADgYEAsB4JWLBGFIaPAJAnZ8BMGuVoQhNtRxUD4htX/enKpuiQM3u0Nw4sFotJG8xvnxucJheCB8DpvIcAVmaARqLJ0bvfJ4wbP70cWd3iCvxoiiXtjpSQy/0rOTeGiYcnnwZC+ffpOzTGe4OoPdYymjrmubeIyRrF+ijmH2n2Rn4ELXw=",
+  "codeSecret" : "0af1be0b-2fdb-4037-9e6a-1e3370bf9f15",
+  "roles" : {
+    "application" : {
+      "realm-management" : [ {
+        "id" : "eaaf02b4-a38e-4fca-8689-a4ace644c7d9",
+        "name" : "manage-applications",
+        "composite" : false
+      }, {
+        "id" : "ce48589c-1459-4b75-ac99-45fd9255e562",
+        "name" : "manage-events",
+        "composite" : false
+      }, {
+        "id" : "ac30d420-da49-4ac6-83f8-2a6be5b5435d",
+        "name" : "view-users",
+        "composite" : false
+      }, {
+        "id" : "6f465ced-4722-4059-8300-104a68d5fd98",
+        "name" : "view-realm",
+        "composite" : false
+      }, {
+        "id" : "0f3060f4-2097-4e8b-8852-b8b27be11b6b",
+        "name" : "view-events",
+        "composite" : false
+      }, {
+        "id" : "1ceb312c-a5ae-4199-b567-81bef7d9103f",
+        "name" : "manage-realm",
+        "composite" : false
+      }, {
+        "id" : "d36d799b-0fa1-48eb-8b45-3bfc1eab817e",
+        "name" : "view-applications",
+        "composite" : false
+      }, {
+        "id" : "7d04fc11-2d52-4aca-9f79-e3d1782e4eef",
+        "name" : "manage-clients",
+        "composite" : false
+      }, {
+        "id" : "1c233305-6941-407f-8058-dfdf40f7d87f",
+        "name" : "realm-admin",
+        "composite" : true,
+        "composites" : {
+          "application" : {
+            "realm-management" : [ "manage-applications", "manage-events", "view-users", "view-realm", "view-events", "manage-realm", "view-applications", "manage-clients", "view-clients", "manage-users" ]
+          }
+        }
+      }, {
+        "id" : "29fe8dc9-ec74-42bf-b11a-3592aa205612",
+        "name" : "view-clients",
+        "composite" : false
+      }, {
+        "id" : "ac0059d0-bbe5-4247-ab82-5d408a1e9e19",
+        "name" : "manage-users",
+        "composite" : false
+      } ],
+      "security-admin-console" : [ ],
+      "account" : [ {
+        "id" : "44d8d987-62e4-4235-afd8-c0f7e7c5c280",
+        "name" : "view-profile",
+        "composite" : false
+      }, {
+        "id" : "03c1c19b-1732-488d-afc6-b5962e1d5fcd",
+        "name" : "manage-account",
+        "composite" : false
+      } ]
+    }
+  },
+  "requiredCredentials" : [ "password" ],
+  "users" : [ {
+    "id" : "2de2f04e-ff3b-4c22-b98d-6e3689bb2108",
+    "username" : "john11",
+    "enabled" : true,
+    "totp" : false,
+    "emailVerified" : false,
+    "email" : "john11@email.cz",
+    "credentials" : [ {
+      "type" : "password",
+      "hashedSaltedValue" : "2iUgsRh4EU4OV1nucya5UGCtQ34g/dpF8S1fKR77SsC0MrGpb1IKW7VOxGrooaQdxyzwFl48wXy68QFlkk6BcQ==",
+      "salt" : "rkzFU40mN8yVa7agq3SXMA==",
+      "hashIterations" : 1,
+      "temporary" : false
+    } ],
+    "requiredActions" : [ ],
+    "applicationRoles" : {
+      "realm-management" : [ "manage-applications" ],
+      "account" : [ "view-profile", "manage-account" ]
+    }
+  } ],
+  "applicationScopeMappings" : {
+    "realm-management" : [ {
+      "client" : "security-admin-console",
+      "roles" : [ "realm-admin" ]
+    } ]
+  },
+  "applications" : [ {
+    "id" : "c7a9cf59-feeb-44a4-a467-e008e157efa2",
+    "name" : "realm-management",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "secret" : "1bceb96f-9abe-4a8a-9d76-5989e87a981e",
+    "redirectUris" : [ ],
+    "webOrigins" : [ ],
+    "claims" : {
+      "name" : true,
+      "username" : true,
+      "profile" : true,
+      "picture" : true,
+      "website" : true,
+      "email" : true,
+      "gender" : true,
+      "locale" : true,
+      "address" : true,
+      "phone" : true
+    },
+    "notBefore" : 0,
+    "bearerOnly" : true,
+    "publicClient" : false,
+    "attributes" : { },
+    "fullScopeAllowed" : false,
+    "nodeReRegistrationTimeout" : 0
+  }, {
+    "id" : "0715aa1a-0b7d-4594-a315-741205441910",
+    "name" : "account",
+    "baseUrl" : "/auth/realms/foo11/account",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "secret" : "c7378e28-201c-4fd0-8482-ad5ea78adc51",
+    "defaultRoles" : [ "view-profile", "manage-account" ],
+    "redirectUris" : [ "/auth/realms/foo11/account/*" ],
+    "webOrigins" : [ ],
+    "claims" : {
+      "name" : true,
+      "username" : true,
+      "profile" : true,
+      "picture" : true,
+      "website" : true,
+      "email" : true,
+      "gender" : true,
+      "locale" : true,
+      "address" : true,
+      "phone" : true
+    },
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "publicClient" : false,
+    "attributes" : { },
+    "fullScopeAllowed" : false,
+    "nodeReRegistrationTimeout" : 0
+  }, {
+    "id" : "a9ca4217-74a8-4658-92c8-c2f9ed48a474",
+    "name" : "security-admin-console",
+    "baseUrl" : "/auth/admin/foo11/console/index.html",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "secret" : "a5fd322f-6d2b-463c-b2af-bbc56f772462",
+    "redirectUris" : [ "/auth/admin/foo11/console/*" ],
+    "webOrigins" : [ ],
+    "claims" : {
+      "name" : true,
+      "username" : true,
+      "profile" : true,
+      "picture" : true,
+      "website" : true,
+      "email" : true,
+      "gender" : true,
+      "locale" : true,
+      "address" : true,
+      "phone" : true
+    },
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "publicClient" : true,
+    "attributes" : { },
+    "fullScopeAllowed" : false,
+    "nodeReRegistrationTimeout" : 0
+  } ],
+  "oauthClients" : [ ],
+  "browserSecurityHeaders" : {
+    "xFrameOptions" : "SAMEORIGIN",
+    "contentSecurityPolicy" : "frame-src 'self'"
+  },
+  "socialProviders" : { },
+  "smtpServer" : { },
+  "eventsEnabled" : false,
+  "eventsListeners" : [ ]
+} ]
