@@ -71,6 +71,34 @@ public class RealmTest extends AbstractClientTest {
     }
 
     @Test
+    public void renameRealm() {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setId("old");
+        rep.setRealm("old");
+
+        try {
+            keycloak.realms().create(rep);
+
+            rep.setRealm("new");
+            keycloak.realm("old").update(rep);
+
+            // Check client in master realm renamed
+            assertEquals(0, keycloak.realm("master").clients().findByClientId("old-realm").size());
+            assertEquals(1, keycloak.realm("master").clients().findByClientId("new-realm").size());
+
+            ClientRepresentation adminClient = keycloak.realm("new").clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
+            assertEquals("/auth/admin/new/console/index.html", adminClient.getBaseUrl());
+            assertEquals("/auth/admin/new/console/*", adminClient.getRedirectUris().get(0));
+
+            ClientRepresentation accountClient = keycloak.realm("new").clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+            assertEquals("/auth/realms/new/account", accountClient.getBaseUrl());
+            assertEquals("/auth/realms/new/account/*", accountClient.getRedirectUris().get(0));
+        } finally {
+            keycloak.realms().realm(rep.getRealm()).remove();
+        }
+    }
+
+    @Test
     public void createRealmEmpty() {
         try {
             RealmRepresentation rep = new RealmRepresentation();

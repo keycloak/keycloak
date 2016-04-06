@@ -231,7 +231,6 @@ public class WelcomeResource {
     }
 
     private void updateCsrfChecks() {
-        RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
         if (cookie != null) {
             stateChecker = cookie.getValue();
