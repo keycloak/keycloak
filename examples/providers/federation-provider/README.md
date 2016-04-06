@@ -2,7 +2,7 @@ Example User Federation Provider
 ===================================================
 
 This is an example of user federation backed by a simple properties file.  This properties file only contains username/password
-key pairs.  To deploy, build this directory then take the jar and copy it to standalone/configuration/providers. Alternatively you can deploy as a module by running:
+key pairs.  To deploy, build this directory then take the jar and copy it to providers directory. Alternatively you can deploy as a module by running:
 
     KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.examples.userprops --resources=target/federation-properties-example.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-server-spi"
 
