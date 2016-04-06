@@ -244,7 +244,7 @@ Forms Subflow - ALTERNATIVE
                 This services/ file is used by Keycloak to scan the providers it has to load into the system.
             </para>
             <para>
-                To deploy this jar, just copy it to the standalone/configuration/providers directory.
+                To deploy this jar, just copy it to the providers directory.
             </para>
         </section>
         <section>
@@ -558,7 +558,7 @@ public class SecretQuestionAuthenticatorFactory implements AuthenticatorFactory,
                 This services/ file is used by Keycloak to scan the providers it has to load into the system.
             </para>
             <para>
-                To deploy this jar, just copy it to the standalone/configuration/providers directory.
+                To deploy this jar, just copy it to the providers directory.
             </para>
         </section>
         <section>
@@ -831,7 +831,7 @@ public class SecretQuestionRequiredActionFactory implements RequiredActionFactor
                 This services/ file is used by Keycloak to scan the providers it has to load into the system.
             </para>
             <para>
-                To deploy this jar, just copy it to the standalone/configuration/providers directory.
+                To deploy this jar, just copy it to the providers directory.
             </para>
         </section>
         <section>
