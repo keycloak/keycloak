@@ -18,24 +18,13 @@
 
 package org.keycloak.services.resource;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
 /**
  * <p>A factory that creates {@link RealmResourceProvider} instances.
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public interface RealmResourceProviderFactory extends ProviderFactory<RealmResourceProvider>, ServerInfoAwareProviderFactory {
+public interface RealmResourceProviderFactory extends ProviderFactory<RealmResourceProvider> {
 
-    /**
-     * Creates a {@link RealmResourceProvider}.
-     *
-     * @param realm the {@link RealmModel} associated with the current request
-     * @param keycloakSession the {@link KeycloakSession} associated with the current request
-     * @return a {@link RealmResourceProvider} instance
-     */
-    RealmResourceProvider create(RealmModel realm, KeycloakSession keycloakSession);
 }

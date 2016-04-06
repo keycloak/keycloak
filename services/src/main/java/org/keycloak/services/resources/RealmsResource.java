@@ -17,10 +17,8 @@
 package org.keycloak.services.resources;
 
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -28,20 +26,23 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.util.CacheControlUtil;
-import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import java.net.URI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -59,9 +60,6 @@ public class RealmsResource {
 
     @Context
     private HttpRequest request;
-
-    @Context
-    private UriInfo uriInfo;
 
     public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
         UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
@@ -104,49 +102,6 @@ public class RealmsResource {
 
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
-    }
-
-    /**
-     * Returns a temporary redirect to the client url configured for the given {@code clientId} in the given {@code realmName}.
-     * <p>
-     * This allows a client to refer to other clients just by their client id in URLs, will then redirect users to the actual client url.
-     * The client url is derived according to the rules of the base url in the client configuration.
-     * </p>
-     *
-     * @param realmName
-     * @param clientId
-     * @return
-     * @since 2.0
-     */
-    @GET
-    @Path("{realm}/clients/{client_id}/redirect")
-    public Response getRedirect(final @PathParam("realm") String realmName, final @PathParam("client_id") String clientId) {
-
-        RealmModel realm = init(realmName);
-
-        if (realm == null) {
-            return null;
-        }
-
-        ClientModel client = realm.getClientByClientId(clientId);
-
-        if (client == null) {
-            return null;
-        }
-
-        if (client.getRootUrl() == null && client.getBaseUrl() == null) {
-            return null;
-        }
-
-
-        URI targetUri;
-        if (client.getRootUrl() != null && (client.getBaseUrl() == null || client.getBaseUrl().isEmpty())) {
-            targetUri = KeycloakUriBuilder.fromUri(client.getRootUrl()).build();
-        } else {
-            targetUri = KeycloakUriBuilder.fromUri(ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), client.getRootUrl(), client.getBaseUrl())).build();
-        }
-
-        return Response.temporaryRedirect(targetUri).build();
     }
 
     @Path("{realm}/login-actions")
@@ -239,27 +194,20 @@ public class RealmsResource {
     /**
      * A JAX-RS sub-resource locator that uses the {@link org.keycloak.services.resource.RealmResourceSPI} to resolve sub-resources instances given an <code>unknownPath</code>.
      *
-     * @param unknownPath a path that is unknown to the server
-     * @return a JAX-RS sub-resource instance that maps to the given <code>unknownPath</code>. Otherwise null is returned.
+     * @param extension a path that could be to a REST extension
+     * @return a JAX-RS sub-resource instance for the REST extension if found. Otherwise null is returned.
      */
-    @Path("{realm}/{unknow_path}")
-    public Object resolveUnknowPath(@PathParam("realm") String realmName, @PathParam("unknow_path") String unknownPath) {
-        List<ProviderFactory> factory = this.session.getKeycloakSessionFactory().getProviderFactories(RealmResourceProvider.class);
-
-        if (factory != null) {
-            RealmModel realm = init(realmName);
-
-            for (ProviderFactory providerFactory : factory) {
-                RealmResourceProviderFactory realmFactory = (RealmResourceProviderFactory) providerFactory;
-                RealmResourceProvider resourceProvider = realmFactory.create(realm, this.session);
-                Object resource = resourceProvider.getResource(unknownPath);
-
-                if (resource != null) {
-                    return resource;
-                }
+    @Path("{realm}/{extension}")
+    public Object resolveRealmExtension(@PathParam("realm") String realmName, @PathParam("extension") String extension) {
+        RealmResourceProvider provider = session.getProvider(RealmResourceProvider.class, extension);
+        if (provider != null) {
+            init(realmName);
+            Object resource = provider.getResource();
+            if (resource != null) {
+                return resource;
             }
         }
 
-        return null;
+        throw new NotFoundException();
     }
 }
