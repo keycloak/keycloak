@@ -14,37 +14,11 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <jboss-deployment-structure>
     <deployment>
         <dependencies>
-            <module name="org.keycloak.keycloak-common" services="import"/>
-            <module name="org.keycloak.keycloak-core" services="import"/>
-            <module name="org.keycloak.keycloak-themes" services="import"/>
-            <module name="org.keycloak.keycloak-js-adapter" services="import"/>
-            <module name="org.keycloak.keycloak-kerberos-federation" services="import"/>
-            <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
-            <module name="org.keycloak.keycloak-server-spi" services="import"/>
-            <module name="org.keycloak.keycloak-model-jpa" services="import" meta-inf="import"/>
-            <module name="org.keycloak.keycloak-model-mongo" services="import"/>
-            <module name="org.keycloak.keycloak-model-infinispan" services="import"/>
-            <module name="org.keycloak.keycloak-services" export="true" services="import"/>
-            <module name="org.hibernate" services="import"/>
-            <module name="org.bouncycastle"/>
-
-            <module name="org.jboss.resteasy.resteasy-multipart-provider" services="import"/>
-            <module name="org.jboss.resteasy.resteasy-jaxrs"/>
-
-            <module name="org.jboss.msc"/>
-
-            <!-- suppress unsupported dependency 'org.infinispan:main' warning -->
-            <module name="org.keycloak.keycloak-server-subsystem.infinispan"/>
+            <module name="org.keycloak.keycloak-server-subsystem.dependencies"/>
         </dependencies>
-        <exclusions>
-            <!-- Exclude keycloak modules -->
-            <module name="org.keycloak.keycloak-common" />
-            <module name="org.keycloak.keycloak-core" />
-        </exclusions>
         <exclude-subsystems>
             <subsystem name="webservices"/>
             <subsystem name="weld"/>

@@ -17,13 +17,13 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-server-subsystem.infinispan">
-
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-server-subsystem.dependencies">
     <resources>
-        <!-- Insert resources here -->
     </resources>
 
     <dependencies>
+        <module name="org.keycloak.keycloak-services" export="true"/>
+        <module name="org.jboss.msc"/>
         <module name="org.infinispan" export="true"/>
     </dependencies>
 </module>
