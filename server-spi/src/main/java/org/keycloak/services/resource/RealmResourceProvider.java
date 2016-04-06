@@ -29,13 +29,10 @@ import org.keycloak.provider.Provider;
 public interface RealmResourceProvider extends Provider {
 
     /**
-     * <p>Returns a JAX-RS resource instance that maps to the given <code>path</code>.
+     * <p>Returns a JAX-RS resource instance.
      *
-     * <p>If the given <code>path</code> could not be resolved to a sub-resource, this method must return null to give a chance to other providers
-     * to resolve their sub-resources.
-     *
-     * @param path the sub-resource's path
-     * @return a JAX-RS sub-resource instance that maps to the given path or null if the path could not be resolved to a sub-resource.
+     * @return a JAX-RS sub-resource instance
      */
-    Object getResource(String path);
+    Object getResource();
+
 }
