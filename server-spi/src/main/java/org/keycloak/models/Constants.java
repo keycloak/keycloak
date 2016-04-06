@@ -28,7 +28,6 @@ public interface Constants {
     String ADMIN_CLI_CLIENT_ID = "admin-cli";
 
     String ACCOUNT_MANAGEMENT_CLIENT_ID = "account";
-    String IMPERSONATION_SERVICE_CLIENT_ID = "impersonation";
     String BROKER_SERVICE_CLIENT_ID = "broker";
     String REALM_MANAGEMENT_CLIENT_ID = "realm-management";
 
