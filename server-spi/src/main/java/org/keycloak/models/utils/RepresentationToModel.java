@@ -80,6 +80,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -620,9 +621,40 @@ public class RepresentationToModel {
 
     public static void renameRealm(RealmModel realm, String name) {
         if (name.equals(realm.getName())) return;
+
+        String oldName = realm.getName();
+
         ClientModel masterApp = realm.getMasterAdminClient();
         masterApp.setClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(name));
         realm.setName(name);
+
+        ClientModel adminClient = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+        if (adminClient != null) {
+            if (adminClient.getBaseUrl() != null) {
+                adminClient.setBaseUrl(adminClient.getBaseUrl().replace("/admin/" + oldName + "/", "/admin/" + name + "/"));
+            }
+            Set<String> adminRedirectUris = new HashSet<>();
+            for (String r : adminClient.getRedirectUris()) {
+                adminRedirectUris.add(replace(r, "/admin/" + oldName + "/", "/admin/" + name + "/"));
+            }
+            adminClient.setRedirectUris(adminRedirectUris);
+        }
+
+        ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        if (accountClient != null) {
+            if (accountClient.getBaseUrl() != null) {
+                accountClient.setBaseUrl(accountClient.getBaseUrl().replace("/realms/" + oldName + "/", "/realms/" + name + "/"));
+            }
+            Set<String> accountRedirectUris = new HashSet<>();
+            for (String r : accountClient.getRedirectUris()) {
+                accountRedirectUris.add(replace(r, "/realms/" + oldName + "/", "/realms/" + name + "/"));
+            }
+            accountClient.setRedirectUris(accountRedirectUris);
+        }
+    }
+
+    private static String replace(String url, String target, String replacement) {
+        return url != null ? url.replace(target, replacement) : null;
     }
 
     public static void updateRealm(RealmRepresentation rep, RealmModel realm) {
