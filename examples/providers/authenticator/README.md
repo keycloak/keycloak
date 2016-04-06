@@ -2,7 +2,7 @@ Example User Federation Provider
 ===================================================
 
 This is an example of defining a custom Authenticator and Required action.  This example is explained in the user documentation
-of Keycloak.   To deploy, build this directory then take the jar and copy it to standalone/configuration/providers. Alternatively you can deploy as a module by running:
+of Keycloak.   To deploy, build this directory then take the jar and copy it to providers directory. Alternatively you can deploy as a module by running:
 
     KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.examples.secret-question --resources=target/authenticator-required-action-example.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-server-spi,org.keycloak.keycloak-services,org.jboss.resteasy.resteasy-jaxrs,javax.ws.rs.api"
 
