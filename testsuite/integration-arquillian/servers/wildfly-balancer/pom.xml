@@ -31,6 +31,8 @@
     
     <properties>
         <wildfly.balancer.home>${project.build.directory}/unpacked/wildfly-${wildfly.version}</wildfly.balancer.home>
+        <wildfly.balancer.worker.io-threads>${jboss.default.worker.io-threads}</wildfly.balancer.worker.io-threads>
+        <wildfly.balancer.worker.task-max-threads>${jboss.default.worker.task-max-threads}</wildfly.balancer.worker.task-max-threads>
     </properties>
     
     <build>
@@ -70,6 +72,35 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>xml-maven-plugin</artifactId>
                 <executions>
+                    <execution>
+                        <id>io-worker-threads</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>transform</goal>
+                        </goals>
+                        <configuration>
+                            <transformationSets>
+                                <transformationSet>
+                                    <dir>${wildfly.balancer.home}/standalone/configuration</dir>
+                                    <includes>
+                                        <include>standalone.xml</include>
+                                    </includes>
+                                    <stylesheet>src/main/xslt/io.xsl</stylesheet>
+                                    <outputDir>${wildfly.balancer.home}/standalone/configuration</outputDir>
+                                    <parameters>
+                                        <parameter>
+                                            <name>worker.io-threads</name>
+                                            <value>${wildfly.balancer.worker.io-threads}</value>
+                                        </parameter>
+                                        <parameter>
+                                            <name>worker.task-max-threads</name>
+                                            <value>${wildfly.balancer.worker.task-max-threads}</value>
+                                        </parameter>
+                                    </parameters>
+                                </transformationSet>
+                            </transformationSets>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>configure-mod-cluster</id>
                         <phase>process-resources</phase>

@@ -46,6 +46,7 @@
         <auth.server.home>${containers.home}/${auth.server.container}</auth.server.home>
         <auth.server.config.dir>${auth.server.home}</auth.server.config.dir>
 
+        <auth.server.host>localhost</auth.server.host>
         <auth.server.port.offset>100</auth.server.port.offset>
         <auth.server.http.port>8180</auth.server.http.port>
         <auth.server.events.http.port>8089</auth.server.events.http.port>
@@ -60,6 +61,8 @@
         <auth.server.jboss.skip.unpack>${auth.server.undertow}</auth.server.jboss.skip.unpack>
         <auth.server.jboss.startup.timeout>300</auth.server.jboss.startup.timeout>
 
+        <auth.server.remote>false</auth.server.remote>
+    
         <adapter.test.props/>
         <examples.home>${project.build.directory}/examples</examples.home>
 
@@ -141,6 +144,7 @@
                             <auth.server.home>${auth.server.home}</auth.server.home>
                             <auth.server.java.home>${auth.server.java.home}</auth.server.java.home>
 
+                            <auth.server.host>${auth.server.host}</auth.server.host>
                             <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
                             <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>
                             <auth.server.events.http.port>${auth.server.events.http.port}</auth.server.events.http.port>
@@ -152,6 +156,8 @@
                             <auth.server.config.dir>${auth.server.config.dir}</auth.server.config.dir>
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
+
+                            <auth.server.remote>${auth.server.remote}</auth.server.remote>
 
                             <adapter.test.props>${adapter.test.props}</adapter.test.props>
 
@@ -175,6 +181,23 @@
 
     <profiles>
 
+        <profile>
+            <id>auth-server-remote</id>
+            <properties>
+                <auth.server>remote</auth.server>
+                <auth.server.remote>true</auth.server.remote>
+                <auth.server.undertow>false</auth.server.undertow>
+                <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-arquillian-container-remote</artifactId>
+                    <version>${arquillian-wildfly-container.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+            
         <profile>
             <id>auth-server-wildfly</id>
             <properties>
@@ -865,6 +888,17 @@
             </build>
         </profile>
 
+        <profile>
+            <id>no-offset</id>
+            <properties>
+                <auth.server.port.offset>0</auth.server.port.offset>
+                <auth.server.http.port>8080</auth.server.http.port>
+                <auth.server.https.port>8443</auth.server.https.port>
+                <auth.server.management.port>9990</auth.server.management.port>
+                <auth.server.management.port.jmx>9999</auth.server.management.port.jmx>
+            </properties>
+        </profile>
+        
     </profiles>
     
 </project>

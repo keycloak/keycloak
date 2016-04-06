@@ -81,13 +81,15 @@ public class AuthServerTestEnricher {
     }
 
     public static String getAuthServerContextRoot(int clusterPortOffset) {
+        String host = System.getProperty("auth.server.host", "localhost");
         int httpPort = Integer.parseInt(System.getProperty("auth.server.http.port")); // property must be set
         int httpsPort = Integer.parseInt(System.getProperty("auth.server.https.port")); // property must be set
-        boolean sslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
 
-        return sslRequired
-                ? "https://localhost:" + (httpsPort + clusterPortOffset)
-                : "http://localhost:" + (httpPort + clusterPortOffset);
+        boolean sslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
+        String scheme = sslRequired ? "https" : "http";
+        int port = sslRequired ? httpsPort : httpPort;
+
+        return String.format("%s://%s:%s", scheme, host, port + clusterPortOffset);
     }
 
     public void initializeSuiteContext(@Observes(precedence = 2) BeforeSuite event) {

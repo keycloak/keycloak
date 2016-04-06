@@ -124,6 +124,61 @@
                                     </transformationSets>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>io-worker-threads</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${app.server.jboss.home}/standalone/configuration</dir>
+                                            <includes>
+                                                <include>standalone.xml</include>
+                                                <include>standalone-ha.xml</include>
+                                            </includes>
+                                            <stylesheet>${common.resources}/io.xsl</stylesheet>
+                                            <outputDir>${app.server.jboss.home}/standalone/configuration</outputDir>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>worker.io-threads</name>
+                                                    <value>${app.server.worker.io-threads}</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>worker.task-max-threads</name>
+                                                    <value>${app.server.worker.task-max-threads}</value>
+                                                </parameter>
+                                            </parameters>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enable-jboss-mgmt-admin</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${app.server.jboss.home}/standalone/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}</directory>
+                                            <includes>
+                                                <include>mgmt-users.properties</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
 
