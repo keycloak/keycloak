@@ -36,6 +36,7 @@ import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.jboss.shrinkwrap.undertow.api.UndertowWebArchive;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.resources.KeycloakApplication;
 
@@ -49,6 +50,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
     
     private UndertowJaxrsServer undertow;
     private KeycloakOnUndertowConfiguration configuration;
+    private KeycloakSessionFactory sessionFactory;
 
     private DeploymentInfo createAuthServerDeploymentInfo() {
         ResteasyDeployment deployment = new ResteasyDeployment();
@@ -125,12 +127,16 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
             undertow = new UndertowJaxrsServer();
         }
         undertow.start(Undertow.builder()
-                .addHttpListener(configuration.getBindHttpPort(), configuration.getBindAddress())
-                .setWorkerThreads(configuration.getWorkerThreads())
-                .setIoThreads(configuration.getWorkerThreads() / 8)
+                        .addHttpListener(configuration.getBindHttpPort(), configuration.getBindAddress())
+                        .setWorkerThreads(configuration.getWorkerThreads())
+                        .setIoThreads(configuration.getWorkerThreads() / 8)
         );
 
-        undertow.deploy(createAuthServerDeploymentInfo());
+        DeploymentInfo di = createAuthServerDeploymentInfo();
+        undertow.deploy(di);
+        ResteasyDeployment deployment = (ResteasyDeployment) di.getServletContextAttributes().get(ResteasyDeployment.class.getName());
+        sessionFactory = ((KeycloakApplication) deployment.getApplication()).getSessionFactory();
+
 
         log.info("Auth server started in " + (System.currentTimeMillis() - start) + " ms\n");
     }
@@ -138,6 +144,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
     @Override
     public void stop() throws LifecycleException {
         log.info("Stopping auth server.");
+        sessionFactory.close();
         undertow.stop();
     }
 
