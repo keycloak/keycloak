@@ -18,23 +18,36 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>keycloak-examples-parent</artifactId>
+        <artifactId>keycloak-examples-providers-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>2.0.0.CR1-SNAPSHOT</version>
     </parent>
 
-    <name>Provider Examples</name>
+    <name>Authenticator Example</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-examples-providers-parent</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>keycloak-examples-providers-rest</artifactId>
+    <packaging>jar</packaging>
 
-    <modules>
-        <module>event-listener-sysout</module>
-        <module>event-store-mem</module>
-        <module>federation-provider</module>
-        <module>authenticator</module>
-        <module>rest</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.ws.rs</groupId>
+            <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>hello-rest-example</finalName>
+    </build>
 </project>

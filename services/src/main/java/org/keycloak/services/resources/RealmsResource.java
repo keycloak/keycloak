@@ -17,7 +17,6 @@
 package org.keycloak.services.resources;
 
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -31,11 +30,13 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -236,4 +237,23 @@ public class RealmsResource {
         return Cors.add(request, responseBuilder).allowedOrigins("*").build();
     }
 
+    /**
+     * A JAX-RS sub-resource locator that uses the {@link org.keycloak.services.resource.RealmResourceSPI} to resolve sub-resources instances given an <code>unknownPath</code>.
+     *
+     * @param extension a path that could be to a REST extension
+     * @return a JAX-RS sub-resource instance for the REST extension if found. Otherwise null is returned.
+     */
+    @Path("{realm}/{extension}")
+    public Object resolveRealmExtension(@PathParam("realm") String realmName, @PathParam("extension") String extension) {
+        RealmResourceProvider provider = session.getProvider(RealmResourceProvider.class, extension);
+        if (provider != null) {
+            init(realmName);
+            Object resource = provider.getResource();
+            if (resource != null) {
+                return resource;
+            }
+        }
+
+        throw new NotFoundException();
+    }
 }
