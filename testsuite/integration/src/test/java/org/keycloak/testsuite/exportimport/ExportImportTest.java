@@ -51,6 +51,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 
 /**
+ * TODO: Move to integration-arquillian and make subclass of AbstractExportImportTest
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ExportImportTest {
@@ -58,13 +60,9 @@ public class ExportImportTest {
     private static SystemPropertiesHelper propsHelper = new SystemPropertiesHelper();
 
     private static final String JPA_CONNECTION_URL = "keycloak.connectionsJpa.url";
-    private static final String JPA_DB_SCHEMA = "keycloak.connectionsJpa.databaseSchema";
-    private static final String MONGO_CLEAR_ON_STARTUP = "keycloak.connectionsMongo.clearOnStartup";
 
     // We want data to be persisted among server restarts
     private static ExternalResource persistenceSetupRule = new ExternalResource() {
-
-        private boolean connectionURLSet = false;
 
         @Override
         protected void before() throws Throwable {
@@ -78,31 +76,12 @@ public class ExportImportTest {
 
                 String dbDir = baseExportImportDir + "/keycloakDB";
                 propsHelper.pushProperty(JPA_CONNECTION_URL, "jdbc:h2:file:" + dbDir + ";DB_CLOSE_DELAY=-1");
-                connectionURLSet = true;
             }
-            propsHelper.pushProperty(JPA_DB_SCHEMA, "update");
         }
 
         @Override
         protected void after() {
-            if (connectionURLSet) {
-                propsHelper.pullProperty(JPA_CONNECTION_URL);
-            }
-        }
-    };
-
-    private static ExternalResource outerPersistenceSetupRule = new ExternalResource() {
-
-        @Override
-        protected void before() throws Throwable {
-            System.setProperty(JPA_DB_SCHEMA, "update");
-            propsHelper.pushProperty(MONGO_CLEAR_ON_STARTUP, "false");
-        }
-
-        @Override
-        protected void after() {
-            propsHelper.pullProperty(JPA_DB_SCHEMA);
-            propsHelper.pullProperty(MONGO_CLEAR_ON_STARTUP);
+            propsHelper.pullProperty(JPA_CONNECTION_URL);
         }
     };
 
@@ -130,6 +109,8 @@ public class ExportImportTest {
         protected void after() {
             super.after();
 
+            // TODO: Make this subclass of AbstractExportImportTest and use AbstractExportImportTest.clearExportImportProperties
+
             // Clear export/import properties after test
             Properties systemProps = System.getProperties();
             Set<String> propsToRemove = new HashSet<String>();
@@ -153,8 +134,7 @@ public class ExportImportTest {
     @ClassRule
     public static TestRule chain = RuleChain
             .outerRule(persistenceSetupRule)
-            .around(keycloakRule)
-            .around(outerPersistenceSetupRule);
+            .around(keycloakRule);
 
     @Test
     public void testDirFullExportImport() throws Throwable {
@@ -401,19 +381,19 @@ public class ExportImportTest {
 
         private void pushProperty(String name, String value) {
             String currentValue = System.getProperty(name);
-            if (currentValue != null) {
-                previousValues.put(name, currentValue);
-            }
+            previousValues.put(name, currentValue);
             System.setProperty(name, value);
         }
 
         private void pullProperty(String name) {
-            String prevValue = previousValues.get(name);
+            if (previousValues.containsKey(name)) {
+                String prevValue = previousValues.get(name);
 
-            if (prevValue == null) {
-                System.getProperties().remove(name);
-            }  else {
-                System.setProperty(name, prevValue);
+                if (prevValue == null) {
+                    System.getProperties().remove(name);
+                } else {
+                    System.setProperty(name, prevValue);
+                }
             }
         }
 
