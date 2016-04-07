@@ -27,11 +27,12 @@ import org.keycloak.representations.AccessTokenResponse;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Form;
 
+import static org.keycloak.OAuth2Constants.*;
+
 /**
  * @author rodrigo.sasaki@icarros.com.br
  */
 public class TokenManager {
-
     private static final long DEFAULT_MIN_VALIDITY = 30;
 
     private AccessTokenResponse currentToken;
@@ -39,61 +40,67 @@ public class TokenManager {
     private long minTokenValidity = DEFAULT_MIN_VALIDITY;
     private final Config config;
     private final TokenService tokenService;
+    private final String accessTokenGrantType;
 
-    public TokenManager(Config config, ResteasyClient client){
+    public TokenManager(Config config, ResteasyClient client) {
         this.config = config;
         ResteasyWebTarget target = client.target(config.getServerUrl());
-        if(!config.isPublicClient()){
+        if (!config.isPublicClient()) {
             target.register(new BasicAuthFilter(config.getClientId(), config.getClientSecret()));
         }
-        tokenService = target.proxy(TokenService.class);
+        this.tokenService = target.proxy(TokenService.class);
+        this.accessTokenGrantType = config.getGrantType();
+
+        if (CLIENT_CREDENTIALS.equals(accessTokenGrantType) && config.isPublicClient()) {
+            throw new IllegalArgumentException("Can't use " + GRANT_TYPE + "=" + CLIENT_CREDENTIALS + " with public client");
+        }
     }
 
-    public String getAccessTokenString(){
+    public String getAccessTokenString() {
         return getAccessToken().getToken();
     }
 
-    public synchronized AccessTokenResponse getAccessToken(){
-        if(currentToken == null){
+    public synchronized AccessTokenResponse getAccessToken() {
+        if (currentToken == null) {
             grantToken();
-        }else if(tokenExpired()){
+        } else if (tokenExpired()) {
             refreshToken();
         }
         return currentToken;
     }
 
-    public AccessTokenResponse grantToken(){
-        Form form = new Form()
-                .param("grant_type", "password")
-                .param("username", config.getUsername())
+    public AccessTokenResponse grantToken() {
+        Form form = new Form().param(GRANT_TYPE, accessTokenGrantType);
+        if (PASSWORD.equals(accessTokenGrantType)) {
+            form.param("username", config.getUsername())
                 .param("password", config.getPassword());
+        }
 
-        if(config.isPublicClient()){
-            form.param("client_id", config.getClientId());
+        if (config.isPublicClient()) {
+            form.param(CLIENT_ID, config.getClientId());
         }
 
         int requestTime = Time.currentTime();
         synchronized (this) {
-            currentToken = tokenService.grantToken( config.getRealm(), form.asMap() );
+            currentToken = tokenService.grantToken(config.getRealm(), form.asMap());
             expirationTime = requestTime + currentToken.getExpiresIn();
         }
         return currentToken;
     }
 
-    public AccessTokenResponse refreshToken(){
-        Form form = new Form()
-                .param("grant_type", "refresh_token")
-                .param("refresh_token", currentToken.getRefreshToken());
+    public AccessTokenResponse refreshToken() {
+        Form form = new Form().param(GRANT_TYPE, REFRESH_TOKEN)
+                              .param(REFRESH_TOKEN, currentToken.getRefreshToken());
 
-        if(config.isPublicClient()){
-            form.param("client_id", config.getClientId());
+        if (config.isPublicClient()) {
+            form.param(CLIENT_ID, config.getClientId());
         }
 
         try {
             int requestTime = Time.currentTime();
 
             synchronized (this) {
-                currentToken = tokenService.refreshToken( config.getRealm(), form.asMap() );
+                currentToken = tokenService.refreshToken(config.getRealm(), form.asMap());
                 expirationTime = requestTime + currentToken.getExpiresIn();
             }
             return currentToken;
