@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -189,19 +190,6 @@ public class GroupTest extends AbstractGroupTest {
         Assert.assertEquals(1, level3Group.getRealmRoles().size());
         Assert.assertTrue(level3Group.getRealmRoles().contains("level3Role"));
 
-        try {
-            GroupRepresentation notFound = realm.getGroupByPath("/notFound");
-            Assert.fail();
-        } catch (NotFoundException e) {
-
-        }
-        try {
-            GroupRepresentation notFound = realm.getGroupByPath("/top/notFound");
-            Assert.fail();
-        } catch (NotFoundException e) {
-
-        }
-
         UserRepresentation user = realm.users().search("direct-login", -1, -1).get(0);
         realm.users().get(user.getId()).joinGroup(level3Group.getId());
         List<GroupRepresentation> membership = realm.users().get(user.getId()).groups();
@@ -232,5 +220,27 @@ public class GroupTest extends AbstractGroupTest {
         realm.removeDefaultGroup(level3Group.getId());
         defaultGroups = realm.getDefaultGroups();
         Assert.assertEquals(0, defaultGroups.size());
+
+        realm.groups().group(topGroup.getId()).remove();
+
+        try {
+            realm.getGroupByPath("/top/level2/level3");
+            Assert.fail("Group should not have been found");
+        }
+        catch (NotFoundException e) {}
+
+        try {
+            realm.getGroupByPath("/top/level2");
+            Assert.fail("Group should not have been found");
+        }
+        catch (NotFoundException e) {}
+
+        try {
+            realm.getGroupByPath("/top");
+            Assert.fail("Group should not have been found");
+        }
+        catch (NotFoundException e) {}
+
+        Assert.assertNull(login("direct-login", "resource-owner", "secret", user.getId()).getRealmAccess());
     }
 }
