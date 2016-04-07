@@ -103,9 +103,9 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
 
         try {
             reg.getAdapterConfig(client.getClientId());
-            fail("Expected 403");
+            fail("Expected 401");
         } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
     }
 
@@ -115,9 +115,9 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
 
         try {
             reg.getAdapterConfig(client2.getClientId());
-            fail("Expected 403");
+            fail("Expected 401");
         } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
     }
 

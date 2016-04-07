@@ -17,18 +17,17 @@
 
 package org.keycloak.services.clientregistration;
 
-import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 
-import javax.ws.rs.*;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -52,12 +51,7 @@ public class AdapterInstallationClientRegistrationProvider implements ClientRegi
         event.event(EventType.CLIENT_INFO);
 
         ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
-
-        if (auth.isAuthenticated()) {
-            auth.requireView(client);
-        } else {
-            authenticateClient(client);
-        }
+        auth.requireView(client);
 
         ClientManager clientManager = new ClientManager(new RealmManager(session));
         Object rep = clientManager.toInstallationRepresentation(session.getContext().getRealm(), client, session.getContext().getAuthServerUrl());
@@ -78,31 +72,6 @@ public class AdapterInstallationClientRegistrationProvider implements ClientRegi
 
     @Override
     public void close() {
-    }
-
-    private void authenticateClient(ClientModel client) {
-        if (client.isPublicClient()) {
-            return;
-        }
-
-        AuthenticationProcessor processor = AuthorizeClientUtil.getAuthenticationProcessor(session, event);
-
-        Response response = processor.authenticateClient();
-        if (response != null) {
-            event.client(client.getClientId()).error(Errors.NOT_ALLOWED);
-            throw new ForbiddenException();
-        }
-
-        ClientModel authClient = processor.getClient();
-        if (client == null) {
-            event.client(client.getClientId()).error(Errors.NOT_ALLOWED);
-            throw new ForbiddenException();
-        }
-
-        if (!authClient.getClientId().equals(client.getClientId())) {
-            event.client(client.getClientId()).error(Errors.NOT_ALLOWED);
-            throw new ForbiddenException();
-        }
     }
 
 }

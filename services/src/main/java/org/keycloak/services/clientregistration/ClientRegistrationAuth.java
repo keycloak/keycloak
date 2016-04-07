@@ -17,20 +17,28 @@
 
 package org.keycloak.services.clientregistration;
 
-import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
+import org.jboss.resteasy.spi.Failure;
+import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.models.*;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientInitialAccessModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -49,8 +57,6 @@ public class ClientRegistrationAuth {
     public ClientRegistrationAuth(KeycloakSession session, EventBuilder event) {
         this.session = session;
         this.event = event;
-
-        init();
     }
 
     private void init() {
@@ -67,41 +73,39 @@ public class ClientRegistrationAuth {
             return;
         }
 
-        jwt = ClientRegistrationTokenUtils.parseToken(realm, uri, split[1]);
+        jwt = ClientRegistrationTokenUtils.verifyToken(realm, uri, split[1]);
+        if (jwt == null) {
+            throw unauthorized();
+        }
 
         if (isInitialAccessToken()) {
             initialAccessModel = session.sessions().getClientInitialAccessModel(session.getContext().getRealm(), jwt.getId());
             if (initialAccessModel == null) {
-                throw new ForbiddenException();
+                throw unauthorized();
             }
         }
     }
 
-    public boolean isAuthenticated() {
-        return jwt != null;
-    }
-
-    public boolean isBearerToken() {
-        return TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
+    private boolean isBearerToken() {
+        return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
     }
 
     public boolean isInitialAccessToken() {
-        return ClientRegistrationTokenUtils.TYPE_INITIAL_ACCESS_TOKEN.equals(jwt.getType());
+        return jwt != null && ClientRegistrationTokenUtils.TYPE_INITIAL_ACCESS_TOKEN.equals(jwt.getType());
     }
 
     public boolean isRegistrationAccessToken() {
-        return ClientRegistrationTokenUtils.TYPE_REGISTRATION_ACCESS_TOKEN.equals(jwt.getType());
+        return jwt != null && ClientRegistrationTokenUtils.TYPE_REGISTRATION_ACCESS_TOKEN.equals(jwt.getType());
     }
 
     public void requireCreate() {
-        if (!isAuthenticated()) {
-            event.error(Errors.NOT_ALLOWED);
-            throw new UnauthorizedException();
-        }
+        init();
 
         if (isBearerToken()) {
             if (hasRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.CREATE_CLIENT)) {
                 return;
+            } else {
+                throw forbidden();
             }
         } else if (isInitialAccessToken()) {
             if (initialAccessModel.getRemainingCount() > 0) {
@@ -111,58 +115,55 @@ public class ClientRegistrationAuth {
             }
         }
 
-        event.error(Errors.NOT_ALLOWED);
-        throw new ForbiddenException();
+        throw unauthorized();
     }
 
     public void requireView(ClientModel client) {
-        if (!isAuthenticated()) {
-            event.error(Errors.NOT_ALLOWED);
-            throw new UnauthorizedException();
-        }
-
-        if (client == null) {
-            event.error(Errors.NOT_ALLOWED);
-            throw new ForbiddenException();
-        }
+        init();
 
         if (isBearerToken()) {
             if (hasRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.VIEW_CLIENTS)) {
+                if (client == null) {
+                    throw notFound();
+                }
                 return;
+            } else {
+                throw forbidden();
             }
         } else if (isRegistrationAccessToken()) {
-            if (client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+            if (client.getRegistrationToken() != null && client != null && client.getRegistrationToken().equals(jwt.getId())) {
+                return;
+            }
+        } else if (isInitialAccessToken()) {
+            throw unauthorized();
+        } else {
+            if (authenticateClient(client)) {
                 return;
             }
         }
 
-        event.error(Errors.NOT_ALLOWED);
-        throw new ForbiddenException();
+        throw unauthorized();
     }
 
     public void requireUpdate(ClientModel client) {
-        if (!isAuthenticated()) {
-            event.error(Errors.NOT_ALLOWED);
-            throw new UnauthorizedException();
-        }
-
-        if (client == null) {
-            event.error(Errors.NOT_ALLOWED);
-            throw new ForbiddenException();
-        }
+        init();
 
         if (isBearerToken()) {
             if (hasRole(AdminRoles.MANAGE_CLIENTS)) {
+                if (client == null) {
+                    throw notFound();
+                }
                 return;
+            } else {
+                throw forbidden();
             }
         } else if (isRegistrationAccessToken()) {
-            if (client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+            if (client.getRegistrationToken() != null && client != null && client.getRegistrationToken().equals(jwt.getId())) {
                 return;
             }
         }
 
-        event.error(Errors.NOT_ALLOWED);
-        throw new ForbiddenException();
+        throw unauthorized();
     }
 
     public ClientInitialAccessModel getInitialAccessModel() {
@@ -205,6 +206,48 @@ public class ClientRegistrationAuth {
         } catch (Throwable t) {
             return false;
         }
+    }
+
+    private boolean authenticateClient(ClientModel client) {
+        if (client.isPublicClient()) {
+            return true;
+        }
+
+        AuthenticationProcessor processor = AuthorizeClientUtil.getAuthenticationProcessor(session, event);
+
+        Response response = processor.authenticateClient();
+        if (response != null) {
+            event.client(client.getClientId()).error(Errors.NOT_ALLOWED);
+            throw unauthorized();
+        }
+
+        ClientModel authClient = processor.getClient();
+        if (client == null) {
+            event.client(client.getClientId()).error(Errors.NOT_ALLOWED);
+            throw unauthorized();
+        }
+
+        if (!authClient.getClientId().equals(client.getClientId())) {
+            event.client(client.getClientId()).error(Errors.NOT_ALLOWED);
+            throw unauthorized();
+        }
+
+        return true;
+    }
+
+    private Failure unauthorized() {
+        event.error(Errors.NOT_ALLOWED);
+        return new UnauthorizedException();
+    }
+
+    private Failure forbidden() {
+        event.error(Errors.NOT_ALLOWED);
+        return new ForbiddenException();
+    }
+
+    private Failure notFound() {
+        event.error(Errors.NOT_ALLOWED);
+        return new NotFoundException("Client not found");
     }
 
 }
