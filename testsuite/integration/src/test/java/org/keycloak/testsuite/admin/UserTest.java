@@ -235,7 +235,7 @@ public class UserTest extends AbstractClientTest {
     public void count() {
         createUsers();
 
-        Integer count = realm.users().count().get("count");
+        Integer count = realm.users().count();
         assertEquals(9, count.intValue());
     }
 
