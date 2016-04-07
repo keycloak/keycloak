@@ -151,7 +151,7 @@ public class RealmsAdminResource {
 
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Realm " + rep.getRealm() + " already exists");
+            return ErrorResponse.exists("Realm with same name exists");
         }
     }
 
