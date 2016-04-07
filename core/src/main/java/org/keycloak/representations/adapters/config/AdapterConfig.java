@@ -35,7 +35,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
         "always-refresh-token",
-        "register-node-at-startup", "register-node-period", "token-store", "principal-attribute"
+        "register-node-at-startup", "register-node-period", "token-store", "principal-attribute",
+        "proxy-url"
 })
 public class AdapterConfig extends BaseAdapterConfig {
 
@@ -67,6 +68,12 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected String principalAttribute;
     @JsonProperty("turn-off-change-session-id-on-login")
     protected Boolean turnOffChangeSessionIdOnLogin;
+
+    /**
+     * The Proxy url to use for requests to the auth-server, configurable via the adapter config property {@code proxy-url}.
+     */
+    @JsonProperty("proxy-url")
+    protected String proxyUrl;
 
     public boolean isAllowAnyHostname() {
         return allowAnyHostname;
@@ -178,5 +185,13 @@ public class AdapterConfig extends BaseAdapterConfig {
 
     public void setTurnOffChangeSessionIdOnLogin(Boolean turnOffChangeSessionIdOnLogin) {
         this.turnOffChangeSessionIdOnLogin = turnOffChangeSessionIdOnLogin;
+    }
+
+    public String getProxyUrl() {
+        return proxyUrl;
+    }
+
+    public void setProxyUrl(String proxyUrl) {
+        this.proxyUrl = proxyUrl;
     }
 }
