@@ -46,7 +46,7 @@ public class Keycloak {
 
     Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, ResteasyClient resteasyClient){
         config = new Config(serverUrl, realm, username, password, clientId, clientSecret);
-        client = resteasyClient != null ? resteasyClient : new ResteasyClientBuilder().build();
+        client = resteasyClient != null ? resteasyClient : new ResteasyClientBuilder().connectionPoolSize(10).build();
 
         tokenManager = new TokenManager(config, client);
 
