@@ -192,7 +192,7 @@
                 redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'prompt=' + options.prompt;
             }
 
-            sessionStorage.oauthState = JSON.stringify({ state: state, nonce: nonce, redirectUri: encodeURIComponent(redirectUri) });
+            localStorage.oauthState = JSON.stringify({ state: state, nonce: nonce, redirectUri: encodeURIComponent(redirectUri) });
 
             var action = 'auth';
             if (options && options.action == 'register') {
@@ -689,10 +689,10 @@
         function parseCallback(url) {
             var oauth = new CallbackParser(url, kc.responseMode).parseUri();
 
-            var sessionState = sessionStorage.oauthState && JSON.parse(sessionStorage.oauthState);
+            var sessionState = localStorage.oauthState && JSON.parse(localStorage.oauthState);
 
             if (sessionState && (oauth.code || oauth.error || oauth.access_token || oauth.id_token) && oauth.state && oauth.state == sessionState.state) {
-                delete sessionStorage.oauthState;
+                delete localStorage.oauthState;
 
                 oauth.redirectUri = sessionState.redirectUri;
                 oauth.storedNonce = sessionState.nonce;
