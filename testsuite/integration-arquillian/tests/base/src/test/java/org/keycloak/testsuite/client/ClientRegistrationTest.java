@@ -126,8 +126,14 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     @Test
     public void getClientNotFound() throws ClientRegistrationException {
         authManageClients();
+        assertNull(reg.get("invalid"));
+    }
+
+    @Test
+    public void getClientNotFoundNoAccess() throws ClientRegistrationException {
+        authNoAccess();
         try {
-            reg.get(CLIENT_ID);
+            reg.get("invalid");
             fail("Expected 403");
         } catch (ClientRegistrationException e) {
             assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
@@ -181,10 +187,14 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     public void updateClientNotFound() throws ClientRegistrationException {
         authManageClients();
         try {
-            updateClient();
-            fail("Expected 403");
+            ClientRepresentation client = new ClientRepresentation();
+            client.setClientId("invalid");
+
+            reg.update(client);
+
+            fail("Expected 404");
         } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            assertEquals(404, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
     }
 
