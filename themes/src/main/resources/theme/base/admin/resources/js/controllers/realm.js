@@ -203,6 +203,7 @@ module.controller('ObjectModalCtrl', function($scope, object) {
 module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, Auth) {
     $scope.createRealm = !realm.realm;
     $scope.serverInfo = serverInfo;
+    $scope.realmName = realm.realm;
 
     if (Current.realm == null || Current.realm.realm != realm.realm) {
         for (var i = 0; i < Current.realms.length; i++) {
@@ -228,11 +229,17 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
             $scope.changed = true;
         }
     }, true);
+    $scope.$watch('realmName', function() {
+        if (!angular.equals($scope.realmName, oldCopy.realm)) {
+            $scope.changed = true;
+        }
+    }, true);
 
     $scope.save = function() {
         var realmCopy = angular.copy($scope.realm);
+        realmCopy.realm = $scope.realmName;
         $scope.changed = false;
-        var nameChanged = !angular.equals($scope.realm.realm, oldCopy.realm)
+        var nameChanged = !angular.equals($scope.realmName, oldCopy.realm);
         Realm.update({ id : oldCopy.realm}, realmCopy, function () {
             var data = Realm.query(function () {
                 Current.realms = data;
