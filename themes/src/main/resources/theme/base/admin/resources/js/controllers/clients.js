@@ -1929,7 +1929,7 @@ module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, se
     };
 
     $scope.remove = function() {
-        Dialog.confirmDelete($scope.mapper.name, 'mapper', function() {
+        Dialog.confirmDelete($scope.model.mapper.name, 'mapper', function() {
             ClientTemplateProtocolMapper.remove({ realm: realm.realm, template: template.id, id : $scope.model.mapper.id }, function() {
                 Notifications.success("The mapper has been deleted.");
                 $location.url("/realms/" + realm.realm + '/client-templates/' + template.id + "/mappers");
