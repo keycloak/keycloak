@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
+import liquibase.exception.DatabaseException;
 import liquibase.exception.LockException;
 import liquibase.lockservice.StandardLockService;
 
@@ -26,6 +27,15 @@ import liquibase.lockservice.StandardLockService;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class DummyLockService extends StandardLockService {
+
+    @Override
+    public int getPriority() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public void init() throws DatabaseException {
+    }
 
     @Override
     public void waitForLock() throws LockException {
