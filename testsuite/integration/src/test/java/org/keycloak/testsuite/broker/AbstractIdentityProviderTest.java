@@ -40,6 +40,7 @@ import org.keycloak.testsuite.broker.util.UserSessionStatusServlet.UserSessionSt
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -113,6 +114,9 @@ public abstract class AbstractIdentityProviderTest {
 
     @WebResource
     protected AccountFederatedIdentityPage accountFederatedIdentityPage;
+
+    @WebResource
+    protected ErrorPage errorPage;
 
     protected KeycloakSession session;
 
