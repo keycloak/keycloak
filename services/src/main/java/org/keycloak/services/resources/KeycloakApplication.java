@@ -25,6 +25,7 @@ import org.keycloak.Config;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.*;
+import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.services.managers.DBLockManager;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -91,9 +92,10 @@ public class KeycloakApplication extends Application {
 
         ExportImportManager exportImportManager;
 
-        DBLockManager dbLockManager = new DBLockManager();
-        dbLockManager.checkForcedUnlock(sessionFactory);
-        dbLockManager.waitForLock(sessionFactory);
+        DBLockManager dbLockManager = new DBLockManager(sessionFactory.create());
+        dbLockManager.checkForcedUnlock();
+        DBLockProvider dbLock = dbLockManager.getDBLock();
+        dbLock.waitForLock();
         try {
             migrateModel();
 
@@ -130,7 +132,7 @@ public class KeycloakApplication extends Application {
 
             importAddUser();
         } finally {
-            dbLockManager.releaseLock(sessionFactory);
+            dbLock.releaseLock();
         }
 
         if (exportImportManager.isRunExport()) {

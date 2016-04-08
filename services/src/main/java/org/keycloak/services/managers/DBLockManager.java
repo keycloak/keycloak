@@ -34,52 +34,38 @@ public class DBLockManager {
 
     protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
-    public void waitForLock(KeycloakSessionFactory sessionFactory) {
-        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+    private final KeycloakSession session;
 
-            @Override
-            public void run(KeycloakSession session) {
-                DBLockProvider lock = getDBLock(session);
-                lock.waitForLock();
-            }
-
-        });
+    public DBLockManager(KeycloakSession session) {
+        this.session = session;
     }
 
 
-    public void releaseLock(KeycloakSessionFactory sessionFactory) {
-        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-
-            @Override
-            public void run(KeycloakSession session) {
-                DBLockProvider lock = getDBLock(session);
-                lock.releaseLock();
-            }
-
-        });
-    }
-
-
-    public void checkForcedUnlock(KeycloakSessionFactory sessionFactory) {
+    public void checkForcedUnlock() {
         if (Boolean.getBoolean("keycloak.dblock.forceUnlock")) {
-            logger.forcedReleaseDBLock();
-            releaseLock(sessionFactory);
+            DBLockProvider lock = getDBLock();
+            if (lock.supportsForcedUnlock()) {
+                logger.forcedReleaseDBLock();
+                lock.releaseLock();
+            } else {
+                throw new IllegalStateException("Forced unlock requested, but provider " + lock + " doesn't support it");
+            }
         }
     }
 
 
     // Try to detect ID from realmProvider
-    public DBLockProvider getDBLock(KeycloakSession session) {
-        String realmProviderId = getRealmProviderId(session);
+    public DBLockProvider getDBLock() {
+        String realmProviderId = getRealmProviderId();
         return session.getProvider(DBLockProvider.class, realmProviderId);
     }
 
-    public DBLockProviderFactory getDBLockFactory(KeycloakSession session) {
-        String realmProviderId = getRealmProviderId(session);
+    public DBLockProviderFactory getDBLockFactory() {
+        String realmProviderId = getRealmProviderId();
         return (DBLockProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(DBLockProvider.class, realmProviderId);
     }
 
-    private String getRealmProviderId(KeycloakSession session) {
+    private String getRealmProviderId() {
         RealmProviderFactory realmProviderFactory = (RealmProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(RealmProvider.class);
         return realmProviderFactory.getId();
     }
