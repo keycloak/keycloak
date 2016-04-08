@@ -23,150 +23,159 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
-import org.junit.ClassRule;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.Event;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
-import org.keycloak.protocol.oidc.mappers.HardcodedRole;
-import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
-import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.RealmManager;
+import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.util.BasicAuthHelper;
-import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
-import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
+import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
+import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
+import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createAddressMapper;
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createClaimMapper;
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedRole;
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMapper;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AccessTokenTest {
-
-    protected static Keycloak keycloak;
-
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
-
-        @Override
-        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
-            {   // for KEYCLOAK-2221
-                UserModel user = manager.getSession().users().addUser(appRealm, KeycloakModelUtils.generateId(), "no-permissions", false, false);
-                user.updateCredential(UserCredentialModel.password("password"));
-                user.setEnabled(true);
-                RoleModel role = appRealm.getRole("user");
-                user.grantRole(role);
-            }
-
-            keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
-        }
-
-    });
+public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Rule
-    public WebRule webRule = new WebRule(this);
+    public AssertEvents events = new AssertEvents(this);
 
-    @WebResource
-    protected WebDriver driver;
 
-    @WebResource
-    protected OAuthClient oauth;
+    @Override
+    public void beforeAbstractKeycloakTest() throws Exception {
+        super.beforeAbstractKeycloakTest();
+    }
 
-    @WebResource
-    protected LoginPage loginPage;
+    @Before
+    public void clientConfiguration() {
+        ClientResource clientResource = findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRepresentation = new ClientRepresentation();
+        clientRepresentation.setDirectAccessGrantsEnabled(true);
+        clientResource.update(clientRepresentation);
 
-    @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
+        /*
+         * Configure the default client ID. Seems like OAuthClient is keeping the state of clientID
+         * For example: If some test case configure oauth.clientId("sample-public-client"), other tests
+         * will faile and the clientID will always be "sample-public-client
+         * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
+         */
+        oauth.clientId("test-app");
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+
+        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
+
+        UserBuilder user = UserBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .username("no-permissions")
+                .role("user")
+                .password("password");
+        realm.getUsers().add(user.build());
+
+        testRealms.add(realm);
+
+    }
 
     @Test
     public void accessTokenRequest() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
-        Event loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
-        Assert.assertEquals(200, response.getStatusCode());
+        assertEquals(200, response.getStatusCode());
 
         Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
         Assert.assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
 
-        Assert.assertEquals("bearer", response.getTokenType());
+        assertEquals("bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
-        Assert.assertEquals(keycloakRule.getUser("test", "test-user@localhost").getId(), token.getSubject());
+        assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), token.getSubject());
         Assert.assertNotEquals("test-user@localhost", token.getSubject());
 
-        Assert.assertEquals(sessionId, token.getSessionState());
+        assertEquals(sessionId, token.getSessionState());
 
-        Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
-        Assert.assertTrue(token.getRealmAccess().isUserInRole("user"));
+        assertEquals(1, token.getRealmAccess().getRoles().size());
+        assertTrue(token.getRealmAccess().isUserInRole("user"));
 
-        Assert.assertEquals(1, token.getResourceAccess(oauth.getClientId()).getRoles().size());
-        Assert.assertTrue(token.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
+        assertEquals(1, token.getResourceAccess(oauth.getClientId()).getRoles().size());
+        assertTrue(token.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
 
-        Event event = events.expectCodeToToken(codeId, sessionId).assertEvent();
-        Assert.assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
-        Assert.assertEquals(oauth.verifyRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
-        Assert.assertEquals(sessionId, token.getSessionState());
+        EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
+        assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
+        assertEquals(oauth.verifyRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
+        assertEquals(sessionId, token.getSessionState());
 
     }
 
@@ -174,12 +183,12 @@ public class AccessTokenTest {
     public void accessTokenInvalidClientCredentials() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
-        Event loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "invalid");
-        Assert.assertEquals(400, response.getStatusCode());
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "invalid");
+        assertEquals(400, response.getStatusCode());
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_client_credentials").clearDetails().user((String) null).session((String) null);
         expectedEvent.assertEvent();
@@ -189,12 +198,12 @@ public class AccessTokenTest {
     public void accessTokenMissingClientCredentials() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
-        Event loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
-        Assert.assertEquals(400, response.getStatusCode());
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        assertEquals(400, response.getStatusCode());
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_client_credentials").clearDetails().user((String) null).session((String) null);
         expectedEvent.assertEvent();
@@ -204,36 +213,43 @@ public class AccessTokenTest {
     public void accessTokenInvalidRedirectUri() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
-        Event loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
+        //@TODO This new and was necesssary to not mess up with other tests cases
+        String redirectUri = oauth.getRedirectUri();
+
         oauth.redirectUri("http://invalid");
 
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
-        Assert.assertEquals(400, response.getStatusCode());
-        Assert.assertEquals("invalid_grant", response.getError());
-        Assert.assertEquals("Incorrect redirect_uri", response.getErrorDescription());
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_grant", response.getError());
+        assertEquals("Incorrect redirect_uri", response.getErrorDescription());
 
         events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_code")
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_TYPE)
                 .assertEvent();
+
+        //@TODO Reset back to the original URI. Maybe we should have something to reset to the original state at OAuthClient
+        oauth.redirectUri(redirectUri);
+
     }
 
     @Test
     public void accessTokenUserSessionExpired() {
         oauth.doLogin("test-user@localhost", "password");
 
-        Event loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String sessionId = loginEvent.getSessionId();
 
-        keycloakRule.removeUserSession(sessionId);
 
+        testingClient.testing().removeUserSession("test", sessionId);
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
@@ -254,16 +270,10 @@ public class AccessTokenTest {
 
     @Test
     public void accessTokenCodeExpired() {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setAccessCodeLifespan(1);
-            }
-        });
-
+        RealmManager.realm(adminClient.realm("test")).accessCodeLifeSpan(1);
         oauth.doLogin("test-user@localhost", "password");
 
-        Event loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         loginEvent.getSessionId();
@@ -285,12 +295,7 @@ public class AccessTokenTest {
 
         events.clear();
 
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setAccessCodeLifespan(60);
-            }
-        });
+        RealmManager.realm(adminClient.realm("test")).accessCodeLifeSpan(60);
 
         Time.setOffset(0);
     }
@@ -299,7 +304,7 @@ public class AccessTokenTest {
     public void accessTokenCodeUsed() {
         oauth.doLogin("test-user@localhost", "password");
 
-        Event loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         loginEvent.getSessionId();
@@ -323,38 +328,26 @@ public class AccessTokenTest {
 
         events.clear();
 
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setAccessCodeLifespan(60);
-            }
-        });
+        RealmManager.realm(adminClient.realm("test")).accessCodeLifeSpan(60);
     }
 
     @Test
     public void accessTokenCodeRoleMissing() {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                RoleModel role = appRealm.addRole("tmp-role");
-                session.users().getUserByUsername("test-user@localhost", appRealm).grantRole(role);
-            }
-        });
+        RealmResource realmResource = adminClient.realm("test");
+        RoleRepresentation role = RoleBuilder.create().name("tmp-role").build();
+        realmResource.roles().create(role);
+        UserResource user = findUserByUsernameId(realmResource, "test-user@localhost");
+        UserManager.realm(realmResource).user(user).assignRoles(role.getName());
 
         oauth.doLogin("test-user@localhost", "password");
 
-        Event loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
         loginEvent.getDetails().get(Details.CODE_ID);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.removeRole(appRealm.getRole("tmp-role"));
-            }
-        });
+        realmResource.roles().deleteRole("tmp-role");
 
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
@@ -362,20 +355,16 @@ public class AccessTokenTest {
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
-        Assert.assertTrue(token.getRealmAccess().isUserInRole("user"));
+        assertTrue(token.getRealmAccess().isUserInRole("user"));
 
         events.clear();
     }
 
     @Test
     public void accessTokenCodeHasRequiredAction() {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-                UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
-                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
-            }
-        });
+
+        UserResource user = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+        UserManager.realm(adminClient.realm("test")).user(user).addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString());
 
         oauth.doLogin("test-user@localhost", "password");
 
@@ -384,43 +373,36 @@ public class AccessTokenTest {
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
         Assert.assertEquals(400, response.getStatusCode());
 
-        Event event = events.poll();
+        EventRepresentation event = events.poll();
         assertNotNull(event.getDetails().get(Details.CODE_ID));
 
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                manager.getSession().users().getUserByUsername("test-user@localhost", appRealm).removeRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
-            }
-        });
+        UserManager.realm(adminClient.realm("test")).user(user).removeRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString());
     }
 
     @Test
     public void testGrantAccessToken() throws Exception {
-        Client client = ClientBuilder.newClient();
-        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        Client client = javax.ws.rs.client.ClientBuilder.newClient();
+        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
         URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
 
         {   // test checkSsl
             {
-                KeycloakSession session = keycloakRule.startSession();
-                RealmModel realm = session.realms().getRealmByName("test");
-                realm.setSslRequired(SslRequired.ALL);
-                session.getTransaction().commit();
-                session.close();
+                RealmResource realmsResource = adminClient.realm("test");
+                RealmRepresentation realmRepresentation = realmsResource.toRepresentation();
+                realmRepresentation.setSslRequired(SslRequired.ALL.toString());
+                realmsResource.update(realmRepresentation);
             }
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(403, response.getStatus());
+            assertEquals(403, response.getStatus());
             response.close();
 
             {
-                KeycloakSession session = keycloakRule.startSession();
-                RealmModel realm = session.realms().getRealmByName("test");
-                realm.setSslRequired(SslRequired.EXTERNAL);
-                session.getTransaction().commit();
-                session.close();
+                RealmResource realmsResource = realmsResouce().realm("test");
+                RealmRepresentation realmRepresentation = realmsResource.toRepresentation();
+                realmRepresentation.setSslRequired(SslRequired.EXTERNAL.toString());
+                realmsResource.update(realmRepresentation);
             }
 
         }
@@ -433,7 +415,7 @@ public class AccessTokenTest {
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)
                     .post(Entity.form(form));
-            Assert.assertEquals(401, response.getStatus());
+            assertEquals(401, response.getStatus());
             response.close();
         }
 
@@ -445,7 +427,7 @@ public class AccessTokenTest {
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)
                     .post(Entity.form(form));
-            Assert.assertEquals(401, response.getStatus());
+            assertEquals(401, response.getStatus());
             response.close();
         }
 
@@ -458,7 +440,7 @@ public class AccessTokenTest {
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)
                     .post(Entity.form(form));
-            Assert.assertEquals(401, response.getStatus());
+            assertEquals(401, response.getStatus());
             response.close();
         }
         {   // test no password
@@ -469,56 +451,50 @@ public class AccessTokenTest {
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)
                     .post(Entity.form(form));
-            Assert.assertEquals(401, response.getStatus());
+            assertEquals(401, response.getStatus());
             response.close();
         }
 
-        {   // test bearer-only
+        {   //test bearer-only
 
             {
-                KeycloakSession session = keycloakRule.startSession();
-                RealmModel realm = session.realms().getRealmByName("test");
-                ClientModel clientModel = realm.getClientByClientId("test-app");
-                clientModel.setBearerOnly(true);
-                session.getTransaction().commit();
-                session.close();
+                ClientResource clientResource = findClientByClientId(adminClient.realm("test"), "test-app");
+                ClientRepresentation clientRepresentation = clientResource.toRepresentation();
+                clientRepresentation.setBearerOnly(true);
+                clientResource.update(clientRepresentation);
             }
 
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(400, response.getStatus());
+            assertEquals(400, response.getStatus());
             response.close();
 
             {
-                KeycloakSession session = keycloakRule.startSession();
-                RealmModel realm = session.realms().getRealmByName("test");
-                ClientModel clientModel = realm.getClientByClientId("test-app");
-                clientModel.setBearerOnly(false);
-                session.getTransaction().commit();
-                session.close();
+                ClientResource clientResource = findClientByClientId(adminClient.realm("test"), "test-app");
+                ClientRepresentation clientRepresentation = clientResource.toRepresentation();
+                clientRepresentation.setBearerOnly(false);
+                clientResource.update(clientRepresentation);
             }
 
         }
 
         {   // test realm disabled
             {
-                KeycloakSession session = keycloakRule.startSession();
-                RealmModel realm = session.realms().getRealmByName("test");
-                realm.setEnabled(false);
-                session.getTransaction().commit();
-                session.close();
+                RealmResource realmsResource = realmsResouce().realm("test");
+                RealmRepresentation realmRepresentation = realmsResource.toRepresentation();
+                realmRepresentation.setEnabled(false);
+                realmsResource.update(realmRepresentation);
             }
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(403, response.getStatus());
+            assertEquals(403, response.getStatus());
             response.close();
 
             {
-                KeycloakSession session = keycloakRule.startSession();
-                RealmModel realm = session.realms().getRealmByName("test");
-                realm.setEnabled(true);
-                session.getTransaction().commit();
-                session.close();
+                RealmResource realmsResource = realmsResouce().realm("test");
+                RealmRepresentation realmRepresentation = realmsResource.toRepresentation();
+                realmRepresentation.setEnabled(true);
+                realmsResource.update(realmRepresentation);
             }
 
         }
@@ -526,26 +502,23 @@ public class AccessTokenTest {
         {   // test application disabled
 
             {
-                KeycloakSession session = keycloakRule.startSession();
-                RealmModel realm = session.realms().getRealmByName("test");
-                ClientModel clientModel = realm.getClientByClientId("test-app");
-                clientModel.setEnabled(false);
-                session.getTransaction().commit();
-                session.close();
+                ClientResource clientResource = findClientByClientId(adminClient.realm("test"), "test-app");
+                ClientRepresentation clientRepresentation = clientResource.toRepresentation();
+                clientRepresentation.setEnabled(false);
+                clientResource.update(clientRepresentation);
             }
 
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(400, response.getStatus());
+            assertEquals(400, response.getStatus());
             response.close();
 
             {
-                KeycloakSession session = keycloakRule.startSession();
-                RealmModel realm = session.realms().getRealmByName("test");
-                ClientModel clientModel = realm.getClientByClientId("test-app");
-                clientModel.setEnabled(true);
-                session.getTransaction().commit();
-                session.close();
+                ClientResource clientResource = findClientByClientId(adminClient.realm("test"), "test-app");
+                ClientRepresentation clientRepresentation = clientResource.toRepresentation();
+                clientRepresentation.setEnabled(true);
+                clientResource.update(clientRepresentation);
+
             }
 
         }
@@ -553,195 +526,185 @@ public class AccessTokenTest {
         {   // test user action required
 
             {
-                KeycloakSession session = keycloakRule.startSession();
-                RealmModel realm = session.realms().getRealmByName("test");
-                UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
-                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                session.getTransaction().commit();
-                session.close();
+                UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+                UserRepresentation userRepresentation = userResource.toRepresentation();
+                userRepresentation.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+                userResource.update(userRepresentation);
             }
 
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(400, response.getStatus());
+            assertEquals(400, response.getStatus());
             response.close();
 
             {
-                KeycloakSession session = keycloakRule.startSession();
-                RealmModel realm = session.realms().getRealmByName("test");
-                UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
-                user.removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                session.getTransaction().commit();
-                session.close();
+                UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+                UserRepresentation userRepresentation = userResource.toRepresentation();
+                userRepresentation.getRequiredActions().remove(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+                userResource.update(userRepresentation);
             }
 
         }
+
         {   // test user disabled
             {
-                KeycloakSession session = keycloakRule.startSession();
-                RealmModel realm = session.realms().getRealmByName("test");
-                UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
-                user.setEnabled(false);
-                session.getTransaction().commit();
-                session.close();
+                UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+                UserRepresentation userRepresentation = userResource.toRepresentation();
+                userRepresentation.setEnabled(false);
+                userResource.update(userRepresentation);
             }
 
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(400, response.getStatus());
+            assertEquals(400, response.getStatus());
             response.close();
 
             {
-                KeycloakSession session = keycloakRule.startSession();
-                RealmModel realm = session.realms().getRealmByName("test");
-                UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
-                user.setEnabled(true);
-                session.getTransaction().commit();
-                session.close();
+                UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+                UserRepresentation userRepresentation = userResource.toRepresentation();
+                userRepresentation.setEnabled(true);
+                userResource.update(userRepresentation);
             }
 
         }
-
 
         {
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
             response.close();
         }
 
         client.close();
         events.clear();
-
     }
 
     @Test
     public void testKeycloak2221() throws Exception {
-        Client client = ClientBuilder.newClient();
-        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        Client client = javax.ws.rs.client.ClientBuilder.newClient();
+        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
         URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
+
+        ClientResource clientResource;
+
         {
-            KeycloakSession session = keycloakRule.startSession();
-            RealmModel realm = session.realms().getRealmByName("test");
-            ClientModel app = realm.getClientByClientId("test-app");
-            app.addProtocolMapper(RoleNameMapper.create("rename-role", "user", "realm-user"));
-            app.addProtocolMapper(RoleNameMapper.create("rename-role2", "admin", "the-admin"));
-            session.getTransaction().commit();
-            session.close();
+
+            clientResource = findClientByClientId(adminClient.realm("test"), "test-app");
+            clientResource.getProtocolMappers().createMapper(createRoleNameMapper("rename-role", "user", "realm-user"));
+            clientResource.getProtocolMappers().createMapper(createRoleNameMapper("rename-role2", "admin", "the-admin"));
+
         }
 
         {
             Response response = executeGrantRequest(grantTarget, "no-permissions", "password");
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
             AccessToken accessToken = getAccessToken(tokenResponse);
-            Assert.assertEquals(accessToken.getRealmAccess().getRoles().size(), 1);
-            Assert.assertTrue(accessToken.getRealmAccess().getRoles().contains("realm-user"));
-
+            assertEquals(accessToken.getRealmAccess().getRoles().size(), 1);
+            assertTrue(accessToken.getRealmAccess().getRoles().contains("realm-user"));
 
             response.close();
         }
 
         // undo mappers
         {
-            KeycloakSession session = keycloakRule.startSession();
-            RealmModel realm = session.realms().getRealmByName("test");
-            ClientModel app = realm.getClientByClientId("test-app");
-            for (ProtocolMapperModel model : app.getProtocolMappers()) {
-                if (model.getName().startsWith("rename-role")) {
-                    app.removeProtocolMapper(model);
+            ClientResource app = findClientByClientId(adminClient.realm("test"), "test-app");
+            ClientRepresentation clientRepresentation = app.toRepresentation();
+            for (ProtocolMapperRepresentation protocolRep : clientRepresentation.getProtocolMappers()) {
+                if (protocolRep.getName().startsWith("rename-role")) {
+                    clientResource.getProtocolMappers().delete(protocolRep.getId());
                 }
             }
-            session.getTransaction().commit();
-            session.close();
         }
 
         events.clear();
 
-
     }
-
 
     @Test
     public void testTokenMapping() throws Exception {
-        Client client = ClientBuilder.newClient();
-        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        Client client = javax.ws.rs.client.ClientBuilder.newClient();
+        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
         URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
         {
-            KeycloakSession session = keycloakRule.startSession();
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
-            user.setSingleAttribute("street", "5 Yawkey Way");
-            user.setSingleAttribute("locality", "Boston");
-            user.setSingleAttribute("region", "MA");
-            user.setSingleAttribute("postal_code", "02115");
-            user.setSingleAttribute("country", "USA");
-            user.setSingleAttribute("phone", "617-777-6666");
+            UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+            UserRepresentation user = userResource.toRepresentation();
+
+            user.singleAttribute("street", "5 Yawkey Way");
+            user.singleAttribute("locality", "Boston");
+            user.singleAttribute("region", "MA");
+            user.singleAttribute("postal_code", "02115");
+            user.singleAttribute("country", "USA");
+            user.singleAttribute("phone", "617-777-6666");
+
             List<String> departments = Arrays.asList("finance", "development");
-            user.setAttribute("departments", departments);
-            ClientModel app = realm.getClientByClientId("test-app");
-            ProtocolMapperModel mapper = AddressMapper.createAddressMapper(true, true);
-            app.addProtocolMapper(mapper);
-            ProtocolMapperModel hard = HardcodedClaim.create("hard", "hard", "coded", "String", false, null, true, true);
-            app.addProtocolMapper(hard);
-            app.addProtocolMapper(HardcodedClaim.create("hard-nested", "nested.hard", "coded-nested", "String", false, null, true, true));
-            app.addProtocolMapper(UserAttributeMapper.createClaimMapper("custom phone", "phone", "home_phone", "String", true, "", true, true, false));
-            app.addProtocolMapper(UserAttributeMapper.createClaimMapper("nested phone", "phone", "home.phone", "String", true, "", true, true, false));
-            app.addProtocolMapper(UserAttributeMapper.createClaimMapper("departments", "departments", "department", "String", true, "", true, true, true));
-            app.addProtocolMapper(HardcodedRole.create("hard-realm", "hardcoded"));
-            app.addProtocolMapper(HardcodedRole.create("hard-app", "app.hardcoded"));
-            app.addProtocolMapper(RoleNameMapper.create("rename-app-role", "test-app.customer-user", "realm-user"));
-            session.getTransaction().commit();
-            session.close();
+            user.getAttributes().put("departments", departments);
+            userResource.update(user);
+
+            ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
+
+            ProtocolMapperRepresentation mapper = createAddressMapper(true, true);
+            app.getProtocolMappers().createMapper(mapper);
+
+            ProtocolMapperRepresentation hard = createHardcodedClaim("hard", "hard", "coded", "String", false, null, true, true);
+            app.getProtocolMappers().createMapper(hard);
+            app.getProtocolMappers().createMapper(createHardcodedClaim("hard-nested", "nested.hard", "coded-nested", "String", false, null, true, true));
+            app.getProtocolMappers().createMapper(createClaimMapper("custom phone", "phone", "home_phone", "String", true, "", true, true, false));
+            app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, "", true, true, false));
+            app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, "", true, true, true));
+            app.getProtocolMappers().createMapper(createHardcodedRole("hard-realm", "hardcoded"));
+            app.getProtocolMappers().createMapper(createHardcodedRole("hard-app", "app.hardcoded"));
+            app.getProtocolMappers().createMapper(createRoleNameMapper("rename-app-role", "test-app.customer-user", "realm-user"));
         }
 
         {
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
+
             org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
             IDToken idToken = getIdToken(tokenResponse);
-            Assert.assertNotNull(idToken.getAddress());
-            Assert.assertEquals(idToken.getName(), "Tom Brady");
-            Assert.assertEquals(idToken.getAddress().getStreetAddress(), "5 Yawkey Way");
-            Assert.assertEquals(idToken.getAddress().getLocality(), "Boston");
-            Assert.assertEquals(idToken.getAddress().getRegion(), "MA");
-            Assert.assertEquals(idToken.getAddress().getPostalCode(), "02115");
-            Assert.assertEquals(idToken.getAddress().getCountry(), "USA");
-            Assert.assertNotNull(idToken.getOtherClaims().get("home_phone"));
-            Assert.assertEquals("617-777-6666", idToken.getOtherClaims().get("home_phone"));
-            Assert.assertEquals("coded", idToken.getOtherClaims().get("hard"));
+            assertNotNull(idToken.getAddress());
+            assertEquals(idToken.getName(), "Tom Brady");
+            assertEquals(idToken.getAddress().getStreetAddress(), "5 Yawkey Way");
+            assertEquals(idToken.getAddress().getLocality(), "Boston");
+            assertEquals(idToken.getAddress().getRegion(), "MA");
+            assertEquals(idToken.getAddress().getPostalCode(), "02115");
+            assertEquals(idToken.getAddress().getCountry(), "USA");
+            assertNotNull(idToken.getOtherClaims().get("home_phone"));
+            assertEquals("617-777-6666", idToken.getOtherClaims().get("home_phone"));
+            assertEquals("coded", idToken.getOtherClaims().get("hard"));
             Map nested = (Map) idToken.getOtherClaims().get("nested");
-            Assert.assertEquals("coded-nested", nested.get("hard"));
+            assertEquals("coded-nested", nested.get("hard"));
             nested = (Map) idToken.getOtherClaims().get("home");
-            Assert.assertEquals("617-777-6666", nested.get("phone"));
+            assertEquals("617-777-6666", nested.get("phone"));
             List<String> departments = (List<String>) idToken.getOtherClaims().get("department");
-            Assert.assertEquals(2, departments.size());
-            Assert.assertTrue(departments.contains("finance") && departments.contains("development"));
+            assertEquals(2, departments.size());
+            assertTrue(departments.contains("finance") && departments.contains("development"));
 
             AccessToken accessToken = getAccessToken(tokenResponse);
-            Assert.assertEquals(accessToken.getName(), "Tom Brady");
-            Assert.assertNotNull(accessToken.getAddress());
-            Assert.assertEquals(accessToken.getAddress().getStreetAddress(), "5 Yawkey Way");
-            Assert.assertEquals(accessToken.getAddress().getLocality(), "Boston");
-            Assert.assertEquals(accessToken.getAddress().getRegion(), "MA");
-            Assert.assertEquals(accessToken.getAddress().getPostalCode(), "02115");
-            Assert.assertEquals(accessToken.getAddress().getCountry(), "USA");
-            Assert.assertNotNull(accessToken.getOtherClaims().get("home_phone"));
-            Assert.assertEquals("617-777-6666", accessToken.getOtherClaims().get("home_phone"));
-            Assert.assertEquals("coded", accessToken.getOtherClaims().get("hard"));
+            assertEquals(accessToken.getName(), "Tom Brady");
+            assertNotNull(accessToken.getAddress());
+            assertEquals(accessToken.getAddress().getStreetAddress(), "5 Yawkey Way");
+            assertEquals(accessToken.getAddress().getLocality(), "Boston");
+            assertEquals(accessToken.getAddress().getRegion(), "MA");
+            assertEquals(accessToken.getAddress().getPostalCode(), "02115");
+            assertEquals(accessToken.getAddress().getCountry(), "USA");
+            assertNotNull(accessToken.getOtherClaims().get("home_phone"));
+            assertEquals("617-777-6666", accessToken.getOtherClaims().get("home_phone"));
+            assertEquals("coded", accessToken.getOtherClaims().get("hard"));
             nested = (Map) accessToken.getOtherClaims().get("nested");
-            Assert.assertEquals("coded-nested", nested.get("hard"));
+            assertEquals("coded-nested", nested.get("hard"));
             nested = (Map) accessToken.getOtherClaims().get("home");
-            Assert.assertEquals("617-777-6666", nested.get("phone"));
+            assertEquals("617-777-6666", nested.get("phone"));
             departments = (List<String>) idToken.getOtherClaims().get("department");
-            Assert.assertEquals(2, departments.size());
-            Assert.assertTrue(departments.contains("finance") && departments.contains("development"));
-            Assert.assertTrue(accessToken.getRealmAccess().getRoles().contains("hardcoded"));
-            Assert.assertTrue(accessToken.getRealmAccess().getRoles().contains("realm-user"));
+            assertEquals(2, departments.size());
+            assertTrue(departments.contains("finance") && departments.contains("development"));
+            assertTrue(accessToken.getRealmAccess().getRoles().contains("hardcoded"));
+            assertTrue(accessToken.getRealmAccess().getRoles().contains("realm-user"));
             Assert.assertFalse(accessToken.getResourceAccess("test-app").getRoles().contains("customer-user"));
-            Assert.assertTrue(accessToken.getResourceAccess("app").getRoles().contains("hardcoded"));
+            assertTrue(accessToken.getResourceAccess("app").getRoles().contains("hardcoded"));
 
 
             response.close();
@@ -749,10 +712,9 @@ public class AccessTokenTest {
 
         // undo mappers
         {
-            KeycloakSession session = keycloakRule.startSession();
-            RealmModel realm = session.realms().getRealmByName("test");
-            ClientModel app = realm.getClientByClientId("test-app");
-            for (ProtocolMapperModel model : app.getProtocolMappers()) {
+            ClientResource app = findClientByClientId(adminClient.realm("test"), "test-app");
+            ClientRepresentation clientRepresentation = app.toRepresentation();
+            for (ProtocolMapperRepresentation model : clientRepresentation.getProtocolMappers()) {
                 if (model.getName().equals("address")
                         || model.getName().equals("hard")
                         || model.getName().equals("hard-nested")
@@ -763,11 +725,9 @@ public class AccessTokenTest {
                         || model.getName().equals("hard-realm")
                         || model.getName().equals("hard-app")
                         ) {
-                    app.removeProtocolMapper(model);
+                    app.getProtocolMappers().delete(model.getId());
                 }
             }
-            session.getTransaction().commit();
-            session.close();
         }
 
         events.clear();
@@ -775,14 +735,14 @@ public class AccessTokenTest {
 
         {
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
             IDToken idToken = getIdToken(tokenResponse);
-            Assert.assertNull(idToken.getAddress());
-            Assert.assertNull(idToken.getOtherClaims().get("home_phone"));
-            Assert.assertNull(idToken.getOtherClaims().get("hard"));
-            Assert.assertNull(idToken.getOtherClaims().get("nested"));
-            Assert.assertNull(idToken.getOtherClaims().get("department"));
+            assertNull(idToken.getAddress());
+            assertNull(idToken.getOtherClaims().get("home_phone"));
+            assertNull(idToken.getOtherClaims().get("hard"));
+            assertNull(idToken.getOtherClaims().get("nested"));
+            assertNull(idToken.getOtherClaims().get("department"));
 
             response.close();
         }
@@ -796,7 +756,7 @@ public class AccessTokenTest {
 
     @Test
     public void testClientTemplate() throws Exception {
-        RealmResource realm = keycloak.realms().realm("test");
+        RealmResource realm = adminClient.realm("test");
         RoleRepresentation realmRole = new RoleRepresentation();
         realmRole.setName("realm-test-role");
         realm.roles().create(realmRole);
@@ -808,7 +768,7 @@ public class AccessTokenTest {
 
 
         List<UserRepresentation> users = realm.users().search("test-user@localhost", -1, -1);
-        Assert.assertEquals(1, users.size());
+        assertEquals(1, users.size());
         UserRepresentation user = users.get(0);
 
         List<RoleRepresentation> addRoles = new LinkedList<>();
@@ -820,14 +780,14 @@ public class AccessTokenTest {
         rep.setName("template");
         rep.setProtocol("oidc");
         Response response = realm.clientTemplates().create(rep);
-        Assert.assertEquals(201, response.getStatus());
+        assertEquals(201, response.getStatus());
         URI templateUri = response.getLocation();
         response.close();
-        ClientTemplateResource templateResource = keycloak.proxy(ClientTemplateResource.class, templateUri);
+        ClientTemplateResource templateResource = adminClient.proxy(ClientTemplateResource.class, templateUri);
         ProtocolMapperModel hard = HardcodedClaim.create("hard", "hard", "coded", "String", false, null, true, true);
         ProtocolMapperRepresentation mapper = ModelToRepresentation.toRepresentation(hard);
         response = templateResource.getProtocolMappers().createMapper(mapper);
-        Assert.assertEquals(201, response.getStatus());
+        assertEquals(201, response.getStatus());
         response.close();
         List<ClientRepresentation> clients = realm.clients().findAll();
         ClientRepresentation clientRep = null;
@@ -846,19 +806,19 @@ public class AccessTokenTest {
         realm.clients().get(clientRep.getId()).update(clientRep);
 
         {
-            Client client = ClientBuilder.newClient();
-            UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+            Client client = javax.ws.rs.client.ClientBuilder.newClient();
+            UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
 
             response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
             IDToken idToken = getIdToken(tokenResponse);
-            Assert.assertEquals("coded", idToken.getOtherClaims().get("hard"));
+            assertEquals("coded", idToken.getOtherClaims().get("hard"));
 
             AccessToken accessToken = getAccessToken(tokenResponse);
-            Assert.assertEquals("coded", accessToken.getOtherClaims().get("hard"));
+            assertEquals("coded", accessToken.getOtherClaims().get("hard"));
 
             // check zero scope for template
             Assert.assertFalse(accessToken.getRealmAccess().getRoles().contains(realmRole.getName()));
@@ -875,18 +835,18 @@ public class AccessTokenTest {
         templateResource.getScopeMappings().realmLevel().add(addRole1);
 
         {
-            Client client = ClientBuilder.newClient();
-            UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+            Client client = javax.ws.rs.client.ClientBuilder.newClient();
+            UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
 
             response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
             AccessToken accessToken = getAccessToken(tokenResponse);
             // check zero scope for template
-            Assert.assertNotNull(accessToken.getRealmAccess());
-            Assert.assertTrue(accessToken.getRealmAccess().getRoles().contains(realmRole.getName()));
+            assertNotNull(accessToken.getRealmAccess());
+            assertTrue(accessToken.getRealmAccess().getRoles().contains(realmRole.getName()));
             Assert.assertFalse(accessToken.getRealmAccess().getRoles().contains(realmRole2.getName()));
 
 
@@ -900,21 +860,21 @@ public class AccessTokenTest {
         realm.clients().get(clientRep.getId()).getScopeMappings().realmLevel().add(addRole2);
 
         {
-            Client client = ClientBuilder.newClient();
-            UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+            Client client = javax.ws.rs.client.ClientBuilder.newClient();
+            UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
 
             response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
 
             AccessToken accessToken = getAccessToken(tokenResponse);
 
             // check zero scope for template
-            Assert.assertNotNull(accessToken.getRealmAccess());
-            Assert.assertTrue(accessToken.getRealmAccess().getRoles().contains(realmRole.getName()));
-            Assert.assertTrue(accessToken.getRealmAccess().getRoles().contains(realmRole2.getName()));
+            assertNotNull(accessToken.getRealmAccess());
+            assertTrue(accessToken.getRealmAccess().getRoles().contains(realmRole.getName()));
+            assertTrue(accessToken.getRealmAccess().getRoles().contains(realmRole2.getName()));
 
 
             response.close();
@@ -926,13 +886,13 @@ public class AccessTokenTest {
         realm.clients().get(clientRep.getId()).getScopeMappings().realmLevel().remove(addRole2);
 
         {
-            Client client = ClientBuilder.newClient();
-            UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+            Client client = javax.ws.rs.client.ClientBuilder.newClient();
+            UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
 
             response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
 
             AccessToken accessToken = getAccessToken(tokenResponse);
@@ -949,21 +909,21 @@ public class AccessTokenTest {
         templateResource.update(rep);
 
         {
-            Client client = ClientBuilder.newClient();
-            UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+            Client client = javax.ws.rs.client.ClientBuilder.newClient();
+            UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
 
             response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
 
             AccessToken accessToken = getAccessToken(tokenResponse);
 
             // check zero scope for template
-            Assert.assertNotNull(accessToken.getRealmAccess());
-            Assert.assertTrue(accessToken.getRealmAccess().getRoles().contains(realmRole.getName()));
-            Assert.assertTrue(accessToken.getRealmAccess().getRoles().contains(realmRole2.getName()));
+            assertNotNull(accessToken.getRealmAccess());
+            assertTrue(accessToken.getRealmAccess().getRoles().contains(realmRole.getName()));
+            assertTrue(accessToken.getRealmAccess().getRoles().contains(realmRole2.getName()));
 
 
             response.close();
@@ -975,13 +935,13 @@ public class AccessTokenTest {
         realm.clients().get(clientRep.getId()).update(clientRep);
 
         {
-            Client client = ClientBuilder.newClient();
-            UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+            Client client = javax.ws.rs.client.ClientBuilder.newClient();
+            UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
 
             response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
 
             AccessToken accessToken = getAccessToken(tokenResponse);
@@ -993,9 +953,6 @@ public class AccessTokenTest {
             client.close();
         }
 
-
-
-
         // undo mappers
         clientRep.setClientTemplate(ClientTemplateRepresentation.NONE);
         clientRep.setFullScopeAllowed(true);
@@ -1006,19 +963,19 @@ public class AccessTokenTest {
         templateResource.remove();
 
         {
-            Client client = ClientBuilder.newClient();
-            UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+            Client client = javax.ws.rs.client.ClientBuilder.newClient();
+            UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
 
             response = executeGrantAccessTokenRequest(grantTarget);
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
             IDToken idToken = getIdToken(tokenResponse);
-            Assert.assertNull(idToken.getOtherClaims().get("hard"));
+            assertNull(idToken.getOtherClaims().get("hard"));
 
             AccessToken accessToken = getAccessToken(tokenResponse);
-            Assert.assertNull(accessToken.getOtherClaims().get("hard"));
+            assertNull(accessToken.getOtherClaims().get("hard"));
 
 
             response.close();
@@ -1031,19 +988,17 @@ public class AccessTokenTest {
     // KEYCLOAK-1595 Assert that public client is able to retrieve token even if header "Authorization: Negotiate something" was used (parameter client_id has preference in this case)
     @Test
     public void testAuthorizationNegotiateHeaderIgnored() throws Exception {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                ClientModel client = KeycloakModelUtils.createClient(appRealm, "sample-public-client");
-                client.addRedirectUri("http://localhost:8081/app/auth");
-                client.setEnabled(true);
-                client.setPublicClient(true);
-            }
-        });
+
+        adminClient.realm("test").clients().create(ClientBuilder.create()
+                .clientId("sample-public-client")
+                .authenticatorType("client-secret")
+                .redirectUris("http://localhost:8180/auth/realms/master/app/*")
+                .publicClient()
+                .build());
 
         oauth.clientId("sample-public-client");
         oauth.doLogin("test-user@localhost", "password");
-        Event loginEvent = events.expectLogin().client("sample-public-client").assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().client("sample-public-client").assertEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -1065,7 +1020,7 @@ public class AccessTokenTest {
             formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
             post.setEntity(formEntity);
 
-            AccessTokenResponse response = new AccessTokenResponse(client.execute(post));
+            OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));
             Assert.assertEquals(200, response.getStatusCode());
             AccessToken token = oauth.verifyToken(response.getAccessToken());
             events.expectCodeToToken(codeId, sessionId).client("sample-public-client").assertEvent();
@@ -1082,7 +1037,6 @@ public class AccessTokenTest {
     private AccessToken getAccessToken(org.keycloak.representations.AccessTokenResponse tokenResponse) throws JWSInputException {
         JWSInput input = new JWSInput(tokenResponse.getToken());
         return input.readJsonContent(AccessToken.class);
-
     }
 
     protected Response executeGrantAccessTokenRequest(WebTarget grantTarget) {
@@ -1101,6 +1055,4 @@ public class AccessTokenTest {
                 .header(HttpHeaders.AUTHORIZATION, header)
                 .post(Entity.form(form));
     }
-
-
 }

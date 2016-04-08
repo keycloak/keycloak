@@ -17,17 +17,10 @@
 
 package org.keycloak.testsuite.util;
 
-import org.codehaus.plexus.util.xml.pull.XmlSerializer;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 
-import javax.ws.rs.client.Client;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -83,7 +76,6 @@ public class ClientBuilder {
         Map<String, String> attributes = new HashMap<String, String>();
         attributes.put(name, value);
         rep.setAttributes(attributes);
-
         return this;
     }
 
