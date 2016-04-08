@@ -204,17 +204,20 @@ ol li {
 
 ol li img {
     margin-top: 15px;
-    width: 180px;
     margin-bottom: 5px;
     border: 1px solid #eee;
 }
 
 ol li span {
-    bottom: 80px;
-    left: 200px;
+    padding: 15px;
+    background-color: #f5f5f5;
+    border: 1px solid #eee;
+    top: 46px;
+    left: 270px;
+    right: 50px;
     position: absolute;
     font-family: courier, ​monospace;
-    font-size: 13px;
+    font-size: 25px;
 }
 
 hr + .form-horizontal {
