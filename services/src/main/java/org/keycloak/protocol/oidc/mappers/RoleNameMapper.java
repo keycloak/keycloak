@@ -88,8 +88,8 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
     }
 
     @Override
-    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                            UserSessionModel userSession, ClientSessionModel clientSession) {
+    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session2,
+                                            UserSessionModel userSession2, ClientSessionModel clientSessio2n) {
         String role = mappingModel.getConfig().get(ROLE_CONFIG);
         String newName = mappingModel.getConfig().get(NEW_ROLE_NAME);
 

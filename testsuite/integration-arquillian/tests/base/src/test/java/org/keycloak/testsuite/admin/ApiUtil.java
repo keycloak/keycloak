@@ -99,6 +99,10 @@ public class ApiUtil {
         return user;
     }
 
+    public static UserResource findUserByUsernameId(RealmResource realm, String username) {
+        return realm.users().get(findUserByUsername(realm, username).getId());
+    }
+
     public static String createUserWithAdminClient(RealmResource realm, UserRepresentation user) {
         Response response = realm.users().create(user);
         String createdId = getCreatedId(response);
@@ -158,5 +162,4 @@ public class ApiUtil {
         }
         return contains;
     }
-
 }
