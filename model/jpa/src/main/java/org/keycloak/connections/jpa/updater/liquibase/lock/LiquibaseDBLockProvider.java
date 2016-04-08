@@ -46,7 +46,7 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
     private final LiquibaseDBLockProviderFactory factory;
     private final KeycloakSession session;
 
-    private LockService lockService;
+    private CustomLockService lockService;
     private Connection dbConnection;
 
     private int maxAttempts = DEFAULT_MAX_ATTEMPTS;
@@ -69,7 +69,6 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
 
             this.lockService = new CustomLockService();
             lockService.setChangeLogLockWaitTime(factory.getLockWaitTimeoutMillis());
-            lockService.setChangeLogLockRecheckTime(factory.getLockRecheckTimeMillis());
             lockService.setDatabase(liquibase.getDatabase());
         } catch (LiquibaseException exception) {
             safeRollbackConnection();
@@ -94,16 +93,15 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
                 lockService.waitForLock();
                 this.maxAttempts = DEFAULT_MAX_ATTEMPTS;
                 return;
-            } catch (LockException le) {
-                if (le.getCause() != null && le.getCause() instanceof LockRetryException) {
-                    // Indicates we should try to acquire lock again in different transaction
-                    restart();
-                    maxAttempts--;
-                } else {
-                    throw new IllegalStateException("Failed to retrieve lock", le);
-
-                    // TODO: Possibility to forcefully retrieve lock after timeout instead of just give-up?
-                }
+            } catch (LockRetryException le) {
+                // Indicates we should try to acquire lock again in different transaction
+                safeRollbackConnection();
+                restart();
+                maxAttempts--;
+            } catch (RuntimeException re) {
+                safeRollbackConnection();
+                safeCloseConnection();
+                throw re;
             }
         }
     }
@@ -111,12 +109,14 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
 
     @Override
     public void releaseLock() {
-        try {
-            lockService.releaseLock();
-        } catch (LockException e) {
-            logger.error("Could not release lock", e);
-        }
+        lockService.releaseLock();
         lockService.reset();
+    }
+
+    @Override
+    public boolean supportsForcedUnlock() {
+        // Implementation based on "SELECT FOR UPDATE" can't force unlock as it's locked by other transaction
+        return false;
     }
 
     @Override

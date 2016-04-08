@@ -31,12 +31,7 @@ public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory {
 
     private static final Logger logger = Logger.getLogger(LiquibaseDBLockProviderFactory.class);
 
-    private long lockRecheckTimeMillis;
     private long lockWaitTimeoutMillis;
-
-    protected long getLockRecheckTimeMillis() {
-        return lockRecheckTimeMillis;
-    }
 
     protected long getLockWaitTimeoutMillis() {
         return lockWaitTimeoutMillis;
@@ -44,11 +39,9 @@ public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory {
 
     @Override
     public void init(Config.Scope config) {
-        int lockRecheckTime = config.getInt("lockRecheckTime", 2);
         int lockWaitTimeout = config.getInt("lockWaitTimeout", 900);
-        this.lockRecheckTimeMillis = Time.toMillis(lockRecheckTime);
         this.lockWaitTimeoutMillis = Time.toMillis(lockWaitTimeout);
-        logger.debugf("Liquibase lock provider configured with lockWaitTime: %d seconds, lockRecheckTime: %d seconds", lockWaitTimeout, lockRecheckTime);
+        logger.debugf("Liquibase lock provider configured with lockWaitTime: %d seconds", lockWaitTimeout);
     }
 
     @Override
@@ -63,7 +56,6 @@ public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory {
 
     @Override
     public void setTimeouts(long lockRecheckTimeMillis, long lockWaitTimeoutMillis) {
-        this.lockRecheckTimeMillis = lockRecheckTimeMillis;
         this.lockWaitTimeoutMillis = lockWaitTimeoutMillis;
     }
 
