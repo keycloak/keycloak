@@ -531,7 +531,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     @Override
     public Response cancelled(String code) {
         ClientSessionCode clientCode = ClientSessionCode.parse(code, this.session, this.realmModel);
-        if (clientCode.getClientSession() == null || !clientCode.isValid(AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+        if (clientCode == null || !clientCode.isValid(AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return redirectToErrorPage(Messages.INVALID_CODE);
         }
 
@@ -541,7 +541,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     @Override
     public Response error(String code, String message) {
         ClientSessionCode clientCode = ClientSessionCode.parse(code, this.session, this.realmModel);
-        if (clientCode.getClientSession() == null || !clientCode.isValid(AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+        if (clientCode == null || !clientCode.isValid(AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return redirectToErrorPage(Messages.INVALID_CODE);
         }
         return browserAuthentication(clientCode.getClientSession(), message);
