@@ -18,25 +18,16 @@
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
 import java.lang.reflect.Field;
-import java.text.DateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
 
-import liquibase.database.Database;
 import liquibase.database.core.DerbyDatabase;
 import liquibase.exception.DatabaseException;
-import liquibase.exception.LockException;
 import liquibase.executor.Executor;
 import liquibase.executor.ExecutorService;
-import liquibase.lockservice.DatabaseChangeLogLock;
 import liquibase.lockservice.StandardLockService;
-import liquibase.logging.LogFactory;
-import liquibase.sql.visitor.AbstractSqlVisitor;
-import liquibase.sql.visitor.SqlVisitor;
 import liquibase.statement.core.CreateDatabaseChangeLogLockTableStatement;
 import liquibase.statement.core.DropTableStatement;
 import liquibase.statement.core.InitializeDatabaseChangeLogLockTableStatement;
+import liquibase.statement.core.LockDatabaseChangeLogStatement;
 import liquibase.statement.core.RawSqlStatement;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
@@ -50,24 +41,6 @@ import org.keycloak.common.util.reflections.Reflections;
 public class CustomLockService extends StandardLockService {
 
     private static final Logger log = Logger.getLogger(CustomLockService.class);
-
-    private long changeLogLocRecheckTimeMillis = -1;
-
-    @Override
-    public void setChangeLogLockRecheckTime(long changeLogLocRecheckTime) {
-        super.setChangeLogLockRecheckTime(changeLogLocRecheckTime);
-        this.changeLogLocRecheckTimeMillis = changeLogLocRecheckTime;
-    }
-
-    // Bug in StandardLockService.getChangeLogLockRecheckTime()
-    @Override
-    public Long getChangeLogLockRecheckTime() {
-        if (changeLogLocRecheckTimeMillis == -1) {
-            return super.getChangeLogLockRecheckTime();
-        } else {
-            return changeLogLocRecheckTimeMillis;
-        }
-    }
 
     @Override
     public void init() throws DatabaseException {
@@ -84,8 +57,8 @@ public class CustomLockService extends StandardLockService {
                 database.commit();
             } catch (DatabaseException de) {
                 log.warn("Failed to create lock table. Maybe other transaction created in the meantime. Retrying...");
-                if (log.isDebugEnabled()) {
-                    log.debug(de.getMessage(), de); //Log details at debug level
+                if (log.isTraceEnabled()) {
+                    log.trace(de.getMessage(), de); //Log details at trace level
                 }
                 database.rollback();
                 throw new LockRetryException(de);
@@ -115,8 +88,8 @@ public class CustomLockService extends StandardLockService {
 
             } catch (DatabaseException de) {
                 log.warn("Failed to insert first record to the lock table. Maybe other transaction inserted in the meantime. Retrying...");
-                if (log.isDebugEnabled()) {
-                    log.debug(de.getMessage(), de); // Log details at debug level
+                if (log.isTraceEnabled()) {
+                    log.trace(de.getMessage(), de); // Log details at trace level
                 }
                 database.rollback();
                 throw new LockRetryException(de);
@@ -140,34 +113,88 @@ public class CustomLockService extends StandardLockService {
     }
 
     @Override
-    public void waitForLock() throws LockException {
+    public void waitForLock() {
         boolean locked = false;
         long startTime = Time.toMillis(Time.currentTime());
         long timeToGiveUp = startTime + (getChangeLogLockWaitTime());
+        boolean nextAttempt = true;
 
-        while (!locked && Time.toMillis(Time.currentTime()) < timeToGiveUp) {
+        while (nextAttempt) {
             locked = acquireLock();
             if (!locked) {
                 int remainingTime = ((int)(timeToGiveUp / 1000)) - Time.currentTime();
-                log.debugf("Waiting for changelog lock... Remaining time: %d seconds", remainingTime);
-                try {
-                    Thread.sleep(getChangeLogLockRecheckTime());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                if (remainingTime > 0) {
+                    log.debugf("Will try to acquire log another time. Remaining time: %d seconds", remainingTime);
+                } else {
+                    nextAttempt = false;
                 }
+            } else {
+                nextAttempt = false;
             }
         }
 
         if (!locked) {
-            DatabaseChangeLogLock[] locks = listLocks();
-            String lockedBy;
-            if (locks.length > 0) {
-                DatabaseChangeLogLock lock = locks[0];
-                lockedBy = lock.getLockedBy() + " since " + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(lock.getLockGranted());
-            } else {
-                lockedBy = "UNKNOWN";
+            int timeout = ((int)(getChangeLogLockWaitTime() / 1000));
+            throw new IllegalStateException("Could not acquire change log lock within specified timeout " + timeout + " seconds.  Currently locked by other transaction");
+        }
+    }
+
+    @Override
+    public boolean acquireLock() {
+        if (hasChangeLogLock) {
+            // We already have a lock
+            return true;
+        }
+
+        Executor executor = ExecutorService.getInstance().getExecutor(database);
+
+        try {
+            database.rollback();
+
+            // Ensure table created and lock record inserted
+            this.init();
+        } catch (DatabaseException de) {
+            throw new IllegalStateException("Failed to retrieve lock", de);
+        }
+
+        try {
+            log.debug("Trying to lock database");
+            executor.execute(new LockDatabaseChangeLogStatement());
+            log.debug("Successfully acquired database lock");
+
+            hasChangeLogLock = true;
+            database.setCanCacheLiquibaseTableInfo(true);
+            return true;
+
+        } catch (DatabaseException de) {
+            log.warn("Lock didn't yet acquired. Will possibly retry to acquire lock. Details: " + de.getMessage());
+            if (log.isTraceEnabled()) {
+                log.debug(de.getMessage(), de);
             }
-            throw new LockException("Could not acquire change log lock.  Currently locked by " + lockedBy);
+            return false;
+        }
+    }
+
+
+    @Override
+    public void releaseLock() {
+        try {
+            if (hasChangeLogLock) {
+                log.debug("Going to release database lock");
+                database.commit();
+            } else {
+                log.warn("Attempt to release lock, which is not owned by current transaction");
+            }
+        } catch (Exception e) {
+            log.error("Database error during release lock", e);
+        } finally {
+            try {
+                hasChangeLogLock = false;
+                database.setCanCacheLiquibaseTableInfo(false);
+                database.rollback();
+            } catch (DatabaseException e) {
+                ;
+            }
         }
     }
 

@@ -125,6 +125,11 @@ public class MongoDBLockProvider implements DBLockProvider {
     }
 
     @Override
+    public boolean supportsForcedUnlock() {
+        return true;
+    }
+
+    @Override
     public void destroyLockInfo() {
         db.getCollection(DB_LOCK_COLLECTION).remove(new BasicDBObject());
         logger.debugf("Destroyed lock collection");
