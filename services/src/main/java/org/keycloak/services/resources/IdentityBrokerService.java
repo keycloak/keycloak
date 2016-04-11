@@ -142,7 +142,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         try {
-            ClientSessionCode clientSessionCode = parseClientSessionCode(code);
+            ParsedCodeContext parsedCode = parseClientSessionCode(code);
+            if (parsedCode.response != null) {
+                return parsedCode.response;
+            }
+
+            ClientSessionCode clientSessionCode = parsedCode.clientSessionCode;
             IdentityProvider identityProvider = getIdentityProvider(session, realmModel, providerId);
             Response response = identityProvider.performLogin(createAuthenticationRequest(providerId, clientSessionCode));
 
@@ -241,14 +246,14 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     public Response authenticated(BrokeredIdentityContext context) {
-        ClientSessionCode clientCode = null;
         IdentityProviderModel identityProviderConfig = context.getIdpConfig();
-        try {
-            clientCode = parseClientSessionCode(context.getCode());
-        } catch (Exception e) {
-            return redirectToErrorPage(Messages.IDENTITY_PROVIDER_AUTHENTICATION_FAILED, e, identityProviderConfig.getProviderId());
 
+        ParsedCodeContext parsedCode = parseClientSessionCode(context.getCode());
+        if (parsedCode.response != null) {
+            return parsedCode.response;
         }
+        ClientSessionCode clientCode = parsedCode.clientSessionCode;
+
         String providerId = identityProviderConfig.getAlias();
         if (!identityProviderConfig.isStoreToken()) {
             if (isDebugEnabled()) {
@@ -325,8 +330,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     @GET
     @Path("/after-first-broker-login")
     public Response afterFirstBrokerLogin(@QueryParam("code") String code) {
-        ClientSessionCode clientCode = parseClientSessionCode(code);
-        ClientSessionModel clientSession = clientCode.getClientSession();
+        ParsedCodeContext parsedCode = parseClientSessionCode(code);
+        if (parsedCode.response != null) {
+            return parsedCode.response;
+        }
+        ClientSessionModel clientSession = parsedCode.clientSessionCode.getClientSession();
 
         try {
             this.event.detail(Details.CODE_ID, clientSession.getId())
@@ -439,8 +447,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     @GET
     @Path("/after-post-broker-login")
     public Response afterPostBrokerLoginFlow(@QueryParam("code") String code) {
-        ClientSessionCode clientCode = parseClientSessionCode(code);
-        ClientSessionModel clientSession = clientCode.getClientSession();
+        ParsedCodeContext parsedCode = parseClientSessionCode(code);
+        if (parsedCode.response != null) {
+            return parsedCode.response;
+        }
+        ClientSessionModel clientSession = parsedCode.clientSessionCode.getClientSession();
 
         try {
             SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(clientSession, PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
@@ -526,20 +537,23 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     @Override
     public Response cancelled(String code) {
-        ClientSessionCode clientCode = ClientSessionCode.parse(code, this.session, this.realmModel);
-        if (clientCode == null || !clientCode.isValid(AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
-            return redirectToErrorPage(Messages.INVALID_CODE);
+        ParsedCodeContext parsedCode = parseClientSessionCode(code);
+        if (parsedCode.response != null) {
+            return parsedCode.response;
         }
+        ClientSessionCode clientCode = parsedCode.clientSessionCode;
 
         return browserAuthentication(clientCode.getClientSession(), null);
     }
 
     @Override
     public Response error(String code, String message) {
-        ClientSessionCode clientCode = ClientSessionCode.parse(code, this.session, this.realmModel);
-        if (clientCode == null || !clientCode.isValid(AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
-            return redirectToErrorPage(Messages.INVALID_CODE);
+        ParsedCodeContext parsedCode = parseClientSessionCode(code);
+        if (parsedCode.response != null) {
+            return parsedCode.response;
         }
+        ClientSessionCode clientCode = parsedCode.clientSessionCode;
+
         return browserAuthentication(clientCode.getClientSession(), message);
     }
 
@@ -600,36 +614,41 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     }
 
-    private ClientSessionCode parseClientSessionCode(String code) {
+    private ParsedCodeContext parseClientSessionCode(String code) {
         ClientSessionCode clientCode = ClientSessionCode.parse(code, this.session, this.realmModel);
 
-        if (clientCode != null && clientCode.isValid(AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+        if (clientCode != null) {
             ClientSessionModel clientSession = clientCode.getClientSession();
 
-            if (clientSession != null) {
-                ClientModel client = clientSession.getClient();
+            if (clientSession.getUserSession() != null) {
+                this.event.session(clientSession.getUserSession());
+            }
 
-                if (client == null) {
-                    throw new IdentityBrokerException("Invalid client");
-                }
+            ClientModel client = clientSession.getClient();
+
+            if (client != null) {
 
                 logger.debugf("Got authorization code from client [%s].", client.getClientId());
                 this.event.client(client);
                 this.session.getContext().setClient(client);
 
-                if (clientSession.getUserSession() != null) {
-                    this.event.session(clientSession.getUserSession());
+                if (!clientCode.isValid(AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+                    logger.debugf("Authorization code is not valid. Client session ID: %s, Client session's action: %s", clientSession.getId(), clientSession.getAction());
+                    Response staleCodeError = redirectToErrorPage(Messages.STALE_CODE);
+                    return ParsedCodeContext.response(staleCodeError);
                 }
-            }
 
-            if (isDebugEnabled()) {
-                logger.debugf("Authorization code is valid.");
-            }
+                if (isDebugEnabled()) {
+                    logger.debugf("Authorization code is valid.");
+                }
 
-            return clientCode;
+                return ParsedCodeContext.clientSessionCode(clientCode);
+            }
         }
 
-        throw new IdentityBrokerException("Invalid code, please login again through your client.");
+        logger.debugf("Authorization code is not valid. Code: %s", code);
+        Response staleCodeError = redirectToErrorPage(Messages.STALE_CODE);
+        return ParsedCodeContext.response(staleCodeError);
     }
 
     private AuthenticationRequest createAuthenticationRequest(String providerId, ClientSessionCode clientSessionCode) {
@@ -802,6 +821,24 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private void rollback() {
         if (this.session.getTransaction().isActive()) {
             this.session.getTransaction().rollback();
+        }
+    }
+
+
+    private static class ParsedCodeContext {
+        private ClientSessionCode clientSessionCode;
+        private Response response;
+
+        public static ParsedCodeContext clientSessionCode(ClientSessionCode clientSessionCode) {
+            ParsedCodeContext ctx = new ParsedCodeContext();
+            ctx.clientSessionCode = clientSessionCode;
+            return ctx;
+        }
+
+        public static ParsedCodeContext response(Response response) {
+            ParsedCodeContext ctx = new ParsedCodeContext();
+            ctx.response = response;
+            return ctx;
         }
     }
 }
