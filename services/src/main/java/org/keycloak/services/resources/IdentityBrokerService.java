@@ -543,6 +543,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
         ClientSessionCode clientCode = parsedCode.clientSessionCode;
 
+        Response accountManagementFailedLinking = checkAccountManagementFailedLinking(clientCode.getClientSession(), Messages.CONSENT_DENIED);
+        if (accountManagementFailedLinking != null) {
+            return accountManagementFailedLinking;
+        }
+
         return browserAuthentication(clientCode.getClientSession(), null);
     }
 
@@ -553,6 +558,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return parsedCode.response;
         }
         ClientSessionCode clientCode = parsedCode.clientSessionCode;
+
+        Response accountManagementFailedLinking = checkAccountManagementFailedLinking(clientCode.getClientSession(), message);
+        if (accountManagementFailedLinking != null) {
+            return accountManagementFailedLinking;
+        }
 
         return browserAuthentication(clientCode.getClientSession(), message);
     }
@@ -635,20 +645,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 if (!clientCode.isValid(AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
                     logger.debugf("Authorization code is not valid. Client session ID: %s, Client session's action: %s", clientSession.getId(), clientSession.getAction());
 
-                    Response staleCodeError;
+                    // Check if error happened during login or during linking from account management
+                    Response accountManagementFailedLinking = checkAccountManagementFailedLinking(clientCode.getClientSession(), Messages.STALE_CODE_ACCOUNT);
+                    Response staleCodeError = (accountManagementFailedLinking != null) ? accountManagementFailedLinking : redirectToErrorPage(Messages.STALE_CODE);
 
-                    // Linking identityProvider from account mgmt
-                    if (clientSession.getUserSession() != null && client.getClientId().equals(ACCOUNT_MANAGEMENT_CLIENT_ID)) {
-
-                        this.event.event(EventType.FEDERATED_IDENTITY_LINK);
-                        UserModel user = clientSession.getUserSession().getUser();
-                        this.event.user(user);
-                        this.event.detail(Details.USERNAME, user.getUsername());
-
-                        staleCodeError = redirectToAccountErrorPage(clientSession, Messages.STALE_CODE_ACCOUNT);
-                    } else {
-                        staleCodeError = redirectToErrorPage(Messages.STALE_CODE);
-                    }
 
                     return ParsedCodeContext.response(staleCodeError);
                 }
@@ -664,6 +664,20 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         logger.debugf("Authorization code is not valid. Code: %s", code);
         Response staleCodeError = redirectToErrorPage(Messages.STALE_CODE);
         return ParsedCodeContext.response(staleCodeError);
+    }
+
+    private Response checkAccountManagementFailedLinking(ClientSessionModel clientSession, String error, Object... parameters) {
+        if (clientSession.getUserSession() != null && clientSession.getClient() != null && clientSession.getClient().getClientId().equals(ACCOUNT_MANAGEMENT_CLIENT_ID)) {
+
+            this.event.event(EventType.FEDERATED_IDENTITY_LINK);
+            UserModel user = clientSession.getUserSession().getUser();
+            this.event.user(user);
+            this.event.detail(Details.USERNAME, user.getUsername());
+
+            return redirectToAccountErrorPage(clientSession, error, parameters);
+        } else {
+            return null;
+        }
     }
 
     private AuthenticationRequest createAuthenticationRequest(String providerId, ClientSessionCode clientSessionCode) {
