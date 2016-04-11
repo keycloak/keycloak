@@ -49,6 +49,7 @@ import java.util.List;
 import javax.ws.rs.core.UriBuilder;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -147,7 +148,7 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
 
 
     @Test
-    public void testAccessDeniedError() throws Exception {
+    public void testConsentDeniedWithExpiredClientSession() throws Exception {
         // Disable update profile
         setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
 
@@ -174,9 +175,26 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
         // Login to broker
         loginIDP("test-user");
 
-        // Set time offset and manually enforce removeExpired sessions TODO: Will need custom REST endpoints for that on integration-arquillian
+        // Set time offset
         Time.setOffset(60);
         try {
+            // User rejected consent
+            grantPage.assertCurrent();
+            grantPage.cancel();
+
+            // Assert error page with backToApplication link displayed
+            errorPage.assertCurrent();
+            errorPage.clickBackToApplication();
+
+            assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+
+
+            // Login to broker again
+            loginIDP("test-user");
+
+            // Set time offset and manually remove expiredSessions TODO: Will require custom endpoint when migrate to integration-arquillian
+            Time.setOffset(120);
+
             brokerServerRule.stopSession(this.session, true);
             this.session = brokerServerRule.startSession();
 
@@ -189,8 +207,14 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
             grantPage.assertCurrent();
             grantPage.cancel();
 
-            // Assert classic error page ( We're sorry ) displayed. TODO: Should be improved? See KEYCLOAK-2740
+            // Assert error page without backToApplication link (clientSession expired and was removed on the server)
             errorPage.assertCurrent();
+            try {
+                errorPage.clickBackToApplication();
+                fail("Not expected to have link backToApplication available");
+            } catch (NoSuchElementException nsee) {
+                // Expected;
+            }
 
         } finally {
             Time.setOffset(0);

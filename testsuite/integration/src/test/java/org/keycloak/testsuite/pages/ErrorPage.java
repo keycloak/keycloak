@@ -16,8 +16,10 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.junit.Assert;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.rule.WebResource;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -32,8 +34,15 @@ public class ErrorPage extends AbstractPage {
     @FindBy(className = "instruction")
     private WebElement errorMessage;
 
+    @FindBy(id = "backToApplication")
+    private WebElement backToApplicationLink;
+
     public String getError() {
         return errorMessage.getText();
+    }
+
+    public void clickBackToApplication() {
+        backToApplicationLink.click();
     }
 
     public boolean isCurrent() {
