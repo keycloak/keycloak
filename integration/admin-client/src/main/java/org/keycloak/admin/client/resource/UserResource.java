@@ -17,6 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -35,6 +36,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -131,5 +133,14 @@ public interface UserResource {
 
     @Path("role-mappings")
     public RoleMappingResource roles();
+
+
+    @GET
+    @Path("consents")
+    public List<Map<String, Object>> getConsents();
+
+    @DELETE
+    @Path("consents/{client}")
+    public void revokeConsent(@PathParam("client") String clientId);
 
 }

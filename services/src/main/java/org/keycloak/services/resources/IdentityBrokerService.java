@@ -638,7 +638,22 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
                 if (!clientCode.isValid(AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
                     logger.debugf("Authorization code is not valid. Client session ID: %s, Client session's action: %s", clientSession.getId(), clientSession.getAction());
-                    Response staleCodeError = redirectToErrorPage(Messages.STALE_CODE);
+
+                    Response staleCodeError;
+
+                    // Linking identityProvider from account mgmt
+                    if (clientSession.getUserSession() != null && client.getClientId().equals(ACCOUNT_MANAGEMENT_CLIENT_ID)) {
+
+                        this.event.event(EventType.FEDERATED_IDENTITY_LINK);
+                        UserModel user = clientSession.getUserSession().getUser();
+                        this.event.user(user);
+                        this.event.detail(Details.USERNAME, user.getUsername());
+
+                        staleCodeError = redirectToAccountErrorPage(clientSession, Messages.STALE_CODE_ACCOUNT);
+                    } else {
+                        staleCodeError = redirectToErrorPage(Messages.STALE_CODE);
+                    }
+
                     return ParsedCodeContext.response(staleCodeError);
                 }
 
