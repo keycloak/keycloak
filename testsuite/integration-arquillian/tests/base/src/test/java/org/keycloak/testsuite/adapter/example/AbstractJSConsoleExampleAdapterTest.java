@@ -168,6 +168,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         jsConsoleExamplePage.init();
         jsConsoleExamplePage.getProfile();
+        pause(500);
         assertTrue(jsConsoleExamplePage.getOutputText().contains("Failed to load profile"));
 
         jsConsoleExamplePage.logIn();
@@ -306,7 +307,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         logInAndInit("implicit");
 
-        pause(5000);
+        pause(6000);
 
         assertTrue(jsConsoleExamplePage.getEventsText().contains("Access token expired"));
     }
