@@ -32,7 +32,7 @@ public abstract class AbstractPageWithInjectedUrl extends AbstractPage {
 
     //EAP6 URL fix
     protected URL createInjectedURL(String url) {
-        if (System.getProperty("app.server.eap6","false").equals("false")) {
+        if (!System.getProperty("app.server").equals("eap6")) {
             return null;
         }
         try {
