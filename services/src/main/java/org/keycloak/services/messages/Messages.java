@@ -156,6 +156,8 @@ public class Messages {
 
     public static final String STALE_CODE = "staleCodeMessage";
 
+    public static final String STALE_CODE_ACCOUNT = "staleCodeAccountMessage";
+
     public static final String IDENTITY_PROVIDER_NOT_UNIQUE = "identityProviderNotUniqueMessage";
 
     public static final String REALM_SUPPORTS_NO_CREDENTIALS = "realmSupportsNoCredentialsMessage";
