@@ -240,6 +240,20 @@ public class UserTest extends AbstractClientTest {
     }
 
     @Test
+    public void delete() {
+        Response response = realm.users().delete( createUser() );
+        assertEquals(204, response.getStatus());
+        response.close();
+    }
+
+    @Test
+    public void deleteNonExistent() {
+        Response response = realm.users().delete( "does-not-exist" );
+        assertEquals(404, response.getStatus());
+        response.close();
+    }
+
+    @Test
     public void searchPaginated() {
         createUsers();
 
