@@ -17,7 +17,6 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;

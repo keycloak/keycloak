@@ -20,15 +20,12 @@ package org.keycloak.testsuite.broker;
 import java.util.List;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -37,9 +34,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.KeycloakServer;
-import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
 import org.openqa.selenium.NoSuchElementException;
 
 import static org.junit.Assert.assertTrue;
@@ -175,11 +170,7 @@ public class OIDCKeycloakServerBrokerWithConsentTest extends AbstractIdentityPro
     @Test
     public void testAccountManagementLinkingAndExpiredClientSession() throws Exception {
         // Login as pedroigor to account management
-        accountFederatedIdentityPage.realm("realm-with-broker");
-        accountFederatedIdentityPage.open();
-        assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
-        loginPage.login("pedroigor", "password");
-        assertTrue(accountFederatedIdentityPage.isCurrent());
+        loginToAccountManagement("pedroigor");
 
         // Link my "pedroigor" identity with "test-user" from brokered Keycloak
         accountFederatedIdentityPage.clickAddProvider(getProviderId());
@@ -196,7 +187,7 @@ public class OIDCKeycloakServerBrokerWithConsentTest extends AbstractIdentityPro
 
             // Assert account error page with "staleCodeAccount" error displayed
             accountFederatedIdentityPage.assertCurrent();
-            Assert.assertEquals("The page expired. Please try one more time", accountFederatedIdentityPage.getError());
+            Assert.assertEquals("The page expired. Please try one more time.", accountFederatedIdentityPage.getError());
 
 
             // Try to link one more time
@@ -213,15 +204,61 @@ public class OIDCKeycloakServerBrokerWithConsentTest extends AbstractIdentityPro
 
             // Assert account error page with "staleCodeAccount" error displayed
             accountFederatedIdentityPage.assertCurrent();
-            Assert.assertEquals("The page expired. Please try one more time", accountFederatedIdentityPage.getError());
+            Assert.assertEquals("The page expired. Please try one more time.", accountFederatedIdentityPage.getError());
 
         } finally {
             Time.setOffset(0);
-
-            // Revoke consent
-            RealmResource brokeredRealm = keycloak2.realm("realm-with-oidc-identity-provider");
-            List<UserRepresentation> users = brokeredRealm.users().search("test-user", 0, 1);
-            brokeredRealm.users().get(users.get(0).getId()).revokeConsent("broker-app");
         }
+
+        // Revoke consent
+        RealmResource brokeredRealm = keycloak2.realm("realm-with-oidc-identity-provider");
+        List<UserRepresentation> users = brokeredRealm.users().search("test-user", 0, 1);
+        brokeredRealm.users().get(users.get(0).getId()).revokeConsent("broker-app");
+    }
+
+
+    @Test
+    public void testLoginCancelConsent() throws Exception {
+        // Try to login
+        loginIDP("test-user");
+
+        // User rejected consent
+        grantPage.assertCurrent();
+        grantPage.cancel();
+
+        // Assert back on login page
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/"));
+        assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
+    }
+
+
+    // KEYCLOAK-2802
+    @Test
+    public void testAccountManagementLinkingCancelConsent() throws Exception {
+        // Login as pedroigor to account management
+        loginToAccountManagement("pedroigor");
+
+        // Link my "pedroigor" identity with "test-user" from brokered Keycloak
+        accountFederatedIdentityPage.clickAddProvider(getProviderId());
+
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
+        this.loginPage.login("test-user", "password");
+
+        // User rejected consent
+        grantPage.assertCurrent();
+        grantPage.cancel();
+
+        // Assert account error page with "consentDenied" error displayed
+        accountFederatedIdentityPage.assertCurrent();
+        Assert.assertEquals("Consent denied.", accountFederatedIdentityPage.getError());
+    }
+
+
+    private void loginToAccountManagement(String username) {
+        accountFederatedIdentityPage.realm("realm-with-broker");
+        accountFederatedIdentityPage.open();
+        assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
+        loginPage.login(username, "password");
+        assertTrue(accountFederatedIdentityPage.isCurrent());
     }
 }
