@@ -17,16 +17,12 @@
 
 package org.keycloak.testsuite.broker;
 
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.Urls;
@@ -41,10 +37,8 @@ import org.openqa.selenium.NoSuchElementException;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
-import java.util.List;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -139,88 +133,6 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
         keycloak.realm("realm-with-oidc-identity-provider").update(realm);
         idp.getConfig().put("backchannelSupported", "true");
         keycloak.realm("realm-with-broker").identityProviders().get("kc-oidc-idp").update(idp);
-    }
-
-
-    @Test
-    public void testConsentDeniedWithExpiredClientSession() throws Exception {
-        // Disable update profile
-        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
-
-        Keycloak keycloak1 = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID);
-        Keycloak keycloak2 = Keycloak.getInstance("http://localhost:8082/auth", "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID);
-
-        // Require broker to show consent screen
-        RealmResource brokeredRealm = keycloak2.realm("realm-with-oidc-identity-provider");
-        List<ClientRepresentation> clients = brokeredRealm.clients().findByClientId("broker-app");
-        Assert.assertEquals(1, clients.size());
-        ClientRepresentation brokerApp = clients.get(0);
-        brokerApp.setConsentRequired(true);
-        brokeredRealm.clients().get(brokerApp.getId()).update(brokerApp);
-
-        // Change timeouts on realm-with-broker to lower values
-        RealmResource realmWithBroker = keycloak1.realm("realm-with-broker");
-        RealmRepresentation realmBackup = realmWithBroker.toRepresentation();
-        RealmRepresentation realm = realmWithBroker.toRepresentation();
-        realm.setAccessCodeLifespanLogin(30);;
-        realm.setAccessCodeLifespan(30);
-        realm.setAccessCodeLifespanUserAction(30);
-        realmWithBroker.update(realm);
-
-        // Login to broker
-        loginIDP("test-user");
-
-        // Set time offset
-        Time.setOffset(60);
-        try {
-            // User rejected consent
-            grantPage.assertCurrent();
-            grantPage.cancel();
-
-            // Assert error page with backToApplication link displayed
-            errorPage.assertCurrent();
-            errorPage.clickBackToApplication();
-
-            assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
-
-
-            // Login to broker again
-            loginIDP("test-user");
-
-            // Set time offset and manually remove expiredSessions TODO: Will require custom endpoint when migrate to integration-arquillian
-            Time.setOffset(120);
-
-            brokerServerRule.stopSession(this.session, true);
-            this.session = brokerServerRule.startSession();
-
-            session.sessions().removeExpired(getRealm());
-
-            brokerServerRule.stopSession(this.session, true);
-            this.session = brokerServerRule.startSession();
-
-            // User rejected consent
-            grantPage.assertCurrent();
-            grantPage.cancel();
-
-            // Assert error page without backToApplication link (clientSession expired and was removed on the server)
-            errorPage.assertCurrent();
-            try {
-                errorPage.clickBackToApplication();
-                fail("Not expected to have link backToApplication available");
-            } catch (NoSuchElementException nsee) {
-                // Expected;
-            }
-
-        } finally {
-            Time.setOffset(0);
-        }
-
-        // Revert consent
-        brokerApp.setConsentRequired(false);
-        brokeredRealm.clients().get(brokerApp.getId()).update(brokerApp);
-
-        // Revert timeouts
-        realmWithBroker.update(realmBackup);
     }
 
     @Test
