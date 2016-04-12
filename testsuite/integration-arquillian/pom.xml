@@ -47,7 +47,7 @@
         <arquillian-graphene.version>2.1.0.Alpha3</arquillian-graphene.version>
         <arquillian-wildfly-container.version>8.2.0.Final</arquillian-wildfly-container.version>
         <version.shrinkwrap.resolvers>2.2.2</version.shrinkwrap.resolvers>
-
+        <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
     </properties>
 
     <dependencyManagement>
