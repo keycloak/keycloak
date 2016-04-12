@@ -30,7 +30,6 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
-import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.util.JsonSerialization;
@@ -67,9 +66,6 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
             return new String[] { "realm-with-oidc-identity-provider" };
         }
     };
-
-    @WebResource
-    private OAuthGrantPage grantPage;
 
     @WebResource
     protected AccountApplicationsPage accountApplicationsPage;
@@ -117,6 +113,16 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
     @Test
     public void testSuccessfulAuthentication() {
         super.testSuccessfulAuthentication();
+    }
+
+    @Test
+    public void testDisabledUser() {
+        super.testDisabledUser();
+    }
+
+    @Test
+    public void testTemporarilyDisabledUser() {
+        super.testTemporarilyDisabledUser();
     }
 
     @Test

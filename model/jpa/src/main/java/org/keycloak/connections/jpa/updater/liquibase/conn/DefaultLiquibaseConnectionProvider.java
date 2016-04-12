@@ -39,6 +39,7 @@ import org.keycloak.Config;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
+import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService;
 import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
 import org.keycloak.models.KeycloakSession;
@@ -68,6 +69,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
     protected void baseLiquibaseInitialization() {
         ServiceLocator sl = ServiceLocator.getInstance();
+        sl.setResourceAccessor(new ClassLoaderResourceAccessor(getClass().getClassLoader()));
 
         if (!System.getProperties().containsKey("liquibase.scan.packages")) {
             if (sl.getPackages().remove("liquibase.core")) {
@@ -84,6 +86,10 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
             sl.getPackages().remove("liquibase.ext");
             sl.getPackages().remove("liquibase.sdk");
+
+            String lockPackageName = DummyLockService.class.getPackage().getName();
+            logger.debugf("Added package %s to liquibase", lockPackageName);
+            sl.addPackageToScan(lockPackageName);
         }
 
         LogFactory.setInstance(new LogWrapper());
@@ -93,6 +99,9 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
         // Change command for creating lock and drop DELETE lock record from it
         SqlGeneratorFactory.getInstance().register(new CustomInsertLockRecordGenerator());
+
+        // Use "SELECT FOR UPDATE" for locking database
+        SqlGeneratorFactory.getInstance().register(new CustomLockDatabaseChangeLogGenerator());
     }
 
 
@@ -124,10 +133,6 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
         String changelog = (database instanceof DB2Database) ? LiquibaseJpaUpdaterProvider.DB2_CHANGELOG :  LiquibaseJpaUpdaterProvider.CHANGELOG;
         logger.debugf("Using changelog file: %s", changelog);
-
-        // We wrap liquibase update in CustomLockService provided by DBLockProvider. No need to lock inside liquibase itself.
-        // NOTE: This can't be done in baseLiquibaseInitialization() as liquibase always restarts lock service
-        LockServiceFactory.getInstance().register(new DummyLockService());
 
         return new Liquibase(changelog, new ClassLoaderResourceAccessor(getClass().getClassLoader()), database);
     }

@@ -20,21 +20,33 @@ package org.keycloak.admin.client;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 
+import static org.keycloak.OAuth2Constants.CLIENT_CREDENTIALS;
+import static org.keycloak.OAuth2Constants.PASSWORD;
+
 /**
  * Provides a {@link Keycloak} client builder with the ability to customize the underlying
  * {@link ResteasyClient RESTEasy client} used to communicate with the Keycloak server.
- *
+ * <p>
  * <p>Example usage with a connection pool size of 20:</p>
- *
  * <pre>
  *   Keycloak keycloak = KeycloakBuilder.builder()
- *     .serverUrl("https:/sso.example.com/auth")
+ *     .serverUrl("https://sso.example.com/auth")
  *     .realm("realm")
  *     .username("user")
  *     .password("pass")
  *     .clientId("client")
  *     .clientSecret("secret")
  *     .resteasyClient(new ResteasyClientBuilder().connectionPoolSize(20).build())
+ *     .build();
+ * </pre>
+ * <p>Example usage with grant_type=client_credentials</p>
+ * <pre>
+ *   Keycloak keycloak = KeycloakBuilder.builder()
+ *     .serverUrl("https://sso.example.com/auth")
+ *     .realm("example")
+ *     .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+ *     .clientId("client")
+ *     .clientSecret("secret")
  *     .build();
  * </pre>
  *
@@ -48,6 +60,7 @@ public class KeycloakBuilder {
     private String password;
     private String clientId;
     private String clientSecret;
+    private String grantType = PASSWORD;
     private ResteasyClient resteasyClient;
 
     public KeycloakBuilder serverUrl(String serverUrl) {
@@ -57,6 +70,12 @@ public class KeycloakBuilder {
 
     public KeycloakBuilder realm(String realm) {
         this.realm = realm;
+        return this;
+    }
+
+    public KeycloakBuilder grantType(String grantType) {
+        Config.checkGrantType(grantType);
+        this.grantType = grantType;
         return this;
     }
 
@@ -97,19 +116,25 @@ public class KeycloakBuilder {
             throw new IllegalStateException("realm required");
         }
 
-        if (username == null) {
-            throw new IllegalStateException("username required");
-        }
+        if (PASSWORD.equals(grantType)) {
+            if (username == null) {
+                throw new IllegalStateException("username required");
+            }
 
-        if (password == null) {
-            throw new IllegalStateException("password required");
+            if (password == null) {
+                throw new IllegalStateException("password required");
+            }
+        } else if (CLIENT_CREDENTIALS.equals(grantType)) {
+            if (clientSecret == null) {
+                throw new IllegalStateException("clientSecret required with grant_type=client_credentials");
+            }
         }
 
         if (clientId == null) {
             throw new IllegalStateException("clientId required");
         }
 
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, resteasyClient);
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, grantType, resteasyClient);
     }
 
     private KeycloakBuilder() {

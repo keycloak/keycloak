@@ -59,8 +59,8 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
             try {
                 reg.get(client.getClientId());
                 fail("Expected 403");
-            } catch (ClientRegistrationException e) {
-                assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            } catch (Exception e) {
+                assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
             }
         }
         return null;
@@ -82,9 +82,9 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         reg.auth(Auth.token("invalid"));
         try {
             reg.get(client.getClientId());
-            fail("Expected 403");
+            fail("Expected 401");
         } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
     }
 
@@ -109,9 +109,9 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         reg.auth(Auth.token("invalid"));
         try {
             reg.update(client);
-            fail("Expected 403");
+            fail("Expected 401");
         } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
 
         assertEquals("http://root", getClient(client.getId()).getRootUrl());
@@ -128,9 +128,9 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         reg.auth(Auth.token("invalid"));
         try {
             reg.delete(client);
-            fail("Expected 403");
+            fail("Expected 401");
         } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
         assertNotNull(getClient(client.getId()));
     }

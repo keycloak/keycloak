@@ -40,6 +40,7 @@ import org.keycloak.testsuite.broker.util.UserSessionStatusServlet.UserSessionSt
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -109,6 +110,9 @@ public abstract class AbstractIdentityProviderTest {
     @WebResource
     protected AccountFederatedIdentityPage accountFederatedIdentityPage;
 
+    @WebResource
+    protected ErrorPage errorPage;
+
     protected KeycloakSession session;
 
     protected int logoutTimeOffset = 0;
@@ -168,10 +172,6 @@ public abstract class AbstractIdentityProviderTest {
             Time.setOffset(0);
         }
 
-        String afterLogoutUrl = driver.getCurrentUrl();
-        String afterLogoutPageSource = driver.getPageSource();
-        System.out.println("afterLogoutUrl: " + afterLogoutUrl);
-        //System.out.println("after logout page source: " + afterLogoutPageSource);
 
         driver.navigate().to("http://localhost:8081/test-app");
 
@@ -215,7 +215,6 @@ public abstract class AbstractIdentityProviderTest {
 
         String currentUrl = this.driver.getCurrentUrl();
         assertTrue(currentUrl.startsWith("http://localhost:8082/auth/"));
-        System.out.println(this.driver.getCurrentUrl());
         // log in to identity provider
         this.loginPage.login(username, "password");
         doAfterProviderAuthentication();

@@ -48,6 +48,11 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
                 .addAsWebInfResource(keycloakJSON, "keycloak.json")
                 .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
 
+        URL keystore = AbstractServletsAdapterTest.class.getResource(webInfPath + "keystore.jks");
+        if (keystore != null) {
+            deployment.addAsWebInfResource(keystore, "classes/keystore.jks");
+        }
+
         addContextXml(deployment, name);
 
         return deployment;
