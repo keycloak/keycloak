@@ -37,6 +37,42 @@
         <common.resources>${project.parent.basedir}/common</common.resources>
         <adapter.libs.home>${app.server.home}/modules/system/add-ons/keycloak</adapter.libs.home>
     </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>Configure keycloak subsystem</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>transform</goal>
+                        </goals>
+                        <configuration>
+                            <transformationSets>
+                                <transformationSet>
+                                    <dir>${app.server.home}/standalone/configuration</dir>
+                                    <includes>
+                                        <include>standalone.xml</include>
+                                    </includes>
+                                    <stylesheet>${common.resources}/xslt/keycloak-subsystem.xsl</stylesheet>
+                                    <outputDir>${app.server.home}/standalone/configuration</outputDir>
+                                    <parameters>
+                                        <parameter>
+                                            <name>auth-server-port</name>
+                                            <value>${auth.server.http.port}</value>
+                                        </parameter>
+                                    </parameters>
+                                </transformationSet>
+                            </transformationSets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
     
     <profiles>
         <profile>
