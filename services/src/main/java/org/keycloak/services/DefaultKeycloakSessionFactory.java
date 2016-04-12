@@ -40,6 +40,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
 
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
+    private Set<Spi> spis = new HashSet<>();
     private Map<Class<? extends Provider>, String> provider = new HashMap<Class<? extends Provider>, String>();
     private Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<Class<? extends Provider>, Map<String, ProviderFactory>>();
     protected CopyOnWriteArrayList<ProviderEventListener> listeners = new CopyOnWriteArrayList<ProviderEventListener>();
@@ -80,6 +81,8 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
 
     protected void loadSPIs(ProviderManager pm, ServiceLoader<Spi> load) {
         for (Spi spi : load) {
+            spis.add(spi);
+
             Map<String, ProviderFactory> factories = new HashMap<String, ProviderFactory>();
             factoriesMap.put(spi.getProviderClass(), factories);
 
@@ -136,6 +139,11 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
 
     <T extends Provider> String getDefaultProvider(Class<T> clazz) {
         return provider.get(clazz);
+    }
+
+    @Override
+    public Set<Spi> getSpis() {
+        return spis;
     }
 
     @Override
