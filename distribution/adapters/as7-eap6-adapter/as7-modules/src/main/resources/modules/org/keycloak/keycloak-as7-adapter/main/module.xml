@@ -20,6 +20,9 @@
   -->
 
 <module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-as7-adapter">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
     <resources>
         <!-- Insert resources here -->
     </resources>
@@ -36,6 +39,7 @@
         <module name="org.jboss.as.security"/>
         <module name="org.jboss.as.web"/>
         <module name="org.picketbox"/>
+        <module name="org.keycloak.keycloak-adapter-spi-public"/>
         <module name="org.keycloak.keycloak-adapter-spi"/>
         <module name="org.keycloak.keycloak-adapter-core"/>
         <module name="org.keycloak.keycloak-common"/>

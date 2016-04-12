@@ -26,7 +26,6 @@ import org.keycloak.saml.SAML2NameIDPolicyBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.security.KeyPair;
