@@ -38,6 +38,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
@@ -67,6 +68,73 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
         UserModel user = assertSuccessfulAuthentication(identityProviderModel, "test-user", "new@email.com", true);
         Assert.assertEquals("617-666-7777", user.getFirstAttribute("mobile"));
+    }
+
+    @Test
+    public void testDisabledUser() {
+        setUpdateProfileFirstLogin(session.realms().getRealmByName("realm-with-broker"), IdentityProviderRepresentation.UPFLM_OFF);
+
+        driver.navigate().to("http://localhost:8081/test-app");
+        loginPage.clickSocial(getProviderId());
+        loginPage.login("test-user", "password");
+        System.out.println(driver.getPageSource());
+        driver.navigate().to("http://localhost:8081/test-app/logout");
+
+        try {
+            KeycloakSession session = brokerServerRule.startSession();
+            session.users().getUserByUsername("test-user", session.realms().getRealmByName("realm-with-broker")).setEnabled(false);
+            brokerServerRule.stopSession(session, true);
+
+            driver.navigate().to("http://localhost:8081/test-app");
+
+            loginPage.clickSocial(getProviderId());
+            loginPage.login("test-user", "password");
+
+            assertTrue(errorPage.isCurrent());
+            assertEquals("Account is disabled, contact admin.", errorPage.getError());
+        } finally {
+            KeycloakSession session = brokerServerRule.startSession();
+            session.users().getUserByUsername("test-user", session.realms().getRealmByName("realm-with-broker")).setEnabled(true);
+            brokerServerRule.stopSession(session, true);
+        }
+    }
+
+    @Test
+    public void testTemporarilyDisabledUser() {
+        setUpdateProfileFirstLogin(session.realms().getRealmByName("realm-with-broker"), IdentityProviderRepresentation.UPFLM_OFF);
+
+        driver.navigate().to("http://localhost:8081/test-app");
+        loginPage.clickSocial(getProviderId());
+        loginPage.login("test-user", "password");
+        driver.navigate().to("http://localhost:8081/test-app/logout");
+
+        try {
+            KeycloakSession session = brokerServerRule.startSession();
+            RealmModel brokerRealm = session.realms().getRealmByName("realm-with-broker");
+            brokerRealm.setBruteForceProtected(true);
+            brokerRealm.setFailureFactor(2);
+            brokerServerRule.stopSession(session, true);
+
+            driver.navigate().to("http://localhost:8081/test-app");
+            loginPage.login("test-user", "fail");
+            loginPage.login("test-user", "fail");
+
+            driver.navigate().to("http://localhost:8081/test-app");
+
+            assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+
+            loginPage.clickSocial(getProviderId());
+            loginPage.login("test-user", "password");
+
+            assertTrue(errorPage.isCurrent());
+            assertEquals("Account is disabled, contact admin.", errorPage.getError());
+        } finally {
+            KeycloakSession session = brokerServerRule.startSession();
+            RealmModel brokerRealm = session.realms().getRealmByName("realm-with-broker");
+            brokerRealm.setBruteForceProtected(false);
+            brokerRealm.setFailureFactor(0);
+            brokerServerRule.stopSession(session, true);
+        }
     }
 
     @Test
@@ -362,7 +430,6 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         revokeGrant();
 
         // Logout from account management
-        System.out.println("*** logout from account management");
         accountFederatedIdentityPage.logout();
         assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
@@ -502,7 +569,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
             driver.navigate().to("http://localhost:8081/test-app/logout");
             String currentUrl = this.driver.getCurrentUrl();
-            System.out.println("after logout currentUrl: " + currentUrl);
+//            System.out.println("after logout currentUrl: " + currentUrl);
             assertTrue(currentUrl.startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
             unconfigureUserRetrieveToken("test-user");
