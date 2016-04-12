@@ -36,7 +36,7 @@
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>undertow-embedded</artifactId>
-            <version>1.0.0.Alpha1-SNAPSHOT</version>
+            <version>${undertow-embedded.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
