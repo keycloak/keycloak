@@ -16,3 +16,4 @@
 #
 
 org.keycloak.testsuite.rest.TimeOffsetResourceProviderFactory
+org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory
