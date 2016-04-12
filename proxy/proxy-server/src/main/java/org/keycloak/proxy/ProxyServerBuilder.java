@@ -32,6 +32,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.PathHandler;
 import io.undertow.server.handlers.ResponseCodeHandler;
 import io.undertow.server.handlers.proxy.ProxyHandler;
+import io.undertow.server.handlers.ProxyPeerAddressHandler;
 import io.undertow.server.handlers.proxy.SimpleProxyClientProvider;
 import io.undertow.server.session.InMemorySessionManager;
 import io.undertow.server.session.SessionAttachmentHandler;
@@ -135,6 +136,7 @@ public class ProxyServerBuilder {
         protected SecurityPathMatches.Builder constraintBuilder = new SecurityPathMatches.Builder();
         protected SecurityPathMatches matches;
         protected String errorPage;
+        protected boolean proxyAddressForwarding;
 
         public ApplicationBuilder base(String base) {
             this.base = base;
@@ -146,6 +148,11 @@ public class ProxyServerBuilder {
                 errorPage = errorPage.substring(1);
             }
             this.errorPage = errorPage;
+            return this;
+        }
+        
+        public ApplicationBuilder proxyAddressForwarding(boolean proxyAddressForwarding) {
+            this.proxyAddressForwarding = proxyAddressForwarding;
             return this;
         }
 
@@ -273,7 +280,9 @@ public class ProxyServerBuilder {
                 }
             };
             handler = new UndertowPreAuthActionsHandler(deploymentContext, userSessionManagement, sessionManager, handler);
-            return new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, identityManager, handler);
+            handler = new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, identityManager, handler);
+            if (proxyAddressForwarding) handler = new ProxyPeerAddressHandler(handler);
+            return handler;
         }
 
         private HttpHandler sessionHandling(HttpHandler toWrap) {
@@ -383,7 +392,8 @@ public class ProxyServerBuilder {
         for (ProxyConfig.Application application : config.getApplications()) {
             ApplicationBuilder applicationBuilder = builder.application(application.getAdapterConfig())
                     .base(application.getBasePath())
-                    .errorPage(application.getErrorPage());
+                    .errorPage(application.getErrorPage())
+                    .proxyAddressForwarding(application.isProxyAddressForwarding());
 
             if (application.getConstraints() != null) {
                 for (ProxyConfig.Constraint constraint : application.getConstraints()) {
