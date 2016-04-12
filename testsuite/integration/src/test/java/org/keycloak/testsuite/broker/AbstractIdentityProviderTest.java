@@ -172,10 +172,6 @@ public abstract class AbstractIdentityProviderTest {
             Time.setOffset(0);
         }
 
-        String afterLogoutUrl = driver.getCurrentUrl();
-        String afterLogoutPageSource = driver.getPageSource();
-        System.out.println("afterLogoutUrl: " + afterLogoutUrl);
-        //System.out.println("after logout page source: " + afterLogoutPageSource);
 
         driver.navigate().to("http://localhost:8081/test-app");
 
@@ -219,7 +215,6 @@ public abstract class AbstractIdentityProviderTest {
 
         String currentUrl = this.driver.getCurrentUrl();
         assertTrue(currentUrl.startsWith("http://localhost:8082/auth/"));
-        System.out.println(this.driver.getCurrentUrl());
         // log in to identity provider
         this.loginPage.login(username, "password");
         doAfterProviderAuthentication();

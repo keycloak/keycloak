@@ -34,6 +34,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -323,11 +324,28 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return Response.status(302).location(redirect).build();
 
         } else {
+            Response response = validateUser(federatedUser, realmModel);
+            if (response != null) {
+                return response;
+            }
+
             updateFederatedIdentity(context, federatedUser);
             clientSession.setAuthenticatedUser(federatedUser);
 
             return finishOrRedirectToPostBrokerLogin(clientSession, context, false);
         }
+    }
+
+    public Response validateUser(UserModel user, RealmModel realm) {
+        if (!user.isEnabled()) {
+            event.error(Errors.USER_DISABLED);
+            return ErrorPage.error(session, Messages.ACCOUNT_DISABLED);
+        }
+        if (realm.isBruteForceProtected()) {
+            event.error(Errors.USER_TEMPORARILY_DISABLED);
+            return ErrorPage.error(session, Messages.ACCOUNT_DISABLED);
+        }
+        return null;
     }
 
     // Callback from LoginActionsService after first login with broker was done and Keycloak account is successfully linked/created
