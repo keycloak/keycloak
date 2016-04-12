@@ -46,6 +46,10 @@ public interface RoleModel {
 
     Set<RoleModel> getComposites();
 
+    boolean isClientRole();
+
+    String getContainerId();
+
     RoleContainerModel getContainer();
 
     boolean hasRole(RoleModel role);
