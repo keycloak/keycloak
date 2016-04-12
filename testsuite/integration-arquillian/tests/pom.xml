@@ -753,7 +753,7 @@
                 <dependency>
                     <groupId>org.jboss.arquillian.container</groupId>
                     <artifactId>undertow-embedded</artifactId>
-                    <version>1.0.0.Alpha2</version>
+                    <version>${undertow-embedded.version}</version>
                 </dependency>
 
                 <dependency>
