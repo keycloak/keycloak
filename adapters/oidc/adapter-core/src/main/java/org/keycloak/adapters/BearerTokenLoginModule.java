@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.adapters.jaas;
+package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.VerificationException;

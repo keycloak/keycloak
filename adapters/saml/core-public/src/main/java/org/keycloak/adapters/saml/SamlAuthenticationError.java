@@ -19,7 +19,6 @@ package org.keycloak.adapters.saml;
 
 import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
-import org.keycloak.dom.saml.v2.protocol.StatusType;
 
 /**
  * Object that describes the SAML error that happened.

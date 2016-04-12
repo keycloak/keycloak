@@ -18,8 +18,6 @@
 package org.keycloak.adapters.saml;
 
 import org.keycloak.adapters.spi.AdapterSessionStore;
-import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
-import org.keycloak.dom.saml.v2.protocol.StatusType;
 
 import java.util.List;
 

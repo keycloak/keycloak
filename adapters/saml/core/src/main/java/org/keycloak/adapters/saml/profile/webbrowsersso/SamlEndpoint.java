@@ -20,7 +20,6 @@ package org.keycloak.adapters.saml.profile.webbrowsersso;
 import org.keycloak.adapters.saml.OnSessionCreated;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlSessionStore;
-import org.keycloak.adapters.saml.profile.SamlInvocationContext;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.saml.common.constants.GeneralConstants;
