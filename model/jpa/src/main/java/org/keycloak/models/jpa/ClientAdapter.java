@@ -222,7 +222,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
-         public Set<RoleModel> getRealmScopeMappings() {
+    public Set<RoleModel> getRealmScopeMappings() {
         Set<RoleModel> roleMappings = getScopeMappings();
 
         Set<RoleModel> appRoles = new HashSet<>();

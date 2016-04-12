@@ -137,6 +137,17 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     }
 
     @Override
+    public boolean isClientRole() {
+        return role.isClientRole();
+    }
+
+    @Override
+    public String getContainerId() {
+        if (isClientRole()) return role.getClient().getId();
+        else return realm.getId();
+    }
+
+    @Override
     public RoleContainerModel getContainer() {
         if (role.isClientRole()) {
             return realm.getClientById(role.getClient().getId());

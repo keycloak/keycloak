@@ -134,6 +134,19 @@ public class RoleAdapter extends AbstractMongoAdapter<MongoRoleEntity> implement
     }
 
     @Override
+    public boolean isClientRole() {
+        return role.getClientId() != null;
+    }
+
+
+
+    @Override
+    public String getContainerId() {
+        if (isClientRole()) return role.getClientId();
+        else return role.getRealmId();
+    }
+
+    @Override
     public RoleContainerModel getContainer() {
         if (roleContainer == null) {
             // Compute it
