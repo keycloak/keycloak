@@ -116,6 +116,16 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
     }
 
     @Test
+    public void testDisabledUser() {
+        super.testDisabledUser();
+    }
+
+    @Test
+    public void testTemporarilyDisabledUser() {
+        super.testTemporarilyDisabledUser();
+    }
+
+    @Test
     public void testLogoutWorksWithTokenTimeout() {
         Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID);
         RealmRepresentation realm = keycloak.realm("realm-with-oidc-identity-provider").toRepresentation();

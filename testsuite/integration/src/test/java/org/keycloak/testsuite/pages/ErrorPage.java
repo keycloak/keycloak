@@ -46,7 +46,7 @@ public class ErrorPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("We're sorry...");
+        return driver.getTitle() != null && driver.getTitle().equals("We're sorry...");
     }
 
     @Override
