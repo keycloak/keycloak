@@ -28,7 +28,6 @@ import org.keycloak.adapters.jetty.spi.JettyUserSessionManagement;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.dom.saml.v2.protocol.StatusType;
 
 import javax.servlet.http.HttpSession;
 

@@ -31,6 +31,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>core-public</module>
         <module>core</module>
         <module>undertow</module>
         <module>tomcat</module>

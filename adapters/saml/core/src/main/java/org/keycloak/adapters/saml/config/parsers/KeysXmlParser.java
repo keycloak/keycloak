@@ -18,7 +18,6 @@
 package org.keycloak.adapters.saml.config.parsers;
 
 import org.keycloak.adapters.saml.config.Key;
-import org.keycloak.adapters.saml.config.SP;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.AbstractParser;
 import org.keycloak.saml.common.util.StaxParserUtil;
