@@ -728,8 +728,8 @@ public class RealmCacheSession implements CacheRealmProvider {
             RoleModel model = getDelegate().getRoleById(id, realm);
             if (model == null) return null;
             if (invalidations.contains(id)) return model;
-            if (model.getContainer() instanceof ClientModel) {
-                cached = new CachedClientRole(loaded, ((ClientModel) model.getContainer()).getId(), model, realm);
+            if (model.isClientRole()) {
+                cached = new CachedClientRole(loaded, model.getContainerId(), model, realm);
             } else {
                 cached = new CachedRealmRole(loaded, model, realm);
             }

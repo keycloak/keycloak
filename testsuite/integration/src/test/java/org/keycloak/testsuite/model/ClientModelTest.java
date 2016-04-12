@@ -144,6 +144,23 @@ public class ClientModelTest extends AbstractModelTest {
 
     }
 
+    @Test
+    public void testCircularClientScopes() throws Exception {
+        ClientModel scoped1 = realm.addClient("scoped");
+        RoleModel role1 = scoped1.addRole("role1");
+        ClientModel scoped2 = realm.addClient("scoped2");
+        RoleModel role2 = scoped2.addRole("role2");
+        scoped1.addScopeMapping(role2);
+        scoped2.addScopeMapping(role1);
+        commit();
+        realm = session.realms().getRealmByName("original");
+
+        // this hit the circular cache and failed with a stack overflow
+        scoped1 = realm.getClientByClientId("scoped");
+
+
+    }
+
 
     @Test
     public void persist() {
