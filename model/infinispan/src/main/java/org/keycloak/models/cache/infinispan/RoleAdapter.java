@@ -145,6 +145,22 @@ public class RoleAdapter implements RoleModel {
     }
 
     @Override
+    public boolean isClientRole() {
+        return cached instanceof CachedClientRole;
+    }
+
+    @Override
+    public String getContainerId() {
+        if (isClientRole()) {
+            CachedClientRole appRole = (CachedClientRole)cached;
+            return appRole.getClientId();
+        } else {
+            return realm.getId();
+        }
+    }
+
+
+    @Override
     public RoleContainerModel getContainer() {
         if (cached instanceof CachedRealmRole) {
             return realm;
