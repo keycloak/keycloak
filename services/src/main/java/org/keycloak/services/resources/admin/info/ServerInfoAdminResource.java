@@ -95,10 +95,7 @@ public class ServerInfoAdminResource {
     private void setProviders(ServerInfoRepresentation info) {
         LinkedHashMap<String, SpiInfoRepresentation> spiReps = new LinkedHashMap<>();
 
-        List<Spi> spis = new LinkedList<>();
-        for (Spi spi : ServiceLoader.load(Spi.class)) {
-            spis.add(spi);
-        }
+        List<Spi> spis = new LinkedList<>(session.getKeycloakSessionFactory().getSpis());
         Collections.sort(spis, new Comparator<Spi>() {
             @Override
             public int compare(Spi s1, Spi s2) {
