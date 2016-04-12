@@ -162,6 +162,7 @@
         <module>core</module>
         <module>dependencies</module>
         <module>server-spi</module>
+        <module>saml-core-api</module>
         <module>saml-core</module>
         <module>proxy</module>
         <module>federation</module>
@@ -674,6 +675,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-adapter-spi-public</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-adapter-spi</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -905,6 +911,16 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-core-public</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-adapter-api-public</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

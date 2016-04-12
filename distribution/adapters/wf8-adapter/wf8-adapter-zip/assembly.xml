@@ -32,6 +32,7 @@
                 <include>org/keycloak/keycloak-common/**</include>
                 <include>org/keycloak/keycloak-core/**</include>
                 <include>org/keycloak/keycloak-adapter-spi/**</include>
+                <include>org/keycloak/keycloak-adapter-spi-public/**</include>
                 <include>org/keycloak/keycloak-adapter-core/**</include>
                 <include>org/keycloak/keycloak-jboss-adapter-core/**</include>
                 <include>org/keycloak/keycloak-undertow-adapter/**</include>

@@ -20,12 +20,8 @@ package org.keycloak.saml.processing.core.parsers.saml.metadata;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.AbstractParser;
 
-import javax.xml.stream.EventFilter;
 import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.Characters;
-import javax.xml.stream.events.XMLEvent;
 
 /**
  * <p>Abstract entity descriptor parser, which provides common parser functionality</p>

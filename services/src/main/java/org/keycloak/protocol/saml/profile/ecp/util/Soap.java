@@ -17,7 +17,6 @@
 
 package org.keycloak.protocol.saml.profile.ecp.util;
 
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.DocumentUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.w3c.dom.Document;
@@ -35,7 +34,6 @@ import javax.xml.soap.SOAPHeaderElement;
 import javax.xml.soap.SOAPMessage;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.util.Locale;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

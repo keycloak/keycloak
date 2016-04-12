@@ -26,6 +26,7 @@
     <dependencies>
         <module name="org.jboss.logging"/>
         <module name="org.keycloak.keycloak-common"/>
+        <module name="org.keycloak.keycloak-saml-core-public"/>
         <module name="org.apache.santuario.xmlsec">
             <imports>
                 <exclude path="javax/*"/>

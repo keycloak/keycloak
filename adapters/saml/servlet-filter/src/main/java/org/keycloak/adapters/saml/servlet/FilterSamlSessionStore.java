@@ -26,7 +26,6 @@ import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.servlet.FilterSessionStore;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.dom.saml.v2.protocol.StatusType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;

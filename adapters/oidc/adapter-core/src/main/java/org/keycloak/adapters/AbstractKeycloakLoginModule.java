@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.adapters.jaas;
+package org.keycloak.adapters;
 
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
@@ -39,12 +39,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.adapters.AdapterDeploymentContext;
-import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.common.util.FindFile;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.KeycloakDeploymentBuilder;
-import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.common.util.reflections.Reflections;
 
