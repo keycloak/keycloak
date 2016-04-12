@@ -389,10 +389,16 @@ public class AuthenticationManagementResource {
         String provider = data.get("provider");
 
         // make sure provider is one of the registered providers
-        ProviderFactory f = session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, provider);
+        ProviderFactory f;
+        if (parentFlow.getProviderId().equals(AuthenticationFlow.CLIENT_FLOW)) {
+            f = session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, provider);
+        } else {
+            f = session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, provider);
+        }
         if (f == null) {
             throw new BadRequestException("No authentication provider found for id: " + provider);
         }
+
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setParentFlow(parentFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);

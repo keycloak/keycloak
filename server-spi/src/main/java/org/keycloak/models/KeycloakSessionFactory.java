@@ -20,8 +20,10 @@ package org.keycloak.models;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEventManager;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -29,6 +31,8 @@ import java.util.List;
  */
 public interface KeycloakSessionFactory extends ProviderEventManager {
     KeycloakSession create();
+
+    Set<Spi> getSpis();
 
     <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz);
 

@@ -8,7 +8,7 @@
         <div id="kc-error-message">
             <p class="instruction">${message.summary}</p>
             <#if client?? && client.baseUrl?has_content>
-                <p><a href="${client.baseUrl}">${msg("backToApplication")}</a></p>
+                <p><a id="backToApplication" href="${client.baseUrl}">${msg("backToApplication")}</a></p>
             </#if>
         </div>
     </#if>
