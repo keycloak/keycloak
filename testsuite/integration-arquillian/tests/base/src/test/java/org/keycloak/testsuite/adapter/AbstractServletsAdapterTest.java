@@ -45,12 +45,15 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
                 .addClasses(servletClasses)
                 .addAsWebInfResource(webXML, "web.xml")
-                .addAsWebInfResource(keycloakJSON, "keycloak.json")
                 .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
 
         URL keystore = AbstractServletsAdapterTest.class.getResource(webInfPath + "keystore.jks");
         if (keystore != null) {
             deployment.addAsWebInfResource(keystore, "classes/keystore.jks");
+        }
+
+        if (keycloakJSON != null) {
+            deployment.addAsWebInfResource(keycloakJSON, "keycloak.json");
         }
 
         addContextXml(deployment, name);
