@@ -59,6 +59,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Page
     private CustomerPortal customerPortal;
     @Page
+    private CustomerPortalSubsystem customerPortalSubsystem;
+    @Page
     private SecurePortal securePortal;
     @Page
     private CustomerDb customerDb;
@@ -72,6 +74,11 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = CustomerPortal.DEPLOYMENT_NAME)
     protected static WebArchive customerPortal() {
         return servletDeployment(CustomerPortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class);
+    }
+
+    @Deployment(name = CustomerPortalSubsystem.DEPLOYMENT_NAME)
+    protected static WebArchive customerPortalSubsystem() {
+        return servletDeployment(CustomerPortalSubsystem.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class);
     }
 
     @Deployment(name = SecurePortal.DEPLOYMENT_NAME)
@@ -97,6 +104,14 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = InputPortal.DEPLOYMENT_NAME)
     protected static WebArchive inputPortal() {
         return servletDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class);
+    }
+
+    @Test
+    public void testCustomerPortalWithSubsystemSettings() {
+        customerPortalSubsystem.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertTrue(driver.getPageSource().contains("Bill Burke") && driver.getPageSource().contains("Stian Thorgersen"));
     }
 
     @Test

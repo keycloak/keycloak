@@ -128,6 +128,16 @@
             "secret": "password"
         },
         {
+            "clientId": "customer-portal-subsystem",
+            "enabled": true,
+            "adminUrl": "/customer-portal-subsystem",
+            "baseUrl": "/customer-portal-subsystem",
+            "redirectUris": [
+                "/customer-portal-subsystem/*"
+            ],
+            "secret": "password"
+        },
+        {
             "clientId": "customer-cookie-portal",
             "enabled": true,
             "baseUrl": "/customer-cookie-portal",
