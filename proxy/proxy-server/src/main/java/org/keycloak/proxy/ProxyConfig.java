@@ -185,6 +185,8 @@ public class ProxyConfig {
         protected AdapterConfig adapterConfig;
         @JsonProperty("error-page")
         protected String errorPage;
+        @JsonProperty("proxy-address-forwarding")
+        protected boolean proxyAddressForwarding;
         @JsonProperty("constraints")
         protected List<Constraint> constraints = new LinkedList<Constraint>();
 
@@ -210,6 +212,14 @@ public class ProxyConfig {
 
         public void setErrorPage(String errorPage) {
             this.errorPage = errorPage;
+        }
+		
+        public boolean isProxyAddressForwarding() {
+            return proxyAddressForwarding;
+        }
+
+        public void setProxyAddressForwarding(boolean proxyAddressForwarding) {
+            this.proxyAddressForwarding = proxyAddressForwarding;
         }
 
         public List<Constraint> getConstraints() {
