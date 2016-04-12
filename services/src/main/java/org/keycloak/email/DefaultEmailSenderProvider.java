@@ -25,6 +25,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 
 import javax.mail.Message;
+import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Transport;
@@ -54,6 +55,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     @Override
     public void send(RealmModel realm, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
+        Transport transport = null;
         try {
             String address = user.getEmail();
             Map<String, String> config = realm.getSmtpConfig();
@@ -114,7 +116,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             msg.saveChanges();
             msg.setSentDate(new Date());
 
-            Transport transport = session.getTransport("smtp");
+            transport = session.getTransport("smtp");
             if (auth) {
                 transport.connect(config.get("user"), config.get("password"));
             } else {
@@ -124,6 +126,14 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         } catch (Exception e) {
             logger.failedToSendEmail(e);
             throw new EmailException(e);
+        } finally {
+            if (transport != null) {
+                try {
+                    transport.close();
+                } catch (MessagingException e) {
+                    logger.warn("Failed to close transport", e);
+                }
+            }
         }
     }
 
