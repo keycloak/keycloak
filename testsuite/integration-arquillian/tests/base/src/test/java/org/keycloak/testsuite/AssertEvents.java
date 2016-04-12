@@ -57,7 +57,7 @@ public class AssertEvents {
     static final String DEFAULT_REALM = "test";
     static final String DEFAULT_USERNAME = "test-user@localhost";
 
-    String defaultRedirectUri = "http://localhost:8081/app/auth";
+    String defaultRedirectUri = "http://localhost:8180/auth/realms/master/app/auth";
     String defaultEventsQueueUri = "http://localhost:8092";
 
     private RealmResource realmResource;
@@ -96,7 +96,23 @@ public class AssertEvents {
     }
 
     public void clear() {
-        realmResource.clearEvents();
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+        try {
+            HttpPost post = new HttpPost(defaultEventsQueueUri + "/clear-event-queue");
+            CloseableHttpResponse response = httpclient.execute(post);
+            if (response.getStatusLine().getStatusCode() != 200) {
+                throw new RuntimeException("Failed to clear events from " + post.getURI() + ": " + response.getStatusLine().toString());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        finally {
+            try {
+                httpclient.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public ExpectedEvent expectRequiredAction(EventType event) {
