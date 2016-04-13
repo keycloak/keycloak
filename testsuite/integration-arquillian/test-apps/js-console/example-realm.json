@@ -51,7 +51,8 @@
                 "/js-console/*"
             ],
             "webOrigins": [
-                "http://localhost:8280"
+                "http://localhost:8280",
+                "https://localhost:8643"
             ]
         }
     ],
