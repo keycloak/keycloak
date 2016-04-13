@@ -56,7 +56,15 @@ public class CustomerServlet extends HttpServlet {
 
         //try {
         StringBuilder result = new StringBuilder();
-        URL url = new URL(System.getProperty("app.server.base.url", "http://localhost:8280") + "/customer-db/");
+        String urlBase;
+
+        if (System.getProperty("app.server.ssl.required", "false").equals("true")) {
+            urlBase = System.getProperty("app.server.ssl.base.url", "https://localhost:8643");
+        } else {
+            urlBase = System.getProperty("app.server.base.url", "http://localhost:8280");
+        }
+
+        URL url = new URL(urlBase + "/customer-db/");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
         conn.setRequestProperty(HttpHeaders.AUTHORIZATION, "Bearer " + context.getTokenString());

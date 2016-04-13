@@ -7,7 +7,7 @@
     <xsl:strip-space elements="*"/>
 
     <xsl:variable name="keycloakSubsystem" select="'urn:jboss:domain:keycloak:1.1'"/>
-    <xsl:param name="auth-server-port"/>
+    <xsl:param name="auth-server-host"/>
 
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $keycloakSubsystem)]">
             <xsl:copy>
@@ -16,7 +16,7 @@
                 <secure-deployment name="customer-portal-subsystem.war">
                     <realm>demo</realm>
                     <realm-public-key>MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB</realm-public-key>
-                    <auth-server-url>http://localhost:<xsl:value-of select="$auth-server-port"/>/auth</auth-server-url>
+                    <auth-server-url><xsl:value-of select="$auth-server-host"/>/auth</auth-server-url>
                     <ssl-required>EXTERNAL</ssl-required>
                     <resource>customer-portal-subsystem</resource>
                     <credential name="secret">password</credential>

@@ -25,6 +25,7 @@
     <extension qualifier="webdriver">
         <property name="browser">${browser}</property>
         <property name="firefox_binary">${firefox_binary}</property>
+        <property name="phantomjs.cli.args">--ignore-ssl-errors=true --web-security=false</property>
     </extension>
     
     <extension qualifier="graphene">
