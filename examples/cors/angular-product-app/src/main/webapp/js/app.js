@@ -35,7 +35,7 @@ angular.element(document).ready(function ($http) {
         console.log('here login');
         auth.loggedIn = true;
         auth.authz = keycloakAuth;
-        auth.logoutUrl = keycloakAuth.authServerUrl + "/realms/" + keycloakAuth.realm + "/tokens/logout?redirect_uri=http://localhost:8080/angular-cors-product/index.html";
+        auth.logoutUrl = keycloakAuth.authServerUrl + "/realms/" + keycloakAuth.realm + "/protocol/openid-connect/logout?redirect_uri=http://localhost:8080/angular-cors-product/index.html"
         module.factory('Auth', function() {
             return auth;
         });
