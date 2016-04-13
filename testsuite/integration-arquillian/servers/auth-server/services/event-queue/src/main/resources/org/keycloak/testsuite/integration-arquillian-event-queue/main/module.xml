@@ -21,9 +21,11 @@
     </resources>
     <dependencies>
         <module name="javax.api"/>
+        <module name="javax.ws.rs.api"/>
         <module name="javax.servlet.api"/>
         <module name="io.undertow.core"/>
         <module name="io.undertow.servlet"/>
+        <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>
     </dependencies>
