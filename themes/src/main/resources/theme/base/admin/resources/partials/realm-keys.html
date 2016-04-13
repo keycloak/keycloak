@@ -2,6 +2,9 @@
     <kc-tabs-realm></kc-tabs-realm>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <input type="text" readonly value="this is not a login form" style="display: none;">
+        <input type="password" readonly value="this is not a login form" style="display: none;">
+
         <fieldset class="border-top">
             <div class="form-group">
                 <label class="col-md-2 control-label" for="privateKey">{{:: 'privateKey' | translate}}</label>
