@@ -220,6 +220,11 @@ public class RealmCacheSession implements CacheRealmProvider {
                 group.invalidate();
                 continue;
             }
+            ClientTemplateAdapter clientTemplate = managedClientTemplates.get(id);
+            if (clientTemplate != null) {
+                clientTemplate.invalidate();
+                continue;
+            }
 
 
         }
