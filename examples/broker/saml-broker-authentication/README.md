@@ -188,7 +188,7 @@ _NOTE: The following build command assumes you have configured your Maven user s
 3. Type this command to build and deploy the archive:
 
         For EAP 6:     mvn clean package jboss-as:deploy
-        For WildFly:   mvn -Pwildfly clean package wildfly:deploy
+        For WildFly:   mvn clean package wildfly:deploy
 
 4. This will deploy `target/saml-broker-authentication.war` to the running instance of the server.
 
