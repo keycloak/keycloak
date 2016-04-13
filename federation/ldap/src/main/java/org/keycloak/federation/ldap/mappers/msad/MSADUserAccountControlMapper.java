@@ -117,6 +117,10 @@ public class MSADUserAccountControlMapper extends AbstractLDAPFederationMapper {
 
 
     protected ModelException processFailedPasswordUpdateException(ModelException e) {
+        if (e.getCause() == null || e.getCause().getMessage() == null) {
+            return e;
+        }
+
         String exceptionMessage = e.getCause().getMessage().replace('\n', ' ');
         Matcher m = AUTH_INVALID_NEW_PASSWORD.matcher(exceptionMessage);
         if (m.matches()) {
