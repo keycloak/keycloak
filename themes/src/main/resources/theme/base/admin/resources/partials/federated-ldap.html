@@ -8,6 +8,8 @@
     <kc-tabs-user-federation></kc-tabs-user-federation>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <input type="text" readonly value="this is not a login form" style="display: none;">
+        <input type="password" readonly value="this is not a login form" style="display: none;">
 
         <fieldset>
             <legend><span class="text">{{:: 'required-settings' | translate}}</span></legend>
