@@ -11,6 +11,9 @@
     </div>
 
     <form action="${url.passwordUrl}" class="form-horizontal" method="post">
+        <input type="text" readonly value="this is not a login form" style="display: none;">
+        <input type="password" readonly value="this is not a login form" style="display: none;">
+
         <#if password.passwordSet>
             <div class="form-group">
                 <div class="col-sm-2 col-md-2">

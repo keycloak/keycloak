@@ -12,6 +12,8 @@
     	data-ng-hide="changed" data-ng-click="remove()"></i></a></h1>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <input type="text" readonly value="this is not a login form" style="display: none;">
+        <input type="password" readonly value="this is not a login form" style="display: none;">
 
         <fieldset>
             <div class="form-group clearfix" data-ng-show="!create">
