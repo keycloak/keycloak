@@ -81,6 +81,7 @@ public class KeycloakApplication extends Application {
         context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
         singletons.add(new ServerVersionResource());
+        singletons.add(new RobotsResource());
         singletons.add(new RealmsResource());
         singletons.add(new AdminRoot());
         classes.add(ThemeResource.class);

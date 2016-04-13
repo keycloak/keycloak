@@ -3,6 +3,9 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="robots" content="noindex, nofollow">
+
     <title>${msg("accountManagementTitle")}</title>
     <link rel="icon" href="${url.resourcesPath}/img/favicon.ico">
     <#if properties.styles?has_content>
