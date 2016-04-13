@@ -18,7 +18,7 @@
 package org.keycloak.adapters;
 
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.spi.KeycloakAccount;
+import org.keycloak.adapters.spi.internal.KeycloakAccount;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

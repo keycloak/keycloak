@@ -25,7 +25,7 @@ import org.keycloak.adapters.saml.SamlUtil;
 import org.keycloak.adapters.saml.profile.AbstractSamlAuthenticationHandler;
 import org.keycloak.adapters.saml.profile.SamlAuthenticationHandler;
 import org.keycloak.adapters.saml.profile.SamlInvocationContext;
-import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.internal.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.saml.BaseSAML2BindingBuilder;

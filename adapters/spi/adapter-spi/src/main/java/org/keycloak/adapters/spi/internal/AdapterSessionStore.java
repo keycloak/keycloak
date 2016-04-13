@@ -15,24 +15,13 @@
  * limitations under the License.
  */
 
-package org.keycloak.adapters.spi;
+package org.keycloak.adapters.spi.internal;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface AuthChallenge {
-    /**
-     *
-     * @param exchange
-     * @return challenge sent
-     */
-    boolean challenge(HttpFacade exchange);
-
-    /**
-     * Some platforms need the error code that will be sent (i.e. Undertow)
-     *
-     * @return
-     */
-    int getResponseCode();
+public interface AdapterSessionStore {
+    void saveRequest();
+    boolean restoreRequest();
 }

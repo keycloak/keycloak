@@ -27,7 +27,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
-import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.internal.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.util.Base64;
 import org.keycloak.constants.ServiceUrlConstants;

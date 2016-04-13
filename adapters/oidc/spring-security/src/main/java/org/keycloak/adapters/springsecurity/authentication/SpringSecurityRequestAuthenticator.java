@@ -22,7 +22,7 @@ import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.spi.HttpFacade;
-import org.keycloak.adapters.spi.KeycloakAccount;
+import org.keycloak.adapters.spi.internal.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OAuthRequestAuthenticator;
 import org.keycloak.adapters.OidcKeycloakAccount;

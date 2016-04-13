@@ -19,7 +19,7 @@ package org.keycloak.adapters.springsecurity.token;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.adapters.spi.AdapterSessionStore;
+import org.keycloak.adapters.spi.internal.AdapterSessionStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;

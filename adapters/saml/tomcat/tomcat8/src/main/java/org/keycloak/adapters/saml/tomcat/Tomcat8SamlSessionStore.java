@@ -23,7 +23,7 @@ import org.keycloak.adapters.saml.AbstractSamlAuthenticatorValve;
 import org.keycloak.adapters.saml.CatalinaSamlSessionStore;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.spi.HttpFacade;
-import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.internal.SessionIdMapper;
 import org.keycloak.adapters.tomcat.CatalinaUserSessionManagement;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
 

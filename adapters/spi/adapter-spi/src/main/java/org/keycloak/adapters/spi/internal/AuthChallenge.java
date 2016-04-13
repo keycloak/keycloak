@@ -15,24 +15,26 @@
  * limitations under the License.
  */
 
-package org.keycloak.adapters.spi;
+package org.keycloak.adapters.spi.internal;
 
-import java.util.Set;
+import org.keycloak.adapters.spi.HttpFacade;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface SessionIdMapper {
-    boolean hasSession(String id);
+public interface AuthChallenge {
+    /**
+     *
+     * @param exchange
+     * @return challenge sent
+     */
+    boolean challenge(HttpFacade exchange);
 
-    void clear();
-
-    Set<String> getUserSessions(String principal);
-
-    String getSessionFromSSO(String sso);
-
-    void map(String sso, String principal, String session);
-
-    void removeSession(String session);
+    /**
+     * Some platforms need the error code that will be sent (i.e. Undertow)
+     *
+     * @return
+     */
+    int getResponseCode();
 }

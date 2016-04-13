@@ -19,7 +19,7 @@ package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.spi.HttpFacade;
-import org.keycloak.adapters.spi.UserSessionManagement;
+import org.keycloak.adapters.spi.internal.UserSessionManagement;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.constants.AdapterConstants;

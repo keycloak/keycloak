@@ -32,7 +32,7 @@
 
     <properties>
         <keycloak.osgi.export>
-            org.keycloak.adapters.spi.*
+            org.keycloak.adapters.spi.internal.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             org.keycloak.*;version="${project.version}",

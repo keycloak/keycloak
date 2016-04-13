@@ -26,7 +26,7 @@ import io.undertow.servlet.spec.HttpSessionImpl;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlUtil;
-import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.internal.SessionIdMapper;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.undertow.ChangeSessionId;

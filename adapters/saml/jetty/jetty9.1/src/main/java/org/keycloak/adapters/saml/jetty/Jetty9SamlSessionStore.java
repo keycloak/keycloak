@@ -20,9 +20,9 @@ package org.keycloak.adapters.saml.jetty;
 import org.eclipse.jetty.server.Request;
 import org.keycloak.adapters.jetty.spi.JettyUserSessionManagement;
 import org.keycloak.adapters.saml.SamlDeployment;
-import org.keycloak.adapters.spi.AdapterSessionStore;
+import org.keycloak.adapters.spi.internal.AdapterSessionStore;
 import org.keycloak.adapters.spi.HttpFacade;
-import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.internal.SessionIdMapper;
 
 import javax.servlet.http.HttpSession;
 

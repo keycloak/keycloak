@@ -47,11 +47,11 @@ import org.keycloak.adapters.saml.profile.SamlAuthenticationHandler;
 import org.keycloak.adapters.saml.profile.webbrowsersso.BrowserHandler;
 import org.keycloak.adapters.saml.profile.webbrowsersso.SamlEndpoint;
 import org.keycloak.adapters.servlet.ServletHttpFacade;
-import org.keycloak.adapters.spi.AuthChallenge;
-import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.internal.AuthChallenge;
+import org.keycloak.adapters.spi.internal.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
-import org.keycloak.adapters.spi.InMemorySessionIdMapper;
-import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.internal.InMemorySessionIdMapper;
+import org.keycloak.adapters.spi.internal.SessionIdMapper;
 import org.keycloak.saml.common.exceptions.ParsingException;
 
 /**

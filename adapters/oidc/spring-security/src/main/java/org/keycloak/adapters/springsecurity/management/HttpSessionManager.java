@@ -17,7 +17,7 @@
 
 package org.keycloak.adapters.springsecurity.management;
 
-import org.keycloak.adapters.spi.UserSessionManagement;
+import org.keycloak.adapters.spi.internal.UserSessionManagement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

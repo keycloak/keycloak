@@ -17,9 +17,9 @@
 
 package org.keycloak.adapters.servlet;
 
-import org.keycloak.adapters.spi.AdapterSessionStore;
+import org.keycloak.adapters.spi.internal.AdapterSessionStore;
 import org.keycloak.adapters.spi.HttpFacade;
-import org.keycloak.adapters.spi.KeycloakAccount;
+import org.keycloak.adapters.spi.internal.KeycloakAccount;
 import org.keycloak.common.util.Encode;
 import org.keycloak.common.util.MultivaluedHashMap;
 

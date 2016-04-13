@@ -21,7 +21,7 @@ import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.security.authentication.FormAuthenticator;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.MultiMap;
-import org.keycloak.adapters.spi.AdapterSessionStore;
+import org.keycloak.adapters.spi.internal.AdapterSessionStore;
 import org.keycloak.adapters.jetty.spi.JettyHttpFacade;
 import org.keycloak.common.util.MultivaluedHashMap;
 
