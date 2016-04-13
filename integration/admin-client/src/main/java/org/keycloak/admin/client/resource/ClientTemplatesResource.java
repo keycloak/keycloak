@@ -36,7 +36,7 @@ import java.util.List;
 public interface ClientTemplatesResource {
 
     @Path("{id}")
-    public ClientTemplatesResource get(@PathParam("id") String id);
+    public ClientTemplateResource get(@PathParam("id") String id);
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
