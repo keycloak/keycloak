@@ -36,7 +36,7 @@ public class ClientTemplateTest extends AbstractClientTest {
 
     // KEYCLOAK-2809
     @Test
-    public void testRemove() {
+    public void testRemoveScopedRole() {
         // Add realm role
         RoleRepresentation roleRep = new RoleRepresentation();
         roleRep.setName("foo-role");

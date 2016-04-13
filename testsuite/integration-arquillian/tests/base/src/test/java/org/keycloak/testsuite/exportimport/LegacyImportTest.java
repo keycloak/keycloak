@@ -26,6 +26,7 @@ import java.util.Set;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -57,9 +58,10 @@ public class LegacyImportTest extends AbstractExportImportTest {
     }
 
 
+    @Ignore // TODO: Restart and set system properties doesn't work on wildfly ATM. Figure and re-enable
     @Test
     public void importFrom11() throws LifecycleException {
-        // Setup system properties for import ( TODO: Does this work with external container? )
+        // Setup system properties for import ( TODO: Set properly with external-container )
         ExportImportConfig.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
         URL url = LegacyImportTest.class.getResource("/exportimport-test/kc11-exported-realm.json");
         String targetFilePath = new File(url.getFile()).getAbsolutePath();
