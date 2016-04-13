@@ -29,6 +29,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientTemplateEntity;
@@ -396,6 +397,11 @@ public class MongoRealmProvider implements RealmProvider {
     @Override
     public boolean removeRole(RealmModel realm, RoleModel role) {
         session.users().preRemove(realm, role);
+        RoleContainerModel container = role.getContainer();
+        if (container.getDefaultRoles().contains(role.getName())) {
+            container.removeDefaultRoles(role.getName());
+        }
+
         return getMongoStore().removeEntity(MongoRoleEntity.class, role.getId(), invocationContext);
     }
 
