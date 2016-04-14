@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.client;
+package org.keycloak.testsuite.endpoint.client;
 
 import java.util.Collections;
 import java.util.List;
