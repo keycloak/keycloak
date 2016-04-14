@@ -20,9 +20,6 @@
   -->
 
 <module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-adapter-spi">
-    <properties>
-        <property name="jboss.api" value="private"/>
-    </properties>
     <resources>
         <!-- Insert resources here -->
     </resources>
