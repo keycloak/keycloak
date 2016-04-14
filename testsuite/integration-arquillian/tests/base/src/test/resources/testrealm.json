@@ -101,11 +101,11 @@
     {
       "clientId": "test-app",
       "enabled": true,
-      "baseUrl": "http://localhost:8081/app",
+      "baseUrl": "http://localhost:8180/auth/realms/master/app",
       "redirectUris": [
-        "http://localhost:8081/app/*"
+        "http://localhost:8180/auth/realms/master/app/*"
       ],
-      "adminUrl": "http://localhost:8081/app/logout",
+      "adminUrl": "http://localhost:8180/auth/realms/master/app/logout",
       "secret": "password"
     },
     {
@@ -114,7 +114,7 @@
       "consentRequired": true,
 
       "redirectUris": [
-        "http://localhost:8081/app/*"
+        "http://localhost:8180/app/*"
       ],
       "secret": "password"
     }
