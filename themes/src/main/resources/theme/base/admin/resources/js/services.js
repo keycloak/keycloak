@@ -1281,7 +1281,7 @@ module.factory('PasswordPolicy', function() {
         for (var i = 0; i < policyArray.length; i ++){
             var policyToken = policyArray[i];
             
-            if(policyToken.indexOf('regexPattern') === 0) {
+            if(policyToken.indexOf('hashAlgorithm') === 0 || policyToken.indexOf('regexPattern') === 0) {
             	re = /(\w+)\((.*)\)/;
             	policyEntry = re.exec(policyToken);
                 if (null !== policyEntry) {
