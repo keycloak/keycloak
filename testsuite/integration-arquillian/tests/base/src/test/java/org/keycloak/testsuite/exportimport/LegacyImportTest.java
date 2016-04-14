@@ -40,7 +40,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
 /**
- * Test importing JSON files exported from previous keycloak versions
+ * Test importing JSON files exported from previous adminClient versions
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

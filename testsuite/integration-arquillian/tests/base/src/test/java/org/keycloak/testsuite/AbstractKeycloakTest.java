@@ -60,19 +60,23 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.auth.page.WelcomePage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.DeleteMeOAuthClient;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
 import org.keycloak.testsuite.auth.page.AuthRealm;
+
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.util.WaitUtils;
+
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+
 import org.keycloak.testsuite.util.TestEventsLogger;
 
 /**
@@ -93,7 +97,7 @@ public abstract class AbstractKeycloakTest {
 
     protected Keycloak adminClient;
 
-    protected OAuthClient oauthClient;
+    protected DeleteMeOAuthClient oauthClient;
 
     protected List<RealmRepresentation> testRealmReps;
 
@@ -128,7 +132,7 @@ public abstract class AbstractKeycloakTest {
     public void beforeAbstractKeycloakTest() {
         adminClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
                 MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
-        oauthClient = new OAuthClient(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
+        oauthClient = new DeleteMeOAuthClient(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
 
         
         adminUser = createAdminUserRepresentation();
@@ -155,7 +159,7 @@ public abstract class AbstractKeycloakTest {
         }
 
 //        removeTestRealms(); // keeping test realms after test to be able to inspect failures, instead deleting existing realms before import
-//        keycloak.close(); // keeping admin connection open
+//        adminClient.close(); // keeping admin connection open
     }
 
     private void updateMasterAdminPassword() {
