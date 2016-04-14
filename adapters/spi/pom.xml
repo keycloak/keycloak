@@ -31,7 +31,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>adapter-spi-public</module>
         <module>adapter-spi</module>
         <module>tomcat-adapter-spi</module>
         <module>undertow-adapter-spi</module>
