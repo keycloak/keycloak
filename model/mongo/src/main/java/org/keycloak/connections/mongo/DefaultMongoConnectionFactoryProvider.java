@@ -180,7 +180,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
     private Class[] getManagedEntities() throws ClassNotFoundException {
        Class[] entityClasses = new Class[entities.length];
         for (int i = 0; i < entities.length; i++) {
-            entityClasses[i] = Thread.currentThread().getContextClassLoader().loadClass(entities[i]);
+            entityClasses[i] = getClass().getClassLoader().loadClass(entities[i]);
         }
         return entityClasses;
     }
