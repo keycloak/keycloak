@@ -34,7 +34,7 @@
 
         kc.init = function (initOptions) {
             kc.authenticated = false;
- 		    if (initOptions && initOptions.adapter === 'cordova') {
+            if (initOptions && initOptions.adapter === 'cordova') {
                adapter = loadAdapter('cordova');
             } else if (initOptions && initOptions.adapter === 'default') {
                 adapter = loadAdapter();
