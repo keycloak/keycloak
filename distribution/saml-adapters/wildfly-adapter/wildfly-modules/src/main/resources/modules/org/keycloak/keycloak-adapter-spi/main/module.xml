@@ -20,16 +20,12 @@
   -->
 
 <module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-adapter-spi">
-    <properties>
-        <property name="jboss.api" value="private"/>
-    </properties>
     <resources>
         <!-- Insert resources here -->
     </resources>
     <dependencies>
         <module name="javax.api"/>
         <module name="org.keycloak.keycloak-common"/>
-        <module name="org.keycloak.keycloak-adapter-spi-public"/>
         <module name="org.apache.httpcomponents"/>
         <module name="javax.servlet.api"/>
         <module name="org.jboss.logging"/>

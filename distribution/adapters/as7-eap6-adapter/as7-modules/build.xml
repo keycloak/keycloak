@@ -70,10 +70,6 @@
             <maven-resource group="org.keycloak" artifact="keycloak-as7-adapter-spi"/>
         </module-def>
 
-        <module-def name="org.keycloak.keycloak-adapter-spi-public">
-            <maven-resource group="org.keycloak" artifact="keycloak-adapter-spi-public"/>
-        </module-def>
-
         <module-def name="org.keycloak.keycloak-adapter-core">
             <maven-resource group="org.keycloak" artifact="keycloak-adapter-core"/>
         </module-def>

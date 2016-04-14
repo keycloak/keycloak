@@ -47,11 +47,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-adapter-spi-public</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-spi</artifactId>
             <scope>provided</scope>
         </dependency>
