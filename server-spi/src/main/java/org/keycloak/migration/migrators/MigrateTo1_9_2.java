@@ -34,7 +34,7 @@ public class MigrateTo1_9_2 {
             if (realm.getBrowserSecurityHeaders() != null) {
 
                 Map<String, String> browserSecurityHeaders = new HashMap<>(realm.getBrowserSecurityHeaders());
-                browserSecurityHeaders.put("xFrameOptions", "nosniff");
+                browserSecurityHeaders.put("xContentTypeOptions", "nosniff");
 
                 realm.setBrowserSecurityHeaders(Collections.unmodifiableMap(browserSecurityHeaders));
             }
