@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.9.2.Final-SNAPSHOT</version>
+        <version>1.9.2.Test</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak Model Parent</name>
