@@ -63,6 +63,13 @@
         </profile>
         
         <profile>
+            <id>auth-server-migration</id>
+            <modules>
+                <module>migration</module>
+            </modules>
+        </profile>
+        
+        <profile>
             <id>win</id>
             <activation>
                 <os>
