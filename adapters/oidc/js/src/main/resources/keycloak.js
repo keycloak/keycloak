@@ -34,13 +34,18 @@
 
         kc.init = function (initOptions) {
             kc.authenticated = false;
-
-            if (window.Cordova) {
-                adapter = loadAdapter('cordova');
-            } else {
+            if (initOptions && initOptions.adapter === 'cordova') {
+               adapter = loadAdapter('cordova');
+            } else if (initOptions && initOptions.adapter === 'default') {
                 adapter = loadAdapter();
+            } else {
+                if (window.Cordova) {
+                    adapter = loadAdapter('cordova');
+                } else {
+                    adapter = loadAdapter();
+                }
             }
-
+            
             if (initOptions) {
                 if (typeof initOptions.checkLoginIframe !== 'undefined') {
                     loginIframe.enable = initOptions.checkLoginIframe;
