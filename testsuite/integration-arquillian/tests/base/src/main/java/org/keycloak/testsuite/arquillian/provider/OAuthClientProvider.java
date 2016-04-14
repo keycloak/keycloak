@@ -21,7 +21,7 @@ import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.DeleteMeOAuthClient;
 
 import java.lang.annotation.Annotation;
 
@@ -31,11 +31,11 @@ import java.lang.annotation.Annotation;
 public class OAuthClientProvider implements ResourceProvider {
 
     @Inject
-    Instance<OAuthClient> oauthClient;
+    Instance<DeleteMeOAuthClient> oauthClient;
 
     @Override
     public boolean canProvide(Class<?> type) {
-        return OAuthClient.class.isAssignableFrom(type);
+        return DeleteMeOAuthClient.class.isAssignableFrom(type);
     }
 
     @Override
