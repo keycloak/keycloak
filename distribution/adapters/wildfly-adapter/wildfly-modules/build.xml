@@ -44,10 +44,6 @@
 
         <!-- subsystems -->
 
-        <module-def name="org.keycloak.keycloak-adapter-spi-public">
-            <maven-resource group="org.keycloak" artifact="keycloak-adapter-spi-public"/>
-        </module-def>
-
         <module-def name="org.keycloak.keycloak-adapter-spi">
             <maven-resource group="org.keycloak" artifact="keycloak-adapter-spi"/>
             <maven-resource group="org.keycloak" artifact="keycloak-undertow-adapter-spi"/>
