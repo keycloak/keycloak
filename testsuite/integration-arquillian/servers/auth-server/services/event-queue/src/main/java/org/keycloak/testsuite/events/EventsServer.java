@@ -69,6 +69,7 @@ public class EventsServer {
         FilterInfo filter = Servlets.filter("EventsFilter", AssertEventsServletFilter.class);
         di.addFilter(filter);
         di.addFilterUrlMapping("EventsFilter", "/event-queue", DispatcherType.REQUEST);
+        di.addFilterUrlMapping("EventsFilter", "/clear-event-queue", DispatcherType.REQUEST);
 
         DeploymentManager manager = container.addDeployment(di);
         manager.deploy();
