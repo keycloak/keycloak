@@ -110,6 +110,7 @@ public class WebBrowserSsoAuthenticationHandler extends AbstractSamlAuthenticati
                 .destination(deployment.getIDP().getSingleLogoutService().getRequestBindingUrl());
         BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
         if (deployment.getIDP().getSingleLogoutService().signRequest()) {
+            binding.signatureAlgorithm(deployment.getSignatureAlgorithm());
             binding.signWith(deployment.getSigningKeyPair())
                     .signDocument();
         }
