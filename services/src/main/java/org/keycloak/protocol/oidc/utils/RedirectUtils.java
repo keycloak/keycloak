@@ -83,9 +83,10 @@ public class RedirectUtils {
             redirectUri = lowerCaseHostname(redirectUri);
 
             Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, rootUrl, validRedirects);
-            boolean valid = matchesRedirects(resolveValidRedirects, redirectUri);
+            String r = redirectUri;
+            boolean valid = matchesRedirects(resolveValidRedirects, r);
             if (!valid && redirectUri.indexOf('?') != -1) {
-                String r = redirectUri.substring(0, redirectUri.indexOf('?'));
+                r = redirectUri.substring(0, redirectUri.indexOf('?'));
                 valid = matchesRedirects(resolveValidRedirects, r);
             }
             if (!valid && r.startsWith(Constants.INSTALLED_APP_URL) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
