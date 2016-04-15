@@ -195,4 +195,5 @@ public class Messages {
     public static final String FAILED_LOGOUT = "failedLogout";
 
     public static final String CONSENT_DENIED="consentDenied";
+    public static final String ALREADY_LOGGED_IN="alreadyLoggedIn";
 }
