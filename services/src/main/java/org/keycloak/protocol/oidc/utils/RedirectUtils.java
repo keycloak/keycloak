@@ -82,11 +82,13 @@ public class RedirectUtils {
         } else {
             redirectUri = lowerCaseHostname(redirectUri);
 
-            String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
             Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, rootUrl, validRedirects);
-
+            String r = redirectUri;
             boolean valid = matchesRedirects(resolveValidRedirects, r);
-
+            if (!valid && redirectUri.indexOf('?') != -1) {
+                r = redirectUri.substring(0, redirectUri.indexOf('?'));
+                valid = matchesRedirects(resolveValidRedirects, r);
+            }
             if (!valid && r.startsWith(Constants.INSTALLED_APP_URL) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
                 int i = r.indexOf(':', Constants.INSTALLED_APP_URL.length());
 
