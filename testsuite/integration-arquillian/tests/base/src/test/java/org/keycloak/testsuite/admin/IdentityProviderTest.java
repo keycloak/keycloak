@@ -21,7 +21,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.testsuite.rule.WebRule;
 
 import javax.ws.rs.NotFoundException;
 
@@ -33,10 +32,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class IdentityProviderTest extends AbstractClientTest {
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
+public class IdentityProviderTest extends AbstractAdminTest {
 
     @Test
     public void testFindAll() {

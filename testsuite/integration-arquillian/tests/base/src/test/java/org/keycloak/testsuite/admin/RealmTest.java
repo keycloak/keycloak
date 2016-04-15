@@ -23,20 +23,14 @@ import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ServerInfoResource;
 import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -53,7 +47,7 @@ import static org.junit.Assert.fail;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RealmTest extends AbstractClientTest {
+public class RealmTest extends AbstractAdminTest {
 
     public static final String PRIVATE_KEY = "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=";
     public static final String PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
@@ -61,7 +55,7 @@ public class RealmTest extends AbstractClientTest {
 
     @Test
     public void getRealms() {
-        List<RealmRepresentation> realms = keycloak.realms().findAll();
+        List<RealmRepresentation> realms = adminClient.realms().findAll();
         assertNames(realms, "master", "test", REALM_NAME);
 
         for (RealmRepresentation rep : realms) {
@@ -79,63 +73,49 @@ public class RealmTest extends AbstractClientTest {
         rep.setRealm("old");
 
         try {
-            keycloak.realms().create(rep);
+            adminClient.realms().create(rep);
 
             rep.setRealm("new");
-            keycloak.realm("old").update(rep);
+            adminClient.realm("old").update(rep);
 
             // Check client in master realm renamed
-            assertEquals(0, keycloak.realm("master").clients().findByClientId("old-realm").size());
-            assertEquals(1, keycloak.realm("master").clients().findByClientId("new-realm").size());
+            assertEquals(0, adminClient.realm("master").clients().findByClientId("old-realm").size());
+            assertEquals(1, adminClient.realm("master").clients().findByClientId("new-realm").size());
 
-            ClientRepresentation adminClient = keycloak.realm("new").clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
-            assertEquals("/auth/admin/new/console/index.html", adminClient.getBaseUrl());
-            assertEquals("/auth/admin/new/console/*", adminClient.getRedirectUris().get(0));
+            ClientRepresentation consoleClient = adminClient.realm("new").clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
+            assertEquals("/auth/admin/new/console/index.html", consoleClient.getBaseUrl());
+            assertEquals("/auth/admin/new/console/*", consoleClient.getRedirectUris().get(0));
 
-            ClientRepresentation accountClient = keycloak.realm("new").clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+            ClientRepresentation accountClient = adminClient.realm("new").clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
             assertEquals("/auth/realms/new/account", accountClient.getBaseUrl());
             assertEquals("/auth/realms/new/account/*", accountClient.getRedirectUris().get(0));
         } finally {
-            keycloak.realms().realm(rep.getRealm()).remove();
+            adminClient.realms().realm(rep.getRealm()).remove();
         }
     }
 
     @Test
     public void createRealmEmpty() {
+        RealmRepresentation rep = new RealmRepresentation();
         try {
-            RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm("new-realm");
-
-            keycloak.realms().create(rep);
-
-            assertNames(keycloak.realms().findAll(), "master", "test", REALM_NAME, "new-realm");
+            adminClient.realms().create(rep);
+            assertNames(adminClient.realms().findAll(), "master", "test", REALM_NAME, "new-realm");
         } finally {
-            KeycloakSession session = keycloakRule.startSession();
-            RealmManager manager = new RealmManager(session);
-            RealmModel newRealm = manager.getRealmByName("new-realm");
-            if (newRealm != null) {
-                manager.removeRealm(newRealm);
-            }
-            keycloakRule.stopSession(session, true);
+            removeRealm(rep);
         }
     }
 
     @Test
     public void createRealm() {
+        RealmRepresentation rep = loadJson(getClass().getResourceAsStream("/admin-test/testrealm.json"), RealmRepresentation.class);
         try {
-            RealmRepresentation rep = KeycloakServer.loadJson(getClass().getResourceAsStream("/admin-test/testrealm.json"), RealmRepresentation.class);
-            keycloak.realms().create(rep);
+            adminClient.realms().create(rep);
 
-            RealmRepresentation created = keycloak.realms().realm("admin-test-1").toRepresentation();
+            RealmRepresentation created = adminClient.realms().realm("admin-test-1").toRepresentation();
             assertRealm(rep, created);
         } finally {
-            KeycloakSession session = keycloakRule.startSession();
-            RealmManager manager = new RealmManager(session);
-            RealmModel newRealm = manager.getRealmByName("admin-test-1");
-            if (newRealm != null) {
-                manager.removeRealm(newRealm);
-            }
-            keycloakRule.stopSession(session, true);
+            removeRealm(rep);
         }
     }
 
@@ -143,14 +123,14 @@ public class RealmTest extends AbstractClientTest {
     public void removeRealm() {
         realm.remove();
 
-        assertNames(keycloak.realms().findAll(), "master", "test");
+        assertNames(adminClient.realms().findAll(), "master", "test");
     }
 
     @Test
     public void loginAfterRemoveRealm() {
         realm.remove();
 
-        ServerInfoResource serverInfoResource = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID).serverInfo();
+        ServerInfoResource serverInfoResource = Keycloak.getInstance("http://localhost:8180/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID).serverInfo();
         serverInfoResource.getInfo();
     }
 
@@ -160,22 +140,22 @@ public class RealmTest extends AbstractClientTest {
      */
     @Test
     public void renameRealmTest() throws Exception {
-        Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
+        Keycloak keycloak = Keycloak.getInstance("http://localhost:8180/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
         RealmRepresentation realm1 = new RealmRepresentation();
         realm1.setRealm("test-immutable");
-        keycloak.realms().create(realm1);
-        realm1 = keycloak.realms().realm("test-immutable").toRepresentation();
+        adminClient.realms().create(realm1);
+        realm1 = adminClient.realms().realm("test-immutable").toRepresentation();
         realm1.setRealm("test-immutable-old");
-        keycloak.realms().realm("test-immutable").update(realm1);
-        realm1 = keycloak.realms().realm("test-immutable-old").toRepresentation();
+        adminClient.realms().realm("test-immutable").update(realm1);
+        realm1 = adminClient.realms().realm("test-immutable-old").toRepresentation();
 
         RealmRepresentation realm2 = new RealmRepresentation();
         realm2.setRealm("test-immutable");
-        keycloak.realms().create(realm2);
-        realm2 = keycloak.realms().realm("test-immutable").toRepresentation();
+        adminClient.realms().create(realm2);
+        realm2 = adminClient.realms().realm("test-immutable").toRepresentation();
 
-        keycloak.realms().realm("test-immutable-old").remove();
-        keycloak.realms().realm("test-immutable").remove();
+        adminClient.realms().realm("test-immutable-old").remove();
+        adminClient.realms().realm("test-immutable").remove();
 
 
 
@@ -456,9 +436,9 @@ public class RealmTest extends AbstractClientTest {
         rep.setGroups(Collections.singletonList(group));
         rep.setDefaultGroups(Collections.singletonList("/default1"));
 
-        keycloak.realms().create(rep);
+        adminClient.realms().create(rep);
 
-        keycloak.realm(rep.getRealm()).remove();
+        adminClient.realm(rep.getRealm()).remove();
     }
 
 }

@@ -19,7 +19,6 @@ package org.keycloak.testsuite;
 
 import org.keycloak.testsuite.util.OAuthClient;
 import java.util.List;
-import org.junit.Before;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
