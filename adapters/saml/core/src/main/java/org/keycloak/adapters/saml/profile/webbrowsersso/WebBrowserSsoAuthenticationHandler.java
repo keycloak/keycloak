@@ -79,11 +79,11 @@ public class WebBrowserSsoAuthenticationHandler extends AbstractSamlAuthenticati
         builder.issuer(issuerURL);
         BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder().relayState(relayState);
         if (deployment.getIDP().getSingleLogoutService().signResponse()) {
+            if (deployment.getSignatureCanonicalizationMethod() != null)
+                binding.canonicalizationMethod(deployment.getSignatureCanonicalizationMethod());
             binding.signatureAlgorithm(deployment.getSignatureAlgorithm())
                     .signWith(deployment.getSigningKeyPair())
                     .signDocument();
-            if (deployment.getSignatureCanonicalizationMethod() != null)
-                binding.canonicalizationMethod(deployment.getSignatureCanonicalizationMethod());
         }
 
 
@@ -110,6 +110,9 @@ public class WebBrowserSsoAuthenticationHandler extends AbstractSamlAuthenticati
                 .destination(deployment.getIDP().getSingleLogoutService().getRequestBindingUrl());
         BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
         if (deployment.getIDP().getSingleLogoutService().signRequest()) {
+            if (deployment.getSignatureCanonicalizationMethod() != null)
+                binding.canonicalizationMethod(deployment.getSignatureCanonicalizationMethod());
+            binding.signatureAlgorithm(deployment.getSignatureAlgorithm());
             binding.signWith(deployment.getSigningKeyPair())
                     .signDocument();
         }
