@@ -25,6 +25,7 @@
         var kc = this;
         var adapter;
         var refreshQueue = [];
+        var storage;
 
         var loginIframe = {
             enable: true,
@@ -45,8 +46,14 @@
                     adapter = loadAdapter();
                 }
             }
-            
+
             if (initOptions) {
+                if (typeof initOptions.storage !== 'undefined') {
+                    storage = initOptions.storage;
+                } else {
+                    storage = window.localStorage;
+                }
+
                 if (typeof initOptions.checkLoginIframe !== 'undefined') {
                     loginIframe.enable = initOptions.checkLoginIframe;
                 }
@@ -197,7 +204,7 @@
                 redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'prompt=' + options.prompt;
             }
 
-            localStorage.oauthState = JSON.stringify({ state: state, nonce: nonce, redirectUri: encodeURIComponent(redirectUri) });
+            storage.oauthState = JSON.stringify({ state: state, nonce: nonce, redirectUri: encodeURIComponent(redirectUri) });
 
             var action = 'auth';
             if (options && options.action == 'register') {
@@ -694,10 +701,10 @@
         function parseCallback(url) {
             var oauth = new CallbackParser(url, kc.responseMode).parseUri();
 
-            var sessionState = localStorage.oauthState && JSON.parse(localStorage.oauthState);
+            var sessionState = storage.oauthState && JSON.parse(storage.oauthState);
 
             if (sessionState && (oauth.code || oauth.error || oauth.access_token || oauth.id_token) && oauth.state && oauth.state == sessionState.state) {
-                delete localStorage.oauthState;
+                delete storage.oauthState;
 
                 oauth.redirectUri = sessionState.redirectUri;
                 oauth.storedNonce = sessionState.nonce;

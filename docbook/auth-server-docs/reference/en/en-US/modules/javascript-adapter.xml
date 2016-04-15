@@ -260,6 +260,8 @@ new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp'
                         </listitem>
                         <listitem>flow - set the OpenID Connect flow. Valid values are <literal>standard</literal>, <literal>implicit</literal> or <literal>hybrid</literal>.
                             See <link linkend="javascript-implicit-flow">Implicit flow</link> for details.</listitem>
+                        <listitem>storage - provide a storage object. The default is <literal>window.localStorage</literal>.
+                            You can also provide <literal>window.sessionStorage</literal> or your custom implementation.</listitem>
                     </itemizedlist>
                 </para>
                 <para>Returns promise to set functions to be invoked on success or error.</para>
