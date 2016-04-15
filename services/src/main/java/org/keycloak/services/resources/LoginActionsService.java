@@ -173,11 +173,14 @@ public class LoginActionsService {
                 return false;
             }
             if (!clientCode.isValidAction(requiredAction)) {
-                if (ClientSessionModel.Action.REQUIRED_ACTIONS.name().equals(clientCode.getClientSession().getAction())) {
+                ClientSessionModel clientSession = clientCode.getClientSession();
+                if (ClientSessionModel.Action.REQUIRED_ACTIONS.name().equals(clientSession.getAction())) {
                     response = redirectToRequiredActions(code);
                     return false;
-                } else {
-                    invalidAction();
+                } else if (clientSession.getUserSession() != null && clientSession.getUserSession().getState() == UserSessionModel.State.LOGGED_IN) {
+                    response = session.getProvider(LoginFormsProvider.class)
+                            .setSuccess(Messages.ALREADY_LOGGED_IN)
+                            .createInfoPage();
                     return false;
                 }
             }
@@ -185,7 +188,7 @@ public class LoginActionsService {
             return true;
        }
 
-        public boolean isValidAction(String requiredAction) {
+        private boolean isValidAction(String requiredAction) {
             if (!clientCode.isValidAction(requiredAction)) {
                 invalidAction();
                 return false;
@@ -199,7 +202,7 @@ public class LoginActionsService {
             response = ErrorPage.error(session, Messages.INVALID_CODE);
         }
 
-        public boolean isActionActive(ClientSessionCode.ActionType actionType) {
+        private boolean isActionActive(ClientSessionCode.ActionType actionType) {
             if (!clientCode.isActionActive(actionType)) {
                 event.client(clientCode.getClientSession().getClient());
                 event.clone().error(Errors.EXPIRED_CODE);
