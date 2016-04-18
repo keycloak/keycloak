@@ -1,5 +1,5 @@
 
-Keycloak Server Adminstration Guide Documentation
+Keycloak Server Developer Guide
 ======================
 
 image:images/keycloak_logo.png[alt="Keycloak"]
