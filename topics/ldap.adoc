@@ -1,5 +1,5 @@
 [[_user_federation]]
-= User Federation SPI and LDAP/AD Integration
+= LDAP/AD Integration
 
 Keycloak can federate external user databases.
 Out of the box we have support for LDAP and Active Directory.
@@ -145,34 +145,3 @@ Admin console provides tooltips, which should help on how to configure correspon
 We have an example, which is showing LDAP integration and set of base mappers and sample mappers (mappers for street and postalCode) . It's in `examples/ldap`            in the Keycloak example distribution or demo distribution download.
 You can also check the example sources directly https://github.com/keycloak/keycloak/blob/master/examples/ldap[here] . 
 
-=== Writing your own LDAP Mapper
-
-For the more advanced usecases, you have the possibility to create your own implementation of LDAP mapper or just subclass from some already existing mapper implementation.
-You will need to implement `UserFederationMapperFactory` interface.
-In most cases, instead of creating `UserFederationMapperFactory` from scratch, you can create subclasses of `AbstractLDAPFederationMapperFactory`, which itself implements `UserFederationMapperFactory`.
-Then you need to create mapper implementation, which will be subclass of `AbstractLDAPFederationMapper` (this mapper implementation will be returned by `YourAbstractLDAPFederationMapperFactorySubclass.createMapper` method). 
-
-After your code is written you must package up all your classes within a JAR file.
-This jar file must contain a file called `org.keycloak.mappers.UserFederationMapperFactory` within the `META-INF/services directory` of the JAR.
-This file is a list of fully qualified classnames of all implementations of `UserFederationMapperFactory`.
-For more details, look at section for <<_write_federation_provider,Write your own federation provider>> and at <<_providers,Providers and SPI>> section. 
-
-[[_write_federation_provider]]
-== Writing your own User Federation Provider
-
-The keycloak examples directory contains an example of a simple User Federation Provider backed by a simple properties file.
-See `examples/providers/federation-provider`.
-Most of how to create a federation provider is explained directly within the example code, but some information is here too. 
-
-Writing a User Federation Provider starts by implementing the `UserFederationProvider`            and `UserFederationProviderFactory` interfaces.
-Please see the Javadoc and example for complete details on how to do this.
-Some important methods of note: getUserByUsername() and getUserByEmail() require that you query your federated storage and if the user exists create and import the user into Keycloak storage.
-How much metadata you import is fully up to you.
-This import is done by invoking methods on the object returned `KeycloakSession.userStorage()`            to add and import user information.
-The proxy() method will be called whenever Keycloak has found an imported UserModel.
-This allows the federation provider to proxy the UserModel which is useful if you want to support external storage updates on demand. 
-
-After your code is written you must package up all your classes within a JAR file.
-This jar file must contain a file called `org.keycloak.models.UserFederationProviderFactory`            within the `META-INF/services` directory of the JAR.
-This file is a list of fully qualified classnames of all implementations of `UserFederationProviderFactory`.
-For more details on writing provider implementations and how to deploy to Keycloak refer to the <<_providers,providers>> section. 
