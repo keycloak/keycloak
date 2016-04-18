@@ -1,0 +1,27 @@
+
+[[_jaas_adapter]]
+= JAAS plugin
+
+It's generally not needed to use JAAS for most of the applications, especially if they are HTTP based, but directly choose one of our adapters.
+However some applications and systems may still rely on pure legacy JAAS solution.
+Keycloak provides couple of login modules to help with such use cases.
+Some login modules provided by Keycloak are: 
+
+
+
+org.keycloak.adapters.jaas.DirectAccessGrantsLoginModule::
+  This login module allows to authenticate with username/password from Keycloak database.
+  It's using <<_direct_access_grants,Direct Access Grants>> Keycloak endpoint to validate on Keycloak side if provided username/password is valid.
+  It's useful especially for non-web based systems, which need to rely on JAAS and want to use Keycloak credentials, but can't use classic browser based authentication flow due to their non-web nature.
+  Example of such application could be messaging application or SSH system. 
+
+org.keycloak.adapters.jaas.BearerTokenLoginModule::
+  This login module allows to authenticate with Keycloak access token passed to it through CallbackHandler as password.
+  It may be useful for example in case, when you have Keycloak access token from classic web based authentication flow and your web application then needs to talk to external non-web based system, which rely on JAAS.
+  For example to JMS/messaging system.     
+
+Both login modules have configuration property `keycloak-config-file` where you need to provide location of keycloak.json configuration file.
+It could be either provided from filesystem or from classpath (in that case you may need value like `classpath:/folder-on-classpath/keycloak.json` ). 
+
+Second property `role-principal-class` allows to specify alternative class for Role principals attached to JAAS Subject.
+Default value for Role principal is `org.keycloak.adapters.jaas.RolePrincipal` . Note that class should have constructor with single String argument. 

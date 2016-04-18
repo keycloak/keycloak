@@ -1,5 +1,5 @@
 
-Keycloak Client Applications Guide
+Securing Client Applications Guide
 ======================
 
 image:images/keycloak_logo.png[alt="Keycloak"]
