@@ -1,0 +1,5 @@
+= Creating Event LIsteners
+
+Keycloak provides an Events SPI that makes it possible to register listeners for user related events, for example user logins.
+There are two interfaces that can be implemented, the first is a pure listener, the second is a events store which listens for events, but is also required to store events.
+An events store provides a way for the admin and account management consoles to view events. 

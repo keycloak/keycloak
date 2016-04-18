@@ -1,0 +1,16 @@
+== Keycloak Server Developer Guide
+
+//. link:topics/templates/document-attributes.adoc[]
+:imagesdir: images
+
+ . link:topics/preface.adoc[Preface]
+ . link:topics/providers.adoc[Providers and SPIs]
+ . link:topics/themes.adoc[Themes]
+ . link:topics/direct-access.adoc[Direct Access Grants]
+ . link:topics/admin-rest-api.adoc[Admin REST API]
+ . link:topics/events.adoc[Creating Event Listeners]
+ . link:topics/user-federation.adoc[User Federation SPI and LDAP/AD Integration]
+ . link:topics/custom-attributes.adoc[Custom User Attributes]
+ . link:topics/auth-spi.adoc[Custom Authentication, Registration, and Required Actions]
+
+

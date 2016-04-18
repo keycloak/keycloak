@@ -1,0 +1,159 @@
+= Direct Access Grants
+
+Keycloak allows you to make direct REST invocations to obtain an access token.
+(See http://tools.ietf.org/html/rfc6749#section-4.3[Resource Owner Password Credentials Grant]        from OAuth 2.0 spec).  To use it you must also have registered a valid Client to use as the "client_id" for this grant request. 
+
+[WARNING]
+====
+It is highly recommended that you do not use Direct Access Grants to write your own login pages for your application.
+You will lose a lot of features that Keycloak has if you do this.
+Specifically all the account management, remember me, lost password, account reset features of Keycloak.
+Instead, if you want to tailor the look and feel of Keycloak login pages, you should create your own <<_themes,theme>>.
+There are also security implications to using Direct Access Grants compared to the redirect based flows as you are exposing plain text passwords to applications directly. 
+
+It is even highly recommended that you use the browser to log in for native mobile applications!  Android and iPhone applications allow you to redirect to and from the browser.
+You can use this to redirect the user from your native mobile app to the web browser to perform login, then the browser will redirect back to your native application. 
+====
+
+The REST URL to invoke on is `/{keycloak-root}/realms/{realm-name}/protocol/openid-connect/token`.
+Invoking on this URL is a POST request and requires you to post the username and credentials of the user you want an access token for.
+You must also pass along the "client_id" of the client you are creating an access token for.
+This "client_id" is the Client Id specified in admin console (not it's id from DB!).  Depending on whether your client is <<_access_types,"public" or "confidential">>, you may also have to pass along it's client secret as well.
+We support pluggable client authentication, so alternatively you can use other form of client credentials like signed JWT assertion.
+See <<_client_authentication,Client Authentication>> section for more details.
+Finally you need to pass "grant_type" parameter with value "password" . 
+
+For public client's, the POST invocation requires form parameters that contain the username, credentials, and client_id of your application.
+For example: 
+
+[source]
+----
+    POST /auth/realms/demo/protocol/openid-connect/token
+    Content-Type: application/x-www-form-urlencoded
+
+    username=bburke&password=geheim&client_id=customer-portal&grant_type=password
+----        
+The response would be this http://tools.ietf.org/html/rfc6749#section-4.3.3[standard JSON document] from the OAuth 2.0 specification. 
+
+[source]
+----
+HTTP/1.1 200 OK
+Content-Type: application/json;charset=UTF-8
+Cache-Control: no-store
+Pragma: no-cache
+
+{
+    "access_token":"2YotnFZFEjr1zCsicMWpAA",
+    "token_type":"bearer",
+    "expires_in":3600,
+    "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA",
+    "id_token":"tGzv3JOkF0XG5Qx2TlKWIA",
+    "session_state":"234234-234234-234234"
+}
+----    
+
+For confidential client's, you must create a Basic Auth `Authorization` header that contains the client_id and client secret.
+And pass in the form parameters for username and for each user credential.
+For example: 
+
+[source]
+----
+
+    POST /auth/realms/demo/protocol/openid-connect/token
+    Authorization: Basic atasdf023l2312023
+    Content-Type: application/x-www-form-urlencoded
+
+    username=bburke&password=geheim&grant_type=password
+----    
+
+As mentioned above, we support also other means of authenticating clients.
+In adition to default client_id and client secret, we also have signed JWT assertion by default.
+There is possibility to use any other form of client authentication implemented by you.
+See <<_client_authentication,Client Authentication>> section for more details. 
+
+Here's a Java example using Apache HTTP Client and some Keycloak utility classes.: 
+
+[source]
+----
+HttpClient client = new HttpClientBuilder()
+                .disableTrustManager().build();
+
+try {
+   HttpPost post = new HttpPost(
+           KeycloakUriBuilder.fromUri("http://localhost:8080/auth")
+           .path(ServiceUrlConstants.TOKEN_PATH).build("demo"));
+   List <NameValuePair> formparams = new ArrayList <NameValuePair>();
+   formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "password"));
+   formparams.add(new BasicNameValuePair("username", "bburke"));
+   formparams.add(new BasicNameValuePair("password", "password"));
+
+   if (isPublic()) { // if client is public access type
+       formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "customer-portal"));
+   } else {
+       String authorization = BasicAuthHelper.createHeader("customer-portal", "secret-secret-secret");
+       post.setHeader("Authorization", authorization);
+   }
+   UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+   post.setEntity(form);
+
+   HttpResponse response = client.execute(post);
+   int status = response.getStatusLine().getStatusCode();
+   HttpEntity entity = response.getEntity();
+   if (status != 200) {
+      throw new IOException("Bad status: " + status);
+   }
+   if (entity == null) {
+      throw new IOException("No Entity");
+   }
+   InputStream is = entity.getContent();
+   try {
+      AccessTokenResponse tokenResponse = JsonSerialization.readValue(is, AccessTokenResponse.class);
+   } finally {
+      try {
+          is.close();
+      } catch (IOException ignored) { }
+      }
+} finally {
+   client.getConnectionManager().shutdown();
+}
+----    
+
+Once you have the access token string, you can use it in REST HTTP bearer token authorized requests, i.e 
+
+[source]
+----
+GET /my/rest/api
+Authorization: Bearer 2YotnFZFEjr1zCsicMWpAA
+----    
+
+To logout you must use the refresh token contained in the AccessTokenResponse object. 
+
+[source]
+----    
+List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+if (isPublic()) { // if client is public access type
+    formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "customer-portal"));
+} else {
+    String authorization = BasicAuthHelper.createHeader("customer-portal", "secret-secret-secret");
+    post.setHeader("Authorization", authorization);
+}
+formparams.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, tokenResponse.getRefreshToken()));
+HttpResponse response = null;
+URI logoutUri = KeycloakUriBuilder.fromUri(getBaseUrl(request) + "/auth")
+                    .path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
+                    .build("demo");
+HttpPost post = new HttpPost(logoutUri);
+UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+post.setEntity(form);
+response = client.execute(post);
+int status = response.getStatusLine().getStatusCode();
+HttpEntity entity = response.getEntity();
+if (status != 204) {
+   error(status, entity);
+}
+if (entity == null) {
+   return;
+}
+InputStream is = entity.getContent();
+if (is != null) is.close();
+----
