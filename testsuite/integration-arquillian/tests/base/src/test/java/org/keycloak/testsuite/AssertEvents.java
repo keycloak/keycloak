@@ -52,10 +52,10 @@ import java.util.Map;
  */
 public class AssertEvents {
 
-    static final String DEFAULT_CLIENT_ID = "test-app";
-    static final String DEFAULT_IP_ADDRESS = "127.0.0.1";
-    static final String DEFAULT_REALM = "test";
-    static final String DEFAULT_USERNAME = "test-user@localhost";
+    public static final String DEFAULT_CLIENT_ID = "test-app";
+    public static final String DEFAULT_IP_ADDRESS = "127.0.0.1";
+    public static final String DEFAULT_REALM = "test";
+    public static final String DEFAULT_USERNAME = "test-user@localhost";
 
     String defaultRedirectUri = "http://localhost:8180/auth/realms/master/app/auth";
     String defaultEventsQueueUri = "http://localhost:8092";

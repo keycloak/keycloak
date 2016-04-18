@@ -59,7 +59,7 @@
                                         <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
                                         <type>test-jar</type>
-                                        <includes>arquillian.xml,keycloak-add-user.json</includes>
+                                        <includes>arquillian.xml,keycloak-add-user.json,kerberos/*</includes>
                                     </artifactItem>
                                 </artifactItems>
                             </configuration>
