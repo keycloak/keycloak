@@ -1,4 +1,4 @@
 # Summary
 
-* Server Adminstration Guide
+* Server Administration Guide
 
