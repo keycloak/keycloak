@@ -15,32 +15,39 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.arquillian.provider;
+package org.keycloak.testsuite.rest;
 
-import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.annotation.Inject;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
-import org.keycloak.testsuite.util.DeleteMeOAuthClient;
-
-import java.lang.annotation.Annotation;
+import org.keycloak.Config.Scope;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.services.resource.RealmResourceProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class OAuthClientProvider implements ResourceProvider {
-
-    @Inject
-    Instance<DeleteMeOAuthClient> oauthClient;
+public class TestApplicationResourceProviderFactory implements RealmResourceProviderFactory {
 
     @Override
-    public boolean canProvide(Class<?> type) {
-        return DeleteMeOAuthClient.class.isAssignableFrom(type);
+    public RealmResourceProvider create(KeycloakSession session) {
+        return new TestApplicationResourceProvider(session);
     }
 
     @Override
-    public Object lookup(ArquillianResource resource, Annotation... qualifiers) {
-        return oauthClient.get();
+    public void init(Scope config) {
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    public void close() {
+    }
+
+    @Override
+    public String getId() {
+        return "app";
     }
 
 }

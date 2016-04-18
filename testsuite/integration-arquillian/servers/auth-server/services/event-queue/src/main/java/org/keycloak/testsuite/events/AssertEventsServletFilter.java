@@ -44,6 +44,11 @@ public class AssertEventsServletFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
 
+        if ("/clear-event-queue".equals(req.getRequestURI().substring(req.getContextPath().length()))) {
+            EventsListenerProvider.getInstance().clear();
+            return;
+        }
+
         if ("/event-queue".equals(req.getRequestURI().substring(req.getContextPath().length()))) {
             BlockingQueue<Event> events = EventsListenerProvider.getInstance();
             HttpServletResponse resp = (HttpServletResponse) servletResponse;
