@@ -1,4 +1,0 @@
-# Summary
-
-* Server Administration Guide
-

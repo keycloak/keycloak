@@ -1,0 +1,8 @@
+=== Permission Scopes
+
+Each client is configured with a set of permission scopes.
+These are a set of roles that a client is allowed to ask permission for.
+Access tokens are always granted at the request of a specific client.
+This also holds true for SSO.
+As you visit different sites, the application will redirect back to the Keycloak Server via the OAuth 2.0 protocol to obtain an access token specific to that application (client).  The role mappings contained within the token are the intersection between the set of user role mappings and the permission scope of the client.
+So, access tokens are tailor made for each client and contain only the information required for by them. 

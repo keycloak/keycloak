@@ -1,0 +1,47 @@
+= CORS
+
+CORS stands for Cross-Origin Resource Sharing.
+If executing browser Javascript tries to make an AJAX HTTP request to a server's whose domain is different than the one the Javascript code came from, then the request uses the http://www.w3.org/TR/cors/[CORS protocol].
+The server must handle CORS requests in a special way, otherwise the browser will not display or allow the request to be processed.
+This protocol exists to protect against XSS and other Javascript-based attacks.
+Keycloak has support for validated CORS requests. 
+
+Keycloak's CORS support is configured per client.
+You specify the allowed origins in the client's configuration page in the admin console.
+You can add as many you want.
+The value must be what the browser would send as a value in the `Origin` header.
+For example `http://example.com`        is what you must specify to allow CORS requests from `example.com`.
+When an access token is created for the client, these allowed origins are embedded within the token.
+On authenticated CORS requests, your application's Keycloak adapter will handle the CORS protocol and validate the `Origin`        header against the allowed origins embedded in the token.
+If there is no match, then the request is denied. 
+
+To enable CORS processing in your application's server, you must set the `enable-cors` setting to `true` in your <<_adapter_config,adapter's configuration file>>.
+When this setting is enabled, the Keycloak adapter will handle all CORS preflight requests.
+It will validate authenticated requests (protected resource requests), but will let unauthenticated requests (unprotected resource requests) pass through. 
+
+== Handling CORS Yourself
+
+This section is for Java developers securing servlet-based applications using our servlet adapter. 
+
+If you don't like our CORS support you can handle it yourself in a filter or something.
+One problem you will encounter is that our adapter will may trigger for any CORS preflight OPTIONS requests to blindly secured URLs.
+This will result in 302 redirection or 401 responses for the preflight OPTIONS request.
+To workaround this problem, you must modify your web.xml security constraints to let OPTIONS requests through 
+[source]
+----
+
+<security-constraint>
+     <web-resource-collection>
+         <web-resource-name>wholesale</web-resource-name>
+         <url-pattern>/*</url-pattern>
+         <http-method>GET</http-method>
+         <http-method>POST</http-method>
+         <http-method>PUT</http-method>
+         <http-method>DELETE</http-method>
+     </web-resource-collection>
+...
+</security-constraint>
+----        
+
+The above security constraint will secure all URLs, but only on GET, POST, PUT, and DELETE calls.
+OPTIONS requests will be let through. 

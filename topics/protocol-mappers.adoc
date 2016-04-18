@@ -1,0 +1,17 @@
+[[_mappers]]
+= OIDC Token and SAML Assertion Mappings
+
+Applications that receive ID Tokens, Access Tokens, or SAML assertions may need or want different user metadata and roles.
+Keycloak allows you to define what exactly is transferred.
+You can hardcode roles, claims and custom attributes.
+You can pull user metadata into a token or assertion.
+You can rename roles.
+Basicall you have a lot of control of what exactly goes back to the client. 
+
+Within the admin console, if you go to an application you've registered, you'll see a "Mappers" sub-menu item.
+This is the place where you can control how a OIDC ID Token, Access Token, and SAML login response assertions look like.
+When you click on this you'll see some default mappers that have been set up for you.
+Clicking the "Add Builtin" button gives you the option to add other preconfigured mappers.
+Clicking on "Create" allows you to define your own protocol mappers.
+The tooltips are very helpful to learn exactly what you can do to tailor your tokens and assertions.
+They should be enough to guide you through the process. 

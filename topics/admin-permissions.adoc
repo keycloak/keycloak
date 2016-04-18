@@ -1,0 +1,47 @@
+[[_admin_permissions]]
+
+= Master Admin Access Control
+
+You can create and manage multiple realms by logging into the `master` Keycloak admin console at `/{keycloak-root}/admin/index.html`    
+
+Users in the Keycloak `master` realm can be granted permission to manage zero or more realms that are deployed on the Keycloak server.
+When a realm is created, Keycloak automatically creates various roles that grant fine-grain permissions to access that new realm.
+Access to The Admin Console and REST endpoints can be controlled by mapping these roles to users in the `master` realm.
+It's possible to create multiple super users as well as users that have only access to certain operations in specific realms. 
+
+== Global Roles
+
+There are two realm roles in the `master` realm.
+These are: 
+
+* admin
+* create-realm        
+
+To add these roles to a user select the `master` realm, then click on `Users`.
+Find the user you want to grant permissions to, open the user and click on `Role Mappings`.
+Under `Realm Roles` assign any of the above roles to the user by selecting it and clicking on the right-arrow. 
+
+== Realm Specific Roles
+
+Each realm in Keycloak is represented by an application in the `master` realm.
+The name of the application is `<realm name>-realm`.
+This allows assigning access to users for individual realms.
+The roles available are: 
+
+* view-realm
+* view-users
+* view-applications
+* view-clients
+* view-events
+* manage-realm
+* manage-users
+* manage-applications
+* create-clients
+* manage-clients
+* manage-events            
+
+Manage roles includes permissions to view (for example a user with manage-realm role can also view the realm configuration). 
+
+To add these roles to a user select the `master` realm, then click on `Users`.
+Find the user you want to grant permissions to, open the user and click on `Role Mappings`.
+Under `Application Roles` select the application that represents the realm you're adding permissions to (`<realm name>-realm`), then assign any of the above roles to the user by selecting it and clicking on the right-arrow. 

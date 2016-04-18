@@ -1,0 +1,21 @@
+== Key Concepts in Keycloak
+
+The core concept in Keycloak is a _Realm_.
+A realm secures and manages security metadata for a set of users and registered clients.
+Users can be created within a specific realm within the Administration console.
+Roles (permission types) can be defined at the realm level and you can also set up user role mappings to assign these permissions to specific users. 
+
+A _client_ is a service that is secured by a realm.
+You will often use Client for every Application secured by Keycloak.
+When a user browses an application's web site, the application can redirect the user agent to the Keycloak Server and request a login.
+Once a user is logged in, they can visit any other client (application) managed by the realm and not have to re-enter credentials.
+This also hold true for logging out.
+Roles can also be defined at the client level and assigned to specific users.
+Depending on the client type, you may also be able to view and manage user sessions from the administration console. 
+
+In admin console there is switch _Consent required_ specified when creating/editing client.
+When on, the client is not immediately granted all permissions of the user.
+In addition to requesting the login credentials of the user, the Keycloak Server will also display a grant page asking the user if it is ok to grant allowed permissions to the client.
+The granted consents are saved and every user can see his granted consents in Account Management UI and he can also revoke them for particular client.
+Also admin can see and revoke the grants of particular user in Keycloak Admin Console UI. 
+

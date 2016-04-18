@@ -1,0 +1,164 @@
+= Clustering
+
+To improve availability and scalability Keycloak can be deployed in a cluster.
+
+It's fairly straightforward to configure a Keycloak cluster, the steps required are: 
+
+* Configure a shared database 
+* Configure Infinispan 
+* Enable realm and user cache invalidation 
+* Enable distributed user sessions 
+* Start in HA mode     
+
+== Configure a shared database
+
+Keycloak doesn't replicate realms and users, but instead relies on all nodes using the same database.
+This can be a relational database or Mongo.
+To make sure your database doesn't become a single point of failure you may also want to deploy your database to a cluster. 
+
+=== DB lock
+
+Note that Keycloak supports concurrent startup by more cluster nodes at the same.
+This is ensured by DB lock, which prevents that some startup actions (migrating database from previous version, importing realms at startup, initial bootstrap of admin user) are always executed just by one cluster node at a time and other cluster nodes need to wait until the current node finishes startup actions and release the DB lock. 
+
+By default, the maximum timeout for lock is 900 seconds, so in case that second node is not able to acquire the lock within 900 seconds, it fails to start.
+The lock checking is done every 2 seconds by default.
+Typically you won't need to increase/decrease the default value, but just in case it's possible to configure it in `standalone/configuration/keycloak-server.json`: 
+
+[source,json]
+----
+"dblock": {
+    "jpa": {
+        "lockWaitTimeout": 900,
+        "lockRecheckTime": 2
+    }
+}
+----                
+or similarly if you're using Mongo (just by replace `jpa` with `mongo`) 
+
+== Configure Infinispan
+
+Keycloak uses http://www.infinispan.org/[Infinispan] caches to share information between nodes. 
+
+For realm and users Keycloak uses a invalidation cache.
+An invalidation cache doesn't share any data, but simply removes stale data from remote caches and makes sure all nodes re-load data from the database when it is changed.
+This reduces network traffic, as well as preventing sensitive data (such as realm keys and password hashes) from being sent between the nodes. 
+
+User sessions and login failures supports either distributed caches or fully replicated caches.
+We recommend using a distributed cache.
+A distributed cache splits user sessions into segments where each node holds one or more segment.
+It is possible to replicate each segment to multiple nodes, but this is not strictly necessary since the failure of a node will only result in users having to log in again.
+If you need to prevent node failures from requiring users to log in again, set the `owners` attribute to 2 or more for the `sessions` cache of `infinispan/Keycloak` container as described below. 
+
+The infinispan container is set by default in `standalone/configuration/keycloak-server.json`: 
+
+[source,json]
+----
+
+"connectionsInfinispan": {
+    "default" : {
+        "cacheContainer" : "java:jboss/infinispan/Keycloak"
+    }
+}
+----        
+
+As you can see in this file, the realmCache, userCache and userSession providers are configured to use infinispan by default, which applies for both cluster and non-cluster environment.
+
+For non-cluster configuration (server executed with `standalone.xml` ) is the infinispan container `infinispan/Keycloak` just uses local infinispan caches for realms, users and userSessions. 
+
+For cluster configuration, you can edit the configuration of `infinispan/Keycloak` container in `standalone/configuration/standalone-ha.xml` (or `standalone-keycloak-ha.xml` if you are using overlay or demo distribution) . 
+
+== Start in HA mode
+
+To start the server in HA mode, start it with: 
+
+[source]
+----
+# bin/standalone --server-config=standalone-ha.xml
+---- 
+or if you are using overlay or demo distribution with: 
+           
+[source]
+----
+# bin/standalone --server-config=standalone-keycloak-ha.xml
+----        
+
+Alternatively you can copy `standalone/config/standalone-ha.xml` to `standalone/config/standalone.xml`            to make it the default server config. 
+
+== Enabling cluster security
+
+By default there's nothing to prevent unauthorized nodes from joining the cluster and sending potentially malicious messages to the cluster.
+However, as there's no sensitive data sent there's not much that can be achieved.
+For realms and users all that can be done is to send invalidation messages to make nodes load data from the database more frequently.
+For user sessions it would be possible to modify existing user sessions, but creating new sessions would have no affect as they would not be linked to any access tokens.
+There's not too much that can be achieved by modifying user sessions.
+For example it would be possible to prevent sessions from expiring, by changing the creation time.
+However, it would for example have no effect adding additional permissions to the sessions as these are rechecked against the user and application when the token is created or refreshed. 
+
+In either case your cluster nodes should be in a private network, with a firewall protecting them from outside attacks.
+Ideally isolated from workstations and laptops.
+You can also enable encryption of cluster messages, this could for example be useful if you can't isolate cluster nodes from workstations and laptops on your private network.
+However, encryption will obviously come at a cost of reduced performance. 
+
+To enable encryption of cluster messages you first have to create a shared keystore (change the key and store passwords!): 
+
+[source]
+----
+
+# keytool -genseckey -alias keycloak -keypass <PASSWORD> -storepass <PASSWORD> \
+ -keyalg Blowfish -keysize 56 -keystore defaultStore.keystore -storetype JCEKS
+----        
+
+Copy this keystore to all nodes (for example to standalone/configuration). Then configure JGroups to encrypt all messages by adding the `ENCRYPT` protocol to the JGroups sub-system (this should be added after the `pbcast.GMS` protocol): 
+
+[source]
+----
+<subsystem xmlns="urn:jboss:domain:jgroups:2.0" default-stack="udp">
+    <stack name="udp">
+        ...
+        <protocol type="pbcast.GMS"/>
+        <protocol type="ENCRYPT">
+            <property name="key_store_name">
+                ${jboss.server.config.dir}/defaultStore.keystore
+            </property>
+            <property name="key_password">PASSWORD</property>
+            <property name="store_password">PASSWORD</property>
+            <property name="alias">keycloak</property>
+        </protocol>
+        ...
+    </stack>
+    <stack name="tcp">
+        ...
+        <protocol type="pbcast.GMS"/>
+        <protocol type="ENCRYPT">
+            <property name="key_store_name">
+                ${jboss.server.config.dir}/defaultStore.keystore
+            </property>
+            <property name="key_password">PASSWORD</property>
+            <property name="store_password">PASSWORD</property>
+            <property name="alias">keycloak</property>
+        </protocol>
+        ...
+    </stack>
+    ...
+</subsystem>
+----            
+See the http://www.jgroups.org/manual/index.html#ENCRYPT[JGroups manual] for more details. 
+
+== Troubleshooting
+
+Note that when you run cluster, you should see message similar to this in the log of both cluster nodes: 
+
+[source]
+----
+INFO  [org.infinispan.remoting.transport.jgroups.JGroupsTransport] (Incoming-10,shared=udp)
+ISPN000094: Received new cluster view: [node1/keycloak|1] (2) [node1/keycloak, node2/keycloak]
+----            
+If you see just one node mentioned, it's possible that your cluster hosts are not joined together. 
+
+Usually it's best practice to have your cluster nodes on private network without firewall for communication among them.
+Firewall could be enabled just on public access point to your network instead.
+If for some reason you still need to have firewall enabled on cluster nodes, you will need to open some ports.
+Default values are UDP port 55200 and multicast port 45688 with multicast address 230.0.0.4.
+Note that you may need more ports opened if you want to enable additional features like diagnostics for your JGroups stack.
+Keycloak delegates most of the clustering work to Infinispan/JGroups, so consult EAP or JGroups documentation for more info. 

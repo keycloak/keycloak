@@ -1,0 +1,281 @@
+[[_providers]]
+
+= Providers and SPIs 
+
+Keycloak is designed to cover most use-cases without requiring custom code, but we also want it to be customizable.
+To achive this Keycloak has a number of SPIs which you can implement your own providers for. 
+
+== Implementing a SPI
+
+To implement an SPI you need to implement it's ProviderFactory and Provider interfaces.
+You also need to create a provider-configuration file.
+For example to implement the Event Listener SPI you need to implement EventListenerProviderFactory and EventListenerProvider and also provide the file `META-INF/services/org.keycloak.events.EventListenerProviderFactory`        
+
+For example to implement the Event Listener SPI you start by implementing EventListenerProviderFactory: 
+
+[source]
+----
+package org.acme.provider;
+
+import ...
+
+public class MyEventListenerProviderFactory implements EventListenerProviderFactory {
+
+    private List<Event> events;
+
+    public String getId() {
+        return "my-event-listener";
+    }
+
+    public void init(Config.Scope config) {
+        int max = config.getInt("max");
+        events = new MaxList(max);
+    }
+
+    public EventListenerProvider create(KeycloakSession session) {
+        return new MyEventListenerProvider(events);
+    }
+
+    public void close() {
+        events = null;
+    }
+
+}
+----
+
+The example uses an imagined MaxList which has a maximum size and is concurrency safe.
+When the maximum size is reached and new entries are added the oldest entry is removed.
+Keycloak creates a single instance of `EventListenerProviderFactory` which makes it possible to store state for multiple requests.
+`EventListenerProvider` instances are created by calling create on the factory for each requests so these should be light-weight. 
+
+Next you would implement `EventListenerProvider`: 
+
+[source]
+----
+package org.acme.provider;
+
+import ...
+
+public class MyEventListenerProvider implements EventListenerProvider {
+
+    private List<Event> events;
+
+    public MyEventListenerProvider(List<Event> events) {
+        this.events = events;
+    }
+
+    @Override
+    public void onEvent(Event event) {
+        events.add(event);
+    }
+
+    @Override
+    public void close() {
+
+    }
+
+}
+----        
+
+The file `META-INF/services/org.keycloak.events.EventListenerProviderFactory` should contain the full name of your ProviderFactory implementation: 
+
+[source]
+----
+org.acme.provider.MyEventListenerProviderFactory
+----        
+
+=== Show info from you SPI implementation in Keycloak admin console
+
+Sometimes it is useful to show additional info about your Provider to a Keycloak administrator.
+You can show provider build time informations (eg. version of custom provider currently installed), current configuration of the provider (eg. url of remote system your provider talks to) or some operational info (average time of response from remote system your provider talks to). Keycloak admin console provides Server Info page to show this kind of information. 
+
+To show info from your provider it is enough to implement `org.keycloak.provider.ServerInfoAwareProviderFactory` interface in your `ProviderFactory`.
+Example implementation for `MyEventListenerProviderFactory` from previous example: 
+
+[source]
+----
+package org.acme.provider;
+
+import ...
+
+public class MyEventListenerProviderFactory implements EventListenerProviderFactory, ServerInfoAwareProviderFactory {
+
+    private List<Event> events;
+    private int max;
+
+...
+
+    @Override
+    public void init(Config.Scope config) {
+        max = config.getInt("max");
+        events = new MaxList(max);
+    }
+
+...
+
+    @Override
+    public Map<String, String> getOperationalInfo() {
+        Map<String, String> ret = new LinkedHashMap<>();
+        ret.put("version", "1.0");
+        ret.put("listSizeMax", max + "");
+        ret.put("listSizeCurrent", events.size() + "");
+        return ret;
+    }
+
+}
+----            
+
+== Registering provider implementations
+
+Keycloak can load provider implementations from JBoss Modules or directly from the file-system.
+Using Modules is recommended as you can control exactly what classes are available to your provider.
+Any providers loaded from the file-system uses a classloader with the Keycloak classloader as its parent. 
+
+=== Register a provider using Modules
+
+To register a provider using Modules first create a module.
+To do this you can either use the jboss-cli script or manually create a folder inside `KEYCLOAK_HOME/modules` and add your jar and a `module.xml`.
+For example to add the event listener sysout example provider using the `jboss-cli` script execute: 
+
+[source]
+----
+KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.examples.event-sysout --resources=target/event-listener-sysout-example.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-server-spi,org.keycloak.keycloak-events-api"
+----                
+Or to manually create it start by creating the folder `KEYCLOAK_HOME/modules/org/keycloak/examples/event-sysout/main`.
+Then copy `event-listener-sysout-example.jar` to this folder and create `module.xml` with the following content: 
+
+[source]
+----
+
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.examples.event-sysout">
+    <resources>
+        <resource-root path="event-listener-sysout-example.jar"/>
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-server-spi"/>
+    </dependencies>
+</module>
+----            
+
+Once you've created the module you need to register this module with Keycloak.
+This is done by editing keycloak-server.json and adding it to the providers: 
+
+[source]
+----
+{
+    "providers": [
+        ...
+        "module:org.keycloak.examples.event-sysout"
+    ]
+}
+----            
+
+=== Register a provider using file-system
+
+To register your provider simply copy the JAR including the ProviderFactory and Provider classes and the provider configuration file to server's root `providers` directory. 
+
+You can also define multiple provider class-path if you want to create isolated class-loaders.
+To do this edit keycloak-server.json and add more classpath entries to the providers array.
+For example: 
+
+[source]
+----
+{
+    "providers": [
+        "classpath:provider1.jar;lib-v1.jar",
+        "classpath:provider2.jar;lib-v2.jar"
+    ]
+}
+----
+
+The above example will create two separate class-loaders for providers.
+The classpath entries follow the same syntax as Java classpath, with ';' separating multiple-entries.
+Wildcard is also supported allowing loading all jars (files with .jar or .JAR extension) in a folder, for example: 
+
+[source]
+----
+{
+    "providers": [
+        "classpath:/home/user/providers/*"
+    ]
+}
+----            
+
+=== Configuring a provider
+
+You can pass configuration options to your provider by setting them in `keycloak-server.json`.
+For example to set the max value for `my-event-listener` add: 
+
+[source]
+----
+{
+    "eventsListener": {
+        "my-event-listener": {
+            "max": 100
+        }
+    }
+}
+----            
+
+=== Disabling a provider
+
+You can disable a provider by setting the enabled field for the provider to false in `keycloak-server.json`.
+For example to disable the Infinispan user cache provider add: 
+
+[source]
+----
+{
+"userCache": {
+    "infinispan" : {
+        "enabled": false
+    }
+}
+}
+----            
+
+== Available SPIs
+
+Here's a list of the available SPIs and a brief description.
+For more details on each SPI refer to individual sections. 
+
+Account::
+
+Connections Infinispan::
+
+Connections Jpa::
+
+Connections Jpa Updater::
+
+Connections Mongo::
+
+Email::
+
+Events Listener::
+
+Events Store::
+
+Export::
+
+Import::
+
+Login::
+
+Login Protocol::
+
+Realm::
+
+Realm Cache::
+
+Theme::
+
+Timer::
+
+User::
+
+User Cache::
+
+User Federation::
+
+User Sessions::        

@@ -1,0 +1,28 @@
+
+[[_social_google]]
+= Google
+
+To enable login with Google you first have to create a project and a client in the https://cloud.google.com/console/project[Google Developer Console].
+Then you need to copy the client id and secret into the Keycloak Admin Console. 
+
+. Log in to the https://cloud.google.com/console/project[Google Developer Console].
+  Click the `Create Project` button.
+  Use any value for `Project name` and `Project ID` you want, then click the `Create` button.
+  Wait for the project to be created (this may take a while). 
+. Once the project has been created click on `APIs & auth` in sidebar on the left.
+  To retrieve user profiles the `Google+ API` has to be enabled.
+  Scroll down to find it in the list.
+  If its status is `OFF`, click on `OFF` to enable it (it should move to the top of the list and the status should be `ON`). 
+. Now click on the `Consent screen` link on the sidebar menu on the left.
+  You must specify a project name and choose an email for the consent screen.
+  Otherwise users will get a login error.
+  There's other things you can configure here like what the consent screen looks like.
+  Feel free to play around with this. 
+. Now click `Credentials` in the sidebar on the left.
+  Then click `Create New Client ID`.
+  Select `Web application` as `Application type`.
+  Empty the `Authorized Javascript origins` textarea.
+  In `Authorized redirect URI` enter the <<_social_callbackurl,social callback url>>                for your realm.
+  Click the `Create Client ID` button. 
+. Copy `Client ID` and `Client secret` from the https://cloud.google.com/console/project[Google Developer Console] into the settings page in the Keycloak Admin Console as the `Key` and `Secret`.
+  Then click `Save` in the Keycloak Admin Console to enable login with Google. 

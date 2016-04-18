@@ -1,0 +1,24 @@
+
+[[_social_facebook]]
+= Facebook
+
+To enable login with Facebook you first have to create an app in the https://developers.facebook.com/[Facebook Developer Console].
+Then you need to copy the client id and secret into the Keycloak Admin Console. 
+
+. Log in to the https://developers.facebook.com/[Facebook Developer Console].
+  Click `Apps` in the menu and select `Create a New App`.
+  Use any value for `Display Name` and `Category` you want, then click the `Create App` button.
+  Wait for the project to be created (this may take a while). If after creating the app you are not redirected to the app settings, click on `Apps` in the menu and select the app you created. 
+. Once the app has been created click on `Settings` in sidebar on the left.
+  You must specify a contact email.
+  Save your changes.
+  Then click on `Advanced`.
+  Under `Security` make sure `Client OAuth Login` is enabled.
+  In `Valid OAuth redirect URIs` insert the <<_social_callbackurl,social callback url>>.
+  Scroll down and click on the `Save Changes` button. 
+. Click `Status & Review` and select `YES` for `Do you want
+  to make this app and all its live features available to the general public?`.
+  You will not be able to set this until you have provided a contact email in the general settings of this application. 
+. Click `Basic`.
+  Copy `App ID` and `App Secret`                (click `show`) from the https://developers.facebook.com/[Facebook Developer Console] into the settings page in the Keycloak Admin Console as the `Key` and `Secret`.
+  Then click `Save` in the Keycloak Admin Console to enable login with Facebook. 

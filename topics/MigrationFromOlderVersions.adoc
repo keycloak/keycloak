@@ -1,0 +1,429 @@
+= Migration from older versions
+
+To upgrade to a new version of Keycloak first download and install the new version of Keycloak.
+You then have to migrate the database, keycloak-server.json, providers, themes and applications from the old version. 
+
+== Migrate database
+
+Keycloak provides automatic migration of the database.
+It's highly recommended that you backup your database prior to upgrading Keycloak. 
+
+To enable automatic upgrading of the database if you're using a relational database make sure `databaseSchema` is set to `update` for `connectionsJpa`: 
+
+[source]
+----
+"connectionsJpa": {
+    "default": {
+        ...
+        "databaseSchema": "update"
+    }
+}
+----        
+
+For MongoDB do the same, but for `connectionsMongo`: 
+
+[source]
+----
+
+"connectionsMongo": {
+    "default": {
+        ...
+        "databaseSchema": "update"
+    }
+}
+----        
+
+When you start the server with this setting your database will automatically be migrated if the database schema has changed in the new version. 
+
+== Migrate keycloak-server.json
+
+You should copy `standalone/configuration/keycloak-server.json` from the old version to make sure any configuration changes you've done are added to the new installation.
+The version specific section below will list any changes done to this file that you have to do when upgrading from one version to another. 
+
+== Migrate providers
+
+If you have implemented any SPI providers you need to copy them to the new server.
+The version specific section below will mention if any of the SPI's have changed.
+If they have you may have to update your code accordingly. 
+
+== Migrate themes
+
+If you have created a custom theme you need to copy them to the new server.
+The version specific section below will mention if changes have been made to themes.
+If there is you may have to update your themes accordingly. 
+
+== Migrate application
+
+If you deploy applications directly to the Keycloak server you should copy them to the new server.
+For any applications including those not deployed directly to the Keycloak server you should upgrade the adapter.
+The version specific section below will mention if any changes are required to applications. 
+
+== Version specific migration
+
+=== Migrating to 1.9.0
+
+==== Themes and providers directory moved
+
+We've moved the themes and providers directories from `standalone/configuration/themes` and `standalone/configuration/providers` to `themes` and `providers` respectively.
+If you have added custom themes and providers you need to move them to the new location.
+You also need to update `keycloak-server.json` as it's changed due to this. 
+
+==== Adapter Subsystems only bring in dependencies if keycloak is on
+
+Previously, if you had installed our saml or oidc keycloak subsystem adapters into Wildfly or JBoss EAP, we would automatically include Keycloak client jars into EVERY application irregardless if you were using Keycloak or not.
+These libraries are now only added to your deployment if you have keycloak authentication turned on for that adapter (via the subsystem, or auth-method in web.xml 
+
+==== Client Registration service endpoints moved
+
+The Client Registration service endpoints have been moved from `{realm}/clients` to `{realm}/clients-registrations`. 
+
+==== Session state parameter in authentication response renamed
+
+In the OpenID Connect authentication response we used to return the session state as `session-state` this is not correct according to the specification and has been renamed to `session_state`. 
+
+==== Deprecated OpenID Connect endpoints
+
+In 1.2 we deprecated a number of endpoints that where not consistent with the OpenID Connect specifications, these have now been removed.
+This also applies to the validate token endpoints that was replaced with the new introspect endpoint in 1.8. 
+
+==== Updates to theme templates
+
+Feedback in template.ftl has been moved and format has changed slightly. 
+
+==== Module and Source Code Re-org
+
+Most of our modules and source code have been consolidated into two maven modules:  keycloak-server-spi and keycloak-services.
+SPI interfaces are in server-spi, implementations are in keycloak-services.
+All JPA dependent modules have been consolidated under keycloak-model-jpa.
+Same goes with mongo and infinispan under modules keycloak-model-mongo and keycloak-model-infinispan. 
+
+==== For adapters, session id changed after login
+
+To plug a security attack vector, for platforms that support it (Tomcat 8, Undertow/Wildfly, Jetty 9), the keycloak oidc and saml adapters will change the session id after login.
+You can turn off this behavior check adapter config switches. 
+
+==== SAML SP Client Adapter Changes
+
+Keycloak SAML SP Client Adapter now requires a specific endpoint, `/saml` to be registered with your IDP. 
+
+=== Migrating to 1.8.0
+
+==== Admin account
+
+In previous releases we shipped with a default admin user with a default password, this has now been removed.
+If you are doing a new installation of 1.8 you will have to create an admin user as a first step.
+This can be done easily by following the steps in <<_create_admin_user,Admin User>>. 
+
+==== OAuth2 Token Introspection
+
+In order to add more compliance with OAuth2 specification, we added a new endpoint for token introspection.
+The new endpoint can reached at `/realms/{realm}/protocols/openid-connect/token/introspect` and it is solely based on `RFC-7662.`                
+
+The `/realms/{realm}/protocols/openid-connect/validate` endpoint is now deprecated and we strongly recommend you to move to the new introspection endpoint as soon as possible.
+The reason for this change is that RFC-7662 provides a more standard and secure introspection endpoint. 
+
+The new token introspection URL can now be obtained from OpenID Connect Provider's configuration at `/realms/{realm}/.well-known/openid-configuration`.
+There you will find a claim with name `token_introspection_endpoint` within the response.
+Only `confidential clients` are allowed to invoke the new endpoint, where these clients will be usually acting as a resource server and looking for token metadata in order to perform local authorization checks. 
+
+=== Migrating to 1.7.0.CR1
+
+==== Direct access grants disabled by default for clients
+
+In order to add more compliance with OpenID Connect specification, we added flags into admin console to Client Settings page, where you can enable/disable various kinds of OpenID Connect/OAuth2 flows (Standard flow, Implicit flow, Direct Access Grants, Service Accounts). As part of this, we have `Direct Access Grants` (corresponds to OAuth2 `Resource Owner Password Credentials Grant`) disabled by default for new clients. 
+
+Clients migrated from previous version have `Direct Access Grants` enabled just if they had flag `Direct Grants Only` on.
+The `Direct Grants Only` flag was removed as if you enable Direct Access Grants and disable both Standard+Implicit flow, you will achieve same effect. 
+
+We also added builtin client `admin-cli` to each realm.
+This client has `Direct Access Grants` enabled.
+So if you're using Admin REST API or Keycloak admin-client, you should update your configuration to use `admin-cli` instead of `security-admin-console` as the latter one doesn't have direct access grants enabled anymore by default. 
+
+==== Option 'Update Profile On First Login' moved from Identity provider to Review Profile authenticator
+
+In this version, we added `First Broker Login`, which allows you to specify what exactly should be done when new user is logged through Identity provider (or Social provider), but there is no existing Keycloak user yet linked to the social account.
+As part of this work, we added option `First Login Flow` to identity providers where you can specify the flow and then you can configure this flow under `Authentication` tab in admin console. 
+
+We also removed the option `Update Profile On First Login` from the Identity provider settings and moved it to the configuration of `Review Profile` authenticator.
+So once you specify which flow should be used for your Identity provider (by default it's `First Broker Login` flow), you go to `Authentication` tab, select the flow and then you configure the option under `Review Profile` authenticator. 
+
+==== Element 'form-error-page' in web.xml not supported anymore
+
+form-error-page in web.xml will no longer work for client adapter authentication errors.
+You must define an error-page for the various HTTP error codes.
+See documentation for more details if you want to catch and handle adapter error conditions. 
+
+==== IdentityProviderMapper changes
+
+There is no change in the interface itself or method signatures.
+However there is some change in behaviour.
+We added `First Broker Login` flow in this release and the method `IdentityProviderMapper.importNewUser` is now called after `First Broker Login` flow is finished.
+So if you want to have any attribute available in `Review Profile` page, you would need to use the method `preprocessFederatedIdentity` instead of `importNewUser` . You can set any attribute by invoke `BrokeredIdentityContext.setUserAttribute` and that will be available on `Review profile` page. 
+
+=== Migrating to 1.6.0.Final
+
+==== Option that refresh tokens are not reusable anymore
+
+Old versions of Keycloak allowed reusing refresh tokens multiple times.
+Keycloak still permits this, but also have an option `Revoke refresh token` to disallow it.
+Option is in in admin console under token settings.
+When a refresh token is used to obtain a new access token a new refresh token is also included.
+When option is enabled, then this new refresh token should be used next time the access token is refreshed.
+It won't be possible to reuse old refresh token multiple times. 
+
+==== Some packages renamed
+
+We did a bit of restructure and renamed some packages.
+It is mainly about renaming internal packages of util classes.
+The most important classes used in your application ( for example AccessToken or KeycloakSecurityContext ) as well as the SPI are still unchanged.
+However there is slight chance that you will be affected and will need to update imports of your classes.
+For example if you are using multitenancy and KeycloakConfigResolver, you will be affected as for example class HttpFacade was moved to different package - it is `org.keycloak.adapters.spi.HttpFacade` now. 
+
+==== Persisting user sessions
+
+We added support for offline tokens in this release, which means that we are persisting "offline" user sessions into database now.
+If you are not using offline tokens, nothing will be persisted for you, so you don't need to care about worse performance for more DB writes.
+However in all cases, you will need to update `standalone/configuration/keycloak-server.json` and add `userSessionPersister` like this: 
+
+[source]
+----
+"userSessionPersister": {
+    "provider": "jpa"
+},
+----                    
+If you want sessions to be persisted in Mongo instead of classic RDBMS, use provider `mongo` instead. 
+
+=== Migrating to 1.5.0.Final
+
+==== Realm and User cache providers
+
+Infinispan is now the default and only realm and user cache providers.
+In non-clustered mode a local Infinispan cache is used.
+We've also removed our custom in-memory cache and the no cache providers.
+If you have realmCache or userCache set in keycloak-server.json to mem or none please remove these.
+As Infinispan is the only provider there's no longer any need for the realmCache and userCache objects so these can be removed. 
+
+==== Uses Session providers
+
+Infinispan is now the default and only user session provider.
+In non-clustered mode a local Infinispan cache is used.
+We've also removed the JPA and Mongo user session providers.
+If you have userSession set in keycloak-server.json to mem, jpa or mongo please remove it.
+As Infinispan is the only provider there's no longer any need for the userSession object so it can be removed. 
+
+For anyone that wants to achieve increased durability of user sessions this can be achieved by configuring the user session cache with more than one owner or use a replicated cache.
+It's also possible to configure Infinispan to persist caches, although that would have impacts on performance. 
+
+==== Contact details removed from registration and account management
+
+In the default theme we have now removed the contact details from the registration page and account management.
+The admin console now lists all the users attributes, not just contact specific attributes.
+The admin console also has the ability to add/remove attributes to a user.
+If you want to add contact details, please refer to the address theme included in the examples. 
+
+=== Migrating to 1.3.0.Final
+
+==== Direct Grant API always enabled
+
+In the past Direct Grant API (or Resource Owner Password Credentials) was disabled by default and there was an option on a realm to enable it.
+The Direct Grant API is now always enabled and the option to enable/disable for a realm is removed. 
+
+==== Database changed
+
+There are again few database changes.
+Remember to backup your database prior to upgrading. 
+
+==== UserFederationProvider changed
+
+There are few minor changes in UserFederationProvider interface.
+You may need to sync your implementation when upgrade to newer version and upgrade few methods, which has changed signature.
+Changes are really minor, but were needed to improve performance of federation. 
+
+==== WildFly 9.0.0.Final
+
+Following on from the distribution changes that was done in the last release the standalone download of Keycloak is now based on WildFly 9.0.0.Final.
+This als affects the overlay which can only be deployed to WildFly 9.0.0.Final or JBoss EAP 6.4.0.GA.
+WildFly 8.2.0.Final is no longer supported for the server. 
+
+==== WildFly, JBoss EAP and JBoss AS7 adapters
+
+There are now 3 separate adapter downloads for WildFly, JBoss EAP and JBoss AS7: 
+
+* eap6
+* wf9
+* wf8
+* as7                    
+
+Make sure you grab the correct one. 
+
+You also need to update standalone.xml as the extension module and subsystem definition has changed.
+See <<_jboss_adapter_installation,Adapter Installation>> for details. 
+
+=== Migrating from 1.2.0.Beta1 to 1.2.0.RC1
+
+==== Distribution changes
+
+Keycloak is now available in 3 downloads: standalone, overlay and demo bundle.
+The standalone is intended for production and non-JEE developers.
+Overlay is aimed at adding Keycloak to an existing WildFly 8.2 or EAP 6.4 installation and is mainly for development.
+Finally we have a demo (or dev) bundle that is aimed at developers getting started with Keycloak.
+This bundle contains a WildFly server, with Keycloak server and adapter included.
+It also contains all documentation and examples. 
+
+==== Database changed
+
+This release contains again a number of changes to the database.
+The biggest one is Application and OAuth client merge.
+Remember to backup your database prior to upgrading. 
+
+==== Application and OAuth client merge
+
+Application and OAuth clients are now merged into `Clients`.
+The UI of admin console is updated and database as well.
+Your data from database should be automatically updated.
+The previously set Applications will be converted into Clients with `Consent required` switch off and OAuth Clients will be converted into Clients with this switch on. 
+
+=== Migrating from 1.1.0.Final to 1.2.0.Beta1
+
+==== Database changed
+
+This release contains a number of changes to the database.
+Remember to backup your database prior to upgrading. 
+
+==== `iss` in access and id tokens
+
+The value of `iss` claim in access and id tokens have changed from `realm name` to `realm url`.
+This is required by OpenID Connect specification.
+If you're using our adapters there's no change required, other than if you've been using bearer-only without specifying `auth-server-url` you have to add it now.
+If you're using another library (or RSATokenVerifier) you need to make the corresponding changes when verifying `iss`. 
+
+==== OpenID Connect endpoints
+
+To comply with OpenID Connect specification the authentication and token endpoints have been changed to having a single authentication endpoint and a single token endpoint.
+As per-spec `response_type` and `grant_type` parameters are used to select the required flow.
+The old endpoints (`/realms/{realm}/protocols/openid-connect/login`, `/realms/{realm}/protocols/openid-connect/grants/access`, `/realms/{realm}/protocols/openid-connect/refresh`, `/realms/{realm}/protocols/openid-connect/access/codes)` are now deprecated and will be removed in a future version. 
+
+==== Theme changes
+
+The layout of themes have changed.
+The directory hierarchy used to be `type/name` this is now changed to `name/type`.
+For example a login theme named `sunrise` used to be deployed to `standalone/configuration/themes/login/sunrise`, which is now moved to `standalone/configuration/themes/sunrise/login`.
+This change was done to make it easier to have group the different types for the same theme into one folder. 
+
+If you deployed themes as a JAR in the past you had to create a custom theme loader which required Java code.
+This has been simplified to only requiring a plain text file (`META-INF/keycloak-themes.json`) to describe the themes included in a JAR.
+See the <<_themes,themes>> section in the docs for more information. 
+
+==== Claims changes
+
+Previously there was `Claims` tab in admin console for application and OAuth clients.
+This was used to configure which attributes should go into access token for particular application/client.
+This was removed and replaced with <<_mappers,Protocol mappers>>, which are more flexible. 
+
+You don't need to care about migration of database from previous version.
+We did migration scripts for both RDBMS and Mongo, which should ensure that claims configured for particular application/client will be converted into corresponding protocol mappers (Still it's safer to backup DB before migrating to newer version though). Same applies for exported JSON representation from previous version. 
+
+==== Social migration to identity brokering
+
+We refactored social providers SPI and replaced it with <<_identity_broker,identity brokering SPI>>, which is more flexible.
+The `Social` tab in admin console is renamed to `Identity Provider` tab. 
+
+Again you don't need to care about migration of database from previous version similarly like for Claims/protocol mappers.
+Both configuration of social providers and "social links" to your users will be converted to corresponding Identity providers. 
+
+Only required action from you would be to change allowed `Redirect URI` in the admin console of particular 3rd party social providers.
+You can first go to the Keycloak admin console and copy Redirect URI from the page where you configure the identity provider.
+Then you can simply paste this as allowed Redirect URI to the admin console of 3rd party provider (IE.
+Facebook admin console). 
+
+=== Migrating from 1.1.0.Beta2 to 1.1.0.Final
+
+* WEB-INF/lib
++`standalone/configuration/providers`<<_providers,+providers>>
+
+
+=== Migrating from 1.1.0.Beta1 to 1.1.0.Beta2
+
+* Adapters are now a separate download.  They are not included in appliance and war distribution.  We have too many now and the distro
+  is getting bloated.
+* org.keycloak.adapters.tomcat7.KeycloakAuthenticatorValve
++`org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve`
+
+* JavaScript adapter now has idToken and idTokenParsed properties. If you use idToken to retrieve first name, email, etc. you need to change this to idTokenParsed.
+* The as7-eap-subsystem and keycloak-wildfly-subsystem have been merged into one keycloak-subsystem.  If you have an existing standalone.xml
+  or domain.xml, you will need edit near the top of the file and change the extension module name to org.keycloak.keycloak-subsystem.
+  For AS7 only, the extension module name is org.keycloak.keycloak-as7-subsystem.
+* Server installation is no longer supported on AS7.  You can still use AS7 as an application client.
+
+=== Migrating from 1.0.x.Final to 1.1.0.Beta1
+
+* RealmModel JPA and Mongo storage schema has changed
+* UserSessionModel JPA and Mongo storage schema has changed as these interfaces have been refactored
+* Upgrade your adapters, old adapters are not compatible with Keycloak 1.1.  We interpreted JSON Web Token and OIDC ID Token specification incorrectly.  'aud'
+  claim must be the client id, we were storing the realm name in there and validating it.
+
+=== Migrating from 1.0 RC-1 to RC-2
+
+* A lot of info level logging has been changed to debug. Also, a realm no longer has the jboss-logging audit listener by default.
+  If you want log output when users login, logout, change passwords, etc. enable the jboss-logging audit listener through the admin console.
+
+=== Migrating from 1.0 Beta 4 to RC-1
+
+* logout REST API has been refactored.  The GET request on the logout URI does not take a session_state
+  parameter anymore.  You must be logged in in order to log out the session.
+  You can also POST to the logout REST URI.  This action requires a valid refresh token to perform the logout.
+  The signature is the same as refresh token minus the grant type form parameter.  See documentation for details.
+
+=== Migrating from 1.0 Beta 1 to Beta 4
+
+* LDAP/AD configuration is changed.  It is no longer under the "Settings" page.  It is now under
+  Users->Federation.  Add Provider will show you an "ldap" option.
+* Authentication SPI has been removed and rewritten.  The new SPI is UserFederationProvider and is
+  more flexible.
+* ssl-not-required
++`ssl-required`
++`all`
++`external`
++`none`
+
+* DB Schema has changed again.
+* Created applications now have a full scope by default.  This means that you don't have to configure
+  the scope of an application if you don't want to.
+* Format of JSON file for importing realm data was changed. Now role mappings is available under the JSON record of particular
+  user.
+
+=== Migrating from 1.0 Alpha 4 to Beta 1
+
+* DB Schema has changed.  We have added export of the database to Beta 1, but not the ability to import
+  the database from older versions. This will be supported in future releases.
+* For all clients except bearer-only applications, you must specify at least one redirect uri.  Keycloak
+  will not allow you to log in unless you have specified a valid redirect uri for that application.
+* Direct Grant API
++`ON`
+
+* standalone/configuration/keycloak-server.json
+* JavaScript adapter
+* Session Timeout
+
+=== Migrating from 1.0 Alpha 2 to Alpha 3
+
+* SkeletonKeyToken, SkeletonKeyScope, SkeletonKeyPrincipal, and SkeletonKeySession have been renamed to:
+  AccessToken, AccessScope, KeycloakPrincipal, and KeycloakAuthenticatedSession respectively.
+* ServleOAuthClient.getBearerToken() method signature has changed.  It now returns an AccessTokenResponse
+  so that you can obtain a refresh token too.
+* Adapters now check the access token expiration with every request.  If the token is expired, they will
+  attempt to invoke a refresh on the auth server using a saved refresh token.
+* Subject in AccessToken has been changed to the User ID.
+
+=== Migrating from 1.0 Alpha 1 to Alpha 2
+
+* DB Schema has changed.  We don't have any data migration utilities yet as of Alpha 2.
+* JBoss and Wildfly adapters are now installed via a JBoss/Wildfly subsystem.  Please review the adapter
+  installation documentation.  Edits to standalone.xml are now required.
+* There is a new credential type "secret".  Unlike other credential types, it is stored in plain text in
+  the database and can be viewed in the admin console.
+* There is no longer required Application or OAuth Client credentials.  These client types are now
+  hard coded to use the "secret" credential type.
+* Because of the "secret" credential change to Application and OAuth Client, you'll have to update
+  your keycloak.json configuration files and regenarate a secret within the Application or OAuth Client
+  credentials tab in the administration console.
