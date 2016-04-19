@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.adapters;
+package org.keycloak.adapters.jaas;
 
 import java.io.IOException;
 import java.io.InputStream;
