@@ -28,6 +28,10 @@ if "%UNINSTALL_PAX%" == "true" (
     call client.bat %CLIENT_AUTH% -f uninstall-pax.cli
     if %ERRORLEVEL% neq 0 set ERROR=%ERRORLEVEL%
 )
+if "%UPDATE_CONFIG%" == "true" (
+    call client.bat %CLIENT_AUTH% -f update-config.cli
+    if %ERRORLEVEL% neq 0 set ERROR=%ERRORLEVEL%
+)
 call client.bat %CLIENT_AUTH% -f install-features.cli
 if %ERRORLEVEL% neq 0 set ERROR=%ERRORLEVEL%
 
