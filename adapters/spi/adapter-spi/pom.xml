@@ -98,6 +98,7 @@
                         <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                         <Import-Package>${keycloak.osgi.import}</Import-Package>
                         <Export-Package>${keycloak.osgi.export}</Export-Package>
+                        <Fragment-Host>org.keycloak.keycloak-adapter-spi-public</Fragment-Host>
                     </instructions>
                 </configuration>
             </plugin>
