@@ -17,33 +17,26 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.testsuite.Assert;
 
 import javax.ws.rs.NotFoundException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class IdentityProviderTest extends AbstractClientTest {
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
+public class IdentityProviderTest extends AbstractAdminTest {
 
     @Test
     public void testFindAll() {
         realm.identityProviders().create(create("google", "google", "Google"));
         realm.identityProviders().create(create("facebook", "facebook", "Facebook"));
 
-        assertNames(realm.identityProviders().findAll(), "google", "facebook");
+        Assert.assertNames(realm.identityProviders().findAll(), "google", "facebook");
     }
 
     @Test
@@ -135,4 +128,5 @@ public class IdentityProviderTest extends AbstractClientTest {
 
         return identityProviderRepresentation;
     }
+
 }
