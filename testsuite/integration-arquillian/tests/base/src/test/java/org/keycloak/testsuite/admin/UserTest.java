@@ -17,21 +17,29 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.*;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.Constants;
-import org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest;
-import org.keycloak.testsuite.forms.ResetPasswordTest;
-import org.keycloak.testsuite.pages.*;
-import org.keycloak.testsuite.rule.GreenMailRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.pages.InfoPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.WebDriver;
 
 import javax.mail.MessagingException;
@@ -39,39 +47,37 @@ import javax.mail.internet.MimeMessage;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-
 import java.io.IOException;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UserTest extends AbstractClientTest {
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
+public class UserTest extends AbstractAdminTest {
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
-    @WebResource
-    protected LoginPasswordUpdatePage passwordUpdatePage;
-
-    @WebResource
+    @Drone
     protected WebDriver driver;
 
-    @WebResource
+    @Page
+    protected LoginPasswordUpdatePage passwordUpdatePage;
+
+
+    @ArquillianResource
+    protected OAuthClient oAuthClient;
+
+    @Page
     protected InfoPage infoPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
     public String createUser() {
@@ -485,7 +491,7 @@ public class UserTest extends AbstractClientTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        String link = ResetPasswordTest.getPasswordResetEmailLink(message);
+        String link = MailUtils.getPasswordResetEmailLink(message);
 
         driver.navigate().to(link);
 
@@ -546,9 +552,9 @@ public class UserTest extends AbstractClientTest {
         }
 
         user.sendVerifyEmail();
-        assertEquals(1, greenMail.getReceivedMessages().length);
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
-        String link = RequiredActionEmailVerificationTest.getPasswordResetEmailLink(greenMail.getReceivedMessages()[0]);
+        String link = MailUtils.getPasswordResetEmailLink(greenMail.getReceivedMessages()[0]);
 
         driver.navigate().to(link);
 
@@ -659,7 +665,7 @@ public class UserTest extends AbstractClientTest {
 
         realm.users().get(userId).resetPassword(cred);
 
-        String accountUrl = RealmsResource.accountUrl(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT)).build(REALM_NAME).toString();
+        String accountUrl = RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build(REALM_NAME).toString();
 
         driver.navigate().to(accountUrl);
 

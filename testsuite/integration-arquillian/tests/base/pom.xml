@@ -62,6 +62,16 @@
             <artifactId>integration-arquillian-event-queue</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.icegreen</groupId>
+            <artifactId>greenmail</artifactId>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
     
     <build>
