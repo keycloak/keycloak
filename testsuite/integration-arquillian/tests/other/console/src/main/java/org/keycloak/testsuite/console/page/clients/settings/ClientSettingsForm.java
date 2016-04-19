@@ -51,20 +51,20 @@ public class ClientSettingsForm extends CreateClientForm {
 
     @FindBy(id = "newRedirectUri")
     private WebElement newRedirectUriInput;
-    @FindBy(xpath = ".//i[contains(@data-ng-click, 'newRedirectUri') and @class='fa fa-plus']")
+    @FindBy(xpath = ".//button[contains(@data-ng-click,'addRedirectUri')]")
     private WebElement newRedirectUriSubmit;
     @FindBy(xpath = ".//input[@ng-model='client.redirectUris[i]']")
     private List<WebElement> redirectUriInputs;
-    @FindBy(xpath = ".//i[contains(@data-ng-click, 'deleteRedirectUri') and @class='fa fa-minus']")
+    @FindBy(xpath = ".//button[contains(@data-ng-click, 'deleteRedirectUri')]")
     private List<WebElement> deleteRedirectUriIcons;
 
     @FindBy(id = "newWebOrigin")
     private WebElement newWebOriginInput;
-    @FindBy(xpath = ".//i[contains(@data-ng-click, 'newWebOrigin')]")
+    @FindBy(xpath = ".//button[contains(@data-ng-click,'addWebOrigin')]")
     private WebElement newWebOriginSubmit;
     @FindBy(xpath = ".//input[ng-model='client.webOrigins[i]']")
     private List<WebElement> webOriginInputs;
-    @FindBy(xpath = ".//i[contains(@data-ng-click, 'deleteWebOrigin')]")
+    @FindBy(xpath = ".//button[contains(@data-ng-click, 'deleteWebOrigin')]")
     private List<WebElement> deleteWebOriginIcons;
 
     public enum OidcAccessType {
