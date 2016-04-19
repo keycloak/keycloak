@@ -77,7 +77,7 @@ keycloak.use-resource-role-mappings = true
 <![CDATA[
 keycloak.securityConstraints[0].securityCollections[0].name = insecure stuff
 keycloak.securityConstraints[0].securityCollections[0].authRoles[0] = admin
-keycloak.securityConstraints[0].securityCollections[0].authRoles[0] = user
+keycloak.securityConstraints[0].securityCollections[0].authRoles[1] = user
 keycloak.securityConstraints[0].securityCollections[0].patterns[0] = /insecure
 
 keycloak.securityConstraints[0].securityCollections[1].name = admin stuff
