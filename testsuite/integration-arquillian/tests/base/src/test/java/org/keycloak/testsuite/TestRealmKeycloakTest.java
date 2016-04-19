@@ -17,11 +17,10 @@
 
 package org.keycloak.testsuite;
 
-import org.keycloak.testsuite.util.OAuthClient;
-import java.util.List;
-import org.junit.Before;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+
+import java.util.List;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
@@ -32,8 +31,6 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public abstract class TestRealmKeycloakTest extends AbstractKeycloakTest {
-
-    protected OAuthClient oauth;
 
     protected ClientRepresentation findTestApp(RealmRepresentation testRealm) {
         for (ClientRepresentation client : testRealm.getClients()) {
@@ -46,8 +43,6 @@ public abstract class TestRealmKeycloakTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-
-        oauth = new OAuthClient(driver, testRealm.getPublicKey());
 
         testRealms.add(testRealm);
 

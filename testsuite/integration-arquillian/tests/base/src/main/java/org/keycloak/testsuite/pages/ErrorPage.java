@@ -14,34 +14,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.testsuite.pages;
 
-package org.keycloak.testsuite.arquillian.provider;
-
-import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
-import org.keycloak.testsuite.util.DeleteMeOAuthClient;
 import org.keycloak.testsuite.util.OAuthClient;
-
-import java.lang.annotation.Annotation;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class OAuthClientProvider implements ResourceProvider {
+public class ErrorPage extends AbstractPage {
 
-    @Inject
-    Instance<OAuthClient> oauthClient;
+    @ArquillianResource
+    protected OAuthClient oauth;
 
-    @Override
-    public boolean canProvide(Class<?> type) {
-        return OAuthClient.class.isAssignableFrom(type);
+    @FindBy(className = "instruction")
+    private WebElement errorMessage;
+
+    @FindBy(id = "backToApplication")
+    private WebElement backToApplicationLink;
+
+    public String getError() {
+        return errorMessage.getText();
+    }
+
+    public void clickBackToApplication() {
+        backToApplicationLink.click();
+    }
+
+    public boolean isCurrent() {
+        return driver.getTitle() != null && driver.getTitle().equals("We're sorry...");
     }
 
     @Override
-    public Object lookup(ArquillianResource resource, Annotation... qualifiers) {
-        return oauthClient.get();
+    public void open() {
+        throw new UnsupportedOperationException();
     }
 
 }
