@@ -23,18 +23,16 @@ import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 
-import javax.ws.rs.core.Response;
-import java.net.URI;
 import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ClientInitialAccessTest extends AbstractClientTest {
+public class ClientInitialAccessTest extends AbstractAdminTest {
 
     @Test
     public void create() {
-        ClientInitialAccessResource resource = keycloak.realm(REALM_NAME).clientInitialAccess();
+        ClientInitialAccessResource resource = adminClient.realm(REALM_NAME).clientInitialAccess();
 
         ClientInitialAccessPresentation access = resource.create(new ClientInitialAccessCreatePresentation(1000, 2));
         Assert.assertEquals(new Integer(2), access.getCount());
