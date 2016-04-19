@@ -61,7 +61,7 @@
         <auth.server.jboss.startup.timeout>300</auth.server.jboss.startup.timeout>
 
         <adapter.test.props/>
-        <examples.home>${project.build.directory}/examples</examples.home>
+        <test-apps.home>${project.build.directory}/test-apps</test-apps.home>
 
         <browser>phantomjs</browser>
         <firefox_binary>/usr/bin/firefox</firefox_binary>

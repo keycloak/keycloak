@@ -30,6 +30,7 @@ import java.net.URL;
 public class CorsDatabaseServiceExample extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "cors-database-service";
+    public static final String CLIENT_ID = "integration-arquillian-test-apps-cors-database-service";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)

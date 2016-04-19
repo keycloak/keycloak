@@ -34,6 +34,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 public class ProductPortalExample extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "product-portal-example";
+    public static final String CLIENT_ID = "integration-arquillian-test-apps-demo-product-portal";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)

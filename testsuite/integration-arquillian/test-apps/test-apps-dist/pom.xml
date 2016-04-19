@@ -14,7 +14,7 @@
     <name>Test apps distribution</name>
 
     <build>
-        <finalName>${product.name}-${product.version}-test-apps</finalName>
+        <finalName>test-apps-dist</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

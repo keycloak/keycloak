@@ -44,12 +44,12 @@ public abstract class AbstractBasicAuthExampleAdapterTest extends AbstractExampl
 
     @Deployment(name = BasicAuthExample.DEPLOYMENT_NAME)
     private static WebArchive basicAuthExample() throws IOException {
-        return exampleDeployment("examples-basicauth");
+        return exampleDeployment(BasicAuthExample.CLIENT_ID);
     }
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(loadRealm(new File(EXAMPLES_HOME_DIR + "/basic-auth/basicauthrealm.json")));
+        testRealms.add(loadRealm(new File(TEST_APPS_HOME_DIR + "/basic-auth/basicauthrealm.json")));
     }
 
     @Override
