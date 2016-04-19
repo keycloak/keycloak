@@ -15,33 +15,38 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.arquillian.provider;
+package org.keycloak.testsuite.pages;
 
-import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
-import org.keycloak.testsuite.util.DeleteMeOAuthClient;
 import org.keycloak.testsuite.util.OAuthClient;
-
-import java.lang.annotation.Annotation;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
  */
-public class OAuthClientProvider implements ResourceProvider {
+public class VerifyEmailPage extends AbstractPage {
 
-    @Inject
-    Instance<OAuthClient> oauthClient;
+    @ArquillianResource
+    protected OAuthClient oauth;
+
+    @FindBy(linkText = "Click here")
+    private WebElement resendEmailLink;
 
     @Override
-    public boolean canProvide(Class<?> type) {
-        return OAuthClient.class.isAssignableFrom(type);
+    public void open() {
     }
 
-    @Override
-    public Object lookup(ArquillianResource resource, Annotation... qualifiers) {
-        return oauthClient.get();
+    public boolean isCurrent() {
+        return driver.getTitle().equals("Email verification");
+    }
+
+    public void clickResendEmail() {
+        resendEmailLink.click();
+    }
+
+    public String getResendEmailLink() {
+        return resendEmailLink.getAttribute("href");
     }
 
 }
