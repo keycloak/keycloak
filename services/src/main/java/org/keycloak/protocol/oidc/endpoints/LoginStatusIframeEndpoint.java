@@ -20,10 +20,12 @@ package org.keycloak.protocol.oidc.endpoints;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.services.util.P3PHelper;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
@@ -44,6 +46,9 @@ public class LoginStatusIframeEndpoint {
 
     @Context
     private UriInfo uriInfo;
+
+    @Context
+    private KeycloakSession session;
 
     private RealmModel realm;
 
@@ -98,6 +103,8 @@ public class LoginStatusIframeEndpoint {
         try {
             String file = StreamUtil.readString(is);
             file = file.replace("ORIGIN", origin);
+
+            P3PHelper.addP3PHeader(session);
 
             CacheControl cacheControl = new CacheControl();
             cacheControl.setNoTransform(false);
