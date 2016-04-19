@@ -31,8 +31,6 @@
     <packaging>jar</packaging>
 
     <properties>
-
-        <cxf.version>3.1.5</cxf.version>
         <jetty9.version>8.1.17.v20150415</jetty9.version>
         <keycloak.osgi.export>
             org.keycloak.adapters.osgi.*
