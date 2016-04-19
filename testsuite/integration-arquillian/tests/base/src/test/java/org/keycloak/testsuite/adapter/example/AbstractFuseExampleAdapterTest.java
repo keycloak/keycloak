@@ -58,8 +58,8 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation fureRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/fuse/testrealm.json"));
-        testRealms.add(fureRealm);
+        RealmRepresentation fuseRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/fuse/testrealm.json"));
+        testRealms.add(fuseRealm);
     }
 
     @Override
@@ -121,6 +121,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         pause(500);
         assertCurrentUrlStartsWith(customerPortal);
 
+        customerPortal.navigateTo();//needed for phantomjs
         customerPortal.clickAdminInterfaceLink();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
