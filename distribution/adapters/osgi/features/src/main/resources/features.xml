@@ -73,13 +73,4 @@
         <feature>keycloak-jaas</feature>
     </feature>
 
-    <!-- This is just simplification to upgrade paxweb to 3.1.2 in JBoss Fuse 6.1 or Karaf 2.3.X environment -->
-    <feature name="keycloak-pax-web-upgrade" version="${project.version}" resolver="(obr)">
-        <details>This is just simplification to upgrade paxweb to 3.1.2 in JBoss Fuse 6.1 or Karaf 2.3.X environment</details>
-        <bundle>mvn:org.ow2.asm/asm-all/5.0</bundle>
-        <bundle>mvn:org.apache.xbean/xbean-bundleutils/3.18</bundle>
-        <bundle>mvn:org.apache.xbean/xbean-reflect/3.18</bundle>
-        <bundle>mvn:org.apache.xbean/xbean-finder/3.18</bundle>
-    </feature>
-
 </features>
