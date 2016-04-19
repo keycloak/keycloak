@@ -31,7 +31,7 @@ import static org.junit.Assert.assertArrayEquals;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class Assert {
+public class Assert extends org.junit.Assert {
 
     public static <T> void assertNames(List<T> actual, String... expected) {
         Arrays.sort(expected);
