@@ -200,9 +200,62 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>xml-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>io-worker-threads</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${auth.server.home}/standalone/configuration</dir>
+                                            <includes>
+                                                <include>standalone.xml</include>
+                                                <include>standalone-ha.xml</include>
+                                            </includes>
+                                            <stylesheet>${common.resources}/io.xsl</stylesheet>
+                                            <outputDir>${auth.server.home}/standalone/configuration</outputDir>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>worker.io-threads</name>
+                                                    <value>${auth.server.worker.io-threads}</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>worker.task-max-threads</name>
+                                                    <value>${auth.server.worker.task-max-threads}</value>
+                                                </parameter>
+                                            </parameters>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                     <plugin>
                         <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enable-jboss-mgmt-admin</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/standalone/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}</directory>
+                                            <includes>
+                                                <include>mgmt-users.properties</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
@@ -573,6 +626,25 @@
                                                         <value>${login.failure.cache.owners}</value>
                                                     </parameter>
                                                 </parameters>
+                                            </transformationSet>
+                                        </transformationSets>
+                                    </configuration>
+                                </execution>
+                                <execution>
+                                    <id>mod-cluster-configuration</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>transform</goal>
+                                    </goals>
+                                    <configuration>
+                                        <transformationSets>
+                                            <transformationSet>
+                                                <dir>${auth.server.home}/standalone/configuration</dir>
+                                                <includes>
+                                                    <include>standalone-ha.xml</include>
+                                                </includes>
+                                                <stylesheet>${common.resources}/mod_cluster.xsl</stylesheet>
+                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
                                             </transformationSet>
                                         </transformationSets>
                                     </configuration>

@@ -135,6 +135,18 @@
         </configuration>
     </container>
     
+    <container qualifier="auth-server-remote" mode="suite" >
+        <configuration>
+            <property name="enabled">${auth.server.remote}</property>
+            <property name="adapterImplClass">org.jboss.as.arquillian.container.remote.RemoteDeployableContainer</property>
+
+            <property name="managementAddress">${auth.server.host}</property>
+            <property name="managementPort">${auth.server.management.port}</property>
+            <property name="username">admin</property>
+            <property name="password">admin</property>
+        </configuration>
+    </container>
+    
     <!-- PREVIOUS VERSIONS OF KEYCLOAK FOR MIGRATION TESTS -->
     
     <container qualifier="auth-server-jboss-kc16" mode="manual" >

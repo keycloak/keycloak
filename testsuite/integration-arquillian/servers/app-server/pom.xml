@@ -31,6 +31,8 @@
 
     <properties>
         <app.server.saml.adapter.supported>false</app.server.saml.adapter.supported>
+        <app.server.worker.io-threads>${jboss.default.worker.io-threads}</app.server.worker.io-threads>
+        <app.server.worker.task-max-threads>${jboss.default.worker.task-max-threads}</app.server.worker.task-max-threads>
     </properties>
 
     <modules>

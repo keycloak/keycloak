@@ -36,6 +36,7 @@
     <properties>
         <common.resources>${project.parent.basedir}/common</common.resources>
         <adapter.libs.home>${app.server.home}/modules/system/add-ons/keycloak</adapter.libs.home>
+        <app.server.type>managed</app.server.type>
     </properties>
 
     <build>
@@ -85,7 +86,8 @@
             <dependencies>
                 <dependency>
                     <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                    <artifactId>wildfly-arquillian-container-${app.server.type}</artifactId>
+                    <version>${arquillian-wildfly-container.version}</version>
                 </dependency>                
             </dependencies>            
         </profile>
