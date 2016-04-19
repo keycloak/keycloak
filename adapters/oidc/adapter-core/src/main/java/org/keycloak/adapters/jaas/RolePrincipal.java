@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.adapters;
+package org.keycloak.adapters.jaas;
 
 import java.io.Serializable;
 import java.security.Principal;
