@@ -19,7 +19,6 @@ package org.keycloak.testsuite;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.IOUtils;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.testsuite.arquillian.TestContext;
 
@@ -28,13 +27,10 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.NotFoundException;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -61,6 +57,7 @@ import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.auth.page.WelcomePage;
 import org.keycloak.testsuite.util.DeleteMeOAuthClient;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.testsuite.auth.page.AuthServer;
@@ -97,7 +94,10 @@ public abstract class AbstractKeycloakTest {
 
     protected Keycloak adminClient;
 
-    protected DeleteMeOAuthClient oauthClient;
+    @ArquillianResource
+    protected OAuthClient oauthClient;
+
+    protected DeleteMeOAuthClient deleteMeOAuthClient;
 
     protected List<RealmRepresentation> testRealmReps;
 
@@ -132,7 +132,7 @@ public abstract class AbstractKeycloakTest {
     public void beforeAbstractKeycloakTest() {
         adminClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
                 MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
-        oauthClient = new DeleteMeOAuthClient(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
+        deleteMeOAuthClient = new DeleteMeOAuthClient(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
 
         
         adminUser = createAdminUserRepresentation();
@@ -150,6 +150,9 @@ public abstract class AbstractKeycloakTest {
         }
 
         importTestRealms();
+
+        oauthClient.setAdminClient(adminClient);
+        oauthClient.setDriver(driver);
     }
 
     @After
@@ -344,6 +347,14 @@ public abstract class AbstractKeycloakTest {
             loadConstantsProperties();
         }
         return constantsProperties;
+    }
+
+    public URI getAuthServerRoot() {
+        try {
+            return KeycloakUriBuilder.fromUri(suiteContext.getAuthServerInfo().getContextRoot().toURI()).path("/auth/").build();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

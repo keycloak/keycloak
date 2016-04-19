@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.keycloak.testsuite.util;
 
 import org.apache.commons.io.IOUtils;
@@ -29,6 +30,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
@@ -64,6 +66,8 @@ public class OAuthClient {
     public static final String AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
     public static final String APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
 
+    private Keycloak adminClient;
+
     private WebDriver driver;
 
     private String baseUrl = AUTH_SERVER_ROOT;
@@ -80,20 +84,18 @@ public class OAuthClient {
 
     private String uiLocales = null;
 
-    private PublicKey realmPublicKey;
-
     private String clientSessionState;
 
     private String clientSessionHost;
 
-    public OAuthClient(WebDriver driver, String publicKey) {
-        this.driver = driver;
+    private Map<String, PublicKey> publicKeys = new HashMap<>();
 
-        try {
-            realmPublicKey = PemUtils.decodePublicKey(publicKey);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to retrieve realm public key", e);
-        }
+    public void setAdminClient(Keycloak adminClient) {
+        this.adminClient = adminClient;
+    }
+
+    public void setDriver(WebDriver driver) {
+        this.driver = driver;
     }
 
     public AuthorizationCodeResponse doLogin(String username, String password) {
@@ -373,7 +375,7 @@ public class OAuthClient {
 
     public AccessToken verifyToken(String token) {
         try {
-            return RSATokenVerifier.verifyToken(token, realmPublicKey, baseUrl + "/realms/" + realm);
+            return RSATokenVerifier.verifyToken(token, getRealmPublicKey(realm), baseUrl + "/realms/" + realm);
         } catch (VerificationException e) {
             throw new RuntimeException("Failed to verify token", e);
         }
@@ -382,7 +384,7 @@ public class OAuthClient {
     public RefreshToken verifyRefreshToken(String refreshToken) {
         try {
             JWSInput jws = new JWSInput(refreshToken);
-            if (!RSAProvider.verify(jws, realmPublicKey)) {
+            if (!RSAProvider.verify(jws, getRealmPublicKey(realm))) {
                 throw new RuntimeException("Invalid refresh token");
             }
             return jws.readJsonContent(RefreshToken.class);
@@ -495,10 +497,6 @@ public class OAuthClient {
 
     public OAuthClient realm(String realm) {
         this.realm = realm;
-        return this;
-    }
-    public OAuthClient realmPublicKey(PublicKey key) {
-        this.realmPublicKey = key;
         return this;
     }
 
@@ -640,6 +638,21 @@ public class OAuthClient {
         public String getTokenType() {
             return tokenType;
         }
+    }
+
+    public PublicKey getRealmPublicKey(String realm) {
+        if (!publicKeys.containsKey(realm)) {
+            String publicKeyPem = adminClient.realms().realm(realm).toRepresentation().getPublicKey();
+            PublicKey publicKey = null;
+            try {
+                publicKey = PemUtils.decodePublicKey(publicKeyPem);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            publicKeys.put(realm, publicKey);
+        }
+
+        return publicKeys.get(realm);
     }
 
 }

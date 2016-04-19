@@ -38,6 +38,7 @@ import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
 import org.keycloak.testsuite.util.LogChecker;
+import org.keycloak.testsuite.util.OAuthClient;
 
 /**
  *
@@ -75,6 +76,10 @@ public class AuthServerTestEnricher {
     @Inject
     @ClassScoped
     private InstanceProducer<TestContext> testContextProducer;
+
+    @Inject
+    @ClassScoped
+    private InstanceProducer<OAuthClient> oAuthClientProducer;
 
     public static String getAuthServerContextRoot() {
         return getAuthServerContextRoot(0);
@@ -196,6 +201,11 @@ public class AuthServerTestEnricher {
     public void initializeTestContext(@Observes(precedence = 2) BeforeClass event) {
         TestContext testContext = new TestContext(suiteContext, event.getTestClass().getJavaClass());
         testContextProducer.set(testContext);
+    }
+
+    public void initializeOAuthClient(@Observes(precedence = 3) BeforeClass event) {
+        OAuthClient oAuthClient = new OAuthClient();
+        oAuthClientProducer.set(oAuthClient);
     }
 
 }

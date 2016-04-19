@@ -62,7 +62,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     public void registerClientInMasterRealm() throws ClientRegistrationException {
         ClientRegistration masterReg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "master").build();
 
-        String token = oauthClient.getToken("master", Constants.ADMIN_CLI_CLIENT_ID, null, "admin", "admin").getToken();
+        String token = deleteMeOAuthClient.getToken("master", Constants.ADMIN_CLI_CLIENT_ID, null, "admin", "admin").getToken();
         masterReg.auth(Auth.token(token));
 
         ClientRepresentation client = new ClientRepresentation();

@@ -50,7 +50,7 @@ public abstract class AbstractGroupTest extends AbstractKeycloakTest {
 
     AccessToken login(String login, String clientId, String clientSecret, String userId) throws Exception {
 
-        AccessTokenResponse tokenResponse = oauthClient.getToken("test", clientId, clientSecret, login, "password");
+        AccessTokenResponse tokenResponse = deleteMeOAuthClient.getToken("test", clientId, clientSecret, login, "password");
 
         String accessToken = tokenResponse.getToken();
         String refreshToken = tokenResponse.getRefreshToken();
