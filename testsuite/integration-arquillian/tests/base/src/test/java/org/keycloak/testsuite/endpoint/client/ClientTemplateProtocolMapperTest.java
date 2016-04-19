@@ -1,83 +1,89 @@
 /*
- * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
- * as indicated by the @author tags. All rights reserved.
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.keycloak.testsuite.endpoint.client;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.ClientResource;
+import org.junit.runners.MethodSorters;
+import org.keycloak.admin.client.resource.ClientTemplateResource;
+import org.keycloak.admin.client.resource.ClientTemplatesResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
- *
- * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+public class ClientTemplateProtocolMapperTest extends AbstractProtocolMapperTest {
 
-    private ClientResource oidcClientRsc;
+    private ClientTemplateResource oidcClientTemplateRsc;
     private ProtocolMappersResource oidcMappersRsc;
-    private ClientResource samlClientRsc;
+    private ClientTemplateResource samlClientTemplateRsc;
     private ProtocolMappersResource samlMappersRsc;
 
     @Before
     public void init() {
-        createOidcClient("oidcMapperClient");
-        oidcClientRsc = findClientResource("oidcMapperClient");
-        oidcMappersRsc = oidcClientRsc.getProtocolMappers();
+        oidcClientTemplateRsc = createTemplate("oidcMapperClient-template", OIDCLoginProtocol.LOGIN_PROTOCOL);
+        oidcMappersRsc = oidcClientTemplateRsc.getProtocolMappers();
 
-        createSamlClient("samlMapperClient");
-        samlClientRsc = findClientResource("samlMapperClient");
-        samlMappersRsc = samlClientRsc.getProtocolMappers();
+        samlClientTemplateRsc = createTemplate("samlMapperClient-template", SamlProtocol.LOGIN_PROTOCOL);
+        samlMappersRsc = samlClientTemplateRsc.getProtocolMappers();
 
         super.initBuiltinMappers();
     }
 
     @After
     public void tearDown() {
-        oidcClientRsc.remove();
-        samlClientRsc.remove();
+        oidcClientTemplateRsc.remove();
+        samlClientTemplateRsc.remove();
     }
 
     @Test
-    public void testGetMappersList() {
-        assertFalse(oidcMappersRsc.getMappers().isEmpty());
-        assertFalse(samlMappersRsc.getMappers().isEmpty());
+    public void test01GetMappersList() {
+        assertTrue(oidcMappersRsc.getMappers().isEmpty());
+        assertTrue(samlMappersRsc.getMappers().isEmpty());
     }
 
     @Test
-    public void testCreateOidcMappersFromList() {
+    public void test02CreateOidcMappersFromList() {
         testAddAllBuiltinMappers(oidcMappersRsc, "openid-connect");
     }
 
     @Test
-    public void testCreateSamlMappersFromList() {
+    public void test03CreateSamlMappersFromList() {
         testAddAllBuiltinMappers(samlMappersRsc, "saml");
     }
 
     @Test
-    public void testCreateSamlProtocolMapper() {
+    public void test04CreateSamlProtocolMapper() {
 
         //{"protocol":"saml",
         // "config":{"role":"account.view-profile","new.role.name":"new-role-name"},
@@ -100,7 +106,7 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
-    public void testCreateOidcProtocolMapper() {
+    public void test05CreateOidcProtocolMapper() {
         //{"protocol":"openid-connect",
         // "config":{"role":"myrole"},
         // "consentRequired":true,
@@ -122,7 +128,7 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
-    public void testUpdateSamlMapper() {
+    public void test06UpdateSamlMapper() {
         ProtocolMapperRepresentation rep = makeSamlMapper("saml-role-name-mapper2");
 
         Response resp = samlMappersRsc.createMapper(rep);
@@ -140,7 +146,7 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
-    public void testUpdateOidcMapper() {
+    public void test07UpdateOidcMapper() {
         ProtocolMapperRepresentation rep = makeOidcMapper("oidc-hardcoded-role-mapper2");
 
         Response resp = oidcMappersRsc.createMapper(rep);
@@ -185,4 +191,20 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
         oidcMappersRsc.getMapperById(createdId);
     }
 
+
+    private ClientTemplatesResource clientTemplates() {
+        return testRealmResource().clientTemplates();
+    }
+
+    private ClientTemplateResource createTemplate(String templateName, String protocol) {
+        ClientTemplateRepresentation rep = new ClientTemplateRepresentation();
+        rep.setName(templateName);
+        rep.setFullScopeAllowed(false);
+        rep.setProtocol(protocol);
+        Response resp = clientTemplates().create(rep);
+        Assert.assertEquals(201, resp.getStatus());
+        resp.close();
+        String clientTemplateId = ApiUtil.getCreatedId(resp);
+        return clientTemplates().get(clientTemplateId);
+    }
 }
