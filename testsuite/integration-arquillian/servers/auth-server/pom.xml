@@ -29,6 +29,11 @@
     <packaging>pom</packaging>
     <name>Auth Server</name>
 
+    <properties>
+        <auth.server.worker.io-threads>${jboss.default.worker.io-threads}</auth.server.worker.io-threads>
+        <auth.server.worker.task-max-threads>${jboss.default.worker.task-max-threads}</auth.server.worker.task-max-threads>
+    </properties>
+
     <modules>
         <module>services</module>
         <module>jboss</module>

@@ -78,6 +78,11 @@
                 <artifactId>wildfly-arquillian-container-managed</artifactId>
                 <version>${arquillian-wildfly-container.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-arquillian-container-remote</artifactId>
+                <version>${arquillian-wildfly-container.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     
@@ -100,9 +105,9 @@
     </build>
     
     <modules>
+        <module>test-apps</module>
         <module>servers</module>
         <module>tests</module>
-        <module>test-apps</module>
     </modules>
 
 </project>

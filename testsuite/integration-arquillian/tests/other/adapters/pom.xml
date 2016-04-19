@@ -42,6 +42,7 @@
         
         <app.server.mode>manual</app.server.mode>
         
+        <app.server.host>localhost</app.server.host>
         <app.server.port.offset>200</app.server.port.offset>
         <app.server.http.port>8280</app.server.http.port>
         <app.server.https.port>8643</app.server.https.port>
@@ -143,6 +144,7 @@
                             
                                 <app.server.mode>${app.server.mode}</app.server.mode>
                             
+                                <app.server.host>${app.server.host}</app.server.host>
                                 <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
                                 <app.server.http.port>${app.server.http.port}</app.server.http.port>
                                 <app.server.https.port>${app.server.https.port}</app.server.https.port>

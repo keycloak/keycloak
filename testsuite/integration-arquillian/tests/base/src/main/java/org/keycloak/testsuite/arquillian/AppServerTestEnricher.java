@@ -51,13 +51,15 @@ public class AppServerTestEnricher {
     }
 
     public static String getAppServerContextRoot(int clusterPortOffset) {
+        String host = System.getProperty("app.server.host", "localhost");
         int httpPort = Integer.parseInt(System.getProperty("app.server.http.port")); // property must be set
         int httpsPort = Integer.parseInt(System.getProperty("app.server.https.port")); // property must be set
-        boolean sslRequired = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
 
-        return sslRequired
-                ? "https://localhost:" + (httpsPort + clusterPortOffset)
-                : "http://localhost:" + (httpPort + clusterPortOffset);
+        boolean sslRequired = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
+        String scheme = sslRequired ? "https" : "http";
+        int port = sslRequired ? httpsPort : httpPort;
+
+        return String.format("%s://%s:%s", scheme, host, port + clusterPortOffset);
     }
 
     public void updateTestContextWithAppServerInfo(@Observes(precedence = 1) BeforeClass event) {
