@@ -1,4 +1,3 @@
-<?xml version="1.0"?>
 <!--
   ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -16,42 +15,50 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <parent>
-        <artifactId>keycloak-parent</artifactId>
-        <groupId>org.keycloak</groupId>
-        <version>1.9.4.Final-SNAPSHOT</version>
-        <relativePath>../../../pom.xml</relativePath>
-    </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-osgi-adapter</artifactId>
-    <name>Keycloak OSGI Adapter</name>
-    <packaging>jar</packaging>
+    <parent>
+        <artifactId>keycloak-examples-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>2.0.0.CR1-SNAPSHOT</version>
+    </parent>
+
+    <name>Keycloak Examples - External Config</name>
+    <artifactId>external-config</artifactId>
+    <packaging>war</packaging>
+    <groupId>org.keycloak.example.demo</groupId>
+    <description>
+        Keycloak External Config Example
+    </description>
 
     <properties>
-        <jetty9.version>8.1.17.v20150415</jetty9.version>
         <keycloak.osgi.export>
-            org.keycloak.adapters.osgi.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
-            org.ops4j.pax.web.*;version="[3.0,5)",
-            javax.servlet.*;version="[2.5,4)";resolution:=optional,
-            org.eclipse.jetty.*;version="[8.1,10)";resolution:=optional,
+            org.apache.http.*;version=${apache.httpcomponents.version},
+            javax.servlet.*;version="[2.5,4)",
+            org.keycloak.adapters.jetty;version="${project.version}",
+            org.keycloak.adapters;version="${project.version}",
+            org.keycloak.constants;version="${project.version}",
+            org.keycloak.adapters.osgi;version="${project.version}",
+            org.keycloak.util;version="${project.version}",
             org.keycloak.*;version="${project.version}",
-            org.apache.cxf.transport.http;resolution:=optional;version="[3,4)",
-            org.apache.cxf.transport.servlet;resolution:=optional;version="[3,4)",
             *;resolution:=optional
         </keycloak.osgi.import>
+        <keycloak.osgi.private>
+            org.keycloak.example.*
+        </keycloak.osgi.private>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Contains KeycloakDeployment and KeycloakConfigResolver -->
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-core</artifactId>
@@ -63,61 +70,27 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging</artifactId>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-spi</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Contains KeycloakPrincipal -->
         <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.enterprise</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.web</groupId>
-            <artifactId>pax-web-runtime</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.ops4j.pax.web</groupId>
-            <artifactId>pax-web-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-security</artifactId>
-            <version>${jetty9.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-rt-transports-http</artifactId>
-            <version>${cxf.version}</version>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>
-
     <build>
+        <finalName>external-config</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
-                </configuration>
-            </plugin>
-
-            <!-- Adding OSGI metadata to the JAR without changing the packaging type. -->
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
+                <artifactId>maven-war-plugin</artifactId>
                 <configuration>
                     <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                        <manifestFile>${basedir}/target/classes/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
             </plugin>
@@ -135,11 +108,17 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <supportedProjectTypes>
+                        <supportedProjectType>war</supportedProjectType>
+                    </supportedProjectTypes>
                     <instructions>
-                        <Bundle-ClassPath>.</Bundle-ClassPath>
+                        <Webapp-Context>external-config</Webapp-Context>
+                        <Web-ContextPath>external-config</Web-ContextPath>
+                        <Embed-Directory>WEB-INF/lib</Embed-Directory>
                         <Bundle-Name>${project.name}</Bundle-Name>
                         <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                         <Import-Package>${keycloak.osgi.import}</Import-Package>
+                        <Private-Package>${keycloak.osgi.private}</Private-Package>
                         <Export-Package>${keycloak.osgi.export}</Export-Package>
                     </instructions>
                 </configuration>
@@ -147,3 +126,4 @@
         </plugins>
     </build>
 </project>
+

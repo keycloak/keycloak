@@ -39,6 +39,7 @@
         <module>cxf-jaxws</module>
         <module>camel</module>
         <module>features</module>
+        <module>external-config</module>
     </modules>
 
 </project>
