@@ -36,7 +36,7 @@
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             org.apache.karaf.jaas.config,
-            org.keycloak.adapters.jaas;version=${project.version},
+            org.keycloak.adapters;version=${project.version},
             *;resolution:=optional
         </keycloak.osgi.import>
     </properties>

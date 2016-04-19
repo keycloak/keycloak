@@ -25,7 +25,7 @@
     <para>
         <variablelist>
             <varlistentry>
-                <term>org.keycloak.adapters.jaas.DirectAccessGrantsLoginModule</term>
+                <term>org.keycloak.adapters.DirectAccessGrantsLoginModule</term>
                 <listitem>
                     <para>
                         This login module allows to authenticate with username/password from Keycloak database. It's using
@@ -36,7 +36,7 @@
                 </listitem>
             </varlistentry>
             <varlistentry>
-                <term>org.keycloak.adapters.jaas.BearerTokenLoginModule</term>
+                <term>org.keycloak.adapters.BearerTokenLoginModule</term>
                 <listitem>
                     <para>
                         This login module allows to authenticate with Keycloak access token passed to it through CallbackHandler as password.
@@ -53,7 +53,7 @@
     </para>
     <para>
         Second property <literal>role-principal-class</literal> allows to specify alternative class for Role principals attached to JAAS Subject. Default
-        value for Role principal is <literal>org.keycloak.adapters.jaas.RolePrincipal</literal> . Note that class should have constructor
+        value for Role principal is <literal>org.keycloak.adapters.RolePrincipal</literal> . Note that class should have constructor
         with single String argument.
     </para>
 </section>
