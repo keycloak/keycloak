@@ -54,6 +54,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CookieHelper;
+import org.keycloak.services.util.P3PHelper;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
@@ -273,7 +274,7 @@ public class AuthenticationManager {
         return token;
     }
 
-    public static void createLoginCookie(RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, ClientConnection connection) {
+    public static void createLoginCookie(KeycloakSession keycloakSession, RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, ClientConnection connection) {
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
         String issuer = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
         AccessToken identityToken = createIdentityToken(realm, user, session, issuer);
@@ -294,7 +295,7 @@ public class AuthenticationManager {
         // THIS SHOULD NOT BE A HTTPONLY COOKIE!  It is used for OpenID Connect Iframe Session support!
         // Max age should be set to the max lifespan of the session as it's used to invalidate old-sessions on re-login
         CookieHelper.addCookie(KEYCLOAK_SESSION_COOKIE, sessionCookieValue, cookiePath, null, null, realm.getSsoSessionMaxLifespan(), secureOnly, false);
-
+        P3PHelper.addP3PHeader(keycloakSession);
     }
 
     public static void createRememberMeCookie(RealmModel realm, String username, UriInfo uriInfo, ClientConnection connection) {
@@ -413,7 +414,7 @@ public class AuthenticationManager {
         session.getContext().resolveLocale(userSession.getUser());
 
         // refresh the cookies!
-        createLoginCookie(realm, userSession.getUser(), userSession, uriInfo, clientConnection);
+        createLoginCookie(session, realm, userSession.getUser(), userSession, uriInfo, clientConnection);
         if (userSession.getState() != UserSessionModel.State.LOGGED_IN) userSession.setState(UserSessionModel.State.LOGGED_IN);
         if (userSession.isRememberMe()) createRememberMeCookie(realm, userSession.getUser().getUsername(), uriInfo, clientConnection);
         return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));

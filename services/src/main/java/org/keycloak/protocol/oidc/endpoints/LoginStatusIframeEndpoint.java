@@ -17,7 +17,6 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.models.ClientModel;
@@ -26,10 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.common.util.UriUtils;
-import org.keycloak.saml.common.util.StringUtil;
-import org.keycloak.services.validation.Validation;
-import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
+import org.keycloak.services.util.P3PHelper;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
@@ -47,13 +43,12 @@ import java.io.InputStream;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class LoginStatusIframeEndpoint {
-    private static final Logger logger = Logger.getLogger(LoginStatusIframeEndpoint.class);
 
     @Context
     private UriInfo uriInfo;
 
     @Context
-    protected KeycloakSession session;
+    private KeycloakSession session;
 
     private RealmModel realm;
 
@@ -105,32 +100,17 @@ public class LoginStatusIframeEndpoint {
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
         }
 
-        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-        Theme theme;
-        try {
-            theme = themeProvider.getTheme(realm.getLoginTheme(), Theme.Type.LOGIN);
-        } catch (IOException e) {
-            logger.error("Failed to create theme", e);
-            return Response.serverError().build();
-        }
-
         try {
             String file = StreamUtil.readString(is);
             file = file.replace("ORIGIN", origin);
 
-            Response.ResponseBuilder response = Response.ok(file);
-
-            String p3pValue = theme.getProperties().getProperty("sessionIframeP3P");
-            if (!Validation.isBlank(p3pValue)) {
-                // This header is required by IE, see KEYCLOAK-2828 for details.
-                response.header("P3P", p3pValue);
-            }
+            P3PHelper.addP3PHeader(session);
 
             CacheControl cacheControl = new CacheControl();
             cacheControl.setNoTransform(false);
             cacheControl.setMaxAge(Config.scope("theme").getInt("staticMaxAge", -1));
 
-            return response.cacheControl(cacheControl).build();
+            return Response.ok(file).cacheControl(cacheControl).build();
         } catch (IOException e) {
             throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
         }

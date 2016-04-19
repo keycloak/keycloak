@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.util;
 
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -41,6 +42,25 @@ public class LocaleHelper {
         } else {
             Locale locale = getUserLocale(session, realm, user);
             return locale != null ? locale : Locale.forLanguageTag(realm.getDefaultLocale());
+        }
+    }
+
+    public static Locale getLocaleFromCookie(KeycloakSession session) {
+        KeycloakContext ctx = session.getContext();
+
+        if (ctx.getRequestHeaders() != null && ctx.getRequestHeaders().getCookies().containsKey(LOCALE_COOKIE)) {
+            String localeString = ctx.getRequestHeaders().getCookies().get(LOCALE_COOKIE).getValue();
+            Locale locale = findLocale(ctx.getRealm().getSupportedLocales(), localeString);
+            if (locale != null) {
+                return locale;
+            }
+        }
+
+        String locale = ctx.getRealm().getDefaultLocale();
+        if (locale != null) {
+            return Locale.forLanguageTag(locale);
+        } else {
+            return Locale.ENGLISH;
         }
     }
 
