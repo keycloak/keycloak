@@ -30,6 +30,7 @@ import java.net.URL;
  */
 public class SAMLPostEncExample extends AbstractPageWithInjectedUrl {
     public static final String DEPLOYMENT_NAME = "saml-post-encryption";
+    public static final String CLIENT_ID = "integration-arquillian-test-apps-saml-post-encryption";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)

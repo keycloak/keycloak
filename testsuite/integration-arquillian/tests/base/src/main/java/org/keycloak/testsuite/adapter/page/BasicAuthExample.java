@@ -31,6 +31,7 @@ import java.net.URL;
 public class BasicAuthExample extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "basic-auth-example";
+    public static final String CLIENT_ID = "integration-arquillian-test-apps-basic-auth";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)

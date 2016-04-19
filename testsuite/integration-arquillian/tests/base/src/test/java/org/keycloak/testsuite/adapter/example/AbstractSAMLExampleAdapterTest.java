@@ -52,7 +52,7 @@ public abstract class AbstractSAMLExampleAdapterTest extends AbstractExampleAdap
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation samlRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/saml/testsaml.json"));
+        RealmRepresentation samlRealm = loadRealm(new File(TEST_APPS_HOME_DIR + "/saml/testsaml.json"));
         testRealms.add(samlRealm);
     }
 
@@ -66,17 +66,17 @@ public abstract class AbstractSAMLExampleAdapterTest extends AbstractExampleAdap
 
     @Deployment(name = SAMLPostSigExample.DEPLOYMENT_NAME)
     private static WebArchive samlPostSigExampleDeployment() throws IOException {
-        return exampleDeployment(SAMLPostSigExample.DEPLOYMENT_NAME);
+        return exampleDeployment(SAMLPostSigExample.CLIENT_ID);
     }
 
     @Deployment(name = SAMLPostEncExample.DEPLOYMENT_NAME)
     private static WebArchive samlPostEncExampleDeployment() throws IOException {
-        return exampleDeployment(SAMLPostEncExample.DEPLOYMENT_NAME);
+        return exampleDeployment(SAMLPostEncExample.CLIENT_ID);
     }
 
     @Deployment(name = SAMLRedirectSigExample.DEPLOYMENT_NAME)
     private static WebArchive samlRedirectSigExampleDeployment() throws IOException {
-        return exampleDeployment(SAMLRedirectSigExample.DEPLOYMENT_NAME);
+        return exampleDeployment(SAMLRedirectSigExample.CLIENT_ID);
     }
 
     @Test
