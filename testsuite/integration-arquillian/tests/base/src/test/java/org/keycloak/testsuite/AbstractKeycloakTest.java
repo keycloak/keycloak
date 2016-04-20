@@ -129,7 +129,7 @@ public abstract class AbstractKeycloakTest {
     private boolean resetTimeOffset;
 
     @Before
-    public void beforeAbstractKeycloakTest() {
+    public void beforeAbstractKeycloakTest() throws Exception {
         adminClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
                 MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
         deleteMeOAuthClient = new DeleteMeOAuthClient(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");

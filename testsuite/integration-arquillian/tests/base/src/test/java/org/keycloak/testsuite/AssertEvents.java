@@ -64,7 +64,6 @@ public class AssertEvents {
     private RealmRepresentation realmRep;
     private AbstractKeycloakTest context;
     private PublicKey realmPublicKey;
-    private UserRepresentation defaultUser;
 
     public AssertEvents(AbstractKeycloakTest ctx) throws Exception {
         context = ctx;
@@ -73,11 +72,6 @@ public class AssertEvents {
         realmRep = realmResource.toRepresentation();
         String pubKeyString = realmRep.getPublicKey();
         realmPublicKey = PemUtils.decodePublicKey(pubKeyString);
-
-        defaultUser = getUser(DEFAULT_USERNAME);
-        if (defaultUser == null) {
-            throw new RuntimeException("Default user does not exist: " + DEFAULT_USERNAME + ". Make sure to add it to your test realm.");
-        }
 
         defaultEventsQueueUri = getAuthServerEventsQueueUri();
     }
@@ -192,7 +186,7 @@ public class AssertEvents {
         return new ExpectedEvent()
                 .realm(realmRep.getId())
                 .client(DEFAULT_CLIENT_ID)
-                .user(defaultUser.getId())
+                .user(defaultUserId())
                 .ipAddress(DEFAULT_IP_ADDRESS)
                 .session((String) null)
                 .event(event);
@@ -354,6 +348,34 @@ public class AssertEvents {
             public void describeTo(Description description) {
                 description.appendText("Not an UUID");
             }
+        };
+    }
+
+    public Matcher<String> defaultUserId() {
+        return new TypeSafeMatcher<String>() {
+            private String userId;
+
+            @Override
+            protected boolean matchesSafely(String item) {
+                return item.equals(getUserId());
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText(getUserId());
+            }
+
+            private String getUserId() {
+                if (userId == null) {
+                    UserRepresentation user = getUser(DEFAULT_USERNAME);
+                    if (user == null) {
+                        throw new RuntimeException("Default user does not exist: " + DEFAULT_USERNAME + ". Make sure to add it to your test realm.");
+                    }
+                    userId = user.getId();
+                }
+                return userId;
+            }
+
         };
     }
 
