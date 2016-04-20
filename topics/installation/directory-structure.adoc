@@ -2,9 +2,35 @@
 
 This chapter walks you through the directory structure of the server distribution.
 
-.
-
 .Distribution Directory Structure
-image:rhsso-images/files.png[alt="distribution"]
+{% if product %}
+. image:rhsso-images/files.png[alt="distribution"]
+{% elif %}
+image:keycloak-images/files.png[alt="distribution"]
+{% endif %}
+
+
+.Distribution Directory Structure2
+{% if product %}
+. image:../rhsso-images/files.png[alt="distribution"]
+{% elif %}
+image:../keycloak-images/files.png[alt="distribution"]
+{% endif %}
+
+
+.Distribution Directory Structure3
+{% if product %}
+. image:../../rhsso-images/files.png[alt="distribution"]
+{% elif %}
+image:../../keycloak-images/files.png[alt="distribution"]
+{% endif %}
+
+
+.Distribution Directory Structure4
+{% if product %}
+. image:fake/../../rhsso-images/files.png[alt="distribution"]
+{% elif %}
+image:fake/../../keycloak-images/files.png[alt="distribution"]
+{% endif %}
 
 
