@@ -35,6 +35,7 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -241,5 +242,24 @@ public class GroupTest extends AbstractGroupTest {
         catch (NotFoundException e) {}
 
         Assert.assertNull(login("direct-login", "resource-owner", "secret", user.getId()).getRealmAccess());
+    }
+
+
+    @Test
+    // KEYCLOAK-2700
+    public void deleteRealmWithDefaultGroups() throws IOException {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("foo");
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("default1");
+        group.setPath("/default1");
+
+        rep.setGroups(Collections.singletonList(group));
+        rep.setDefaultGroups(Collections.singletonList("/default1"));
+
+        adminClient.realms().create(rep);
+
+        adminClient.realm(rep.getRealm()).remove();
     }
 }
