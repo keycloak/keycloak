@@ -91,6 +91,8 @@ public class ClientInitialAccessResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<ClientInitialAccessPresentation> list() {
+        auth.requireView();
+
         List<ClientInitialAccessModel> models = session.sessions().listClientInitialAccess(realm);
         List<ClientInitialAccessPresentation> reps = new LinkedList<>();
         for (ClientInitialAccessModel m : models) {
@@ -103,6 +105,8 @@ public class ClientInitialAccessResource {
     @DELETE
     @Path("{id}")
     public void delete(final @PathParam("id") String id) {
+        auth.requireManage();
+
         session.sessions().removeClientInitialAccessModel(realm, id);
     }
 

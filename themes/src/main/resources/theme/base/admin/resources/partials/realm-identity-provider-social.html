@@ -6,7 +6,7 @@
 
     <kc-tabs-identity-provider></kc-tabs-identity-provider>
 
-    <form class="form-horizontal" name="realmForm" novalidate>
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageIdentityProviders">
         <input type="text" readonly value="this is not a login form" style="display: none;">
         <input type="password" readonly value="this is not a login form" style="display: none;">
 

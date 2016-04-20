@@ -28,6 +28,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.resources.admin.RealmAuth.Resource;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -71,7 +72,7 @@ public class ProtocolMappersResource {
         this.client = client;
         this.adminEvent = adminEvent;
 
-        auth.init(RealmAuth.Resource.USER);
+        auth.init(Resource.CLIENT);
     }
 
     /**
@@ -85,7 +86,8 @@ public class ProtocolMappersResource {
     @Path("protocol/{protocol}")
     @Produces(MediaType.APPLICATION_JSON)
     public List<ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol) {
-        auth.requireView();
+        auth.requireAny();
+
         List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
         for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
             if (mapper.getProtocol().equals(protocol)) mappers.add(ModelToRepresentation.toRepresentation(mapper));
@@ -127,6 +129,7 @@ public class ProtocolMappersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void createMapper(List<ProtocolMapperRepresentation> reps) {
         auth.requireManage();
+
         ProtocolMapperModel model = null;
         for (ProtocolMapperRepresentation rep : reps) {
             model = RepresentationToModel.toModel(rep);
@@ -145,7 +148,8 @@ public class ProtocolMappersResource {
     @Path("models")
     @Produces(MediaType.APPLICATION_JSON)
     public List<ProtocolMapperRepresentation> getMappers() {
-        auth.requireView();
+        auth.requireAny();
+
         List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
         for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
             mappers.add(ModelToRepresentation.toRepresentation(mapper));
@@ -164,7 +168,8 @@ public class ProtocolMappersResource {
     @Path("models/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public ProtocolMapperRepresentation getMapperById(@PathParam("id") String id) {
-        auth.requireView();
+        auth.requireAny();
+
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         return ModelToRepresentation.toRepresentation(model);
@@ -182,6 +187,7 @@ public class ProtocolMappersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void update(@PathParam("id") String id, ProtocolMapperRepresentation rep) {
         auth.requireManage();
+
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
@@ -199,6 +205,7 @@ public class ProtocolMappersResource {
     @Path("models/{id}")
     public void delete(@PathParam("id") String id) {
         auth.requireManage();
+
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         client.removeProtocolMapper(model);
