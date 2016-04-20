@@ -1,0 +1,6 @@
+= Installation
+
+This chapter shows you how to install Keycloak and walks you through the directory structure of an installation.
+
+== Unpackaging Keycloak
+

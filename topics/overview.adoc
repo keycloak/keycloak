@@ -7,3 +7,5 @@ own embedded and local-only database.  For
  at runtime (standalone or domain mode), configure a shared database you will use for Keycloak, set up encryption and HTTPS,
  and finally set up Keycloak to run in a cluster.  This guide walks through each and every aspect of any pre-boot
  decisions and setup you must do prior to deploying Keycloak.
+
+ Testing templating {book.project.name} and {project.name}
