@@ -13,6 +13,7 @@
  {% if book.product %}
  .. link:topics/installation/distribution-files-product.adoc[Installing Distribution Files]
  {% endif %}
+ .. link:topics/installation/directory-structre.adoc
  .. link:topics/openshift.adoc[Installing on OpenShift]
  . link:topics/cache.adoc[Server Cache]
  . link:topics/clustering.adoc[Clustering]

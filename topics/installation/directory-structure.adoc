@@ -1,2 +1,6 @@
 = Distribution Directory Structure
 
+This chapter walks you through the directory structure of the server distribution.
+
+.Distribution Directory Structure
+image::{{book.images}}/files.png

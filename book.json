@@ -11,6 +11,7 @@
   "variables": {
     "community": true,
     "product": false,
+    "images": "rhsso-images",
     "project": {
       "name": "Keycloak",
       "version": "1.9.3.Final-SNAPSHOT"
