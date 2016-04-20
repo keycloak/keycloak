@@ -33,8 +33,6 @@ import javax.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -44,7 +42,7 @@ import static org.junit.Assert.*;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ConcurrencyTest extends AbstractClientTest {
+public class ConcurrencyTest extends AbstractAdminTest {
 
     private static final Logger log = Logger.getLogger(ConcurrencyTest.class);
 
@@ -274,7 +272,7 @@ public class ConcurrencyTest extends AbstractClientTest {
                             lock.lock();
                         }
 
-                        Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID);
+                        Keycloak keycloak = Keycloak.getInstance(getAuthServerRoot().toString(), "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID);
                         RealmResource realm = keycloak.realm(REALM_NAME);
                         for (int i = 0; i < numIterationsPerThread && latch.getCount() > 0; i++) {
                             log.infov("thread {0}, iteration {1}", threadNum, i);
