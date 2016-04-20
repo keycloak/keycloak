@@ -1,7 +1,4 @@
-== Keycloak Reference Guide
-:project.name: Keycloak
-//. link:topics/templates/document-attributes.adoc[]
-:imagesdir: images
+= Summary
 
  . link:topics/preface.adoc[Preface]
  . link:topics/overview.adoc[Overview]
@@ -13,7 +10,7 @@
  {% if book.product %}
  .. link:topics/installation/distribution-files-product.adoc[Installing Distribution Files]
  {% endif %}
- .. link:topics/installation/directory-structure.adoc[Directory Structure]
+ .. link:topics/installation/directory-structure.adoc[Distribution Directory Structure]
  .. link:topics/openshift.adoc[Installing on OpenShift]
  . link:topics/cache.adoc[Server Cache]
  . link:topics/clustering.adoc[Clustering]
