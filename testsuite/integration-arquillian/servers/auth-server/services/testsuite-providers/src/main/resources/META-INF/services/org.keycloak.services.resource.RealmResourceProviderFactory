@@ -15,5 +15,5 @@
 # limitations under the License.
 #
 
-org.keycloak.testsuite.rest.TimeOffsetResourceProviderFactory
+org.keycloak.testsuite.rest.TestingResourceProviderFactory
 org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory
