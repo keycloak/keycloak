@@ -147,6 +147,7 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public ClientRepresentation getClient() {
         auth.requireView();
+
         return ModelToRepresentation.toRepresentation(client);
     }
 
@@ -165,6 +166,8 @@ public class ClientResource {
     @NoCache
     @Path("installation/providers/{providerId}")
     public Response getInstallationProvider(@PathParam("providerId") String providerId) {
+        auth.requireView();
+
         ClientInstallationProvider provider = session.getProvider(ClientInstallationProvider.class, providerId);
         if (provider == null) throw new NotFoundException("Unknown Provider");
         return provider.generateInstallation(session, realm, client, keycloak.getBaseUri(uriInfo));
@@ -178,6 +181,7 @@ public class ClientResource {
     @NoCache
     public void deleteClient() {
         auth.requireManage();
+
         new ClientManager(new RealmManager(session)).removeClient(realm, client);
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
@@ -290,6 +294,7 @@ public class ClientResource {
     @POST
     public GlobalRequestResult pushRevocation() {
         auth.requireManage();
+
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
         return new ResourceAdminManager(session).pushClientRevocationPolicy(uriInfo.getRequestUri(), realm, client);
 
@@ -312,6 +317,7 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Long> getApplicationSessionCount() {
         auth.requireView();
+
         Map<String, Long> map = new HashMap<>();
         map.put("count", session.sessions().getActiveUserSessions(client.getRealm(), client));
         return map;
@@ -332,6 +338,7 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserSessionRepresentation> getUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
         auth.requireView();
+
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : -1;
         List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
@@ -359,6 +366,7 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Long> getOfflineSessionCount() {
         auth.requireView();
+
         Map<String, Long> map = new HashMap<>();
         map.put("count", session.sessions().getOfflineSessionsCount(client.getRealm(), client));
         return map;
@@ -379,6 +387,7 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserSessionRepresentation> getOfflineUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
         auth.requireView();
+
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : -1;
         List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
@@ -412,6 +421,7 @@ public class ClientResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void registerNode(Map<String, String> formParams) {
         auth.requireManage();
+
         String node = formParams.get("node");
         if (node == null) {
             throw new BadRequestException("Node not found in params");
@@ -431,6 +441,7 @@ public class ClientResource {
     @NoCache
     public void unregisterNode(final @PathParam("node") String node) {
         auth.requireManage();
+
         if (logger.isDebugEnabled()) logger.debug("Unregister node: " + node);
 
         Integer time = client.getRegisteredNodes().get(node);
@@ -453,6 +464,7 @@ public class ClientResource {
     @NoCache
     public GlobalRequestResult testNodesAvailable() {
         auth.requireManage();
+
         logger.debug("Test availability of cluster nodes");
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
         return new ResourceAdminManager(session).testNodesAvailability(uriInfo.getRequestUri(), realm, client);

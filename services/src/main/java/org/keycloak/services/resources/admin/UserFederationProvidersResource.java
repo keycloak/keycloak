@@ -134,6 +134,7 @@ public class UserFederationProvidersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserFederationProviderFactoryRepresentation> getProviders() {
         auth.requireView();
+
         List<UserFederationProviderFactoryRepresentation> providers = new LinkedList<UserFederationProviderFactoryRepresentation>();
         for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(UserFederationProvider.class)) {
             UserFederationProviderFactoryRepresentation rep = new UserFederationProviderFactoryRepresentation();
@@ -155,6 +156,7 @@ public class UserFederationProvidersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public UserFederationProviderFactoryRepresentation getProvider(@PathParam("id") String id) {
         auth.requireView();
+
         for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(UserFederationProvider.class)) {
             if (!factory.getId().equals(id)) {
                 continue;
@@ -192,6 +194,7 @@ public class UserFederationProvidersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createProviderInstance(UserFederationProviderRepresentation rep) {
         auth.requireManage();
+
         String displayName = rep.getDisplayName();
         if (displayName != null && displayName.trim().equals("")) {
             displayName = null;
@@ -225,6 +228,7 @@ public class UserFederationProvidersResource {
     @NoCache
     public List<UserFederationProviderRepresentation> getUserFederationInstances() {
         auth.requireManage();
+
         List<UserFederationProviderRepresentation> reps = new LinkedList<UserFederationProviderRepresentation>();
         for (UserFederationProviderModel model : realm.getUserFederationProviders()) {
             UserFederationProviderRepresentation rep = ModelToRepresentation.toRepresentation(model);
