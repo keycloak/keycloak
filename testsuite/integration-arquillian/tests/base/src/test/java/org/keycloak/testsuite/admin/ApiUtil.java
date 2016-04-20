@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin;
 import org.jboss.logging.Logger;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -83,6 +84,10 @@ public class ApiUtil {
             }
         }
         return null;
+    }
+
+    public static RoleResource findClientRoleByName(ClientResource client, String role) {
+        return client.roles().get(role);
     }
 
     public static UserRepresentation findUserByUsername(RealmResource realm, String username) {
