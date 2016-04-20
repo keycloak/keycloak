@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
@@ -31,6 +30,8 @@ import javax.ws.rs.core.Response;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -47,7 +48,7 @@ public class ClientTest extends AbstractAdminTest {
 
     @Test
     public void getClients() {
-        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", Constants.ADMIN_CLI_CLIENT_ID);
+        Assert.assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
     private ClientRepresentation createClient() {
@@ -67,7 +68,7 @@ public class ClientTest extends AbstractAdminTest {
         String id = createClient().getId();
 
         assertNotNull(realm.clients().get(id));
-        assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", "my-app", Constants.ADMIN_CLI_CLIENT_ID);
+        Assert.assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", "my-app", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
     @Test
