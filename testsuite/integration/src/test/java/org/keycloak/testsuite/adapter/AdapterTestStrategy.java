@@ -34,7 +34,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountSessionsPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
