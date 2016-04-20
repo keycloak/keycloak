@@ -58,7 +58,7 @@ public class CompositeRolesModelTest extends AbstractModelTest {
         RealmRepresentation rep = AbstractModelTest.loadJson("model/testrealm-noclient-id.json");
         rep.setId("TestNoClientID");
         expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage("Unknown client specified in client scope mappings");
+        expectedException.expectMessage("Unknown client specification in scope mappings: some-client");
         manager.importRealm(rep);
 
     }

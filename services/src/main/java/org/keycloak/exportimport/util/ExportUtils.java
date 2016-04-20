@@ -88,13 +88,14 @@ public class ExportUtils {
         List<ClientModel> allClients = new ArrayList<>(clients);
         Map<String, List<ScopeMappingRepresentation>> clientScopeReps = new HashMap<>();
 
+        // Scopes of clients
         for (ClientModel client : allClients) {
             Set<RoleModel> clientScopes = client.getScopeMappings();
             ScopeMappingRepresentation scopeMappingRep = null;
             for (RoleModel scope : clientScopes) {
                 if (scope.getContainer() instanceof RealmModel) {
                     if (scopeMappingRep == null) {
-                        scopeMappingRep = rep.scopeMapping(client.getClientId());
+                        scopeMappingRep = rep.clientScopeMapping(client.getClientId());
                     }
                     scopeMappingRep.role(scope.getName());
                 } else {
@@ -108,7 +109,7 @@ public class ExportUtils {
 
                     ScopeMappingRepresentation currentClientScope = null;
                     for (ScopeMappingRepresentation scopeMapping : currentAppScopes) {
-                        if (scopeMapping.getClient().equals(client.getClientId())) {
+                        if (client.getClientId().equals(scopeMapping.getClient())) {
                             currentClientScope = scopeMapping;
                             break;
                         }
@@ -119,6 +120,42 @@ public class ExportUtils {
                         currentAppScopes.add(currentClientScope);
                     }
                     currentClientScope.role(scope.getName());
+                }
+            }
+        }
+
+        // Scopes of client templates
+        for (ClientTemplateModel clientTemplate : realm.getClientTemplates()) {
+            Set<RoleModel> clientScopes = clientTemplate.getScopeMappings();
+            ScopeMappingRepresentation scopeMappingRep = null;
+            for (RoleModel scope : clientScopes) {
+                if (scope.getContainer() instanceof RealmModel) {
+                    if (scopeMappingRep == null) {
+                        scopeMappingRep = rep.clientTemplateScopeMapping(clientTemplate.getName());
+                    }
+                    scopeMappingRep.role(scope.getName());
+                } else {
+                    ClientModel app = (ClientModel)scope.getContainer();
+                    String appName = app.getClientId();
+                    List<ScopeMappingRepresentation> currentAppScopes = clientScopeReps.get(appName);
+                    if (currentAppScopes == null) {
+                        currentAppScopes = new ArrayList<>();
+                        clientScopeReps.put(appName, currentAppScopes);
+                    }
+
+                    ScopeMappingRepresentation currentClientTemplateScope = null;
+                    for (ScopeMappingRepresentation scopeMapping : currentAppScopes) {
+                        if (clientTemplate.getName().equals(scopeMapping.getClientTemplate())) {
+                            currentClientTemplateScope = scopeMapping;
+                            break;
+                        }
+                    }
+                    if (currentClientTemplateScope == null) {
+                        currentClientTemplateScope = new ScopeMappingRepresentation();
+                        currentClientTemplateScope.setClientTemplate(clientTemplate.getName());
+                        currentAppScopes.add(currentClientTemplateScope);
+                    }
+                    currentClientTemplateScope.role(scope.getName());
                 }
             }
         }

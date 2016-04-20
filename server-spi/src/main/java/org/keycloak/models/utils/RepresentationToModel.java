@@ -42,6 +42,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
@@ -250,16 +251,14 @@ public class RepresentationToModel {
 
         if (rep.getScopeMappings() != null) {
             for (ScopeMappingRepresentation scope : rep.getScopeMappings()) {
-                ClientModel client = newRealm.getClientByClientId(scope.getClient());
-                if (client == null) {
-                    throw new RuntimeException("Unknown client specification in realm scope mappings");
-                }
+                ScopeContainerModel scopeContainer = getScopeContainerHavingScope(newRealm, scope);
+
                 for (String roleString : scope.getRoles()) {
                     RoleModel role = newRealm.getRole(roleString.trim());
                     if (role == null) {
                         role = newRealm.addRole(roleString.trim());
                     }
-                    client.addScopeMapping(role);
+                    scopeContainer.addScopeMapping(role);
                 }
 
             }
@@ -1205,17 +1204,33 @@ public class RepresentationToModel {
 
     public static void createClientScopeMappings(RealmModel realm, ClientModel clientModel, List<ScopeMappingRepresentation> mappings) {
         for (ScopeMappingRepresentation mapping : mappings) {
-            ClientModel client = realm.getClientByClientId(mapping.getClient());
-            if (client == null) {
-                throw new RuntimeException("Unknown client specified in client scope mappings");
-            }
+            ScopeContainerModel scopeContainer = getScopeContainerHavingScope(realm, mapping);
+
             for (String roleString : mapping.getRoles()) {
                 RoleModel role = clientModel.getRole(roleString.trim());
                 if (role == null) {
                     role = clientModel.addRole(roleString.trim());
                 }
-                client.addScopeMapping(role);
+                scopeContainer.addScopeMapping(role);
             }
+        }
+    }
+
+    private static ScopeContainerModel getScopeContainerHavingScope(RealmModel realm, ScopeMappingRepresentation scope) {
+        if (scope.getClient() != null) {
+            ClientModel client = realm.getClientByClientId(scope.getClient());
+            if (client == null) {
+                throw new RuntimeException("Unknown client specification in scope mappings: " + scope.getClient());
+            }
+            return client;
+        } else if (scope.getClientTemplate() != null) {
+            ClientTemplateModel clientTemplate = KeycloakModelUtils.getClientTemplateByName(realm, scope.getClientTemplate());
+            if (clientTemplate == null) {
+                throw new RuntimeException("Unknown clientTemplate specification in scope mappings: " + scope.getClientTemplate());
+            }
+            return clientTemplate;
+        } else {
+            throw new RuntimeException("Either client or clientTemplate needs to be specified in scope mappings");
         }
     }
 

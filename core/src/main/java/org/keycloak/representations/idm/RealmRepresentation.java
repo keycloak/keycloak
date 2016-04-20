@@ -264,13 +264,22 @@ public class RealmRepresentation {
         return scopeMappings;
     }
 
-    public ScopeMappingRepresentation scopeMapping(String username) {
+    public ScopeMappingRepresentation clientScopeMapping(String clientName) {
         ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
-        mapping.setClient(username);
+        mapping.setClient(clientName);
         if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
         scopeMappings.add(mapping);
         return mapping;
     }
+
+    public ScopeMappingRepresentation clientTemplateScopeMapping(String clientTemplateName) {
+        ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
+        mapping.setClientTemplate(clientTemplateName);
+        if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
+        scopeMappings.add(mapping);
+        return mapping;
+    }
+
     @Deprecated
     public Set<String> getRequiredCredentials() {
         return requiredCredentials;

@@ -136,7 +136,7 @@ public class ClientTemplateResource {
     @NoCache
     public Response deleteClientTemplate() {
         auth.requireManage();
-        
+
         try {
             realm.removeClientTemplate(template.getId());
             adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
