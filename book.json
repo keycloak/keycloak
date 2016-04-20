@@ -1,11 +1,16 @@
 {
   "gitbook": "2.x.x",
+  "structure": {
+    "readme": "README.adoc"
+  },
   "plugins": [
     "toggle-chapters",
     "ungrey",
     "splitter"
   ],
   "variables": {
-    "project.name": "Keycloak"
+    "project": {
+      "name": "Keycloak"
+    }
   }
 }
