@@ -54,7 +54,12 @@
         
         <app.server.ssl.required>false</app.server.ssl.required>
         
-        <adapter.test.props>-Dapp.server.base.url=http://localhost:${app.server.http.port} -Dmy.host.name=localhost</adapter.test.props>
+        <adapter.test.props>
+            -Dapp.server.base.url=http://localhost:${app.server.http.port}
+            -Dapp.server.ssl.base.url=https://localhost:${app.server.https.port}
+            -Dapp.server.ssl.required=${app.server.ssl.required}
+            -Dmy.host.name=localhost
+        </adapter.test.props>
         
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
         <adapter.libs.mode>bundled</adapter.libs.mode>

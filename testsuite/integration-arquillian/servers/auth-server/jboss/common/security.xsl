@@ -55,14 +55,6 @@
          <socket-binding name="proxy-https" port="8443"/>
     </xsl:template>
 
-    <xsl:template match="//j:extensions">
-         <xsl:copy-of select="."/>
-         <system-properties>
-             <property name="javax.net.ssl.trustStore" value="${{jboss.server.config.dir}}/keycloak.truststore"/>
-             <property name="javax.net.ssl.trustStorePassword" value="secret"/>
-         </system-properties>
-    </xsl:template>
-
     <xsl:template match="@*|node()">
         <xsl:copy>
             <xsl:apply-templates select="@*|node()" />

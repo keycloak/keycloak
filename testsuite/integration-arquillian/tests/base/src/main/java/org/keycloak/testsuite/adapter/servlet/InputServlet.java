@@ -18,12 +18,12 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import javax.servlet.annotation.WebServlet;
 
 /**
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
@@ -33,7 +33,12 @@ public class InputServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String appBase = System.getProperty("app.server.base.url", "http://localhost:8280");
+        String appBase;
+        if (System.getProperty("app.server.ssl.required", "false").equals("true")) {
+            appBase = System.getProperty("app.server.ssl.base.url", "https://localhost:8643");
+        } else {
+            appBase = System.getProperty("app.server.base.url", "http://localhost:8280");
+        }
         String actionUrl = appBase + "/input-portal/secured/post";
 
 
