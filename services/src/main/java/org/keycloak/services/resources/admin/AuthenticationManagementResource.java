@@ -397,6 +397,8 @@ public class AuthenticationManagementResource {
         ProviderFactory f;
         if (parentFlow.getProviderId().equals(AuthenticationFlow.CLIENT_FLOW)) {
             f = session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, provider);
+        } else if (parentFlow.getProviderId().equals(AuthenticationFlow.FORM_FLOW)) {
+            f = session.getKeycloakSessionFactory().getProviderFactory(FormAction.class, provider);
         } else {
             f = session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, provider);
         }
