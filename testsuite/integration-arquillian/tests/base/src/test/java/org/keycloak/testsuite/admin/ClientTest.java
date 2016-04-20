@@ -102,12 +102,12 @@ public class ClientTest extends AbstractAdminTest {
 
     @Test
     public void getClientSessions() throws Exception {
-        OAuthClient.AccessTokenResponse response = oauthClient.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
 
-        OAuthClient.AuthorizationCodeResponse codeResponse = oauthClient.doLogin("test-user@localhost", "password");
+        OAuthClient.AuthorizationCodeResponse codeResponse = oauth.doLogin("test-user@localhost", "password");
 
-        OAuthClient.AccessTokenResponse response2 = oauthClient.doAccessTokenRequest(codeResponse.getCode(), "password");
+        OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(codeResponse.getCode(), "password");
         assertEquals(200, response2.getStatusCode());
 
         ClientResource app = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
