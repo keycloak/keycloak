@@ -15,14 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.endpoint.group;
+package org.keycloak.testsuite.admin.group;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -40,8 +38,6 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

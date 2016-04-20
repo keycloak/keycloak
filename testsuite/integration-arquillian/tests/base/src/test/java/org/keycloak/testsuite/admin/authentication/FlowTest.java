@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.endpoint.authentication;
+package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;

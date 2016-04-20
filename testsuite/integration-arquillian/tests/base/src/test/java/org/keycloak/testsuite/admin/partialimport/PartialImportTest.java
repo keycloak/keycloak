@@ -14,14 +14,13 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.keycloak.testsuite.endpoint.partialimport;
+package org.keycloak.testsuite.admin.partialimport;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.Response;
 import org.junit.Before;
 import org.junit.Test;

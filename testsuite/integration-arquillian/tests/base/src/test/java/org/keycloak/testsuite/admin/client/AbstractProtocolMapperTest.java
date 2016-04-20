@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.endpoint.client;
+package org.keycloak.testsuite.admin.client;
 
 import java.util.ArrayList;
 import java.util.HashMap;
