@@ -2,11 +2,9 @@
 
 This chapter walks you through the directory structure of the server distribution.
 
-.Distribution Directory Structure
-image:{{book.images}}/files.png[alt="distribution"]
+.
 
+.Distribution Directory Structure
 image:rhsso-images/files.png[alt="distribution"]
 
-image:../../rhsso-images/files.png[alt="distribution"]
 
-image:fake/../../rhsso-images/files.png[alt="distribution"]
