@@ -18,3 +18,4 @@ Let's pretend to have an extremely long line that does not fit
 This one is short
 ----      
 
+Test if attribute is working {product.name}

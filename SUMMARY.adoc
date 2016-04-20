@@ -1,5 +1,5 @@
 == Keycloak Reference Guide
-
+:project.name: Keycloak
 //. link:topics/templates/document-attributes.adoc[]
 :imagesdir: images
 
