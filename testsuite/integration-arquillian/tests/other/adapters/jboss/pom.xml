@@ -62,8 +62,8 @@
                                     <outputDir>${app.server.home}/standalone/configuration</outputDir>
                                     <parameters>
                                         <parameter>
-                                            <name>auth-server-port</name>
-                                            <value>${auth.server.http.port}</value>
+                                            <name>auth-server-host</name>
+                                            <value>http://localhost:${auth.server.http.port}</value>
                                         </parameter>
                                     </parameters>
                                 </transformationSet>
@@ -76,6 +76,50 @@
     </build>
     
     <profiles>
+        <profile>
+            <id>ssl</id>
+            <activation>
+                <property>
+                    <name>app.server.ssl.required</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>Configure keycloak subsystem</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${app.server.home}/standalone/configuration</dir>
+                                            <includes>
+                                                <include>standalone.xml</include>
+                                            </includes>
+                                            <stylesheet>${common.resources}/xslt/keycloak-subsystem.xsl</stylesheet>
+                                            <outputDir>${app.server.home}/standalone/configuration</outputDir>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>auth-server-host</name>
+                                                    <value>https://localhost:${auth.server.https.port}</value>
+                                                </parameter>
+                                            </parameters>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>adapter-test-jboss-submodules</id>
             <activation>
@@ -91,7 +135,7 @@
                 </dependency>                
             </dependencies>            
         </profile>
-        
+
         <profile>
             <id>app-server-as7</id>
             <modules>
