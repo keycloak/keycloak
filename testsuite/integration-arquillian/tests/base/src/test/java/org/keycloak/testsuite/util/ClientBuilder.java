@@ -20,6 +20,7 @@ package org.keycloak.testsuite.util;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import javax.ws.rs.client.Client;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -56,6 +57,16 @@ public class ClientBuilder {
 
     public ClientBuilder directAccessGrants() {
         rep.setDirectAccessGrantsEnabled(true);
+        return this;
+    }
+
+    public ClientBuilder secret(String secret) {
+        rep.setSecret(secret);
+        return this;
+    }
+
+    public ClientBuilder serviceAccountsEnabled(Boolean serviceAccountsEnabled) {
+        rep.setServiceAccountsEnabled(serviceAccountsEnabled);
         return this;
     }
 

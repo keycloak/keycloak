@@ -19,64 +19,85 @@ package org.keycloak.testsuite.oauth;
 
 import org.apache.http.HttpResponse;
 import org.junit.Assert;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.services.managers.ClientManager;
-import org.keycloak.services.managers.RealmManager;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ServiceAccountTest {
-
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
-        @Override
-        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ClientModel app = KeycloakModelUtils.createClient(appRealm, "service-account-cl");
-            app.setSecret("secret1");
-            new ClientManager(manager).enableServiceAccount(app);
-
-            ClientModel disabledApp = KeycloakModelUtils.createClient(appRealm, "service-account-disabled");
-            disabledApp.setSecret("secret1");
-
-            UserModel serviceAccountUser = session.users().getUserByUsername(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "service-account-cl", appRealm);
-            userId = serviceAccountUser.getId();
-        }
-    });
-
-    @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
-
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
-    protected OAuthClient oauth;
+public class ServiceAccountTest extends AbstractKeycloakTest {
 
     private static String userId;
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
+
+
+    @Override
+    public void beforeAbstractKeycloakTest() throws Exception {
+        super.beforeAbstractKeycloakTest();
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+
+        RealmBuilder realm = RealmBuilder.create().name("test")
+                .privateKey("MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=")
+                .publicKey("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB")
+                .testEventListener();
+
+        ClientRepresentation enabledApp = ClientBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .clientId("service-account-cl")
+                .secret("secret1")
+                .serviceAccountsEnabled(true)
+                .build();
+
+        realm.client(enabledApp);
+
+        ClientRepresentation disabledApp = ClientBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .clientId("service-account-disabled")
+                .secret("secret1")
+                .build();
+
+        realm.client(disabledApp);
+
+        UserBuilder defaultUser = UserBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .username("test-user@localhost");
+        realm.user(defaultUser);
+
+        userId = KeycloakModelUtils.generateId();
+
+        UserBuilder serviceAccountUser = UserBuilder.create()
+                .id(userId)
+                .username(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + enabledApp.getClientId())
+                .serviceAccountId(enabledApp.getClientId());
+        realm.user(serviceAccountUser);
+
+        testRealms.add(realm.build());
+    }
 
     @Test
     public void clientCredentialsAuthSuccess() throws Exception {
@@ -193,19 +214,13 @@ public class ServiceAccountTest {
                 .removeDetail(Details.RESPONSE_TYPE)
                 .error(Errors.INVALID_CLIENT)
                 .assertEvent();
+
     }
 
     @Test
     public void changeClientIdTest() throws Exception {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
 
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                ClientModel app = appRealm.getClientByClientId("service-account-cl");
-                app.setClientId("updated-client");
-            }
-
-        });
+        ClientManager.realm(adminClient.realm("test")).rename("service-account-cl", "updated-client");
 
         oauth.clientId("updated-client");
 
@@ -227,16 +242,8 @@ public class ServiceAccountTest {
                 .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "service-account-cl")
                 .assertEvent();
 
-        // Revert change
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
 
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                ClientModel app = appRealm.getClientByClientId("updated-client");
-                app.setClientId("service-account-cl");
-            }
+        ClientManager.realm(adminClient.realm("test")).rename("updated-client", "service-account-cl");
 
-        });
     }
-
 }
