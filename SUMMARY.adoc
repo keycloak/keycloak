@@ -1,7 +1,5 @@
 == Keycloak Reference Guide
 
-:toc:
-
 //. link:topics/templates/document-attributes.adoc[]
 :imagesdir: images
 
