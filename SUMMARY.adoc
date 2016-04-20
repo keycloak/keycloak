@@ -6,7 +6,7 @@
  . link:topics/preface.adoc[Preface]
  . link:topics/overview.adoc[Overview]
  . link:topics/installation.adoc[Installation]
- .. link:topics/installation/system-requirements.adoc[System Requirements]
+ .. link:topics/installation/system-requirements.adoc[System Requirements test]
  {% if book.community %}
  .. link:topics/installation/distribution-files-community.adoc[Installing Distribution Files]
  {% endif %}
