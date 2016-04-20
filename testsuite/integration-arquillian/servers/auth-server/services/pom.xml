@@ -30,7 +30,7 @@
     <name>Auth Server Services</name>
 
     <modules>
-        <module>event-queue</module>
+        <module>testsuite-providers</module>
     </modules>
 
 </project>

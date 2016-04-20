@@ -101,7 +101,7 @@
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>copy-event-queue-provider</id>
+                                <id>copy-testsuite-providers</id>
                                 <phase>generate-resources</phase>
                                 <goals>
                                     <goal>copy</goal>
@@ -110,17 +110,17 @@
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>org.keycloak.testsuite</groupId>
-                                            <artifactId>integration-arquillian-event-queue</artifactId>
+                                            <artifactId>integration-arquillian-testsuite-providers</artifactId>
                                             <version>${project.version}</version>
                                             <type>jar</type>
                                             <overWrite>false</overWrite>
-                                            <outputDirectory>${auth.server.home}/modules/org/keycloak/testsuite/integration-arquillian-event-queue/main</outputDirectory>
+                                            <outputDirectory>${auth.server.home}/modules/org/keycloak/testsuite/integration-arquillian-testsuite-providers/main</outputDirectory>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>install-event-queue-module</id>
+                                <id>install-testsuite-providers-module</id>
                                 <phase>generate-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -129,7 +129,7 @@
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>org.keycloak.testsuite</groupId>
-                                            <artifactId>integration-arquillian-event-queue</artifactId>
+                                            <artifactId>integration-arquillian-testsuite-providers</artifactId>
                                             <version>${project.version}</version>
                                             <type>jar</type>
                                             <outputDirectory>${auth.server.home}/modules</outputDirectory>
