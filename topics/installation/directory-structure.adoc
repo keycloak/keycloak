@@ -2,35 +2,38 @@
 
 This chapter walks you through the directory structure of the server distribution.
 
-.Distribution Directory Structure
-{% if book.product %}
-. image:rhsso-images/files.png[alt="distribution"]
-{% else %}
-image:keycloak-images/files.png[alt="distribution"]
-{% endif %}
-
-
-.Distribution Directory Structure2
-{% if book.product %}
-. image:../rhsso-images/files.png[alt="distribution"]
-{% else %}
-image:../keycloak-images/files.png[alt="distribution"]
-{% endif %}
-
-
-.Distribution Directory Structure3
+.distribution directory structure
 {% if book.product %}
 . image:../../rhsso-images/files.png[alt="distribution"]
 {% else %}
 image:../../keycloak-images/files.png[alt="distribution"]
 {% endif %}
 
+Let's examine some of the purposes of each directory
 
-.Distribution Directory Structure4
-{% if book.product %}
-. image:fake/../../rhsso-images/files.png[alt="distribution"]
-{% else %}
-image:fake/../../keycloak-images/files.png[alt="distribution"]
-{% endif %}
+_bin/_::
+  This contains various scripts to either boot the server or perform some other management action on the server.
+
+_domain/_::
+  This contains configuration files and working directory when running {{book.project.name}} in <<fake/../../domain-mode.adoc,domain mode>>.
+
+_modules/_::
+  These are all the Java libraries used by the server.
+
+_providers/_::
+  If you are writing extensions to keycloak, you can put your extensions here.  See the link:http://not-implemented-yet[Server Developer Guide] for more information on this.
+
+_standalone/_::
+  This contains configuration files and working directory when running {{book.project.name}} in <<fake/../../standalone-mode.adoc,standalone mode>>.
+
+_themes/_::
+  This directory contains all the html, style sheets, javascript files, and images used to display any UI screen displayed by the server.
+  Here you can modify an existing theme or create your own.  See the link:http://not-implemented-yet[Server Developer Guide] for more information on this.
+
+
+
+
+
+
 
 
