@@ -6,7 +6,7 @@
  . link:topics/preface.adoc[Preface]
  . link:topics/overview.adoc[Overview]
  . link:topics/server-installation.adoc[Installation and Configuration of Keycloak Server]
-    . link:topics/server-installation.adoc#_overlay_install[Install on existing WildFly or JBoss EAP]
+ .. link:++topics/server-installation.adoc#_overlay_install++[Install on existing WildFly or JBoss EAP]
  . link:topics/openshift.adoc[Running Keycloak Server on OpenShift]
  . link:topics/cache.adoc[Server Cache]
  . link:topics/clustering.adoc[Clustering]
