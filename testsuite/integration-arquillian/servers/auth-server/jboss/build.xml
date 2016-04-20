@@ -29,7 +29,7 @@
 
             // inject provider
             providers = root.withArray("providers");
-            providers.add("module:org.keycloak.testsuite.integration-arquillian-event-queue");
+            providers.add("module:org.keycloak.testsuite.integration-arquillian-testsuite-providers");
 
             // save file
             JsonSerialization.prettyMapper.writeValue(file, root);

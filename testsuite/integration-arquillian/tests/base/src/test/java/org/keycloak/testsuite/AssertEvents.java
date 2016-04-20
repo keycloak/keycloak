@@ -17,11 +17,6 @@
 
 package org.keycloak.testsuite;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -38,10 +33,10 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.testsuite.client.resources.TestingResource;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
+import javax.ws.rs.core.Response;
 import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.List;
@@ -58,9 +53,9 @@ public class AssertEvents {
     public static final String DEFAULT_USERNAME = "test-user@localhost";
 
     String defaultRedirectUri = "http://localhost:8180/auth/realms/master/app/auth";
-    String defaultEventsQueueUri = "http://localhost:8092";
 
     private RealmResource realmResource;
+    private TestingResource testingResource;
     private RealmRepresentation realmRep;
     private AbstractKeycloakTest context;
     private PublicKey realmPublicKey;
@@ -73,13 +68,11 @@ public class AssertEvents {
         String pubKeyString = realmRep.getPublicKey();
         realmPublicKey = PemUtils.decodePublicKey(pubKeyString);
 
-        defaultEventsQueueUri = getAuthServerEventsQueueUri();
-    }
-
-    String getAuthServerEventsQueueUri() {
-        int httpPort = Integer.parseInt(System.getProperty("auth.server.event.http.port", "8089"));
-        int portOffset = Integer.parseInt(System.getProperty("auth.server.port.offset", "0"));
-        return "http://localhost:" + (httpPort + portOffset);
+        UserRepresentation defaultUser = getUser(DEFAULT_USERNAME);
+        if (defaultUser == null) {
+            throw new RuntimeException("Default user does not exist: " + DEFAULT_USERNAME + ". Make sure to add it to your test realm.");
+        }
+        testingResource = context.testingClient.testing();
     }
 
     public EventRepresentation poll() {
@@ -90,22 +83,11 @@ public class AssertEvents {
     }
 
     public void clear() {
-        CloseableHttpClient httpclient = HttpClients.createDefault();
+        Response res = testingResource.clearQueue();
         try {
-            HttpPost post = new HttpPost(defaultEventsQueueUri + "/clear-event-queue");
-            CloseableHttpResponse response = httpclient.execute(post);
-            if (response.getStatusLine().getStatusCode() != 200) {
-                throw new RuntimeException("Failed to clear events from " + post.getURI() + ": " + response.getStatusLine().toString());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        finally {
-            try {
-                httpclient.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            Assert.assertEquals("clear-event-queue success", res.getStatus(), 200);
+        } finally {
+            res.close();
         }
     }
 
@@ -380,24 +362,6 @@ public class AssertEvents {
     }
 
     private EventRepresentation fetchNextEvent() {
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-        try {
-            HttpPost post = new HttpPost(defaultEventsQueueUri + "/event-queue");
-            CloseableHttpResponse response = httpclient.execute(post);
-            if (response.getStatusLine().getStatusCode() != 200) {
-                throw new RuntimeException("Failed to retrieve event from " + post.getURI() + ": " + response.getStatusLine().toString() + " / " + IOUtils.toString(response.getEntity().getContent()));
-            }
-
-            return JsonSerialization.readValue(response.getEntity().getContent(), EventRepresentation.class);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        finally {
-            try {
-                httpclient.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        return testingResource.pollEvent();
     }
 }

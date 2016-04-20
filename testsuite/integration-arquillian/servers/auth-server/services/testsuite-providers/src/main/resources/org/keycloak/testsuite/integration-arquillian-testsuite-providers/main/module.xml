@@ -15,9 +15,9 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.testsuite.integration-arquillian-event-queue">
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.testsuite.integration-arquillian-testsuite-providers">
     <resources>
-        <resource-root path="integration-arquillian-event-queue-${project.version}.jar"/>
+        <resource-root path="integration-arquillian-testsuite-providers-${project.version}.jar"/>
     </resources>
     <dependencies>
         <module name="javax.api"/>
@@ -28,5 +28,6 @@
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>
+        <module name="org.keycloak.keycloak-services"/>
     </dependencies>
 </module>

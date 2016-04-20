@@ -30,8 +30,6 @@ public class EventsListenerProviderFactory implements EventListenerProviderFacto
 
     private static final EventsListenerProvider INSTANCE = new EventsListenerProvider();
 
-    private EventsServer server = new EventsServer();
-
     @Override
     public EventListenerProvider create(KeycloakSession session) {
         return INSTANCE;
@@ -43,12 +41,10 @@ public class EventsListenerProviderFactory implements EventListenerProviderFacto
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        server.start();
     }
 
     @Override
     public void close() {
-        server.stop();
     }
 
     @Override
