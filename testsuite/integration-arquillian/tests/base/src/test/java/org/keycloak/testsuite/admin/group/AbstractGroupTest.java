@@ -18,8 +18,10 @@
 package org.keycloak.testsuite.admin.group;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -31,6 +33,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 
+import java.security.PublicKey;
 import java.util.List;
 
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
@@ -40,13 +43,8 @@ import static org.keycloak.testsuite.util.IOUtil.loadRealm;
  */
 public abstract class AbstractGroupTest extends AbstractKeycloakTest {
 
-    AssertEvents events;
-
-    @Before
-    public void initAssertEvents() throws Exception {
-        events = new AssertEvents(this);
-        events.clear();
-    }
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     AccessToken login(String login, String clientId, String clientSecret, String userId) throws Exception {
 
@@ -55,10 +53,12 @@ public abstract class AbstractGroupTest extends AbstractKeycloakTest {
         String accessToken = tokenResponse.getToken();
         String refreshToken = tokenResponse.getRefreshToken();
 
-        AccessToken accessTokenRepresentation = RSATokenVerifier.verifyToken(accessToken, events.getRealmPublicKey(), AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/test");
+        PublicKey publicKey = PemUtils.decodePublicKey(adminClient.realm("test").toRepresentation().getPublicKey());
+
+        AccessToken accessTokenRepresentation = RSATokenVerifier.verifyToken(accessToken, publicKey, AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/test");
 
         JWSInput jws = new JWSInput(refreshToken);
-        if (!RSAProvider.verify(jws, events.getRealmPublicKey())) {
+        if (!RSAProvider.verify(jws, publicKey)) {
             throw new RuntimeException("Invalid refresh token");
         }
         RefreshToken refreshTokenRepresentation = jws.readJsonContent(RefreshToken.class);

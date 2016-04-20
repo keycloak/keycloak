@@ -18,13 +18,10 @@ package org.keycloak.testsuite.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.ArrayList;
-import java.util.List;
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Time;
-import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -33,12 +30,12 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
-//import org.adminClient.testsuite.pages.LoginPage;
-//import org.adminClient.testsuite.rule.KeycloakRule;
-//import org.adminClient.testsuite.rule.WebResource;
-//import org.adminClient.testsuite.rule.WebRule;
 import org.keycloak.util.JsonSerialization;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -48,34 +45,8 @@ import static org.junit.Assert.*;
  */
 public class TokenIntrospectionTest extends TestRealmKeycloakTest {
 
-    private AssertEvents events;
-    
-   /* @ClassRule >>> now implemented in configureTestRealm()
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
-
-        @Override
-                                                                                           vvv "test" realm
-        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            vvv Done in TestRealmKeycloakTest vvv
-            appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
-
-            ClientModel confApp = KeycloakModelUtils.createClient(appRealm, "confidential-cli");
-            confApp.setSecret("secret1");
-            new ClientManager(manager).enableServiceAccount(confApp);
-            ClientModel pubApp = KeycloakModelUtils.createClient(appRealm, "public-cli");
-            pubApp.setPublicClient(true);
-            {
-                UserModel user = manager.getSession().users().addUser(appRealm, KeycloakModelUtils.generateId(), "no-permissions", false, false);
-                user.updateCredential(UserCredentialModel.password("password"));
-                user.setEnabled(true);
-                RoleModel role = appRealm.getRole("user");
-                user.grantRole(role);
-            }
-
-            adminClient = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
-        }
-
-    }); */
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -99,11 +70,6 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         realmRoles.add("user");
         user.setRealmRoles(realmRoles);
         testRealm.getUsers().add(user);
-    }
-
-    @Before
-    public void setUpAssertEvents() throws Exception {
-        events = new AssertEvents(this);
     }
 
     @Test
