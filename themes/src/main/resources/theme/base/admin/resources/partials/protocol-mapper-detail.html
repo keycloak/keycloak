@@ -1,8 +1,8 @@
     <h1 data-ng-show="model.create">{{:: 'create-protocol-mapper' | translate}}</h1>
-    <h1 data-ng-hide="model.create">{{model.mapper.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!model.create && access.manageRealm"
+    <h1 data-ng-hide="model.create">{{model.mapper.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!model.create && access.manageClients"
     	data-ng-hide="model.changed" data-ng-click="remove()"></i></h1>
 
-    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients">
 
         <fieldset>
             <div class="form-group clearfix">
@@ -64,14 +64,14 @@
         </fieldset>
 
         <div class="form-group">
-            <div class="col-md-10 col-md-offset-2" data-ng-show="model.create && access.manageRealm">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="model.create && access.manageClients">
                 <button kc-save>{{:: 'save' | translate}}</button>
                 <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
 
         <div class="form-group">
-            <div class="col-md-10 col-md-offset-2" data-ng-show="!model.create && access.manageRealm">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!model.create && access.manageClients">
                 <button kc-save  data-ng-disabled="!model.changed">{{:: 'save' | translate}}</button>
                 <button kc-reset data-ng-disabled="!model.changed">{{:: 'cancel' | translate}}</button>
             </div>

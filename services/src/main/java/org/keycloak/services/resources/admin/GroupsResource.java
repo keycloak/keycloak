@@ -69,7 +69,8 @@ public class GroupsResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<GroupRepresentation> getGroups() {
-        this.auth.requireView();
+        auth.requireView();
+
         return ModelToRepresentation.toGroupHierarchy(realm, false);
     }
 
@@ -81,7 +82,8 @@ public class GroupsResource {
      */
     @Path("{id}")
     public GroupResource getGroupById(@PathParam("id") String id) {
-        this.auth.requireView();
+        auth.requireView();
+
         GroupModel group = realm.getGroupById(id);
         if (group == null) {
             throw new NotFoundException("Could not find group by id");
@@ -101,7 +103,8 @@ public class GroupsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addTopLevelGroup(GroupRepresentation rep) {
-        this.auth.requireManage();
+        auth.requireManage();
+
         GroupModel child = null;
         Response.ResponseBuilder builder = Response.status(204);
         if (rep.getId() != null) {

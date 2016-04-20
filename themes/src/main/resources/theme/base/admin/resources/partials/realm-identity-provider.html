@@ -9,7 +9,7 @@
                     <thead>
                     <tr>
                         <th colspan="6" class="kc-table-actions">
-                            <div class="dropdown pull-right">
+                            <div class="dropdown pull-right" data-ng-show="access.manageIdentityProviders">
                                 <select class="form-control" ng-model="provider"
                                         ng-options="p.name group by p.groupName for p in allProviders track by p.id"
                                         data-ng-change="addProvider(provider); provider = null">
@@ -35,7 +35,7 @@
                         <td translate="{{identityProvider.enabled}}"></td>
                         <td>{{identityProvider.config.guiOrder}}</td>
                         <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{:: 'edit' | translate}}</td>
-                        <td class="kc-action-cell" data-ng-click="removeIdentityProvider(identityProvider)">{{:: 'delete' | translate}}</td>
+                        <td class="kc-action-cell" data-ng-show="access.manageIdentityProviders" data-ng-click="removeIdentityProvider(identityProvider)">{{:: 'delete' | translate}}</td>
                     </tr>
                     </tbody>
                 </table>

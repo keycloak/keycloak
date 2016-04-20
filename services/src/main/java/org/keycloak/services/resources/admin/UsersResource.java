@@ -313,6 +313,7 @@ public class UsersResource {
     public Map<String, Object> impersonate(final @PathParam("id") String id) {
         auth.init(RealmAuth.Resource.IMPERSONATION);
         auth.requireManage();
+
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
@@ -357,6 +358,7 @@ public class UsersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserSessionRepresentation> getSessions(final @PathParam("id") String id) {
         auth.requireView();
+
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
@@ -382,6 +384,7 @@ public class UsersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserSessionRepresentation> getSessions(final @PathParam("id") String id, final @PathParam("clientId") String clientId) {
         auth.requireView();
+
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
@@ -420,6 +423,7 @@ public class UsersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<FederatedIdentityRepresentation> getFederatedIdentity(final @PathParam("id") String id) {
         auth.requireView();
+
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
@@ -456,6 +460,7 @@ public class UsersResource {
     @NoCache
     public Response addFederatedIdentity(final @PathParam("id") String id, final @PathParam("provider") String provider, FederatedIdentityRepresentation rep) {
         auth.requireManage();
+
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
@@ -481,6 +486,7 @@ public class UsersResource {
     @NoCache
     public void removeFederatedIdentity(final @PathParam("id") String id, final @PathParam("provider") String provider) {
         auth.requireManage();
+
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
@@ -503,6 +509,7 @@ public class UsersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<Map<String, Object>> getConsents(final @PathParam("id") String id) {
         auth.requireView();
+
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
@@ -555,6 +562,7 @@ public class UsersResource {
     @NoCache
     public void revokeConsent(final @PathParam("id") String id, final @PathParam("client") String clientId) {
         auth.requireManage();
+
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
@@ -586,6 +594,7 @@ public class UsersResource {
     @POST
     public void logout(final @PathParam("id") String id) {
         auth.requireManage();
+
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");

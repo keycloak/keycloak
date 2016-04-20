@@ -7,11 +7,11 @@
         <li class="active" data-ng-hide="create">{{mapper.name|capitalize}}</li>
     </ol>
 
-    <h1 data-ng-hide="create">{{mapper.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create && access.manageRealm" 
+    <h1 data-ng-hide="create">{{mapper.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create && access.manageIdentityProviders"
     	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
     <h1 data-ng-show="create">{{:: 'add-identity-provider-mapper' | translate}}</h1>
 
-    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageIdentityProviders">
         <fieldset>
             <div class="form-group clearfix" data-ng-show="!create">
                 <label class="col-md-2 control-label" for="mapperId">{{:: 'id' | translate}} </label>
@@ -48,14 +48,14 @@
             <kc-provider-config config="mapper.config" properties="mapperType.properties" realm="realm"></kc-provider-config>
         </fieldset>
 
-        <div class="form-group" data-ng-show="create && access.manageRealm">
+        <div class="form-group" data-ng-show="create && access.manageIdentityProviders">
             <div class="col-md-10 col-md-offset-2">
                 <button kc-save>{{:: 'save' | translate}}</button>
                 <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
 
-        <div class="form-group" data-ng-show="!create && access.manageRealm">
+        <div class="form-group" data-ng-show="!create && access.manageIdentityProviders">
             <div class="col-md-10 col-md-offset-2">
                 <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                 <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
