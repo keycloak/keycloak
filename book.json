@@ -9,8 +9,11 @@
     "splitter"
   ],
   "variables": {
+    "community": "true",
+    "product": "false",
     "project": {
-      "name": "Keycloak"
+      "name": "Keycloak",
+      "version": "1.9.3.Final-SNAPSHOT"
     }
   }
 }

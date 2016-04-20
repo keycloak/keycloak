@@ -5,9 +5,11 @@
 
  . link:topics/preface.adoc[Preface]
  . link:topics/overview.adoc[Overview]
- . link:topics/system-requirements.adoc[System Requirements]
- . link:topics/installation.adoc[Installation and Configuration of Keycloak Server]
- . link:topics/openshift.adoc[Running Keycloak Server on OpenShift]
+ . link:topics/installation.adoc[Installation]
+ .. link:topics/installation/system-requirements.adoc[System Requirements]
+ {% if community %}.. link:topics/installation/distribution-files-community.adoc[Installing Distribution Files] {% endif %}
+ {% if product %}.. link:topics/installation/distribution-files-product.adoc[Installing Distribution Files] {% endif %}
+ .. link:topics/openshift.adoc[Installing on OpenShift]
  . link:topics/cache.adoc[Server Cache]
  . link:topics/clustering.adoc[Clustering]
  . link:topics/proxy.adoc[Keycloak Security Proxy]

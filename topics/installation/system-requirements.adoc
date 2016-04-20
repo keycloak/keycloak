@@ -1,0 +1,13 @@
+= System Requirements
+
+These are the requirements to run the {{book.project.name}} authentication server:
+
+* Can run on any operating system that runs Java
+* Java 8 JDK
+* zip or gzip and tar
+* Network multicast support if you are clustering {{book.project.name}}.
+* At least 512M of RAM
+* At least 1G of diskspace
+
+{{book.project.name}} can be clustered without multicast, but this requires a bunch of configuration changes.  Please see
+the <<../clustering.adoc#,clustering>> section of this guide for more information.
