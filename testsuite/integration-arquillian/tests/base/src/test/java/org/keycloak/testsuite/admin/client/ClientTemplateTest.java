@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.endpoint.client;
+package org.keycloak.testsuite.admin.client;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,7 +30,6 @@ import javax.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientTemplatesResource;
-import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;

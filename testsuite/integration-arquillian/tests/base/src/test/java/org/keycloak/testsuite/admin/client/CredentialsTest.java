@@ -15,7 +15,7 @@
  * the License.
  */
 
-package org.keycloak.testsuite.endpoint.client;
+package org.keycloak.testsuite.admin.client;
 
 import org.junit.Before;
 import org.junit.Test;

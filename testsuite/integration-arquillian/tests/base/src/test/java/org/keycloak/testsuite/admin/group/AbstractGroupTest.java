@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.endpoint.group;
+package org.keycloak.testsuite.admin.group;
 
 import org.junit.Before;
 import org.keycloak.OAuth2Constants;

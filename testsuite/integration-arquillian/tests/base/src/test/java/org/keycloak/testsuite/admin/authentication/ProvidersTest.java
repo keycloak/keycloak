@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.endpoint.authentication;
+package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
 import org.junit.Test;
