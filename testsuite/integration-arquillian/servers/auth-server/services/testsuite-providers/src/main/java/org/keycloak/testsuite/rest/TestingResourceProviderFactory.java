@@ -26,11 +26,11 @@ import org.keycloak.services.resource.RealmResourceProviderFactory;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class TimeOffsetResourceProviderFactory implements RealmResourceProviderFactory {
+public class TestingResourceProviderFactory implements RealmResourceProviderFactory {
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
-        return new TimeOffsetResourceProvider();
+        return new TestingResourceProvider(session);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class TimeOffsetResourceProviderFactory implements RealmResourceProviderF
 
     @Override
     public String getId() {
-        return "time-offset";
+        return "testing";
     }
 
 }

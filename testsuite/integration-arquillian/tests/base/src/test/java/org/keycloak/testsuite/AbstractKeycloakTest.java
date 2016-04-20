@@ -18,19 +18,16 @@ package org.keycloak.testsuite;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.io.IOUtils;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.testsuite.arquillian.TestContext;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.NotFoundException;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -56,9 +53,9 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.auth.page.WelcomePage;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.DeleteMeOAuthClient;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
@@ -93,6 +90,8 @@ public abstract class AbstractKeycloakTest {
     protected TestContext testContext;
 
     protected Keycloak adminClient;
+
+    protected KeycloakTestingClient testingClient;
 
     @ArquillianResource
     protected OAuthClient oauthClient;
@@ -134,7 +133,8 @@ public abstract class AbstractKeycloakTest {
                 MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
         deleteMeOAuthClient = new DeleteMeOAuthClient(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
 
-        
+        testingClient = KeycloakTestingClient.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
+
         adminUser = createAdminUserRepresentation();
 
         setDefaultPageUriParameters();
@@ -302,7 +302,7 @@ public abstract class AbstractKeycloakTest {
         userResource.update(userRepresentation);
     }
 
-    public void setTimeOffset(int offset) {invokeTimeOffset(offset);
+    public void setTimeOffset(int offset) {
         String response = invokeTimeOffset(offset);
         resetTimeOffset = offset != 0;
         log.debugv("Set time offset, response {0}", response);
@@ -315,26 +315,8 @@ public abstract class AbstractKeycloakTest {
     }
 
     private String invokeTimeOffset(int offset) {
-        try {
-            String data = JsonSerialization.writeValueAsString(Collections.singletonMap("offset", String.valueOf(offset)));
-            URI uri = KeycloakUriBuilder.fromUri(suiteContext.getAuthServerInfo().getContextRoot().toURI()).path("/auth/realms/master/time-offset").build();
-            HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
-            connection.setDoOutput(true);
-            connection.setRequestMethod("PUT");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Content-Length", String.valueOf(data.length()));
-
-            OutputStream os = connection.getOutputStream();
-            os.write(data.getBytes());
-            os.close();
-
-            InputStream is = connection.getInputStream();
-            String response = IOUtils.toString(is);
-            is.close();
-            return response;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        Map result = testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset)));
+        return String.valueOf(result);
     }
 
     private void loadConstantsProperties() throws ConfigurationException {

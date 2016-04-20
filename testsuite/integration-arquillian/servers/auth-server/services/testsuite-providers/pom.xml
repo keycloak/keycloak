@@ -27,8 +27,8 @@
         <version>1.9.3.Final-SNAPSHOT</version>
     </parent>
 
-    <artifactId>integration-arquillian-event-queue</artifactId>
-    <name>Auth Server Services - Event Queue</name>
+    <artifactId>integration-arquillian-testsuite-providers</artifactId>
+    <name>Auth Server Services - Testsuite Providers</name>
 
     <dependencies>
 
