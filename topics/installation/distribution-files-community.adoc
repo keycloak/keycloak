@@ -2,17 +2,17 @@
 
 The Keycloak Server has three downloadable distributions:
 
-* +keycloak-{{book.project.version}}.[zip|tar.gz]+
-* +keycloak-overlay-{{book.project.version}}.[zip|tar.gz]+
-* +keycloak-demo-{{book.project.version}}.[zip|tar.gz]+
+* 'keycloak-{{book.project.version}}.[zip|tar.gz]'
+* 'keycloak-overlay-{{book.project.version}}.[zip|tar.gz]'
+* 'keycloak-demo-{{book.project.version}}.[zip|tar.gz]'
 
-The +keycloak-{{book.project.version}}.[zip|tar.gz]+ file is the server only distribution.  It contains nothing other than the scripts and binaries
+The 'keycloak-{{book.project.version}}.[zip|tar.gz]' file is the server only distribution.  It contains nothing other than the scripts and binaries
 to run the Keycloak Server.
 
-The +keycloak-overlay-{{book.project.version}}.[zip|tar.gz]+ file is a Wildfly Service Pack that allows you to install Keycloak Server on top of an existing
+The 'keycloak-overlay-{{book.project.version}}.[zip|tar.gz]' file is a Wildfly Service Pack that allows you to install Keycloak Server on top of an existing
 Wildfly or JBoss EAP distribution.  We suggest that you do not use this file unless you want to install on top of a JBoss EAP distribution.
 
-The +keycloak-demo-{{book.project.version}}.[zip|tar.gz]+ contains a the server binaries, all documentation and all examples.  It is preconfigured with both the
+The 'keycloak-demo-{{book.project.version}}.[zip|tar.gz]' contains a the server binaries, all documentation and all examples.  It is preconfigured with both the
 OIDC and SAML client application adapters and can deploy any of the distribution examples out of the box with no configuration.  This distribution is only
 recommended for those that want to test drive Keycloak.
 
