@@ -41,6 +41,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -77,8 +78,9 @@ public abstract class AbstractKerberosAdapterTest extends AbstractServletsAdapte
     protected ResteasyClient client;
         
     protected static LDAPEmbeddedServer ldapEmbeddedServer;
-    
-    protected AssertEvents events;
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
     
     @Page
     protected ChangePassword changePasswordPage;
@@ -115,7 +117,6 @@ public abstract class AbstractKerberosAdapterTest extends AbstractServletsAdapte
         String krb5ConfPath = LDAPTestConfiguration.getResource("test-krb5.conf");
         log.info("Krb5.conf file location is: " + krb5ConfPath);
         System.setProperty("java.security.krb5.conf", krb5ConfPath);
-        events = new AssertEvents(this);
         UserFederationProviderModel model = new UserFederationProviderModel();
         model.setConfig(ldapTestConfiguration.getLDAPConfig());
         spnegoSchemeFactory = new KeycloakSPNegoSchemeFactory(getKerberosConfig(model));
