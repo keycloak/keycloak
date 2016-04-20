@@ -43,6 +43,16 @@ public class RealmBuilder {
         return this;
     }
 
+    public RealmBuilder publicKey(String publicKey) {
+        rep.setPublicKey(publicKey);
+        return this;
+    }
+
+    public RealmBuilder privateKey(String privateKey) {
+        rep.setPrivateKey(privateKey);
+        return this;
+    }
+
     public RealmBuilder testEventListener() {
         if (rep.getEventsListeners() == null) {
             rep.setEventsListeners(new LinkedList<String>());
