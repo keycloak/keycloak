@@ -95,7 +95,7 @@ public abstract class AbstractKeycloakTest {
     protected Keycloak adminClient;
 
     @ArquillianResource
-    protected OAuthClient oauthClient;
+    protected OAuthClient oauth;
 
     protected DeleteMeOAuthClient deleteMeOAuthClient;
 
@@ -151,8 +151,8 @@ public abstract class AbstractKeycloakTest {
 
         importTestRealms();
 
-        oauthClient.setAdminClient(adminClient);
-        oauthClient.setDriver(driver);
+        oauth.setAdminClient(adminClient);
+        oauth.setDriver(driver);
     }
 
     @After
