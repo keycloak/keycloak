@@ -632,5 +632,15 @@ public final class KeycloakModelUtils {
         return false;
     }
 
+    public static ClientTemplateModel getClientTemplateByName(RealmModel realm, String templateName) {
+        for (ClientTemplateModel clientTemplate : realm.getClientTemplates()) {
+            if (templateName.equals(clientTemplate.getName())) {
+                return clientTemplate;
+            }
+        }
+
+        return null;
+    }
+
 
 }

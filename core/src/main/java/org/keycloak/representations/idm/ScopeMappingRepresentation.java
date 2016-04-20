@@ -27,6 +27,7 @@ import java.util.Set;
 public class ScopeMappingRepresentation {
     protected String self; // link
     protected String client;
+    protected String clientTemplate;
     protected Set<String> roles;
 
     public String getSelf() {
@@ -43,6 +44,14 @@ public class ScopeMappingRepresentation {
 
     public void setClient(String client) {
         this.client = client;
+    }
+
+    public String getClientTemplate() {
+        return clientTemplate;
+    }
+
+    public void setClientTemplate(String clientTemplate) {
+        this.clientTemplate = clientTemplate;
     }
 
     public Set<String> getRoles() {

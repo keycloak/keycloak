@@ -195,6 +195,28 @@
             "secret": "clientpassword"
         }
     ],
+    "clientTemplates" : [
+        {
+            "name" : "foo-template",
+            "description" : "foo-template-desc",
+            "protocol" : "openid-connect",
+            "protocolMappers" : [
+                {
+                    "name" : "gss delegation credential",
+                    "protocol" : "openid-connect",
+                    "protocolMapper" : "oidc-usersessionmodel-note-mapper",
+                    "consentRequired" : true,
+                    "consentText" : "gss delegation credential",
+                    "config" : {
+                        "user.session.note" : "gss_delegation_credential",
+                        "access.token.claim" : "true",
+                        "claim.name" : "gss_delegation_credential",
+                        "Claim JSON Type" : "String"
+                    }
+                }
+            ]
+        }
+    ],
     "roles" : {
         "realm" : [
             {
@@ -226,6 +248,10 @@
         {
             "client": "oauthclient",
             "roles": ["admin"]
+        },
+        {
+            "clientTemplate": "foo-template",
+            "roles": ["admin"]
         }
     ],
     "applicationScopeMappings": {
@@ -233,6 +259,10 @@
             {
                 "client": "oauthclient",
                 "roles": ["app-user"]
+            },
+            {
+                "clientTemplate": "foo-template",
+                "roles": ["app-user", "app-admin" ]
             }
         ]
 
