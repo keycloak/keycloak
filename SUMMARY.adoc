@@ -5,7 +5,7 @@
 
  . link:topics/preface.adoc[Preface]
  . link:topics/overview.adoc[Overview]
- . link:topics/server-installation.adoc[Installation and Configuration of Keycloak Server]
+ . link:topics/system-requirements.adoc[System Requirements]
  . link:topics/installation.adoc[Installation and Configuration of Keycloak Server]
  . link:topics/openshift.adoc[Running Keycloak Server on OpenShift]
  . link:topics/cache.adoc[Server Cache]

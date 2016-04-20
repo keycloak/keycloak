@@ -1,10 +1,10 @@
 = Guide Overview
 
 The purpose of this guide is to walk through the steps that need to be completed prior to booting up the
-Keycloak server for the first time.  If you just want to test drive Keycloak, it pretty much runs out of the box with its
+{{book.project.name}} server for the first time.  If you just want to test drive {{book.project.name}}, it pretty much runs out of the box with its
 own embedded and local-only database.  For
  actual deployments that are going to be run in production you'll need to decide how you want to manage server configuration
- at runtime (standalone or domain mode), configure a shared database you will use for Keycloak, set up encryption and HTTPS,
- and finally set up Keycloak to run in a cluster.  This guide walks through each and every aspect of any pre-boot
- decisions and setup you must do prior to deploying Keycloak.
+ at runtime (standalone or domain mode), configure a shared database for {{book.project.name}} storage, set up encryption and HTTPS,
+ and finally set up {{book.project.name}} to run in a cluster.  This guide walks through each and every aspect of any pre-boot
+ decisions and setup you must do prior to deploying the server.
 

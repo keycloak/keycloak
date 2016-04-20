@@ -1,16 +1,4 @@
-= Clustering
-
-To improve availability and scalability Keycloak can be deployed in a cluster.
-
-It's fairly straightforward to configure a Keycloak cluster, the steps required are: 
-
-* Configure a shared database 
-* Configure Infinispan 
-* Enable realm and user cache invalidation 
-* Enable distributed user sessions 
-* Start in HA mode     
-
-== Configure a shared database
+[[_clustering]]
 
 Keycloak doesn't replicate realms and users, but instead relies on all nodes using the same database.
 This can be a relational database or Mongo.

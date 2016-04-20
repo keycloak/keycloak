@@ -1,0 +1,11 @@
+= Getting Distribution Files
+
+Keycloak Server has three downloadable distributions.
+To run the Keycloak server you need to have Java 8 already installed.
+
+* keycloak-.[zip|tar.gz]
+* keycloak-overlay-.[zip|tar.gz]
+* keycloak-demo-.[zip|tar.gz]
+
+
+
