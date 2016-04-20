@@ -1,4 +1,3 @@
-:project.name: Keycloak
 
 = Preface
 
@@ -19,4 +18,4 @@ Let's pretend to have an extremely long line that does not fit
 This one is short
 ----      
 
-Test if attribute is working {project.name} and {{project.name}}
+Test if attribute is working {{book.project.name}}

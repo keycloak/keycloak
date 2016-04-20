@@ -1,5 +1,10 @@
 {
-  "title": "intall and conf",
+  "gitbook": "2.x.x",
+  "plugins": [
+    "toggle-chapters",
+    "ungrey",
+    "splitter"
+  ],
   "variables": {
     "project.name": "Keycloak"
   }
