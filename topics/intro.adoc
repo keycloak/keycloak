@@ -1,4 +1,4 @@
 = Introduction
 
 The purpose of this guide is to walk through everything that needs to be installed and configred prior to first booting
-up the {{ book.product.name }} server.
+up the {{book.project.name}} server.
