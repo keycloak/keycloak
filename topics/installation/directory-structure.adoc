@@ -3,33 +3,33 @@
 This chapter walks you through the directory structure of the server distribution.
 
 .Distribution Directory Structure
-{% if product %}
+{% if book.product %}
 . image:rhsso-images/files.png[alt="distribution"]
-{% elif %}
+{% else %}
 image:keycloak-images/files.png[alt="distribution"]
 {% endif %}
 
 
 .Distribution Directory Structure2
-{% if product %}
+{% if book.product %}
 . image:../rhsso-images/files.png[alt="distribution"]
-{% elif %}
+{% else %}
 image:../keycloak-images/files.png[alt="distribution"]
 {% endif %}
 
 
 .Distribution Directory Structure3
-{% if product %}
+{% if book.product %}
 . image:../../rhsso-images/files.png[alt="distribution"]
-{% elif %}
+{% else %}
 image:../../keycloak-images/files.png[alt="distribution"]
 {% endif %}
 
 
 .Distribution Directory Structure4
-{% if product %}
+{% if book.product %}
 . image:fake/../../rhsso-images/files.png[alt="distribution"]
-{% elif %}
+{% else %}
 image:fake/../../keycloak-images/files.png[alt="distribution"]
 {% endif %}
 
