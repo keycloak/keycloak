@@ -154,4 +154,7 @@ public interface RealmResource {
     @Consumes(MediaType.APPLICATION_JSON)
     AuthenticationManagementResource flows();
 
+    @Path("attack-detection")
+    AttackDetectionResource attackDetection();
+
 }
