@@ -6,7 +6,7 @@
  . link:topics/preface.adoc[Preface]
  . link:topics/overview.adoc[Overview]
  . link:topics/server-installation.adoc[Installation and Configuration of Keycloak Server]
- .. <<_server_install>>
+ . link:topics/installation.adoc[Installation and Configuration of Keycloak Server]
  . link:topics/openshift.adoc[Running Keycloak Server on OpenShift]
  . link:topics/cache.adoc[Server Cache]
  . link:topics/clustering.adoc[Clustering]

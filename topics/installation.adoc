@@ -4,3 +4,4 @@ This chapter shows you how to install Keycloak and walks you through the directo
 
 == Unpackaging Keycloak
 
+<<_server_install>>
