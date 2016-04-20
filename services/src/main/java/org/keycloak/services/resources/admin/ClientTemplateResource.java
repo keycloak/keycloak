@@ -22,6 +22,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -133,11 +134,16 @@ public class ClientTemplateResource {
      */
     @DELETE
     @NoCache
-    public void deleteClientTemplate() {
+    public Response deleteClientTemplate() {
         auth.requireManage();
-
-        realm.removeClientTemplate(template.getId());
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        
+        try {
+            realm.removeClientTemplate(template.getId());
+            adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+            return Response.noContent().build();
+        } catch (ModelException me) {
+            return ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 
 

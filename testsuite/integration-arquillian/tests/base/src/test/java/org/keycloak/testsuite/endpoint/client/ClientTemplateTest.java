@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
@@ -35,6 +36,7 @@ import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
@@ -266,6 +268,40 @@ public class ClientTemplateTest extends AbstractClientTest {
         Assert.assertEquals(0, roleReps.size());
 
         // Cleanup
+        clientTemplates().get(templateId).remove();
+    }
+
+
+    // KEYCLOAK-2844
+    @Test
+    public void testRemoveTemplateInUse() {
+        // Add client template
+        ClientTemplateRepresentation templateRep = new ClientTemplateRepresentation();
+        templateRep.setName("foo-template");
+        templateRep.setFullScopeAllowed(false);
+        String templateId = createTemplate(templateRep);
+
+        // Add client with the clientTemplate
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("bar-client");
+        clientRep.setName("bar-client");
+        clientRep.setRootUrl("foo");
+        clientRep.setProtocol("openid-connect");
+        clientRep.setClientTemplate("foo-template");
+        String clientDbId = createClient(clientRep);
+
+        // Can't remove clientTemplate
+        try {
+            clientTemplates().get(templateId).remove();
+        } catch (BadRequestException bre) {
+            ErrorRepresentation error = bre.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("Cannot remove client template, it is currently in use", error.getErrorMessage());
+        }
+
+        // Remove client
+        testRealmResource().clients().get(clientDbId).remove();
+
+        // Can remove clientTemplate now
         clientTemplates().get(templateId).remove();
     }
 
