@@ -18,21 +18,3 @@ Let's pretend to have an extremely long line that does not fit
 This one is short
 ----      
 
-{% if community %}
-  community set
-{% else %}
-  community VARIABLE NOT SET
-{% endif %}
-
-{% if book.community %}
-  book.community set
-{% else %}
-  book.community VARIABLE NOT SET
-{% endif %}
-
-{% if product %}
-  PRODUCT!
-{% else %}
-  product VARIABLE NOT SET
-{% endif %}
-

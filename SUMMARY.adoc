@@ -7,10 +7,10 @@
  . link:topics/overview.adoc[Overview]
  . link:topics/installation.adoc[Installation]
  .. link:topics/installation/system-requirements.adoc[System Requirements]
- {% if community %}
+ {% if book.community %}
  .. link:topics/installation/distribution-files-community.adoc[Installing Distribution Files]
  {% endif %}
- {% if product %}
+ {% if book.product %}
  .. link:topics/installation/distribution-files-product.adoc[Installing Distribution Files]
  {% endif %}
  .. link:topics/openshift.adoc[Installing on OpenShift]
