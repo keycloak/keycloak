@@ -88,7 +88,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
         try {
             String password = username.equals("admin") ? "admin" : "password";
             String clientId = realm.equals("master") ? Constants.ADMIN_CLI_CLIENT_ID : "myclient";
-            AccessTokenResponse tokenResponse = oauthClient.doGrantAccessTokenRequest(realm, username, password, null, clientId, null);
+            AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest(realm, username, password, null, clientId, null);
             if (tokenResponse.getStatusCode() != 200) {
                 throw new RuntimeException("Failed to get token: " + tokenResponse.getErrorDescription());
             }
