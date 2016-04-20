@@ -1,4 +1,0 @@
-= Introduction
-
-The purpose of this guide is to walk through everything that needs to be installed and configred prior to first booting
-up the {{ project.name }} server.  why not work? {{ book.project.name }}

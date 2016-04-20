@@ -4,7 +4,7 @@
 :imagesdir: images
 
  . link:topics/preface.adoc[Preface]
- . link:topics/intro.adoc[Introduction]
+ . link:topics/overview.adoc[Overview]
  . link:topics/server-installation.adoc[Installation and Configuration of Keycloak Server]
  . link:topics/openshift.adoc[Running Keycloak Server on OpenShift]
  . link:topics/cache.adoc[Server Cache]

@@ -1,0 +1,4 @@
+= Introduction
+
+The purpose of this guide is to walk through everything that needs to be installed and configured prior to first booting
+up the {{ project.name }} server.

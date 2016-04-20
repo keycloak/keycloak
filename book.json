@@ -1,4 +1,5 @@
 {
+  "title": "intall and conf",
   "variables": {
     "project.name": "Keycloak"
   }
