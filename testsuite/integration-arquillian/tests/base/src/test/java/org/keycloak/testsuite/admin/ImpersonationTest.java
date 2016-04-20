@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.admin;
 
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -58,14 +59,14 @@ import java.util.Map;
  */
 public class ImpersonationTest extends AbstractKeycloakTest {
 
-    private AssertEvents events;
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     private String impersonatedUserId;
 
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
-        events = new AssertEvents(this);
     }
 
     @Override

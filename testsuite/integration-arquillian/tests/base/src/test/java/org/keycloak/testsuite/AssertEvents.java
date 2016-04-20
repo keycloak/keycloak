@@ -22,10 +22,10 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.Assert;
+import org.junit.rules.TestRule;
+import org.junit.runners.model.Statement;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -33,11 +33,9 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.testsuite.client.resources.TestingResource;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.Response;
-import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +43,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AssertEvents {
+public class AssertEvents implements TestRule {
 
     public static final String DEFAULT_CLIENT_ID = "test-app";
     public static final String DEFAULT_IP_ADDRESS = "127.0.0.1";
@@ -54,25 +52,22 @@ public class AssertEvents {
 
     String defaultRedirectUri = "http://localhost:8180/auth/realms/master/app/auth";
 
-    private RealmResource realmResource;
-    private TestingResource testingResource;
-    private RealmRepresentation realmRep;
     private AbstractKeycloakTest context;
-    private PublicKey realmPublicKey;
 
-    public AssertEvents(AbstractKeycloakTest ctx) throws Exception {
+    public AssertEvents(AbstractKeycloakTest ctx) {
         context = ctx;
+    }
 
-        realmResource = context.adminClient.realms().realm(DEFAULT_REALM);
-        realmRep = realmResource.toRepresentation();
-        String pubKeyString = realmRep.getPublicKey();
-        realmPublicKey = PemUtils.decodePublicKey(pubKeyString);
-
-        UserRepresentation defaultUser = getUser(DEFAULT_USERNAME);
-        if (defaultUser == null) {
-            throw new RuntimeException("Default user does not exist: " + DEFAULT_USERNAME + ". Make sure to add it to your test realm.");
-        }
-        testingResource = context.testingClient.testing();
+    @Override
+    public Statement apply(final Statement base, org.junit.runner.Description description) {
+        return new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                base.evaluate();
+                // TODO Test should fail if there are leftover events
+                context.testingClient.testing().clearQueue();
+            }
+        };
     }
 
     public EventRepresentation poll() {
@@ -83,7 +78,7 @@ public class AssertEvents {
     }
 
     public void clear() {
-        Response res = testingResource.clearQueue();
+        Response res = context.testingClient.testing().clearQueue();
         try {
             Assert.assertEquals("clear-event-queue success", res.getStatus(), 200);
         } finally {
@@ -166,7 +161,7 @@ public class AssertEvents {
 
     public ExpectedEvent expect(EventType event) {
         return new ExpectedEvent()
-                .realm(realmRep.getId())
+                .realm(defaultRealmId())
                 .client(DEFAULT_CLIENT_ID)
                 .user(defaultUserId())
                 .ipAddress(DEFAULT_IP_ADDRESS)
@@ -174,29 +169,24 @@ public class AssertEvents {
                 .event(event);
     }
 
-    UserRepresentation getUser(String username) {
-        List<UserRepresentation> result = realmResource.users().search(username, null, null, null, 0, 1);
-        return result.size() > 0 ? result.get(0) : null;
-    }
-
-    public PublicKey getRealmPublicKey() {
-        return realmPublicKey;
-    }
-
     public class ExpectedEvent {
         private EventRepresentation expected = new EventRepresentation();
+        private Matcher<String> realmId;
         private Matcher<String> userId;
         private Matcher<String> sessionId;
         private HashMap<String, Matcher<String>> details;
 
-        public ExpectedEvent realm(RealmRepresentation realm) {
-            expected.setRealmId(realm.getId());
+        public ExpectedEvent realm(Matcher<String> realmId) {
+            this.realmId = realmId;
             return this;
         }
 
+        public ExpectedEvent realm(RealmRepresentation realm) {
+            return realm(CoreMatchers.equalTo(realm.getId()));
+        }
+
         public ExpectedEvent realm(String realmId) {
-            expected.setRealmId(realmId);
-            return this;
+            return realm(CoreMatchers.equalTo(realmId));
         }
 
         public ExpectedEvent client(ClientRepresentation client) {
@@ -283,7 +273,7 @@ public class AssertEvents {
                 expected.setType(expected.getType() + "_ERROR");
             }
             Assert.assertEquals(expected.getType(), actual.getType());
-            Assert.assertEquals(expected.getRealmId(), actual.getRealmId());
+            Assert.assertThat(actual.getRealmId(), realmId);
             Assert.assertEquals(expected.getClientId(), actual.getClientId());
             Assert.assertEquals(expected.getError(), actual.getError());
             Assert.assertEquals(expected.getIpAddress(), actual.getIpAddress());
@@ -333,6 +323,34 @@ public class AssertEvents {
         };
     }
 
+    public Matcher<String> defaultRealmId() {
+        return new TypeSafeMatcher<String>() {
+            private String realmId;
+
+            @Override
+            protected boolean matchesSafely(String item) {
+                return item.equals(getRealmId());
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText(getRealmId());
+            }
+
+            private String getRealmId() {
+                if (realmId == null) {
+                    RealmRepresentation realm = context.adminClient.realm(DEFAULT_REALM).toRepresentation();
+                    if (realm == null) {
+                        throw new RuntimeException("Default user does not exist: " + DEFAULT_USERNAME + ". Make sure to add it to your test realm.");
+                    }
+                    realmId = realm.getId();
+                }
+                return realmId;
+            }
+
+        };
+    }
+
     public Matcher<String> defaultUserId() {
         return new TypeSafeMatcher<String>() {
             private String userId;
@@ -361,7 +379,12 @@ public class AssertEvents {
         };
     }
 
+    private UserRepresentation getUser(String username) {
+        List<UserRepresentation> users = context.adminClient.realm(DEFAULT_REALM).users().search(username, null, null, null, 0, 1);
+        return users.isEmpty() ? null : users.get(0);
+    }
+
     private EventRepresentation fetchNextEvent() {
-        return testingResource.pollEvent();
+        return context.testingClient.testing().pollEvent();
     }
 }
