@@ -91,6 +91,8 @@ public class ClientAttributeCertificateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public CertificateRepresentation getKeyInfo() {
+        auth.requireView();
+
         CertificateRepresentation info = new CertificateRepresentation();
         info.setCertificate(client.getAttribute(certificateAttribute));
         info.setPrivateKey(client.getAttribute(privateAttribute));
@@ -132,6 +134,8 @@ public class ClientAttributeCertificateResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public CertificateRepresentation uploadJks(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
+        auth.requireManage();
+
         CertificateRepresentation info = getCertFromRequest(uriInfo, input);
 
         if (info.getPrivateKey() != null) {
@@ -163,6 +167,8 @@ public class ClientAttributeCertificateResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public CertificateRepresentation uploadJksCertificate(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
+        auth.requireManage();
+
         CertificateRepresentation info = getCertFromRequest(uriInfo, input);
 
         if (info.getCertificate() != null) {
@@ -239,6 +245,7 @@ public class ClientAttributeCertificateResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public byte[] getKeystore(final KeyStoreConfig config) {
         auth.requireView();
+
         if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
             throw new NotAcceptableException("Only support jks or pkcs12 format.");
         }

@@ -100,6 +100,7 @@ public class UserFederationProviderResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void updateProviderInstance(UserFederationProviderRepresentation rep) {
         auth.requireManage();
+
         String displayName = rep.getDisplayName();
         if (displayName != null && displayName.trim().equals("")) {
             displayName = null;
@@ -129,6 +130,7 @@ public class UserFederationProviderResource {
     @Produces(MediaType.APPLICATION_JSON)
     public UserFederationProviderRepresentation getProviderInstance() {
         auth.requireView();
+
         return ModelToRepresentation.toRepresentation(this.federationProviderModel);
     }
 
@@ -157,8 +159,9 @@ public class UserFederationProviderResource {
     @Path("sync")
     @NoCache
     public UserFederationSyncResult syncUsers(@QueryParam("action") String action) {
-        logger.debug("Syncing users");
         auth.requireManage();
+
+        logger.debug("Syncing users");
 
         UsersSyncManager syncManager = new UsersSyncManager();
         UserFederationSyncResult syncResult;
@@ -183,7 +186,8 @@ public class UserFederationProviderResource {
     @Path("mapper-types")
     @NoCache
     public Map<String, UserFederationMapperTypeRepresentation> getMapperTypes() {
-        this.auth.requireView();
+        auth.requireView();
+
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         Map<String, UserFederationMapperTypeRepresentation> types = new HashMap<>();
         List<ProviderFactory> factories = sessionFactory.getProviderFactories(UserFederationMapper.class);
@@ -226,7 +230,8 @@ public class UserFederationProviderResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<UserFederationMapperRepresentation> getMappers() {
-        this.auth.requireView();
+        auth.requireView();
+
         List<UserFederationMapperRepresentation> mappers = new LinkedList<>();
         for (UserFederationMapperModel model : realm.getUserFederationMappersByFederationProvider(this.federationProviderModel.getId())) {
             mappers.add(ModelToRepresentation.toRepresentation(realm, model));
@@ -265,6 +270,7 @@ public class UserFederationProviderResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addMapper(UserFederationMapperRepresentation mapper) {
         auth.requireManage();
+
         UserFederationMapperModel model = RepresentationToModel.toModel(realm, mapper);
 
         validateModel(model);
@@ -290,6 +296,7 @@ public class UserFederationProviderResource {
     @Produces(MediaType.APPLICATION_JSON)
     public UserFederationMapperRepresentation getMapperById(@PathParam("id") String id) {
         auth.requireView();
+
         UserFederationMapperModel model = realm.getUserFederationMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         return ModelToRepresentation.toRepresentation(realm, model);
@@ -307,6 +314,7 @@ public class UserFederationProviderResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void update(@PathParam("id") String id, UserFederationMapperRepresentation rep) {
         auth.requireManage();
+
         UserFederationMapperModel model = realm.getUserFederationMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(realm, rep);
@@ -328,6 +336,7 @@ public class UserFederationProviderResource {
     @Path("mappers/{id}")
     public void delete(@PathParam("id") String id) {
         auth.requireManage();
+
         UserFederationMapperModel model = realm.getUserFederationMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         realm.removeUserFederationMapper(model);

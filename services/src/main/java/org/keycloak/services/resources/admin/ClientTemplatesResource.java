@@ -75,7 +75,7 @@ public class ClientTemplatesResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<ClientTemplateRepresentation> getClientTemplates() {
-        auth.requireAny();
+        auth.requireView();
 
         List<ClientTemplateRepresentation> rep = new ArrayList<>();
         List<ClientTemplateModel> clientModels = realm.getClientTemplates();

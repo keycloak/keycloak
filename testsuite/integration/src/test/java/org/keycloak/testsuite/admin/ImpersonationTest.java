@@ -72,6 +72,9 @@ public class ImpersonationTest {
                 UserModel masterImpersonator = manager.getSession().users().addUser(adminstrationRealm, "master-impersonator");
                 masterImpersonator.setEnabled(true);
                 ClientModel adminRealmClient = adminstrationRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(appRealm.getName()));
+                RoleModel masterManageUsersRole = adminRealmClient.getRole(AdminRoles.MANAGE_USERS);
+                masterImpersonator.grantRole(masterManageUsersRole);
+
                 RoleModel masterImpersonatorRole = adminRealmClient.getRole(ImpersonationConstants.IMPERSONATION_ROLE);
                 masterImpersonator.grantRole(masterImpersonatorRole);
             }
@@ -84,6 +87,10 @@ public class ImpersonationTest {
                 UserModel impersonator = manager.getSession().users().addUser(appRealm, "impersonator");
                 impersonator.setEnabled(true);
                 ClientModel appRealmClient = appRealm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+
+                RoleModel masterManageUsersRole = appRealmClient.getRole(AdminRoles.MANAGE_USERS);
+                impersonator.grantRole(masterManageUsersRole);
+
                 RoleModel realmImpersonatorRole = appRealmClient.getRole(ImpersonationConstants.IMPERSONATION_ROLE);
                 impersonator.grantRole(realmImpersonatorRole);
             }

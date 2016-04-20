@@ -123,6 +123,7 @@ public class ClientTemplateResource {
     @Produces(MediaType.APPLICATION_JSON)
     public ClientTemplateRepresentation getClient() {
         auth.requireView();
+
         return ModelToRepresentation.toRepresentation(template);
     }
 
@@ -134,6 +135,7 @@ public class ClientTemplateResource {
     @NoCache
     public void deleteClientTemplate() {
         auth.requireManage();
+
         realm.removeClientTemplate(template.getId());
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }

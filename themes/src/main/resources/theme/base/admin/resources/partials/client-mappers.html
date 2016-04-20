@@ -55,7 +55,7 @@
             <td>{{mapperTypes[mapper.protocolMapper].category}}</td>
             <td>{{mapperTypes[mapper.protocolMapper].name}}</td>
             <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}/mappers/{{mapper.id}}">{{:: 'edit' | translate}}</td>
-            <td class="kc-action-cell" data-ng-click="removeMapper(mapper)">{{:: 'delete' | translate}}</td>
+            <td class="kc-action-cell" data-ng-show="access.manageClients" data-ng-click="removeMapper(mapper)">{{:: 'delete' | translate}}</td>
         </tr>
         <tr data-ng-show="mappers.length == 0">
             <td>{{:: 'no-mappers-available' | translate}}</td>
