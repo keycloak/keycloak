@@ -14,7 +14,7 @@
  .. link:topics/installation/directory-structure.adoc[Distribution Directory Structure]
  .. link:topics/openshift.adoc[Installing on OpenShift]
  . link:topics/operating-mode.adoc[Choosing an Operating Mode]
- .. link:topics/deployment-mode/standalone.adoc[Standalone Mode]
+ .. link:topics/operating-mode/standalone.adoc[Standalone Mode]
  . link:topics/cache.adoc[Server Cache]
  . link:topics/clustering.adoc[Clustering]
  . link:topics/proxy.adoc[Keycloak Security Proxy]
