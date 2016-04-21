@@ -20,11 +20,14 @@ package org.keycloak.testsuite;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertArrayEquals;
 
@@ -32,6 +35,12 @@ import static org.junit.Assert.assertArrayEquals;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class Assert extends org.junit.Assert {
+
+    public static <T> void assertNames(Set<T> actual, String... expected) {
+        Arrays.sort(expected);
+        String[] actualNames = names(new LinkedList<Object>(actual));
+        assertArrayEquals("Expected: " + Arrays.toString(expected) + ", was: " + Arrays.toString(actualNames), expected, actualNames);
+    }
 
     public static <T> void assertNames(List<T> actual, String... expected) {
         Arrays.sort(expected);
@@ -65,6 +74,8 @@ public class Assert extends org.junit.Assert {
             return ((ClientRepresentation) o1).getClientId();
         } else if (o1 instanceof IdentityProviderRepresentation) {
             return ((IdentityProviderRepresentation) o1).getAlias();
+        } else if (o1 instanceof RoleRepresentation) {
+            return ((RoleRepresentation) o1).getName();
         }
         throw new IllegalArgumentException();
     }
