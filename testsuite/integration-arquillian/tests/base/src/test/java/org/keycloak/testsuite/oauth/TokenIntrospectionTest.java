@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.util.Time;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -35,7 +34,6 @@ import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -243,19 +241,13 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
 
-        try {
-            HashMap<String, String> args = new HashMap<>();
-            args.put("offset", String.valueOf(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan() + 1));
-            testingClient.testing().setTimeOffset(args);
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
-            TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        setTimeOffset(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan() + 1);
+        String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
+        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
 
-            assertFalse(rep.isActive());
-            assertNull(rep.getUserName());
-            assertNull(rep.getClientId());
-            assertNull(rep.getSubject());
-        } finally {
-            Time.setOffset(0);
-        }
+        assertFalse(rep.isActive());
+        assertNull(rep.getUserName());
+        assertNull(rep.getClientId());
+        assertNull(rep.getSubject());
     }
 }
