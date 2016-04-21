@@ -45,9 +45,7 @@ public class ShiftExecutionTest extends AbstractAuthenticationTest {
         }
 
         // get executions
-        response = authMgmtResource.getExecutions("Copy of browser");
-        List<AuthenticationExecutionInfoRepresentation> executions = response.readEntity(new GenericType<List<AuthenticationExecutionInfoRepresentation>>() {
-        });
+        List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions("Copy of browser");
 
         AuthenticationExecutionInfoRepresentation last = executions.get(executions.size() - 1);
         AuthenticationExecutionInfoRepresentation oneButLast = executions.get(executions.size() - 2);
@@ -55,9 +53,7 @@ public class ShiftExecutionTest extends AbstractAuthenticationTest {
         // shift last execution up
         authMgmtResource.raisePriority(last.getId());
 
-        response = authMgmtResource.getExecutions("Copy of browser");
-        List<AuthenticationExecutionInfoRepresentation> executions2 = response.readEntity(new GenericType<List<AuthenticationExecutionInfoRepresentation>>() {
-        });
+        List<AuthenticationExecutionInfoRepresentation> executions2 = authMgmtResource.getExecutions("Copy of browser");
 
         AuthenticationExecutionInfoRepresentation last2 = executions2.get(executions.size() - 1);
         AuthenticationExecutionInfoRepresentation oneButLast2 = executions2.get(executions.size() - 2);
@@ -68,9 +64,7 @@ public class ShiftExecutionTest extends AbstractAuthenticationTest {
         // shift one before last down
         authMgmtResource.lowerPriority(oneButLast2.getId());
 
-        response = authMgmtResource.getExecutions("Copy of browser");
-        executions2 = response.readEntity(new GenericType<List<AuthenticationExecutionInfoRepresentation>>() {
-        });
+        executions2 = authMgmtResource.getExecutions("Copy of browser");
 
         last2 = executions2.get(executions.size() - 1);
         oneButLast2 = executions2.get(executions.size() - 2);

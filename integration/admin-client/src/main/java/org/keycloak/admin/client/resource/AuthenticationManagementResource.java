@@ -100,7 +100,7 @@ public interface AuthenticationManagementResource {
     @Path("/flows/{flowAlias}/executions")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    Response getExecutions(@PathParam("flowAlias") String flowAlias);
+    List<AuthenticationExecutionInfoRepresentation> getExecutions(@PathParam("flowAlias") String flowAlias);
 
     @Path("/flows/{flowAlias}/executions")
     @PUT
