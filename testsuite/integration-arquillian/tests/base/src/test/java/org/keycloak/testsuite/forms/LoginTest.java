@@ -16,40 +16,33 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
-import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.models.BrowserSecurityHeaders;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.RealmManager;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.common.util.Time;
-import org.openqa.selenium.WebDriver;
 
+import java.util.Map;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
-
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -58,53 +51,46 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginTest {
+public class LoginTest extends TestRealmKeycloakTest {
 
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        UserRepresentation user = UserBuilder.create()
+                                             .id("login-test")
+                                             .username("login-test")
+                                             .email("login@test.com")
+                                             .enabled(true)
+                                             .password("password")
+                                             .build();
+        userId = user.getId();
 
-        @Override
-        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            UserModel user = manager.getSession().users().addUser(appRealm, "login-test");
-            user.setEmail("login@test.com");
-            user.setEnabled(true);
+        UserRepresentation user2 = UserBuilder.create()
+                                              .id("login-test2")
+                                              .username("login-test2")
+                                              .email("login2@test.com")
+                                              .enabled(true)
+                                              .password("password")
+                                              .build();
+        user2Id = user2.getId();
 
-            userId = user.getId();
-
-            user.updateCredential(UserCredentialModel.password("password"));
-
-            UserModel user2 = manager.getSession().users().addUser(appRealm, "login-test2");
-            user2.setEmail("login2@test.com");
-            user2.setEnabled(true);
-
-            user2Id = user2.getId();
-
-            user2.updateCredential(UserCredentialModel.password("password"));
-        }
-    });
+        RealmBuilder.edit(testRealm)
+                    .user(user)
+                    .user(user2);
+    }
 
     @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
+    public AssertEvents events = new AssertEvents(this);
 
-    @Rule
-    public WebRule webRule = new WebRule(this);
-
-    @WebResource
-    protected OAuthClient oauth;
-
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     protected ErrorPage errorPage;
-    
-    @WebResource
+
+    @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
 
     private static String userId;
@@ -188,14 +174,15 @@ public class LoginTest {
                 .assertEvent();
     }
 
+    private void setUserEnabled(String userName, boolean enabled) {
+        UserRepresentation rep = adminClient.realm("test").users().get(userName).toRepresentation();
+        rep.setEnabled(enabled);
+        adminClient.realm("test").users().get(userName).update(rep);
+    }
+
     @Test
     public void loginInvalidPasswordDisabledUser() {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                session.users().getUserByUsername("login-test", appRealm).setEnabled(false);
-            }
-        });
+        setUserEnabled("login-test", false);
 
         try {
             loginPage.open();
@@ -215,23 +202,13 @@ public class LoginTest {
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    session.users().getUserByUsername("login-test", appRealm).setEnabled(true);
-                }
-            });
+            setUserEnabled("login-test", true);
         }
     }
 
     @Test
     public void loginDisabledUser() {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                session.users().getUserByUsername("login-test", appRealm).setEnabled(false);
-            }
-        });
+        setUserEnabled("login-test", false);
 
         try {
             loginPage.open();
@@ -251,12 +228,7 @@ public class LoginTest {
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    session.users().getUserByUsername("login-test", appRealm).setEnabled(true);
-                }
-            });
+            setUserEnabled("login-test", true);
         }
     }
 
@@ -303,17 +275,19 @@ public class LoginTest {
     @Test
     // KEYCLOAK-2557
     public void loginUserWithEmailAsUsername() {
-        KeycloakSession session = keycloakRule.startSession();
+        UserRepresentation rep = UserBuilder.create()
+                                            .enabled(true)
+                                            .id("foo")
+                                            .email("foo")
+                                            .username("login@test.com")
+                                            .password("password")
+                                            .build();
 
-        UserModel user = session.users().addUser(session.realms().getRealmByName("test"), "login@test.com");
-        user.setEnabled(true);
-        user.updateCredential(UserCredentialModel.password("password"));
-
-        keycloakRule.stopSession(session, true);
+        adminClient.realm(userId).users().create(rep);
 
         loginPage.open();
         loginPage.login("login@test.com", "password");
-        
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
@@ -349,86 +323,71 @@ public class LoginTest {
 
         events.expectLogin().user(userId).removeDetail(Details.USERNAME).assertEvent();
     }
-    
+
+    private void setPasswordPolicy(String policy) {
+        RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+        realmRep.setPasswordPolicy(policy);
+        adminClient.realm("test").update(realmRep);
+    }
+
     @Test
     public void loginWithForcePasswordChangePolicy() {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setPasswordPolicy(new PasswordPolicy("forceExpiredPasswordChange(1)"));
-            }
-        });
-        
+        setPasswordPolicy("forceExpiredPasswordChange(1)");
+
         try {
             // Setting offset to more than one day to force password update
             // elapsedTime > timeToExpire
             Time.setOffset(86405);
-            
+
             loginPage.open();
 
             loginPage.login("login-test", "password");
-            
+
             updatePasswordPage.assertCurrent();
-            
+
             updatePasswordPage.changePassword("updatedPassword", "updatedPassword");
 
             events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
-            
+
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
-            
+
         } finally {
-            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
-                    
-                    UserModel user = manager.getSession().users().getUserByUsername("login-test", appRealm);
-                    UserCredentialModel cred = new UserCredentialModel();
-                    cred.setType(CredentialRepresentation.PASSWORD);
-                    cred.setValue("password");
-                    user.updateCredential(cred);
-                }
-            });
+            setPasswordPolicy(null);
+            UserResource userRsc = adminClient.realm("test").users().get("login-test");
+            UserBuilder userBuilder = UserBuilder.edit(userRsc.toRepresentation())
+                                                 .password("password");
+            userRsc.update(userBuilder.build());
+
             Time.setOffset(0);
         }
     }
-    
+
     @Test
     public void loginWithoutForcePasswordChangePolicy() {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setPasswordPolicy(new PasswordPolicy("forceExpiredPasswordChange(1)"));
-            }
-        });
-        
+        setPasswordPolicy("forceExpiredPasswordChange(1)");
+
         try {
             // Setting offset to less than one day to avoid forced password update
             // elapsedTime < timeToExpire
             Time.setOffset(86205);
-            
+
             loginPage.open();
 
             loginPage.login("login-test", "password");
-            
+
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
             events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
-            
+
         } finally {
-            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
-                }
-            });
+            setPasswordPolicy(null);
             Time.setOffset(0);
         }
     }
-    
+
     @Test
     public void loginNoTimeoutWithLongWait() {
         try {
@@ -484,14 +443,15 @@ public class LoginTest {
         events.expectLogin().user(userId).assertEvent();
     }
 
+    private void setRememberMe(boolean enabled) {
+        RealmRepresentation rep = adminClient.realm("test").toRepresentation();
+        rep.setRememberMe(enabled);
+        adminClient.realm("test").update(rep);
+    }
+
     @Test
     public void loginWithRememberMe() {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setRememberMe(true);
-            }
-        });
+        setRememberMe(true);
 
         try {
             loginPage.open();
@@ -502,14 +462,14 @@ public class LoginTest {
 
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-            Event loginEvent = events.expectLogin().user(userId)
-                    .detail(Details.USERNAME, "login-test")
-                    .detail(Details.REMEMBER_ME, "true")
-                    .assertEvent();
+            EventRepresentation loginEvent = events.expectLogin().user(userId)
+                                                   .detail(Details.USERNAME, "login-test")
+                                                   .detail(Details.REMEMBER_ME, "true")
+                                                   .assertEvent();
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            keycloakRule.removeUserSession(sessionId);
+            testingClient.testing().removeUserSession("test", sessionId);
 
             // Assert rememberMe checked and username/email prefilled
             loginPage.open();
@@ -518,12 +478,7 @@ public class LoginTest {
 
             loginPage.setRememberMe(false);
         } finally {
-            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setRememberMe(false);
-                }
-            });
+            setRememberMe(false);
         }
     }
 
@@ -533,12 +488,7 @@ public class LoginTest {
         try {
             loginPage.open();
             Time.setOffset(5000);
-            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                   manager.getSession().sessions().removeExpired(appRealm);
-                }
-            });
+            testingClient.testing().removeExpired("test");
 
             loginPage.login("login@test.com", "password");
 

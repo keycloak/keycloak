@@ -29,8 +29,8 @@ import javax.ws.rs.core.UriBuilder;
  */
 public class AppPage extends AbstractPage {
 
-    public static final String AUTH_SERVER_URL = "http://localhost:8081/auth";
-    public static final String baseUrl = "http://localhost:8081/app";
+    public static final String AUTH_SERVER_URL = "http://localhost:8180/auth";
+    public static final String baseUrl = "http://localhost:8180/auth/realms/master/app";
 
     @FindBy(id = "account")
     private WebElement accountLink;
