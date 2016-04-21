@@ -158,6 +158,7 @@ public class UserFederationProviderResource {
     @POST
     @Path("sync")
     @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
     public UserFederationSyncResult syncUsers(@QueryParam("action") String action) {
         auth.requireManage();
 
@@ -352,6 +353,7 @@ public class UserFederationProviderResource {
     @POST
     @Path("mappers/{id}/sync")
     @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
     public UserFederationSyncResult syncMapperData(@PathParam("id") String mapperId, @QueryParam("direction") String direction) {
         auth.requireManage();
 
