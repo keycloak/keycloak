@@ -105,7 +105,7 @@ public class RoleMapperResource {
         auth.requireView();
 
         MappingsRepresentation all = new MappingsRepresentation();
-        Set<RoleModel> realmMappings = roleMapper.getRoleMappings();
+        Set<RoleModel> realmMappings = roleMapper.getRealmRoleMappings();
         RealmManager manager = new RealmManager(session);
         if (realmMappings.size() > 0) {
             List<RoleRepresentation> realmRep = new ArrayList<RoleRepresentation>();
