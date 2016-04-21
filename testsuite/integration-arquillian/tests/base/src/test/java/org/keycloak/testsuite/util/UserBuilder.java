@@ -80,6 +80,11 @@ public class UserBuilder {
         return this;
     }
 
+    public UserBuilder serviceAccountId(String serviceAccountId) {
+        rep.setServiceAccountClientId(serviceAccountId);
+        return this;
+    }
+
     public UserRepresentation build() {
         return rep;
     }
