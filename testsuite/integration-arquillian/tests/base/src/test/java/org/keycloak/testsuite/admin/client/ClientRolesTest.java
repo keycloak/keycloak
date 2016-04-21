@@ -23,7 +23,14 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.util.RoleBuilder;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -73,6 +80,38 @@ public class ClientRolesTest extends AbstractClientTest {
         rolesRsc.create(makeRole("role2"));
         rolesRsc.deleteRole("role2");
         assertFalse(hasRole(rolesRsc, "role2"));
+    }
+
+    @Test
+    public void testComposites() {
+        rolesRsc.create(makeRole("role-a"));
+
+        assertFalse(rolesRsc.get("role-a").toRepresentation().isComposite());
+        assertEquals(0, rolesRsc.get("role-a").getRoleComposites().size());
+
+        rolesRsc.create(makeRole("role-b"));
+        testRealmResource().roles().create(makeRole("role-c"));
+
+        List<RoleRepresentation> l = new LinkedList<>();
+        l.add(rolesRsc.get("role-b").toRepresentation());
+        l.add(testRealmResource().roles().get("role-c").toRepresentation());
+        rolesRsc.get("role-a").addComposites(l);
+
+        Set<RoleRepresentation> composites = rolesRsc.get("role-a").getRoleComposites();
+
+        assertTrue(rolesRsc.get("role-a").toRepresentation().isComposite());
+        Assert.assertNames(composites, "role-b", "role-c");
+
+        Set<RoleRepresentation> realmComposites = rolesRsc.get("role-a").getRealmRoleComposites();
+        Assert.assertNames(realmComposites, "role-c");
+
+        Set<RoleRepresentation> clientComposites = rolesRsc.get("role-a").getClientRoleComposites(clientRsc.toRepresentation().getId());
+        Assert.assertNames(clientComposites, "role-b");
+
+        rolesRsc.get("role-a").deleteComposites(l);
+
+        assertFalse(rolesRsc.get("role-a").toRepresentation().isComposite());
+        assertEquals(0, rolesRsc.get("role-a").getRoleComposites().size());
     }
 
 }
