@@ -1,3 +1,4 @@
+[[_standalone-mode]]
 === Standalone Mode
 
 Standalone operating mode is only useful when you want to run one, and only one {{book.project.name}} server instance.  Standalone
@@ -12,12 +13,7 @@ When running the server in standalone mode, there is a specific script you need 
 operating system.  These scripts live in the _bin/_ directory of the server distribution.
 
 .Standalone Boot Scripts
-{% if book.product %}
-image:../../rhsso-images/standalone-boot-files.png[]
-{% endif %}
-{% if book.community %}
-image:../../keycloak-images/standalone-boot-files.png[]
-{% endif %}
+image:../../{{book.images}}/standalone-boot-files.png[]
 
 To boot the server:
 
@@ -42,6 +38,11 @@ derivative of.  In the standalone operation mode, this file lives in _.../standa
 .Standalone Config File
 image:../../{{book.images}}/standalone-config-file.png[]
 
+NOTE: Any changes you make to this file while the server is running will not take effect and may even be overwritten
+      by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
+      the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
+
+
 ==== Standalone {{book.project.name}} Configuration
 
 {{book.project.name}} has a json configuration file that is specific to {{book.project.name}} this is located within
@@ -50,6 +51,9 @@ only applicable to {{book.project.name}}
 
 .Standalone {{book.project.name}} Config File
 image:../../{{book.images}}/standalone-json-config-file.png[]
+
+NOTE: Any changes you make to this file while the server is running will not take effect.  You'll need to reboot the
+      server.
 
 
 

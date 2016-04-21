@@ -1,0 +1,52 @@
+=== Standalone Clustered
+
+Standalone clustered operation mode is for when you want to run {{book.project.name}} within a cluster.  This mode
+requires that you have a copy of each distribution for each node you want to run in the cluster.  While very easy to
+deploy initially, this mode can become cumbersome if you end up having a large cluster because you will have to
+modify the configuration in each node anytime you need to make a change.
+
+==== Standalone Clustered Configuration
+
+The distribution has a pre-configured app server configuration file for running within a cluster.  It has all the specific
+infrasture settings you need for the clustered caches and discovery that {{book.project.name}} needs.  This file resides
+in _.../standalone/configuration/standalone-ha.xml_
+
+.Standalone HA Config
+image:../../{{book.images}}/standalone-ha-config-file.png[]
+
+NOTE: Any changes you make to this file while the server is running will not take effect and may even be overwritten
+      by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
+      the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
+
+==== Standalone Boot Script
+
+You use the same boot scripts to start {{book.project.name}} as you do in standalone mode.  The difference is that
+you pass in an additional flag to point to the HA config file.
+
+.Standalone Clustered Boot Scripts
+image:../../{{book.images}}/standalone-boot-files.png[]
+
+To boot the server:
+
+.Linux/Unix
+[source]
+----
+$ .../bin/standalone.sh --server-config=standalone-ha.xml
+----
+
+.Windows
+[source]
+----
+> ...\bin\standalone.bat --server-config=standalone-ha.xml
+----
+
+==== Standalone Clustered{{book.project.name}} Configuration
+
+The {{book.project.name}} specific json configure file resides in the same place as in standalone mode: _.../standalone/configuration/keycloak.json_.
+Like _standalone-ha.xml_ you have to modify this file in each distribution in your cluster in order for changes to take effect.
+
+NOTE: Any changes you make to this file while the server is running will not take effect.  You'll need to reboot the
+      server.
+
+
+
