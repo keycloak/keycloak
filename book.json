@@ -12,6 +12,10 @@
     "community": true,
     "product": false,
     "images": "rhsso-images",
+    "appserver": {
+      "name": "Wildfly",
+      "version": "10.0.0.Final"
+    },
     "project": {
       "name": "Keycloak",
       "version": "1.9.3.Final-SNAPSHOT"

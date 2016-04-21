@@ -5,7 +5,8 @@ This chapter walks you through the directory structure of the server distributio
 .distribution directory structure
 {% if book.product %}
 . image:../../rhsso-images/files.png[alt="distribution"]
-{% else %}
+{% endif %}
+{% if book.community %}
 image:../../keycloak-images/files.png[alt="distribution"]
 {% endif %}
 

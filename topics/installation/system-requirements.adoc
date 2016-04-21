@@ -10,4 +10,4 @@ These are the requirements to run the {{book.project.name}} authentication serve
 * At least 1G of diskspace
 
 {{book.project.name}} can be clustered without multicast, but this requires a bunch of configuration changes.  Please see
-the <<fake/../../clustering.adoc#,clustering>> section of this guide for more information.
+the <<fake/../../clustering.adoc#_clustering_db_lock,clustering>> section of this guide for more information.

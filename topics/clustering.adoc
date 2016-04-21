@@ -5,6 +5,7 @@ Keycloak doesn't replicate realms and users, but instead relies on all nodes usi
 This can be a relational database or Mongo.
 To make sure your database doesn't become a single point of failure you may also want to deploy your database to a cluster. 
 
+[[_clustering_db_lock]]
 === DB lock
 
 Note that Keycloak supports concurrent startup by more cluster nodes at the same.
