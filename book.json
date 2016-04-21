@@ -15,8 +15,27 @@
     "appserver": {
       "name": "JBoss EAP",
       "version": "6.4",
-      "admindoc": "Administration and Configuration Guide",
-      "admindoclink": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/"
+      "admindoc": {
+        "name": "JBoss EAP Administration and Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/"
+      }
+    },
+    "caching": {
+      "name": "JBoss Data Grid",
+      "version": "???",
+      "admindoc": {
+        "name": "JBoss Data Grid Administration and Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en-US/Red_Hat_JBoss_Data_Grid/6.6/html/Administration_and_Configuration_Guide/index.html"
+      }
+    },
+    "jpa": {
+      "name": "Hibernate",
+      "version": "???",
+      "admindoc": {
+        "name": "Hibernate Config",
+        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Development_Guide/sect-Java_Persistence_API_JPA.html#sect-Configuration2"
+      }
+
     },
     "project": {
       "name": "Keycloak",

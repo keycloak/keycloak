@@ -1,0 +1,69 @@
+=== Standalone Mode
+
+Standalone operating mode is only useful when you want to run one, and only one {{book.project.name}} server instance.  Standalone
+instances contain all the configuration files they need locally.  What this basically means is that any configuration done
+must be done on the config files contained in the installed distribution on the machine the {{book.project.name}} is going to run on
+{{book.project.name}} standalone mode is available pre-configured out of the box.  It turns off clustering entirely
+and turns any distributed caches into local-only ones.
+
+==== Standalone Boot Script
+
+When running the server in standalone mode, there is a specific script you need to run to boot the server depending on your
+operating system.  These scripts live in the _bin/_ directory of the server distribution.
+
+.Standalone Boot Scripts
+{% if book.product %}
+image:../../rhsso-images/standalone-boot-files.png[]
+{% endif %}
+{% if book.community %}
+image:../../keycloak-images/standalone-boot-files.png[]
+{% endif %}
+
+To boot the server:
+
+.Linux/Unix
+[source]
+----
+$ .../bin/standalone.sh
+----
+
+.Windows
+[source]
+----
+> ...\bin\standalone.bat
+----
+
+==== Standalone Configuration
+
+The bulk of this guide walks you through how to configure infrastructure level aspects of {{book.project.name}}.  These
+aspects are configured in a configuration file that is specific to the application server that {{book.project.name}} is a
+derivative of.  In the standalone operation mode, this file lives in _.../standalone/configuration/standalone.xml_.
+
+.Standalone Config File
+{% if book.product %}
+image:../../rhsso-images/standalone-config-file.png[]
+{% endif %}
+{% if book.community %}
+image:../../keycloak-images/standalone-config-file.png[]
+{% endif %}
+
+==== Standalone {{book.project.name}} Configuration
+
+{{book.project.name}} has a json configuration file that is specific to {{book.project.name}} this is located within
+_.../standalone/configuration/keycloak.json_.  This file is used to configure non-infrastructure level things that are
+only applicable to {{book.project.name}}
+
+.Standalone {{book.project.name}} Config File
+{% if book.product %}
+image:../../rhsso-images/standalone-json-config-file.png[]
+{% endif %}
+{% if book.community %}
+image:../../keycloak-images/standalone-json-config-file.png[]
+{% endif %}
+
+
+
+
+
+
+

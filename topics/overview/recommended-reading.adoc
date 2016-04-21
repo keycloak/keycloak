@@ -1,0 +1,10 @@
+=== Recommended Additional External Documentation
+
+{{book.project.name}} is built upon a derivative of the {{book.appserver.name}} Application Server and projects embedded
+within {{book.appserver.name}} like {{book.cache.name}} (for caching) and Hibernate (for persistence).  This guide only
+goes over the basics for infrastructure-level configuration.  It is highly recommended that you peruse the documentation
+for {{book.appserver.name}} and its sub projects.  Here are some links to that documentation:
+
+* link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}]
+* link:{{book.cache.admindoc.link}}[{{book.cache.admindoc.name}}]
+* link:{{book.jpa.admindoc.link}}[{{book.jpa.admindoc.name}}]
