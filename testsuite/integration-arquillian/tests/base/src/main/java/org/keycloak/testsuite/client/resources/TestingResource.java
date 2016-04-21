@@ -62,10 +62,10 @@ public interface TestingResource {
     @POST
     @Path("/remove-user-session")
     @Produces(MediaType.APPLICATION_JSON)
-    Response removeUserSession(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId);
+    Response removeUserSession(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId);
 
     @POST
     @Path("/remove-expired")
     @Produces(MediaType.APPLICATION_JSON)
-    Response removeExpired(@QueryParam("realm") final String name);
+    Response removeExpired(@QueryParam("realm") final String realm);
 }

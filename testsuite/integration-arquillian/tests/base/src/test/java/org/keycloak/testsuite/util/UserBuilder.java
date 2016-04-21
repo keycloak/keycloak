@@ -29,14 +29,20 @@ import java.util.List;
  */
 public class UserBuilder {
 
-    private UserRepresentation rep = new UserRepresentation();
+    private final UserRepresentation rep;
 
     public static UserBuilder create() {
-        return new UserBuilder();
+        UserRepresentation rep = new UserRepresentation();
+        rep.setEnabled(Boolean.TRUE);
+        return new UserBuilder(rep);
     }
 
-    private UserBuilder() {
-        rep.setEnabled(true);
+    public static UserBuilder edit(UserRepresentation rep) {
+        return new UserBuilder(rep);
+    }
+
+    private UserBuilder(UserRepresentation rep) {
+        this.rep = rep;
     }
 
     public UserBuilder id(String id) {
@@ -49,7 +55,10 @@ public class UserBuilder {
         return this;
     }
 
-    public UserBuilder password(String password) {
+    /**
+     * This method adds additional passwords to the user.
+     */
+    public UserBuilder addPassword(String password) {
         if (rep.getCredentials() == null) {
             rep.setCredentials(new LinkedList<CredentialRepresentation>());
         }
@@ -59,6 +68,24 @@ public class UserBuilder {
         credential.setValue(password);
 
         rep.getCredentials().add(credential);
+        return this;
+    }
+
+    /**
+     * This method makes sure that there is one single password for the user.
+     */
+    public UserBuilder password(String password) {
+        rep.setCredentials(null);
+        return addPassword(password);
+    }
+
+    public UserBuilder email(String email) {
+        rep.setEmail(email);
+        return this;
+    }
+
+    public UserBuilder enabled(boolean enabled) {
+        rep.setEnabled(enabled);
         return this;
     }
 
