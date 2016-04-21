@@ -15,7 +15,7 @@ _bin/_::
   This contains various scripts to either boot the server or perform some other management action on the server.
 
 _domain/_::
-  This contains configuration files and working directory when running {{book.project.name}} in <<fake/../../domain-mode.adoc,domain mode>>.
+  This contains configuration files and working directory when running {{book.project.name}} in <<fake/../../domain-mode.adoc#,domain mode>>.
 
 _modules/_::
   These are all the Java libraries used by the server.
@@ -24,7 +24,7 @@ _providers/_::
   If you are writing extensions to keycloak, you can put your extensions here.  See the link:http://not-implemented-yet[Server Developer Guide] for more information on this.
 
 _standalone/_::
-  This contains configuration files and working directory when running {{book.project.name}} in <<fake/../../standalone-mode.adoc,standalone mode>>.
+  This contains configuration files and working directory when running {{book.project.name}} in <<fake/../../standalone-mode.adoc#,standalone mode>>.
 
 _themes/_::
   This directory contains all the html, style sheets, javascript files, and images used to display any UI screen displayed by the server.

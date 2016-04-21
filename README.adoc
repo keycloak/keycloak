@@ -1,10 +1,10 @@
 
-Keycloak Server Installation and Configuration Guide
+{{book.project.name}} Server Installation and Configuration Guide
 ======================
 
 image:images/keycloak_logo.png[alt="Keycloak"]
 
-*Keycloak* _Documentation_ for {{book.versions.swarm}}
+*{{book.project.name}}* _Documentation_ for {{book.project.version}}
 
 http://www.keycloak.org
 
