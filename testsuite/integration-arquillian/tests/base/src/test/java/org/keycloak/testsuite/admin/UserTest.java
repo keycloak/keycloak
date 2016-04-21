@@ -24,22 +24,30 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.WebDriver;
 
 import javax.mail.MessagingException;
@@ -55,6 +63,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.*;
+import static org.keycloak.testsuite.Assert.assertNames;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -713,6 +722,66 @@ public class UserTest extends AbstractAdminTest {
         realm.flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePasswordReqAction);
     }
 
+    @Test
+    public void roleMappings() {
+        RealmResource realm = adminClient.realms().realm("test");
+        realm.roles().create(RoleBuilder.create().name("realm-role").build());
+        realm.roles().create(RoleBuilder.create().name("realm-composite").build());
+        realm.roles().create(RoleBuilder.create().name("realm-child").build());
+        realm.roles().get("realm-composite").addComposites(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
+
+        Response response = realm.clients().create(ClientBuilder.create().clientId("myclient").build());
+        String clientId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-role").build());
+        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-role2").build());
+        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-composite").build());
+        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-child").build());
+        realm.clients().get(clientId).roles().get("client-composite").addComposites(Collections.singletonList(realm.clients().get(clientId).roles().get("client-child").toRepresentation()));
+
+        response = realm.users().create(UserBuilder.create().username("myuser").build());
+        String userId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        RoleMappingResource roles = realm.users().get(userId).roles();
+        assertNames(roles.realmLevel().listAll(), "user", "offline_access");
+
+        // Add realm roles
+        List<RoleRepresentation> l = new LinkedList<>();
+        l.add(realm.roles().get("realm-role").toRepresentation());
+        l.add(realm.roles().get("realm-composite").toRepresentation());
+        roles.realmLevel().add(l);
+
+        // Add client roles
+        roles.clientLevel(clientId).add(Collections.singletonList(realm.clients().get(clientId).roles().get("client-role").toRepresentation()));
+        roles.clientLevel(clientId).add(Collections.singletonList(realm.clients().get(clientId).roles().get("client-composite").toRepresentation()));
+
+        // List realm roles
+        assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite", "user", "offline_access");
+        assertNames(roles.realmLevel().listAvailable(), "admin");
+        assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child", "user", "offline_access");
+
+        // List client roles
+        assertNames(roles.clientLevel(clientId).listAll(), "client-role", "client-composite");
+        assertNames(roles.clientLevel(clientId).listAvailable(), "client-role2");
+        assertNames(roles.clientLevel(clientId).listEffective(), "client-role", "client-composite", "client-child");
+
+        // Get mapping representation
+        MappingsRepresentation all = roles.getAll();
+        assertNames(all.getRealmMappings(), "realm-role", "realm-composite", "user", "offline_access");
+        assertEquals(2, all.getClientMappings().size());
+        assertNames(all.getClientMappings().get("myclient").getMappings(), "client-role", "client-composite");
+        assertNames(all.getClientMappings().get("account").getMappings(), "manage-account", "view-profile");
+
+        // Remove realm role
+        roles.realmLevel().remove(Collections.singletonList(realm.roles().get("realm-role").toRepresentation()));
+        assertNames(roles.realmLevel().listAll(), "realm-composite", "user", "offline_access");
+
+        // Remove client role
+        roles.clientLevel(clientId).remove(Collections.singletonList(realm.clients().get(clientId).roles().get("client-role").toRepresentation()));
+        assertNames(roles.clientLevel(clientId).listAll(), "client-composite");
+    }
 
     private void switchEditUsernameAllowedOn() {
         RealmRepresentation rep = realm.toRepresentation();
