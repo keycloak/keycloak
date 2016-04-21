@@ -63,6 +63,9 @@ public interface RealmResource {
     @Path("roles")
     RolesResource roles();
 
+    @Path("roles-by-id")
+    RoleByIdResource rolesById();
+
     @Path("groups")
     GroupsResource groups();
 
