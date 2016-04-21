@@ -25,6 +25,7 @@
         var kc = this;
         var adapter;
         var refreshQueue = [];
+        var storage;
 
         var loginIframe = {
             enable: true,
@@ -34,6 +35,8 @@
 
         kc.init = function (initOptions) {
             kc.authenticated = false;
+
+            storage = new PersistentStorage();
 
             if (window.Cordova) {
                 adapter = loadAdapter('cordova');
@@ -192,7 +195,7 @@
                 redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'prompt=' + options.prompt;
             }
 
-            localStorage.oauthState = JSON.stringify({ state: state, nonce: nonce, redirectUri: encodeURIComponent(redirectUri) });
+            storage.setItem('oauthState', JSON.stringify({ state: state, nonce: nonce, redirectUri: encodeURIComponent(redirectUri) }));
 
             var action = 'auth';
             if (options && options.action == 'register') {
@@ -689,10 +692,11 @@
         function parseCallback(url) {
             var oauth = new CallbackParser(url, kc.responseMode).parseUri();
 
-            var sessionState = localStorage.oauthState && JSON.parse(localStorage.oauthState);
+            var oauthState = storage.getItem('oauthState');
+            var sessionState = oauthState && JSON.parse(oauthState);
 
             if (sessionState && (oauth.code || oauth.error || oauth.access_token || oauth.id_token) && oauth.state && oauth.state == sessionState.state) {
-                delete localStorage.oauthState;
+                storage.removeItem('oauthState');
 
                 oauth.redirectUri = sessionState.redirectUri;
                 oauth.storedNonce = sessionState.nonce;
@@ -972,6 +976,82 @@
             throw 'invalid adapter type: ' + type;
         }
 
+
+        var PersistentStorage = function() {
+            if (!(this instanceof PersistentStorage)) {
+                return new PersistentStorage();
+            }
+            var ps = this;
+            var useCookieStorage = function () {
+                if (typeof localStorage === "undefined") {
+                    return true;
+                }
+                try {
+                    var key = '@@keycloak-session-storage/test';
+                    localStorage.setItem(key, 'test');
+                    localStorage.removeItem(key);
+                    return false;
+                } catch (err) {
+                    // Probably in Safari "private mode" where localStorage
+                    // quota is 0, or quota exceeded. Switching to cookie
+                    // storage.
+                    return true;
+                }
+            }
+
+            ps.setItem = function(key, value) {
+                if (useCookieStorage()) {
+                    setCookie(key, value, cookieExpiration(5));
+                } else {
+                    localStorage.setItem(key, value);
+                }
+            }
+
+            ps.getItem = function(key) {
+                if (useCookieStorage()) {
+                    return getCookie(key);
+                }
+                return localStorage.getItem(key);
+            }
+
+            ps.removeItem = function(key) {
+                if (typeof localStorage !== "undefined") {
+                    try {
+                        // Always try to delete from localStorage.
+                        localStorage.removeItem(key);
+                    } catch (err) { }
+                }
+                // Always remove the cookie.
+                setCookie(key, '', cookieExpiration(-100));
+            }
+
+            var cookieExpiration = function (minutes) {
+                var exp = new Date();
+                exp.setTime(exp.getTime() + (minutes*60*1000));
+                return exp;
+            }
+
+            var getCookie = function (key) {
+                var name = key + '=';
+                var ca = document.cookie.split(';');
+                for (var i = 0; i < ca.length; i++) {
+                    var c = ca[i];
+                    while (c.charAt(0) == ' ') {
+                        c = c.substring(1);
+                    }
+                    if (c.indexOf(name) == 0) {
+                        return c.substring(name.length, c.length);
+                    }
+                }
+                return '';
+            }
+
+            var setCookie = function (key, value, expirationDate) {
+                var cookie = key + '=' + value + '; '
+                    + 'expires=' + expirationDate.toUTCString() + '; ';
+                document.cookie = cookie;
+            }
+        }
 
         var CallbackParser = function(uriToParse, responseMode) {
             if (!(this instanceof CallbackParser)) {
