@@ -21,6 +21,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -76,6 +77,8 @@ public class Assert extends org.junit.Assert {
             return ((IdentityProviderRepresentation) o1).getAlias();
         } else if (o1 instanceof RoleRepresentation) {
             return ((RoleRepresentation) o1).getName();
+        } else if (o1 instanceof UserRepresentation) {
+            return ((UserRepresentation) o1).getUsername();
         }
         throw new IllegalArgumentException();
     }
