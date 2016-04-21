@@ -1,10 +1,10 @@
-= Server Cache
+== Server Cache
 
 By default, Keycloak caches realm metadata and users.
 There are two separate caches, one for realm metadata (realm, application, client, roles, etc...) and one for users.
 These caches greatly improves the performance of the server. 
 
-== Eviction and Expiration
+=== Eviction and Expiration
 
 By default the user cache contains a maximum of 10000 entries.
 This is not 10000 users, but 10000 entries in the cache.
@@ -12,7 +12,7 @@ You can change the maximum number of entries by editing the server configuration
 Locate the element `cache-container name="keycloak"` and change the eviction policy for the `users` cache.
 For more information see https://docs.jboss.org/author/display/WFLY10/Infinispan+Subsystem[Infinispan Subsystem documentation]. 
 
-== Disabling Caches
+=== Disabling Caches
 
 To disable the realm or user cache, you must edit the `keycloak-server.json` file in your distribution.
 Here's what the config looks like initially. 
@@ -51,7 +51,7 @@ To disable the cache set the enabled field to false for the cache you want to di
     },
 ----        
 
-== Clear Caches
+=== Clear Caches
 
 To clear the realm or user cache, go to the Keycloak admin console Realm Settings->Cache Config page.
 On this page you can clear the realm cache or the user cache.

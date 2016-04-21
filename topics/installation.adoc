@@ -1,4 +1,4 @@
-= Installation
+== Installation
 
 This chapter reviews what binaries you need to install to run the {{book.project.name}} Server on a specific machine.
 It describes the directory structure and files of the distribution.  Finally, it describes how to install {{book.project.name}}

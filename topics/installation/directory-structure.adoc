@@ -1,4 +1,4 @@
-= Distribution Directory Structure
+=== Distribution Directory Structure
 
 This chapter walks you through the directory structure of the server distribution.
 

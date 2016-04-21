@@ -1,4 +1,4 @@
-= Installing Distribution Files
+=== Installing Distribution Files
 
 The Keycloak Server has three downloadable distributions:
 

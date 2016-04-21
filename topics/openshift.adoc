@@ -1,6 +1,6 @@
 [[_openshift]]
 
-= Running Keycloak Server on OpenShift
+== Running Keycloak Server on OpenShift
 
 Keycloak provides a OpenShift cartridge to make it easy to get it running on OpenShift.
 If you don't already have an account or don't know how to create applications go to https://www.openshift.com/        first.
@@ -9,7 +9,7 @@ You can create the Keycloak instance either with the web tool or the command lin
 WARNING: It's important that immediately after creating a Keycloak instance you open the `Administration Console`            and login to reset the password.
 If this is not done anyone can easily gain admin rights to your Keycloak instance. 
 
-== Create Keycloak instance with the web tool
+=== Create Keycloak instance with the web tool
 
 . Open https://openshift.redhat.com/app/console/applications and click on `Add Application`.
 . Scroll down to the bottom of the page to find the `Code Anything` section.
@@ -19,7 +19,7 @@ If this is not done anyone can easily gain admin rights to your Keycloak instanc
 . Under the list of applications you should find your Keycloak instance and the status should be `Started`.
 . Click on it to open the Keycloak servers homepage. 
 
-== Create Keycloak instance with the command-line tool
+=== Create Keycloak instance with the command-line tool
 
 . Run the following command from a terminal: 
 
@@ -33,7 +33,7 @@ rhc app create <APPLICATION NAME> http://cartreflect-claytondev.rhcloud.com/gith
 Once the instance is created the rhc tool outputs details about it.
 Open the returned `URL` in a browser to open the Keycloak servers homepage. 
 
-== Next steps
+=== Next steps
 
 The Keycloak servers homepage shows the Keycloak logo and `Welcome to Keycloak`.
 There is also a link to the `Administration Console`.

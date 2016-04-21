@@ -1,4 +1,5 @@
 [[_clustering]]
+== Clustering
 
 Keycloak doesn't replicate realms and users, but instead relies on all nodes using the same database.
 This can be a relational database or Mongo.
@@ -24,7 +25,7 @@ Typically you won't need to increase/decrease the default value, but just in cas
 ----                
 or similarly if you're using Mongo (just by replace `jpa` with `mongo`) 
 
-== Configure Infinispan
+=== Configure Infinispan
 
 Keycloak uses http://www.infinispan.org/[Infinispan] caches to share information between nodes. 
 
@@ -56,7 +57,7 @@ For non-cluster configuration (server executed with `standalone.xml` ) is the in
 
 For cluster configuration, you can edit the configuration of `infinispan/Keycloak` container in `standalone/configuration/standalone-ha.xml` (or `standalone-keycloak-ha.xml` if you are using overlay or demo distribution) . 
 
-== Start in HA mode
+=== Start in HA mode
 
 To start the server in HA mode, start it with: 
 
@@ -73,7 +74,7 @@ or if you are using overlay or demo distribution with:
 
 Alternatively you can copy `standalone/config/standalone-ha.xml` to `standalone/config/standalone.xml`            to make it the default server config. 
 
-== Enabling cluster security
+=== Enabling cluster security
 
 By default there's nothing to prevent unauthorized nodes from joining the cluster and sending potentially malicious messages to the cluster.
 However, as there's no sensitive data sent there's not much that can be achieved.
@@ -133,7 +134,7 @@ Copy this keystore to all nodes (for example to standalone/configuration). Then 
 ----            
 See the http://www.jgroups.org/manual/index.html#ENCRYPT[JGroups manual] for more details. 
 
-== Troubleshooting
+=== Troubleshooting
 
 Note that when you run cluster, you should see message similar to this in the log of both cluster nodes: 
 
