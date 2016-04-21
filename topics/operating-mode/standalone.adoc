@@ -40,12 +40,7 @@ aspects are configured in a configuration file that is specific to the applicati
 derivative of.  In the standalone operation mode, this file lives in _.../standalone/configuration/standalone.xml_.
 
 .Standalone Config File
-{% if book.product %}
-image:../../rhsso-images/standalone-config-file.png[]
-{% endif %}
-{% if book.community %}
-image:../../keycloak-images/standalone-config-file.png[]
-{% endif %}
+image:../../{{book.images}}/standalone-config-file.png[]
 
 ==== Standalone {{book.project.name}} Configuration
 
