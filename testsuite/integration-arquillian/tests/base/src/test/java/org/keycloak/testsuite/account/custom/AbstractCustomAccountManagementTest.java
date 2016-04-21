@@ -56,14 +56,8 @@ public abstract class AbstractCustomAccountManagementTest extends AbstractAccoun
     }
     
     protected AuthenticationExecutionInfoRepresentation getExecution(String flowAlias, String provider) {
-        Response response = authMgmtResource.getExecutions(flowAlias);
-        
-        List<AuthenticationExecutionInfoRepresentation> executionReps = response.readEntity(
-                new GenericType<List<AuthenticationExecutionInfoRepresentation>>() {
-                });
-        
-        response.close();
-        
+        List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions(flowAlias);
+
         for (AuthenticationExecutionInfoRepresentation exec : executionReps) {
             if (provider.equals(exec.getProviderId())) {
                 return exec;

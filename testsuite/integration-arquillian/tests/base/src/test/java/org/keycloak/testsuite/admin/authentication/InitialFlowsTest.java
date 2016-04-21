@@ -55,9 +55,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         List<AuthenticationFlowRepresentation> flows = authMgmtResource.getFlows();
         for (AuthenticationFlowRepresentation flow : flows) {
             // get all executions for flow
-            Response executions = authMgmtResource.getExecutions(flow.getAlias());
-            List<AuthenticationExecutionInfoRepresentation> executionReps = executions.readEntity(new GenericType<List<AuthenticationExecutionInfoRepresentation>>() {
-            });
+            List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions(flow.getAlias());
 
             for (AuthenticationExecutionInfoRepresentation exec : executionReps) {
                 // separately load referenced configurations
