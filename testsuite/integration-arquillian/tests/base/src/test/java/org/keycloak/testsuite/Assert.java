@@ -22,15 +22,12 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import static org.junit.Assert.assertArrayEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -49,16 +46,6 @@ public class Assert extends org.junit.Assert {
         assertArrayEquals("Expected: " + Arrays.toString(expected) + ", was: " + Arrays.toString(actualNames), expected, actualNames);
     }
 
-    private static <T> List<T> sort(List<T> list) {
-        Collections.sort(list, new Comparator<Object>() {
-            @Override
-            public int compare(Object o1, Object o2) {
-                return name(o1).compareTo(name(o2));
-            }
-        });
-        return list;
-    }
-
     private static <T> String[] names(List<T> list) {
         String[] names = new String[list.size()];
         for (int i = 0; i < list.size(); i++) {
@@ -69,7 +56,9 @@ public class Assert extends org.junit.Assert {
     }
 
     private static String name(Object o1) {
-        if (o1 instanceof RealmRepresentation) {
+        if (o1 instanceof String) {
+            return (String) o1;
+        } else if (o1 instanceof RealmRepresentation) {
             return ((RealmRepresentation) o1).getRealm();
         } else if (o1 instanceof ClientRepresentation) {
             return ((ClientRepresentation) o1).getClientId();
@@ -79,7 +68,10 @@ public class Assert extends org.junit.Assert {
             return ((RoleRepresentation) o1).getName();
         } else if (o1 instanceof UserRepresentation) {
             return ((UserRepresentation) o1).getUsername();
+        } else if (o1 instanceof UserFederationProviderFactoryRepresentation) {
+            return ((UserFederationProviderFactoryRepresentation) o1).getId();
         }
+
         throw new IllegalArgumentException();
     }
 }

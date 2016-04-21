@@ -160,4 +160,14 @@ public interface RealmResource {
     @Path("attack-detection")
     AttackDetectionResource attackDetection();
 
+    @Path("user-federation")
+    UserFederationProvidersResource userFederation();
+
+    @Path("testLDAPConnection")
+    @GET
+    @NoCache
+    Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
+                                @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential,
+                                @QueryParam("useTruststoreSpi") String useTruststoreSpi);
+
 }
