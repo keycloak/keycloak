@@ -1,4 +1,4 @@
-include::document-attributes.adoc[]
+include::../document-attributes.adoc[]
 
 = Preface
 
