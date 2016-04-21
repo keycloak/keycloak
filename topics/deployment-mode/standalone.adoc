@@ -13,7 +13,7 @@ operating system.  These scripts live in the _bin/_ directory of the server dist
 
 .Standalone Boot Scripts
 {% if book.product %}
-. image:../../rhsso-images/standalone-boot-files.png[alt="distribution"]
+image:../../rhsso-images/standalone-boot-files.png[alt="distribution"]
 {% endif %}
 {% if book.community %}
 image:../../keycloak-images/standalone-boot-files.png[alt="distribution"]
