@@ -11,7 +11,7 @@
   "variables": {
     "community": true,
     "product": false,
-    "images": "rhsso-images",
+    "images": "keycloak-images",
     "appserver": {
       "name": "JBoss EAP",
       "version": "6.4",

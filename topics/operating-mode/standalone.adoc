@@ -49,12 +49,7 @@ _.../standalone/configuration/keycloak.json_.  This file is used to configure no
 only applicable to {{book.project.name}}
 
 .Standalone {{book.project.name}} Config File
-{% if book.product %}
-image:../../rhsso-images/standalone-json-config-file.png[]
-{% endif %}
-{% if book.community %}
-image:../../keycloak-images/standalone-json-config-file.png[]
-{% endif %}
+image:../../{{book.images}}/standalone-json-config-file.png[]
 
 
 

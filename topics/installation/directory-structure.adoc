@@ -3,12 +3,7 @@
 This chapter walks you through the directory structure of the server distribution.
 
 .distribution directory structure
-{% if book.product %}
-. image:../../rhsso-images/files.png[alt="distribution"]
-{% endif %}
-{% if book.community %}
-image:../../keycloak-images/files.png[alt="distribution"]
-{% endif %}
+image:../../{{book.images}}/files.png[alt="distribution"]
 
 Let's examine some of the purposes of each directory
 
