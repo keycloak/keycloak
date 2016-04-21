@@ -63,7 +63,7 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
     }
 
 
-    AuthenticationExecutionInfoRepresentation findExecutionByProvider(String provider, List<AuthenticationExecutionInfoRepresentation> executions) {
+    public static AuthenticationExecutionInfoRepresentation findExecutionByProvider(String provider, List<AuthenticationExecutionInfoRepresentation> executions) {
         for (AuthenticationExecutionInfoRepresentation exec : executions) {
             if (provider.equals(exec.getProviderId())) {
                 return exec;
