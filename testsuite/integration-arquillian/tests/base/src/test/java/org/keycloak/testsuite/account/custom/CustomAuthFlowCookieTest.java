@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.account.custom;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.junit.Before;
@@ -30,6 +31,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
+@Ignore
 public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTest {
 
     @Page
