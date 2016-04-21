@@ -17,12 +17,6 @@
 
 package org.keycloak.testsuite.oauth;
 
-import java.security.PrivateKey;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -30,89 +24,104 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.junit.Assert;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.constants.ServiceUrlConstants;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
-import org.keycloak.events.Event;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.RefreshToken;
-import org.keycloak.services.managers.ClientManager;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
-import org.openqa.selenium.WebDriver;
+import org.keycloak.constants.ServiceUrlConstants;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
+
+import java.security.PrivateKey;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientAuthSignedJWTTest {
+public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
+    private String client1SAUserId;
 
-        @Override
-        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ClientModel app1 = appRealm.addClient("client1");
-            new ClientManager(manager).enableServiceAccount(app1);
-            app1.setAttribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIICnTCCAYUCBgFPPLDaTzANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdjbGllbnQxMB4XDTE1MDgxNzE3MjI0N1oXDTI1MDgxNzE3MjQyN1owEjEQMA4GA1UEAwwHY2xpZW50MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIUjjgv+V3s96O+Za9002Lp/trtGuHBeaeVL9dFKMKzO2MPqdRmHB4PqNlDdd28Rwf5Xn6iWdFpyUKOnI/yXDLhdcuFpR0sMNK/C9Lt+hSpPFLuzDqgtPgDotlMxiHIWDOZ7g9/gPYNXbNvjv8nSiyqoguoCQiiafW90bPHsiVLdP7ZIUwCcfi1qQm7FhxRJ1NiW5dvUkuCnnWEf0XR+Wzc5eC9EgB0taLFiPsSEIlWMm5xlahYyXkPdNOqZjiRnrTWm5Y4uk8ZcsD/KbPTf/7t7cQXipVaswgjdYi1kK2/zRwOhg1QwWFX/qmvdd+fLxV0R6VqRDhn7Qep2cxwMxLsCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAKE6OA46sf20bz8LZPoiNsqRwBUDkaMGXfnob7s/hJZIIwDEx0IAQ3uKsG7q9wb+aA6s+v7S340zb2k3IxuhFaHaZpAd4CyR5cn1FHylbzoZ7rI/3ASqHDqpljdJaFqPH+m7nZWtyDvtZf+gkZ8OjsndwsSBK1d/jMZPp29qYbl1+XfO7RCp/jDqro/R3saYFaIFiEZPeKn1hUJn6BO48vxH1xspSu9FmlvDOEAOz4AuM58z4zRMP49GcFdCWr1wkonJUHaSptJaQwmBwLFUkCbE5I1ixGMb7mjEud6Y5jhfzJiZMo2U8RfcjNbrN0diZl3jB6LQIwESnhYSghaTjNQ==");
-            app1.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
 
-            ClientModel app2 = appRealm.addClient("client2");
-            app2.setDirectAccessGrantsEnabled(true);
-            new ClientManager(manager).enableServiceAccount(app2);
-            app2.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
+    @Override
+    public void beforeAbstractKeycloakTest() throws Exception {
+        super.beforeAbstractKeycloakTest();
+    }
 
-            // This one is for keystore-client2.p12 , which doesn't work on Sun JDK
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        RealmBuilder realm = RealmBuilder.create().name("test")
+                .privateKey("MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=")
+                .publicKey("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB")
+                .testEventListener();
+
+        ClientRepresentation app1 = ClientBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .clientId("client1")
+                .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIICnTCCAYUCBgFPPLDaTzANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdjbGllbnQxMB4XDTE1MDgxNzE3MjI0N1oXDTI1MDgxNzE3MjQyN1owEjEQMA4GA1UEAwwHY2xpZW50MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIUjjgv+V3s96O+Za9002Lp/trtGuHBeaeVL9dFKMKzO2MPqdRmHB4PqNlDdd28Rwf5Xn6iWdFpyUKOnI/yXDLhdcuFpR0sMNK/C9Lt+hSpPFLuzDqgtPgDotlMxiHIWDOZ7g9/gPYNXbNvjv8nSiyqoguoCQiiafW90bPHsiVLdP7ZIUwCcfi1qQm7FhxRJ1NiW5dvUkuCnnWEf0XR+Wzc5eC9EgB0taLFiPsSEIlWMm5xlahYyXkPdNOqZjiRnrTWm5Y4uk8ZcsD/KbPTf/7t7cQXipVaswgjdYi1kK2/zRwOhg1QwWFX/qmvdd+fLxV0R6VqRDhn7Qep2cxwMxLsCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAKE6OA46sf20bz8LZPoiNsqRwBUDkaMGXfnob7s/hJZIIwDEx0IAQ3uKsG7q9wb+aA6s+v7S340zb2k3IxuhFaHaZpAd4CyR5cn1FHylbzoZ7rI/3ASqHDqpljdJaFqPH+m7nZWtyDvtZf+gkZ8OjsndwsSBK1d/jMZPp29qYbl1+XfO7RCp/jDqro/R3saYFaIFiEZPeKn1hUJn6BO48vxH1xspSu9FmlvDOEAOz4AuM58z4zRMP49GcFdCWr1wkonJUHaSptJaQwmBwLFUkCbE5I1ixGMb7mjEud6Y5jhfzJiZMo2U8RfcjNbrN0diZl3jB6LQIwESnhYSghaTjNQ==")
+                .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
+                .serviceAccountsEnabled(true)
+                .build();
+
+        realm.client(app1);
+
+        ClientRepresentation app2 = ClientBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .clientId("client2")
+                .directAccessGrants()
+                .serviceAccountsEnabled(true)
+                .redirectUris(oauth.getRedirectUri())
+                .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIICnTCCAYUCBgFPPQDGxTANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdjbGllbnQxMB4XDTE1MDgxNzE4NTAwNVoXDTI1MDgxNzE4NTE0NVowEjEQMA4GA1UEAwwHY2xpZW50MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMMw3PaBffWxgS2PYSDDBp6As+cNvv9kt2C4f/RDAGmvSIHPFev9kuQiKs3Oaws3ZsV4JG3qHEuYgnh9W4vfe3DwNwtD1bjL5FYBhPBFTw0lAQECYxaBHnkjHwUKp957FqdSPPICm3LjmTcEdlH+9dpp9xHCMbbiNiWDzWI1xSxC8Fs2d0hwz1sd+Q4QeTBPIBWcPM+ICZtNG5MN+ORfayu4X+Me5d0tXG2fQO//rAevk1i5IFjKZuOjTwyKB5SJIY4b8QTeg0g/50IU7Ht00Pxw6CK02dHS+FvXHasZlD3ckomqCDjStTBWdhJo5dST0CbOqalkkpLlCCbGA1yEQRsCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAUIMeJ+EAo8eNpCG/nXImacjrKakbFnZYBGD/gqeTGaZynkX+jgBSructTHR83zSH+yELEhsAy+3BfK4EEihp+PEcRnK2fASVkHste8AQ7rlzC+HGGirlwrVhWCdizNUCGK80DE537IZ7nmZw6LFG9P5/Q2MvCsOCYjRUvMkukq6TdXBXR9tETwZ+0gpSfsOxjj0ZF7ftTRUSzx4rFfcbM9fRNdVizdOuKGc8HJPA5lLOxV6CyaYIvi3y5RlQI1OHeS34lE4w9CNPRFa/vdxXvN7ClyzA0HMFNWxBN7pC/Ht/FbhSvaAagJBHg+vCrcY5C26Oli7lAglf/zZrwUPs0w==")
+                .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
+                .build();
+
+        realm.client(app2);
+
+        // This one is for keystore-client2.p12 , which doesn't work on Sun JDK
 //            app2.setAttribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIICnTCCAYUCBgFPPLGHHjANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdjbGllbnQxMB4XDTE1MDgxNzE3MjMzMVoXDTI1MDgxNzE3MjUxMVowEjEQMA4GA1UEAwwHY2xpZW50MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIsatXj38fFD9fHslNrsWrubobudXYwwdZpGYqkHIhuDeSojGvhBSLmKIFmtbHMVcLEbS0dIEsSbNVrwjdFfuRuvd9Vu6Ng0JUC8fRhSeQniC3jcBuP8P4WlXK4+ir3Wlya+T6Hum9b68BiH0KyNZtFGJ6zLHuCcq9Bl0JifvibnUkDeTZPwgJNA9+GxS/x8fAkApcAbJrgBZvr57PwhbgHoZdB8aAY5f5ogbGzKDtSUMvFh+Jah39gWtn7p3VOuuMXA8SugogoH8C5m2itrPBL1UPhAcKUeWiqx4SmZe/lZo7x2WbSecNiFaiqBhIW+QbqCYW6I4u0YvuLuEe3+TC8CAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAZzW5DZviCxUQdV5Ab07PZkUfvImHZ73oWWHZqzUQtZtbVdzfp3cnbb2wyXtlOvingO3hgpoTxV8vbKgLbIQfvkGGHBG1F5e0QVdtikfdcwWb7cy4/9F80OD7cgG0ZAzFbQ8ZY7iS3PToBp3+4tbIK2NK0ntt/MYgJnPbHeG4V4qfgUbFm1YgEK7WpbSVU8jGuJ5DWE+mlYgECZKZ5TSlaVGs2XOm6WXrJScucNekwcBWWiHyRsFHZEDzWmzt8TLTLnnb0vVjhx3qCYxah3RbyyMZm6WLZlLAaGEcwNDO8jaA3hAjrxoOA1xEaolQfGVsb/ElelHcR1Zfe0u4Ekd4tw==");
 
-            app2.setAttribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIICnTCCAYUCBgFPPQDGxTANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdjbGllbnQxMB4XDTE1MDgxNzE4NTAwNVoXDTI1MDgxNzE4NTE0NVowEjEQMA4GA1UEAwwHY2xpZW50MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMMw3PaBffWxgS2PYSDDBp6As+cNvv9kt2C4f/RDAGmvSIHPFev9kuQiKs3Oaws3ZsV4JG3qHEuYgnh9W4vfe3DwNwtD1bjL5FYBhPBFTw0lAQECYxaBHnkjHwUKp957FqdSPPICm3LjmTcEdlH+9dpp9xHCMbbiNiWDzWI1xSxC8Fs2d0hwz1sd+Q4QeTBPIBWcPM+ICZtNG5MN+ORfayu4X+Me5d0tXG2fQO//rAevk1i5IFjKZuOjTwyKB5SJIY4b8QTeg0g/50IU7Ht00Pxw6CK02dHS+FvXHasZlD3ckomqCDjStTBWdhJo5dST0CbOqalkkpLlCCbGA1yEQRsCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAUIMeJ+EAo8eNpCG/nXImacjrKakbFnZYBGD/gqeTGaZynkX+jgBSructTHR83zSH+yELEhsAy+3BfK4EEihp+PEcRnK2fASVkHste8AQ7rlzC+HGGirlwrVhWCdizNUCGK80DE537IZ7nmZw6LFG9P5/Q2MvCsOCYjRUvMkukq6TdXBXR9tETwZ+0gpSfsOxjj0ZF7ftTRUSzx4rFfcbM9fRNdVizdOuKGc8HJPA5lLOxV6CyaYIvi3y5RlQI1OHeS34lE4w9CNPRFa/vdxXvN7ClyzA0HMFNWxBN7pC/Ht/FbhSvaAagJBHg+vCrcY5C26Oli7lAglf/zZrwUPs0w==");
+        UserBuilder defaultUser = UserBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .serviceAccountId(app1.getClientId())
+                .username("test-user@localhost")
+                .password("password");
+        realm.user(defaultUser);
 
+        client1SAUserId = KeycloakModelUtils.generateId();
 
-            String redirectUri = new OAuthClient(null).getRedirectUri();
-            app2.setRedirectUris(new HashSet<String>(Arrays.asList(redirectUri)));
+        UserBuilder serviceAccountUser = UserBuilder.create()
+                .id(client1SAUserId)
+                .username(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + app1.getClientId())
+                .serviceAccountId(app1.getClientId());
+        realm.user(serviceAccountUser);
 
-            UserModel client1SAUser = session.users().getUserByUsername(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "client1", appRealm);
-            client1SAUserId = client1SAUser.getId();
-        }
-
-    });
-
-    @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
-
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
-    protected OAuthClient oauth;
-
-    private static String client1SAUserId;
-
-
-
+        testRealms.add(realm.build());
+    }
 
     // TEST SUCCESS
 
@@ -121,7 +130,7 @@ public class ClientAuthSignedJWTTest {
         String client1Jwt = getClient1SignedJWT();
         OAuthClient.AccessTokenResponse response = doClientCredentialsGrantRequest(client1Jwt);
 
-        Assert.assertEquals(200, response.getStatusCode());
+        assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
 
@@ -135,15 +144,15 @@ public class ClientAuthSignedJWTTest {
                 .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
                 .assertEvent();
 
-        Assert.assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
+        assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 
         client1Jwt = getClient1SignedJWT();
         OAuthClient.AccessTokenResponse refreshedResponse = doRefreshTokenRequest(response.getRefreshToken(), client1Jwt);
         AccessToken refreshedAccessToken = oauth.verifyToken(refreshedResponse.getAccessToken());
         RefreshToken refreshedRefreshToken = oauth.verifyRefreshToken(refreshedResponse.getRefreshToken());
 
-        Assert.assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
-        Assert.assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
+        assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
+        assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
         events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
                 .user(client1SAUserId)
@@ -179,14 +188,14 @@ public class ClientAuthSignedJWTTest {
     public void testCodeToTokenRequestSuccess() throws Exception {
         oauth.clientId("client2");
         oauth.doLogin("test-user@localhost", "password");
-        Event loginEvent = events.expectLogin()
+        EventRepresentation loginEvent = events.expectLogin()
                 .client("client2")
                 .assertEvent();
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClient2SignedJWT());
 
-        Assert.assertEquals(200, response.getStatusCode());
+        assertEquals(200, response.getStatusCode());
         oauth.verifyToken(response.getAccessToken());
         oauth.verifyRefreshToken(response.getRefreshToken());
         events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
@@ -217,8 +226,6 @@ public class ClientAuthSignedJWTTest {
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
     }
-
-
 
     // TEST ERRORS
 
@@ -291,13 +298,8 @@ public class ClientAuthSignedJWTTest {
 
     @Test
     public void testAssertionDisabledClient() throws Exception {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
 
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getClientByClientId("client1").setEnabled(false);
-            }
-        });
+        ClientManager.realm(adminClient.realm("test")).clientId("client1").enabled(false);
 
         String invalidJwt = getClient1SignedJWT();
 
@@ -311,13 +313,7 @@ public class ClientAuthSignedJWTTest {
 
         assertError(response, "client1", "invalid_client", Errors.CLIENT_DISABLED);
 
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getClientByClientId("client1").setEnabled(true);
-            }
-        });
+        ClientManager.realm(adminClient.realm("test")).clientId("client1").enabled(false);
     }
 
     @Test
@@ -327,14 +323,12 @@ public class ClientAuthSignedJWTTest {
         }
         final CertificateHolder backupClient1Cert = new CertificateHolder();
 
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+        backupClient1Cert.certificate = ApiUtil.findClientByClientId(adminClient.realm("test"), "client1")
+                .toRepresentation().getAttributes().get(JWTClientAuthenticator.CERTIFICATE_ATTR);
 
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                backupClient1Cert.certificate = appRealm.getClientByClientId("client1").getAttribute(JWTClientAuthenticator.CERTIFICATE_ATTR);
-                appRealm.getClientByClientId("client1").removeAttribute(JWTClientAuthenticator.CERTIFICATE_ATTR);
-            }
-        });
+        ClientManager.realm(adminClient.realm("test")).clientId("client1")
+                .updateAttribute(JWTClientAuthenticator.CERTIFICATE_ATTR, null);
+
 
         String invalidJwt = getClient1SignedJWT();
 
@@ -348,19 +342,13 @@ public class ClientAuthSignedJWTTest {
 
         assertError(response, "client1", "unauthorized_client", "client_credentials_setup_required");
 
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getClientByClientId("client1").setAttribute(JWTClientAuthenticator.CERTIFICATE_ATTR, backupClient1Cert.certificate);
-            }
-        });
+        ClientManager.realm(adminClient.realm("test")).clientId("client1").updateAttribute(JWTClientAuthenticator.CERTIFICATE_ATTR, backupClient1Cert.certificate);
     }
 
     @Test
     public void testAssertionInvalidSignature() throws Exception {
         // JWT for client1, but signed by privateKey of client2
-        String invalidJwt =  getClientSignedJWT(
+        String invalidJwt = getClientSignedJWT(
                 "classpath:client-auth-test/keystore-client2.jks", "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS, "client1");
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
@@ -378,7 +366,7 @@ public class ClientAuthSignedJWTTest {
     @Test
     public void testAssertionExpired() throws Exception {
         Time.setOffset(-1000);
-        String invalidJwt =  getClient1SignedJWT();
+        String invalidJwt = getClient1SignedJWT();
         Time.setOffset(0);
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
@@ -395,7 +383,7 @@ public class ClientAuthSignedJWTTest {
     @Test
     public void testAssertionInvalidNotBefore() throws Exception {
         Time.setOffset(1000);
-        String invalidJwt =  getClient1SignedJWT();
+        String invalidJwt = getClient1SignedJWT();
         Time.setOffset(0);
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
@@ -421,9 +409,6 @@ public class ClientAuthSignedJWTTest {
                 .user((String) null)
                 .assertEvent();
     }
-
-
-
 
     // HELPER METHODS
 
@@ -493,7 +478,6 @@ public class ClientAuthSignedJWTTest {
             oauth.closeClient(client);
         }
     }
-
 
     private String getClient1SignedJWT() {
         return getClientSignedJWT("classpath:client-auth-test/keystore-client1.jks", "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS, "client1");
