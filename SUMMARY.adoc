@@ -2,7 +2,7 @@
 
  . link:topics/preface.adoc[Preface]
  . link:topics/overview.adoc[Overview]
- . link:topics/overview/recommended-reading.adoc[Recommended Reading]
+ .. link:topics/overview/recommended-reading.adoc[Recommended Reading]
  . link:topics/installation.adoc[Installation]
  .. link:topics/installation/system-requirements.adoc[System Requirements]
  {% if book.community %}
@@ -13,7 +13,7 @@
  {% endif %}
  .. link:topics/installation/directory-structure.adoc[Distribution Directory Structure]
  .. link:topics/openshift.adoc[Installing on OpenShift]
- . link:topics/deployment-mode.adoc[Choosing an Operation Mode]
+ . link:topics/operating-mode.adoc[Choosing an Operating Mode]
  .. link:topics/deployment-mode/standalone.adoc[Standalone Mode]
  . link:topics/cache.adoc[Server Cache]
  . link:topics/clustering.adoc[Clustering]
