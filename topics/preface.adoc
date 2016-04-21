@@ -1,4 +1,3 @@
-:community: true
 
 = Preface
 
@@ -19,20 +18,6 @@ Let's pretend to have an extremely long line that does not fit
 This one is short
 ----
 
-Are ifdefs supported?
-
-ifdef::product[]
-
-product should not be here
-
-endif::product[]
-
-ifdef::community[]
-
-community should be here
-
-endif::community[]
-
-
+Attributes from book.json?  {book.project.name}
 
 
