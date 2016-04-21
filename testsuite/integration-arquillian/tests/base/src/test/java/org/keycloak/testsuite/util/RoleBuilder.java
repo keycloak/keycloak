@@ -43,6 +43,11 @@ public class RoleBuilder {
         return this;
     }
 
+    public RoleBuilder description(String description) {
+        rep.setDescription(description);
+        return this;
+    }
+
     public RoleRepresentation build() {
         return rep;
     }
