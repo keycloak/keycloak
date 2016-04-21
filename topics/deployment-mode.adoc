@@ -4,3 +4,7 @@ Before deploying {{book.project.name}} in a production environment you need to d
 you are going to use.  Will you run {{book.project.name}} within a cluster?  Do you want a centralized way to manage
 your server configurations?  This is where deciding the deployment mode comes in.  This decision
  effects how you configure databases, configure caching and even how you boot the server.
+
+TIP: The {{book.project.name}} is built on top of the {{book.appserver.name}} Application Server.  This guide will only
+     go over the basics for deployment within a specific mode.  If you want specific information on this, a better place
+     to go would be the link:{{book.appserver.admindoclink}}[{{book.appserver.admindoc}}]

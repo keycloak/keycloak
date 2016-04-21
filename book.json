@@ -13,8 +13,10 @@
     "product": false,
     "images": "rhsso-images",
     "appserver": {
-      "name": "Wildfly",
-      "version": "10.0.0.Final"
+      "name": "JBoss EAP",
+      "version": "6.4",
+      "admindoc": "Administration and Configuration Guide",
+      "admindoclink": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/"
     },
     "project": {
       "name": "Keycloak",
