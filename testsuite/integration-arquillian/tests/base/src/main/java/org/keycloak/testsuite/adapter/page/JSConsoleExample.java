@@ -113,11 +113,15 @@ public class JSConsoleExample extends AbstractPageWithInjectedUrl {
         responseModeSelect.selectByValue(value);
     }
 
-    public String getOutputText() {
-        return outputArea.getText();
+    public WebElement getOutputElement() {
+        return outputArea;
     }
 
-    public String getEventsText() {
-        return eventsArea.getText();
+    public WebElement getEventsElement() {
+        return eventsArea;
+    }
+
+    public WebElement getInitButtonElement() {
+        return initButton;
     }
 }
