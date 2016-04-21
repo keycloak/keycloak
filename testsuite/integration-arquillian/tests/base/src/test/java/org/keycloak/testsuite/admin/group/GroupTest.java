@@ -29,6 +29,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.URLAssert;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.NotFoundException;
@@ -36,8 +37,13 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -144,14 +150,14 @@ public class GroupTest extends AbstractGroupTest {
         URI location = response.getLocation();
         final String level2Id = ApiUtil.getCreatedId(response);
         final GroupRepresentation level2GroupById = realm.groups().group(level2Id).toRepresentation();
-        Assert.assertEquals(level2Id, level2GroupById.getId());
-        Assert.assertEquals(level2Group.getName(), level2GroupById.getName());
+        assertEquals(level2Id, level2GroupById.getId());
+        assertEquals(level2Group.getName(), level2GroupById.getName());
 
         URLAssert.assertGetURL(location, adminClient.tokenManager().getAccessTokenString(), new URLAssert.AssertJSONResponseHandler() {
             @Override
             protected void assertResponseBody(String body) throws IOException {
                 GroupRepresentation level2 = JsonSerialization.readValue(body, GroupRepresentation.class);
-                Assert.assertEquals(level2Id, level2.getId());
+                assertEquals(level2Id, level2.getId());
             }
         });
 
@@ -172,37 +178,37 @@ public class GroupTest extends AbstractGroupTest {
         realm.groups().group(level3Group.getId()).roles().realmLevel().add(roles);
 
         topGroup = realm.getGroupByPath("/top");
-        Assert.assertEquals(1, topGroup.getRealmRoles().size());
-        Assert.assertTrue(topGroup.getRealmRoles().contains("topRole"));
-        Assert.assertEquals(1, topGroup.getSubGroups().size());
+        assertEquals(1, topGroup.getRealmRoles().size());
+        assertTrue(topGroup.getRealmRoles().contains("topRole"));
+        assertEquals(1, topGroup.getSubGroups().size());
 
         level2Group = topGroup.getSubGroups().get(0);
-        Assert.assertEquals("level2", level2Group.getName());
-        Assert.assertEquals(1, level2Group.getRealmRoles().size());
-        Assert.assertTrue(level2Group.getRealmRoles().contains("level2Role"));
-        Assert.assertEquals(1, level2Group.getSubGroups().size());
+        assertEquals("level2", level2Group.getName());
+        assertEquals(1, level2Group.getRealmRoles().size());
+        assertTrue(level2Group.getRealmRoles().contains("level2Role"));
+        assertEquals(1, level2Group.getSubGroups().size());
 
         level3Group = level2Group.getSubGroups().get(0);
-        Assert.assertEquals("level3", level3Group.getName());
-        Assert.assertEquals(1, level3Group.getRealmRoles().size());
-        Assert.assertTrue(level3Group.getRealmRoles().contains("level3Role"));
+        assertEquals("level3", level3Group.getName());
+        assertEquals(1, level3Group.getRealmRoles().size());
+        assertTrue(level3Group.getRealmRoles().contains("level3Role"));
 
         UserRepresentation user = realm.users().search("direct-login", -1, -1).get(0);
         realm.users().get(user.getId()).joinGroup(level3Group.getId());
         List<GroupRepresentation> membership = realm.users().get(user.getId()).groups();
-        Assert.assertEquals(1, membership.size());
-        Assert.assertEquals("level3", membership.get(0).getName());
+        assertEquals(1, membership.size());
+        assertEquals("level3", membership.get(0).getName());
 
         AccessToken token = login("direct-login", "resource-owner", "secret", user.getId());
-        Assert.assertTrue(token.getRealmAccess().getRoles().contains("topRole"));
-        Assert.assertTrue(token.getRealmAccess().getRoles().contains("level2Role"));
-        Assert.assertTrue(token.getRealmAccess().getRoles().contains("level3Role"));
+        assertTrue(token.getRealmAccess().getRoles().contains("topRole"));
+        assertTrue(token.getRealmAccess().getRoles().contains("level2Role"));
+        assertTrue(token.getRealmAccess().getRoles().contains("level3Role"));
 
         realm.addDefaultGroup(level3Group.getId());
 
         List<GroupRepresentation> defaultGroups = realm.getDefaultGroups();
-        Assert.assertEquals(1, defaultGroups.size());
-        Assert.assertEquals(defaultGroups.get(0).getId(), level3Group.getId());
+        assertEquals(1, defaultGroups.size());
+        assertEquals(defaultGroups.get(0).getId(), level3Group.getId());
 
         UserRepresentation newUser = new UserRepresentation();
         newUser.setUsername("groupUser");
@@ -211,12 +217,12 @@ public class GroupTest extends AbstractGroupTest {
         response.close();
         newUser =  realm.users().search("groupUser", -1, -1).get(0);
         membership = realm.users().get(newUser.getId()).groups();
-        Assert.assertEquals(1, membership.size());
-        Assert.assertEquals("level3", membership.get(0).getName());
+        assertEquals(1, membership.size());
+        assertEquals("level3", membership.get(0).getName());
 
         realm.removeDefaultGroup(level3Group.getId());
         defaultGroups = realm.getDefaultGroups();
-        Assert.assertEquals(0, defaultGroups.size());
+        assertEquals(0, defaultGroups.size());
 
         realm.groups().group(topGroup.getId()).remove();
 
@@ -241,6 +247,78 @@ public class GroupTest extends AbstractGroupTest {
         Assert.assertNull(login("direct-login", "resource-owner", "secret", user.getId()).getRealmAccess());
     }
 
+    @Test
+    public void updateGroup() {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("group");
+
+        Map<String, List<String>> attrs = new HashMap<>();
+        attrs.put("attr1", Collections.singletonList("attrval1"));
+        attrs.put("attr2", Collections.singletonList("attrval2"));
+        group.setAttributes(attrs);
+
+        Response response = realm.groups().add(group);
+        response.close();
+        group = realm.getGroupByPath("/group");
+        Assert.assertNotNull(group);
+        assertEquals("group", group.getName());
+        assertEquals(2, group.getAttributes().size());
+        assertEquals(1, group.getAttributes().get("attr1").size());
+        assertEquals("attrval1", group.getAttributes().get("attr1").get(0));
+        assertEquals(1, group.getAttributes().get("attr2").size());
+        assertEquals("attrval2", group.getAttributes().get("attr2").get(0));
+
+        group.setName("group-new");
+
+        group.getAttributes().remove("attr1");
+        group.getAttributes().get("attr2").add("attrval2-2");
+        group.getAttributes().put("attr3", Collections.singletonList("attrval2"));
+
+        realm.groups().group(group.getId()).update(group);
+
+        group = realm.getGroupByPath("/group-new");
+
+        assertEquals("group-new", group.getName());
+        assertEquals(2, group.getAttributes().size());
+        assertEquals(2, group.getAttributes().get("attr2").size());
+        assertEquals(1, group.getAttributes().get("attr3").size());
+    }
+
+    @Test
+    public void groupMembership() {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("group");
+        Response response = realm.groups().add(group);
+        String groupId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        response = realm.users().create(UserBuilder.create().username("user-a").build());
+        String userAId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        response = realm.users().create(UserBuilder.create().username("user-b").build());
+        String userBId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        realm.users().get(userAId).joinGroup(groupId);
+
+        List<UserRepresentation> members = realm.groups().group(groupId).members(0, 10);
+        org.keycloak.testsuite.Assert.assertNames(members, "user-a");
+
+        realm.users().get(userBId).joinGroup(groupId);
+
+        members = realm.groups().group(groupId).members(0, 10);
+        org.keycloak.testsuite.Assert.assertNames(members, "user-a", "user-b");
+
+        realm.users().get(userAId).leaveGroup(groupId);
+
+        members = realm.groups().group(groupId).members(0, 10);
+        org.keycloak.testsuite.Assert.assertNames(members, "user-b");
+    }
 
     @Test
     // KEYCLOAK-2700
