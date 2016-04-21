@@ -68,20 +68,12 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         authMgmtResource.addExecution("Copy of browser", params);
 
         // check execution was added
-        response = authMgmtResource.getExecutions("Copy of browser");
-        AuthenticationExecutionInfoRepresentation exec;
-        AuthenticationExecutionInfoRepresentation authCookieExec;
-        try {
-            List<AuthenticationExecutionInfoRepresentation> executionReps = response.readEntity(new GenericType<List<AuthenticationExecutionInfoRepresentation>>() {
-            });
-            exec = findExecutionByProvider("idp-review-profile", executionReps);
-            Assert.assertNotNull("idp-review-profile added", exec);
+        List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions("Copy of browser");
+        AuthenticationExecutionInfoRepresentation exec = findExecutionByProvider("idp-review-profile", executionReps);
+        Assert.assertNotNull("idp-review-profile added", exec);
 
-            // we'll need auth-cookie later
-            authCookieExec = findExecutionByProvider("auth-cookie", executionReps);
-        } finally {
-            response.close();
-        }
+        // we'll need auth-cookie later
+        AuthenticationExecutionInfoRepresentation authCookieExec = findExecutionByProvider("auth-cookie", executionReps);
 
         compareExecution(newExecInfo("Review Profile", "idp-review-profile", true, 0, 3, DISABLED, null, new String[]{REQUIRED, DISABLED}), exec);
 
@@ -89,15 +81,9 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         authMgmtResource.removeExecution(exec.getId());
 
         // check execution was removed
-        response = authMgmtResource.getExecutions("Copy of browser");
-        try {
-            List<AuthenticationExecutionInfoRepresentation> executionReps = response.readEntity(new GenericType<List<AuthenticationExecutionInfoRepresentation>>() {
-            });
-            exec = findExecutionByProvider("idp-review-profile", executionReps);
-            Assert.assertNull("idp-review-profile removed", exec);
-        } finally {
-            response.close();
-        }
+        executionReps = authMgmtResource.getExecutions("Copy of browser");
+        exec = findExecutionByProvider("idp-review-profile", executionReps);
+        Assert.assertNull("idp-review-profile removed", exec);
 
         // now add the execution again using a different method and representation
 
@@ -130,16 +116,9 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         }
 
         // check execution was added
-        List<AuthenticationExecutionInfoRepresentation> executions;
-        response = authMgmtResource.getExecutions("Copy of browser");
-        try {
-            executions = response.readEntity(new GenericType<List<AuthenticationExecutionInfoRepresentation>>() {
-            });
-            exec = findExecutionByProvider("auth-cookie", executions);
-            Assert.assertNotNull("auth-cookie added", exec);
-        } finally {
-            response.close();
-        }
+        List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions("Copy of browser");
+        exec = findExecutionByProvider("auth-cookie", executions);
+        Assert.assertNotNull("auth-cookie added", exec);
 
         // Note: there is no checking in addExecution if requirement is one of requirementChoices
         // Thus we can have OPTIONAL which is neither ALTERNATIVE, nor DISABLED
@@ -150,10 +129,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
     public void testUpdateExecution() {
 
         // get current auth-cookie execution
-        Response response = authMgmtResource.getExecutions("browser");
-        List<AuthenticationExecutionInfoRepresentation> executionReps = response.readEntity(
-                new GenericType<List<AuthenticationExecutionInfoRepresentation>>() {
-                });
+        List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions("browser");
         AuthenticationExecutionInfoRepresentation exec = findExecutionByProvider("auth-cookie", executionReps);
 
         Assert.assertEquals("auth-cookie set to ALTERNATIVE", ALTERNATIVE, exec.getRequirement());
@@ -163,8 +139,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         authMgmtResource.updateExecutions("browser", exec);
 
         // make sure the change is visible
-        response = authMgmtResource.getExecutions("browser");
-        executionReps = response.readEntity(new GenericType<List<AuthenticationExecutionInfoRepresentation>>() {});
+        executionReps = authMgmtResource.getExecutions("browser");
 
         // get current auth-cookie execution
         AuthenticationExecutionInfoRepresentation exec2 = findExecutionByProvider("auth-cookie", executionReps);

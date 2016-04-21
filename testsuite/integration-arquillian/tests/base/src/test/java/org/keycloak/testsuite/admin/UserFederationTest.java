@@ -348,14 +348,8 @@ public class UserFederationTest extends AbstractAdminTest {
 
     private AuthenticationExecutionInfoRepresentation findKerberosExecution() {
         AuthenticationExecutionInfoRepresentation kerberosExecution = null;
-        Response response = realm.flows().getExecutions("browser");
-        try {
-            List<AuthenticationExecutionInfoRepresentation> executionReps = response.readEntity(new GenericType<List<AuthenticationExecutionInfoRepresentation>>() {
-            });
-            kerberosExecution = AbstractAuthenticationTest.findExecutionByProvider("auth-spnego", executionReps);
-        } finally {
-            response.close();
-        }
+        List<AuthenticationExecutionInfoRepresentation> executionReps = realm.flows().getExecutions("browser");
+        kerberosExecution = AbstractAuthenticationTest.findExecutionByProvider("auth-spnego", executionReps);
 
         Assert.assertNotNull(kerberosExecution);
         return kerberosExecution;
