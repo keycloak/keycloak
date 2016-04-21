@@ -36,17 +36,17 @@ public interface RolesResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<RoleRepresentation> list();
+    List<RoleRepresentation> list();
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public void create(RoleRepresentation roleRepresentation);
+    void create(RoleRepresentation roleRepresentation);
 
     @Path("{roleName}")
-    public RoleResource get(@PathParam("roleName") String roleName);
+    RoleResource get(@PathParam("roleName") String roleName);
 
     @Path("{role-name}")
     @DELETE
-    public void deleteRole(final @PathParam("role-name") String roleName);
+    void deleteRole(final @PathParam("role-name") String roleName);
 
 }
