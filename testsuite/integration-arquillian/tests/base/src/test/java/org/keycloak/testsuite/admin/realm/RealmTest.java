@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin;
+package org.keycloak.testsuite.admin.realm;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
@@ -27,6 +27,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.util.JsonSerialization;

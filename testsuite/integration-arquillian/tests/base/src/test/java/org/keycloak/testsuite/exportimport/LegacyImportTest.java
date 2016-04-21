@@ -86,7 +86,7 @@ public class LegacyImportTest extends AbstractExportImportTest {
         assertRolesAvailable(roles);
 
         // Assert all admin roles are also available as composites of "realm-admin"
-        Set<RoleRepresentation> realmAdminComposites = foo11RealmManagementClient.roles().get(AdminRoles.REALM_ADMIN).getChildren();
+        Set<RoleRepresentation> realmAdminComposites = foo11RealmManagementClient.roles().get(AdminRoles.REALM_ADMIN).getRoleComposites();
         assertRolesAvailable(realmAdminComposites);
 
         // Assert "foo11-master" client correctly set and contains all admin roles.
@@ -95,7 +95,7 @@ public class LegacyImportTest extends AbstractExportImportTest {
         assertRolesAvailable(roles);
 
         // Assert all admin roles are also available as composites of "admin" role
-        Set<RoleRepresentation> masterAdminComposites = adminClient.realm(Config.getAdminRealm()).roles().get(AdminRoles.ADMIN).getChildren();
+        Set<RoleRepresentation> masterAdminComposites = adminClient.realm(Config.getAdminRealm()).roles().get(AdminRoles.ADMIN).getRoleComposites();
         assertRolesAvailable(masterAdminComposites);
     }
 

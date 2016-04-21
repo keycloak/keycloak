@@ -162,7 +162,7 @@ public class ClientTemplateTest extends AbstractClientTest {
         roleRep2 = testRealmResource().roles().get("role2").toRepresentation();
 
         // Add role2 as composite to role1
-        testRealmResource().roles().get("role1").addChildren(Collections.singletonList(roleRep2));
+        testRealmResource().roles().get("role1").addComposites(Collections.singletonList(roleRep2));
 
 
         // create client template
