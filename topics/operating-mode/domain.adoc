@@ -49,35 +49,6 @@ aspect of this pre-configured _domain.xml_ file.
 .domain.xml
 image:../../{{book.images}}/domain-file.png[]
 
-The default +profile+ XML block is where you are going to make the bulk of your configuration decisions.  You can edit this file
-directly prior to booting the domain controller, but you should use the {{book.appserver.name}} web console or command line interface
-to modify it at runtime.
-
-.profile
-[source,xml]
-----
-    <profiles>
-        <profile name="default">
-           ...
-        </profile>
-----
-
-The definition of the server group for {{book.project.name}} resides in the +server-groups+ XML block.  It specifies the domain profile
-that is used (+default+) and also so default boot arguments for the Java VM when the host controller boots an instance.
-
-.server group
-[source,xml]
-----
-    <server-groups>
-        <server-group name="main-server-group" profile="default">
-            <jvm name="default">
-                <heap size="64m" max-size="512m"/>
-            </jvm>
-            <socket-binding-group ref="standard-sockets"/>
-        </server-group>
-    </server-groups>
-----
-
 NOTE: Any changes you make to this file while the domain controller is running will not take effect and may even be overwritten
       by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
       the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
