@@ -114,6 +114,20 @@ public class UserBuilder {
         return this;
     }
 
+    public UserBuilder totpSecret(String totpSecret) {
+        if (rep.getCredentials() == null) {
+            rep.setCredentials(new LinkedList<CredentialRepresentation>());
+        }
+
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.TOTP);
+        credential.setValue(totpSecret);
+
+        rep.getCredentials().add(credential);
+        rep.setTotp(true);
+        return this;
+    }
+
     public UserRepresentation build() {
         return rep;
     }
