@@ -1,4 +1,6 @@
-=== Standalone Clustered
+[[_standalone-ha-mode]]
+
+=== Standalone Clustered Mode
 
 Standalone clustered operation mode is for when you want to run {{book.project.name}} within a cluster.  This mode
 requires that you have a copy of each distribution for each node you want to run in the cluster.  While very easy to
@@ -7,9 +9,12 @@ modify the configuration in each node anytime you need to make a change.
 
 ==== Standalone Clustered Configuration
 
-The distribution has a pre-configured app server configuration file for running within a cluster.  It has all the specific
-infrasture settings you need for the clustered caches and discovery that {{book.project.name}} needs.  This file resides
-in _.../standalone/configuration/standalone-ha.xml_
+The distribution has a mostly pre-configured app server configuration file for running within a cluster.  It has all the specific
+infrasture settings you need to configure networking, databases, caches, and discovery.  This file resides
+in _.../standalone/configuration/standalone-ha.xml_.  There's a few things missing from this configuration.
+You can't run {{book.project.name}} in a cluster without a configuring a shared database connection.  You also need to
+deploy some type of load balancer in front of the cluster.  The <<fake/../../clustering.adoc#_clustering,clustering>> and
+<<fake/../../database.adoc#_database,database>> sections of this guide walk you though these things.
 
 .Standalone HA Config
 image:../../{{book.images}}/standalone-ha-config-file.png[]

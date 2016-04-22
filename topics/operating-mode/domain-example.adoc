@@ -1,0 +1,6 @@
+== Domain Mode Example Walkthrough
+
+As noted in the <<domain.adoc#,domain mode>> chapter, {{book.project.name}} comes with a mostly pre-configured clustered domain
+setup.  This chapter walks you through this out of the box configuration highlighting each aspect of each configuration
+file you need to touch and manage.  At the end, the chapter discusses what changes you'll need to make to this out of the
+box configuration to have it work in a real cluster.

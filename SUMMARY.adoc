@@ -16,6 +16,8 @@
  . link:topics/operating-mode.adoc[Choosing an Operating Mode]
  .. link:topics/operating-mode/standalone.adoc[Standalone Mode]
  .. link:topics/operating-mode/standalone-ha.adoc[Standalone Clustered Mode]
+ .. link:topics/operating-mode/domain.adoc[Domain Clustered Mode]
+ .. link:topics/operating-mode/domain-example.adoc[Domain Clustered Mode]
  . link:topics/cache.adoc[Server Cache]
  . link:topics/clustering.adoc[Clustering]
  . link:topics/proxy.adoc[Keycloak Security Proxy]

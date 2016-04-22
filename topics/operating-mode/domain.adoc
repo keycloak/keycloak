@@ -1,0 +1,126 @@
+[[_domain-mode]]
+=== Domain Clustered Mode
+
+Running a cluster in standard mode can quickly become aggravating as the cluster grows in size.  Every time you need
+to make a configuration change, you have perform it on each node in the cluster.  Domain mode solves this problem by providing
+a central place to store and publish configuration.  It can be quite complex to set up, but it is worth it in the end.
+This capability is built into the {{book.appserver.name}} Application Server which {{book.project.name}} derives from.
+
+NOTE:  The guide will go over the very basics of domain mode.  Detailed steps on how to set up domain mode in a cluster should be obtained from the
+       link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}].
+
+Here are some of the basic concepts of running in domain mode.
+
+domain controller::
+  The domain controller is a process that is responsible for storing, managing, and publishing the general configuration
+  for each node in the cluster.  This process is the central point from which nodes in a cluster obtain their configuration.
+
+host controller::
+  The host controller is responsible for managing server instances on a specific machine.  You configure it to run
+  one or more server instances.  The domain controller can also interact with the host controllers on each machine to
+  manage the cluster.  To reduce the number of running process, a domain controller also acts as a host controller on
+  the machine it runs on.
+
+domain profile::
+  A domain profile is a named set of configuration that can be used by a server to boot from.  A domain controller
+  can define multiple domain profiles that are consumed by different servers.
+
+server group::
+  A server group is a collection of servers.  They are managed and configured as one.  You can assign a domain profile to a server group and every service in that
+  group will use that domain profile as their configuration.
+
+In domain mode, a domain controller is started on a master node.  The configuration for the cluster resides in the domain controller.
+Next a host controller is started on each machine in the cluster.  Each host controller deployment configuration specifies how
+many {{book.project.name}} server instances will be started on that machine.  When the host controller boots up, it starts
+as many {{book.project.name}} server instances as it was configured to do.  These server instances pull their configuration
+from the domain controller.
+
+==== Domain Configuration
+
+Various other chapters in this guide walk you through configuring various aspects like databases,
+HTTP network connections, caches, and other infrastructure related things.  While standalone mode uses the _standalone.xml_ file to configure these things,
+domain mode uses the _.../domain/domain.xml_ configuration file.  This is
+where the domain profile and server group for the {{book.project.name}} server are defined.
+
+{{book.project.name}} does come with a pre-configured _domain.xml_ file.  While it will work almost out of the box, there is some tweaks you need
+to make to it for it to be able to manage a real cluster.  The <<_example_domain,example domain>> section of this chapter walks through each
+aspect of this pre-configured _domain.xml_ file.
+
+.domain.xml
+image:../../{{book.images}}/domain-file.png[]
+
+The default +profile+ XML block is where you are going to make the bulk of your configuration decisions.  You can edit this file
+directly prior to booting the domain controller, but you should use the {{book.appserver.name}} web console or command line interface
+to modify it at runtime.
+
+.profile
+[source,xml]
+----
+    <profiles>
+        <profile name="default">
+           ...
+        </profile>
+----
+
+The definition of the server group for {{book.project.name}} resides in the +server-groups+ XML block.  It specifies the domain profile
+that is used (+default+) and also so default boot arguments for the Java VM when the host controller boots an instance.
+
+.server group
+[source,xml]
+----
+    <server-groups>
+        <server-group name="main-server-group" profile="default">
+            <jvm name="default">
+                <heap size="64m" max-size="512m"/>
+            </jvm>
+            <socket-binding-group ref="standard-sockets"/>
+        </server-group>
+    </server-groups>
+----
+
+NOTE: Any changes you make to this file while the domain controller is running will not take effect and may even be overwritten
+      by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
+      the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
+
+==== Host Controller Configuration
+
+{{book.project.name}} comes with two host controller configuration files that reside in the _.../domain/configuration/_ directory:
+_host-master.xml_ and _host-slave.xml_.  _host-master.xml_ is configured to boot up a domain controller, a load balancer, and
+one {{book.project.name}} server instance.  _host-slave.xml_ is configured to talk to the domain controller and boot up
+one {{book.project.name}} server instance.
+
+.Host Controller Config
+image:../../{{book.images}}/host-files.png[]
+
+==== Domain Boot Script
+
+When running the server in domain mode, there is a specific script you need to run to boot the server depending on your
+operating system.  These scripts live in the _bin/_ directory of the server distribution.
+
+.Standalone Boot Scripts
+image:../../{{book.images}}/domain-boot-files.png[]
+
+To boot the server:
+
+.Linux/Unix
+[source]
+----
+$ .../bin/domain.sh --host-config=host-master.xml
+----
+
+.Windows
+[source]
+----
+> ...\bin\domain.bat --host-config=host-slave.xml
+----
+
+When running the boot script you will need pass in the host controlling configuration file you are going to use via the
++--host-config+ switch.
+
+
+
+
+
+
+
+

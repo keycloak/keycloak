@@ -8,3 +8,7 @@ own embedded and local-only database.  For
  and finally set up {{book.project.name}} to run in a cluster.  This guide walks through each and every aspect of any pre-boot
  decisions and setup you must do prior to deploying the server.
 
+One thing to particularly note is that {{book.project.name}} is derived from the {{book.appserver.name}} Application Server.
+Many aspects of configuring a {{book.project.name}} revolve around {{book.appserver.name}} configuration elements.  Often
+this guide will direct you to documentation outside of the manual if you want to dive into more detail.
+

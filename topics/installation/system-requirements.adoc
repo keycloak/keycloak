@@ -5,9 +5,11 @@ These are the requirements to run the {{book.project.name}} authentication serve
 * Can run on any operating system that runs Java
 * Java 8 JDK
 * zip or gzip and tar
-* Network multicast support if you are clustering {{book.project.name}}.
 * At least 512M of RAM
 * At least 1G of diskspace
+* Network multicast support on your machine if you want to run in a cluster out of the box.  {{book.project.name}} can
+ be clustered without multicast, but this requires a bunch of configuration changes.  Please see
+ the <<fake/../../clustering.adoc#_clustering,clustering>> section of this guide for more information.
+* A shared external database like Postgres, MySql, Oracle, etc.  {{book.project.name}} requires an external shared
+  database if you want to run in a cluster.   Please see the <<fake/../../database.adoc#_database,database configuration>> section of this guide for more information.
 
-{{book.project.name}} can be clustered without multicast, but this requires a bunch of configuration changes.  Please see
-the <<fake/../../clustering.adoc#_clustering,clustering>> section of this guide for more information.

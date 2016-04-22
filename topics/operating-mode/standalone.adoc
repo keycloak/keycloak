@@ -1,11 +1,10 @@
 [[_standalone-mode]]
 === Standalone Mode
 
-Standalone operating mode is only useful when you want to run one, and only one {{book.project.name}} server instance.  Standalone
-instances contain all the configuration files they need locally.  What this basically means is that any configuration done
-must be done on the config files contained in the installed distribution on the machine the {{book.project.name}} is going to run on
-{{book.project.name}} standalone mode is available pre-configured out of the box.  It turns off clustering entirely
-and turns any distributed caches into local-only ones.
+Standalone operating mode is only useful when you want to run one, and only one {{book.project.name}} server instance.
+It cannot be made to run in a cluster and all caches are non-distributed and local-only.  It is not recommended that
+you use standalone mode in production as you will have a single point of failure.  If your standalone mode server goes down,
+users will not be able to log in.  This mode is really only useful to test drive and play with the features of {{book.project.name}}
 
 ==== Standalone Boot Script
 
