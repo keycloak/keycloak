@@ -185,6 +185,7 @@ public class UserFederationProviderResource {
      */
     @GET
     @Path("mapper-types")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Map<String, UserFederationMapperTypeRepresentation> getMapperTypes() {
         auth.requireView();
