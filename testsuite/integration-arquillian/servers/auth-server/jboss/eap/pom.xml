@@ -33,6 +33,7 @@
     
     <properties>
         <auth.server.jboss>eap</auth.server.jboss>
+        <auth.server.home>${project.build.directory}/unpacked/${product.unpacked.folder.name}</auth.server.home>
 
         <!--server-dist-->
         <auth.server.dist.version>${product.version}</auth.server.dist.version>
