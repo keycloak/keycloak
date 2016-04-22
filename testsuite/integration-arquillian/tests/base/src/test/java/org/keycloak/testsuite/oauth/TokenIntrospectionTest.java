@@ -30,7 +30,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.TestRealmKeycloakTest;
-import org.keycloak.testsuite.util.KeycloakModelUtils;
+import org.keycloak.testsuite.util.ClientTestUtils;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -51,11 +51,11 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        ClientRepresentation confApp = KeycloakModelUtils.createClient(testRealm, "confidential-cli");
+        ClientRepresentation confApp = ClientTestUtils.createClient(testRealm, "confidential-cli");
         confApp.setSecret("secret1");
         confApp.setServiceAccountsEnabled(Boolean.TRUE);
 
-        ClientRepresentation pubApp = KeycloakModelUtils.createClient(testRealm, "public-cli");
+        ClientRepresentation pubApp = ClientTestUtils.createClient(testRealm, "public-cli");
         pubApp.setPublicClient(Boolean.TRUE);
 
         UserRepresentation user = new UserRepresentation();
