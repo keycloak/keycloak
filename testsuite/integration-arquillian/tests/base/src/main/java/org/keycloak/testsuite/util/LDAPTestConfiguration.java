@@ -20,13 +20,19 @@ package org.keycloak.testsuite.util;
 import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.jboss.logging.Logger;
+import org.keycloak.common.constants.GenericConstants;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.FindFile;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserFederationProvider;
 
@@ -37,7 +43,6 @@ public class LDAPTestConfiguration {
 
     private static final Logger log = Logger.getLogger(LDAPTestConfiguration.class);
 
-    private String connectionPropertiesLocation;
     private int sleepTime;
     private boolean startEmbeddedLdapServer = true;
     private Map<String, String> config;
@@ -95,8 +100,7 @@ public class LDAPTestConfiguration {
 
     public static LDAPTestConfiguration readConfiguration(String connectionPropertiesLocation) {
         LDAPTestConfiguration ldapTestConfiguration = new LDAPTestConfiguration();
-        ldapTestConfiguration.setConnectionPropertiesLocation(getResource(connectionPropertiesLocation));
-        ldapTestConfiguration.loadConnectionProperties();
+        ldapTestConfiguration.loadConnectionProperties(connectionPropertiesLocation);
         return ldapTestConfiguration;
     }
     
@@ -104,13 +108,28 @@ public class LDAPTestConfiguration {
         return new File(PROJECT_BUILD_DIRECTORY, "dependency/kerberos/" + resourceName).getAbsolutePath();
     }
 
-    protected void loadConnectionProperties() {
+    protected void loadConnectionProperties(String connectionPropertiesLocation) {
+        // TODO: Improve and possibly use FindFile
+        InputStream is;
+        try {
+            if (connectionPropertiesLocation.startsWith(GenericConstants.PROTOCOL_CLASSPATH)) {
+                String classPathLocation = connectionPropertiesLocation.replace(GenericConstants.PROTOCOL_CLASSPATH, "");
+                log.info("Reading LDAP configuration from classpath from: " + classPathLocation);
+                is = LDAPTestConfiguration.class.getClassLoader().getResourceAsStream(classPathLocation);
+            } else {
+                String file = getResource(connectionPropertiesLocation);
+                log.info("Reading LDAP configuration from: " + connectionPropertiesLocation);
+                is = new FileInputStream(file);
+            }
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+
         PropertiesConfiguration p;
         try {
-            log.info("Reading LDAP configuration from: " + connectionPropertiesLocation);
             p = new PropertiesConfiguration();
             p.setDelimiterParsingDisabled(true);
-            p.load(connectionPropertiesLocation);
+            p.load(is);
         }
         catch (Exception e) {
             throw new RuntimeException(e);
@@ -137,10 +156,6 @@ public class LDAPTestConfiguration {
 
     public Map<String,String> getLDAPConfig() {
         return config;
-    }
-
-    public void setConnectionPropertiesLocation(String connectionPropertiesLocation) {
-        this.connectionPropertiesLocation = connectionPropertiesLocation;
     }
 
     public boolean isStartEmbeddedLdapServer() {
