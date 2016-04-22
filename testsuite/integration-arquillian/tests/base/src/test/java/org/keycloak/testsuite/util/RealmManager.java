@@ -23,4 +23,16 @@ public class RealmManager {
         realmRepresentation.setAccessCodeLifespan(accessCodeLifespan);
         realm.update(realmRepresentation);
     }
+
+    public void verifyEmail(Boolean enabled) {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setVerifyEmail(enabled);
+        realm.update(rep);
+    }
+
+    public void passwordPolicy(String passwordPolicy) {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setPasswordPolicy(passwordPolicy);
+        realm.update(rep);
+    }
 }

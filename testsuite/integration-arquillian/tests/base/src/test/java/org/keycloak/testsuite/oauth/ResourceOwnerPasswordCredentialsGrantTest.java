@@ -20,89 +20,106 @@ package org.keycloak.testsuite.oauth;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.models.*;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.RealmManager;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.common.util.Time;
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.RealmManager;
+import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.UserManager;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ResourceOwnerPasswordCredentialsGrantTest {
-
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
-        @Override
-        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ClientModel app = KeycloakModelUtils.createClient(appRealm, "resource-owner");
-            app.setDirectAccessGrantsEnabled(true);
-            app.setSecret("secret");
-
-            ClientModel app2 = KeycloakModelUtils.createClient(appRealm, "resource-owner-public");
-            app2.setDirectAccessGrantsEnabled(true);
-            app2.setPublicClient(true);
-
-            UserModel user = session.users().addUser(appRealm, "direct-login");
-            user.setEmail("direct-login@localhost");
-            user.setEnabled(true);
-
-            session.users().updateCredential(appRealm, user, UserCredentialModel.password("password"));
-
-            userId = user.getId();
-
-            UserModel user2 = session.users().addUser(appRealm, "direct-login-otp");
-            user2.setEnabled(true);
-
-            UserCredentialModel credentials = new UserCredentialModel();
-            credentials.setType(CredentialRepresentation.TOTP);
-            credentials.setValue("totpSecret");
-            user2.updateCredential(credentials);
-
-            user2.setOtpEnabled(true);
-
-            session.users().updateCredential(appRealm, user2, UserCredentialModel.password("password"));
-
-            userId2 = user2.getId();
-
-        }
-    });
-
-    @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
-
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
-    protected OAuthClient oauth;
+public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakTest {
 
     private static String userId;
 
     private static String userId2;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
+
+    @Override
+    public void beforeAbstractKeycloakTest() throws Exception {
+        super.beforeAbstractKeycloakTest();
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        RealmBuilder realm = RealmBuilder.create().name("test")
+                .privateKey("MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=")
+                .publicKey("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB")
+                .testEventListener();
+
+
+        ClientRepresentation app = ClientBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .clientId("resource-owner")
+                .directAccessGrants()
+                .secret("secret")
+                .build();
+        realm.client(app);
+
+        ClientRepresentation app2 = ClientBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .clientId("resource-owner-public")
+                .directAccessGrants()
+                .publicClient()
+                .build();
+        realm.client(app2);
+
+        UserBuilder defaultUser = UserBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .username("test-user@localhost")
+                .password("password");
+        realm.user(defaultUser);
+
+        userId = KeycloakModelUtils.generateId();
+        UserRepresentation user = UserBuilder.create()
+                .id(userId)
+                .username("direct-login")
+                .email("direct-login@localhost")
+                .password("password")
+                .build();
+        realm.user(user);
+
+        userId2 = KeycloakModelUtils.generateId();
+        UserRepresentation user2 = UserBuilder.create()
+                .id(userId2)
+                .username("direct-login-otp")
+                .password("password")
+                .totpSecret("totpSecret")
+                .build();
+        realm.user(user2);
+
+        testRealms.add(realm.build());
+    }
 
     @Test
     public void grantAccessTokenUsername() throws Exception {
@@ -279,13 +296,8 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
 
     @Test
     public void grantAccessTokenClientNotAllowed() throws Exception {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                ClientModel client = appRealm.getClientByClientId("resource-owner");
-                client.setDirectAccessGrantsEnabled(false);
-            }
-        });
+
+        ClientManager.realm(adminClient.realm("test")).clientId("resource-owner").directAccessGrant(false);
 
         oauth.clientId("resource-owner");
 
@@ -303,25 +315,15 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .user((String) null)
                 .assertEvent();
 
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                ClientModel client = appRealm.getClientByClientId("resource-owner");
-                client.setDirectAccessGrantsEnabled(true);
-            }
-        });
+        ClientManager.realm(adminClient.realm("test")).clientId("resource-owner").directAccessGrant(true);
+
     }
 
     @Test
     public void grantAccessTokenVerifyEmail() throws Exception {
 
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setVerifyEmail(true);
-            }
-        });
-
+        RealmResource realmResource = adminClient.realm("test");
+        RealmManager.realm(realmResource).verifyEmail(true);
 
         oauth.clientId("resource-owner");
 
@@ -340,25 +342,17 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
                 .user((String) null)
                 .assertEvent();
 
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setVerifyEmail(false);
-                UserModel user = manager.getSession().users().getUserByEmail("test-user@localhost", appRealm);
-                user.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
-            }
-        });
+        RealmManager.realm(realmResource).verifyEmail(false);
+        UserManager.realm(realmResource).username("test-user@localhost").removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.toString());
 
     }
 
     @Test
     public void grantAccessTokenExpiredPassword() throws Exception {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setPasswordPolicy(new PasswordPolicy("forceExpiredPasswordChange(1)"));
-            }
-        });
+
+        RealmResource realmResource = adminClient.realm("test");
+        RealmManager.realm(realmResource).passwordPolicy(
+                new PasswordPolicy("forceExpiredPasswordChange(1)").toString());
 
         try {
             Time.setOffset(60 * 60 * 48);
@@ -382,17 +376,11 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         } finally {
             Time.setOffset(0);
 
-            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setPasswordPolicy(new PasswordPolicy(""));
-                    UserModel user = manager.getSession().users().getUserByEmail("test-user@localhost", appRealm);
-                    user.removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                }
-            });
+            RealmManager.realm(realmResource).passwordPolicy(new PasswordPolicy("").toString());
+            UserManager.realm(realmResource).username("test-user@localhost")
+                    .removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         }
     }
-
 
     @Test
     public void grantAccessTokenInvalidUserCredentials() throws Exception {
