@@ -64,6 +64,7 @@ public interface UserFederationProviderResource {
 
     @GET
     @Path("mapper-types")
+    @Produces(MediaType.APPLICATION_JSON)
     Map<String, UserFederationMapperTypeRepresentation> getMapperTypes();
 
 
