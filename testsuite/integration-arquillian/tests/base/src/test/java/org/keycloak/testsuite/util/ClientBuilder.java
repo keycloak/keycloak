@@ -17,13 +17,18 @@
 
 package org.keycloak.testsuite.util;
 
+import org.codehaus.plexus.util.xml.pull.XmlSerializer;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.client.Client;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -74,4 +79,21 @@ public class ClientBuilder {
         return rep;
     }
 
+    public ClientBuilder attribute(String name, String value) {
+        Map<String, String> attributes = new HashMap<String, String>();
+        attributes.put(name, value);
+        rep.setAttributes(attributes);
+
+        return this;
+    }
+
+    public ClientBuilder authenticatorType(String providerId) {
+        rep.setClientAuthenticatorType(providerId);
+        return this;
+    }
+
+    public ClientBuilder redirectUris(String... redirectUris) {
+        rep.setRedirectUris(Arrays.asList(redirectUris));
+        return this;
+    }
 }
