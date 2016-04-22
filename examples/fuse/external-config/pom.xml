@@ -19,7 +19,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>keycloak-examples-parent</artifactId>
+        <artifactId>keycloak-examples-fuse-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>2.0.0.CR1-SNAPSHOT</version>
     </parent>
@@ -126,4 +126,3 @@
         </plugins>
     </build>
 </project>
-
