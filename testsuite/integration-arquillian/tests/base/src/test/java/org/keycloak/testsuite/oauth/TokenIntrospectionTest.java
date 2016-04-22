@@ -35,6 +35,7 @@ import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -104,8 +105,6 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         assertEquals(jsonNode.get("aud").asText(), rep.getAudience()[0]);
         assertEquals(jsonNode.get("iss").asText(), rep.getIssuer());
         assertEquals(jsonNode.get("jti").asText(), rep.getId());
-
-        events.clear();
     }
 
     @Test
@@ -116,8 +115,6 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "bad_credential", accessTokenResponse.getAccessToken());
 
         assertEquals("{\"error_description\":\"Authentication failed.\",\"error\":\"invalid_request\"}", tokenResponse);
-
-        events.clear();
     }
 
     @Test
@@ -152,8 +149,6 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         assertEquals(jsonNode.get("nbf").asInt(), rep.getNotBefore());
         assertEquals(jsonNode.get("iss").asText(), rep.getIssuer());
         assertEquals(jsonNode.get("jti").asText(), rep.getId());
-
-        events.clear();
     }
 
     @Test
@@ -165,8 +160,6 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         String tokenResponse = oauth.introspectAccessTokenWithClientCredential("public-cli", "it_doesnt_matter", accessTokenResponse.getAccessToken());
 
         assertEquals("{\"error_description\":\"Client not allowed.\",\"error\":\"invalid_request\"}", tokenResponse);
-
-        events.clear();
     }
 
     @Test
@@ -185,8 +178,6 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         assertNull(rep.getUserName());
         assertNull(rep.getClientId());
         assertNull(rep.getSubject());
-
-        events.clear();
     }
 
     @Test
@@ -202,8 +193,6 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         assertEquals("test-user@localhost", rep.getUserName());
         assertEquals("test-app", rep.getClientId());
         assertEquals(loginEvent.getUserId(), rep.getSubject());
-
-        events.clear();
     }
 
     @Test
@@ -220,8 +209,6 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         assertNull(rep.getUserName());
         assertNull(rep.getClientId());
         assertNull(rep.getSubject());
-
-        events.clear();
     }
 
     @Test
@@ -244,8 +231,6 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
             assertNull(rep.getUserName());
             assertNull(rep.getClientId());
             assertNull(rep.getSubject());
-
-            events.clear();
         } finally {
             userRep.setEnabled(true);
             adminClient.realm(oauth.getRealm()).users().get(loginEvent.getUserId()).update(userRep);
@@ -259,8 +244,9 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
 
         try {
-            Time.setOffset(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan() + 1);
-
+            HashMap<String, String> args = new HashMap<>();
+            args.put("offset", String.valueOf(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan() + 1));
+            testingClient.testing().setTimeOffset(args);
             String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
             TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
 
@@ -268,8 +254,6 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
             assertNull(rep.getUserName());
             assertNull(rep.getClientId());
             assertNull(rep.getSubject());
-
-            events.clear();
         } finally {
             Time.setOffset(0);
         }
