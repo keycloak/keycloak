@@ -22,7 +22,6 @@ import java.util.List;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 
 import org.junit.Test;
@@ -73,7 +72,7 @@ public class UserFederationTest extends AbstractAdminTest {
             userFederation().getProviderFactory("not-existent");
             Assert.fail("Not expected to find not-existent provider");
         } catch (NotFoundException nfe) {
-            nfe.getResponse().close();
+            // Expected
         }
     }
 
@@ -205,7 +204,7 @@ public class UserFederationTest extends AbstractAdminTest {
             userFederation().get(id).update(ldapRep);
             Assert.fail("Not expected to successfull update");
         } catch (BadRequestException bre) {
-            bre.getResponse().close();
+            // Expected
         }
 
         // Assert nothing was updated
@@ -291,7 +290,7 @@ public class UserFederationTest extends AbstractAdminTest {
             userFederation().get(id1).syncUsers("unknown");
             Assert.fail("Not expected to sync with unknown action");
         } catch (NotFoundException nfe) {
-            nfe.getResponse().close();
+            // Expected
         }
 
         // Assert sync didn't happen
