@@ -29,5 +29,6 @@
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>
         <module name="org.keycloak.keycloak-services"/>
+        <module name="org.jboss.logging"/>
     </dependencies>
 </module>
