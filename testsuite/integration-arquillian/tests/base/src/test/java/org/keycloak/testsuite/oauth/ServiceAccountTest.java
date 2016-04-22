@@ -220,7 +220,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
     @Test
     public void changeClientIdTest() throws Exception {
 
-        ClientManager.realm(adminClient.realm("test")).rename("service-account-cl", "updated-client");
+        ClientManager.realm(adminClient.realm("test")).clientId("service-account-cl").renameTo("updated-client");
 
         oauth.clientId("updated-client");
 
@@ -243,7 +243,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .assertEvent();
 
 
-        ClientManager.realm(adminClient.realm("test")).rename("updated-client", "service-account-cl");
+        ClientManager.realm(adminClient.realm("test")).clientId("updated-client").renameTo("service-account-cl");
 
     }
 }

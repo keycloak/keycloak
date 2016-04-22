@@ -63,9 +63,12 @@ public class AssertEvents implements TestRule {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                base.evaluate();
-                // TODO Test should fail if there are leftover events
-                context.testingClient.testing().clearQueue();
+                try {
+                    base.evaluate();
+                } finally {
+                    // TODO Test should fail if there are leftover events
+                    context.testingClient.testing().clearQueue();
+                }
             }
         };
     }
