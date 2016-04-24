@@ -196,7 +196,7 @@ for one AS process to connect to another.  This will generate a secret that you'
 _.../domain/configuration/host-slave.xml_ file.
 
 .Add App Server Admin
-[source,shell]
+[source]
 ----
 $ add-user.sh
  What type of user do you wish to add?
