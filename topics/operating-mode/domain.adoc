@@ -221,14 +221,14 @@ $ add-user.sh
  Added user 'admin' with groups to file '/.../domain/configuration/mgmt-groups.properties'
  Is this new user going to be used for one AS process to connect to another AS process?
  e.g. for a slave host controller connecting to the master or for a Remoting connection for server to server EJB calls.
- yes/no? *yes*
- To represent the user add the following to the server-identities definition *<secret value="bWdtdDEyMyE=" />*
- ----
+ yes/no? yes
+ To represent the user add the following to the server-identities definition <secret value="bWdtdDEyMyE=" />
+----
 
- Now cut and paste the secret value into the .../domain/configuration/host-slave.xml_ file:
+Now cut and paste the secret value into the .../domain/configuration/host-slave.xml_ file:
 
- [source,xml]
- ----
+[source,xml]
+----
      <management>
          <security-realms>
              <security-realm name="ManagementRealm">
