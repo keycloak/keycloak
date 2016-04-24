@@ -42,7 +42,7 @@ NOTE: Any changes you make to this file while the server is running will not tak
       the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
 
 
-==== Standalone {{book.project.name}} Configuration
+==== Standalone {{book.project.name}} JSON Configuration
 
 {{book.project.name}} has a json configuration file that is specific to {{book.project.name}} this is located within
 _.../standalone/configuration/keycloak.json_.  This file is used to configure non-infrastructure level things that are

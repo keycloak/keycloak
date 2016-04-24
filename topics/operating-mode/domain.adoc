@@ -42,9 +42,6 @@ HTTP network connections, caches, and other infrastructure related things.  Whil
 domain mode uses the _.../domain/domain.xml_ configuration file.  This is
 where the domain profile and server group for the {{book.project.name}} server are defined.
 
-{{book.project.name}} does come with a pre-configured _domain.xml_ file.  While it will work almost out of the box, there is some tweaks you need
-to make to it for it to be able to manage a real cluster.  The <<_example_domain,example domain>> section of this chapter walks through each
-aspect of this pre-configured _domain.xml_ file.
 
 .domain.xml
 image:../../{{book.images}}/domain-file.png[]
@@ -53,6 +50,46 @@ NOTE: Any changes you make to this file while the domain controller is running w
       by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
       the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
 
+Let's look at some aspects of this _domain.xml_ file.  The +auth-server+ +profile+ XML block is where you are going to make the bulk of your configuration decisions.
+You'll be configuring things here like network connections, caches, and database connections.
+
+
+.auth-server profile
+[source,xml]
+----
+    <profiles>
+        <profile name="auth-server">
+           ...
+        </profile>
+----
+
+The +ha-sockets+ +socket-binding-group+ defines the default port mappings for various connectors that are opened with each
+{{book.project.name}} server instance.  Any value that contains +${...}+ is a value that can be overriden on the command line
+with the +-D+ switch, i.e.
+
+----
+$ domain.sh -Djboss.http.port=80
+----
+
+The definition of the server group for {{book.project.name}} resides in the +server-groups+ XML block.  It specifies the domain profile
+that is used (+default+) and also some default boot arguments for the Java VM when the host controller boots an instance.  It also
+binds a +socket-binding-group+ to the server group.
+
+.server group
+[source,xml]
+----
+    <server-groups>
+        <server-group name="auth-server-group" profile="auth-server">
+            <jvm name="default">
+                <heap size="64m" max-size="512m"/>
+            </jvm>
+            <socket-binding-group ref="ha-sockets"/>
+        </server-group>
+    </server-groups>
+----
+
+
+
 ==== Host Controller Configuration
 
 {{book.project.name}} comes with two host controller configuration files that reside in the _.../domain/configuration/_ directory:
@@ -60,8 +97,55 @@ _host-master.xml_ and _host-slave.xml_.  _host-master.xml_ is configured to boot
 one {{book.project.name}} server instance.  _host-slave.xml_ is configured to talk to the domain controller and boot up
 one {{book.project.name}} server instance.
 
+NOTE:  You should remove the load balancer server from _host-master.xml_.  The load balancer included is really not that
+       production ready and doesn't work as smoothly as something like Apache HTTPD + mod-cluster or a hardward based one.
+
 .Host Controller Config
 image:../../{{book.images}}/host-files.png[]
+
+To disable the load balancer server instance, edit _host-master.xml_ and comment out or remove the +"load-balancer"+ entry.
+
+[source,xml]
+----
+    <servers>
+        <!-- remove or comment out next line -->
+        <server name="load-balancer" group="loadbalancer-group"/>
+        ...
+    </servers>
+----
+
+Another interesting thing to note about this file is the declaration of the authentication server instance.  It has
+a +port-offset+ setting.  Any network port defined in the _domain.xml_ +socket-binding-group+ or the server group
+will have the value of +port-offset+ added to it.  For this example domain setup we do this so that ports opened by
+the load balancer server don't conflict with the authentication server instance that is started.
+
+[source,xml]
+----
+    <servers>
+        ...
+        <server name="server-one" group="auth-server-group">
+             <socket-bindings port-offset="150"/>
+        </server>
+    </servers>
+----
+
+==== Server Instance Working Directories
+
+Each {{book.project.name}} server instance defined in your host files creates a working directory under _.../domain/servers/{SERVER NAME}_.
+Additional configuration can be put there, and any temporary, log, or data files the server instance needs or creates go there too.
+The structure of these per server directories ends up looking like any other {{book.appserver.name}} booted server.
+
+.Working Directories
+image:../../{{book.images}}/domain-server-dir.png[]
+
+==== {{book.project.name}} JSon Configuration
+
+Unfortunately, there is no centralized way to manage the _keycloak.json_ file.  You'll have to manage a copy of this file
+in every server instance you deploy.  This file must exist in the _.../domain/servers/{SERVER NAME}/configuration directory.
+
+.JSON Configuration
+image:../../{{book.images}}/domain-json-config.png[]
+
 
 ==== Domain Boot Script
 
@@ -87,6 +171,99 @@ $ .../bin/domain.sh --host-config=host-master.xml
 
 When running the boot script you will need pass in the host controlling configuration file you are going to use via the
 +--host-config+ switch.
+
+
+==== Running the Clustered Domain Example
+
+The example domain that comes with {{book.project.name}} was meant to run on one machine.  It starts a:
+* domain controller
+* HTTP load balancer
+* 2 {{book.project.name}} server instances
+
+To simulate running a cluster on two machines, you'll run the +domain.sh+ script twice to start two separate
+host controllers.  The first will be the master host controller.  It start a domain controller, an HTTP load balancer, and one
+{{book.project.name}} authentication server instance.  The second will be a slave host controller that only starts
+up an authentication server instance.
+
+===== Setup Secure Master Slave Connection
+
+Before you can boot things up though, you have to configure the slave host controller so that it can talk securely to the domain
+controller to obtain the centralized configuration.  To set up a secure connection, you have to create a server admin user and a secret that
+will be shared between the master and the slave.  You do this by running the +.../bin/add-user.sh+ script.
+
+When you run the script select +Management User+ and answer +yes+ when it asks you if the new user is going to be used
+for one AS process to connect to another.  This will generate a secret that you'll need to cut and paste into the
+_.../domain/configuration/host-slave.xml_ file.
+
+.Add App Server Admin
+[source,shell]
+----
+$ add-user.sh
+ What type of user do you wish to add?
+  a) Management User (mgmt-users.properties)
+  b) Application User (application-users.properties)
+ (a): a
+ Enter the details of the new user to add.
+ Using realm 'ManagementRealm' as discovered from the existing property files.
+ Username : admin
+ Password recommendations are listed below. To modify these restrictions edit the add-user.properties configuration file.
+  - The password should not be one of the following restricted values {root, admin, administrator}
+  - The password should contain at least 8 characters, 1 alphabetic character(s), 1 digit(s), 1 non-alphanumeric symbol(s)
+  - The password should be different from the username
+ Password :
+ Re-enter Password :
+ What groups do you want this user to belong to? (Please enter a comma separated list, or leave blank for none)[ ]:
+ About to add user 'admin' for realm 'ManagementRealm'
+ Is this correct yes/no? yes
+ Added user 'admin' to file '/.../standalone/configuration/mgmt-users.properties'
+ Added user 'admin' to file '/.../domain/configuration/mgmt-users.properties'
+ Added user 'admin' with groups to file '/.../standalone/configuration/mgmt-groups.properties'
+ Added user 'admin' with groups to file '/.../domain/configuration/mgmt-groups.properties'
+ Is this new user going to be used for one AS process to connect to another AS process?
+ e.g. for a slave host controller connecting to the master or for a Remoting connection for server to server EJB calls.
+ yes/no? *yes*
+ To represent the user add the following to the server-identities definition *<secret value="bWdtdDEyMyE=" />*
+ ----
+
+ Now cut and paste the secret value into the .../domain/configuration/host-slave.xml_ file:
+
+ [source,xml]
+ ----
+     <management>
+         <security-realms>
+             <security-realm name="ManagementRealm">
+                 <server-identities>
+                     <secret value="bWdtdDEyMyE="/>
+                 </server-identities>
+----
+
+===== Run the Boot Scripts
+
+Since we're simulating running on two separate machines, you'll run the boot script twice:
+
+.Boot up master
+[source,shell]
+----
+$ domain.sh --host-config=host-master.xml
+----
+
+.Boot up slave
+[source,shell]
+----
+$ domain.sh --host-config=host-slave.xml
+----
+
+To try it out, open your browser and go to http://localhost:8080/auth
+
+
+
+
+
+
+
+
+
+
 
 
 
