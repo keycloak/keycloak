@@ -4,7 +4,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 
-import java.util.Map;
+import java.util.LinkedHashMap;
 
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 
@@ -49,9 +49,17 @@ public class ClientManager {
 
         public void updateAttribute(String attribute, String value) {
             ClientRepresentation app = clientResource.toRepresentation();
+            if (app.getAttributes() == null) {
+                app.setAttributes(new LinkedHashMap<String, String>());
+            }
             app.getAttributes().put(attribute, value);
             clientResource.update(app);
         }
 
+        public void directAccessGrant(Boolean enable) {
+            ClientRepresentation app = clientResource.toRepresentation();
+            app.setDirectAccessGrantsEnabled(enable);
+            clientResource.update(app);
+        }
     }
 }
