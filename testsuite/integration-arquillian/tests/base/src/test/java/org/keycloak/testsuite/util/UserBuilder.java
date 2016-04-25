@@ -20,6 +20,7 @@ package org.keycloak.testsuite.util;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -91,8 +92,9 @@ public class UserBuilder {
 
     public UserBuilder role(String role) {
         if (rep.getRealmRoles() == null) {
-            rep.setRealmRoles(new LinkedList<String>());
+            rep.setRealmRoles(new ArrayList<String>());
         }
+        rep.getRealmRoles().add(role);
         return this;
     }
 
