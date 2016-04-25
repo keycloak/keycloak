@@ -28,14 +28,20 @@ import java.util.LinkedList;
  */
 public class RealmBuilder {
 
-    private RealmRepresentation rep = new RealmRepresentation();
+    private final RealmRepresentation rep;
 
     public static RealmBuilder create() {
-        return new RealmBuilder();
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setEnabled(Boolean.TRUE);
+        return new RealmBuilder(rep);
     }
 
-    private RealmBuilder() {
-        rep.setEnabled(true);
+    public static RealmBuilder edit(RealmRepresentation rep) {
+        return new RealmBuilder(rep);
+    }
+
+    private RealmBuilder(RealmRepresentation rep) {
+        this.rep = rep;
     }
 
     public RealmBuilder name(String name) {
