@@ -18,6 +18,7 @@
 package org.keycloak.admin.client.resource;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -169,5 +170,27 @@ public interface RealmResource {
     Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
                                 @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential,
                                 @QueryParam("useTruststoreSpi") String useTruststoreSpi);
+
+    @Path("clear-realm-cache")
+    @POST
+    void clearRealmCache();
+
+    @Path("clear-user-cache")
+    @POST
+    void clearUserCache();
+
+    @Path("push-revocation")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    GlobalRequestResult pushRevocation();
+
+    @Path("logout-all")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    GlobalRequestResult logoutAll();
+
+    @Path("sessions/{session}")
+    @DELETE
+    void deleteSession(@PathParam("session") String sessionId);
 
 }

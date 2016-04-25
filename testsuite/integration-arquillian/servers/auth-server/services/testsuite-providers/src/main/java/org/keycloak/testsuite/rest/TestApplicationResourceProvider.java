@@ -17,16 +17,26 @@
 
 package org.keycloak.testsuite.rest;
 
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.adapters.action.LogoutAction;
+import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.events.EventsListenerProvider;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -36,8 +46,50 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
 
     private KeycloakSession session;
 
-    public TestApplicationResourceProvider(KeycloakSession session) {
+    private final BlockingQueue<LogoutAction> adminLogoutActions;
+    private final BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions;
+
+    public TestApplicationResourceProvider(KeycloakSession session, BlockingQueue<LogoutAction> adminLogoutActions,
+            BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions) {
         this.session = session;
+        this.adminLogoutActions = adminLogoutActions;
+        this.adminPushNotBeforeActions = adminPushNotBeforeActions;
+    }
+
+    @POST
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Path("/admin/k_logout")
+    public void adminLogout(String data) throws JWSInputException {
+        adminLogoutActions.add(new JWSInput(data).readJsonContent(LogoutAction.class));
+    }
+
+    @POST
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Path("/admin/k_push_not_before")
+    public void adminPushNotBefore(String data) throws JWSInputException {
+        adminPushNotBeforeActions.add(new JWSInput(data).readJsonContent(PushNotBeforeAction.class));
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/poll-admin-logout")
+    public LogoutAction getAdminLogoutAction() throws InterruptedException {
+        return adminLogoutActions.poll(10, TimeUnit.SECONDS);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/poll-admin-not-before")
+    public PushNotBeforeAction getAdminPushNotBefore() throws InterruptedException {
+        return adminPushNotBeforeActions.poll(10, TimeUnit.SECONDS);
+    }
+
+    @POST
+    @Path("/clear-admin-actions")
+    public Response clearAdminActions() {
+        adminLogoutActions.clear();
+        adminPushNotBeforeActions.clear();
+        return Response.noContent().build();
     }
 
     @GET

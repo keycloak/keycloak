@@ -101,9 +101,14 @@ public class OAuthClient {
     public AuthorizationCodeResponse doLogin(String username, String password) {
         openLoginForm();
         String src = driver.getPageSource();
-        driver.findElement(By.id("username")).sendKeys(username);
-        driver.findElement(By.id("password")).sendKeys(password);
-        driver.findElement(By.name("login")).click();
+        try {
+            driver.findElement(By.id("username")).sendKeys(username);
+            driver.findElement(By.id("password")).sendKeys(password);
+            driver.findElement(By.name("login")).click();
+        } catch (Throwable t) {
+            System.err.println(src);
+            throw t;
+        }
 
         return new AuthorizationCodeResponse(this);
     }
