@@ -90,11 +90,13 @@ public class UserBuilder {
         return this;
     }
 
-    public UserBuilder role(String role) {
+    public UserBuilder addRoles(String... roles) {
         if (rep.getRealmRoles() == null) {
             rep.setRealmRoles(new ArrayList<String>());
         }
-        rep.getRealmRoles().add(role);
+        for (String role : roles) {
+            rep.getRealmRoles().add(role);
+        }
         return this;
     }
 

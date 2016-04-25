@@ -1,0 +1,204 @@
+{
+  "id": "test",
+  "realm": "test",
+  "enabled": true,
+  "accessTokenLifespan": 10,
+  "ssoSessionIdleTimeout": 30,
+  "sslRequired": "external",
+  "registrationAllowed": true,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed" : true,
+  "privateKey": "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=",
+  "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+  "requiredCredentials": [ "password" ],
+  "defaultRoles": [ "user" ],
+  "smtpServer": {
+    "from": "auto@keycloak.org",
+    "host": "localhost",
+    "port":"3025"
+  },
+  "users" : [
+    {
+      "username" : "test-user@localhost",
+      "enabled": true,
+      "email" : "test-user@localhost",
+      "firstName": "Tom",
+      "lastName": "Brady",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "realmRoles": ["user", "offline_access"],
+      "clientRoles": {
+        "test-app": [ "customer-user" ],
+        "account": [ "view-profile", "manage-account" ]
+      }
+    },
+    {
+      "username" : "john-doh@localhost",
+      "enabled": true,
+      "email" : "john-doh@localhost",
+      "firstName": "John",
+      "lastName": "Doh",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "realmRoles": ["user"],
+      "clientRoles": {
+        "test-app": [ "customer-user" ],
+        "account": [ "view-profile", "manage-account" ]
+      }
+    },
+    {
+      "username" : "keycloak-user@localhost",
+      "enabled": true,
+      "email" : "keycloak-user@localhost",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "realmRoles": ["user"],
+      "clientRoles": {
+        "test-app": [ "customer-user" ],
+        "account": [ "view-profile", "manage-account" ]
+      }
+    },
+    {
+      "username" : "topGroupUser",
+      "enabled": true,
+      "email" : "top@redhat.com",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "groups": [
+        "/topGroup"
+      ]
+    },
+    {
+      "username" : "level2GroupUser",
+      "enabled": true,
+      "email" : "level2@redhat.com",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "groups": [
+        "/topGroup/level2group"
+      ]
+    }
+  ],
+  "scopeMappings": [
+    {
+      "client": "third-party",
+      "roles": ["user"]
+    },
+    {
+      "client": "test-app",
+      "roles": ["user"]
+    },
+    {
+      "client": "offline-client",
+      "roles": ["user","offline_access"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "test-app",
+      "enabled": true,
+      "baseUrl": "http://localhost:8180/auth/realms/master/app",
+      "redirectUris": [
+        "http://localhost:8180/auth/realms/master/app/*"
+      ],
+      "adminUrl": "http://localhost:8180/auth/realms/master/app/logout",
+      "secret": "password"
+    },
+    {
+      "clientId" : "third-party",
+      "enabled": true,
+      "consentRequired": true,
+
+      "redirectUris": [
+        "http://localhost:8180/app/*"
+      ],
+      "secret": "password"
+    },
+    {
+      "clientId": "offline-client",
+      "enabled": true,
+      "adminUrl": "/offline-client/logout",
+      "baseUrl": "/offline-client",
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "/offline-client/*"
+      ],
+      "secret": "secret1"
+    }
+
+  ],
+  "roles" : {
+    "realm" : [
+      {
+        "name": "user",
+        "description": "Have User privileges"
+      },
+      {
+        "name": "admin",
+        "description": "Have Administrator privileges"
+      }
+    ],
+    "client" : {
+      "test-app" : [
+        {
+          "name": "customer-user",
+          "description": "Have Customer User privileges"
+        },
+        {
+          "name": "customer-admin",
+          "description": "Have Customer Admin privileges"
+        }
+      ]
+    }
+
+  },
+  "groups" : [
+    {
+      "name": "topGroup",
+      "attributes": {
+        "topAttribute": ["true"]
+
+      },
+      "realmRoles": ["user"],
+
+      "subGroups": [
+        {
+          "name": "level2group",
+          "realmRoles": ["admin"],
+          "clientRoles": {
+            "test-app": ["customer-user"]
+          },
+          "attributes": {
+            "level2Attribute": ["true"]
+
+          }
+        }
+      ]
+    }
+  ],
+
+
+  "clientScopeMappings": {
+    "test-app": [
+      {
+        "client": "third-party",
+        "roles": ["customer-user"]
+      }
+    ]
+  },
+
+  "internationalizationEnabled": true,
+  "supportedLocales": ["en", "de"],
+  "defaultLocale": "en",
+  "eventsListeners": ["jboss-logging", "event-queue"]
+}
