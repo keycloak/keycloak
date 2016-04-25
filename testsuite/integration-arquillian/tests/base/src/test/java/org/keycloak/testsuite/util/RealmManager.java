@@ -18,21 +18,46 @@ public class RealmManager {
         return new RealmManager();
     }
 
-    public void accessCodeLifeSpan(Integer accessCodeLifespan) {
+    public RealmManager accessCodeLifeSpan(Integer accessCodeLifespan) {
         RealmRepresentation realmRepresentation = realm.toRepresentation();
         realmRepresentation.setAccessCodeLifespan(accessCodeLifespan);
         realm.update(realmRepresentation);
+        return this;
     }
 
-    public void verifyEmail(Boolean enabled) {
+    public RealmManager verifyEmail(Boolean enabled) {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setVerifyEmail(enabled);
         realm.update(rep);
+        return this;
     }
 
-    public void passwordPolicy(String passwordPolicy) {
+    public RealmManager passwordPolicy(String passwordPolicy) {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setPasswordPolicy(passwordPolicy);
         realm.update(rep);
+        return this;
+    }
+
+    public RealmManager accessTokenLifespan(int accessTokenLifespan) {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setAccessTokenLifespan(accessTokenLifespan);
+        realm.update(rep);
+        return this;
+    }
+
+    public RealmManager ssoSessionIdleTimeout(int sessionIdleTimeout) {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setSsoSessionIdleTimeout(sessionIdleTimeout);
+        realm.update(rep);
+        return this;
+
+    }
+
+    public RealmManager revokeRefreshToken(boolean enable) {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setRevokeRefreshToken(enable);
+        realm.update(rep);
+        return this;
     }
 }
