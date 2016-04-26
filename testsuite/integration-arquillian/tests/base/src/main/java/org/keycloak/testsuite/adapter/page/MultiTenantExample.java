@@ -17,12 +17,13 @@
 
 package org.keycloak.testsuite.adapter.page;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
+
+import javax.ws.rs.core.UriBuilder;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  *
@@ -31,6 +32,7 @@ import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 public class MultiTenantExample extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "multi-tenant-example";
+    public static final String CLIENT_ID = "integration-arquillian-test-apps-multi-tenant";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)

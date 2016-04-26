@@ -31,6 +31,7 @@ import java.net.URL;
 public class AngularCorsProductExample extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "cors-angular-product-example";
+    public static final String CLIENT_ID = "integration-arquillian-test-apps-cors-angular-product";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)

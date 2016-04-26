@@ -51,18 +51,18 @@ public abstract class AbstractCorsExampleAdapterTest extends AbstractExampleAdap
 
     @Deployment(name = AngularCorsProductExample.DEPLOYMENT_NAME)
     private static WebArchive angularCorsProductExample() throws IOException {
-        return exampleDeployment(AngularCorsProductExample.DEPLOYMENT_NAME, "angular-cors-product");
+        return exampleDeployment(AngularCorsProductExample.CLIENT_ID, "angular-cors-product");
     }
 
     @Deployment(name = CorsDatabaseServiceExample.DEPLOYMENT_NAME)
     private static WebArchive corsDatabaseServiceExample() throws IOException {
-        return exampleDeployment("database-service");
+        return exampleDeployment(CorsDatabaseServiceExample.CLIENT_ID);
     }
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(
-                loadRealm(new File(EXAMPLES_HOME_DIR + "/cors/cors-realm.json")));
+                loadRealm(new File(TEST_APPS_HOME_DIR + "/cors/cors-realm.json")));
     }
 
     @Override

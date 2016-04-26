@@ -1,0 +1,55 @@
+{
+    "id": "tenant2",
+    "realm": "tenant2",
+    "enabled": true,
+    "accessTokenLifespan": 3000,
+    "accessCodeLifespan": 10,
+    "accessCodeLifespanUserAction": 6000,
+    "sslRequired": "external",
+    "registrationAllowed": false,
+    "updateProfileOnInitialSocialLogin": false,
+    "privateKey": "MIICXQIBAAKBgQDA0oJjgPQJhnVhOo51KauQGfLLreMFu64OJdKXRnfvAQJQTuKNwc5JrR63l/byyW1B6FgclABF818TtLvMCAkn4EuFwQZCZhg3x3+lFGiB/IzC6UAt4Bi0JQrTbdh83/U97GIPegvaDqiqEiQESEkbCZWxM6sh/34hQaAhCaFpMwIDAQABAoGADwFSvEOQuh0IjWRtKZjwjOo4BrmlbRDJ3rf6x2LoemTttSouXzGxx/H87fSZdxNNuU9HbBHoY4ko4POzmZEWhS0gV6UjM7VArc4YjID6Hh2tfU9vCbuuKZrRs7RjxL70b51WxycKc49PQ4JiR3g04punrpq2UzToPrm66zI+ICECQQD2Jauo6cXXoxHR0QychQf4dityZwFXUoR/8oI/YFiu9XwcWgSMwrFKUdWWNKYmrIRNqCBzrGyeiGdaAjsw41T3AkEAyIpn+XL7bek/uLno5/7ULauf2dFI6MEaHJixQJD7S6Tfo/CGuDK93H4K0GAdjgR0LA0tCnB09yyPCd5NmAYKpQJBAO7+BH4s/PsyScr+vs/6GpMTqXuap6KxbBUO0YfXdEPr9mVQwboqDxmp+0esNua1+n+sDlZBw/TpW+/42p/NGmECQF0sOQyjyH+TfGCmN7j6I7ioYZeA7h/9/9TDeK8n7SmDC8kOanlQUfgMs5eG4JRoK1WANaoA/8cLc9XA7EoynGUCQQDx/Gjg6qyWheVujxjKufH1XkqDNiQHClDRM1ntChCmGq/RmpVmce+mYeOYZ9eofv7UJUCBdamllRlB+056Ld2h",
+    "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDA0oJjgPQJhnVhOo51KauQGfLLreMFu64OJdKXRnfvAQJQTuKNwc5JrR63l/byyW1B6FgclABF818TtLvMCAkn4EuFwQZCZhg3x3+lFGiB/IzC6UAt4Bi0JQrTbdh83/U97GIPegvaDqiqEiQESEkbCZWxM6sh/34hQaAhCaFpMwIDAQAB",
+    "requiredCredentials": [ "password" ],
+    "users" : [
+        {
+            "username" : "user-tenant2",
+            "enabled": true,
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "user-tenant2" }
+            ],
+            "realmRoles": [ "user" ],
+            "clientRoles": {
+                "multi-tenant": [ "user" ]
+            }
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "description": "User privileges"
+            }
+        ]
+    },
+    "scopeMappings": [
+        {
+            "client": "multi-tenant",
+            "roles": ["user"]
+        }
+
+    ],
+    "clients": [
+        {
+            "clientId": "multi-tenant",
+            "enabled": true,
+            "adminUrl": "/multitenant/tenant2",
+            "baseUrl": "/multitenant/tenant2",
+            "redirectUris": [
+                "/multitenant/tenant2/*"
+            ],
+            "secret": "password"
+        }
+    ]
+}
