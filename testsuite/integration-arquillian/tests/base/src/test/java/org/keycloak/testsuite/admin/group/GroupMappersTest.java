@@ -109,7 +109,6 @@ public class GroupMappersTest extends AbstractGroupTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testGroupMappers() throws Exception {
-        events.clear();
         RealmResource realm = adminClient.realms().realm("test");
         {
             UserRepresentation user = realm.users().search("topGroupUser", -1, -1).get(0);
