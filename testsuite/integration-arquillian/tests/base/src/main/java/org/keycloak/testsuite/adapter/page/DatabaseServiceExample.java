@@ -30,6 +30,7 @@ import java.net.URL;
 public class DatabaseServiceExample extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "database-service-example";
+    public static final String CLIENT_ID = "integration-arquillian-test-apps-demo-database-service";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)

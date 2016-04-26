@@ -82,23 +82,23 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
 
     @Deployment(name = CustomerPortalExample.DEPLOYMENT_NAME)
     private static WebArchive customerPortalExample() throws IOException {
-        return exampleDeployment(CustomerPortalExample.DEPLOYMENT_NAME);
+        return exampleDeployment(CustomerPortalExample.CLIENT_ID);
     }
 
     @Deployment(name = ProductPortalExample.DEPLOYMENT_NAME)
     private static WebArchive productPortalExample() throws IOException {
-        return exampleDeployment(ProductPortalExample.DEPLOYMENT_NAME);
+        return exampleDeployment(ProductPortalExample.CLIENT_ID);
     }
 
     @Deployment(name = DatabaseServiceExample.DEPLOYMENT_NAME)
     private static WebArchive databaseServiceExample() throws IOException {
-        return exampleDeployment("database-service");
+        return exampleDeployment(DatabaseServiceExample.CLIENT_ID);
     }
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(
-                loadRealm(new File(EXAMPLES_HOME_DIR + "/preconfigured-demo/testrealm.json")));
+                loadRealm(new File(TEST_APPS_HOME_DIR + "/demo/testrealm.json")));
     }
 
     @Override

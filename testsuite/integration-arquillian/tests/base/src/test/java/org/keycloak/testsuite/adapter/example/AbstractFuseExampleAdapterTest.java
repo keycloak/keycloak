@@ -17,22 +17,23 @@
 
 package org.keycloak.testsuite.adapter.example;
 
-import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
-import java.io.File;
-import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.auth.page.account.Account;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
-import static org.keycloak.testsuite.adapter.AbstractExampleAdapterTest.EXAMPLES_HOME_DIR;
+import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.fuse.AdminInterface;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
 import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
+import org.keycloak.testsuite.auth.page.account.Account;
+
+import java.io.File;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
+import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
@@ -58,7 +59,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation fureRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/fuse/testrealm.json"));
+        RealmRepresentation fureRealm = loadRealm(new File(TEST_APPS_HOME_DIR + "/fuse/testrealm.json"));
         testRealms.add(fureRealm);
     }
 

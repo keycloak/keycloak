@@ -188,7 +188,7 @@
         </profile>
         
         <profile>
-            <id>examples</id>
+            <id>test-apps</id>
             <activation>
                 <property>
                     <name>!skipTests</name>
@@ -201,7 +201,7 @@
                             <artifactId>maven-dependency-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>example-wars</id>
+                                    <id>test-apps-wars</id>
                                     <phase>generate-test-resources</phase>
                                     <goals>
                                         <goal>copy</goal>
@@ -209,20 +209,20 @@
                                     <configuration>
                                         <artifactItems>
                                             <artifactItem>
-                                                <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>product-portal-example</artifactId>        
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-demo-product-portal</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
                                             <artifactItem>
-                                                <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>customer-portal-example</artifactId>        
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-demo-customer-portal</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>                                        
                                             <artifactItem>
-                                                <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>database-service</artifactId>        
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-demo-database-service</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>       
@@ -233,67 +233,60 @@
                                                 <type>war</type>
                                             </artifactItem>
                                             <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>examples-multitenant</artifactId>        
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-multi-tenant</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>                    
                                             <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>examples-basicauth</artifactId>        
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-basic-auth</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
                                             <artifactItem>
-                                                <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>cors-angular-product-example</artifactId>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-cors-angular-product</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
                                             <artifactItem>
-                                                <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>cors-database-service</artifactId>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-cors-database-service</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
                                             <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>sales-post-sig</artifactId>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-saml-post-signature</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
                                             <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>saml-post-encryption</artifactId>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-saml-post-encryption</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
                                             <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>saml-redirect-signatures</artifactId>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-saml-redirect-signature</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
                                         </artifactItems>
-                                        <outputDirectory>${examples.home}</outputDirectory>
+                                        <outputDirectory>${test-apps.home}</outputDirectory>
                                         <overWriteIfNewer>true</overWriteIfNewer>
                                     </configuration>
                                 </execution>                            
                                 <execution>
-                                    <id>example-realms</id>
+                                    <id>test-apps-realms</id>
                                     <phase>generate-test-resources</phase>
                                     <goals>
                                         <goal>unpack</goal>
                                     </goals>
                                     <configuration>
                                         <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>keycloak-examples-dist</artifactId>        
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                                <includes>**/*realm.json,**/testsaml.json</includes>
-                                            </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
                                                 <artifactId>integration-arquillian-test-apps-dist</artifactId>
@@ -302,7 +295,7 @@
                                                 <includes>**/*realm.json,**/testsaml.json</includes>
                                             </artifactItem>
                                         </artifactItems>
-                                        <outputDirectory>${examples.home}</outputDirectory>
+                                        <outputDirectory>${test-apps.home}</outputDirectory>
                                         <overWriteIfNewer>true</overWriteIfNewer>
                                     </configuration>
                                 </execution>                            
@@ -312,8 +305,8 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
-                                    <examples.home>${examples.home}</examples.home>
-                                    <examples.version.suffix>${project.version}</examples.version.suffix>
+                                    <test-apps.home>${test-apps.home}</test-apps.home>
+                                    <test-apps.version.suffix>${project.version}</test-apps.version.suffix>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -327,7 +320,7 @@
                                         <goal>copy-resources</goal>
                                     </goals>
                                     <configuration>
-                                        <outputDirectory>${examples.home}</outputDirectory>
+                                        <outputDirectory>${test-apps.home}</outputDirectory>
                                         <resources>
                                             <resource>
                                                 <directory>${basedir}/src/test/resources</directory>

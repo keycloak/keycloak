@@ -30,6 +30,7 @@ import java.net.URL;
  */
 public class SAMLPostSigExample extends AbstractPageWithInjectedUrl {
     public static final String DEPLOYMENT_NAME = "sales-post-sig";
+    public static final String CLIENT_ID = "integration-arquillian-test-apps-saml-post-signature";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)

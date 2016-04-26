@@ -30,6 +30,7 @@ import java.net.URL;
  */
 public class SAMLRedirectSigExample extends AbstractPageWithInjectedUrl {
     public static final String DEPLOYMENT_NAME = "saml-redirect-signatures";
+    public static final String CLIENT_ID = "integration-arquillian-test-apps-saml-redirect-signature";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)

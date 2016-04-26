@@ -16,6 +16,25 @@
 
     <modules>
         <module>js-console</module>
+        <module>multi-tenant</module>
+        <module>basic-auth</module>
         <module>test-apps-dist</module>
+        <module>cors</module>
+        <module>demo</module>
+        <module>saml</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.5.1</version>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
