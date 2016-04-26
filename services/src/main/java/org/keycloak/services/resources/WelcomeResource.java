@@ -20,14 +20,11 @@ import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.models.BrowserSecurityHeaders;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
@@ -225,11 +222,22 @@ public class WelcomeResource {
 
     private boolean isLocal() {
         try {
-            InetAddress inetAddress = InetAddress.getByName(session.getContext().getConnection().getRemoteAddr());
-            return inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress();
+            ClientConnection clientConnection = session.getContext().getConnection();
+            InetAddress remoteInetAddress = InetAddress.getByName(clientConnection.getRemoteAddr());
+            InetAddress localInetAddress = InetAddress.getByName(clientConnection.getLocalAddr());
+            String xForwardedFor = headers.getHeaderString("X-Forwarded-For");
+            logger.debugf("Checking WelcomePage. Remote address: %s, Local address: %s, X-Forwarded-For header: %s", remoteInetAddress.toString(), localInetAddress.toString(), xForwardedFor);
+
+            // Access through AJP protocol (loadbalancer) may cause that remoteAddress is "127.0.0.1".
+            // So consider that welcome page accessed locally just if it was accessed really through "localhost" URL and without loadbalancer (x-forwarded-for header is empty).
+            return isLocalAddress(remoteInetAddress) && isLocalAddress(localInetAddress) && xForwardedFor == null;
         } catch (UnknownHostException e) {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private boolean isLocalAddress(InetAddress inetAddress) {
+        return inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress();
     }
 
     private String updateCsrfChecks() {
