@@ -98,6 +98,16 @@
         <title>Version specific migration</title>
 
         <section>
+            <title>Migrating to 1.9.3</title>
+            <simplesect>
+                <title>Add User script renamed</title>
+                <para>
+                    The script to add admin users to Keycloak has been renamed to <literal>add-user-keycloak</literal>.
+                </para>
+            </simplesect>
+        </section>
+
+        <section>
             <title>Migrating to 1.9.2</title>
             <simplesect>
                 <title>Adapter option auth-server-url-for-backend-requests removed</title>
