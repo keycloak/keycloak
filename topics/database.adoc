@@ -35,7 +35,7 @@ of the JDBC driver for the name of the directory structure.  For PostgreSQL, cre
 driver JAR into this directory and also create an empty _module.xml_ file.
 
 .Module Directory
-image:../../{{book.images}}/db-module.png[]
+image:../{{book.images}}/db-module.png[]
 
 After you have done this, open up the _module.xml_ file and create the following XML
 
