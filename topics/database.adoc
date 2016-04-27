@@ -8,7 +8,7 @@ highly recommended that you replace the default embedded database with a more sc
 chapter will show you how to configure {{book.project.name}} to use an external relational database.  It will also discuss
 how you can configure the Hibernate JPA persistence abstraction that sits on top of your RDBMS.
 
-NOTE:  Datasource configuration is covered much more thoroughly within the link:{{book.appserver.database.link}}[the datasource configuration chapter]
+NOTE:  Datasource configuration is covered much more thoroughly within the link:{{book.appserver.dataource.link}}[the datasource configuration chapter]
        of the {{book.appserver.admindoc.name}}.
 
 === RDBMS Checklist
