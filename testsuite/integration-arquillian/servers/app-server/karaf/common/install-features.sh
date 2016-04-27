@@ -22,6 +22,16 @@ do
             if [ $? -ne 0 ]; then RESULT=1; fi
         fi
 
+        if "$UPDATE_CONFIG" == "true"; then
+            echo "Updating Config - org.ops4j.pax.url.mvn"
+            ./client $CLIENT_AUTH -f update-config.cli
+            if [ $? -ne 0 ]; then 
+                RESULT=1; 
+            else
+                ./client $CLIENT_AUTH config:list | grep org.ops4j.pax.url.mvn.
+            fi
+        fi
+
         echo "Installing features."
         ./client $CLIENT_AUTH -f install-features.cli
         if [ $? -ne 0 ]; then RESULT=1; fi
