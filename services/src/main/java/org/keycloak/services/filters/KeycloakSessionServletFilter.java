@@ -63,8 +63,18 @@ public class KeycloakSessionServletFilter implements Filter {
             }
 
             @Override
-            public int getReportPort() {
+            public int getRemotePort() {
                 return request.getRemotePort();
+            }
+
+            @Override
+            public String getLocalAddr() {
+                return request.getLocalAddr();
+            }
+
+            @Override
+            public int getLocalPort() {
+                return request.getLocalPort();
             }
         };
         session.getContext().setConnection(connection);
