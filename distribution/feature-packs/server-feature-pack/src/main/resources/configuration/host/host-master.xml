@@ -18,8 +18,9 @@
   -->
 
 <!--
-   A simple configuration for a Host Controller that only acts as the master domain controller
-   and does not itself directly control any servers.
+  Runs an HTTP Loadbalancer that balances to two separate auth server instances.  The first auth server instance
+  is also started by this host controller file.  The other instance must be started
+  via host-slave.xml
 -->
 <host name="master" xmlns="urn:jboss:domain:4.0">
     <extensions>
@@ -84,6 +85,12 @@
         <interface name="management">
             <inet-address value="${jboss.bind.address.management:127.0.0.1}"/>
         </interface>
+        <interface name="public">
+            <inet-address value="${jboss.bind.address:127.0.0.1}"/>
+        </interface>
+
+        <?INTERFACES?>
+
     </interfaces>
 
     <jvms>
@@ -94,6 +101,24 @@
             </jvm-options>
         </jvm>
     </jvms>
+
+    <servers>
+        <!-- load-balancer should be removed in production systems and replaced with a better softare or hardare based one -->
+        <server name="load-balancer" group="load-balancer-group">
+        </server>
+        <server name="server-one" group="auth-server-group" auto-start="true">
+            <!-- Remote JPDA debugging for a specific server
+            <jvm name="default">
+              <jvm-options>
+                <option value="-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n"/>
+              </jvm-options>
+           </jvm>
+           -->
+            <!-- server-two avoids port conflicts by incrementing the ports in
+                 the default socket-group declared in the server-group -->
+            <socket-bindings port-offset="150"/>
+        </server>
+    </servers>
 
     <profile>
         <?SUBSYSTEMS socket-binding-group="standard-sockets"?>

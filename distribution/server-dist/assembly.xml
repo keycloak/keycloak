@@ -39,6 +39,7 @@
             <outputDirectory/>
             <filtered>false</filtered>
             <excludes>
+                <exclude>**/*.sh</exclude>
                 <exclude>**/module.xml</exclude>
                 <exclude>welcome-content/**</exclude>
                 <exclude>appclient</exclude>
@@ -48,6 +49,14 @@
                 <exclude>copyright.txt</exclude>
                 <exclude>README.txt</exclude>
             </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>target/${project.build.finalName}</directory>
+            <outputDirectory/>
+            <includes>
+                <include>**/*.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
         </fileSet>
         <fileSet>
             <directory>src/main/welcome-content</directory>
