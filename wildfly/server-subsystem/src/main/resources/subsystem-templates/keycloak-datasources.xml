@@ -30,7 +30,7 @@
                 </security>
             </datasource>
             <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
-                <connection-url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</connection-url>
+                <?KEYCLOAK_DS_CONNECTION_URL?>
                 <driver>h2</driver>
                 <security>
                     <user-name>sa</user-name>
@@ -44,4 +44,14 @@
             </drivers>
         </datasources>
     </subsystem>
+    <supplement name="default">
+        <replacement placeholder="KEYCLOAK_DS_CONNECTION_URL">
+            <connection-url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</connection-url>
+        </replacement>
+    </supplement>
+    <supplement name="domain">
+        <replacement placeholder="KEYCLOAK_DS_CONNECTION_URL">
+            <connection-url>jdbc:h2:${jboss.server.data.dir}/../../shared-database/keycloak;AUTO_SERVER=TRUE</connection-url>
+        </replacement>
+    </supplement>
 </config>
