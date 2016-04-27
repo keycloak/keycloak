@@ -1,0 +1,53 @@
+[[_app_server_cli]]
+
+== Manage Configuration at Runtime
+
+In the upcoming chapters, you'll often be provided two options for applying application server configuration changes to your deployment.  You'll be
+shown how to edit the _standalone.xml_ or _domain.xml_ directly.  This must be done when the server (or servers) are offline.
+Additionally, you may be shown how to apply config changes on a running server using the app server's command line interface ({{books.appserver.name}} CLI).  This chapter discusses
+how you will do this.
+
+=== Start the {{books.appserver.name}} CLI
+
+To start the {{books.appserver.name}} CLI, you need to run the +jboss-cli+ script.
+
+.Linux/Unix
+[source]
+----
+$ .../bin/jboss-cli.sh
+----
+
+.Windows
+[source]
+----
+> ...\bin\jboss-cli.bat
+----
+
+This will bring you to a prompt like this:
+
+.Prompt
+[source]
+----
+[disconnected /]
+----
+
+There's a few commands you can execute without a running standalone server or domain controller, but usually you will
+have to have those services booted up before you can execute CLI commands.  To connect to a running server simply
+execute the +connect+ command.
+
+.connect
+[source]
+----
+[disconnected /] connect
+connect
+[domain@localhost:9990 /]
+----
+
+You may be thinking to yourself, "I didn't enter in any username or password!".  If you run +jboss-cli+ on the same machine
+as your running standalone server or domain controller and your account has appropriate file permissions, you do not have
+to setup or enter in a admin username and password.  See the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}]
+for more details on how to make things more secure if you are uncomfortable with that setup.
+
+
+
+

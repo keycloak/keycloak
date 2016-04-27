@@ -225,7 +225,7 @@ $ add-user.sh
  To represent the user add the following to the server-identities definition <secret value="bWdtdDEyMyE=" />
 ----
 
-Now cut and paste the secret value into the .../domain/configuration/host-slave.xml_ file:
+Now cut and paste the secret value into the _.../domain/configuration/host-slave.xml_ file:
 
 [source,xml]
 ----

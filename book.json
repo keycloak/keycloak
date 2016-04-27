@@ -18,6 +18,10 @@
       "admindoc": {
         "name": "JBoss EAP Administration and Configuration Guide",
         "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/"
+      },
+      "datasource": {
+        "name": "JBoss EAP Administration and Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/chap-Datasource_Management.html"
       }
     },
     "caching": {

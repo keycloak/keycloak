@@ -1,0 +1,95 @@
+[[_mongo]]
+
+== Mongo DB Setup
+
+You are not stuck with using a RDBMS for persisting data.  {{book.project.name}}
+provides http://www.mongodb.com[MongoDB] based model implementation.
+To configure {{book.project.name}} to use Mongo, you need to edit the _keycloak-server.json_ file.  If you are running
+in standalone mode, this file is in the _.../standalone/configuration_ directory.  If you are running in domain mode
+this file will live in the _.../domain/servers/{server name}/configuration_ directory.
+
+[source,json]
+----
+
+"eventsStore": {
+    "provider": "jpa",
+    "jpa": {
+        "exclude-events": [ "REFRESH_TOKEN" ]
+    }
+},
+
+"realm": {
+    "provider": "jpa"
+},
+
+"user": {
+    "provider": "${keycloak.user.provider:jpa}"
+},
+----
+to:
+
+[source,json]
+----
+
+"eventsStore": {
+    "provider": "mongo",
+    "mongo": {
+        "exclude-events": [ "REFRESH_TOKEN" ]
+    }
+},
+
+"realm": {
+    "provider": "mongo"
+},
+
+"user": {
+    "provider": "mongo"
+},
+----
+And at the end of the file add the snippet like this where you can configure details about your Mongo database:
+
+[source,json]
+----
+
+"connectionsMongo": {
+    "default": {
+        "host": "127.0.0.1",
+        "port": "27017",
+        "db": "keycloak",
+        "connectionsPerHost": 100,
+        "databaseSchema": "update"
+    }
+}
+----
+All configuration options are optional.
+Default values for host and port are localhost and 27017.
+Default name of database is `keycloak` . You can also specify properties `user` and `password` if you want authenticate against your MongoDB.
+If user and password are not specified, Keycloak will connect unauthenticated to your MongoDB.
+
+Finally there is set of optional configuration options, which can be used to specify connection-pooling capabilities of Mongo client.
+Supported int options are: `connectionsPerHost`, `threadsAllowedToBlockForConnectionMultiplier`, `maxWaitTime`, `connectTimeout` `socketTimeout`.
+Supported boolean options are: `socketKeepAlive`, `autoConnectRetry`.
+Supported long option is `maxAutoConnectRetryTime`.
+See http://api.mongodb.org/java/2.11.4/com/mongodb/MongoClientOptions.html[Mongo documentation]                for details about those options and their default values.
+
+Alternatively, you can configure MongoDB using a MongoDB http://docs.mongodb.org/manual/reference/connection-string/[connection URI].
+In this case, you define all information concerning the connection and authentication within the URI, as described in the MongoDB documentation.
+Please note that the database specified within the URI is only used for authentication.
+To change the database used by keycloak you have to set `db` property as before.
+Therefore, a configuration like the following
+
+[source]
+----
+
+"connectionsMongo": {
+    "default": {
+        "uri": "mongodb://user:password@127.0.0.1/authentication",
+        "db": "keycloak"
+    }
+}
+----
+will authenticate the user against the authentication database, but store all keycloak related data in the keycloak database.
+
+==== MongoDB Replica Sets
+
+In order to use a mongo replica set for Keycloak, one has to use URI based configuration, which supports the definition of replica sets out of the box: `mongodb://host1:27017,host2:27017,host3:27017/`.

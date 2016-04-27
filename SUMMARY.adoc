@@ -17,6 +17,11 @@
  .. link:topics/operating-mode/standalone.adoc[Standalone Mode]
  .. link:topics/operating-mode/standalone-ha.adoc[Standalone Clustered Mode]
  .. link:topics/operating-mode/domain.adoc[Domain Clustered Mode]
+ . link:topics/management.adoc[Managing Config at Runtime]
+ . link:topics/database.adoc[Relational Database Setup]
+ {% if book.community %}
+ . link:topics/mongo.adoc[Mongo DB Setup]
+ {% endif %}
  . link:topics/cache.adoc[Server Cache]
  . link:topics/clustering.adoc[Clustering]
  . link:topics/management.adoc[Runtime Management]
