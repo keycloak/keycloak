@@ -17,6 +17,12 @@
   ~ limitations under the License.
   -->
 
+<!--
+  Runs an HTTP Loadbalancer that balances to two separate auth server instances.  The first auth server instance
+  is also started by this host controller file.  The other instance must be started
+  via host-slave.xml
+-->
+
 <host name="master" xmlns="urn:jboss:domain:4.0">
     <extensions>
         <?EXTENSIONS?>
@@ -74,8 +80,6 @@
 
     <domain-controller>
         <local/>
-        <!-- Alternative remote domain controller configuration with a host and port -->
-        <!-- <remote protocol="remote" host="${jboss.domain.master.address}" port="${jboss.domain.master.port:9999}" security-realm="ManagementRealm"/> -->
     </domain-controller>
 
     <interfaces>
@@ -100,7 +104,10 @@
     </jvms>
 
     <servers>
-        <server name="server-one" group="main-server-group">
+        <!-- load-balancer should be removed in production systems and replaced with a better softare or hardare based one -->
+        <server name="load-balancer" group="load-balancer-group">
+        </server>
+        <server name="server-one" group="auth-server-group" auto-start="true">
             <!-- Remote JPDA debugging for a specific server
             <jvm name="default">
               <jvm-options>
@@ -108,16 +115,9 @@
               </jvm-options>
            </jvm>
            -->
-        </server>
-        <server name="server-two" group="main-server-group" auto-start="true">
             <!-- server-two avoids port conflicts by incrementing the ports in
                  the default socket-group declared in the server-group -->
             <socket-bindings port-offset="150"/>
-        </server>
-        <server name="server-three" group="other-server-group" auto-start="false">
-            <!-- server-three avoids port conflicts by incrementing the ports in
-                 the default socket-group declared in the server-group -->
-            <socket-bindings port-offset="250"/>
         </server>
     </servers>
 

@@ -69,7 +69,7 @@
         </audit-log>
         <management-interfaces>
             <native-interface security-realm="ManagementRealm">
-                <socket interface="management" port="${jboss.management.native.port:9999}"/>
+                <socket interface="management" port="${jboss.management.native.port:3456}"/>
             </native-interface>
         </management-interfaces>
     </management>
@@ -77,7 +77,7 @@
     <domain-controller>
         <remote security-realm="ManagementRealm">
             <discovery-options>
-                <static-discovery name="primary" protocol="${jboss.domain.master.protocol:remote}" host="${jboss.domain.master.address}" port="${jboss.domain.master.port:9999}"/>
+                <static-discovery name="primary" protocol="${jboss.domain.master.protocol:remote}" host="${jboss.domain.master.address:127.0.0.1}" port="${jboss.domain.master.port:9999}"/>
             </discovery-options>
         </remote>
     </domain-controller>
@@ -104,11 +104,10 @@
     </jvms>
 
     <servers>
-        <server name="server-one" group="main-server-group"/>
-        <server name="server-two" group="other-server-group">
+        <server name="server-two" group="auth-server-group" auto-start="true">
             <!-- server-two avoids port conflicts by incrementing the ports in
                  the default socket-group declared in the server-group -->
-            <socket-bindings port-offset="150"/>
+            <socket-bindings port-offset="250"/>
         </server>
     </servers>
 
