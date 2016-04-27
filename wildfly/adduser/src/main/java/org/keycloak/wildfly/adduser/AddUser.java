@@ -42,7 +42,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,13 +63,7 @@ public class AddUser {
             System.exit(1);
         }
 
-        if (command.isContainer()) {
-            List<String> l = new LinkedList<>(Arrays.asList(args));
-            l.remove("--container");
-            args = l.toArray(new String[l.size()]);
-
-            org.jboss.as.domain.management.security.adduser.AddUser.main(args);
-        } else  if (command.isHelp()) {
+        if (command.isHelp()) {
             printHelp(command);
         } else {
             try {
@@ -273,9 +266,6 @@ public class AddUser {
         @Option(hasValue = false, description = "Enable domain mode")
         private boolean domain;
 
-        @Option(hasValue = false, description = "Add user to underlying container. For usage use '--container --help'")
-        private boolean container;
-
         @Option(hasValue = true, description = "Define the location of the server config directory")
         private String sc;
 
@@ -312,10 +302,6 @@ public class AddUser {
 
         public boolean isDomain() {
             return domain;
-        }
-
-        public boolean isContainer() {
-            return container;
         }
 
         public String getSc() {
