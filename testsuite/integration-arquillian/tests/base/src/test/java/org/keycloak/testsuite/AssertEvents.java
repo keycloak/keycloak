@@ -77,6 +77,11 @@ public class AssertEvents implements TestRule {
         return event;
     }
 
+    public void assertEmpty() {
+        EventRepresentation event = fetchNextEvent();
+        Assert.assertNull("Empty event queue expected, but there is " + event, event);
+    }
+
     public void clear() {
         Response res = context.testingClient.testing().clearQueue();
         try {

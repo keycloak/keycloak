@@ -16,24 +16,26 @@
  */
 package org.keycloak.testsuite.actions;
 
+import java.util.LinkedList;
+import java.util.List;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.ClassRule;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
-import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
-import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.RealmManager;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -41,64 +43,59 @@ import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.utils.CredentialHelper;
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testsuite.util.RealmBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RequiredActionTotpSetupTest {
+public class RequiredActionTotpSetupTest extends TestRealmKeycloakTest {
 
-    private static OTPPolicy originalPolicy;
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        RequiredActionProviderRepresentation requiredAction = new RequiredActionProviderRepresentation();
+        requiredAction.setAlias(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        requiredAction.setProviderId(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        requiredAction.setName("Configure Totp");
+        requiredAction.setEnabled(true);
+        requiredAction.setDefaultAction(true);
 
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
+        List<RequiredActionProviderRepresentation> requiredActions = new LinkedList<>();
+        requiredActions.add(requiredAction);
+        testRealm.setRequiredActions(requiredActions);
+        testRealm.setResetPasswordAllowed(Boolean.TRUE);
+    }
 
-        @Override
-        public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-            CredentialHelper.setRequiredCredential(manager.getSession(), CredentialRepresentation.TOTP, appRealm);
-            //appRealm.addRequiredCredential(CredentialRepresentation.TOTP);
-            RequiredActionProviderModel requiredAction = appRealm.getRequiredActionProviderByAlias(UserModel.RequiredAction.CONFIGURE_TOTP.name());
-            requiredAction.setDefaultAction(true);
-            appRealm.updateRequiredActionProvider(requiredAction);
-            appRealm.setResetPasswordAllowed(true);
-            originalPolicy = appRealm.getOTPPolicy();
+    @Before
+    public void setOTPAuthRequired() {
+        for (AuthenticationExecutionInfoRepresentation execution : adminClient.realm("test").flows().getExecutions("browser")) {
+            String providerId = execution.getProviderId();
+            if ("auth-otp-form".equals(providerId)) {
+                execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
+                adminClient.realm("test").flows().updateExecutions("browser", execution);
+            }
         }
+    }
 
-    });
-
-    @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
 
     @Rule
-    public WebRule webRule = new WebRule(this);
+    public AssertEvents events = new AssertEvents(this);
 
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     protected LoginTotpPage loginTotpPage;
 
-    @WebResource
+    @Page
     protected LoginConfigTotpPage totpPage;
 
-    @WebResource
+    @Page
     protected AccountTotpPage accountTotpPage;
 
-    @WebResource
-    protected OAuthClient oauth;
-
-    @WebResource
+    @Page
     protected RegisterPage registerPage;
 
     protected TimeBasedOTP totp = new TimeBasedOTP();
@@ -111,7 +108,7 @@ public class RequiredActionTotpSetupTest {
 
         String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
 
-        totpPage.assertCurrent();
+        Assert.assertTrue(totpPage.isCurrent());
 
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
@@ -137,7 +134,7 @@ public class RequiredActionTotpSetupTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        Event loginEvent = events.expectLogin().session(sessionId).assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
 
         oauth.openLogout();
 
@@ -175,7 +172,7 @@ public class RequiredActionTotpSetupTest {
 
         events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
 
-        Event loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
 
         // Logout
         oauth.openLogout();
@@ -227,21 +224,15 @@ public class RequiredActionTotpSetupTest {
     @Test
     public void setupOtpPolicyChangedTotp8Digits() {
         // set policy to 8 digits
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                OTPPolicy newPolicy = new OTPPolicy();
-                newPolicy.setLookAheadWindow(1);
-                newPolicy.setDigits(8);
-                newPolicy.setPeriod(30);
-                newPolicy.setType(UserCredentialModel.TOTP);
-                newPolicy.setAlgorithm(HmacOTP.HMAC_SHA1);
-                newPolicy.setInitialCounter(0);
-                appRealm.setOTPPolicy(newPolicy);
-            }
-
-        });
+        RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+        RealmBuilder.edit(realmRep)
+                    .otpLookAheadWindow(1)
+                    .otpDigits(8)
+                    .otpPeriod(30)
+                    .otpType(UserCredentialModel.TOTP)
+                    .otpAlgorithm(HmacOTP.HMAC_SHA1)
+                    .otpInitialCounter(0);
+        adminClient.realm("test").update(realmRep);
 
 
         loginPage.open();
@@ -258,7 +249,7 @@ public class RequiredActionTotpSetupTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        Event loginEvent = events.expectLogin().session(sessionId).assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
 
         oauth.openLogout();
 
@@ -274,35 +265,19 @@ public class RequiredActionTotpSetupTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
-
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setOTPPolicy(originalPolicy);
-            }
-
-        });
-
     }
 
     @Test
     public void setupOtpPolicyChangedHotp() {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                OTPPolicy newPolicy = new OTPPolicy();
-                newPolicy.setLookAheadWindow(0);
-                newPolicy.setDigits(6);
-                newPolicy.setPeriod(30);
-                newPolicy.setType(UserCredentialModel.HOTP);
-                newPolicy.setAlgorithm(HmacOTP.HMAC_SHA1);
-                newPolicy.setInitialCounter(0);
-                appRealm.setOTPPolicy(newPolicy);
-            }
-
-        });
+        RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+        RealmBuilder.edit(realmRep)
+                    .otpLookAheadWindow(0)
+                    .otpDigits(6)
+                    .otpPeriod(30)
+                    .otpType(UserCredentialModel.HOTP)
+                    .otpAlgorithm(HmacOTP.HMAC_SHA1)
+                    .otpInitialCounter(0);
+        adminClient.realm("test").update(realmRep);
 
 
         loginPage.open();
@@ -319,7 +294,7 @@ public class RequiredActionTotpSetupTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        Event loginEvent = events.expectLogin().session(sessionId).assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
 
         oauth.openLogout();
 
@@ -338,22 +313,15 @@ public class RequiredActionTotpSetupTest {
         events.expectLogout(null).session(AssertEvents.isUUID()).assertEvent();
 
         // test lookAheadWindow
-
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                OTPPolicy newPolicy = new OTPPolicy();
-                newPolicy.setLookAheadWindow(5);
-                newPolicy.setDigits(6);
-                newPolicy.setPeriod(30);
-                newPolicy.setType(UserCredentialModel.HOTP);
-                newPolicy.setAlgorithm(HmacOTP.HMAC_SHA1);
-                newPolicy.setInitialCounter(0);
-                appRealm.setOTPPolicy(newPolicy);
-            }
-
-        });
+        realmRep = adminClient.realm("test").toRepresentation();
+        RealmBuilder.edit(realmRep)
+                    .otpLookAheadWindow(5)
+                    .otpDigits(6)
+                    .otpPeriod(30)
+                    .otpType(UserCredentialModel.HOTP)
+                    .otpAlgorithm(HmacOTP.HMAC_SHA1)
+                    .otpInitialCounter(0);
+        adminClient.realm("test").update(realmRep);
 
 
         loginPage.open();
@@ -365,23 +333,6 @@ public class RequiredActionTotpSetupTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
-
-
-
-
-
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setOTPPolicy(originalPolicy);
-            }
-
-        });
-
-
     }
-
-
 
 }
