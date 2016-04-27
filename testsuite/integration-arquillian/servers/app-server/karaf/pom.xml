@@ -35,6 +35,7 @@
         <app.server.karaf.home>${containers.home}/${app.server.karaf.unpacked.folder.name}</app.server.karaf.home>
         <app.server.karaf.client.auth>-u karaf</app.server.karaf.client.auth>
         <app.server.karaf.uninstall.pax>false</app.server.karaf.uninstall.pax>
+        <app.server.karaf.update.config>false</app.server.karaf.update.config>
     </properties>
 
     <profiles>
@@ -103,7 +104,7 @@
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>copy-features-clie</id>
+                                <id>copy-clis</id>
                                 <phase>process-resources</phase>
                                 <goals>
                                     <goal>copy-resources</goal>
@@ -115,6 +116,7 @@
                                             <directory>src/main/resources</directory>
                                             <includes>
                                                 <include>install-features.cli</include>
+                                                <include>update-config.cli</include>
                                             </includes>
                                             <filtering>true</filtering>
                                         </resource>
@@ -161,6 +163,7 @@
                                 <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
                                 <CLIENT_AUTH>${app.server.karaf.client.auth}</CLIENT_AUTH>
                                 <UNINSTALL_PAX>${app.server.karaf.uninstall.pax}</UNINSTALL_PAX>
+                                <UPDATE_CONFIG>${app.server.karaf.update.config}</UPDATE_CONFIG>
                             </environmentVariables>
                         </configuration>
                     </plugin>
