@@ -1,0 +1,52 @@
+=== Hibernate Configuration
+
+The Hibernate persistence API is already pre-configured out of the box.  It is rare to have to modify the configuration for it.
+To configure Hibernate, you need to edit the _keycloak-server.json_ file.  If you are running
+in standalone mode, this file is in the _.../standalone/configuration_ directory.  If you are running in domain mode
+this file will live in the _.../domain/servers/{server name}/configuration_ directory.
+
+.Hibernate JPA Config
+[source,json]
+----
+"connectionsJpa": {
+    "default": {
+        "dataSource": "java:jboss/datasources/KeycloakDS",
+        "databaseSchema": "update"
+    }
+},
+----
+
+Possible configuration options are:
+
+dataSource::
+  JNDI name of the dataSource
+
+jta::
+  boolean property to specify if datasource is JTA capable
+
+driverDialect::
+  Value of database dialect.
+  In most cases you don't need to specify this property as dialect will be autodetected by Hibernate.
+
+databaseSchema::
+  Specify if schema should be updated or validated.
+  Valid values are +update+ (default) and +validate+.  The +update+ value will set up or update
+  the table definitions that {{book.project.name}} needs.  +validate+ just makes sure that the database has
+  the appropriate table definitions set up.
+
+showSql::
+  Specify whether Hibernate should show all SQL commands in the console (false by default).  This is very verbose!
+
+formatSql::
+  Specify whether Hibernate should format SQL commands (true by default)
+
+globalStatsInterval::
+  Will log global statistics from Hibernate about executed DB queries and other things.
+  Statistics are always reported to server log at specified interval (in seconds) and are cleared after each report.
+
+schema::
+  Specify the database schema to use
+
+NOTE:  All these configuration switches and more are described in the link:{{book.jpa.link}}[the Hibernate chapter]
+       of {{book.jpa.name}}.
+

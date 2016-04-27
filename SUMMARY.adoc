@@ -18,6 +18,10 @@
  .. link:topics/operating-mode/domain.adoc[Domain Clustered Mode]
  . link:topics/manage.adoc[Managing Config at Runtime]
  . link:topics/database.adoc[Relational Database Setup]
+ .. link:topics/checklist.adoc[Setup Checklist]
+ .. link:topics/jdbc.adoc[JDBC Setup]
+ .. link:topics/datasource.adoc[Datasource Setup]
+ .. link:topics/hibernate.adoc[Hibernate Configuration]
  {% if book.community %}
  . link:topics/mongo.adoc[Mongo DB Setup]
  {% endif %}

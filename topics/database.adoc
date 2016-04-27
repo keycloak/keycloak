@@ -1,62 +1,23 @@
 [[_database]]
 
 == Relational Database Setup
+{{book.project.name}} comes with its own embedded Java-based relational database called H2.
+This is the default database that {{book.project.name}} will use to persist data and really only exists so that you can run the authentication
+server out of the box.  We highly recommend that you replace it with a more production ready external database.  The H2 database
+is not very viable in high concurrency situations and cannot be used in a cluster either.  The purpose of this chapter is to
+show you how to connect {{book.project.name}} to a more mature database.
 
-Out of the box, {{book.project.name}} persists its data using the Hibernate JPA set of APIs on top of an embedded Java based relational database.
-The built-in database is not viable in high load and high concurrency situations.  It cannot be used in a cluster either.  It is
-highly recommended that you replace the default embedded database with a more scalable and reliable solution like PostgreSQL or MySql.  This
-chapter will show you how to configure {{book.project.name}} to use an external relational database.  It will also discuss
-how you can configure the Hibernate JPA persistence abstraction that sits on top of your RDBMS.
+{{book.project.name}} uses two layered technologies to persist its relational data.  The bottom layered technology is JDBC.  JDBC
+is a Java API that is used to connect to a RDBMS.  There are different JDBC drivers per database type that are provided
+by your database vendor.  This chapter discusses how to configure {{book.project.name}} to use one of these vendor-specific drivers.
 
-NOTE:  Datasource configuration is covered much more thoroughly within the link:{{book.appserver.dataource.link}}[the datasource configuration chapter]
+The top layered technology for persistence is Hibernate JPA.  This is a object to relational mapping API that maps Java
+Objects to relational data.  Most deployments of {{book.project.name}} will never have to touch the configuration aspects
+of Hibernate, but we will discuss how that is done if you run into that rare circumstance.
+
+NOTE:  Datasource configuration is covered much more thoroughly within the link:{{book.appserver.datasource.link}}[the datasource configuration chapter]
        of the {{book.appserver.admindoc.name}}.
 
-=== RDBMS Checklist
 
-These are the steps you will need to perform to get an RDBMS configured for {{book.project.name}}.
 
-. Locate and download a JDBC driver for your database
-. Package the driver JAR into a module and install this module into the server
-. Declare the JDBC driver in the configuration profile of the server
-. Modify the datasource configuration to use your database's JDBC driver
-. Modify the datasource configuration to define the connection parameters to your database
-
-This chapter will use PostgresSQL for all its examples.  Other databases follow the same steps for installation.
-
-=== Package the JDBC Driver
-
-Find and download the JDBC driver JAR for your RDBMS.  Before you can use this driver, you must package it up into a module.
-Modules define JARs that are loaded into the {{book.project.name}} classpath and the dependencies those JARs have on
-other modules.  They are pretty simple to set up.
-
-Within the _.../modules/system/layers/keycloak/_ directory of your
-{{book.project.name}} distribution, you need to create a directory structure to hold your module definition.  The convention is use the Java package name
-of the JDBC driver for the name of the directory structure.  For PostgreSQL, create the directory _org/postgresql/main_.  Copy your database
-driver JAR into this directory and also create an empty _module.xml_ file.
-
-.Module Directory
-image:../{{book.images}}/db-module.png[]
-
-After you have done this, open up the _module.xml_ file and create the following XML
-
-.Module XML
-[source,xml]
-----
-<?xml version="1.0" ?>
-<module xmlns="urn:jboss:module:1.3" name="org.postgresql">
-
-    <resources>
-        <resource-root path="postgresql-9.4.1208.jar"/>
-    </resources>
-
-    <dependencies>
-        <module name="javax.api"/>
-        <module name="javax.transaction.api"/>
-    </dependencies>
-</module>
-----
-
-The module name should match the directory structure of your module.  _org/postgresql_ maps to +org.postgresql+.  The
-+resource-root path+ attribute should specify the JAR filename.  The rest are just the normal dependencies that
-any JDBC driver JAR would have.
 

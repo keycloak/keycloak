@@ -1,0 +1,46 @@
+=== Modify the {{book.project.name}} Datasource
+
+After declaring your JDBC driver, you  have to modify the existing datasource configuration that {{book.project.name}} uses
+to connect to the built-in embedded database.  You'l need to change it to connect to your new external database.  You'll do
+this within the same configuration file and XML block that you registered your JDBC driver.  Here's an example
+that set's up the connection to your new database:
+
+.Declare Your JDBC Drivers
+[source,xml]
+----
+  <subsystem xmlns="urn:jboss:domain:datasources:4.0">
+     <datasources>
+       ...
+       <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
+           <connection-url>jdbc:postgresql://localhost/keycloak</connection-url>
+           <driver>postgresql</driver>
+           <pool>
+               <max-pool-size>20</max-pool-size>
+           </pool>
+           <security>
+               <user-name>William</user-name>
+               <password>password</password>
+           </security>
+       </datasource>
+        ...
+     </datasources>
+  </subsystem>
+----
+
+Search for the +datasource+ definition for +KeycloakDS+.  You'll first need to specify the +connection-url+.  The
+documentation for your vendor's JDBC implementation will tell you the connection URL you should provide there.
+
+Next define the +driver+ you will use.  This is the logical name of the JDBC driver you declared in the previous section of this
+chapter.
+
+It is expensive to open a new connection to a database ever time you want to perform a transaction.  To compensate, the datasource
+implementation maintains a pool of open connections.  The +max-pool-size+ specifies the maximum number of connections it will pool.
+You may want to change the value of this depending on the load of your system.
+
+Finally, or PostgreSQL at least, you need to define the database username and password that is needed to connect to the database.  You
+may be worried that this is in clear text in the example.  There are methods to obfuscate this, but this is beyond the
+scope of this guide.
+
+NOTE:  For more information and details features of datasources, please see the link:{{book.appserver.datasource.link}}[the datasource configuration chapter]
+of the {{book.appserver.admindoc.name}}.
+

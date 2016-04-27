@@ -1,3 +1,5 @@
+[[_operating_mode]]
+
 == Choosing an Operating Mode
 
 Before deploying {{book.project.name}} in a production environment you need to decide which type of operating mode

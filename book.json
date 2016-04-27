@@ -36,7 +36,7 @@
       "name": "Hibernate",
       "version": "???",
       "admindoc": {
-        "name": "Hibernate Config",
+        "name": "JBoss Development Guide",
         "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Development_Guide/sect-Java_Persistence_API_JPA.html#sect-Configuration2"
       }
 
