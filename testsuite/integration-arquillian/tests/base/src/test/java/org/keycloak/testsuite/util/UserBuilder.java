@@ -109,6 +109,14 @@ public class UserBuilder {
         return this;
     }
 
+    public UserBuilder requiredAction(String requiredAction) {
+        if (rep.getRequiredActions() == null) {
+            rep.setRequiredActions(new LinkedList<String>());
+        }
+        rep.getRequiredActions().add(requiredAction);
+        return this;
+    }
+
     public UserBuilder serviceAccountId(String serviceAccountId) {
         rep.setServiceAccountClientId(serviceAccountId);
         return this;

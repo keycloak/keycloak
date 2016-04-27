@@ -16,60 +16,41 @@
  */
 package org.keycloak.testsuite.actions;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.*;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RequiredActionUpdateProfileTest {
-
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule();
+public class RequiredActionUpdateProfileTest extends TestRealmKeycloakTest {
 
     @Rule
-    public WebRule webRule = new WebRule(this);
+    public AssertEvents events = new AssertEvents(this);
 
-    @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
-
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     protected LoginUpdateProfileEditUsernameAllowedPage updateProfilePage;
 
-    @Before
-    public void before() {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-                UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
-                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
-                UserModel anotherUser = manager.getSession().users().getUserByEmail("john-doh@localhost", appRealm);
-                anotherUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
-            }
-        });
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        ActionUtil.addRequiredActionForUser(testRealm, "test-user@localhost", UserModel.RequiredAction.UPDATE_PROFILE.name());
+        ActionUtil.addRequiredActionForUser(testRealm, "john-doh@localhost", UserModel.RequiredAction.UPDATE_PROFILE.name());
     }
 
     @Test
@@ -90,7 +71,7 @@ public class RequiredActionUpdateProfileTest {
         events.expectLogin().session(sessionId).assertEvent();
 
         // assert user is really updated in persistent store
-        UserRepresentation user = keycloakRule.getUser("test", "test-user@localhost");
+        UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Assert.assertEquals("New first", user.getFirstName());
         Assert.assertEquals("New last", user.getLastName());
         Assert.assertEquals("new@email.com", user.getEmail());
@@ -103,7 +84,7 @@ public class RequiredActionUpdateProfileTest {
 
         loginPage.login("john-doh@localhost", "password");
 
-        String userId = keycloakRule.getUser("test", "john-doh@localhost").getId();
+        String userId = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost").getId();
 
         updateProfilePage.assertCurrent();
 
@@ -124,7 +105,7 @@ public class RequiredActionUpdateProfileTest {
         events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).session(sessionId).assertEvent();
 
         // assert user is really updated in persistent store
-        UserRepresentation user = keycloakRule.getUser("test", "new");
+        UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new");
         Assert.assertEquals("New first", user.getFirstName());
         Assert.assertEquals("New last", user.getLastName());
         Assert.assertEquals("john-doh@localhost", user.getEmail());

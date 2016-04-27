@@ -16,65 +16,43 @@
  */
 package org.keycloak.testsuite.actions;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.services.managers.RealmManager;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RequiredActionMultipleActionsTest {
+public class RequiredActionMultipleActionsTest extends TestRealmKeycloakTest {
 
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
-
-        @Override
-        public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-            UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
-            user.addRequiredAction(RequiredAction.UPDATE_PROFILE);
-            user.addRequiredAction(RequiredAction.UPDATE_PASSWORD);
-        }
-
-    });
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        ActionUtil.addRequiredActionForUser(testRealm, "test-user@localhost", RequiredAction.UPDATE_PROFILE.name());
+        ActionUtil.addRequiredActionForUser(testRealm, "test-user@localhost", RequiredAction.UPDATE_PASSWORD.name());
+    }
 
     @Rule
-    public WebRule webRule = new WebRule(this);
+    public AssertEvents events = new AssertEvents(this);
 
-    @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
-
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
-    protected OAuthClient oauth;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     protected LoginPasswordUpdatePage changePasswordPage;
 
-    @WebResource
+    @Page
     protected LoginUpdateProfileEditUsernameAllowedPage updateProfilePage;
 
     @Test
