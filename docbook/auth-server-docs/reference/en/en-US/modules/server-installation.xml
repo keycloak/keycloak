@@ -117,22 +117,16 @@ bin/jboss-cli.sh --file=bin/keycloak-install-ha.cli
             <para>
                 To access the admin console to configure Keycloak you need an account to login. There is no built in user,
                 instead you have to first create an admin account. This can done either by opening <ulink url="http://localhost:8080/auth">http://localhost:8080/auth</ulink>
-                (creating a user through the browser can only be done through localhost) or you can use the add-user script from
+                (creating a user through the browser can only be done through localhost) or you can use the add-user-keycloak script from
                 the command-line.
             </para>
             <para>
-                The <literal>add-user</literal> script creates a temporary file with the details of the user,
+                The <literal>add-user-keycloak</literal> script creates a temporary file with the details of the user,
                 which are imported at startup. To add a user with this script run:
-<programlisting><![CDATA[
-bin/add-user.[sh|bat] -r master -u <username> -p <password>
-]]></programlisting>
-                Then restart the server.
-            </para>
-            <para>
-                For <literal>keycloak-overlay</literal>, please make sure to use:
 <programlisting><![CDATA[
 bin/add-user-keycloak.[sh|bat] -r master -u <username> -p <password>
 ]]></programlisting>
+                Then restart the server.
             </para>
             </section>
 

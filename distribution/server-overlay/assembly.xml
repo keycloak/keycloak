@@ -80,12 +80,12 @@
             <outputDirectory>standalone/configuration</outputDirectory>
         </file>
         <file>
-            <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user.sh</source>
+            <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user-keycloak.sh</source>
             <outputDirectory>bin</outputDirectory>
             <destName>add-user-keycloak.sh</destName>
         </file>
         <file>
-            <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user.bat</source>
+            <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user-keycloak.bat</source>
             <outputDirectory>bin</outputDirectory>
             <destName>add-user-keycloak.bat</destName>
         </file>
