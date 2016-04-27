@@ -38,7 +38,7 @@ any JDBC driver JAR would have.
 === Declare and Load JDBC Driver
 
 The next thing you have to do is declare your newly packaged JDBC driver into your deployment profile so that it loads and becomes
-available.  Where you perform this action depends on your <<fake/operating-mode.adoc#_operating-mode,operating mode>>.  If you're
+available.  Where you perform this action depends on your <<fake/../operating-mode.adoc#_operating-mode,operating mode>>.  If you're
 deploying in standard mode, edit _.../standalone/configuration/standalone.xml_.  If you're deploying in standard clustering
 mode, edit _.../standalone/configuration/standalone-ha.xml_.  If you're deploying in domain mode, edit
 _.../domain/configuration/domain.xml_.  In domain mode, you'll need to make sure you edit the profile you are using:
