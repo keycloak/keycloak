@@ -1,0 +1,5 @@
+config:edit org.ops4j.pax.url.mvn
+config:propset org.ops4j.pax.url.mvn.localRepository ${maven.repo.local}
+config:propset org.ops4j.pax.url.mvn.settings ${maven.local.settings}
+config:propappend org.ops4j.pax.url.mvn.repositories ${repositories}
+config:update

@@ -18,30 +18,46 @@
 package org.keycloak.testsuite.admin.realm;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ServerInfoResource;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.adapters.action.GlobalRequestResult;
+import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.util.CredentialBuilder;
+import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.HashSet;
 import java.util.Arrays;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -51,6 +67,9 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class RealmTest extends AbstractAdminTest {
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     public static final String PRIVATE_KEY = "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=";
     public static final String PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
@@ -423,6 +442,137 @@ public class RealmTest extends AbstractAdminTest {
         realm.update(rep);
 
         assertEquals(certificate, rep.getCertificate());
+    }
+
+    @Test
+    public void clearRealmCache() {
+        RealmRepresentation realmRep = realm.toRepresentation();
+        assertTrue(testingClient.testing().isCached("realms", realmRep.getId()));
+        adminClient.realm("master").clearRealmCache();
+        assertFalse(testingClient.testing().isCached("realms", realmRep.getId()));
+    }
+
+    @Test
+    public void clearUserCache() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("clearcacheuser");
+        Response response = realm.users().create(user);
+        String userId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        realm.users().get(userId).toRepresentation();
+
+        assertTrue(testingClient.testing().isCached("users", userId));
+        adminClient.realm("master").clearUserCache();
+        assertFalse(testingClient.testing().isCached("users", userId));
+    }
+
+    @Test
+    public void pushNotBefore() {
+        setupTestAppAndUser();
+
+        int time = Time.currentTime() - 60;
+
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setNotBefore(time);
+        realm.update(rep);
+
+        GlobalRequestResult globalRequestResult = realm.pushRevocation();
+        assertEquals(1, globalRequestResult.getSuccessRequests().size());
+        assertEquals("http://localhost:8180/auth/realms/master/app/admin", globalRequestResult.getSuccessRequests().get(0));
+        assertNull(globalRequestResult.getFailedRequests());
+
+        PushNotBeforeAction adminPushNotBefore = testingClient.testApp().getAdminPushNotBefore();
+        assertEquals(time, adminPushNotBefore.getNotBefore());
+    }
+
+    @Test
+    public void logoutAll() {
+        setupTestAppAndUser();
+
+        Response response = realm.users().create(UserBuilder.create().username("user").build());
+        String userId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        realm.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
+
+        oauth.doLogin("user", "password");
+
+        GlobalRequestResult globalRequestResult = realm.logoutAll();
+        assertEquals(1, globalRequestResult.getSuccessRequests().size());
+        assertEquals("http://localhost:8180/auth/realms/master/app/admin", globalRequestResult.getSuccessRequests().get(0));
+        assertNull(globalRequestResult.getFailedRequests());
+
+        assertNotNull(testingClient.testApp().getAdminLogoutAction());
+    }
+
+    @Test
+    public void deleteSession() {
+        setupTestAppAndUser();
+
+        oauth.doLogin("testuser", "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "secret");
+        assertEquals(200, tokenResponse.getStatusCode());
+
+        EventRepresentation event = events.poll();
+        assertNotNull(event);
+
+        realm.deleteSession(event.getSessionId());
+        try {
+            realm.deleteSession(event.getSessionId());
+            fail("Expected 404");
+        } catch (NotFoundException e) {
+        }
+
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret");
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertEquals("Session not active", tokenResponse.getErrorDescription());
+    }
+
+    @Test
+    public void clientSessionStats() {
+        setupTestAppAndUser();
+
+        List<Map<String, String>> sessionStats = realm.getClientSessionStats();
+        assertTrue(sessionStats.isEmpty());
+
+        System.out.println(sessionStats.size());
+
+        oauth.doLogin("testuser", "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "secret");
+        assertEquals(200, tokenResponse.getStatusCode());
+
+        sessionStats = realm.getClientSessionStats();
+
+        assertEquals(1, sessionStats.size());
+        assertEquals("test-app", sessionStats.get(0).get("clientId"));
+        assertEquals("1", sessionStats.get(0).get("active"));
+    }
+
+    private void setupTestAppAndUser() {
+        realm.update(RealmBuilder.edit(realm.toRepresentation()).testEventListener().build());
+
+        testingClient.testApp().clearAdminActions();
+
+        String redirectUri = oauth.getRedirectUri().replace("/master/", "/" + REALM_NAME + "/");
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("test-app");
+        client.setAdminUrl(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/app/admin");
+        client.setRedirectUris(Collections.singletonList(redirectUri));
+        client.setSecret("secret");
+        realm.clients().create(client);
+
+        oauth.realm(REALM_NAME);
+        oauth.redirectUri(redirectUri);
+
+        Response response = realm.users().create(UserBuilder.create().username("testuser").build());
+        String userId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        realm.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
+
+        testingClient.testApp().clearAdminActions();
     }
 
 }

@@ -33,6 +33,7 @@
         <common.resources>${project.parent.basedir}/common</common.resources>
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
         <app.server.jboss.home>${containers.home}/${app.server.jboss.unpacked.folder.name}</app.server.jboss.home>
+        <security.xslt>security.xsl</security.xslt>
     </properties>
 
     <profiles>
@@ -337,7 +338,7 @@
                                                 <includes>
                                                     <include>standalone.xml</include>
                                                 </includes>
-                                                <stylesheet>${common.resources}/security.xsl</stylesheet>
+                                                <stylesheet>${common.resources}/${security.xslt}</stylesheet>
                                                 <outputDir>${app.server.jboss.home}/standalone/configuration</outputDir>
                                             </transformationSet>
                                         </transformationSets>
@@ -392,6 +393,9 @@
         </profile>
         <profile>
             <id>app-server-eap6</id>
+            <properties>
+                <security.xslt>security-eap6.xsl</security.xslt>
+            </properties>
             <modules>
                 <module>eap6</module>
             </modules>

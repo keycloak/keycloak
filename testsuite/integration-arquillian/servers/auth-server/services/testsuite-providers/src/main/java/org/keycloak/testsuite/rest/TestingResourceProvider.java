@@ -17,7 +17,9 @@
 
 package org.keycloak.testsuite.rest;
 
+import org.infinispan.Cache;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.Event;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,6 +36,7 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
@@ -128,6 +131,15 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearQueue() {
         EventsListenerProvider.getInstance().clear();
         return Response.ok().build();
+    }
+
+    @GET
+    @Path("/cache/{cache}/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public boolean isCached(@PathParam("cache") String cacheName, @PathParam("id") String id) {
+        InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
+        Cache<Object, Object> cache = provider.getCache(cacheName);
+        return cache.containsKey(id);
     }
 
     @Override

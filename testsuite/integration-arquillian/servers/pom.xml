@@ -38,7 +38,6 @@
         <eap.version>7.0.0.ER6-redhat-1</eap.version>
         <eap6.version>7.5.6.Final-redhat-2</eap6.version>
         <jboss.as.version>7.1.1.Final</jboss.as.version>
-        <eap6.version>7.5.6.Final-redhat-2</eap6.version>
         <tomcat7.version>7.0.68</tomcat7.version>
         <tomcat8.version>8.0.32</tomcat8.version>
         <tomcat9.version>9.0.0.M3</tomcat9.version>

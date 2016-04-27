@@ -133,7 +133,7 @@ public abstract class AbstractKeycloakTest {
                 MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
         deleteMeOAuthClient = new DeleteMeOAuthClient(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
 
-        testingClient = KeycloakTestingClient.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
+        getTestingClient();
 
         adminUser = createAdminUserRepresentation();
 
@@ -186,6 +186,13 @@ public abstract class AbstractKeycloakTest {
     public void setDefaultPageUriParameters() {
         masterRealmPage.setAuthRealm(MASTER);
         loginPage.setAuthRealm(MASTER);
+    }
+
+    protected KeycloakTestingClient getTestingClient() {
+        if (testingClient == null) {
+            testingClient = KeycloakTestingClient.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
+        }
+        return testingClient;
     }
 
     public abstract void addTestRealms(List<RealmRepresentation> testRealms);
