@@ -17,68 +17,55 @@
 package org.keycloak.testsuite.actions;
 
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
 
 import java.util.List;
 import java.util.Map;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.util.UserBuilder;
 
 import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class TermsAndConditionsTest {
-
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule();
+public class TermsAndConditionsTest extends TestRealmKeycloakTest {
 
     @Rule
-    public WebRule webRule = new WebRule(this);
+    public AssertEvents events = new AssertEvents(this);
 
-    @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
-
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     protected TermsAndConditionsPage termsPage;
 
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+    }
+
     @Before
-    public void before() {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-                UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
-                user.addRequiredAction(TermsAndConditions.PROVIDER_ID);
-            }
-        });
+    public void addTermsAndConditionRequiredAction() {
+        UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+        UserBuilder.edit(user).requiredAction(TermsAndConditions.PROVIDER_ID);
+        adminClient.realm("test").users().get(user.getId()).update(user);
     }
 
     @Test
@@ -87,7 +74,7 @@ public class TermsAndConditionsTest {
 
         loginPage.login("test-user@localhost", "password");
 
-        termsPage.assertCurrent();
+        Assert.assertTrue(termsPage.isCurrent());
 
         termsPage.acceptTerms();
 
@@ -98,7 +85,7 @@ public class TermsAndConditionsTest {
         events.expectLogin().session(sessionId).assertEvent();
 
         // assert user attribute is properly set
-        UserRepresentation user = keycloakRule.getUser("test", "test-user@localhost");
+        UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Map<String,List<String>> attributes = user.getAttributesAsListValues();
         assertNotNull("timestamp for terms acceptance was not stored in user attributes", attributes);
         List<String> termsAndConditions = attributes.get(TermsAndConditions.USER_ATTRIBUTE);
@@ -121,7 +108,7 @@ public class TermsAndConditionsTest {
 
         loginPage.login("test-user@localhost", "password");
 
-        termsPage.assertCurrent();
+        Assert.assertTrue(termsPage.isCurrent());
 
         termsPage.declineTerms();
 
@@ -132,7 +119,7 @@ public class TermsAndConditionsTest {
 
 
         // assert user attribute is properly removed
-        UserRepresentation user = keycloakRule.getUser("test", "test-user@localhost");
+        UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Map<String,List<String>> attributes = user.getAttributesAsListValues();
         if (attributes != null) {
             assertNull("expected null for terms acceptance user attribute " + TermsAndConditions.USER_ATTRIBUTE,

@@ -18,38 +18,31 @@ package org.keycloak.testsuite.actions;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.MailUtil;
-import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
-import org.keycloak.testsuite.rule.GreenMailRule;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
 
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
 
 import java.io.IOException;
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -57,55 +50,38 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RequiredActionEmailVerificationTest {
-
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule();
+public class RequiredActionEmailVerificationTest extends TestRealmKeycloakTest {
 
     @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
+    public AssertEvents events = new AssertEvents(this);
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
-    protected OAuthClient oauth;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     protected VerifyEmailPage verifyEmailPage;
 
-    @WebResource
+    @Page
     protected RegisterPage registerPage;
 
-    @WebResource
+    @Page
     protected InfoPage infoPage;
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setVerifyEmail(Boolean.TRUE);
+        ActionUtil.findUserInRealmRep(testRealm, "test-user@localhost").setEmailVerified(Boolean.FALSE);
+    }
 
     @Before
     public void before() {
         oauth.state("mystate"); // have to set this as keycloak validates that state is sent
-        keycloakRule.configure(new KeycloakSetup() {
-
-            @Override
-            public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-                appRealm.setVerifyEmail(true);
-
-                UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
-                user.setEmailVerified(false);
-            }
-
-        });
     }
 
     @Test
@@ -118,11 +94,11 @@ public class RequiredActionEmailVerificationTest {
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
-        
+
         String verificationUrl = getPasswordResetEmailLink(message);
 
         AssertEvents.ExpectedEvent emailEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost");
-        Event sendEvent = emailEvent.assertEvent();
+        EventRepresentation sendEvent = emailEvent.assertEvent();
         String sessionId = sendEvent.getSessionId();
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
@@ -152,7 +128,7 @@ public class RequiredActionEmailVerificationTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        Event sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail("username", "verifyemail").detail("email", "email@mail.com").assertEvent();
+        EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail("username", "verifyemail").detail("email", "email@mail.com").assertEvent();
         String sessionId = sendEvent.getSessionId();
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
@@ -177,7 +153,7 @@ public class RequiredActionEmailVerificationTest {
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
-        Event sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost").assertEvent();
+        EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost").assertEvent();
         String sessionId = sendEvent.getSessionId();
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
@@ -215,7 +191,7 @@ public class RequiredActionEmailVerificationTest {
         String verificationUrl = getPasswordResetEmailLink(message);
 
         AssertEvents.ExpectedEvent emailEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost");
-        Event sendEvent = emailEvent.assertEvent();
+        EventRepresentation sendEvent = emailEvent.assertEvent();
         String sessionId = sendEvent.getSessionId();
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
@@ -247,7 +223,7 @@ public class RequiredActionEmailVerificationTest {
         String keyInsteadCodeURL = resendEmailLink.replace("code=", "key=");
 
         AssertEvents.ExpectedEvent emailEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost");
-        Event sendEvent = emailEvent.assertEvent();
+        EventRepresentation sendEvent = emailEvent.assertEvent();
         String sessionId = sendEvent.getSessionId();
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
@@ -271,24 +247,24 @@ public class RequiredActionEmailVerificationTest {
                 .detail(Details.CODE_ID, mailCodeId)
                 .assertEvent();
     }
-    
+
     public static String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
     	Multipart multipart = (Multipart) message.getContent();
-    	
+
         final String textContentType = multipart.getBodyPart(0).getContentType();
-        
+
         assertEquals("text/plain; charset=UTF-8", textContentType);
-        
+
         final String textBody = (String) multipart.getBodyPart(0).getContent();
-        final String textChangePwdUrl = MailUtil.getLink(textBody);
-    	
+        final String textChangePwdUrl = MailUtils.getLink(textBody);
+
         final String htmlContentType = multipart.getBodyPart(1).getContentType();
-        
+
         assertEquals("text/html; charset=UTF-8", htmlContentType);
-        
+
         final String htmlBody = (String) multipart.getBodyPart(1).getContent();
-        final String htmlChangePwdUrl = MailUtil.getLink(htmlBody);
-        
+        final String htmlChangePwdUrl = MailUtils.getLink(htmlBody);
+
         assertEquals(htmlChangePwdUrl, textChangePwdUrl);
 
         return htmlChangePwdUrl;
