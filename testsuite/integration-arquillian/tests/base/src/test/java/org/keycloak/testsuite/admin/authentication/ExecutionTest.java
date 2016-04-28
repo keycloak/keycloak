@@ -19,15 +19,19 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.authentication.AuthenticationFlow;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 
 import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.GenericType;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -44,6 +48,15 @@ public class ExecutionTest extends AbstractAuthenticationTest {
             authMgmtResource.addExecution("browser", params);
             Assert.fail("add execution to built-in flow should fail");
         } catch (BadRequestException expected) {
+            // Expected
+        }
+
+        // try add execution to not-existent flow
+        try {
+            authMgmtResource.addExecution("not-existent", params);
+            Assert.fail("add execution to not-existent flow should fail");
+        } catch (BadRequestException expected) {
+            // Expected
         }
 
         // copy built-in flow so we get a new editable flow
@@ -95,9 +108,29 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         rep.setAuthenticator("auth-cookie");
         rep.setRequirement(OPTIONAL);
 
+        // Should fail - missing parent flow
         response = authMgmtResource.addExecution(rep);
         try {
             Assert.assertEquals("added execution missing parent flow", 400, response.getStatus());
+        } finally {
+            response.close();
+        }
+
+        // Should fail - not existent parent flow
+        rep.setParentFlow("not-existent-id");
+        response = authMgmtResource.addExecution(rep);
+        try {
+            Assert.assertEquals("added execution missing parent flow", 400, response.getStatus());
+        } finally {
+            response.close();
+        }
+
+        // Should fail - add execution to builtin flow
+        AuthenticationFlowRepresentation browserFlow = findFlowByAlias("browser", authMgmtResource.getFlows());
+        rep.setParentFlow(browserFlow.getId());
+        response = authMgmtResource.addExecution(rep);
+        try {
+            Assert.assertEquals("added execution to builtin flow", 400, response.getStatus());
         } finally {
             response.close();
         }
@@ -144,5 +177,71 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         // get current auth-cookie execution
         AuthenticationExecutionInfoRepresentation exec2 = findExecutionByProvider("auth-cookie", executionReps);
         compareExecution(exec, exec2);
+    }
+
+    @Test
+    public void testClientFlowExecutions() {
+        // Create client flow
+        AuthenticationFlowRepresentation clientFlow = newFlow("new-client-flow", "desc", AuthenticationFlow.CLIENT_FLOW, true, false);
+        Response response = authMgmtResource.createFlow(clientFlow);
+        Assert.assertEquals(201, response.getStatus());
+        response.close();
+
+        // Add execution to it
+        Map<String, String> executionData = new HashMap<>();
+        executionData.put("provider", ClientIdAndSecretAuthenticator.PROVIDER_ID);
+        authMgmtResource.addExecution("new-client-flow", executionData);
+
+        // Check executions of not-existent flow - SHOULD FAIL
+        try {
+            authMgmtResource.getExecutions("not-existent");
+            Assert.fail("Not expected to find executions");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        // Check existent executions
+        List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions("new-client-flow");
+        AuthenticationExecutionInfoRepresentation executionRep = findExecutionByProvider(ClientIdAndSecretAuthenticator.PROVIDER_ID, executions);
+        Assert.assertNotNull(executionRep);
+
+        // Update execution with not-existent flow - SHOULD FAIL
+        try {
+            authMgmtResource.updateExecutions("not-existent", executionRep);
+            Assert.fail("Not expected to update execution with not-existent flow");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        // Update execution with not-existent ID - SHOULD FAIL
+        try {
+            AuthenticationExecutionInfoRepresentation executionRep2 = new AuthenticationExecutionInfoRepresentation();
+            executionRep2.setId("not-existent");
+            authMgmtResource.updateExecutions("new-client-flow", executionRep2);
+            Assert.fail("Not expected to update not-existent execution");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        // Update success
+        executionRep.setRequirement(ALTERNATIVE);
+        authMgmtResource.updateExecutions("new-client-flow", executionRep);
+
+        // Check updated
+        executionRep = findExecutionByProvider(ClientIdAndSecretAuthenticator.PROVIDER_ID, authMgmtResource.getExecutions("new-client-flow"));
+        Assert.assertEquals(ALTERNATIVE, executionRep.getRequirement());
+
+        // Remove execution with not-existent ID
+        try {
+            authMgmtResource.removeExecution("not-existent");
+            Assert.fail("Didn't expect to find execution");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        // Successfuly remove execution and flow
+        authMgmtResource.removeExecution(executionRep.getId());
+        AuthenticationFlowRepresentation rep = findFlowByAlias("new-client-flow", authMgmtResource.getFlows());
+        authMgmtResource.deleteFlow(rep.getId());
     }
 }

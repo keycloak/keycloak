@@ -701,6 +701,7 @@ public class AuthenticationManagementResource {
      *
      * @param execution Execution id
      * @param id Configuration id
+     * @deprecated Use rather {@link #getAuthenticatorConfig(String)}
      */
     @Path("/executions/{executionId}/config/{id}")
     @GET
@@ -760,7 +761,7 @@ public class AuthenticationManagementResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
-    public void registereRequiredAction(Map<String, String> data) {
+    public void registerRequiredAction(Map<String, String> data) {
         auth.requireManage();
 
         String providerId = data.get("providerId");
@@ -857,7 +858,7 @@ public class AuthenticationManagementResource {
      */
     @Path("required-actions/{alias}")
     @DELETE
-    public void updateRequiredAction(@PathParam("alias") String alias) {
+    public void removeRequiredAction(@PathParam("alias") String alias) {
         auth.requireManage();
 
         RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(alias);
@@ -937,6 +938,7 @@ public class AuthenticationManagementResource {
     /**
      * Create new authenticator configuration
      * @param rep JSON describing new authenticator configuration
+     * @deprecated Use {@link #newExecutionConfig(String, AuthenticatorConfigRepresentation)} instead
      */
     @Path("config")
     @POST
