@@ -28,7 +28,7 @@ _domain.xml_ depending on your <<fake/../../operating-mode.adoc#_operating-mode,
 ----
 
 
-.non-clustered
+.clustered
 [source,xml]
 ----
 <subsystem xmlns="urn:jboss:domain:infinispan:4.0">
