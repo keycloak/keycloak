@@ -5,7 +5,7 @@ is used at boot time to discover and join the cluster.  It is also used to broad
 distributed caches used by {{book.project.name}}.
 
 The clustering subsystem for {{book.project.name}} runs on the JGroups stack.  Out of the box, the bind addresses for clustering are bound to a private network interface with a default IP address of 127.0.0.1.
-You'll have to edit your the _standalone-ha.xml_ or _domain.xml_ sections discussed in <<fake/../network/bind-address.adoc#_bind-address,the Bind Address chapter>>
+You'll have to edit your the _standalone-ha.xml_ or _domain.xml_ sections discussed in the <<fake/../../network/bind-address.adoc#_bind-address,Bind Address>> chapter.
 
 .private network config
 [source,xml]

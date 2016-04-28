@@ -19,5 +19,8 @@ Typically you won't need to increase/decrease the default value, but just in cas
     }
 }
 ----
-or similarly if you're using Mongo (just by replace `jpa` with `mongo`)
+
+{% if book.community %}
+If you are using Mongo DB replace `jpa` with `mongo`.
+{% endif %}
 
