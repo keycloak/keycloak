@@ -16,70 +16,47 @@
  */
 package org.keycloak.testsuite.actions;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.services.managers.RealmManager;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.rule.GreenMailRule;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testsuite.util.GreenMailRule;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RequiredActionResetPasswordTest {
+public class RequiredActionResetPasswordTest extends TestRealmKeycloakTest {
 
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
-
-        @Override
-        public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-            appRealm.setResetPasswordAllowed(true);
-
-            UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
-            user.addRequiredAction(RequiredAction.UPDATE_PASSWORD);
-        }
-
-    });
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setResetPasswordAllowed(Boolean.TRUE);
+        ActionUtil.addRequiredActionForUser(testRealm, "test-user@localhost", RequiredAction.UPDATE_PASSWORD.name());
+    }
 
     @Rule
-    public WebRule webRule = new WebRule(this);
-
-    @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
+    public AssertEvents events = new AssertEvents(this);
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
-    protected OAuthClient oauth;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     protected LoginPasswordUpdatePage changePasswordPage;
 
     @Before
@@ -100,7 +77,7 @@ public class RequiredActionResetPasswordTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        Event loginEvent = events.expectLogin().session(sessionId).assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
 
         oauth.openLogout();
 

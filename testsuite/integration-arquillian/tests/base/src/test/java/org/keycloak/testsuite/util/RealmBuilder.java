@@ -92,6 +92,36 @@ public class RealmBuilder {
         return this;
     }
 
+    public RealmBuilder otpLookAheadWindow(int i) {
+        rep.setOtpPolicyLookAheadWindow(i);
+        return this;
+    }
+
+    public RealmBuilder otpDigits(int i) {
+        rep.setOtpPolicyDigits(i);
+        return this;
+    }
+
+    public RealmBuilder otpPeriod(int i) {
+        rep.setOtpPolicyPeriod(i);
+        return this;
+    }
+
+    public RealmBuilder otpType(String type) {
+        rep.setOtpPolicyType(type);
+        return this;
+    }
+
+    public RealmBuilder otpAlgorithm(String algorithm) {
+        rep.setOtpPolicyAlgorithm(algorithm);
+        return this;
+    }
+
+    public RealmBuilder otpInitialCounter(int i) {
+        rep.setOtpPolicyInitialCounter(i);
+        return this;
+    }
+
     public RealmRepresentation build() {
         return rep;
     }
