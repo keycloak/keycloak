@@ -337,7 +337,7 @@ public class LoginTest extends TestRealmKeycloakTest {
         try {
             // Setting offset to more than one day to force password update
             // elapsedTime > timeToExpire
-            Time.setOffset(86405);
+            setTimeOffset(86405);
 
             loginPage.open();
 
@@ -346,6 +346,8 @@ public class LoginTest extends TestRealmKeycloakTest {
             updatePasswordPage.assertCurrent();
 
             updatePasswordPage.changePassword("updatedPassword", "updatedPassword");
+
+            setTimeOffset(0);
 
             events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 
@@ -359,8 +361,6 @@ public class LoginTest extends TestRealmKeycloakTest {
             UserBuilder userBuilder = UserBuilder.edit(userRsc.toRepresentation())
                                                  .password("password");
             userRsc.update(userBuilder.build());
-
-            Time.setOffset(0);
         }
     }
 
@@ -371,7 +371,7 @@ public class LoginTest extends TestRealmKeycloakTest {
         try {
             // Setting offset to less than one day to avoid forced password update
             // elapsedTime < timeToExpire
-            Time.setOffset(86205);
+            setTimeOffset(86205);
 
             loginPage.open();
 
@@ -380,42 +380,38 @@ public class LoginTest extends TestRealmKeycloakTest {
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-            events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+            setTimeOffset(0);
 
+            events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
         } finally {
             setPasswordPolicy(null);
-            Time.setOffset(0);
         }
     }
 
     @Test
     public void loginNoTimeoutWithLongWait() {
-        try {
-            loginPage.open();
+        loginPage.open();
 
-            Time.setOffset(1700);
+        setTimeOffset(1700);
 
-            loginPage.login("login-test", "password");
+        loginPage.login("login-test", "password");
 
-            events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
-        } finally {
-            Time.setOffset(0);
-        }
+        setTimeOffset(0);
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
     }
 
     @Test
     public void loginTimeout() {
-        try {
-            loginPage.open();
+        loginPage.open();
 
-            Time.setOffset(1850);
+        setTimeOffset(1850);
 
-            loginPage.login("login-test", "password");
+        loginPage.login("login-test", "password");
 
-            events.expectLogin().clearDetails().detail(Details.CODE_ID, AssertEvents.isCodeId()).user((String) null).session((String) null).error("expired_code").assertEvent().getSessionId();
-        } finally {
-            Time.setOffset(0);
-        }
+        setTimeOffset(0);
+
+        events.expectLogin().clearDetails().detail(Details.CODE_ID, AssertEvents.isCodeId()).user((String) null).session((String) null).error("expired_code").assertEvent().getSessionId();
     }
 
     @Test
@@ -485,26 +481,22 @@ public class LoginTest extends TestRealmKeycloakTest {
     // KEYCLOAK-1037
     @Test
     public void loginExpiredCode() {
-        try {
-            loginPage.open();
-            Time.setOffset(5000);
-            testingClient.testing().removeExpired("test");
+        loginPage.open();
+        setTimeOffset(5000);
+        testingClient.testing().removeExpired("test");
 
-            loginPage.login("login@test.com", "password");
+        loginPage.login("login@test.com", "password");
 
-            //loginPage.assertCurrent();
-            loginPage.assertCurrent();
+        //loginPage.assertCurrent();
+        loginPage.assertCurrent();
 
-            //Assert.assertEquals("Login timeout. Please login again.", loginPage.getError());
+        //Assert.assertEquals("Login timeout. Please login again.", loginPage.getError());
+        setTimeOffset(0);
 
-            events.expectLogin().user((String) null).session((String) null).error("expired_code").clearDetails()
-                    .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                    .client((String) null)
-                    .assertEvent();
-
-        } finally {
-            Time.setOffset(0);
-        }
+        events.expectLogin().user((String) null).session((String) null).error("expired_code").clearDetails()
+                .detail(Details.RESTART_AFTER_TIMEOUT, "true")
+                .client((String) null)
+                .assertEvent();
     }
 
 }
