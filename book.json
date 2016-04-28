@@ -22,6 +22,14 @@
       "datasource": {
         "name": "JBoss EAP Administration and Configuration Guide",
         "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/chap-Datasource_Management.html"
+      },
+      "network": {
+        "name": "JBoss EAP Administration and Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/chap-Network_and_Port_Configuration.html#Configure_interfaces"
+      },
+      "socket": {
+        "name": "JBoss EAP Administration and Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/sect-Socket_Binding_Groups.html"
       }
     },
     "caching": {

@@ -1,0 +1,20 @@
+[[_network]]
+
+== Network Setup
+
+{{book.project.name}} can run out of the box, with some limitations.  For one, all network endpoints bind to +localhost+
+so the auth server is really only usable on one local machine.  For HTTP based connections, it does not use default ports
+like 80 and 443.  The SSO protocols that {{book.project.name}} uses all require
+SSL/HTTPS or otherwise these protocols have some serious vulnerabilities.  HTTPS/SSL is not configured out of the box.
+Finally, {{book.project.name}}
+may often need to make secure SSL connections to external servers and thus need a trust store set up so that endpoints can
+be validated correctly.  This chapter discusses all of these things.
+
+
+
+
+
+
+
+
+

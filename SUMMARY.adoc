@@ -25,10 +25,16 @@
  {% if book.community %}
  . link:topics/mongo.adoc[Mongo DB Setup]
  {% endif %}
- . link:topics/cache.adoc[Server Cache]
+ . link:topics/network.adoc[Network Setup]
+ .. link:topics/network/bind-address.adoc[Bind Addresses]
+ .. link:topics/network/ports.adoc[Socket Port Bindings]
+ .. link:topics/network/https.adoc[HTTPS/SSL Setup]
+ .. link:topics/network/outgoing.adoc[Outgoing HTTP Requests]
  . link:topics/clustering.adoc[Clustering]
+ . link:topics/cache.adoc[Server Cache Configuration]
 {% if book.community %}
-. link:topics/proxy.adoc[Keycloak Security Proxy]
+ . link:topics/proxy.adoc[Keycloak Security Proxy]
 {% endif %}
+ . link:topics/migration.adoc[Upgrading and Migrating]
 
 

@@ -1,0 +1,115 @@
+=== Outgoing HTTP Requests
+
+The {{book.project.name}} server often needs to invoke non-browser HTTP requests on the applications and services it secures.
+The auth server manages these outgoing connections by maintaining an HTTP client connection pool.  There are a few settings
+of which you should be aware of.  These settings live in the file _keycloak-server.json_ _keycloak-server.json_ file that corresponds to your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>
+
+By default the setting is like this:
+
+[source,json]
+----
+"connectionsHttpClient": {
+    "default": {}
+},
+----
+Possible configuration options are:
+
+establish-connection-timeout-millis::
+  Timeout for establishing a socket connection.
+
+socket-timeout-millis::
+  If an outgoing request does not receive data for this amount of time, timeout the connection.
+
+connection-pool-size::
+  How many connections can be in the pool (128 by default).
+
+max-pooled-per-route::
+  How many connections can be pooled per host (64 by default).
+
+connection-ttl-millis::
+  Maximum connection time to live in milliseconds.
+  Not set by default.
+
+max-connection-idle-time-millis::
+  Maximum time the connection might stay idle in the connection pool (900 seconds by default). Will start background cleaner thread of Apache HTTP client.
+  Set to -1 to disable this checking and the background thread.
+
+disable-cookies::
+  `true` by default.
+  When set to true, this will disable any cookie caching.
+
+client-keystore::
+  This is the file path to a Java keystore file.
+  This keystore contains client certificate for two-way SSL.
+
+client-keystore-password::
+  Password for the client keystore.
+  This is _REQUIRED_ if `client-keystore` is set.
+
+client-key-password::
+  _Not supported yet, but we will support in future versions. Password for the client's key.
+  This is _REQUIRED_ if `client-keystore` is set.
+
+[[_truststore]]
+==== Outgoing HTTPS Request Truststore
+
+When {{book.project.name}} connects out to remote HTTP endpoints over secure https connection, it has to validate the other server's certificate in order to ensure it is connecting to a trusted server.
+This is necessary in order to prevent man-in-the-middle attacks.
+
+How certificates are validated is also configured in the _keycloak-server.json_ file that corresponds to your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>.
+
+`standalone/configuration/keycloak-server.json`.
+By default truststore provider is not configured, and any https connections fall back to standard java truststore configuration as described in https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html[
+            Java's JSSE Reference Guide] - using `javax.net.ssl.trustStore system property`, otherwise `cacerts` file that comes with java is used.
+
+Truststore is used when connecting securely to identity brokers, LDAP identity providers, when sending emails, and for backchannel communication with client applications.
+Some of these facilities may - in case when no trusted certificate is found in your configured truststore - fallback to using the JSSE provided truststore.
+The default JavaMail API implementation used to send out emails behaves in this way, for example.
+
+You can add your truststore configuration by using the following template:
+
+[source]
+----
+
+"truststore": {
+    "file": {
+        "file": "path to your .jks file containing public certificates",
+        "password": "password",
+        "hostname-verification-policy": "WILDCARD",
+        "disabled": false
+    }
+}
+----
+
+Possible configuration options are:
+
+file::
+  The value is the file path to a Java keystore file.
+  HTTPS requests need a way to verify the host of the server they are talking to.
+  This is what the trustore does.
+  The keystore contains one or more trusted host certificates or certificate authorities.
+  Truststore file should only contain public certificates of your secured hosts.
+  This is _REQUIRED_ if `disabled` is not true.
+
+password::
+  Password for the truststore.
+  This is _REQUIRED_ if `disabled` is not true.
+
+hostname-verification-policy::
+  `WILDCARD` by default.
+  For HTTPS requests, this verifies the hostname of the server's certificate.
+   `ANY` means that the hostname is not verified. `WILDCARD` Allows wildcards in subdomain names i.e.
+  *.foo.com. `STRICT` CN must match hostname exactly.
+
+disabled::
+  If true (default value), truststore configuration will be ignored, and certificate checking will fall back to JSSE configuration as described.
+  If set to false, you must configure `file`, and `password` for the truststore.
+
+You can use _keytool_ to create a new truststore file and add trusted host certificates to it:
+
+[source]
+----
+
+$ keytool -import -alias HOSTDOMAIN -keystore truststore.jks -file host-certificate.cer
+----
+
