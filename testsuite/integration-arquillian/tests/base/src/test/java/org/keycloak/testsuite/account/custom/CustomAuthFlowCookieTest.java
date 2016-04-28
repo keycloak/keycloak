@@ -16,37 +16,34 @@
  */
 package org.keycloak.testsuite.account.custom;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Ignore;
+import java.util.Arrays;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import org.junit.Before;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
-import org.keycloak.testsuite.console.page.AdminConsole;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import org.keycloak.representations.idm.ClientRepresentation;
+import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
-@Ignore
 public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTest {
 
-    @Page
-    private AdminConsole testRealmAdminConsolePage;
-    
-    @Override
-    public void setDefaultPageUriParameters() {
-        super.setDefaultPageUriParameters();
-    }
-    
     @Before
     @Override
     public void beforeTest() {
         super.beforeTest();
-        testRealmAdminConsolePage.setAdminRealm(TEST);
+        
+        ClientRepresentation testApp = new ClientRepresentation();
+        testApp.setClientId("test-app");
+        testApp.setEnabled(true);
+        testApp.setBaseUrl(APP_ROOT);
+        testApp.setRedirectUris(Arrays.asList(new String[]{APP_ROOT + "/*"}));
+        testApp.setAdminUrl(APP_ROOT + "/logout");
+        testApp.setSecret("password");
+        assertEquals(201, testRealmResource().clients().create(testApp).getStatus());
     }
 
     @Test
@@ -57,9 +54,9 @@ public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTes
         testRealmLoginPage.form().login(testUser);
         
         //check SSO is working
-        //navigate to realm-management (different client of the same realm) and verify user is logged in
-        testRealmAdminConsolePage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmAdminConsolePage);
+        //navigate to different client of the same realm and verify user is logged in
+        oauth.openLoginForm();
+        assertEquals("AUTH_RESPONSE", driver.getTitle());
     }
     
     @Test
@@ -72,8 +69,8 @@ public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTes
         testRealmLoginPage.form().login(testUser);
         
         //SSO shouln't work
-        //navigate to realm-management and verify user is not logged in
-        testRealmAdminConsolePage.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmLoginPage);
+        //navigate to different client of the same realm and verify user is not logged in
+        oauth.openLoginForm();
+        assertEquals("Log in to test", driver.getTitle());
     }
 }
