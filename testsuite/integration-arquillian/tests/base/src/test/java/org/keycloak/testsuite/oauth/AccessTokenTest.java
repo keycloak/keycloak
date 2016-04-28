@@ -280,10 +280,12 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
-        Time.setOffset(2);
+        setTimeOffset(2);
 
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
         Assert.assertEquals(400, response.getStatusCode());
+
+        setTimeOffset(0);
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, null);
         expectedEvent.error("invalid_code")
@@ -296,8 +298,6 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         events.clear();
 
         RealmManager.realm(adminClient.realm("test")).accessCodeLifeSpan(60);
-
-        Time.setOffset(0);
     }
 
     @Test
