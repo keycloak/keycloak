@@ -30,6 +30,14 @@
       "socket": {
         "name": "JBoss EAP Administration and Configuration Guide",
         "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/sect-Socket_Binding_Groups.html"
+      },
+      "loadbalancer": {
+        "name": "JBoss EAP Administration and Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/sect-Web_HTTP_Connectors_and_HTTP_Clustering.html"
+      },
+      "jgroups": {
+        "name": "JBoss EAP Administration and Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/sect-JGroups.html"
       }
     },
     "caching": {
@@ -49,6 +57,10 @@
       }
 
     },
+    "adminguide": {
+      "name": "Keycloak Adminstration Guide",
+      "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
+    }
     "project": {
       "name": "Keycloak",
       "version": "1.9.3.Final-SNAPSHOT"

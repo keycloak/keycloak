@@ -1,0 +1,6 @@
+=== Setting Up a Load Balancer
+
+This guide does not go over how to set up a load balancer as it is already documented in detail within the
+link:{{book.appserver.loadbalancer.link}}[the load balancer] chapter of the {{book.appserver.loadbalancer.name}}.  It will
+involve configuring the <<fake/../../network/bind-address.adoc#_bind-address,network interfaces>> and <<fake/../../network/ports.adoc#_ports,ports>> discussed in previous chapters in this guide.
+

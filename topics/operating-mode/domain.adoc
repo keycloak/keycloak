@@ -172,7 +172,7 @@ $ .../bin/domain.sh --host-config=host-master.xml
 When running the boot script you will need pass in the host controlling configuration file you are going to use via the
 +--host-config+ switch.
 
-
+[[_clustered-domain-example]]
 ==== Running the Clustered Domain Example
 
 The example domain that comes with {{book.project.name}} was meant to run on one machine.  It starts a:

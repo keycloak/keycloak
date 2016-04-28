@@ -1,0 +1,5 @@
+=== Clustering Example
+
+{{book.project.name}} does come with an out of the box clustering demo that leverages domain mode.  Review the
+<<fake/../../operating-mode/domain.adoc#_clustered-domain-example, Clustered Domain Example>> chapter for more details.
+

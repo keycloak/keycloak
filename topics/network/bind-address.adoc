@@ -1,3 +1,5 @@
+[[_bind-address]]
+
 === Bind Addresses
 
 By default {{book.project.name}} binds to the localhost loopback address 127.0.0.1.  That's not a very useful default if

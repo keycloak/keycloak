@@ -1,0 +1,17 @@
+=== Booting the Cluster
+
+Booting {{book.project.name}} in a cluster depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>
+
+.Standalone Mode
+[source]
+----
+$ bin/standalone.sh --server-config=standalone-ha.xml
+----
+
+.Domain Mode
+[source]
+----
+$ bin/domain.sh --host-config=host-master.xml
+$ bin/domain.sh --host-config=host-slave.xml
+----
+

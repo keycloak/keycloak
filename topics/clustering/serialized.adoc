@@ -1,0 +1,23 @@
+[[_clustering_db_lock]]
+=== Serialized Cluster Startup
+
+Note that {{book.project.name}} supports concurrent startup by more cluster nodes at the same.
+When {{book.project.name}} boots up it may do some database migration, importing, or first time initializations.  The server
+makes use of a DB lock which prevents these startup actions from running and conflicting with eachother when nodes are
+booted concurrently.
+
+By default, the maximum timeout for lock is 900 seconds, so in case that second node is not able to acquire the lock within 900 seconds, it fails to start.
+The lock checking is done every 2 seconds by default.
+Typically you won't need to increase/decrease the default value, but just in case it's possible to configure it in `keycloak-server.json`:
+
+[source,json]
+----
+"dblock": {
+    "jpa": {
+        "lockWaitTimeout": 900,
+        "lockRecheckTime": 2
+    }
+}
+----
+or similarly if you're using Mongo (just by replace `jpa` with `mongo`)
+
