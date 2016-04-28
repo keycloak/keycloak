@@ -96,8 +96,12 @@
          These default configurations require the binding specification to be done in host.xml.
     -->
     <interfaces>
-        <interface name="management"/>
-        <interface name="public"/>
+        <interface name="management">
+            <inet-address value="${jboss.bind.address.management:127.0.0.1}"/>
+        </interface>
+        <interface name="public">
+            <inet-address value="${jboss.bind.address:127.0.0.1}"/>
+        </interface>
         <?INTERFACES?>
     </interfaces>
 
