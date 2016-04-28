@@ -31,7 +31,6 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
-import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserFederationSyncResultRepresentation;
@@ -65,8 +64,8 @@ public class UserFederationTest extends AbstractAdminTest {
         Assert.assertTrue(dummyConfiguredProvider.getOptions() == null || dummyConfiguredProvider.getOptions().isEmpty());
         Assert.assertEquals("Dummy User Federation Provider Help Text", dummyConfiguredProvider.getHelpText());
         Assert.assertEquals(2, dummyConfiguredProvider.getProperties().size());
-        assertProviderConfigProperty(dummyConfiguredProvider.getProperties().get(0), "prop1", "Prop1", "prop1Default", "Prop1 HelpText", ProviderConfigProperty.STRING_TYPE);
-        assertProviderConfigProperty(dummyConfiguredProvider.getProperties().get(1), "prop2", "Prop2", "true", "Prop2 HelpText", ProviderConfigProperty.BOOLEAN_TYPE);
+        Assert.assertProviderConfigProperty(dummyConfiguredProvider.getProperties().get(0), "prop1", "Prop1", "prop1Default", "Prop1 HelpText", ProviderConfigProperty.STRING_TYPE);
+        Assert.assertProviderConfigProperty(dummyConfiguredProvider.getProperties().get(1), "prop2", "Prop2", "true", "Prop2 HelpText", ProviderConfigProperty.BOOLEAN_TYPE);
 
         try {
             userFederation().getProviderFactory("not-existent");
@@ -78,14 +77,6 @@ public class UserFederationTest extends AbstractAdminTest {
 
     private UserFederationProvidersResource userFederation() {
         return realm.userFederation();
-    }
-
-    private void assertProviderConfigProperty(ConfigPropertyRepresentation property, String name, String label, String defaultValue, String helpText, String type) {
-        Assert.assertEquals(name, property.getName());
-        Assert.assertEquals(label, property.getLabel());
-        Assert.assertEquals(defaultValue, property.getDefaultValue());
-        Assert.assertEquals(helpText, property.getHelpText());
-        Assert.assertEquals(type, property.getType());
     }
 
 
@@ -332,16 +323,8 @@ public class UserFederationTest extends AbstractAdminTest {
         Assert.assertEquals(fullSyncPeriod, rep.getFullSyncPeriod());
         Assert.assertEquals(changeSyncPeriod, rep.getChangedSyncPeriod());
         Assert.assertEquals(lastSync, rep.getLastSync());
-        if (config == null) {
-            config = new String[] {};
-        }
 
-        Assert.assertEquals(rep.getConfig().size() * 2, config.length);
-        for (int i=0 ; i<config.length ; i+=2) {
-            String key = config[i];
-            String value = config[i+1];
-            Assert.assertEquals(value, rep.getConfig().get(key));
-        }
+        Assert.assertMap(rep.getConfig(), config);
     }
 
 

@@ -28,6 +28,9 @@ import org.keycloak.models.KeycloakSessionFactory;
  * @version $Revision: 1 $
  */
 public class DummyRequiredActionFactory implements RequiredActionFactory {
+
+    public static final String PROVIDER_ID = "dummy-action";
+
     @Override
     public String getDisplayText() {
         return "Dummy Action";
@@ -55,6 +58,6 @@ public class DummyRequiredActionFactory implements RequiredActionFactory {
 
     @Override
     public String getId() {
-        return "dummy-action";
+        return PROVIDER_ID;
     }
 }

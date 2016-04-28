@@ -18,8 +18,7 @@
 package org.keycloak.testsuite.account.custom;
 
 import java.util.List;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.Response;
+
 import org.junit.Before;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.models.AuthenticationExecutionModel;
