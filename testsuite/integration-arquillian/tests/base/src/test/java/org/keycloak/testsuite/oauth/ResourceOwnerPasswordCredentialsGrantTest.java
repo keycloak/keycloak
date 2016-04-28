@@ -355,7 +355,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 new PasswordPolicy("forceExpiredPasswordChange(1)").toString());
 
         try {
-            Time.setOffset(60 * 60 * 48);
+            setTimeOffset(60 * 60 * 48);
 
             oauth.clientId("resource-owner");
 
@@ -366,6 +366,8 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
             assertEquals("invalid_grant", response.getError());
             assertEquals("Account is not fully set up", response.getErrorDescription());
 
+            setTimeOffset(0);
+
             events.expectLogin()
                     .client("resource-owner")
                     .session((String) null)
@@ -374,8 +376,6 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                     .user((String) null)
                     .assertEvent();
         } finally {
-            Time.setOffset(0);
-
             RealmManager.realm(realmResource).passwordPolicy(new PasswordPolicy("").toString());
             UserManager.realm(realmResource).username("test-user@localhost")
                     .removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
