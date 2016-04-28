@@ -42,6 +42,6 @@
 {% if book.community %}
  . link:topics/proxy.adoc[Keycloak Security Proxy]
 {% endif %}
- . link:topics/migration.adoc[Upgrading and Migrating]
+ . link:topics/migration.adoc[Importing and Exporting the Database]
 
 
