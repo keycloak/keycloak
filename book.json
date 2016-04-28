@@ -45,7 +45,8 @@
       "version": "???",
       "admindoc": {
         "name": "JBoss Data Grid Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/Red_Hat_JBoss_Data_Grid/6.6/html/Administration_and_Configuration_Guide/index.html"
+        "link": "https://access.redhat.com/documentation/en-US/Red_Hat_JBoss_Data_Grid/6.6/html/Administration_and_Configuration_Guide/index.html",
+        "eviction": "https://access.redhat.com/documentation/en-US/Red_Hat_JBoss_Data_Grid/7.0/html/Administration_and_Configuration_Guide/sect-Eviction_Strategies.html"
       }
     },
     "jpa": {

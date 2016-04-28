@@ -39,9 +39,12 @@
  .. link:topics/clustering/example.adoc[Cluster Example]
  .. link:topics/clustering/troubleshooting.adoc[Trouble Shooting]
  . link:topics/cache.adoc[Server Cache Configuration]
+ .. link:topics/cache/eviction.adoc[Eviction Policy and Max Entries]
+ .. link:topics/cache/replication.adoc[Replication and Failover]
+ .. link:topics/cache/disable.adoc[Disabling Caching]
+ .. link:topics/cache/clear.adoc[Clearing Caches at Runtime]
 {% if book.community %}
  . link:topics/proxy.adoc[Keycloak Security Proxy]
 {% endif %}
- . link:topics/migration.adoc[Importing and Exporting the Database]
 
 

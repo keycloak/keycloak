@@ -1,58 +1,18 @@
-== Server Cache
+== Server Cache Configuration
 
-By default, Keycloak caches realm metadata and users.
-There are two separate caches, one for realm metadata (realm, application, client, roles, etc...) and one for users.
-These caches greatly improves the performance of the server. 
+{{book.project.name}} has two types of caches.  One type of cache sits in front of the database to decrease load on the DB
+and to increase overall response times by keeping data in memory.  Realm, client, role, and user metadata is kept in this cache.
+The caching for this data is stored in something called an invalidation cache.  Invalidation caches do not use replication.
+Instead, they only keep copies locally and if the entry is updated an invalidation message is sent to the rest of the cluster
+and the entry is evicted.  This greatly reduces network traffic, makes things efficient, and avoids transmitting sensitive
+metadata over the ire.
 
-=== Eviction and Expiration
+The second type of cache handles managing user sessions, offline tokens, and keeping track of login failures so that the
+server can detect password phishing and other attacks.  The data held in these caches is temporary, in memory only,
+but is possibly replicated across the cluster.
 
-By default the user cache contains a maximum of 10000 entries.
-This is not 10000 users, but 10000 entries in the cache.
-You can change the maximum number of entries by editing the server configuration `standalone.xml` or `standalone-ha.xml`.
-Locate the element `cache-container name="keycloak"` and change the eviction policy for the `users` cache.
-For more information see https://docs.jboss.org/author/display/WFLY10/Infinispan+Subsystem[Infinispan Subsystem documentation]. 
+This chapter discusses some configuration options for these caches for both clustered a non-clustered deployments.
 
-=== Disabling Caches
-
-To disable the realm or user cache, you must edit the `keycloak-server.json` file in your distribution.
-Here's what the config looks like initially. 
+Note:  More advanced configuration of these caches can be found in link:{{book.caching.admindoc.link}}[{{book.caching.admindoc.name}}]
 
 
-[source]
-----
-
-    "userCache": {
-        "infinispan" : {
-            "enabled": true
-        }
-    },
-
-    "realmCache": {
-        "infinispan" : {
-            "enabled": true
-        }
-    },
-----        
-
-To disable the cache set the enabled field to false for the cache you want to disable: 
-[source]
-----
-
-    "userCache": {
-        "infinispan" : {
-            "enabled": false
-        }
-    },
-
-    "realmCache": {
-        "infinispan" : {
-            "enabled": false
-        }
-    },
-----        
-
-=== Clear Caches
-
-To clear the realm or user cache, go to the Keycloak admin console Realm Settings->Cache Config page.
-On this page you can clear the realm cache or the user cache.
-This will clear the caches for all realms and not only the selected realm. 

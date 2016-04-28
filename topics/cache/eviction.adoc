@@ -1,0 +1,52 @@
+=== Eviction and Expiration
+
+There is a realm cache that holds information about secured applications, general security data, and configuration options.
+This cache is unbounded and does not have a limit on entries.  This might scare you a little bit, but the number of entries
+in this cache is pretty low compared to the user cache.  There is a user cache that contains user metadata.  It defaults to a maximum of 10000 entries and uses a least recently used eviction strategy.
+There are also separate caches for user sessions, offline tokens, and login failures.  These caches are unbounded as well.
+
+The eviction policy and max entries for these caches can be configured in the _standalone.xml_, _standalone-ha.xml_, or
+_domain.xml_ depending on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>.
+
+.non-clustered
+[source,xml]
+----
+<subsystem xmlns="urn:jboss:domain:infinispan:4.0">
+   <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
+       <local-cache name="realms"/>
+       <local-cache name="users">
+          <eviction max-entries="10000" strategy="LRU"/>
+       </local-cache>
+       <local-cache name="sessions"/>
+       <local-cache name="offlineSessions"/>
+       <local-cache name="loginFailures"/>
+       <local-cache name="work"/>
+       <local-cache name="realmVersions">
+          <transaction mode="BATCH" locking="PESSIMISTIC"/>
+       </local-cache>
+   </cache-container>
+----
+
+
+.non-clustered
+[source,xml]
+----
+<subsystem xmlns="urn:jboss:domain:infinispan:4.0">
+   <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
+       <transport lock-timeout="60000"/>
+       <invalidation-cache name="realms" mode="SYNC"/>
+       <invalidation-cache name="users" mode="SYNC">
+           <eviction max-entries="10000" strategy="LRU"/>
+       </invalidation-cache>
+       <distributed-cache name="sessions" mode="SYNC" owners="1"/>
+       <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
+       <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
+       <replicated-cache name="work" mode="SYNC"/>
+       <local-cache name="realmVersions">
+           <transaction mode="BATCH" locking="PESSIMISTIC"/>
+       </local-cache>
+   </cache-container>
+----
+
+To limit to expand the number of entries simply add, edit, or remove the +eviction+ element from the +invalidation-cache+ or
++distributed-cache+ eviction policy you want to change.

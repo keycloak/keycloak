@@ -1,0 +1,25 @@
+=== Disabling Caching
+
+To disable the realm or user cache, you must edit the `keycloak-server.json` file in your distribution.  Where
+this file lives depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>
+Here's what the config looks like initially.
+
+
+[source,json]
+----
+
+    "userCache": {
+        "infinispan" : {
+            "enabled": true
+        }
+    },
+
+    "realmCache": {
+        "infinispan" : {
+            "enabled": true
+        }
+    },
+----
+
+To disable the cache set the +enabled+ field to false for the cache you want to disable.  You must reboot your
+server for this change to take effect.
