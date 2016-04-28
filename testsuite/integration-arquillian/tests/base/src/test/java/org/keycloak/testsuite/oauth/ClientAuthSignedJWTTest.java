@@ -365,9 +365,9 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     @Test
     public void testAssertionExpired() throws Exception {
-        Time.setOffset(-1000);
         String invalidJwt = getClient1SignedJWT();
-        Time.setOffset(0);
+
+        setTimeOffset(1000);
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -376,15 +376,17 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
         HttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+
+        setTimeOffset(0);
 
         assertError(response, "client1", "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
     public void testAssertionInvalidNotBefore() throws Exception {
-        Time.setOffset(1000);
         String invalidJwt = getClient1SignedJWT();
-        Time.setOffset(0);
+
+        setTimeOffset(-1000);
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -393,6 +395,8 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
         HttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+
+        setTimeOffset(0);
 
         assertError(response, "client1", "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
