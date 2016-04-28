@@ -47,6 +47,11 @@
                     Start in HA mode
                 </para>
             </listitem>
+            <listitem>
+                <para>
+                    Loadbalancer (optional step)
+                </para>
+            </listitem>
         </itemizedlist>
     </para>
 
@@ -189,6 +194,20 @@
 ]]>
 </programlisting>
             See the <ulink url="http://www.jgroups.org/manual/index.html#ENCRYPT">JGroups manual</ulink> for more details.
+        </para>
+    </section>
+
+    <section>
+        <title>Loadbalancer setup</title>
+        <para>
+            This is optional step, however in production, when you have more Keycloak nodes in cluster, you usually want to "hide" them behind frontent loadbalancer server, which will forward the
+            requests to the "backend" keycloak nodes. Consult the documentation of your loadbalancer (For example <ulink url="http://mod-cluster.jboss.org/">Mod cluster</ulink> )
+            for how to configure this.
+        </para>
+        <para>
+            But regardless of loadbalancer implementation used, it is important that you make sure the web server sets the <literal>X-Forwarded-For</literal> and
+            <literal>X-Forwarded-Proto</literal> headers on the requests made to Keycloak properly. This is described in details in <link linkend="proxy-address-forwarding">Reverse proxy</link>
+            section.
         </para>
     </section>
 

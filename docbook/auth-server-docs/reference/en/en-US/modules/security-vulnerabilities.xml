@@ -129,7 +129,7 @@
             applications register as specific a URI pattern as possible to mitigate open redirector attacks.
         </para>
     </section>
-    <section>
+    <section id="brute-force-attacks">
         <title>Password guess: brute force attacks</title>
         <para>
             A brute force attack happens when an attacker is trying to guess a user's password.  Keycloak has some

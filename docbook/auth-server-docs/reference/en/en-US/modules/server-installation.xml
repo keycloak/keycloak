@@ -516,7 +516,7 @@ bin/add-user-keycloak.[sh|bat] -r master -u <username> -p <password>
             otherwise <literal>cacerts</literal> file that comes with java is used.
             </para>
             <para>
-                Truststore is used when connecting securely to identity brokers, LDAP identity providers, when sending emails,
+                Truststore is used when connecting securely to identity brokers, LDAP federation providers, when sending emails,
                 and for backchannel communication with client applications.
 
                 Some of these facilities may - in case when no trusted certificate is found in your configured truststore -
@@ -785,7 +785,7 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
                         <programlisting><![CDATA[<https-listener name="https" socket-binding="https" security-realm="UndertowRealm"/>]]></programlisting>
                     </para>
                     <para>
-                        Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">Wildfly Undertow</ulink> documentation for more information on fine tuning the socket connections.
+                        Check the <ulink url="https://docs.jboss.org/author/display/WFLY10/Undertow+subsystem+configuration">Wildfly Undertow</ulink> documentation for more information on fine tuning the socket connections.
                     </para>
                 </section>
             </section>
@@ -795,9 +795,12 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
                 <para>
                     Follow the documentation for your web server to enable SSL and configure reverse proxy for Keycloak.
                     It is important that you make sure the web server sets the <literal>X-Forwarded-For</literal> and
-                    <literal>X-Forwarded-Proto</literal> headers on the requests made to Keycloak. Next you need to enable
-                    <literal>proxy-address-forwarding</literal> on the Keycloak http connector. Assuming that your reverse
-                    proxy doesn't use port 8443 for SSL you also need to configure what port http traffic is redirected to.
+                    <literal>X-Forwarded-Proto</literal> headers on the requests made to Keycloak and you enable
+                    <literal>proxy-address-forwarding</literal> on the Keycloak http connector. This is described in <link linkend="proxy-address-forwarding">next section</link>, so
+                    here we will focus just on SSL setup.
+                </para>
+                <para>
+                    Assuming that your reverse proxy doesn't use port 8443 for SSL you also need to configure what port http traffic is redirected to.
                 </para>
 
                 <section>
@@ -808,12 +811,11 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
                     </para>
 
                     <para>
-                        First add <literal>proxy-address-forwarding</literal> and <literal>redirect-socket</literal> to
+                        First add <literal>redirect-socket</literal> to
                         the <literal>http-listener</literal> element:
 <programlisting><![CDATA[<subsystem xmlns="urn:jboss:domain:undertow:1.1">
     ...
-    <http-listener name="default" socket-binding="http"
-        proxy-address-forwarding="true" redirect-socket="proxy-https"/>
+    <http-listener name="default" socket-binding="http" redirect-socket="proxy-https"/>
     ...
 </subsystem>
 ]]></programlisting>
@@ -830,11 +832,113 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
 ]]></programlisting>
                     </para>
                     <para>
-                        Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">WildFly</ulink> documentation for more information.
+                        Check the <ulink url="https://docs.jboss.org/author/display/WFLY10/Undertow+subsystem+configuration">WildFly</ulink> documentation for more information.
                     </para>
                 </section>
             </section>
 
+        </section>
+
+        <section id="proxy-address-forwarding">
+            <title>Configure reverse proxy for address forwarding</title>
+            <para>
+                Keycloak has some functionalities (for example <link linkend='events'>Events</link> or <link linkend="brute-force-attacks">Brute Force protector</link>)
+                that relies on the fact, that remote address of the HTTP connection is the real IP address of the client machine. This may be a bit tricky when you have setup
+                with reverse proxy or loadbalancer.
+            </para>
+            <para>
+                Assume you have setup when users send requests to the "Frontend" server (reverse proxy), which then forwards them to the
+                "backend" server (Keycloak) on private network. Then with default setup of Wildfly Undertow subsystem, Keycloak will see <literal>request.getRemoteAddress()</literal> to be
+                resolved to the IP address of reverse proxy instead of real IP of client.
+            </para>
+            <para>
+                To address this issue and see the real IP address of client, you need 2 things:
+                <itemizedlist>
+                    <listitem>
+                        <para>Configure your reverse proxy (loadbalancer) to properly set <literal>X-Forwarded-For</literal> and <literal>X-Forwarded-Proto</literal> HTTP headers.</para>
+                    </listitem>
+                    <listitem>
+                        <para>Configure Wildfly undertow subsystem on Keycloak server's side to read the client's IP address from <literal>X-Forwarded-For</literal> header.</para>
+                    </listitem>
+                </itemizedlist>
+                More details for setup both things.
+            </para>
+            <section>
+                <title>Configure your reverse proxy to set X-Forwarded-For</title>
+                <para>
+                    Consult the documentation of your reverse proxy implementation on how to do it.
+                </para>
+                <para>
+                    Note that when your reverse proxy receives requests from the users on public network, you also need to ensure that <literal>X-Forwarded-For</literal>
+                    is always overwritten by proxy with the IP address of client machine. If it's not overwritten, but just forwarded, the
+                    "evil" user can manually set the <literal>X-Forwarded-For</literal> header to the false IP address to trick Keycloak.
+                </para>
+                <para>
+                    For example imagine that evil user connects from IP address <literal>20.20.20.20</literal> but he manually sets the <literal>X-Forwarded-For</literal> header to
+                    value <literal>30.30.30.30</literal>. If reverse proxy "forwards" the header, it will append the old value set by evil user with the IP address user connected from.
+                    So <literal>X-Forwarded-For</literal> header will be incorrectly set to <literal>30.30.30.30 , 20.20.20.20</literal>. Then Keycloak will see incorrect IP
+                    address <literal>30.30.30.30</literal>. So in this case, reverse proxy must overwrite the old value of header and just set the real IP
+                    of the user machine to <literal>20.20.20.20</literal>. On the other hand, when you have more reverse proxies chained together, you need to configure
+                    "overwriting" just for the first proxy in the chain.
+                </para>
+                <para>
+                    Some example setups:
+                    <variablelist>
+                        <varlistentry>
+                            <term>user (IP address: 20.20.20.20) -> load balancer (IP Address: 30.30.30.30 ) -> Keycloak</term>
+                            <listitem>
+                                <para>
+                                    For this setup, loadbalancer receives the IP from the end user, so it must overwrite the header. So Keycloak will correctly see
+                                    <literal>X-Forwarded-For: 20.20.20.20</literal> .
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                        <varlistentry>
+                            <term>internet (IP address: 20.20.20.20) -> reverse proxy (IP Address: 30.30.30.30 ) -> load balancer (IP Address: 40.40.40.40 ) -> keycloak</term>
+                            <listitem>
+                                <para>
+                                    For this setup, just the first reverse proxy is supposed to overwrite <literal>X-Forwarded-For</literal> but second (load balancer) should just forwards it.
+                                    So Keycloak will correctly see <literal>X-Forwarded-For: 20.20.20.20,30.30.30.30</literal>, hence in the second step, it will be able to correctly see
+                                    client's remote IP address <literal>20.20.20.20</literal>.
+                                </para>
+                            </listitem>
+                        </varlistentry>
+                    </variablelist>
+                </para>
+            </section>
+            <section>
+                <title>Configure Wildfly undertow subsystem</title>
+                <para>
+                    This is needed, so the wildfly undertow subsystem will read the client's IP address from the <literal>X-Forwarded-For</literal> header rather than from the IP of network packet, which
+                    came from loadbalancer and hence it's set to the IP of loadbalancer.
+                </para>
+                <para>
+                    If your proxy sends requests to the HTTP connector, it can be configured easily by add attribute <literal>proxy-address-forwarding</literal> to the
+                    <literal>http-listener</literal> subelement of undertow subsystem.
+                    For example:
+                    <programlisting><![CDATA[
+<http-listener name="default" socket-binding="http"
+    redirect-socket="https" proxy-address-forwarding="true" />
+]]></programlisting>
+                </para>
+                <para>
+                    If you use AJP connector, which is common setup for loadbalancers, the proxy-address-forwarding is not available, hence you need to do slightly more configurations.
+                    First add <literal>filter</literal> subelement of <literal>filters</literal> element with the value like this:
+                    <programlisting><![CDATA[
+<filter name="proxy-peer"
+    class-name="io.undertow.server.handlers.ProxyPeerAddressHandler"
+    module="io.undertow.core" />
+]]></programlisting>
+                    Then reference it from the <literal>host</literal> element:
+                    <programlisting><![CDATA[
+<filter-ref name="proxy-peer"/>
+]]></programlisting>
+                    If you want to check address is correctly set, you can enable <link linkend="events">events</link> and verify the IP address really points to the IP address of client machine.
+                </para>
+                <para>
+                    Check the <ulink url="https://docs.jboss.org/author/display/WFLY10/Undertow+subsystem+configuration">WildFly</ulink> documentation for more information.
+                </para>
+            </section>
         </section>
 
     </section>
