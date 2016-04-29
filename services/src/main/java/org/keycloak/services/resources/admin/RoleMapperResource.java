@@ -104,6 +104,10 @@ public class RoleMapperResource {
     public MappingsRepresentation getRoleMappings() {
         auth.requireView();
 
+        if (roleMapper == null) {
+            throw new NotFoundException("User not found");
+        }
+
         MappingsRepresentation all = new MappingsRepresentation();
         Set<RoleModel> realmMappings = roleMapper.getRealmRoleMappings();
         RealmManager manager = new RealmManager(session);
@@ -149,6 +153,10 @@ public class RoleMapperResource {
     public List<RoleRepresentation> getRealmRoleMappings() {
         auth.requireView();
 
+        if (roleMapper == null) {
+            throw new NotFoundException("User not found");
+        }
+
         Set<RoleModel> realmMappings = roleMapper.getRealmRoleMappings();
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : realmMappings) {
@@ -170,6 +178,10 @@ public class RoleMapperResource {
     @NoCache
     public List<RoleRepresentation> getCompositeRealmRoleMappings() {
         auth.requireView();
+
+        if (roleMapper == null) {
+            throw new NotFoundException("User not found");
+        }
 
         Set<RoleModel> roles = realm.getRoles();
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
@@ -193,6 +205,10 @@ public class RoleMapperResource {
     public List<RoleRepresentation> getAvailableRealmRoleMappings() {
         auth.requireView();
 
+        if (roleMapper == null) {
+            throw new NotFoundException("User not found");
+        }
+
         Set<RoleModel> available = realm.getRoles();
         return ClientRoleMappingsResource.getAvailableRoles(roleMapper, available);
     }
@@ -207,6 +223,10 @@ public class RoleMapperResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void addRealmRoleMappings(List<RoleRepresentation> roles) {
         auth.requireManage();
+
+        if (roleMapper == null) {
+            throw new NotFoundException("User not found");
+        }
 
         logger.debugv("** addRealmRoleMappings: {0}", roles);
 
@@ -230,6 +250,10 @@ public class RoleMapperResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void deleteRealmRoleMappings(List<RoleRepresentation> roles) {
         auth.requireManage();
+
+        if (roleMapper == null) {
+            throw new NotFoundException("User not found");
+        }
 
         logger.debug("deleteRealmRoleMappings");
         if (roles == null) {
@@ -262,10 +286,6 @@ public class RoleMapperResource {
     @Path("clients/{client}")
     public ClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("client") String client) {
         ClientModel clientModel = realm.getClientById(client);
-        if (clientModel == null) {
-            throw new NotFoundException("Client not found");
-        }
-
         return new ClientRoleMappingsResource(uriInfo, session, realm, auth, roleMapper, clientModel, adminEvent);
 
     }

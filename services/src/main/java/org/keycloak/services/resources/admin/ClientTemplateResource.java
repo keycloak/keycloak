@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientTemplateModel;
@@ -104,6 +105,10 @@ public class ClientTemplateResource {
     public Response update(final ClientTemplateRepresentation rep) {
         auth.requireManage();
 
+        if (template == null) {
+            throw new NotFoundException("Could not find client template");
+        }
+
         try {
             RepresentationToModel.updateClientTemplate(rep, template);
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
@@ -125,6 +130,10 @@ public class ClientTemplateResource {
     public ClientTemplateRepresentation getClient() {
         auth.requireView();
 
+        if (template == null) {
+            throw new NotFoundException("Could not find client template");
+        }
+
         return ModelToRepresentation.toRepresentation(template);
     }
 
@@ -136,6 +145,10 @@ public class ClientTemplateResource {
     @NoCache
     public Response deleteClientTemplate() {
         auth.requireManage();
+
+        if (template == null) {
+            throw new NotFoundException("Could not find client template");
+        }
 
         try {
             realm.removeClientTemplate(template.getId());

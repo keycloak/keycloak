@@ -727,7 +727,7 @@ public class AuthenticationManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<Map<String, String>> getUnregisteredRequiredActions() {
-        auth.requireManage();
+        auth.requireView();
 
         List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(RequiredActionProvider.class);
         List<Map<String, String>> unregisteredList = new LinkedList<>();

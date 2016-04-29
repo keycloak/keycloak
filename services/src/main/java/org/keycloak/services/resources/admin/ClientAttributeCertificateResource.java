@@ -93,6 +93,10 @@ public class ClientAttributeCertificateResource {
     public CertificateRepresentation getKeyInfo() {
         auth.requireView();
 
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         CertificateRepresentation info = new CertificateRepresentation();
         info.setCertificate(client.getAttribute(certificateAttribute));
         info.setPrivateKey(client.getAttribute(privateAttribute));
@@ -110,6 +114,10 @@ public class ClientAttributeCertificateResource {
     @Produces(MediaType.APPLICATION_JSON)
     public CertificateRepresentation generate() {
         auth.requireManage();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId());
 
@@ -135,6 +143,10 @@ public class ClientAttributeCertificateResource {
     @Produces(MediaType.APPLICATION_JSON)
     public CertificateRepresentation uploadJks(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
         auth.requireManage();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         CertificateRepresentation info = getCertFromRequest(uriInfo, input);
 
@@ -168,6 +180,10 @@ public class ClientAttributeCertificateResource {
     @Produces(MediaType.APPLICATION_JSON)
     public CertificateRepresentation uploadJksCertificate(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
         auth.requireManage();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         CertificateRepresentation info = getCertFromRequest(uriInfo, input);
 
@@ -246,6 +262,10 @@ public class ClientAttributeCertificateResource {
     public byte[] getKeystore(final KeyStoreConfig config) {
         auth.requireView();
 
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
             throw new NotAcceptableException("Only support jks or pkcs12 format.");
         }
@@ -282,6 +302,10 @@ public class ClientAttributeCertificateResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public byte[] generateAndGetKeystore(final KeyStoreConfig config) {
         auth.requireManage();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
             throw new NotAcceptableException("Only support jks or pkcs12 format.");
