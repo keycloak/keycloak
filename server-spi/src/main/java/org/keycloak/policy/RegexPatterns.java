@@ -30,25 +30,23 @@ import java.util.regex.Pattern;
 public class RegexPatterns extends BasePasswordPolicy {
     private static final String NAME = "regexPattern";
     private static final String INVALID_PASSWORD_REGEX_PATTERN = "invalidPasswordRegexPatternMessage";
-    private String regexPattern;
-
-    public RegexPatterns(String arg) {
-        regexPattern = arg;
-    }
 
     @Override
-    public Error validate(KeycloakSession session, String username, String password) {
-        Pattern pattern = Pattern.compile(regexPattern);
-        Matcher matcher = pattern.matcher(password);
-        if (!matcher.matches()) {
-            return new Error(INVALID_PASSWORD_REGEX_PATTERN, (Object) regexPattern);
+    public Error validate(KeycloakSession session, String username, String password, PasswordPolicy policy) {
+        String regexPattern = policy.stringArg(NAME, null);
+        if (regexPattern != null) {
+            Pattern pattern = Pattern.compile(regexPattern);
+            Matcher matcher = pattern.matcher(password);
+            if (!matcher.matches()) {
+                return new Error(INVALID_PASSWORD_REGEX_PATTERN, (Object) regexPattern);
+            }
         }
         return null;
     }
 
     @Override
-    public Error validate(KeycloakSession session, UserModel user, String password) {
-        return validate(session, user.getUsername(), password);
+    public Error validate(KeycloakSession session, UserModel user, String password, PasswordPolicy policy) {
+        return validate(session, user.getUsername(), password, policy);
     }
 
     @Override

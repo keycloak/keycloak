@@ -27,7 +27,6 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -36,6 +35,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.infinispan.RealmCache;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.io.Serializable;
@@ -230,10 +230,10 @@ public class CachedRealm extends AbstractRevisioned {
         eventsExpiration = model.getEventsExpiration();
         eventsListeners = model.getEventsListeners();
         enabledEventTypes = model.getEnabledEventTypes();
-        
+
         adminEventsEnabled = model.isAdminEventsEnabled();
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
-        
+
         defaultRoles = model.getDefaultRoles();
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
@@ -460,7 +460,7 @@ public class CachedRealm extends AbstractRevisioned {
     public Set<String> getEventsListeners() {
         return eventsListeners;
     }
-    
+
     public Set<String> getEnabledEventTypes() {
         return enabledEventTypes;
     }

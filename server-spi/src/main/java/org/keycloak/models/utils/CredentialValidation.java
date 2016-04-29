@@ -23,11 +23,11 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.representations.PasswordToken;
 import org.keycloak.common.util.Time;
 

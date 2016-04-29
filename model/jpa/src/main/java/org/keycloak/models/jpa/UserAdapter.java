@@ -26,7 +26,6 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -43,6 +42,7 @@ import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 
@@ -364,7 +364,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             em.persist(credentialEntity);
             user.getCredentials().add(credentialEntity);
         } else {
-            
+
             int expiredPasswordsPolicyValue = -1;
             PasswordPolicy policy = realm.getPasswordPolicy();
             if(policy != null) {
@@ -394,7 +394,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             }
         }
     }
-    
+
     private CredentialEntity setCredentials(UserEntity user, UserCredentialModel cred) {
         CredentialEntity credentialEntity = new CredentialEntity();
         credentialEntity.setId(KeycloakModelUtils.generateId());

@@ -27,20 +27,16 @@ import org.keycloak.models.UserModel;
 public class Length extends BasePasswordPolicy {
     private static final String NAME = "length";
     private static final String INVALID_PASSWORD_MIN_LENGTH_MESSAGE = "invalidPasswordMinLengthMessage";
-    private int min;
-
-    public Length(String arg) {
-        min = intArg(NAME, 8, arg);
-    }
 
     @Override
-    public Error validate(KeycloakSession session, String username, String password) {
+    public Error validate(KeycloakSession session, String username, String password, PasswordPolicy policy) {
+        int min = policy.intArg(NAME, 8);
         return password.length() < min ? new Error(INVALID_PASSWORD_MIN_LENGTH_MESSAGE, min) : null;
     }
 
     @Override
-    public Error validate(KeycloakSession session, UserModel user, String password) {
-        return validate(session, user.getUsername(), password);
+    public Error validate(KeycloakSession session, UserModel user, String password, PasswordPolicy policy) {
+        return validate(session, user.getUsername(), password, policy);
     }
 
     @Override

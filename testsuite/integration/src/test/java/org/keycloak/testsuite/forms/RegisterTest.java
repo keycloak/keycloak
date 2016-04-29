@@ -19,9 +19,9 @@ package org.keycloak.testsuite.forms;
 import org.junit.*;
 import org.keycloak.events.Details;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
@@ -136,7 +136,7 @@ public class RegisterTest {
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setPasswordPolicy(new PasswordPolicy("length"));
+                appRealm.setPasswordPolicy(new PasswordPolicy("length", manager.getSession()));
             }
         });
 
@@ -165,7 +165,7 @@ public class RegisterTest {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
+                    appRealm.setPasswordPolicy(new PasswordPolicy(null, null));
                 }
             });
         }
@@ -319,7 +319,7 @@ public class RegisterTest {
     @Test
     public void registerUserSuccess_emailAsUsername() {
         configureRelamRegistrationEmailAsUsername(true);
-        
+
         try {
             loginPage.open();
             loginPage.clickRegister();

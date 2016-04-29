@@ -18,6 +18,7 @@
 package org.keycloak.hash;
 
 import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.provider.Provider;
 
 /**
@@ -25,7 +26,7 @@ import org.keycloak.provider.Provider;
  */
 public interface PasswordHashProvider extends Provider {
 
-    UserCredentialValueModel encode(String rawPassword, int iterations);
+    UserCredentialValueModel encode(String rawPassword, PasswordPolicy policy);
 
     boolean verify(String rawPassword, UserCredentialValueModel credential);
 

@@ -28,17 +28,14 @@ public class NotUsername extends BasePasswordPolicy {
     private static final String NAME = "notUsername";
     private static final String INVALID_PASSWORD_NOT_USERNAME = "invalidPasswordNotUsernameMessage";
 
-    public NotUsername(String arg) {
-    }
-
     @Override
-    public Error validate(KeycloakSession session, String username, String password) {
+    public Error validate(KeycloakSession session, String username, String password, PasswordPolicy policy) {
         return username.equals(password) ? new Error(INVALID_PASSWORD_NOT_USERNAME) : null;
     }
 
     @Override
-    public Error validate(KeycloakSession session, UserModel user, String password) {
-        return validate(session, user.getUsername(), password);
+    public Error validate(KeycloakSession session, UserModel user, String password, PasswordPolicy policy) {
+        return validate(session, user.getUsername(), password, policy);
     }
 
     @Override

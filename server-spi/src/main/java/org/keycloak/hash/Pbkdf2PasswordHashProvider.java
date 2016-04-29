@@ -23,6 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.policy.PasswordPolicy;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -41,7 +42,8 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProviderFactory, 
     private static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA1";
     private static final int DERIVED_KEY_SIZE = 512;
 
-    public UserCredentialValueModel encode(String rawPassword, int iterations) {
+    public UserCredentialValueModel encode(String rawPassword, PasswordPolicy policy) {
+        int iterations = Math.max(1, policy.getHashIterations());
         byte[] salt = getSalt();
         String encodedPassword = encode(rawPassword, iterations, salt);
 

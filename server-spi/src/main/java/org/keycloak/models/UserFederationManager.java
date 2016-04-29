@@ -19,6 +19,8 @@ package org.keycloak.models;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.policy.Error;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.services.managers.UserManager;
 
 import java.util.ArrayList;
@@ -445,7 +447,7 @@ public class UserFederationManager implements UserProvider {
     public void updateCredential(RealmModel realm, UserModel user, UserCredentialModel credential) {
         if (credential.getType().equals(UserCredentialModel.PASSWORD)) {
             if (realm.getPasswordPolicy() != null) {
-                PasswordPolicy.Error error = realm.getPasswordPolicy().validate(session, user, credential.getValue());
+                Error error = realm.getPasswordPolicy().validate(session, user, credential.getValue());
                 if (error != null) throw new ModelException(error.getMessage(), error.getParameters());
             }
         }

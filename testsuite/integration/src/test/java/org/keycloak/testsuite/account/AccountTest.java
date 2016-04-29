@@ -28,11 +28,11 @@ import org.keycloak.events.EventType;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.AccountService;
@@ -256,7 +256,7 @@ public class AccountTest {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setPasswordPolicy(new PasswordPolicy("length"));
+                appRealm.setPasswordPolicy(new PasswordPolicy("length", manager.getSession()));
             }
         });
 
@@ -280,18 +280,18 @@ public class AccountTest {
             keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
+                    appRealm.setPasswordPolicy(new PasswordPolicy(null, null));
                 }
             });
         }
     }
-    
+
     @Test
     public void changePasswordWithPasswordHistoryPolicy() {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setPasswordPolicy(new PasswordPolicy("passwordHistory(2)"));
+                appRealm.setPasswordPolicy(new PasswordPolicy("passwordHistory(2)", manager.getSession()));
             }
         });
 
@@ -308,9 +308,9 @@ public class AccountTest {
             changePasswordPage.changePassword("password", "password1", "password1");
 
             Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
-            
+
             events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
-            
+
             changePasswordPage.changePassword("password1", "password", "password");
 
             Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
@@ -318,18 +318,18 @@ public class AccountTest {
             changePasswordPage.changePassword("password1", "password1", "password1");
 
             Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
-            
+
             changePasswordPage.changePassword("password1", "password2", "password2");
 
             Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
 
             events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
-            
+
         } finally {
             keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
+                    appRealm.setPasswordPolicy(new PasswordPolicy(null, null));
                 }
             });
         }

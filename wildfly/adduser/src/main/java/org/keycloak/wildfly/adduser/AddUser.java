@@ -31,6 +31,7 @@ import org.jboss.aesh.console.command.registry.CommandRegistry;
 import org.keycloak.common.util.Base64;
 import org.keycloak.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -153,7 +154,8 @@ public class AddUser {
         user.setUsername(userName);
         user.setCredentials(new LinkedList<CredentialRepresentation>());
 
-        UserCredentialValueModel credentialValueModel = new Pbkdf2PasswordHashProvider().encode(password, iterations > 0 ? iterations : DEFAULT_HASH_ITERATIONS);
+        PasswordPolicy policy = new PasswordPolicy(iterations > 0 ? iterations : DEFAULT_HASH_ITERATIONS);
+        UserCredentialValueModel credentialValueModel = new Pbkdf2PasswordHashProvider().encode(password, policy);
 
         CredentialRepresentation credentials = new CredentialRepresentation();
         credentials.setType(credentialValueModel.getType());

@@ -25,7 +25,6 @@ import org.keycloak.Config;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -34,6 +33,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
@@ -164,11 +164,11 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertTrue(userProvider.validCredentials(session, realmModel, user, UserCredentialModel.password("geheim")));
         List<UserCredentialValueModel> creds = user.getCredentialsDirectly();
         Assert.assertEquals(creds.get(0).getHashIterations(), 1);
-        realmModel.setPasswordPolicy(new PasswordPolicy("hashIterations(200)"));
+        realmModel.setPasswordPolicy(new PasswordPolicy("hashIterations(200)", session));
         Assert.assertTrue(userProvider.validCredentials(session, realmModel, user, UserCredentialModel.password("geheim")));
         creds = user.getCredentialsDirectly();
         Assert.assertEquals(creds.get(0).getHashIterations(), 200);
-        realmModel.setPasswordPolicy(new PasswordPolicy("hashIterations(1)"));
+        realmModel.setPasswordPolicy(new PasswordPolicy("hashIterations(1)", session));
     }
 
     @Test

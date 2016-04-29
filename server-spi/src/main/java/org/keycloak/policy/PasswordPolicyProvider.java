@@ -26,7 +26,7 @@ import org.keycloak.provider.Provider;
  */
 public interface PasswordPolicyProvider extends Provider {
 
-    Error validate(KeycloakSession session, UserModel user, String password);
-    Error validate(KeycloakSession session, String user, String password);
+    Error validate(KeycloakSession session, UserModel user, String password, PasswordPolicy policy);
+    Error validate(KeycloakSession session, String user, String password, PasswordPolicy policy);
     String description();
 }

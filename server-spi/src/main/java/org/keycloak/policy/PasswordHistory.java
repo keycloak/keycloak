@@ -20,7 +20,6 @@ package org.keycloak.policy;
 import org.keycloak.hash.PasswordHashManager;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
@@ -34,27 +33,21 @@ import java.util.List;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class PasswordHistory extends BasePasswordPolicy {
-    private static final String NAME = "passwordHistory";
+    public static final String NAME = "passwordHistory";
     private static final String INVALID_PASSWORD_HISTORY = "invalidPasswordHistoryMessage";
-    private final PasswordPolicy passwordPolicy;
-    private int passwordHistoryPolicyValue;
-
-    public PasswordHistory(String arg, PasswordPolicy passwordPolicy) {
-        this.passwordPolicy = passwordPolicy;
-        passwordHistoryPolicyValue = intArg(NAME, 3, arg);
-    }
 
     @Override
-    public Error validate(KeycloakSession session, String user, String password) {
+    public Error validate(KeycloakSession session, String user, String password, PasswordPolicy policy) {
         return null;
     }
 
     @Override
-    public Error validate(KeycloakSession session, UserModel user, String password) {
+    public Error validate(KeycloakSession session, UserModel user, String password, PasswordPolicy policy) {
+        int passwordHistoryPolicyValue = policy.intArg(NAME, 3);
         if (passwordHistoryPolicyValue != -1) {
             UserCredentialValueModel cred = getCredentialValueModel(user, UserCredentialModel.PASSWORD);
             if (cred != null) {
-                if(PasswordHashManager.verify(session, passwordPolicy, password, cred)) {
+                if(PasswordHashManager.verify(session, policy, password, cred)) {
                     return new Error(INVALID_PASSWORD_HISTORY, passwordHistoryPolicyValue);
                 }
             }
@@ -62,7 +55,7 @@ public class PasswordHistory extends BasePasswordPolicy {
             List<UserCredentialValueModel> passwordExpiredCredentials = getCredentialValueModels(user, passwordHistoryPolicyValue - 1,
                     UserCredentialModel.PASSWORD_HISTORY);
             for (UserCredentialValueModel credential : passwordExpiredCredentials) {
-                if (PasswordHashManager.verify(session, passwordPolicy, password, credential)) {
+                if (PasswordHashManager.verify(session, policy, password, credential)) {
                     return new Error(INVALID_PASSWORD_HISTORY, passwordHistoryPolicyValue);
                 }
             }

@@ -23,12 +23,7 @@ import org.keycloak.models.KeycloakSession;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ForceExpiredPasswordChange extends BasePasswordPolicy {
-    private static final String NAME = "forceExpiredPasswordChange";
-    private int daysToExpirePassword;
-
-    public ForceExpiredPasswordChange(String arg) {
-        daysToExpirePassword = intArg(NAME, 365, arg);
-    }
+    public static final String NAME = "forceExpiredPasswordChange";
 
     @Override
     public String description() {

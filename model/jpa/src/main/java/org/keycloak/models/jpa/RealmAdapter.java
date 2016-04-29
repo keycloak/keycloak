@@ -32,7 +32,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -42,6 +41,7 @@ import org.keycloak.models.UserFederationProviderCreationEventImpl;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.policy.PasswordPolicy;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -1034,7 +1034,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public PasswordPolicy getPasswordPolicy() {
         if (passwordPolicy == null) {
-            passwordPolicy = new PasswordPolicy(realm.getPasswordPolicy());
+            passwordPolicy = new PasswordPolicy(realm.getPasswordPolicy(), session);
         }
         return passwordPolicy;
     }

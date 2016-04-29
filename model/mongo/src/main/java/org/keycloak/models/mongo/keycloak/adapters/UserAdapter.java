@@ -30,7 +30,6 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -42,6 +41,7 @@ import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.common.util.Time;
 
 import java.util.ArrayList;
@@ -60,7 +60,7 @@ import java.util.Set;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implements UserModel {
-    
+
     private final MongoUserEntity user;
     private final RealmModel realm;
     private final KeycloakSession session;
@@ -312,7 +312,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
             if(policy != null) {
                 expiredPasswordsPolicyValue = policy.getExpiredPasswords();
             }
-            
+
             if (expiredPasswordsPolicyValue != -1) {
                 user.getCredentials().remove(credentialEntity);
                 credentialEntity.setType(UserCredentialModel.PASSWORD_HISTORY);
@@ -335,7 +335,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
             }
         }
     }
-    
+
     private CredentialEntity setCredentials(MongoUserEntity user, UserCredentialModel cred) {
         CredentialEntity credentialEntity = new CredentialEntity();
         credentialEntity.setType(cred.getType());
@@ -369,7 +369,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
                 credentialEntities.add(entity);
             }
         }
-        
+
         // Avoiding direct use of credSecond.getCreatedDate() - credFirst.getCreatedDate() to prevent Integer Overflow
         // Orders from most recent to least recent
         Collections.sort(credentialEntities, new Comparator<CredentialEntity>() {

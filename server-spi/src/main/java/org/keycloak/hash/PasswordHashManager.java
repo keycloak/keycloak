@@ -19,6 +19,7 @@ package org.keycloak.hash;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.*;
+import org.keycloak.policy.PasswordPolicy;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -33,16 +34,12 @@ public class PasswordHashManager {
 
     public static UserCredentialValueModel encode(KeycloakSession session, PasswordPolicy passwordPolicy, String rawPassword) {
         String algorithm = passwordPolicy.getHashAlgorithm();
-        int iterations = passwordPolicy.getHashIterations();
-        if (iterations < 1) {
-            iterations = 1;
-        }
         PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class, passwordPolicy.getHashAlgorithm());
         if (provider == null) {
             log.warnv("Could not find hash provider {0} from password policy, using default provider {1}", algorithm, Constants.DEFAULT_HASH_ALGORITHM);
             provider = session.getProvider(PasswordHashProvider.class, Constants.DEFAULT_HASH_ALGORITHM);
         }
-        return provider.encode(rawPassword, iterations);
+        return provider.encode(rawPassword, passwordPolicy);
     }
 
     public static boolean verify(KeycloakSession session, RealmModel realm, String password, UserCredentialValueModel credential) {
