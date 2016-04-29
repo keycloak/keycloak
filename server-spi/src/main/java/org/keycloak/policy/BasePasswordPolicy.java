@@ -53,5 +53,4 @@ public abstract class BasePasswordPolicy implements PasswordPolicyProvider, Pass
     public String defaultValue() {
         return null;
     }
-
 }

@@ -28,7 +28,6 @@ public class UpperCase extends BasePasswordPolicy {
     private static final String NAME = "upperCase";
     private static final String DEFAULT = "1";
     private static final String INVALID_PASSWORD_MIN_UPPER_CASE_CHARS_MESSAGE = "invalidPasswordMinUpperCaseCharsMessage";
-    private int min;
 
     @Override
     public Error validate(KeycloakSession session, String username, String password, PasswordPolicy policy) {
