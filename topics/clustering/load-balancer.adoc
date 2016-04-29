@@ -3,7 +3,7 @@
 This section only covers configuring the built in load balancer that is discussed in the
 <<fake/../../operating-mode/domain.adoc#_clustered-domain-example, Clustered Domain Example>>.
 The link:{{book.appserver.loadbalancer.link}}[the load balancer] chapter of the {{book.appserver.loadbalancer.name}}
-has some information on using some other software based load balancers that may help you.
+has information on using some other software based load balancers that may help you.
 
 The <<fake/../../operating-mode/domain.adoc#_clustered-domain-example, Clustered Domain Example>> is only designed to run
 on one machine.  To bring up a slave on another host, you'll need to
@@ -62,7 +62,7 @@ binding needs to point to the host and port of the new host.
 === Master Bind Addresses
 
 Next thing you'll have to do is to change the `public` and `management` bind addresses for the master host.  Either
-edit the _domain.xml_ file as discussed in the <<fake/../../netork/bind-address.adoc#_bind-address, Bind Addresses>> chapter
+edit the _domain.xml_ file as discussed in the <<fake/../../network/bind-address.adoc#_bind-address, Bind Addresses>> chapter
 or specify these bind addresses on the command line as follows:
 
 [source]
