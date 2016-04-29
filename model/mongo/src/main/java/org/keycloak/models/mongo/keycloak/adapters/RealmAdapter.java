@@ -34,7 +34,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -58,6 +57,7 @@ import org.keycloak.models.mongo.keycloak.entities.MongoGroupEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.policy.PasswordPolicy;
 
 import java.security.Key;
 import java.security.PrivateKey;
@@ -305,7 +305,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public PasswordPolicy getPasswordPolicy() {
         if (passwordPolicy == null) {
-            passwordPolicy = new PasswordPolicy(realm.getPasswordPolicy());
+            passwordPolicy = new PasswordPolicy(realm.getPasswordPolicy(), session);
         }
         return passwordPolicy;
     }
@@ -1220,7 +1220,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
         updateRealm();
     }
-    
+
     @Override
     public boolean isAdminEventsEnabled() {
         return realm.isAdminEventsEnabled();
@@ -1230,7 +1230,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public void setAdminEventsEnabled(boolean enabled) {
         realm.setAdminEventsEnabled(enabled);
         updateRealm();
-        
+
     }
 
     @Override
@@ -1243,7 +1243,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         realm.setAdminEventsDetailsEnabled(enabled);
         updateRealm();
     }
-    
+
     @Override
     public ClientModel getMasterAdminClient() {
         MongoClientEntity appData = getMongoStore().loadEntity(MongoClientEntity.class, realm.getMasterAdminClient(), invocationContext);

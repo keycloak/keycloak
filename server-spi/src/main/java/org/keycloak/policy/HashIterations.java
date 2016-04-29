@@ -24,12 +24,7 @@ import org.keycloak.models.KeycloakSession;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class HashIterations extends BasePasswordPolicy {
-    private static final String NAME = "hashIterations";
-    private int iterations;
-
-    public HashIterations(String arg) {
-        iterations = intArg(NAME, 1, arg);
-    }
+    public static final String NAME = "hashIterations";
 
     @Override
     public String description() {

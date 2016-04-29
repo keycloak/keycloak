@@ -19,9 +19,10 @@ package org.keycloak.services.validation;
 
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.policy.Error;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
 
@@ -39,7 +40,7 @@ public class Validation {
     public static final String FIELD_FIRST_NAME = "firstName";
     public static final String FIELD_PASSWORD = "password";
     public static final String FIELD_USERNAME = "username";
-    
+
     // Actually allow same emails like angular. See ValidationTest.testEmailValidation()
     private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*");
 
@@ -73,14 +74,14 @@ public class Validation {
         }
 
         if (formData.getFirst(FIELD_PASSWORD) != null) {
-            PasswordPolicy.Error err = policy.validate(session, realm.isRegistrationEmailAsUsername()?formData.getFirst(FIELD_EMAIL):formData.getFirst(FIELD_USERNAME), formData.getFirst(FIELD_PASSWORD));
+            Error err = policy.validate(session, realm.isRegistrationEmailAsUsername()?formData.getFirst(FIELD_EMAIL):formData.getFirst(FIELD_USERNAME), formData.getFirst(FIELD_PASSWORD));
             if (err != null)
                 errors.add(new FormMessage(FIELD_PASSWORD, err.getMessage(), err.getParameters()));
         }
-        
+
         return errors;
     }
-    
+
     private static void addError(List<FormMessage> errors, String field, String message){
         errors.add(new FormMessage(field, message));
     }
@@ -91,7 +92,7 @@ public class Validation {
 
     public static List<FormMessage> validateUpdateProfileForm(boolean editUsernameAllowed, MultivaluedMap<String, String> formData) {
         List<FormMessage> errors = new ArrayList<>();
-        
+
         if (editUsernameAllowed && isBlank(formData.getFirst(FIELD_USERNAME))) {
             addError(errors, FIELD_USERNAME, Messages.MISSING_USERNAME);
         }
@@ -112,31 +113,31 @@ public class Validation {
 
         return errors;
     }
-    
+
     /**
      * Validate if user object contains all mandatory fields.
-     * 
+     *
      * @param realm user is for
      * @param user to validate
      * @return true if user object contains all mandatory values, false if some mandatory value is missing
      */
     public static boolean validateUserMandatoryFields(RealmModel realm, UpdateProfileContext user){
-        return!(isBlank(user.getFirstName()) || isBlank(user.getLastName()) || isBlank(user.getEmail()));        
+        return!(isBlank(user.getFirstName()) || isBlank(user.getLastName()) || isBlank(user.getEmail()));
     }
 
     /**
      * Check if string is empty (null or lenght is 0)
-     * 
+     *
      * @param s to check
      * @return true if string is empty
      */
     public static boolean isEmpty(String s) {
         return s == null || s.length() == 0;
     }
-    
+
     /**
      * Check if string is blank (null or lenght is 0 or contains only white characters)
-     * 
+     *
      * @param s to check
      * @return true if string is blank
      */

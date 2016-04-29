@@ -24,12 +24,7 @@ import org.keycloak.models.KeycloakSession;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class HashAlgorithm extends BasePasswordPolicy {
-    private static final String NAME = "hashAlgorithm";
-    private String algorithm;
-
-    public HashAlgorithm(String arg) {
-        algorithm = stringArg(NAME, Constants.DEFAULT_HASH_ALGORITHM, arg);
-    }
+    public static final String NAME = "hashAlgorithm";
 
     @Override
     public String description() {

@@ -27,14 +27,10 @@ import org.keycloak.models.UserModel;
 public class Digits extends BasePasswordPolicy {
     private static final String NAME = "digits";
     private static final String INVALID_PASSWORD_MIN_DIGITS_MESSAGE = "invalidPasswordMinDigitsMessage";
-    private int min;
-
-    public Digits(String arg) {
-        min = intArg(NAME, 1, arg);
-    }
 
     @Override
-    public Error validate(KeycloakSession session, String username, String password) {
+    public Error validate(KeycloakSession session, String username, String password, PasswordPolicy policy) {
+        int min = policy.intArg(NAME, 1);
         int count = 0;
         for (char c : password.toCharArray()) {
             if (Character.isDigit(c)) {
@@ -45,8 +41,8 @@ public class Digits extends BasePasswordPolicy {
     }
 
     @Override
-    public Error validate(KeycloakSession session, UserModel user, String password) {
-        return validate(session, user.getUsername(), password);
+    public Error validate(KeycloakSession session, UserModel user, String password, PasswordPolicy policy) {
+        return validate(session, user.getUsername(), password, policy);
     }
 
     @Override

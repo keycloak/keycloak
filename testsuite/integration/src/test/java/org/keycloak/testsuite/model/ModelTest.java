@@ -20,10 +20,10 @@ package org.keycloak.testsuite.model;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.Arrays;
@@ -42,7 +42,7 @@ public class ModelTest extends AbstractModelTest {
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setVerifyEmail(true);
         realm.setAccessTokenLifespan(1000);
-        realm.setPasswordPolicy(new PasswordPolicy("length"));
+        realm.setPasswordPolicy(new PasswordPolicy("length", session));
         realm.setAccessCodeLifespan(1001);
         realm.setAccessCodeLifespanUserAction(1002);
         KeycloakModelUtils.generateRealmKeys(realm);

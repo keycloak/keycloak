@@ -18,7 +18,7 @@
 package org.keycloak.policy;
 
 /**
- * @author <a href="mailto:roelof.naude@epiuse.com">Roelof Naude</a>
+ * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public final class Error {
     private String message;

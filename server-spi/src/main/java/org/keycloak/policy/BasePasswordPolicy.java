@@ -28,12 +28,12 @@ import org.keycloak.models.UserModel;
 public abstract class BasePasswordPolicy implements PasswordPolicyProvider, PasswordPolicyProviderFactory {
 
     @Override
-    public Error validate(KeycloakSession session, String user, String password) {
+    public Error validate(KeycloakSession session, String user, String password, PasswordPolicy policy) {
         return null;
     }
 
     @Override
-    public Error validate(KeycloakSession session, UserModel user, String password) {
+    public Error validate(KeycloakSession session, UserModel user, String password, PasswordPolicy policy) {
         return null;
     }
 
@@ -47,22 +47,6 @@ public abstract class BasePasswordPolicy implements PasswordPolicyProvider, Pass
 
     @Override
     public void close() {
-    }
-
-    protected static int intArg(String policy, int defaultValue, String arg) {
-        if (arg == null) {
-            return defaultValue;
-        } else {
-            return Integer.parseInt(arg);
-        }
-    }
-
-    protected static String stringArg(String policy, String defaultValue, String arg) {
-        if (arg == null) {
-            return defaultValue;
-        } else {
-            return arg;
-        }
     }
 
 }
