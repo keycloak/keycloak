@@ -34,6 +34,7 @@ import java.util.List;
  */
 public class PasswordHistory extends BasePasswordPolicy {
     public static final String NAME = "passwordHistory";
+    private static final String DEFAULT = "3";
     private static final String INVALID_PASSWORD_HISTORY = "invalidPasswordHistoryMessage";
 
     @Override
@@ -113,5 +114,10 @@ public class PasswordHistory extends BasePasswordPolicy {
     @Override
     public String getId() {
         return NAME;
+    }
+
+    @Override
+    public String defaultValue() {
+        return DEFAULT;
     }
 }

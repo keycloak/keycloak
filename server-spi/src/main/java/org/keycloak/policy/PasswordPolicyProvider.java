@@ -29,4 +29,5 @@ public interface PasswordPolicyProvider extends Provider {
     Error validate(KeycloakSession session, UserModel user, String password, PasswordPolicy policy);
     Error validate(KeycloakSession session, String user, String password, PasswordPolicy policy);
     String description();
+    String defaultValue();
 }

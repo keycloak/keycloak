@@ -26,6 +26,7 @@ import org.keycloak.models.UserModel;
  */
 public class Digits extends BasePasswordPolicy {
     private static final String NAME = "digits";
+    private static final String DEFAULT = "1";
     private static final String INVALID_PASSWORD_MIN_DIGITS_MESSAGE = "invalidPasswordMinDigitsMessage";
 
     @Override
@@ -58,5 +59,10 @@ public class Digits extends BasePasswordPolicy {
     @Override
     public String getId() {
         return NAME;
+    }
+
+    @Override
+    public String defaultValue() {
+        return DEFAULT;
     }
 }

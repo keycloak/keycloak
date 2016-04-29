@@ -63,7 +63,7 @@ public class PasswordPolicy implements Serializable {
                 }
 
                 policies.add(provider);
-                policyArgs.put(name, arg);
+                policyArgs.put(name, arg == null ? provider.defaultValue() : arg);
             }
         }
     }

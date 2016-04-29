@@ -26,6 +26,7 @@ import org.keycloak.models.UserModel;
  */
 public class LowerCase extends BasePasswordPolicy {
     private static final String NAME = "lowerCase";
+    private static final String DEFAULT = "1";
     private static final String INVALID_PASSWORD_MIN_LOWER_CASE_CHARS_MESSAGE = "invalidPasswordMinLowerCaseCharsMessage";
 
     @Override
@@ -58,5 +59,10 @@ public class LowerCase extends BasePasswordPolicy {
     @Override
     public String getId() {
         return NAME;
+    }
+
+    @Override
+    public String defaultValue() {
+        return DEFAULT;
     }
 }

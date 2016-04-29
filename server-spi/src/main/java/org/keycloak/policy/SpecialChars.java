@@ -26,6 +26,7 @@ import org.keycloak.models.UserModel;
  */
 public class SpecialChars extends BasePasswordPolicy {
     private static final String NAME = "specialChars";
+    private static final String DEFAULT = "1";
     private static final String INVALID_PASSWORD_MIN_SPECIAL_CHARS_MESSAGE = "invalidPasswordMinSpecialCharsMessage";
     private int min;
 
@@ -59,5 +60,10 @@ public class SpecialChars extends BasePasswordPolicy {
     @Override
     public String getId() {
         return NAME;
+    }
+
+    @Override
+    public String defaultValue() {
+        return DEFAULT;
     }
 }

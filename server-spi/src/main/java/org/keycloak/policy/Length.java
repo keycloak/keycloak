@@ -26,6 +26,7 @@ import org.keycloak.models.UserModel;
  */
 public class Length extends BasePasswordPolicy {
     private static final String NAME = "length";
+    private static final String DEFAULT = "8";
     private static final String INVALID_PASSWORD_MIN_LENGTH_MESSAGE = "invalidPasswordMinLengthMessage";
 
     @Override
@@ -52,5 +53,10 @@ public class Length extends BasePasswordPolicy {
     @Override
     public String getId() {
         return NAME;
+    }
+
+    @Override
+    public String defaultValue() {
+        return DEFAULT;
     }
 }

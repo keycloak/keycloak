@@ -40,4 +40,9 @@ public class HashAlgorithm extends BasePasswordPolicy {
     public String getId() {
         return NAME;
     }
+
+    @Override
+    public String defaultValue() {
+        return Constants.DEFAULT_HASH_ALGORITHM;
+    }
 }

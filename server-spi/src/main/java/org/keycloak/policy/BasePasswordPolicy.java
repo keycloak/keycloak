@@ -49,4 +49,9 @@ public abstract class BasePasswordPolicy implements PasswordPolicyProvider, Pass
     public void close() {
     }
 
+    @Override
+    public String defaultValue() {
+        return null;
+    }
+
 }

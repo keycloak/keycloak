@@ -25,6 +25,7 @@ import org.keycloak.models.KeycloakSession;
  */
 public class HashIterations extends BasePasswordPolicy {
     public static final String NAME = "hashIterations";
+    private static final String DEFAULT = "1";
 
     @Override
     public String description() {
@@ -39,5 +40,10 @@ public class HashIterations extends BasePasswordPolicy {
     @Override
     public String getId() {
         return NAME;
+    }
+
+    @Override
+    public String defaultValue() {
+        return DEFAULT;
     }
 }
