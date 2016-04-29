@@ -7,7 +7,7 @@ The Keycloak Server has three downloadable distributions:
 * 'keycloak-demo-{{book.project.version}}.[zip|tar.gz]'
 
 The 'keycloak-{{book.project.version}}.[zip|tar.gz]' file is the server only distribution.  It contains nothing other than the scripts and binaries
-to run the Keycloak Server.  To unpack this file just run your operating system's +unzip+ or +gunzip+ and +tar+ utilities.
+to run the Keycloak Server.  To unpack this file just run your operating system's `unzip` or `gunzip` and `tar` utilities.
 
 The 'keycloak-overlay-{{book.project.version}}.[zip|tar.gz]' file is a Wildfly Service Pack that allows you to install Keycloak Server on top of an existing
 Wildfly or JBoss EAP distribution.  We suggest that you do not use this distribution unless you want to install on top of the latest JBoss EAP distribution.  We do not support
@@ -18,7 +18,7 @@ The 'keycloak-demo-{{book.project.version}}.[zip|tar.gz]' contains the server bi
 OIDC and SAML client application adapters and can deploy any of the distribution examples out of the box with no configuration.  This distribution is only
 recommended for those that want to test drive Keycloak.  We do not support users that run the demo distribution in production.
 
-To unpack of these files run the +unzip+ or +gunzip+ and +tar+ utilities.
+To unpack of these files run the `unzip` or `gunzip` and `tar` utilities.
 
 
 

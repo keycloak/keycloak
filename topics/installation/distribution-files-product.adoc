@@ -7,7 +7,7 @@ The {{book.project.name}} Server is contained in one distribution file:
 The 'RH-SSO-{{book.project.version}}.[zip|tar.gz]' file is the server only distribution.  It contains nothing other than the scripts and binaries
 to run the {{book.project.name}} Server.
 
-To unpack of these files run the +unzip+ or +gunzip+ and +tar+ utilities.
+To unpack of these files run the `unzip` or `gunzip` and `tar` utilities.
 
 
 

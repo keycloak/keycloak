@@ -2,12 +2,12 @@
 
 === Bind Addresses
 
-By default {{book.project.name}} binds to the localhost loopback address 127.0.0.1.  That's not a very useful default if
+By default {{book.project.name}} binds to the localhost loopback address `127.0.0.1`.  That's not a very useful default if
 you want the authentication server available on your network.  Generally, what we recommend is that you deploy a reverse proxy
 or load balancer on a public network and route traffic to individual {{book.project.name}} server instances on a private network.
-In either case though, you still need to set up your network interfaces to bind to something other than +localhost+.
+In either case though, you still need to set up your network interfaces to bind to something other than `localhost`.
 
-Setting the bind address is actually quite easy and can be done on the command line with either the _standalone.sh_ or
+Setting the bind address is quite easy and can be done on the command line with either the _standalone.sh_ or
 _domain.sh_ boot scripts discussed in the <<fake/../../operating-mode.adoc#_operating-mode, Choosing an Operating Mode>> chapter.
 
 [source]
@@ -15,11 +15,11 @@ _domain.sh_ boot scripts discussed in the <<fake/../../operating-mode.adoc#_oper
 $ standalone.sh -b 192.168.0.5
 ----
 
-The +-b+ switch tells the boot script the IP bind address for any public interfaces.
+The `-b` switch sets the IP bind address for any public interfaces.
 
-Alternatively, you can edit the profile configuration of your deployment if you do not want to specify this IP address
-every time you boot the server.  Open up the profile configuration file (_standalone.xml or _domain.xml_ depending on your
-<<fake/../../operating-mode.adoc#_operating-mode, operating mode>> and look for the interfaces XML block.
+Alternatively, if you don't want to set the bind address at the command line, you can edit the profile configuration of your deployment.
+Open up the profile configuration file (_standalone.xml or _domain.xml_ depending on your
+<<fake/../../operating-mode.adoc#_operating-mode, operating mode>> and look for the `interfaces` XML block.
 
 [source,xml]
 ----
@@ -33,21 +33,21 @@ every time you boot the server.  Open up the profile configuration file (_standa
     </interfaces>
 ----
 
-The +public+ interface corresponds to subsystems creating sockets that are available publically.  An example of one
-of these subsystems is the web layer which serves up the authentication endpoints of {{book.project.name}}.  The +management+
+The `public` interface corresponds to subsystems creating sockets that are available publicly.  An example of one
+of these subsystems is the web layer which serves up the authentication endpoints of {{book.project.name}}.  The `management`
 interface corresponds to sockets opened up by the management layer of the {{book.appserver.name}}.  Specifically the sockets
-which allow you to use the +jboss-cli.sh+ command line interface and the {{book.appserver.name}} web console.
+which allow you to use the `jboss-cli.sh` command line interface and the {{book.appserver.name}} web console.
 
-In looking at the +public+ interface you see that it has a special string +${jboss.bind.address:127.0.0.1}+.  This string
-denotes a value +127.0.0.1+ that can be overriden on the command line by setting a Java system property, i.e.:
+In looking at the `public` interface you see that it has a special string `${jboss.bind.address:127.0.0.1}`.  This string
+denotes a value `127.0.0.1` that can be overriden on the command line by setting a Java system property, i.e.:
 
 [source]
 ----
 $ domain.sh -Djboss.bind.address=192.168.0.5
 ----
 
-+-b+ is actually just a convenience function for this.  So, you can either change the bind address value directly in the profile config, or change it on the command line when
+The `-b` is just a shorthand notation for this command.  So, you can either change the bind address value directly in the profile config, or change it on the command line when
 you boot up.
 
-NOTE:  There's a lot more nifty options when setting up +interface+ definitions.  See the link:{{book.appserver.network.link}}[the network interface]
+NOTE:  There's a lot more nifty options when setting up `interface` definitions.  See the link:{{book.appserver.network.link}}[the network interface]
        chapter of the {{book.appserver.network.name}}.

@@ -21,5 +21,5 @@ Here's what the config looks like initially.
     },
 ----
 
-To disable the cache set the +enabled+ field to false for the cache you want to disable.  You must reboot your
+To disable the cache set the `enabled` field to false for the cache you want to disable.  You must reboot your
 server for this change to take effect.

@@ -32,8 +32,8 @@ After you have done this, open up the _module.xml_ file and create the following
 </module>
 ----
 
-The module name should match the directory structure of your module.  So, _org/postgresql_ maps to +org.postgresql+.  The
-+resource-root path+ attribute should specify the JAR filename of the driver.  The rest are just the normal dependencies that
+The module name should match the directory structure of your module.  So, _org/postgresql_ maps to `org.postgresql`.  The
+`resource-root path` attribute should specify the JAR filename of the driver.  The rest are just the normal dependencies that
 any JDBC driver JAR would have.
 
 === Declare and Load JDBC Driver
@@ -43,9 +43,9 @@ available when the server boots up.  Where you perform this action depends on yo
 deploying in standard mode, edit _.../standalone/configuration/standalone.xml_.  If you're deploying in standard clustering
 mode, edit _.../standalone/configuration/standalone-ha.xml_.  If you're deploying in domain mode, edit
 _.../domain/configuration/domain.xml_.  In domain mode, you'll need to make sure you edit the profile you are using: either
-+auth-server-standalone+ or +auth-server-clustered+
+`auth-server-standalone` or `auth-server-clustered`
 
-Within the profile, search for the +drivers+ XML block within the +datasources+ subsystem.  You should see
+Within the profile, search for the `drivers` XML block within the `datasources` subsystem.  You should see
 a pre-defined driver declared for the H2 JDBC driver.  This is where you'll declare the JDBC driver for your external
 database.
 
@@ -64,8 +64,8 @@ database.
   </subsystem>
 ----
 
-Within the +drivers+ XML block you'll need to declare an additional JDBC driver.  It needs to have a +name+ which
-you can choose to be anything you want.  You specify the +module+ attribute which points to the +module+ package you
+Within the `drivers` XML block you'll need to declare an additional JDBC driver.  It needs to have a `name` which
+you can choose to be anything you want.  You specify the `module` attribute which points to the `module` package you
 created earlier for the driver JAR.  Finally
 you have to specify the driver's Java class.  Here's an example of installing PostgreSQL driver that lives in the module
 example defined earlier in this chapter.

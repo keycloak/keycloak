@@ -10,7 +10,7 @@ This default behavior is defined by the SSL/HTTPS mode of each {{book.project.na
 link:{{book.adminguide.link}}[{{book.adminguide.name}}], but let's give some context and a brief overview of these modes.
 
 external::
-  {{book.project.name}} can run out of the box without SSL so long as you stick to private IP addresses like localhost, 127.0.0.1, 10.0.x.x, 192.168.x.x, and 172..16.x.x.
+  {{book.project.name}} can run out of the box without SSL so long as you stick to private IP addresses like `localhost`, `127.0.0.1`, `10.0.x.x`, `192.168.x.x`, and `172..16.x.x`.
   If you try to access {{book.project.name}} from a non-private IP adress you will get an error.
 
 none::
@@ -19,23 +19,24 @@ none::
 all::
   {{book.project.name}} requires SSL for all IP addresses.
 
+The SSL mode for each realm can be configured in the {{book.project.name}} admin console.
+
 ==== Enable HTTPS/SSL with a Reverse Proxy
 
-It is believed that most deployments of {{book.project.name}} will be clustered and will use a reverse proxy or load balancer
-in front of {{book.project.name}} server instances.
+It is general best practice that {{book.project.name}} will be run in a cluster with a reverse proxy or hardware load balancer
+setting in front of {{book.project.name}} server instances.
 
-To enable SSL/HTTPS in this deployment scenario, follow the documentation for your reverse proxy first, before doing any {{book.project.name}} setup.
-It is important that you make sure the proxy sets the `X-Forwarded-For` and `X-Forwarded-Proto` headers on the requests made to {{book.project.name}}.
-Next you need to enable `proxy-address-forwarding` on the {{book.project.name}} http connector in {{book.project.name}} configuration
+To enable SSL/HTTPS in this deployment scenario, it is important that you make sure your reverse proxy sets the `X-Forwarded-For` and `X-Forwarded-Proto` headers on the requests made to {{book.project.name}}.
+To make sure that {{book.project.name}} honors these headers, you need to enable the `proxy-address-forwarding` setting of the {{book.project.name}} http connector in {{book.project.name}} configuration.
 Assuming that your reverse proxy doesn't use port 8443 for SSL you also need to configure what port http traffic is redirected to.
 
 . Open _standalone.xml_, _standalone-ha.xml_, or _domain.xml_ file (depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>).
 
-. First add `proxy-address-forwarding` and `redirect-socket` to the `http-listener` element:
+. Add `proxy-address-forwarding` and `redirect-socket` to the `http-listener` element:
 
 [source]
 ----
-<subsystem xmlns="urn:jboss:domain:undertow:1.1">
+<subsystem xmlns="urn:jboss:domain:undertow:3.0">
     ...
     <http-listener name="default" socket-binding="http"
         proxy-address-forwarding="true" redirect-socket="proxy-https"/>
@@ -56,12 +57,12 @@ Then add a new `socket-binding` element to the `socket-binding-group` element:
 </socket-binding-group>
 ----
 
-Also remember that when running in <<fake/../../operating-mode/domain.adoc#_domain-mode,domain mode>> what +socket-binding-group+
+Also remember that when running in <<fake/../../operating-mode/domain.adoc#_domain-mode,domain mode>> what `socket-binding-group`
 you modify depends on how you have your server groups configured.
 
 ==== Enabling SSL/HTTPS for the {{book.project.name}} Server
 
-If you are not using a reverse proxy or load blancer to handle HTTPS traffic for you, you'll need to enable HTTPS
+If you are not using a reverse proxy or load balancer to handle HTTPS traffic for you, you'll need to enable HTTPS
 for the {{book.project.name}} server.  This involves
 
 . Obtaining or generating a keystore that contains the private key and certificate for SSL/HTTP traffic
@@ -73,8 +74,8 @@ In order to allow HTTPS connections, you need to obtain a self signed or third-p
 
 ====== Self Signed Certificate
 
-In development, you will probably not have a third party signed certificate available to test a {{book.project.name}} deployment so you'll need to generate a self-signed on.
-Generate one is very easy to do with the `keytool` utility that comes with the Java jdk.
+In development, you will probably not have a third party signed certificate available to test a {{book.project.name}} deployment so you'll need to generate a self-signed one
+using the `keytool` utility that comes with the Java JDK.
 
 
 [source]
@@ -125,7 +126,7 @@ MIIC2jCCAcICAQAwZTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAk1BMREwDwYDVQQHEwhXZXN0Zm9y
 ZDEQMA4GA1UEChMHUmVkIEhhdDEQMA4GA1UECxMHUmVkIEhhdDESMBAGA1UEAxMJbG9jYWxob3N0
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr7kck2TaavlEOGbcpi9c0rncY4HhdzmY
 Ax2nZfq1eZEaIPqI5aTxwQZzzLDK9qbeAd8Ji79HzSqnRDxNYaZu7mAYhFKHgixsolE3o5Yfzbw1
-29Rvy+eUVe+WZxv5oo9wolVVpdSINIMEL2LaFhtX/c1dqiqYVpfnvFshZQaIg2nL8juzZcBjj4as
+29RvyeUVe+WZxv5oo9wolVVpdSINIMEL2LaFhtX/c1dqiqYVpfnvFshZQaIg2nL8juzZcBjj4as
 H98gIS7khql/dkZKsw9NLvyxgJvp7PaXurX29fNf3ihG+oFrL22oFyV54BWWxXCKU/GPn61EGZGw
 Ft2qSIGLdctpMD1aJR2bcnlhEjZKDksjQZoQ5YMXaAGkcYkG6QkgrocDE2YXDbi7GIdf9MegVJ35
 2DQMpwIDAQABoDAwLgYJKoZIhvcNAQkOMSEwHzAdBgNVHQ4EFgQUQwlZJBA+fjiDdiVzaO9vrE/i
@@ -148,7 +149,7 @@ You can download the cert from CA (ie.: root.crt) and import as follows:
 $ keytool -import -keystore keycloak.jks -file root.crt -alias root
 ----
 
-Last step is import your new CA generated certificate to your keystore:
+Last step is to import your new CA generated certificate to your keystore:
 
 [source]
 ----
@@ -159,7 +160,7 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
 ===== Configure {{book.project.name}} to Use the Keystore
 
 Now that you have a Java keystore with the appropriate certificates, you need to configure your {{book.project.name}} installation to use it.
-First step is to move the keystore file to the _configuration_ directory of your deployment and to edit the _standalone.xml_, _standalone-ha.xml_ or _domain.xml_ file to use
+First step is to move the keystore file to the _configuration/_ directory of your deployment and to edit the _standalone.xml_, _standalone-ha.xml_ or _domain.xml_ file to use
 the keystore and enable HTTPS.  (See <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>).
 
 In the standalone or domain configuration file, search for the `security-realms` element and add:

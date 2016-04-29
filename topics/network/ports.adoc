@@ -2,9 +2,9 @@
 
 === Socket Port Bindings
 
-The ports for each socket also have a pre-defined default that can be overriden at the command line or within configuration.
+The ports opened for each socket have a pre-defined default that can be overriden at the command line or within configuration.
 To illustrate this configuration, let's pretend you are running in <<fake/../../operating-mode/standalone.adoc#_standalone-mode,standalone mode>> and
-open up the _.../standalone/configuration/standalone.xml_.  Search for +socket-binding-group+.
+open up the _.../standalone/configuration/standalone.xml_.  Search for `socket-binding-group`.
 
 [source,xml]
 ----
@@ -22,22 +22,22 @@ open up the _.../standalone/configuration/standalone.xml_.  Search for +socket-b
     </socket-binding-group>
 ----
 
-+socket-bindings+ define actual socket connections that will be open by the server that covers both the +interface+ (bind address)
-that will be used as wel as the port.   The ones you will be most interested in are
+`socket-bindings` define socket connections that will be opened by the server.  These bindings specify the
+`interface` (bind address) they use as well as what port number they will open.   The ones you will be most interested in are:
 
 http::
-   Defines the port used by {{book.project.name}} HTTP connections
+   Defines the port used for {{book.project.name}} HTTP connections
 https::
-   Defines the port used by {{book.project.name}} HTTPS connections
+   Defines the port used for {{book.project.name}} HTTPS connections
 ajp::
-   The Apache HTTPD server is often used with _mod-cluster_ as a load balancer.  AJP is the protocol that is used.
-   This socket binding defines the port used for the AJP protocol.
+   This socket binding defines the port used for the AJP protocol.  This protocol is used by Apache HTTPD server
+   in conjunction `mod-cluster` when you are using Apache HTTPD as a load balancer.
 management-http::
    Defines the HTTP connection used by {{book.appserer.name}} CLI and web console.
 
-When running in <<fake/../../operating-mode/domain.adoc#_domain-mode,domain mode>> locking the socket configurations
-is a bit trickier as the example _domain.xml_ file has multiple +socket-binding-groups+ defined.  If you scroll down
-to the +server-group+ definitions you can see what +socket-binding-group+ is used for each +server-group+.
+When running in <<fake/../../operating-mode/domain.adoc#_domain-mode,domain mode>> setting the socket configurations
+is a bit trickier as the example _domain.xml_ file has multiple `socket-binding-groups` defined.  If you scroll down
+to the `server-group` definitions you can see what `socket-binding-group` is used for each `server-group`.
 
 .domain socket bindings
 [source,xml]
@@ -54,6 +54,6 @@ to the +server-group+ definitions you can see what +socket-binding-group+ is use
     </server-groups>
 ----
 
-NOTE:  There's a lot more nifty options when setting up +socket-binding-group+ definitions.  See the link:{{book.appserver.socket.link}}[the socket binding group]
+NOTE:  There's a lot more nifty options when setting up `socket-binding-group` definitions.  See the link:{{book.appserver.socket.link}}[the socket binding group]
        chapter of the {{book.appserver.socket.name}}.
 

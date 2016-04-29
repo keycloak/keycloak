@@ -52,7 +52,7 @@ WARNING: Any changes you make to this file while the domain controller is runnin
       by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
       the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
 
-Let's look at some aspects of this _domain.xml_ file.  The +auth-serve-standalone+ and +auth-server-clustered+ +profile+ XML block is where you are going to make the bulk of your configuration decisions.
+Let's look at some aspects of this _domain.xml_ file.  The `auth-serve-standalone` and `auth-server-clustered` `profile` XML block is where you are going to make the bulk of your configuration decisions.
 You'll be configuring things here like network connections, caches, and database connections.
 
 
@@ -68,9 +68,9 @@ You'll be configuring things here like network connections, caches, and database
         </profile>
 ----
 
-The +auth-server-standalone+ profile is a non-clustered setup.  The +auth-server-clustered+ profile is the clustered setup.
+The `auth-server-standalone` profile is a non-clustered setup.  The `auth-server-clustered` profile is the clustered setup.
 
-If you scroll down further, you'll see various +socket-binding-groups+ defined.
+If you scroll down further, you'll see various `socket-binding-groups` defined.
 
 .socket-binding-grous
 [source,xml]
@@ -90,16 +90,16 @@ If you scroll down further, you'll see various +socket-binding-groups+ defined.
 
 
 This config defines the default port mappings for various connectors that are opened with each
-{{book.project.name}} server instance.  Any value that contains +${...}+ is a value that can be overriden on the command line
-with the +-D+ switch, i.e.
+{{book.project.name}} server instance.  Any value that contains `${...}` is a value that can be overriden on the command line
+with the `-D` switch, i.e.
 
 ----
 $ domain.sh -Djboss.http.port=80
 ----
 
-The definition of the server group for {{book.project.name}} resides in the +server-groups+ XML block.  It specifies the domain profile
-that is used (+default+) and also some default boot arguments for the Java VM when the host controller boots an instance.  It also
-binds a +socket-binding-group+ to the server group.
+The definition of the server group for {{book.project.name}} resides in the `server-groups` XML block.  It specifies the domain profile
+that is used (`default`) and also some default boot arguments for the Java VM when the host controller boots an instance.  It also
+binds a `socket-binding-group` to the server group.
 
 .server group
 [source,xml]
@@ -137,7 +137,7 @@ NOTE:  The load balancer is not a required service.  It exists so that you can e
 .Host Controller Config
 image:../../{{book.images}}/host-files.png[]
 
-To disable the load balancer server instance, edit _host-master.xml_ and comment out or remove the +"load-balancer"+ entry.
+To disable the load balancer server instance, edit _host-master.xml_ and comment out or remove the `"load-balancer"` entry.
 
 [source,xml]
 ----
@@ -149,8 +149,8 @@ To disable the load balancer server instance, edit _host-master.xml_ and comment
 ----
 
 Another interesting thing to note about this file is the declaration of the authentication server instance.  It has
-a +port-offset+ setting.  Any network port defined in the _domain.xml_ +socket-binding-group+ or the server group
-will have the value of +port-offset+ added to it.  For this example domain setup we do this so that ports opened by
+a `port-offset` setting.  Any network port defined in the _domain.xml_ `socket-binding-group` or the server group
+will have the value of `port-offset` added to it.  For this example domain setup we do this so that ports opened by
 the load balancer server don't conflict with the authentication server instance that is started.
 
 [source,xml]
@@ -204,7 +204,7 @@ $ .../bin/domain.sh --host-config=host-master.xml
 ----
 
 When running the boot script you will need pass in the host controlling configuration file you are going to use via the
-+--host-config+ switch.
+`--host-config` switch.
 
 [[_clustered-domain-example]]
 ==== Clustered Domain Example
@@ -216,7 +216,7 @@ domain is meant to run on one machine and boots up:
 * an HTTP load balancer
 * 2 {{book.project.name}} server instances
 
-To simulate running a cluster on two machines, you'll run the +domain.sh+ script twice to start two separate
+To simulate running a cluster on two machines, you'll run the `domain.sh` script twice to start two separate
 host controllers.  The first will be the master host controller which will start a domain controller, an HTTP load balancer, and one
 {{book.project.name}} authentication server instance.  The second will be a slave host controller that only starts
 up an authentication server instance.
@@ -226,9 +226,9 @@ up an authentication server instance.
 Before you can boot things up though, you have to configure the slave host controller so that it can talk securely to the domain
 controller.  If you do not do this, then the slave host will not be able to obtain the centralized configuration from the domain controller.
 To set up a secure connection, you have to create a server admin user and a secret that
-will be shared between the master and the slave.  You do this by running the +.../bin/add-user.sh+ script.
+will be shared between the master and the slave.  You do this by running the `.../bin/add-user.sh` script.
 
-When you run the script select +Management User+ and answer +yes+ when it asks you if the new user is going to be used
+When you run the script select `Management User` and answer `yes` when it asks you if the new user is going to be used
 for one AS process to connect to another.  This will generate a secret that you'll need to cut and paste into the
 _.../domain/configuration/host-slave.xml_ file.
 

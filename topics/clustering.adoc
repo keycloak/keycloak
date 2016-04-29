@@ -1,17 +1,17 @@
 [[_clustering]]
 == Clustering
 
-This section covers some of the aspects of configuring {{book.project.name}} to run in a cluster.  There's a number
-of things you have to do to provide and prepare for to run in a cluster, specifically:
+This section covers configuring {{book.project.name}} to run in a cluster.  There's a number
+of things you have to do when setting up a cluster, specifically:
 
-* <<fake/../operating-mode.adoc#_operating-mode,Picking an operation mode>>
-* <<fake/../database.adoc#_database,Configuring a shared external database>>
-* Setting up a load balancer
+* <<fake/../operating-mode.adoc#_operating-mode,Pick an operation mode>>
+* <<fake/../database.adoc#_database,Configure a shared external database>>
+* Set up a load balancer
 * Supplying a private network that supports IP multicast
 
 Picking an operation mode and configuring a shared database have been discussed earlier in this guide.  In this chapter
-we'll discuss setting up a load balancer and supplying a private network.  We'll also discuss some issues around
-when bringing up a cluster.
+we'll discuss setting up a load balancer and supplying a private network.  We'll also discuss some issues that you need
+to be aware of when booting up a host in the cluster.
 
 Note:  It is possible to cluster {{book.project.name}} without IP Multicast, but this topic is beyond the
        scope of this guide.  Please see the link:{{book.appserver.jgroups.link}}[JGroups] chapter of the {{book.appserver.jgroups.name}}.

@@ -27,14 +27,14 @@ that set's up the connection to your new database:
   </subsystem>
 ----
 
-Search for the +datasource+ definition for +KeycloakDS+.  You'll first need to modify the +connection-url+.  The
+Search for the `datasource` definition for `KeycloakDS`.  You'll first need to modify the `connection-url`.  The
 documentation for your vendor's JDBC implementation should specify the format for this connection URL value.
 
-Next define the +driver+ you will use.  This is the logical name of the JDBC driver you declared in the previous section of this
+Next define the `driver` you will use.  This is the logical name of the JDBC driver you declared in the previous section of this
 chapter.
 
 It is expensive to open a new connection to a database ever time you want to perform a transaction.  To compensate, the datasource
-implementation maintains a pool of open connections.  The +max-pool-size+ specifies the maximum number of connections it will pool.
+implementation maintains a pool of open connections.  The `max-pool-size` specifies the maximum number of connections it will pool.
 You may want to change the value of this depending on the load of your system.
 
 Finally, with PostgreSQL at least, you need to define the database username and password that is needed to connect to the database.  You

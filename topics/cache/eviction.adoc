@@ -1,9 +1,10 @@
 === Eviction and Expiration
 
+There are multiple different caches configured for {{book.project.name}}.
 There is a realm cache that holds information about secured applications, general security data, and configuration options.
-This cache is unbounded and does not have a limit on entries.  This might scare you a little bit, but the number of entries
-in this cache is pretty low compared to the user cache.  There is a user cache that contains user metadata.  It defaults to a maximum of 10000 entries and uses a least recently used eviction strategy.
-There are also separate caches for user sessions, offline tokens, and login failures.  These caches are unbounded as well.
+This size of this cache is unbounded and does not have a limit on entries.  This might scare you a little bit, but the number of entries
+in this cache is pretty low compared to the user cache.  There is also a user cache that contains user metadata.  It defaults to a maximum of 10000 entries and uses a least recently used eviction strategy.
+There are also separate caches for user sessions, offline tokens, and login failures.  These caches are unbounded in size as well.
 
 The eviction policy and max entries for these caches can be configured in the _standalone.xml_, _standalone-ha.xml_, or
 _domain.xml_ depending on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>.
@@ -48,5 +49,5 @@ _domain.xml_ depending on your <<fake/../../operating-mode.adoc#_operating-mode,
    </cache-container>
 ----
 
-To limit to expand the number of entries simply add, edit, or remove the +eviction+ element from the +invalidation-cache+ or
-+distributed-cache+ eviction policy you want to change.
+To limit or expand the number of allowed entries simply add, edit, or remove the `eviction` element from the `invalidation-cache` or
+`distributed-cache` declaration you want to change.

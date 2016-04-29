@@ -1,8 +1,8 @@
 == Server Cache Configuration
 
 {{book.project.name}} has two types of caches.  One type of cache sits in front of the database to decrease load on the DB
-and to increase overall response times by keeping data in memory.  Realm, client, role, and user metadata is kept in this cache.
-The caching for this data is stored in something called an invalidation cache.  Invalidation caches do not use replication.
+and to increase overall response times by keeping data in memory.  Realm, client, role, and user metadata is kept in this type of cache.
+This cache is an invalidation cache.  Invalidation caches do not use replication.
 Instead, they only keep copies locally and if the entry is updated an invalidation message is sent to the rest of the cluster
 and the entry is evicted.  This greatly reduces network traffic, makes things efficient, and avoids transmitting sensitive
 metadata over the ire.

@@ -3,7 +3,7 @@
 == Mongo DB Setup
 
 You are not stuck with using a RDBMS for persisting data.  {{book.project.name}}
-provides http://www.mongodb.com[MongoDB] based model implementation.
+provides a http://www.mongodb.com[MongoDB] based model implementation.
 To configure {{book.project.name}} to use Mongo, you need to edit the _keycloak-server.json_ file.  If you are running
 in standalone mode, this file is in the _.../standalone/configuration_ directory.  If you are running in domain mode
 this file will live in the _.../domain/servers/{server name}/configuration_ directory.

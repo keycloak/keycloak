@@ -1,6 +1,91 @@
 === Setting Up a Load Balancer
 
-This guide does not go over how to set up a load balancer as it is already documented in detail within the
-link:{{book.appserver.loadbalancer.link}}[the load balancer] chapter of the {{book.appserver.loadbalancer.name}}.  It will
-involve configuring the <<fake/../../network/bind-address.adoc#_bind-address,network interfaces>> and <<fake/../../network/ports.adoc#_ports,ports>> discussed in previous chapters in this guide.
+This section only covers configuring the built in load balancer that is discussed in the
+<<fake/../../operating-mode/domain.adoc#_clustered-domain-example, Clustered Domain Example>>.
+The link:{{book.appserver.loadbalancer.link}}[the load balancer] chapter of the {{book.appserver.loadbalancer.name}}
+has some information on using some other software based load balancers that may help you.
+
+The <<fake/../../operating-mode/domain.adoc#_clustered-domain-example, Clustered Domain Example>> is only designed to run
+on one machine.  To bring up a slave on another host, you'll need to
+
+. Edit the _domain.xml_ file to point to your new host slave
+. Copy the server distribution.  You don't need the _domain.xml_, _host.xml_, or _host-master.xml_ files.  Nor do you need
+  the _standalone/_ directory.
+. Edit the _host-slave.xml_ file to change the bind addresses used or override them on the command line
+
+==== Register a New Host With Load Balancer
+
+Let's look first at registering the new host slave with the load balancer configuration in _domain.xml_.  Open this
+file and go to the undertow configuration in the `load-balancer` profile.  Add a new `host` definition called
+`remote-host3` within the `reverse-proxy` XML block.
+
+.domain.xml reverse-proxy config
+[source,xml]
+----
+<subsystem xmlns="urn:jboss:domain:undertow:3.0">
+  ...
+  <handlers>
+      <reverse-proxy name="lb-handler">
+         <host name="host1" outbound-socket-binding="remote-host1" scheme="ajp" path="/" instance-id="myroute1"/>
+         <host name="host2" outbound-socket-binding="remote-host2" scheme="ajp" path="/" instance-id="myroute2"/>
+         <host name="remote-host3" outbound-socket-binding="remote-host3" scheme="ajp" path="/" instance-id="myroute3"/>
+      </reverse-proxy>
+  </handlers>
+  ...
+</subsystem>
+----
+
+The `output-socket-binding` is a logical name pointing to a `socket-binding` configured later in the _domain.xml_ file.
+the `instance-id` attribute must also be unique to the new host as this value is used by a cookie to enable sticky
+sessions when load balancing.
+
+Next go down to the `load-balancer-sockets` `socket-binding-group` and add the `outbound-socket-binding` for `remote-host3`.  This new
+binding needs to point to the host and port of the new host.
+
+.domain.xml outbound-socket-binding
+[source,xml]
+----
+<socket-binding-group name="load-balancer-sockets" default-interface="public">
+    ...
+    <outbound-socket-binding name="remote-host1">
+        <remote-destination host="localhost" port="8159"/>
+    </outbound-socket-binding>
+    <outbound-socket-binding name="remote-host2">
+        <remote-destination host="localhost" port="8259"/>
+    </outbound-socket-binding>
+    <outbound-socket-binding name="remote-host3">
+        <remote-destination host="192.168.0.5" port="8259"/>
+    </outbound-socket-binding>
+</socket-binding-group>
+----
+
+=== Master Bind Addresses
+
+Next thing you'll have to do is to change the `public` and `management` bind addresses for the master host.  Either
+edit the _domain.xml_ file as discussed in the <<fake/../../netork/bind-address.adoc#_bind-address, Bind Addresses>> chapter
+or specify these bind addresses on the command line as follows:
+
+[source]
+----
+$ domain.sh --host-config=host-master.xml -Djboss.bind.address=192.168.0.2 -Djboss.bind.address.management=192.168.0.2
+----
+
+=== Host Slave Bind Addresses
+
+Next you'll have to change the `public`, `management`, and domain controller bind addresses (`jboss.domain.master-address`).  Either edit the
+_host-slave.xml_ file or specify them on the command line as follows:
+
+[source]
+----
+$ domain.sh --host-config=host-slave.xml
+     -Djboss.bind.address=192.168.0.5
+      -Djboss.bind.address.management=192.168.0.5
+       -Djboss.domain.master.address=192.168.0.2
+----
+
+The values of `jboss.bind.address` and `jboss.bind.addres.management` pertain to the host slave's IP address.
+The value of `jboss.domain.master.address` need to be the IP address of the domain controller which is the management address
+of the master host.
+
+
 
