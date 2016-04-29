@@ -142,7 +142,11 @@ public class RealmAdminResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public ClientRepresentation convertClientDescription(String description) {
-        auth.requireManage();
+        auth.init(Resource.CLIENT).requireManage();
+
+        if (realm == null) {
+            throw new NotFoundException("Realm not found.");
+        }
 
         for (ProviderFactory<ClientDescriptionConverter> factory : session.getKeycloakSessionFactory().getProviderFactories(ClientDescriptionConverter.class)) {
             if (((ClientDescriptionConverterFactory) factory).isSupported(description)) {

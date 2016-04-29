@@ -78,6 +78,10 @@ public class ScopeMappedResource {
     public MappingsRepresentation getScopeMappings() {
         auth.requireView();
 
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         MappingsRepresentation all = new MappingsRepresentation();
         Set<RoleModel> realmMappings = scopeContainer.getRealmScopeMappings();
         if (realmMappings.size() > 0) {
@@ -122,6 +126,10 @@ public class ScopeMappedResource {
     public List<RoleRepresentation> getRealmScopeMappings() {
         auth.requireView();
 
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         Set<RoleModel> realmMappings = scopeContainer.getRealmScopeMappings();
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : realmMappings) {
@@ -141,6 +149,10 @@ public class ScopeMappedResource {
     @NoCache
     public List<RoleRepresentation> getAvailableRealmScopeMappings() {
         auth.requireView();
+
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         Set<RoleModel> roles = realm.getRoles();
         return getAvailable(scopeContainer, roles);
@@ -171,6 +183,10 @@ public class ScopeMappedResource {
     public List<RoleRepresentation> getCompositeRealmScopeMappings() {
         auth.requireView();
 
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         Set<RoleModel> roles = realm.getRoles();
         return getComposite(scopeContainer, roles);
     }
@@ -194,6 +210,10 @@ public class ScopeMappedResource {
     public void addRealmScopeMappings(List<RoleRepresentation> roles) {
         auth.requireManage();
 
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         for (RoleRepresentation role : roles) {
             RoleModel roleModel = realm.getRoleById(role.getId());
             if (roleModel == null) {
@@ -214,6 +234,10 @@ public class ScopeMappedResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void deleteRealmScopeMappings(List<RoleRepresentation> roles) {
         auth.requireManage();
+
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         if (roles == null) {
             Set<RoleModel> roleModels = scopeContainer.getRealmScopeMappings();
@@ -237,9 +261,6 @@ public class ScopeMappedResource {
     @Path("clients/{client}")
     public ScopeMappedClientResource getClientByIdScopeMappings(@PathParam("client") String client) {
         ClientModel clientModel = realm.getClientById(client);
-        if (clientModel == null) {
-            throw new NotFoundException("Client not found");
-        }
         return new ScopeMappedClientResource(realm, auth, this.scopeContainer, session, clientModel, adminEvent);
     }
 }

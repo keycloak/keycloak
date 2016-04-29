@@ -30,7 +30,7 @@ public class PartialImportRepresentation {
     public enum Policy { SKIP, OVERWRITE, FAIL };
 
     protected Policy policy = Policy.FAIL;
-    protected String ifResourceExists = "";
+    protected String ifResourceExists;
     protected List<UserRepresentation> users;
     protected List<GroupRepresentation> groups;
     protected List<ClientRepresentation> clients;
@@ -67,7 +67,7 @@ public class PartialImportRepresentation {
 
     public void setIfResourceExists(String ifResourceExists) {
         this.ifResourceExists = ifResourceExists;
-        this.policy = Policy.valueOf(ifResourceExists);
+        this.policy = ifResourceExists != null ? Policy.valueOf(ifResourceExists) : null;
     }
 
     public Policy getPolicy() {

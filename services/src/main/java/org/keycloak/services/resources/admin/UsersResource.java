@@ -702,12 +702,9 @@ public class UsersResource {
 
     @Path("{id}/role-mappings")
     public RoleMapperResource getRoleMappings(@PathParam("id") String id) {
+        auth.init(RealmAuth.Resource.USER);
 
         UserModel user = session.users().getUserById(id, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-        auth.init(RealmAuth.Resource.USER);
 
         RoleMapperResource resource =  new RoleMapperResource(realm, auth, user, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);

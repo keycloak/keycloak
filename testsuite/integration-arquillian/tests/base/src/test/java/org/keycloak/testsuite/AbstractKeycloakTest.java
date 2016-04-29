@@ -161,7 +161,7 @@ public abstract class AbstractKeycloakTest {
             resetTimeOffset();
         }
 
-//        removeTestRealms(); // keeping test realms after test to be able to inspect failures, instead deleting existing realms before import
+        removeTestRealms(); // Remove realms after tests. Tests should cleanup after themselves!
 //        adminClient.close(); // keeping admin connection open
     }
 
@@ -243,7 +243,10 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void removeRealm(RealmRepresentation realm) {
-        adminClient.realms().realm(realm.getRealm()).remove();
+        try {
+            adminClient.realms().realm(realm.getRealm()).remove();
+        } catch (NotFoundException e) {
+        }
     }
     
     public RealmsResource realmsResouce() {

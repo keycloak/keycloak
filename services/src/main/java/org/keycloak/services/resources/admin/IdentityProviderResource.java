@@ -95,6 +95,11 @@ public class IdentityProviderResource {
     @Produces(MediaType.APPLICATION_JSON)
     public IdentityProviderRepresentation getIdentityProvider() {
         this.auth.requireView();
+
+        if (identityProviderModel == null) {
+            throw new javax.ws.rs.NotFoundException();
+        }
+
         IdentityProviderRepresentation rep = ModelToRepresentation.toRepresentation(realm, this.identityProviderModel);
         return rep;
     }
@@ -108,6 +113,10 @@ public class IdentityProviderResource {
     @NoCache
     public Response delete() {
         this.auth.requireManage();
+
+        if (identityProviderModel == null) {
+            throw new javax.ws.rs.NotFoundException();
+        }
 
         this.realm.removeIdentityProviderByAlias(this.identityProviderModel.getAlias());
 
@@ -126,9 +135,13 @@ public class IdentityProviderResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
     public Response update(IdentityProviderRepresentation providerRep) {
-        try {
-            this.auth.requireManage();
+        this.auth.requireManage();
 
+        if (identityProviderModel == null) {
+            throw new javax.ws.rs.NotFoundException();
+        }
+
+        try {
             updateIdpFromRep(providerRep, realm, session);
 
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(providerRep).success();
@@ -207,8 +220,13 @@ public class IdentityProviderResource {
     @Path("export")
     @NoCache
     public Response export(@Context UriInfo uriInfo, @QueryParam("format") String format) {
+        this.auth.requireView();
+
+        if (identityProviderModel == null) {
+            throw new javax.ws.rs.NotFoundException();
+        }
+
         try {
-            this.auth.requireView();
             IdentityProviderFactory factory = getIdentityProviderFactory();
             return factory.create(identityProviderModel).export(uriInfo, realm, format);
         } catch (Exception e) {
@@ -224,6 +242,11 @@ public class IdentityProviderResource {
     @NoCache
     public Map<String, IdentityProviderMapperTypeRepresentation> getMapperTypes() {
         this.auth.requireView();
+
+        if (identityProviderModel == null) {
+            throw new javax.ws.rs.NotFoundException();
+        }
+
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         Map<String, IdentityProviderMapperTypeRepresentation> types = new HashMap<>();
         List<ProviderFactory> factories = sessionFactory.getProviderFactories(IdentityProviderMapper.class);
@@ -263,6 +286,11 @@ public class IdentityProviderResource {
     @NoCache
     public List<IdentityProviderMapperRepresentation> getMappers() {
         this.auth.requireView();
+
+        if (identityProviderModel == null) {
+            throw new javax.ws.rs.NotFoundException();
+        }
+
         List<IdentityProviderMapperRepresentation> mappers = new LinkedList<>();
         for (IdentityProviderMapperModel model : realm.getIdentityProviderMappersByAlias(identityProviderModel.getAlias())) {
             mappers.add(ModelToRepresentation.toRepresentation(model));
@@ -281,6 +309,11 @@ public class IdentityProviderResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addMapper(IdentityProviderMapperRepresentation mapper) {
         auth.requireManage();
+
+        if (identityProviderModel == null) {
+            throw new javax.ws.rs.NotFoundException();
+        }
+
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
         model = realm.addIdentityProviderMapper(model);
 
@@ -303,6 +336,11 @@ public class IdentityProviderResource {
     @Produces(MediaType.APPLICATION_JSON)
     public IdentityProviderMapperRepresentation getMapperById(@PathParam("id") String id) {
         auth.requireView();
+
+        if (identityProviderModel == null) {
+            throw new javax.ws.rs.NotFoundException();
+        }
+
         IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         return ModelToRepresentation.toRepresentation(model);
@@ -320,6 +358,11 @@ public class IdentityProviderResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void update(@PathParam("id") String id, IdentityProviderMapperRepresentation rep) {
         auth.requireManage();
+
+        if (identityProviderModel == null) {
+            throw new javax.ws.rs.NotFoundException();
+        }
+
         IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
@@ -338,6 +381,11 @@ public class IdentityProviderResource {
     @Path("mappers/{id}")
     public void delete(@PathParam("id") String id) {
         auth.requireManage();
+
+        if (identityProviderModel == null) {
+            throw new javax.ws.rs.NotFoundException();
+        }
+
         IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         realm.removeIdentityProviderMapper(model);
