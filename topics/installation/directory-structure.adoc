@@ -17,14 +17,14 @@ _modules/_::
   These are all the Java libraries used by the server.
 
 _providers/_::
-  If you are writing extensions to keycloak, you can put your extensions here.  See the link:{{book.developerguide.link}}[{{book.developerguide.name] for more information on this.
+  If you are writing extensions to keycloak, you can put your extensions here.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more information on this.
 
 _standalone/_::
   This contains configuration files and working directory when running {{book.project.name}} in <<fake/../../operating-mode/standalone.adoc#_standalone-mode,standalone mode>>.
 
 _themes/_::
   This directory contains all the html, style sheets, javascript files, and images used to display any UI screen displayed by the server.
-  Here you can modify an existing theme or create your own.  See the link:{{book.developerguide.link}}[{{book.developerguide.name] for more information on this.
+  Here you can modify an existing theme or create your own.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more information on this.
 
 
 
