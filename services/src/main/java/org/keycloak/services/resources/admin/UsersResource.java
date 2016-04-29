@@ -959,7 +959,7 @@ public class UsersResource {
         try {
             if (user.isMemberOf(group)){
                 user.leaveGroup(group);
-                adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+                adminEvent.operation(OperationType.DELETE).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(uriInfo).success();
             }
         } catch (ModelException me) {
             Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());
@@ -984,9 +984,8 @@ public class UsersResource {
         }
         if (!user.isMemberOf(group)){
             user.joinGroup(group);
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).success();
+            adminEvent.operation(OperationType.CREATE).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(uriInfo).success();
         }
     }
-
 
 }
