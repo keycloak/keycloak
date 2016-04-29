@@ -6,5 +6,5 @@ goes over the basics for infrastructure-level configuration.  It is highly recom
 for {{book.appserver.name}} and its sub projects.  Here are some links to that documentation:
 
 * link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}]
-* link:{{book.cache.admindoc.link}}[{{book.cache.admindoc.name}}]
-* link:{{book.jpa.admindoc.link}}[{{book.jpa.admindoc.name}}]
+* link:{{book.caching.admindoc.link}}[{{book.caching.admindoc.name}}]
+* link:{{book.jpa.admindoc.link}}[Hibernate JPA Configuration]

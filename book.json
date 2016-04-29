@@ -13,8 +13,8 @@
     "product": false,
     "images": "keycloak-images",
     "appserver": {
-      "name": "JBoss EAP",
-      "version": "6.4",
+      "name": "Wildfly",
+      "version": "10",
       "admindoc": {
         "name": "JBoss EAP Administration and Configuration Guide",
         "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/"
@@ -56,6 +56,11 @@
         "name": "JBoss Development Guide",
         "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Development_Guide/sect-Java_Persistence_API_JPA.html#sect-Configuration2"
       }
+
+    },
+    "developerguide": {
+      "name": "Keycloak Server Developer Guide",
+      "link": "https://keycloak.gitbooks.io/server-developer-guide/content/"
 
     },
     "adminguide": {

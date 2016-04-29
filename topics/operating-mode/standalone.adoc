@@ -2,7 +2,7 @@
 === Standalone Mode
 
 Standalone operating mode is only useful when you want to run one, and only one {{book.project.name}} server instance.
-It cannot be made to run in a cluster and all caches are non-distributed and local-only.  It is not recommended that
+It is not usable for clustered deployments and all caches are non-distributed and local-only.  It is not recommended that
 you use standalone mode in production as you will have a single point of failure.  If your standalone mode server goes down,
 users will not be able to log in.  This mode is really only useful to test drive and play with the features of {{book.project.name}}
 
@@ -37,21 +37,21 @@ derivative of.  In the standalone operation mode, this file lives in _.../standa
 .Standalone Config File
 image:../../{{book.images}}/standalone-config-file.png[]
 
-NOTE: Any changes you make to this file while the server is running will not take effect and may even be overwritten
+WARNING: Any changes you make to this file while the server is running will not take effect and may even be overwritten
       by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
       the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
 
 
 ==== Standalone {{book.project.name}} JSON Configuration
 
-{{book.project.name}} has a json configuration file that is specific to {{book.project.name}} this is located within
-_.../standalone/configuration/keycloak.json_.  This file is used to configure non-infrastructure level things that are
+{{book.project.name}} has a json configuration file that is specific to {{book.project.name}} components.  This configuration is located within
+the file_.../standalone/configuration/keycloak.json_.  This file is used to configure non-infrastructure level things that are
 only applicable to {{book.project.name}}
 
 .Standalone {{book.project.name}} Config File
 image:../../{{book.images}}/standalone-json-config-file.png[]
 
-NOTE: Any changes you make to this file while the server is running will not take effect.  You'll need to reboot the
+WARNING: Any changes you make to this file while the server is running will not take effect.  You'll need to reboot the
       server.
 
 

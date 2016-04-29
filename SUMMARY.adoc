@@ -1,6 +1,5 @@
 = Summary
 
- . link:topics/preface.adoc[Preface]
  . link:topics/overview.adoc[Overview]
  .. link:topics/overview/recommended-reading.adoc[Recommended Reading]
  . link:topics/installation.adoc[Installation]

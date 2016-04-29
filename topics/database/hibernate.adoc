@@ -1,7 +1,7 @@
 === Hibernate Configuration
 
-The Hibernate persistence API is already pre-configured out of the box.  It is rare to have to modify the configuration for it.
-To configure Hibernate, you need to edit the _keycloak-server.json_ file.  If you are running
+The Hibernate persistence API is already pre-configured out of the box and rarely needs to be changed.
+The configuration for this component lies in the _keycloak-server.json_ file.  If you are running
 in standalone mode, this file is in the _.../standalone/configuration_ directory.  If you are running in domain mode
 this file will live in the _.../domain/servers/{server name}/configuration_ directory.
 

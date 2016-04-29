@@ -1,6 +1,8 @@
 [[_domain-mode]]
 === Domain Clustered Mode
 
+Domain mode is a way to centrally manage and publish the configuration for your servers.
+
 Running a cluster in standard mode can quickly become aggravating as the cluster grows in size.  Every time you need
 to make a configuration change, you have perform it on each node in the cluster.  Domain mode solves this problem by providing
 a central place to store and publish configuration.  It can be quite complex to set up, but it is worth it in the end.
@@ -46,11 +48,11 @@ where the domain profile and server group for the {{book.project.name}} server a
 .domain.xml
 image:../../{{book.images}}/domain-file.png[]
 
-NOTE: Any changes you make to this file while the domain controller is running will not take effect and may even be overwritten
+WARNING: Any changes you make to this file while the domain controller is running will not take effect and may even be overwritten
       by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
       the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
 
-Let's look at some aspects of this _domain.xml_ file.  The +auth-server+ +profile+ XML block is where you are going to make the bulk of your configuration decisions.
+Let's look at some aspects of this _domain.xml_ file.  The +auth-serve-standalone+ and +auth-server-clustered+ +profile+ XML block is where you are going to make the bulk of your configuration decisions.
 You'll be configuring things here like network connections, caches, and database connections.
 
 
@@ -58,12 +60,36 @@ You'll be configuring things here like network connections, caches, and database
 [source,xml]
 ----
     <profiles>
-        <profile name="auth-server">
+        <profile name="auth-server-standalone">
+            ...
+         </profile>
+       <profile name="auth-server-clustered">
            ...
         </profile>
 ----
 
-The +ha-sockets+ +socket-binding-group+ defines the default port mappings for various connectors that are opened with each
+The +auth-server-standalone+ profile is a non-clustered setup.  The +auth-server-clustered+ profile is the clustered setup.
+
+If you scroll down further, you'll see various +socket-binding-groups+ defined.
+
+.socket-binding-grous
+[source,xml]
+----
+    <socket-binding-groups>
+        <socket-binding-group name="standard-sockets" default-interface="public">
+           ...
+        </socket-binding-group>
+        <socket-binding-group name="ha-sockets" default-interface="public">
+           ...
+        </socket-binding-group>
+        <!-- load-balancer-sockets should be removed in production systems and replaced with a better softare or hardare based one -->
+        <socket-binding-group name="load-balancer-sockets" default-interface="public">
+           ...
+        </socket-binding-group>
+    </socket-binding-groups>----
+
+
+This config defines the default port mappings for various connectors that are opened with each
 {{book.project.name}} server instance.  Any value that contains +${...}+ is a value that can be overriden on the command line
 with the +-D+ switch, i.e.
 
@@ -79,7 +105,14 @@ binds a +socket-binding-group+ to the server group.
 [source,xml]
 ----
     <server-groups>
-        <server-group name="auth-server-group" profile="auth-server">
+        <!-- load-balancer-group should be removed in production systems and replaced with a better softare or hardare based one -->
+        <server-group name="load-balancer-group" profile="load-balancer">
+            <jvm name="default">
+                <heap size="64m" max-size="512m"/>
+            </jvm>
+            <socket-binding-group ref="load-balancer-sockets"/>
+        </server-group>
+        <server-group name="auth-server-group" profile="auth-server-clustered">
             <jvm name="default">
                 <heap size="64m" max-size="512m"/>
             </jvm>
@@ -97,8 +130,9 @@ _host-master.xml_ and _host-slave.xml_.  _host-master.xml_ is configured to boot
 one {{book.project.name}} server instance.  _host-slave.xml_ is configured to talk to the domain controller and boot up
 one {{book.project.name}} server instance.
 
-NOTE:  You should remove the load balancer server from _host-master.xml_.  The load balancer included is really not that
-       production ready and doesn't work as smoothly as something like Apache HTTPD + mod-cluster or a hardward based one.
+NOTE:  The load balancer is not a required service.  It exists so that you can easily test drive clustering on your development
+       machine.  While usable in production, you have the option of replacing it if you have a different hardware or software
+       based load balancer you want to use.
 
 .Host Controller Config
 image:../../{{book.images}}/host-files.png[]
@@ -152,7 +186,7 @@ image:../../{{book.images}}/domain-json-config.png[]
 When running the server in domain mode, there is a specific script you need to run to boot the server depending on your
 operating system.  These scripts live in the _bin/_ directory of the server distribution.
 
-.Standalone Boot Scripts
+.Domain Boot Script
 image:../../{{book.images}}/domain-boot-files.png[]
 
 To boot the server:
@@ -173,22 +207,25 @@ When running the boot script you will need pass in the host controlling configur
 +--host-config+ switch.
 
 [[_clustered-domain-example]]
-==== Running the Clustered Domain Example
+==== Clustered Domain Example
 
-The example domain that comes with {{book.project.name}} was meant to run on one machine.  It starts a:
-* domain controller
-* HTTP load balancer
+You can test drive clustering using the out-of-the-box _domain.xml_ configuration.  This example
+domain is meant to run on one machine and boots up:
+
+* a domain controller
+* an HTTP load balancer
 * 2 {{book.project.name}} server instances
 
 To simulate running a cluster on two machines, you'll run the +domain.sh+ script twice to start two separate
-host controllers.  The first will be the master host controller.  It start a domain controller, an HTTP load balancer, and one
+host controllers.  The first will be the master host controller which will start a domain controller, an HTTP load balancer, and one
 {{book.project.name}} authentication server instance.  The second will be a slave host controller that only starts
 up an authentication server instance.
 
-===== Setup Secure Master Slave Connection
+===== Setup Slave Connection to Domain Controller
 
 Before you can boot things up though, you have to configure the slave host controller so that it can talk securely to the domain
-controller to obtain the centralized configuration.  To set up a secure connection, you have to create a server admin user and a secret that
+controller.  If you do not do this, then the slave host will not be able to obtain the centralized configuration from the domain controller.
+To set up a secure connection, you have to create a server admin user and a secret that
 will be shared between the master and the slave.  You do this by running the +.../bin/add-user.sh+ script.
 
 When you run the script select +Management User+ and answer +yes+ when it asks you if the new user is going to be used
@@ -225,7 +262,7 @@ $ add-user.sh
  To represent the user add the following to the server-identities definition <secret value="bWdtdDEyMyE=" />
 ----
 
-Now cut and paste the secret value into the _.../domain/configuration/host-slave.xml_ file:
+Now cut and paste the secret value into the _.../domain/configuration/host-slave.xml_ file as follows:
 
 [source,xml]
 ----
@@ -239,7 +276,7 @@ Now cut and paste the secret value into the _.../domain/configuration/host-slave
 
 ===== Run the Boot Scripts
 
-Since we're simulating running on two separate machines, you'll run the boot script twice:
+Since we're simulating a two node cluster on one development machine, you'll run the boot script twice:
 
 .Boot up master
 [source,shell]

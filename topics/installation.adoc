@@ -1,5 +1,4 @@
 == Installation
 
-This chapter reviews what binaries you need to install to run the {{book.project.name}} Server on a specific machine.
-It describes the directory structure and files of the distribution.  Finally, it describes how to install {{book.project.name}}
-on the cloud if you prefer that type of deployment.
+Installing {{book.project.name}} is as simple as downloading it and unzipping it.  This chapter reviews system requirements
+as well as the directory structure of the distribution.

@@ -3,14 +3,14 @@
 === Standalone Clustered Mode
 
 Standalone clustered operation mode is for when you want to run {{book.project.name}} within a cluster.  This mode
-requires that you have a copy of each distribution for each node you want to run in the cluster.  While very easy to
-deploy initially, this mode can become cumbersome if you end up having a large cluster because you will have to
-modify the configuration in each node anytime you need to make a change.
+requires that you have a copy of the {{book.project.name}} distribution on each machine you want to run a server instance.
+This mode can be very easy to deploy initially, but can become quite cumbersome. To make a configuration change
+you'll have to modify each distribution on each machine.  For a large cluster this can become time consuming and error prone.
 
 ==== Standalone Clustered Configuration
 
 The distribution has a mostly pre-configured app server configuration file for running within a cluster.  It has all the specific
-infrasture settings you need to configure networking, databases, caches, and discovery.  This file resides
+infrastructure settings for networking, databases, caches, and discovery.  This file resides
 in _.../standalone/configuration/standalone-ha.xml_.  There's a few things missing from this configuration.
 You can't run {{book.project.name}} in a cluster without a configuring a shared database connection.  You also need to
 deploy some type of load balancer in front of the cluster.  The <<fake/../../clustering.adoc#_clustering,clustering>> and
@@ -19,11 +19,11 @@ deploy some type of load balancer in front of the cluster.  The <<fake/../../clu
 .Standalone HA Config
 image:../../{{book.images}}/standalone-ha-config-file.png[]
 
-NOTE: Any changes you make to this file while the server is running will not take effect and may even be overwritten
+WARNING: Any changes you make to this file while the server is running will not take effect and may even be overwritten
       by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
       the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
 
-==== Standalone Boot Script
+==== Standalone Clustered Boot Script
 
 You use the same boot scripts to start {{book.project.name}} as you do in standalone mode.  The difference is that
 you pass in an additional flag to point to the HA config file.
@@ -48,9 +48,9 @@ $ .../bin/standalone.sh --server-config=standalone-ha.xml
 ==== Standalone Clustered {{book.project.name}} JSON Configuration
 
 The {{book.project.name}} specific json configure file resides in the same place as in standalone mode: _.../standalone/configuration/keycloak.json_.
-Like _standalone-ha.xml_ you have to modify this file in each distribution in your cluster in order for changes to take effect.
+Like _standalone-ha.xml_ you have to modify this file in each distribution in your cluster when you want to make a change here.
 
-NOTE: Any changes you make to this file while the server is running will not take effect.  You'll need to reboot the
+WARNING: Any changes you make to this file while the server is running will not take effect.  You'll need to reboot the
       server.
 
 
