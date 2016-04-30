@@ -63,4 +63,9 @@ public class RegexPatterns extends BasePasswordPolicy {
     public String getId() {
         return NAME;
     }
+
+    @Override
+    public String defaultValue() {
+        throw new NullPointerException("Regex Pattern cannot be null");
+    }
 }
