@@ -1,3 +1,4 @@
+
 === Clustering Example
 
 {{book.project.name}} does come with an out of the box clustering demo that leverages domain mode.  Review the

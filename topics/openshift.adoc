@@ -1,3 +1,4 @@
+
 [[_openshift]]
 
 == Running Keycloak Server on OpenShift

@@ -1,3 +1,4 @@
+
 === Troubleshooting
 
 Note that when you run cluster, you should see message similar to this in the log of both cluster nodes:
@@ -16,3 +17,6 @@ Default values are UDP port 55200 and multicast port 45688 with multicast addres
 Note that you may need more ports opened if you want to enable additional features like diagnostics for your JGroups stack.
 {{book.project.name}} delegates most of the clustering work to Infinispan/JGroups.
 Please consult the link:{{book.appserver.jgroups.link}}[JGroups] chapter of the {{book.appserver.jgroups.name}}.
+
+
+

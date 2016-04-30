@@ -1,3 +1,4 @@
+
 === Disabling Caching
 
 To disable the realm or user cache, you must edit the `keycloak-server.json` file in your distribution.  Where

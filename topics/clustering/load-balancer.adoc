@@ -1,3 +1,4 @@
+
 === Setting Up a Load Balancer
 
 This section only covers configuring the built in load balancer that is discussed in the
@@ -59,7 +60,7 @@ binding needs to point to the host and port of the new host.
 </socket-binding-group>
 ----
 
-=== Master Bind Addresses
+==== Master Bind Addresses
 
 Next thing you'll have to do is to change the `public` and `management` bind addresses for the master host.  Either
 edit the _domain.xml_ file as discussed in the <<fake/../../network/bind-address.adoc#_bind-address, Bind Addresses>> chapter
@@ -70,7 +71,7 @@ or specify these bind addresses on the command line as follows:
 $ domain.sh --host-config=host-master.xml -Djboss.bind.address=192.168.0.2 -Djboss.bind.address.management=192.168.0.2
 ----
 
-=== Host Slave Bind Addresses
+==== Host Slave Bind Addresses
 
 Next you'll have to change the `public`, `management`, and domain controller bind addresses (`jboss.domain.master-address`).  Either edit the
 _host-slave.xml_ file or specify them on the command line as follows:

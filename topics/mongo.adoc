@@ -1,3 +1,4 @@
+
 [[_mongo]]
 
 == Mongo DB Setup
@@ -94,6 +95,6 @@ Therefore, a configuration like the following
 ----
 will authenticate the user against the authentication database, but store all keycloak related data in the keycloak database.
 
-==== MongoDB Replica Sets
+=== MongoDB Replica Sets
 
 In order to use a mongo replica set for Keycloak, one has to use URI based configuration, which supports the definition of replica sets out of the box: `mongodb://host1:27017,host2:27017,host3:27017/`.

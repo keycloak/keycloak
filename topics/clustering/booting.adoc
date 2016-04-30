@@ -1,3 +1,4 @@
+
 === Booting the Cluster
 
 Booting {{book.project.name}} in a cluster depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>

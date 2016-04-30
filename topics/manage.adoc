@@ -7,7 +7,8 @@ shown how to edit the _standalone.xml_ or _domain.xml_ directly.  This must be d
 Additionally, you may be shown how to apply config changes on a running server using the app server's command line interface ({{books.appserver.name}} CLI).  This chapter discusses
 how you will do this.
 
-=== Start the {{books.appserver.name}} CLI
+
+=== Start the {{book.appserver.name}} CLI
 
 To start the {{books.appserver.name}} CLI, you need to run the `jboss-cli` script.
 

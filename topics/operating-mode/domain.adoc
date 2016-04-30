@@ -1,3 +1,4 @@
+
 [[_domain-mode]]
 === Domain Clustered Mode
 
@@ -72,7 +73,7 @@ The `auth-server-standalone` profile is a non-clustered setup.  The `auth-server
 
 If you scroll down further, you'll see various `socket-binding-groups` defined.
 
-.socket-binding-grous
+.socket-binding-groups
 [source,xml]
 ----
     <socket-binding-groups>
@@ -86,7 +87,8 @@ If you scroll down further, you'll see various `socket-binding-groups` defined.
         <socket-binding-group name="load-balancer-sockets" default-interface="public">
            ...
         </socket-binding-group>
-    </socket-binding-groups>----
+    </socket-binding-groups>
+----
 
 
 This config defines the default port mappings for various connectors that are opened with each

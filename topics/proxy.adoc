@@ -1,3 +1,4 @@
+
 [[_proxy]]
 == Keycloak Security Proxy
 
@@ -147,7 +148,7 @@ adapter-config::
   Same configuration as any other keycloak adapter.
   See <<_adapter_config,Adapter Config>>                                        
 
-===== Constraint Config
+==== Constraint Config
 
 Next under each application you can define one or more constraints in the `constraints` array attribute.
 A constraint defines a URL pattern relative to the base-path.

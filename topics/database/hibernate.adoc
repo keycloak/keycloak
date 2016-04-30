@@ -1,3 +1,4 @@
+
 === Hibernate Configuration
 
 The Hibernate persistence API is already pre-configured out of the box and rarely needs to be changed.
