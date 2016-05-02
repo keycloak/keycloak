@@ -1,0 +1,132 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<assembly>
+    <id>server-dist</id>
+
+    <formats>
+        <format>zip</format>
+        <format>tar.gz</format>
+    </formats>
+
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/modules/system/layers/keycloak</directory>
+            <outputDirectory>modules/system/layers/keycloak</outputDirectory>
+            <includes>
+                <include>com/google/zxing/**</include>
+                <include>org/freemarker/**</include>
+                <include>org/jboss/aesh/0.65/**</include>
+                <include>org/jboss/as/**</include>
+                <include>org/keycloak/**</include>
+                <include>org/liquibase/**</include>
+                <include>org/mongodb/**</include>
+                <include>org/twitter4j/**</include>
+                <include>sun/jdk/jgss/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/content</directory>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/themes</directory>
+            <outputDirectory>themes</outputDirectory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/providers</directory>
+            <outputDirectory>providers</outputDirectory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>../../</directory>
+            <includes>
+                <include>License.html</include>
+            </includes>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/bin</directory>
+            <outputDirectory>bin</outputDirectory>
+            <includes>
+                <include>add-user.bat</include>
+                <include>add-user.sh</include>
+                <include>product.conf</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration</directory>
+            <outputDirectory>standalone/configuration</outputDirectory>
+            <includes>
+                <include>keycloak-server.json</include>
+                <include>standalone.xml</include>
+                <include>standalone-ha.xml</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/domain/configuration</directory>
+            <outputDirectory>domain/configuration</outputDirectory>
+            <includes>
+                <include>domain.xml</include>
+                <include>host-master.xml</include>
+                <include>host-slave.xml</include>
+                <include>host.xml</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/domain/servers</directory>
+            <outputDirectory>domain/servers</outputDirectory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/welcome-content</directory>
+            <outputDirectory>welcome-content</outputDirectory>
+            <includes>
+                <include>index.html</include>
+                <include>robots.txt</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+
+    <files>
+        <file>
+            <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user-keycloak.sh</source>
+            <outputDirectory>bin</outputDirectory>
+            <destName>add-user-keycloak.sh</destName>
+        </file>
+        <file>
+            <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user-keycloak.bat</source>
+            <outputDirectory>bin</outputDirectory>
+            <destName>add-user-keycloak.bat</destName>
+        </file>
+        <file>
+            <source>${project.build.directory}/unpacked/keycloak-${project.version}/modules/layers.conf</source>
+            <outputDirectory>modules</outputDirectory>
+            <destName>layers.conf</destName>
+        </file>
+    </files>
+
+</assembly>

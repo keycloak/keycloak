@@ -24,9 +24,9 @@
         <version>1.9.4.Final-SNAPSHOT</version>
     </parent>
 
-    <artifactId>keycloak-server-overlay</artifactId>
+    <artifactId>keycloak-server-overlay-layer</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak Server Overlay Distribution</name>
+    <name>Keycloak Server Overlay Layer Distribution</name>
     <description/>
 
     <dependencies>
@@ -38,7 +38,7 @@
     </dependencies>
 
     <build>
-        <finalName>keycloak-overlay-${project.version}</finalName>
+        <finalName>keycloak-overlay-layer-${project.version}</finalName>
 
         <plugins>
             <plugin>

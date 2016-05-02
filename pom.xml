@@ -1013,7 +1013,13 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-server-overlay</artifactId>
+                <artifactId>keycloak-server-overlay-addon</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-server-overlay-layer</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
