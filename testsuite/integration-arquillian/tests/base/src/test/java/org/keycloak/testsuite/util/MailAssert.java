@@ -52,7 +52,7 @@ public class MailAssert {
 
             assertTrue(errorMessage, messageContent.contains(content));
             for (String string : messageContent.split("\n")) {
-                if (string.contains("http://")) {
+                if (string.contains("http")) {
                     return string;
                 }
             }
