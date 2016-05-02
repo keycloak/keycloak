@@ -244,7 +244,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
         salesPostPassiveServletPage.navigateTo();
         waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().contains("<body><pre></pre></body>"));
+        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().equals(""));
 
         salesPostSigEmailServletPage.navigateTo();
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
@@ -322,7 +322,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
         waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
         //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().contains("<body><pre></pre></body>"));
+        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().equals(""));
 
         assertSuccessfulLogin(salesPostServletPage, bburkeUser, testRealmSAMLPostLoginPage);
 
@@ -333,8 +333,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
         waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
         //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().contains("<body><pre></pre></body>"));
-
+        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().equals(""));
         assertForbiddenLogin(salesPostServletPage, "unauthorized", "password", testRealmSAMLPostLoginPage);
         assertForbidden(salesPostPassiveServletPage);
 
