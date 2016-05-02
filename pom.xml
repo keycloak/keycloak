@@ -90,7 +90,7 @@
         <twitter4j.version>4.0.4</twitter4j.version>
 
         <!-- Test -->
-        <greenmail.version>1.3.1b</greenmail.version>
+        <greenmail.version>1.5.0</greenmail.version>
         <hamcrest.version>1.3</hamcrest.version>
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.12</junit.version>

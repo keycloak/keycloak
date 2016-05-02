@@ -21,7 +21,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import static org.keycloak.testsuite.util.MailServerConfiguration.*;
+import static org.keycloak.testsuite.util.MailServerConfiguration.PORT_SMTPS;
+import static org.keycloak.testsuite.util.MailServerConfiguration.SSL;
 
 /**
  *
@@ -44,7 +47,11 @@ public final class SuiteContext {
         this.adminPasswordUpdated = false;
         smtpServer.put("from", FROM);
         smtpServer.put("host", HOST);
-        smtpServer.put("port", PORT);
+        smtpServer.put("port", PORT_SMTP);
+        if(isSslRequired()){
+            smtpServer.put("port", PORT_SMTPS);
+            smtpServer.put("ssl", SSL);
+        }
     }
 
     public boolean isAdminPasswordUpdated() {
@@ -85,6 +92,10 @@ public final class SuiteContext {
 
     public boolean isAuthServerMigrationEnabled() {
         return migratedAuthServerInfo != null;
+    }
+
+    public static boolean isSslRequired() {
+        return Boolean.parseBoolean(System.getProperty("mail.server.stmps.required"));
     }
 
     public Set<ContainerInfo> getContainers() {

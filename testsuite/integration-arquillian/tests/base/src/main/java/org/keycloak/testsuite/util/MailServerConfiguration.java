@@ -24,5 +24,7 @@ package org.keycloak.testsuite.util;
 public class MailServerConfiguration {
     public static final String FROM = "server@mail.test";
     public static final String HOST = "localhost";
-    public static final String PORT = "3025";
+    public static final String PORT_SMTP = "3025";
+    public static final String PORT_SMTPS = "3465";
+    public static final String SSL = "true";
 }
