@@ -94,7 +94,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         jsConsoleExamplePage.navigateTo();
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
 
-        pause(1000);
+        pause(300);
 
         jsConsoleExamplePage.init();
         jsConsoleExamplePage.logIn();
@@ -107,10 +107,12 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
         jsConsoleExamplePage.init();
+
+        pause(300);
         assertTrue(jsConsoleExamplePage.getOutputText().contains("Init Success (Authenticated)"));
         assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Success"));
 
-        pause(1000);
+        pause(300);
 
         jsConsoleExamplePage.logOut();
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
@@ -132,9 +134,11 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
         jsConsoleExamplePage.init();
+        pause(300);
         assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Success"));
 
         jsConsoleExamplePage.refreshToken();
+        pause(300);
         assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Refresh Success"));
     }
 
@@ -150,6 +154,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
         jsConsoleExamplePage.init();
+        pause(300);
         assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Success"));
 
         jsConsoleExamplePage.refreshTokenIfUnder30s();
@@ -158,6 +163,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         pause((TOKEN_LIFESPAN_LEEWAY + 2) * 1000);
 
         jsConsoleExamplePage.refreshTokenIfUnder30s();
+        pause(300);
         assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Refresh Success"));
     }
 
@@ -175,6 +181,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
         jsConsoleExamplePage.init();
+        pause(300);
         assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Success"));
 
         jsConsoleExamplePage.getProfile();
@@ -212,6 +219,8 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         oAuthGrantPage.accept();
 
         jsConsoleExamplePage.init();
+
+        pause(300);
         assertTrue(jsConsoleExamplePage.getOutputText().contains("Init Success (Authenticated)"));
 
         applicationsPage.navigateTo();
