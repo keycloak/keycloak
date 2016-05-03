@@ -273,7 +273,7 @@ public class RealmAdminResource {
                 usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
             }
 
-            adminEvent.operation(OperationType.UPDATE).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
             return Response.noContent().build();
         } catch (PatternSyntaxException e) {
             return ErrorResponse.error("Specified regex pattern(s) is invalid.", Response.Status.BAD_REQUEST);
