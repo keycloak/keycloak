@@ -9,6 +9,7 @@
     "splitter"
   ],
   "variables": {
+    "title": "Keycloak Installation and Configuration Guide",
     "community": true,
     "product": false,
     "images": "keycloak-images",

@@ -1,4 +1,4 @@
-= Summary
+= {{book.title}}
 
  . link:topics/overview.adoc[Overview]
  .. link:topics/overview/recommended-reading.adoc[Recommended Reading]
