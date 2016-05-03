@@ -88,4 +88,14 @@ public class ClientBuilder {
         rep.setRedirectUris(Arrays.asList(redirectUris));
         return this;
     }
+
+    public ClientBuilder baseUrl(String baseUrl) {
+        rep.setBaseUrl(baseUrl);
+        return this;
+    }
+
+    public ClientBuilder rootUrl(String rootUrl) {
+        rep.setRootUrl(rootUrl);
+        return this;
+    }
 }
