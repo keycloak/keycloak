@@ -22,6 +22,7 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.events.EventsListenerProvider;
@@ -48,12 +49,15 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
 
     private final BlockingQueue<LogoutAction> adminLogoutActions;
     private final BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions;
+    private final BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction;
 
     public TestApplicationResourceProvider(KeycloakSession session, BlockingQueue<LogoutAction> adminLogoutActions,
-            BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions) {
+            BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions,
+            BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction) {
         this.session = session;
         this.adminLogoutActions = adminLogoutActions;
         this.adminPushNotBeforeActions = adminPushNotBeforeActions;
+        this.adminTestAvailabilityAction = adminTestAvailabilityAction;
     }
 
     @POST
@@ -70,6 +74,13 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         adminPushNotBeforeActions.add(new JWSInput(data).readJsonContent(PushNotBeforeAction.class));
     }
 
+    @POST
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Path("/admin/k_test_available")
+    public void testAvailable(String data) throws JWSInputException {
+        adminTestAvailabilityAction.add(new JWSInput(data).readJsonContent(TestAvailabilityAction.class));
+    }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/poll-admin-logout")
@@ -82,6 +93,13 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     @Path("/poll-admin-not-before")
     public PushNotBeforeAction getAdminPushNotBefore() throws InterruptedException {
         return adminPushNotBeforeActions.poll(10, TimeUnit.SECONDS);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/poll-test-available")
+    public TestAvailabilityAction getTestAvailable() throws InterruptedException {
+        return adminTestAvailabilityAction.poll(10, TimeUnit.SECONDS);
     }
 
     @POST

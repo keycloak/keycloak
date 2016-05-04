@@ -324,6 +324,7 @@ public class ClientResource {
      */
     @Path("push-revocation")
     @POST
+    @Produces(MediaType.APPLICATION_JSON)
     public GlobalRequestResult pushRevocation() {
         auth.requireManage();
 
@@ -522,6 +523,7 @@ public class ClientResource {
     @Path("test-nodes-available")
     @GET
     @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
     public GlobalRequestResult testNodesAvailable() {
         auth.requireManage();
 

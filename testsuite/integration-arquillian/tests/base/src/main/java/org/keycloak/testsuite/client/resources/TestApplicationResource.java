@@ -19,6 +19,7 @@ package org.keycloak.testsuite.client.resources;
 
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -42,6 +43,11 @@ public interface TestApplicationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/poll-admin-not-before")
     PushNotBeforeAction getAdminPushNotBefore();
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/poll-test-available")
+    TestAvailabilityAction getTestAvailable();
 
     @POST
     @Path("/clear-admin-actions")
