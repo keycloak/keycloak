@@ -1,14 +1,14 @@
-package org.keycloak.testsuite.performance.metrics.impl;
+package org.keycloak.testsuite.performance.statistics;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.keycloak.testsuite.performance.metrics.Metric;
 
 /**
+ * SimpleStatistic just holds data.
  *
  * @author tkyjovsk
  */
-public class Result implements Metric {
+public class SimpleStatistic implements Statistic {
 
     private final long count;
     private final long min;
@@ -16,7 +16,7 @@ public class Result implements Metric {
     private final double average;
     private final double standardDeviation;
 
-    public Result(long count, long min, long max, double average, double standardDeviation) {
+    public SimpleStatistic(long count, long min, long max, double average, double standardDeviation) {
         this.count = count;
         this.min = min;
         this.max = max;
@@ -24,13 +24,13 @@ public class Result implements Metric {
         this.standardDeviation = standardDeviation;
     }
 
-    public Result(Metric metric) {
+    public SimpleStatistic(Statistic statistic) {
         this(
-                metric.getCount(),
-                metric.getMin(),
-                metric.getMax(),
-                metric.getAverage(),
-                metric.getStandardDeviation());
+                statistic.getCount(),
+                statistic.getMin(),
+                statistic.getMax(),
+                statistic.getAverage(),
+                statistic.getStandardDeviation());
     }
 
     @Override
