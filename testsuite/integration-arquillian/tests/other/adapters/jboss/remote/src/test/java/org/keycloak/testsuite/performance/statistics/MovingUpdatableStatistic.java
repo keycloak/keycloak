@@ -1,13 +1,15 @@
-package org.keycloak.testsuite.performance.metrics.impl;
+package org.keycloak.testsuite.performance.statistics;
 
 import java.math.BigDecimal;
-import org.keycloak.testsuite.performance.metrics.ComputedMetric;
 
 /**
+ * Allows to compute statistical values without holding the actual measurements.
  *
  * @author tkyjovsk
  */
-public final class MovingAverageMetric implements ComputedMetric {
+public final class MovingUpdatableStatistic implements UpdatableStatistic {
+
+    public static final String STATISTIC_TYPE_PROPERTY_VALUE = "moving";
 
     private BigDecimal sum;
     private BigDecimal sumSquare;
@@ -15,7 +17,7 @@ public final class MovingAverageMetric implements ComputedMetric {
     private long min;
     private long max;
 
-    public MovingAverageMetric() {
+    public MovingUpdatableStatistic() {
         reset();
     }
 
@@ -29,17 +31,26 @@ public final class MovingAverageMetric implements ComputedMetric {
     }
 
     @Override
-    public long getCount() {
+    public synchronized void addValue(long value) {
+        sum = sum.add(new BigDecimal(value));
+        sumSquare = sumSquare.add(new BigDecimal(value * value));
+        min = Math.min(min, value);
+        max = Math.max(max, value);
+        count++;
+    }
+
+    @Override
+    public synchronized long getCount() {
         return count;
     }
 
     @Override
-    public long getMin() {
+    public synchronized long getMin() {
         return min;
     }
 
     @Override
-    public long getMax() {
+    public synchronized long getMax() {
         return max;
     }
 
@@ -54,15 +65,6 @@ public final class MovingAverageMetric implements ComputedMetric {
         double average = getAverage();
         return count == 0 ? 0
                 : Math.sqrt(sumSquare.longValue() / count - (average * average));
-    }
-
-    @Override
-    public synchronized void addValue(long value) {
-        sum = sum.add(new BigDecimal(value));
-        sumSquare = sumSquare.add(new BigDecimal(value * value));
-        min = Math.min(min, value);
-        max = Math.max(max, value);
-        count++;
     }
 
     @Override
