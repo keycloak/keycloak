@@ -27,14 +27,15 @@ import org.keycloak.testsuite.adapter.page.SAMLPostEncExample;
 import org.keycloak.testsuite.adapter.page.SAMLPostSigExample;
 import org.keycloak.testsuite.adapter.page.SAMLRedirectSigExample;
 import org.keycloak.testsuite.util.URLAssert;
+import org.openqa.selenium.By;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLDEMO;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author mhajas
@@ -84,7 +85,7 @@ public abstract class AbstractSAMLExampleAdapterTest extends AbstractExampleAdap
         samlPostSigExamplePage.navigateTo();
         testRealmSAMLPostLoginPage.form().login(bburkeUser);
 
-        assertTrue(driver.getPageSource().contains("Welcome to the Sales Tool, " + bburkeUser.getUsername()));
+        waitUntilElement(By.xpath("//body")).text().contains("Welcome to the Sales Tool, " + bburkeUser.getUsername());
 
         samlPostSigExamplePage.logout();
 
@@ -98,7 +99,7 @@ public abstract class AbstractSAMLExampleAdapterTest extends AbstractExampleAdap
 
         testRealmSAMLPostLoginPage.form().login(bburkeUser);
 
-        assertTrue(driver.getPageSource().contains("Welcome to the Sales Tool, " + bburkeUser.getUsername()));
+        waitUntilElement(By.xpath("//body")).text().contains("Welcome to the Sales Tool, " + bburkeUser.getUsername());
 
         samlPostEncExamplePage.logout();
 
@@ -112,7 +113,7 @@ public abstract class AbstractSAMLExampleAdapterTest extends AbstractExampleAdap
 
         testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
 
-        assertTrue(driver.getPageSource().contains("Welcome to the Employee Tool,"));
+        waitUntilElement(By.xpath("//body")).text().contains("Welcome to the Employee Tool,");
 
         samlRedirectSigExamplePage.logout();
 
