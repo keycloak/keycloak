@@ -91,28 +91,4 @@ public class ClientTest extends AbstractClientTest {
         assertEqualClients(rep, gotById);
     }
 
-    /*  DEPRECATED?
-    @Test
-    public void testAllowedOrigins() {
-        createOidcClient("originsClient");
-        ClientResource client = findClientResource("originsClient");
-        java.util.Set<String> origins = client.getAllowedOrigins();
-        assertEquals(1, origins.size());
-        assertTrue(origins.contains("foo/*"));
-
-        origins.add("bar/*");
-        client.updateAllowedOrigins(origins); //<-- STACK OVERFLOW
-        origins = client.getAllowedOrigins();
-        assertEquals(2, origins.size());
-        assertTrue(origins.contains("foo/*"));
-        assertTrue(origins.contains("bar/*"));
-
-        java.util.Set<String> toRemove = new java.util.HashSet<>();
-        toRemove.add("bar/*");
-        client.removeAllowedOrigins(origins);
-        origins = client.getAllowedOrigins();
-        assertEquals(1, origins.size());
-        assertTrue(origins.contains("foo/*"));
-    } */
-
 }
