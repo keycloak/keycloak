@@ -1,49 +1,8 @@
 = {{book.title}}
 
  . link:topics/overview.adoc[Overview]
- .. link:topics/overview/recommended-reading.adoc[Recommended Reading]
- . link:topics/installation.adoc[Installation]
+ . link:topics/first-boot.adoc[First Time Boot]
+ . link:topics/cluster.adoc[Boot in Cluster]
+ . link:topics/first-realm-user.adoc[Creating Your First Realm and User]
+ . link:topics/first-jboss-servlet.adoc[Securing a JBoss Servlet Application]
  .. link:topics/installation/system-requirements.adoc[System Requirements]
- {% if book.community %}
- .. link:topics/installation/distribution-files-community.adoc[Installing Distribution Files]
- {% endif %}
- {% if book.product %}
- .. link:topics/installation/distribution-files-product.adoc[Installing Distribution Files]
- {% endif %}
- .. link:topics/installation/directory-structure.adoc[Distribution Directory Structure]
- . link:topics/operating-mode.adoc[Choosing an Operating Mode]
- .. link:topics/operating-mode/standalone.adoc[Standalone Mode]
- .. link:topics/operating-mode/standalone-ha.adoc[Standalone Clustered Mode]
- .. link:topics/operating-mode/domain.adoc[Domain Clustered Mode]
- . link:topics/manage.adoc[Managing Config at Runtime]
- . link:topics/database.adoc[Relational Database Setup]
- .. link:topics/database/checklist.adoc[Setup Checklist]
- .. link:topics/database/jdbc.adoc[JDBC Setup]
- .. link:topics/database/datasource.adoc[Datasource Setup]
- .. link:topics/database/hibernate.adoc[Hibernate Configuration]
- {% if book.community %}
- . link:topics/mongo.adoc[Mongo DB Setup]
- {% endif %}
- . link:topics/network.adoc[Network Setup]
- .. link:topics/network/bind-address.adoc[Bind Addresses]
- .. link:topics/network/ports.adoc[Socket Port Bindings]
- .. link:topics/network/https.adoc[HTTPS/SSL Setup]
- .. link:topics/network/outgoing.adoc[Outgoing HTTP Requests]
- . link:topics/clustering.adoc[Clustering]
- .. link:topics/clustering/recommended.adoc[Recommended Network Architecture]
- .. link:topics/clustering/example.adoc[Cluster Example]
- .. link:topics/clustering/load-balancer.adoc[Setting Up a Load Balancer]
- .. link:topics/clustering/multicast.adoc[Multicast Network Setup]
- .. link:topics/clustering/serialized.adoc[Serialized Cluster Startup]
- .. link:topics/clustering/booting.adoc[Booting the Cluster]
- .. link:topics/clustering/troubleshooting.adoc[Trouble Shooting]
- . link:topics/cache.adoc[Server Cache Configuration]
- .. link:topics/cache/eviction.adoc[Eviction Policy and Max Entries]
- .. link:topics/cache/replication.adoc[Replication and Failover]
- .. link:topics/cache/disable.adoc[Disabling Caching]
- .. link:topics/cache/clear.adoc[Clearing Caches at Runtime]
-{% if book.community %}
- . link:topics/proxy.adoc[Keycloak Security Proxy]
-{% endif %}
-
-

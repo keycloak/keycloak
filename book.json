@@ -9,7 +9,7 @@
     "splitter"
   ],
   "variables": {
-    "title": "Keycloak Installation and Configuration Guide",
+    "title": "Keycloak Getting Started Tutorials",
     "community": true,
     "product": false,
     "images": "keycloak-images",
@@ -62,6 +62,11 @@
     "developerguide": {
       "name": "Keycloak Server Developer Guide",
       "link": "https://keycloak.gitbooks.io/server-developer-guide/content/"
+
+    },
+    "installguide": {
+      "name": "Keycloak Server Installation and Configuration Guide",
+      "link": "https://keycloak.gitbooks.io/server-installation-guide/content/"
 
     },
     "adminguide": {

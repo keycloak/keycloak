@@ -1,5 +1,5 @@
 
-{{book.project.name}} Server Installation and Configuration Guide
+{{book.project.name}} Getting Started Tutorials
 ======================
 
 image:images/keycloak_logo.png[alt="Keycloak"]
