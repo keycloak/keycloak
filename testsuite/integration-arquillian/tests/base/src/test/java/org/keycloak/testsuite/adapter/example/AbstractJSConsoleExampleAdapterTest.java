@@ -46,6 +46,7 @@ import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampleAdapterTest {
 
@@ -94,7 +95,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         jsConsoleExamplePage.navigateTo();
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
 
-        pause(1000);
+        waitUntilElement(jsConsoleExamplePage.getInitButtonElement()).is().present();
 
         jsConsoleExamplePage.init();
         jsConsoleExamplePage.logIn();
@@ -107,16 +108,15 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
         jsConsoleExamplePage.init();
-        assertTrue(jsConsoleExamplePage.getOutputText().contains("Init Success (Authenticated)"));
-        assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Success"));
 
-        pause(1000);
+        waitUntilElement(jsConsoleExamplePage.getOutputElement()).text().contains("Init Success (Authenticated)");
+        waitUntilElement(jsConsoleExamplePage.getEventsElement()).text().contains("Auth Success");
 
         jsConsoleExamplePage.logOut();
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
         jsConsoleExamplePage.init();
 
-        assertTrue(jsConsoleExamplePage.getOutputText().contains("Init Success (Not Authenticated)"));
+        waitUntilElement(jsConsoleExamplePage.getOutputElement()).text().contains("Init Success (Not Authenticated)");
     }
 
     @Test
@@ -126,16 +126,16 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         jsConsoleExamplePage.init();
         jsConsoleExamplePage.refreshToken();
-        assertTrue(jsConsoleExamplePage.getOutputText().contains("Failed to refresh token"));
+        waitUntilElement(jsConsoleExamplePage.getOutputElement()).text().contains("Failed to refresh token");
 
         jsConsoleExamplePage.logIn();
         testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
         jsConsoleExamplePage.init();
-        assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Success"));
+        waitUntilElement(jsConsoleExamplePage.getEventsElement()).text().contains("Auth Success");
 
         jsConsoleExamplePage.refreshToken();
-        assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Refresh Success"));
+        waitUntilElement(jsConsoleExamplePage.getEventsElement()).text().contains("Auth Refresh Success");
     }
 
     @Test
@@ -144,21 +144,21 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
         jsConsoleExamplePage.init();
         jsConsoleExamplePage.refreshToken();
-        assertTrue(jsConsoleExamplePage.getOutputText().contains("Failed to refresh token"));
+        waitUntilElement(jsConsoleExamplePage.getOutputElement()).text().contains("Failed to refresh token");
 
         jsConsoleExamplePage.logIn();
         testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
         jsConsoleExamplePage.init();
-        assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Success"));
+        waitUntilElement(jsConsoleExamplePage.getEventsElement()).text().contains("Auth Success");
 
         jsConsoleExamplePage.refreshTokenIfUnder30s();
-        assertTrue(jsConsoleExamplePage.getOutputText().contains("Token not refreshed, valid for"));
+        waitUntilElement(jsConsoleExamplePage.getOutputElement()).text().contains("Token not refreshed, valid for");
 
         pause((TOKEN_LIFESPAN_LEEWAY + 2) * 1000);
 
         jsConsoleExamplePage.refreshTokenIfUnder30s();
-        assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Refresh Success"));
+        waitUntilElement(jsConsoleExamplePage.getEventsElement()).text().contains("Auth Refresh Success");
     }
 
     @Test
@@ -168,17 +168,16 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         jsConsoleExamplePage.init();
         jsConsoleExamplePage.getProfile();
-        pause(500);
-        assertTrue(jsConsoleExamplePage.getOutputText().contains("Failed to load profile"));
+        waitUntilElement(jsConsoleExamplePage.getOutputElement()).text().contains("Failed to load profile");
 
         jsConsoleExamplePage.logIn();
         testRealmLoginPage.form().login("user", "password");
         assertCurrentUrlStartsWith(jsConsoleExamplePage);
         jsConsoleExamplePage.init();
-        assertTrue(jsConsoleExamplePage.getEventsText().contains("Auth Success"));
+        waitUntilElement(jsConsoleExamplePage.getEventsElement()).text().contains("Auth Success");
 
         jsConsoleExamplePage.getProfile();
-        assertTrue(jsConsoleExamplePage.getOutputText().contains("\"username\": \"user\""));
+        waitUntilElement(jsConsoleExamplePage.getOutputElement()).text().contains("\"username\": \"user\"");
     }
 
     @Test
@@ -212,7 +211,8 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         oAuthGrantPage.accept();
 
         jsConsoleExamplePage.init();
-        assertTrue(jsConsoleExamplePage.getOutputText().contains("Init Success (Authenticated)"));
+
+        waitUntilElement(jsConsoleExamplePage.getOutputElement()).text().contains("Init Success (Authenticated)");
 
         applicationsPage.navigateTo();
         applicationsPage.revokeGrantForApplication("js-console");
@@ -271,7 +271,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         logInAndInit("implicit");
 
-        assertTrue(jsConsoleExamplePage.getOutputText().contains("Init Success (Authenticated)"));
+        waitUntilElement(jsConsoleExamplePage.getOutputElement()).text().contains("Init Success (Authenticated)");
     }
 
     @Test
@@ -294,7 +294,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         jsConsoleExamplePage.refreshToken();
 
-        assertTrue(jsConsoleExamplePage.getOutputText().contains("Failed to refresh token"));
+        waitUntilElement(jsConsoleExamplePage.getOutputElement()).text().contains("Failed to refresh token");
     }
 
     @Test
@@ -309,7 +309,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         pause(6000);
 
-        assertTrue(jsConsoleExamplePage.getEventsText().contains("Access token expired"));
+        waitUntilElement(jsConsoleExamplePage.getEventsElement()).text().contains("Access token expired");
     }
 
     private void setImplicitFlowFroClient() {
