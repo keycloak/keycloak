@@ -1,5 +1,5 @@
 
-[[_operating_mode]]
+[[_operating-mode]]
 
 == Choosing an Operating Mode
 
