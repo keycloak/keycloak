@@ -1,10 +1,113 @@
 
-=== Setting Up a Load Balancer
+=== Setting Up a Load Balancer or Proxy
 
-This section only covers configuring the built in load balancer that is discussed in the
+This section discusses a number of things you need to configure before you can put a reverse proxy or load balancer
+in front of your clustered {{book.project.name}} deployment.  It also covers configuring the built in load balancer that
+was <<fake/../../operating-mode/domain.adoc#_clustered-domain-example, Clustered Domain Example>>.
+
+
+==== Identifying Client IP Addresses
+
+A few features in {{book.project.name}} rely on the fact that the remote
+address of the HTTP client connecting to the authentication server is the real IP address of the client machine.  This can
+be problematic when you have a reverse proxy or loadbalancer in front of your {{book.project.name}} authentication server.
+The usual setup is that you have a frontend proxy sitting on a public network that load balances and forwards requests
+to backend {{book.project.name}} server instances that sin on a private network.  There is some extra configuration you have to do in this scenario
+so that the actual client IP address is forwarded to and processed by the {{book.project.name}} server instances.  Specifically:
+
+* Configure your reverse proxy (loadbalancer) to properly set `X-Forwarded-For` and `X-Forwarded-Proto` HTTP headers.
+* Configure the authentication server to read the client's IP address from `X-Forwarded-For header`.
+
+Configuring your proxy to generate the `X-Forwarded-For` and `X-Forwarded-Proto` HTTP headers is beyond the scope of this
+guide.  Take extra precautions to ensure that the
+`X-Forwared-For` header is set by your proxy.  If your proxy isn't configured correctly, then _rogue_ clients can set this header themselves and trick {{book.project.name}}
+into thinking the client is connecting from a different IP address than it actually is.  This becomes really important if you are doing
+any black or white listing of IP addresses.
+
+Beyond the proxy itself, there are a few things you need to configure on the {{book.project.name}} side of things.
+If your proxy is forwarding requests via the HTTP protocol, then you need to configure {{book.project.name}} to pull the client's
+IP address from the `X-Forwarded-For` header rather than from the network packet.
+To do this, open up the profile configuration file (_standalone.xml, _standalone-ha.xml_, or _domain.xml_ depending on your
+<<fake/../../operating-mode.adoc#_operating-mode, operating mode>>) and look for the `"urn:jboss:domain:undertow:3.0` XML block.
+
+.`X-Forwarded-For` HTTP Config
+[source,xml]
+----
+<subsystem xmlns="urn:jboss:domain:undertow:3.0">
+   <buffer-cache name="default"/>
+   <server name="default-server">
+      <ajp-listener name="ajp" socket-binding="ajp"/>
+      <http-listener name="default" socket-binding="http" redirect-socket="https"
+          proxy-address-forwarding="true"/>
+      ...
+   </server>
+   ...
+</subsystem>
+----
+
+Add the `proxy-address-forwarding` attribute to the `http-listener` element.  Set the value to `true`.
+
+If your proxy is using the AJP protocol instead of HTTP to forward requests (i.e. Apache HTTPD + mod-cluster), then you have
+to configure things a little differently.  Instead of modifying the `http-listener`, you need to add a filter to
+pull this information from the AJP packets.
+
+
+.`X-Forwarded-For` AJP Config
+[source,xml]
+----
+<<subsystem xmlns="urn:jboss:domain:undertow:3.0">
+     <buffer-cache name="default"/>
+     <server name="default-server">
+         <ajp-listener name="ajp" socket-binding="ajp"/>
+         <http-listener name="default" socket-binding="http" redirect-socket="https"/>
+         <host name="default-host" alias="localhost">
+             ...
+             <filter-ref name="proxy-peer"/>
+         </host>
+     </server>
+        ...
+     <filters>
+         ...
+         <filter name="proxy-peer"
+                 class-name="io.undertow.server.handlers.ProxyPeerAddressHandler"
+                 module="io.undertow.core" />
+     </filters>
+ </subsystem>
+----
+
+==== Enable HTTPS/SSL with a Reverse Proxy
+
+Assuming that your reverse proxy doesn't use port 8443 for SSL you also need to configure what port HTTPS traffic is redirected to.
+[source,xml]
+----
+<subsystem xmlns="urn:jboss:domain:undertow:3.0">
+    ...
+    <http-listener name="default" socket-binding="http"
+        proxy-address-forwarding="true" redirect-socket="proxy-https"/>
+    ...
+</subsystem>
+----
+
+Add the `redirect-socket` attribute to the `http-listener` element.  The value should be `proxy-https` which points to a
+socket binding you also need to define.
+
+Then add a new `socket-binding` element to the `socket-binding-group` element:
+
+[source]
+----
+
+<socket-binding-group name="standard-sockets" default-interface="public"
+    port-offset="${jboss.socket.binding.port-offset:0}">
+    ...
+    <socket-binding name="proxy-https" port="443"/>
+    ...
+</socket-binding-group>
+----
+
+==== Using the Built-In Load Balancer
+
+This section covers configuring the built in load balancer that is discussed in the
 <<fake/../../operating-mode/domain.adoc#_clustered-domain-example, Clustered Domain Example>>.
-The link:{{book.appserver.loadbalancer.link}}[the load balancer] chapter of the {{book.appserver.loadbalancer.name}}
-has information on using some other software based load balancers that may help you.
 
 The <<fake/../../operating-mode/domain.adoc#_clustered-domain-example, Clustered Domain Example>> is only designed to run
 on one machine.  To bring up a slave on another host, you'll need to
@@ -14,7 +117,9 @@ on one machine.  To bring up a slave on another host, you'll need to
   the _standalone/_ directory.
 . Edit the _host-slave.xml_ file to change the bind addresses used or override them on the command line
 
-==== Register a New Host With Load Balancer
+
+
+===== Register a New Host With Load Balancer
 
 Let's look first at registering the new host slave with the load balancer configuration in _domain.xml_.  Open this
 file and go to the undertow configuration in the `load-balancer` profile.  Add a new `host` definition called
@@ -60,7 +165,7 @@ binding needs to point to the host and port of the new host.
 </socket-binding-group>
 ----
 
-==== Master Bind Addresses
+===== Master Bind Addresses
 
 Next thing you'll have to do is to change the `public` and `management` bind addresses for the master host.  Either
 edit the _domain.xml_ file as discussed in the <<fake/../../network/bind-address.adoc#_bind-address, Bind Addresses>> chapter
@@ -71,7 +176,7 @@ or specify these bind addresses on the command line as follows:
 $ domain.sh --host-config=host-master.xml -Djboss.bind.address=192.168.0.2 -Djboss.bind.address.management=192.168.0.2
 ----
 
-==== Host Slave Bind Addresses
+===== Host Slave Bind Addresses
 
 Next you'll have to change the `public`, `management`, and domain controller bind addresses (`jboss.domain.master-address`).  Either edit the
 _host-slave.xml_ file or specify them on the command line as follows:
@@ -87,6 +192,12 @@ $ domain.sh --host-config=host-slave.xml
 The values of `jboss.bind.address` and `jboss.bind.addres.management` pertain to the host slave's IP address.
 The value of `jboss.domain.master.address` need to be the IP address of the domain controller which is the management address
 of the master host.
+
+==== Configuring Other Load Balancers
+
+The link:{{book.appserver.loadbalancer.link}}[the load balancer] chapter of the {{book.appserver.loadbalancer.name}}
+has information on using some other software based load balancers that may help you.
+
 
 
 

@@ -20,7 +20,7 @@ The `-b` switch sets the IP bind address for any public interfaces.
 
 Alternatively, if you don't want to set the bind address at the command line, you can edit the profile configuration of your deployment.
 Open up the profile configuration file (_standalone.xml or _domain.xml_ depending on your
-<<fake/../../operating-mode.adoc#_operating-mode, operating mode>> and look for the `interfaces` XML block.
+<<fake/../../operating-mode.adoc#_operating-mode, operating mode>>) and look for the `interfaces` XML block.
 
 [source,xml]
 ----
