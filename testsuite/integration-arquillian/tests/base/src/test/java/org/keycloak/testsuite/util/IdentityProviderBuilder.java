@@ -15,35 +15,37 @@
  * limitations under the License.
  */
 
-package org.keycloak.admin.client.resource;
+package org.keycloak.testsuite.util;
 
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.List;
-
 /**
- * @author pedroigor
+ * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface IdentityProvidersResource {
+public class IdentityProviderBuilder {
 
-    @Path("instances/{id}")
-    IdentityProviderResource get(@PathParam("id") String id);
+    private IdentityProviderRepresentation rep = new IdentityProviderRepresentation();
 
-    @GET
-    @Path("instances")
-    @Produces(MediaType.APPLICATION_JSON)
-    List<IdentityProviderRepresentation> findAll();
+    public static IdentityProviderBuilder create() {
+        return new IdentityProviderBuilder();
+    }
 
-    @POST
-    @Path("instances")
-    @Consumes(MediaType.APPLICATION_JSON)
-    Response create(IdentityProviderRepresentation identityProvider);
+    private IdentityProviderBuilder() {
+        rep.setEnabled(true);
+    }
+
+    public IdentityProviderBuilder alias(String alias) {
+        rep.setAlias(alias);
+        return this;
+    }
+
+    public IdentityProviderBuilder providerId(String providerId) {
+        rep.setProviderId(providerId);
+        return this;
+    }
+
+    public IdentityProviderRepresentation build() {
+        return rep;
+    }
+
 }

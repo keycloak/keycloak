@@ -227,7 +227,7 @@ public class UserFederationProvidersResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<UserFederationProviderRepresentation> getUserFederationInstances() {
-        auth.requireManage();
+        auth.requireView();
 
         List<UserFederationProviderRepresentation> reps = new LinkedList<UserFederationProviderRepresentation>();
         for (UserFederationProviderModel model : realm.getUserFederationProviders()) {
@@ -242,10 +242,6 @@ public class UserFederationProvidersResource {
         this.auth.requireView();
 
         UserFederationProviderModel model = KeycloakModelUtils.findUserFederationProviderById(id, realm);
-        if (model == null) {
-            throw new NotFoundException("Could not find federation provider");
-        }
-
         UserFederationProviderResource instanceResource = new UserFederationProviderResource(session, realm, this.auth, model, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(instanceResource);
         return instanceResource;

@@ -85,10 +85,6 @@ public class GroupsResource {
         auth.requireView();
 
         GroupModel group = realm.getGroupById(id);
-        if (group == null) {
-            throw new NotFoundException("Could not find group by id");
-        }
-
         GroupResource resource =  new GroupResource(realm, group, session, this.auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;

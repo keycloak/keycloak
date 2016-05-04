@@ -130,10 +130,6 @@ public class ClientTemplatesResource {
     @Path("{id}")
     public ClientTemplateResource getClient(final @PathParam("id") String id) {
         ClientTemplateModel clientModel = realm.getClientTemplateById(id);
-        if (clientModel == null) {
-            throw new NotFoundException("Could not find client template");
-        }
-
         ClientTemplateResource clientResource = new ClientTemplateResource(realm, auth, clientModel, session, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(clientResource);
         return clientResource;

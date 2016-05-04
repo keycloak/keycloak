@@ -88,6 +88,10 @@ public class ProtocolMappersResource {
     public List<ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol) {
         auth.requireAny();
 
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
         for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
             if (mapper.getProtocol().equals(protocol)) mappers.add(ModelToRepresentation.toRepresentation(mapper));
@@ -106,6 +110,10 @@ public class ProtocolMappersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createMapper(ProtocolMapperRepresentation rep) {
         auth.requireManage();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         ProtocolMapperModel model = null;
         try {
@@ -130,6 +138,10 @@ public class ProtocolMappersResource {
     public void createMapper(List<ProtocolMapperRepresentation> reps) {
         auth.requireManage();
 
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         ProtocolMapperModel model = null;
         for (ProtocolMapperRepresentation rep : reps) {
             model = RepresentationToModel.toModel(rep);
@@ -149,6 +161,10 @@ public class ProtocolMappersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<ProtocolMapperRepresentation> getMappers() {
         auth.requireAny();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
         for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
@@ -170,6 +186,10 @@ public class ProtocolMappersResource {
     public ProtocolMapperRepresentation getMapperById(@PathParam("id") String id) {
         auth.requireAny();
 
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         return ModelToRepresentation.toRepresentation(model);
@@ -188,6 +208,10 @@ public class ProtocolMappersResource {
     public void update(@PathParam("id") String id, ProtocolMapperRepresentation rep) {
         auth.requireManage();
 
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
@@ -205,6 +229,10 @@ public class ProtocolMappersResource {
     @Path("models/{id}")
     public void delete(@PathParam("id") String id) {
         auth.requireManage();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");

@@ -20,8 +20,15 @@ package org.keycloak.testsuite.util;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import sun.security.krb5.Realm;
 
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
+
+import static org.keycloak.testsuite.util.MailServerConfiguration.FROM;
+import static org.keycloak.testsuite.util.MailServerConfiguration.HOST;
+import static org.keycloak.testsuite.util.MailServerConfiguration.PORT;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -56,6 +63,15 @@ public class RealmBuilder {
 
     public RealmBuilder privateKey(String privateKey) {
         rep.setPrivateKey(privateKey);
+        return this;
+    }
+
+    public RealmBuilder testMail() {
+        Map<String, String> config = new HashMap<>();
+        config.put("from", MailServerConfiguration.FROM);
+        config.put("host", MailServerConfiguration.HOST);
+        config.put("port", MailServerConfiguration.PORT);
+        rep.setSmtpServer(config);
         return this;
     }
 
