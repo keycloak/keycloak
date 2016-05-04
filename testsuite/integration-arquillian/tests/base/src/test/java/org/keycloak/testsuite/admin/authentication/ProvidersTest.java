@@ -74,6 +74,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates client based on signed JWT issued by client and signed with the Client private key");
         addProviderInfo(expected, "client-secret", "Client Id and Secret", "Validates client based on 'client_id' and " +
                 "'client_secret' sent either in request parameters or in 'Authorization: Basic' header");
+        addProviderInfo(expected, "testsuite-client-passthrough", "Testsuite Dummy Client Validation", "Testsuite dummy authenticator, " +
+                "which automatically authenticates hardcoded client (like 'test-app' )");
 
         compareProviders(expected, result);
     }
@@ -119,6 +121,10 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Will also set it if execution is OPTIONAL and the OTP is currently configured for it.");
         addProviderInfo(result, "reset-password", "Reset Password", "Sets the Update Password required action if execution is REQUIRED.  " +
                 "Will also set it if execution is OPTIONAL and the password is currently configured for it.");
+        addProviderInfo(result, "testsuite-dummy-passthrough", "Testsuite Dummy Pass Thru",
+                "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
+        addProviderInfo(result, "testsuite-dummy-registration", "Testsuite Dummy Pass Thru",
+                "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
         return result;
     }
 

@@ -16,54 +16,41 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.*;
 import org.keycloak.events.Details;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.services.managers.RealmManager;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class RegisterTest {
-
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule();
+public class RegisterTest extends TestRealmKeycloakTest {
 
     @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
+    public AssertEvents events = new AssertEvents(this);
 
-    @Rule
-    public WebRule webRule = new WebRule(this);
-
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     protected RegisterPage registerPage;
 
-    @WebResource
-    protected OAuthClient oauth;
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+    }
 
     @Test
     public void registerExistingUser() {
@@ -133,12 +120,15 @@ public class RegisterTest {
 
     @Test
     public void registerPasswordPolicy() {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+        /*keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 appRealm.setPasswordPolicy(new PasswordPolicy("length"));
             }
-        });
+        });*/
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setPasswordPolicy("length");
+        testRealm().update(realm);
 
         try {
             loginPage.open();
@@ -162,12 +152,12 @@ public class RegisterTest {
 
             events.expectLogin().user(userId).detail(Details.USERNAME, "registerpasswordpolicy").assertEvent();
         } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            /*keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                     appRealm.setPasswordPolicy(new PasswordPolicy(null));
                 }
-            });
+            });*/
         }
     }
 
@@ -251,7 +241,7 @@ public class RegisterTest {
         String userId = events.expectRegister("registerUserSuccess", "registerUserSuccess@email").assertEvent().getUserId();
         events.expectLogin().detail("username", "registerusersuccess").user(userId).assertEvent();
 
-        UserModel user = getUser(userId);
+        UserRepresentation user = getUser(userId);
         Assert.assertNotNull(user);
         Assert.assertNotNull(user.getCreatedTimestamp());
         // test that timestamp is current with 10s tollerance
@@ -263,7 +253,7 @@ public class RegisterTest {
         assertEquals("lastName", user.getLastName());
     }
 
-    protected UserModel getUser(String userId) {
+    /*protected UserModel getUser(String userId) {
         KeycloakSession samlServerSession = keycloakRule.startSession();
         try {
             RealmModel brokerRealm = samlServerSession.realms().getRealm("test");
@@ -271,6 +261,10 @@ public class RegisterTest {
         } finally {
             keycloakRule.stopSession(samlServerSession, false);
         }
+    }*/
+
+    protected UserRepresentation getUser(String userId) {
+        return testRealm().users().get(userId).toRepresentation();
     }
 
     @Test
@@ -319,7 +313,7 @@ public class RegisterTest {
     @Test
     public void registerUserSuccess_emailAsUsername() {
         configureRelamRegistrationEmailAsUsername(true);
-        
+
         try {
             loginPage.open();
             loginPage.clickRegister();
@@ -332,7 +326,7 @@ public class RegisterTest {
             String userId = events.expectRegister("registerUserSuccessE@email", "registerUserSuccessE@email").assertEvent().getUserId();
             events.expectLogin().detail("username", "registerusersuccesse@email").user(userId).assertEvent();
 
-            UserModel user = getUser(userId);
+            UserRepresentation user = getUser(userId);
             Assert.assertNotNull(user);
             Assert.assertNotNull(user.getCreatedTimestamp());
             // test that timestamp is current with 10s tollerance
@@ -344,12 +338,9 @@ public class RegisterTest {
     }
 
     protected void configureRelamRegistrationEmailAsUsername(final boolean value) {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setRegistrationEmailAsUsername(value);
-            }
-        });
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setRegistrationEmailAsUsername(value);
+        testRealm().update(realm);
     }
 
 }
