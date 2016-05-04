@@ -43,6 +43,11 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder name(String name) {
+        rep.setName(name);
+        return this;
+    }
+
     public ClientBuilder clientId(String clientId) {
         rep.setClientId(clientId);
         return this;

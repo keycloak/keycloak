@@ -18,73 +18,51 @@ package org.keycloak.testsuite.forms;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
-import org.keycloak.testsuite.rule.GreenMailRule;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
 
 import java.net.MalformedURLException;
-import java.util.Collections;
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.UserBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class LoginTotpTest {
+public class LoginTotpTest extends TestRealmKeycloakTest {
 
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
-
-        @Override
-        public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-            UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
-
-            UserCredentialModel credentials = new UserCredentialModel();
-            credentials.setType(CredentialRepresentation.TOTP);
-            credentials.setValue("totpSecret");
-            user.updateCredential(credentials);
-
-            user.setOtpEnabled(true);
-            appRealm.setEventsListeners(Collections.singleton("dummy"));
-        }
-
-    });
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        UserRepresentation user = findUserInRealmRep(testRealm, "test-user@localhost");
+        UserBuilder.edit(user)
+                   .totpSecret("totpSecret")
+                   .otpEnabled();
+    }
 
     @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
+    public AssertEvents events = new AssertEvents(this);
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     protected LoginTotpPage loginTotpPage;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
@@ -101,7 +79,7 @@ public class LoginTotpTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        loginTotpPage.assertCurrent();
+        Assert.assertTrue(loginTotpPage.isCurrent());
 
         loginTotpPage.login("123456");
         loginTotpPage.assertCurrent();
@@ -120,7 +98,7 @@ public class LoginTotpTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        loginTotpPage.assertCurrent();
+        Assert.assertTrue(loginTotpPage.isCurrent());
 
         loginTotpPage.login(null);
         loginTotpPage.assertCurrent();
@@ -139,7 +117,7 @@ public class LoginTotpTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        loginTotpPage.assertCurrent();
+        Assert.assertTrue(loginTotpPage.isCurrent());
 
         loginTotpPage.login(totp.generateTOTP("totpSecret"));
 
@@ -153,7 +131,7 @@ public class LoginTotpTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        loginTotpPage.assertCurrent();
+        Assert.assertTrue(loginTotpPage.isCurrent());
         loginTotpPage.cancel();
         loginPage.assertCurrent();
     }
@@ -163,7 +141,7 @@ public class LoginTotpTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "invalid");
 
-        loginPage.assertCurrent();
+        Assert.assertTrue(loginPage.isCurrent());
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
