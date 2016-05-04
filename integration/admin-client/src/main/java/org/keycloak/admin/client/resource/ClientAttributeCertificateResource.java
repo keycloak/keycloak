@@ -60,7 +60,6 @@ public interface ClientAttributeCertificateResource {
     /**
      * Upload certificate and eventually private key
      *
-     * @param uriInfo
      * @param input
      * @return
      */
@@ -68,12 +67,11 @@ public interface ClientAttributeCertificateResource {
     @Path("upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public CertificateRepresentation uploadJks(@Context final UriInfo uriInfo, MultipartFormDataInput input);
+    public CertificateRepresentation uploadJks(MultipartFormDataInput input);
 
     /**
      * Upload only certificate, not private key
      *
-     * @param uriInfo
      * @param input
      * @return
      */
@@ -81,7 +79,7 @@ public interface ClientAttributeCertificateResource {
     @Path("upload-certificate")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public CertificateRepresentation uploadJksCertificate(@Context final UriInfo uriInfo, MultipartFormDataInput input);
+    public CertificateRepresentation uploadJksCertificate(MultipartFormDataInput input);
 
     /**
      * Get a keystore file for the client, containing private key and public certificate

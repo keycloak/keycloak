@@ -119,6 +119,10 @@ public interface UserResource {
     public List<UserSessionRepresentation> getUserSessions();
 
     @GET
+    @Path("offline-sessions/{clientId}")
+    List<UserSessionRepresentation> getOfflineSessions(@PathParam("clientId") String clientId);
+
+    @GET
     @Path("federated-identity")
     public List<FederatedIdentityRepresentation> getFederatedIdentity();
 

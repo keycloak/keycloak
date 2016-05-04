@@ -75,6 +75,10 @@ public class ScopeMappedClientResource {
     public List<RoleRepresentation> getClientScopeMappings() {
         auth.requireView();
 
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         Set<RoleModel> mappings = KeycloakModelUtils.getClientScopeMappings(scopedClient, scopeContainer); //scopedClient.getClientScopeMappings(client);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : mappings) {
@@ -97,6 +101,10 @@ public class ScopeMappedClientResource {
     public List<RoleRepresentation> getAvailableClientScopeMappings() {
         auth.requireView();
 
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         Set<RoleModel> roles = scopedClient.getRoles();
         return ScopeMappedResource.getAvailable(scopeContainer, roles);
     }
@@ -115,6 +123,10 @@ public class ScopeMappedClientResource {
     public List<RoleRepresentation> getCompositeClientScopeMappings() {
         auth.requireView();
 
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         Set<RoleModel> roles = scopedClient.getRoles();
         return ScopeMappedResource.getComposite(scopeContainer, roles);
     }
@@ -128,6 +140,10 @@ public class ScopeMappedClientResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void addClientScopeMapping(List<RoleRepresentation> roles) {
         auth.requireManage();
+
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         for (RoleRepresentation role : roles) {
             RoleModel roleModel = scopedClient.getRole(role.getName());
@@ -148,6 +164,10 @@ public class ScopeMappedClientResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void deleteClientScopeMapping(List<RoleRepresentation> roles) {
         auth.requireManage();
+
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         if (roles == null) {
             Set<RoleModel> roleModels = KeycloakModelUtils.getClientScopeMappings(scopedClient, scopeContainer);//scopedClient.getClientScopeMappings(client);

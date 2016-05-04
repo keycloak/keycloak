@@ -83,6 +83,10 @@ public class ClientRoleMappingsResource {
     public List<RoleRepresentation> getClientRoleMappings() {
         auth.requireView();
 
+        if (user == null || client == null) {
+            throw new NotFoundException("Not found");
+        }
+
         Set<RoleModel> mappings = user.getClientRoleMappings(client);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : mappings) {
@@ -105,6 +109,10 @@ public class ClientRoleMappingsResource {
     public List<RoleRepresentation> getCompositeClientRoleMappings() {
         auth.requireView();
 
+        if (user == null || client == null) {
+            throw new NotFoundException("Not found");
+        }
+
         Set<RoleModel> roles = client.getRoles();
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
@@ -124,6 +132,10 @@ public class ClientRoleMappingsResource {
     @NoCache
     public List<RoleRepresentation> getAvailableClientRoleMappings() {
         auth.requireView();
+
+        if (user == null || client == null) {
+            throw new NotFoundException("Not found");
+        }
 
         Set<RoleModel> available = client.getRoles();
         return getAvailableRoles(user, available);
@@ -153,6 +165,10 @@ public class ClientRoleMappingsResource {
     public void addClientRoleMapping(List<RoleRepresentation> roles) {
         auth.requireManage();
 
+        if (user == null || client == null) {
+            throw new NotFoundException("Not found");
+        }
+
         for (RoleRepresentation role : roles) {
             RoleModel roleModel = client.getRole(role.getName());
             if (roleModel == null || !roleModel.getId().equals(role.getId())) {
@@ -173,6 +189,10 @@ public class ClientRoleMappingsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void deleteClientRoleMapping(List<RoleRepresentation> roles) {
         auth.requireManage();
+
+        if (user == null || client == null) {
+            throw new NotFoundException("Not found");
+        }
 
         if (roles == null) {
             Set<RoleModel> roleModels = user.getClientRoleMappings(client);
