@@ -1,8 +1,16 @@
 = {{book.title}}
 
  . link:topics/overview.adoc[Overview]
- . link:topics/first-boot.adoc[First Time Boot]
- . link:topics/cluster.adoc[Boot in Cluster]
+ . link:topics/first-boot.adoc[Install and First Time Boot]
+{% if book.community %}
+ .. link:topics/first-boot/distribution-files-community.adoc[Installing Server]
+{% endif %}
+{% if book.product %}
+ .. link:topics/first-boot/distribution-files-product.adoc[Installing Server]
+{% endif %}
+ .. link:topics/first-boot/boot.adoc[Boot Server]
+ .. link:topics/first-boot/initial-user.adoc[Create Admin Account]
+ .. link:topics/first-boot/admin-console.adoc[Login Into Admin Console]
  . link:topics/first-realm-user.adoc[Creating Your First Realm and User]
  . link:topics/first-jboss-servlet.adoc[Securing a JBoss Servlet Application]
  .. link:topics/installation/system-requirements.adoc[System Requirements]

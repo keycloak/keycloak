@@ -1,0 +1,22 @@
+
+=== Boot the Server
+
+To boot the {{book.project.name}} server, go to the _bin/_ directory of the server distribution.
+
+.Standalone Boot Scripts
+image:../../{{book.images}}/standalone-boot-files.png[]
+
+To boot the server:
+
+.Linux/Unix
+[source]
+----
+$ .../bin/standalone.sh
+----
+
+.Windows
+[source]
+----
+> ...\bin\standalone.bat
+----
+

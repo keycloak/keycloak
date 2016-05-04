@@ -1,0 +1,20 @@
+
+=== Login to Admin Console
+
+After you create the initial admin account, click on the _Administration Console_ link on the bottom of the Welcome Page.
+
+.Login Page
+image:../../{{book.images}}/login-page.png[]
+
+Enter the username and password you created on the Welcome Page.  This will bring you to the {{book.project.name}} Admin Console
+
+.Admin Console
+image:../../{{book.images}}/admin-console.png[]
+
+TIP:  If you are curious about a certain feature, button, or field within the Admin Console, simply hover your mouse
+      over any question mark `?` icon.  This will pop up tooltip text to describe the area of the console you are interested in.
+      The image above shows the tooltip in action.
+
+
+
+
