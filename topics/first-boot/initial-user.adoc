@@ -4,7 +4,7 @@
 After the server boots, open your browser and go to the http://localhost:8080/auth URL.  The page should look like this:
 
 .Welcome Page
-image:../../{{book.images}}/standalone-boot-files.png[]
+image:../../{{book.images}}/initial-welcome-page.png[]
 
 {{book.project.name}} does not have any configured admin account out of the box.  You must create one on the Welcome Page.
 This account will allow you to create an admin that can log into the _master_ realm's administration console so that
