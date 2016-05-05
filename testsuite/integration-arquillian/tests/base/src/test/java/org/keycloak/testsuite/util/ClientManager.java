@@ -61,5 +61,17 @@ public class ClientManager {
             app.setDirectAccessGrantsEnabled(enable);
             clientResource.update(app);
         }
+
+        public void fullScopeAllowed(boolean enable) {
+            ClientRepresentation app = clientResource.toRepresentation();
+            app.setFullScopeAllowed(enable);
+            clientResource.update(app);
+        }
+
+        public void consentRequired(boolean enable) {
+            ClientRepresentation app = clientResource.toRepresentation();
+            app.setConsentRequired(enable);
+            clientResource.update(app);
+        }
     }
 }
