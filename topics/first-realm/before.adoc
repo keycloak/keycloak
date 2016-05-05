@@ -1,0 +1,6 @@
+
+=== Before You Start
+
+Before you can participate in this tutorial, you need to complete the installation of {{book.project.name}} and create the
+initial admin user as shown in the <<fake/../../first-boot.adoc#_install-boot, Install and Boot>> tutorial.
+

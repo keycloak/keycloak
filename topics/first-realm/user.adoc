@@ -1,0 +1,30 @@
+
+=== Create a New User
+
+In this section you are going to create a new user in the `demo` realm as well as a temporary password for that account.
+The first step is to click on the `Users` in the left menu bar.
+
+.Users
+image:../../{{book.images}}/users.png[]
+
+This menu option brings you to the user list page.  On the right side of the empty user list, you should see an `Add User`
+button.  Click that to start creating your new user.
+
+.Add User
+image:../../{{book.images}}/add-user.png[]
+
+The only required field is `Username`.  Click save.  This will bring you to the management page for your new user.
+
+The next step is to define a temporary password for your new user.  Click on the `Credentials` tab to bring you to
+the page that will allo you to do this.
+
+.Set Temporary Password
+image:../../{{book.images}}/credentials.png[]
+
+Enter in a new password and retype it within the `Password Confirmation` field.  Once you do this a red `Reset Password`
+button should reappear.  Clicking on that will reset the user's password to the new one you specified.  Please note that
+this is a temporary password and the user will be required to change it after they first log in.  You can make it permanent
+by flipping the `Temporary` switch from `On` to `Off` before you click the `Reset Password` button.
+
+
+
