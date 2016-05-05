@@ -65,6 +65,11 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     Response removeUserSession(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId);
 
+    @GET
+    @Path("/get-user-session")
+    @Produces(MediaType.APPLICATION_JSON)
+    Integer getLastSessionRefresh(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId);
+
     @POST
     @Path("/remove-expired")
     @Produces(MediaType.APPLICATION_JSON)
