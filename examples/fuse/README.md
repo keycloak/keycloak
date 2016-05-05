@@ -43,13 +43,13 @@ cd keycloak-examples-<VERSION>/fuse
 mvn clean install
 ```
 
-Running demo on JBoss Fuse 6.2.1
-------------------------------
+Running demo on JBoss Fuse 6.2.1 or JBoss Fuse 6.2.0
+----------------------------------------------------
 You just need to download and run JBoss Fuse and then run those commands from the karaf terminal to install the needed features and Keycloak fuse demo (Replace Keycloak versions with the current Keycloak version number):
 
 ```
-features:addurl mvn:org.keycloak/keycloak-osgi-features/1.2.0.Beta1/xml/features
-features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.2.0.Beta1/xml/features
+features:addurl mvn:org.keycloak/keycloak-osgi-features/1.9.4.Final/xml/features
+features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.9.4.Final/xml/features
 features:install keycloak-fuse-6.2-example
 ```
 
@@ -69,10 +69,10 @@ Similar steps to the instructions for JBoss Fuse 6.2.1 but you need to install a
 You just need to download and run JBoss Fuse and then run those commands from the karaf terminal to install the needed features and Keycloak fuse demo (Replace Keycloak versions with the current Keycloak version number):
 
 ```
-features:addurl mvn:org.keycloak/keycloak-osgi-features/1.2.0.Beta1/xml/features
-features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.2.0.Beta1/xml/features
+features:addurl mvn:org.keycloak/keycloak-osgi-features/1.9.4.Final/xml/features
+features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.9.4.Final/xml/features
 features:install keycloak-fuse-6.3-example
-
+```
 
 Running demo on Apache Karaf 3.0.3
 ----------------------------------
@@ -86,8 +86,8 @@ Once you run Apache Karaf, you need to run these commands from Karaf console (Ma
 ```
 feature:repo-add mvn:org.apache.camel.karaf/apache-camel/2.15.1/xml/features
 feature:repo-add mvn:org.apache.cxf.karaf/apache-cxf/3.0.4/xml/features
-feature:repo-add mvn:org.keycloak/keycloak-osgi-features/1.2.0.Beta1/xml/features
-feature:repo-add mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.2.0.Beta1/xml/features
+feature:repo-add mvn:org.keycloak/keycloak-osgi-features/1.9.4.Final/xml/features
+feature:repo-add mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.9.4.Final/xml/features
 feature:install keycloak-fuse-example
 ```
 
@@ -126,6 +126,13 @@ As a side effect, all other CXF services running on default CXF HTTP destination
 original unsecured servlet on `/cxf` context is deployed back and hence context will become unsecured again. 
 
 It's recommended to use your own Jetty engine for your apps (similarly like `cxf-jaxws` application is doing).
+
+
+How to secure WAR application with external keycloak.json configuration
+-----------------------------------------------------------------------
+It's possible to secure your WAR application with the `keycloak.json` configuration provided outside of the WAR bundle itself. 
+See [external-config](external-config/README.md) for more details. This is supported on JBoss Fuse 6.3.
+
 
 How to secure Fuse admin services
 ---------------------------------

@@ -19,4 +19,4 @@ Inside one of those folders it will look for a file called `<your_web_context>-k
 
 For this example you need to copy the file `external-config-keycloak.json` to your JBoss Fuse `etc/` folder.
 
-Once you have done that, you can try to access the endpoint: http://localhost:8181/external-config/index.html
+Once you have done that and once you added feature `keycloak-fuse-6.3-example` (See [here](../README.md) for more details), you can try to access the endpoint: http://localhost:8181/external-config/index.html

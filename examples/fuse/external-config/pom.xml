@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-examples-fuse-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>2.0.0.CR1-SNAPSHOT</version>
+        <version>1.9.4.Final-SNAPSHOT</version>
     </parent>
 
     <name>Keycloak Examples - External Config</name>
@@ -62,11 +62,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-adapter-spi</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
