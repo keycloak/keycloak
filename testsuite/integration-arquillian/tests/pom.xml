@@ -868,6 +868,11 @@
                     <artifactId>postgresql</artifactId>
                     <version>${postgresql.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.mariadb.jdbc</groupId>
+                    <artifactId>mariadb-java-client</artifactId>
+                    <version>${mariadb.version}</version>
+                </dependency>
 
             </dependencies>
             <build>
