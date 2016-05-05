@@ -57,6 +57,8 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertEquals(Version.VERSION, info.getSystemInfo().getVersion());
         assertNotNull(info.getSystemInfo().getServerTime());
         assertNotNull(info.getSystemInfo().getUptime());
+
+        log.infof("JPA Connections provider info: %s", info.getProviders().get("connectionsJpa").getProviders().get("default").getOperationalInfo().toString());
     }
 
     @Override
