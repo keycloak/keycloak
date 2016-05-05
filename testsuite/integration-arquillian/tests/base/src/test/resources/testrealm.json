@@ -114,7 +114,7 @@
       "consentRequired": true,
 
       "redirectUris": [
-        "http://localhost:8180/app/*"
+        "http://localhost:8180/auth/realms/master/app/*"
       ],
       "secret": "password"
     }
