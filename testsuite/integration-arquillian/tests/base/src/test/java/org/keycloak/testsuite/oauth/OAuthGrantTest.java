@@ -16,78 +16,78 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.events.Details;
-import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.services.managers.RealmManager;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.ProtocolMapperUtil;
+import org.keycloak.testsuite.util.RoleBuilder;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
+import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
  */
-public class OAuthGrantTest {
+public class OAuthGrantTest extends AbstractKeycloakTest {
 
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule();
-
+    public static final String THIRD_PARTY_APP = "third-party";
+    public static final String REALM_NAME = "test";
     @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
+    public AssertEvents events = new AssertEvents(this);
 
-    @Rule
-    public WebRule webRule = new WebRule(this);
-
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
-    protected OAuthClient oauth;
-
-    @WebResource
-    protected LoginPage loginPage;
-
-    @WebResource
+    @Page
     protected OAuthGrantPage grantPage;
-
-    @WebResource
+    @Page
     protected AccountApplicationsPage accountAppsPage;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
+
+    @Override
+    public void beforeAbstractKeycloakTest() throws Exception {
+        super.beforeAbstractKeycloakTest();
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+
+        RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
+        testRealms.add(realmRepresentation);
+    }
 
     private static String ROLE_USER = "Have User privileges";
     private static String ROLE_CUSTOMER = "Have Customer User privileges";
 
     @Test
     public void oauthGrantAcceptTest() {
-        oauth.clientId("third-party");
+        oauth.clientId(THIRD_PARTY_APP);
         oauth.doLoginGrant("test-user@localhost", "password");
 
         grantPage.assertCurrent();
@@ -98,8 +98,8 @@ public class OAuthGrantTest {
 
         Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
 
-        Event loginEvent = events.expectLogin()
-                .client("third-party")
+        EventRepresentation loginEvent = events.expectLogin()
+                .client(THIRD_PARTY_APP)
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -116,28 +116,28 @@ public class OAuthGrantTest {
         assertEquals(1, realmAccess.getRoles().size());
         Assert.assertTrue(realmAccess.isUserInRole("user"));
 
-        Map<String,AccessToken.Access> resourceAccess = token.getResourceAccess();
+        Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
         assertEquals(1, resourceAccess.size());
         assertEquals(1, resourceAccess.get("test-app").getRoles().size());
         Assert.assertTrue(resourceAccess.get("test-app").isUserInRole("customer-user"));
 
-        events.expectCodeToToken(codeId, loginEvent.getSessionId()).client("third-party").assertEvent();
+        events.expectCodeToToken(codeId, loginEvent.getSessionId()).client(THIRD_PARTY_APP).assertEvent();
 
         accountAppsPage.open();
 
         assertEquals(1, driver.findElements(By.id("revoke-third-party")).size());
 
-        accountAppsPage.revokeGrant("third-party");
+        accountAppsPage.revokeGrant(THIRD_PARTY_APP);
 
         events.expect(EventType.REVOKE_GRANT)
-                .client("account").detail(Details.REVOKED_CLIENT, "third-party").assertEvent();
+                .client("account").detail(Details.REVOKED_CLIENT, THIRD_PARTY_APP).assertEvent();
 
         assertEquals(0, driver.findElements(By.id("revoke-third-party")).size());
     }
 
     @Test
     public void oauthGrantCancelTest() {
-        oauth.clientId("third-party");
+        oauth.clientId(THIRD_PARTY_APP);
         oauth.doLoginGrant("test-user@localhost", "password");
 
         grantPage.assertCurrent();
@@ -150,7 +150,7 @@ public class OAuthGrantTest {
         assertEquals("access_denied", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
 
         events.expectLogin()
-                .client("third-party")
+                .client(THIRD_PARTY_APP)
                 .error("rejected_by_user")
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
@@ -159,20 +159,20 @@ public class OAuthGrantTest {
     @Test
     public void oauthGrantNotShownWhenAlreadyGranted() {
         // Grant permissions on grant screen
-        oauth.clientId("third-party");
+        oauth.clientId(THIRD_PARTY_APP);
         oauth.doLoginGrant("test-user@localhost", "password");
 
         grantPage.assertCurrent();
         grantPage.accept();
 
         events.expectLogin()
-                .client("third-party")
+                .client(THIRD_PARTY_APP)
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
         // Assert permissions granted on Account mgmt. applications page
         accountAppsPage.open();
-        AccountApplicationsPage.AppEntry thirdPartyEntry = accountAppsPage.getApplications().get("third-party");
+        AccountApplicationsPage.AppEntry thirdPartyEntry = accountAppsPage.getApplications().get(THIRD_PARTY_APP);
         Assert.assertTrue(thirdPartyEntry.getRolesGranted().contains(ROLE_USER));
         Assert.assertTrue(thirdPartyEntry.getRolesGranted().contains("Have Customer User privileges in test-app"));
         Assert.assertTrue(thirdPartyEntry.getProtocolMappersGranted().contains("Full name"));
@@ -185,14 +185,14 @@ public class OAuthGrantTest {
                 .detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
                 .removeDetail(Details.USERNAME)
-                .client("third-party").assertEvent();
+                .client(THIRD_PARTY_APP).assertEvent();
 
         // Revoke grant in account mgmt.
         accountAppsPage.open();
-        accountAppsPage.revokeGrant("third-party");
+        accountAppsPage.revokeGrant(THIRD_PARTY_APP);
 
         events.expect(EventType.REVOKE_GRANT)
-                .client("account").detail(Details.REVOKED_CLIENT, "third-party").assertEvent();
+                .client("account").detail(Details.REVOKED_CLIENT, THIRD_PARTY_APP).assertEvent();
 
         // Open login form again and assert grant Page is shown
         oauth.openLoginForm();
@@ -204,108 +204,99 @@ public class OAuthGrantTest {
     @Test
     public void oauthGrantAddAnotherRoleAndMapper() {
         // Grant permissions on grant screen
-        oauth.clientId("third-party");
+        oauth.clientId(THIRD_PARTY_APP);
         oauth.doLoginGrant("test-user@localhost", "password");
+        oauth.scope(OAuth2Constants.GRANT_TYPE);
 
         // Add new protocolMapper and role before showing grant page
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+        ProtocolMapperRepresentation protocolMapper = ProtocolMapperUtil.createClaimMapper(
+                KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
+                KerberosConstants.GSS_DELEGATION_CREDENTIAL,
+                KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",
+                true, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
+                true, false);
 
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
-                        KerberosConstants.GSS_DELEGATION_CREDENTIAL,
-                        KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",
-                        true, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
-                        true, false);
 
-                ClientModel thirdPartyApp = appRealm.getClientByClientId("third-party");
-                thirdPartyApp.addProtocolMapper(protocolMapper);
+        RealmResource appRealm = adminClient.realm(REALM_NAME);
+        appRealm.roles().create(RoleBuilder.create().name("new-role").build());
+        RoleRepresentation newRole = appRealm.roles().get("new-role").toRepresentation();
 
-                RoleModel newRole = appRealm.addRole("new-role");
-                thirdPartyApp.addScopeMapping(newRole);
-                UserModel testUser = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
-                testUser.grantRole(newRole);
-            }
+        ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(THIRD_PARTY_APP)
+                .addProtocolMapper(protocolMapper)
+                .addScopeMapping(newRole);
 
-        });
+        UserResource userResource = findUserByUsernameId(appRealm, "test-user@localhost");
+        userResource.roles().realmLevel().add(Collections.singletonList(newRole));
 
         // Confirm grant page
         grantPage.assertCurrent();
         grantPage.accept();
         events.expectLogin()
-                .client("third-party")
+                .client(THIRD_PARTY_APP)
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
         // Assert new role and protocol mapper not in account mgmt.
         accountAppsPage.open();
-        AccountApplicationsPage.AppEntry appEntry = accountAppsPage.getApplications().get("third-party");
+        AccountApplicationsPage.AppEntry appEntry = accountAppsPage.getApplications().get(THIRD_PARTY_APP);
         Assert.assertFalse(appEntry.getRolesGranted().contains("new-role"));
         Assert.assertFalse(appEntry.getProtocolMappersGranted().contains(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME));
 
         // Show grant page another time. Just new role and protocol mapper are on the page
         oauth.openLoginForm();
         grantPage.assertCurrent();
+
         Assert.assertFalse(driver.getPageSource().contains(ROLE_USER));
         Assert.assertFalse(driver.getPageSource().contains("Full name"));
         Assert.assertTrue(driver.getPageSource().contains("new-role"));
         Assert.assertTrue(driver.getPageSource().contains(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME));
         grantPage.accept();
         events.expectLogin()
-                .client("third-party")
+                .client(THIRD_PARTY_APP)
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
         // Go to account mgmt. Everything is granted now
         accountAppsPage.open();
-        appEntry = accountAppsPage.getApplications().get("third-party");
+        appEntry = accountAppsPage.getApplications().get(THIRD_PARTY_APP);
         Assert.assertTrue(appEntry.getRolesGranted().contains("new-role"));
         Assert.assertTrue(appEntry.getProtocolMappersGranted().contains(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME));
 
         // Revoke
-        accountAppsPage.revokeGrant("third-party");
+        accountAppsPage.revokeGrant(THIRD_PARTY_APP);
         events.expect(EventType.REVOKE_GRANT)
-                .client("account").detail(Details.REVOKED_CLIENT, "third-party").assertEvent();
+                .client("account").detail(Details.REVOKED_CLIENT, THIRD_PARTY_APP).assertEvent();
 
         // Cleanup
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+        ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(THIRD_PARTY_APP)
+                .removeProtocolMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME)
+                .removeScopeMapping(newRole);
 
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                ClientModel thirdPartyApp = appRealm.getClientByClientId("third-party");
-                ProtocolMapperModel gssMapper = thirdPartyApp.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME);
-                thirdPartyApp.removeProtocolMapper(gssMapper);
+        appRealm.roles().deleteRole("new-role");
 
-                RoleModel newRole = appRealm.getRole("new-role");
-                appRealm.removeRole(newRole);
-            }
-
-        });
     }
 
     @Test
     public void oauthGrantScopeParamRequired() throws Exception {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
 
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                ClientModel thirdParty = appRealm.getClientByClientId("third-party");
-                RoleModel barAppRole = thirdParty.addRole("bar-role");
-                barAppRole.setScopeParamRequired(true);
+        RealmResource appRealm = adminClient.realm(REALM_NAME);
 
-                RoleModel fooRole = appRealm.addRole("foo-role");
-                fooRole.setScopeParamRequired(true);
-                thirdParty.addScopeMapping(fooRole);
+        ClientResource thirdParty = findClientByClientId(appRealm, THIRD_PARTY_APP);
+        thirdParty.roles().create(RoleBuilder.create().id("bar-role").name("bar-role").scopeParamRequired(true).build());
+        RoleRepresentation barAppRole = thirdParty.roles().get("bar-role").toRepresentation();
 
-                UserModel testUser = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
-                testUser.grantRole(fooRole);
-                testUser.grantRole(barAppRole);
-            }
+        appRealm.roles().create(RoleBuilder.create().id("foo-role").name("foo-role").scopeParamRequired(true).build());
+        RoleRepresentation fooRole = appRealm.roles().get("foo-role").toRepresentation();
+        ClientManager.realm(appRealm).clientId(THIRD_PARTY_APP).addScopeMapping(fooRole);
 
-        });
+        UserResource testUser = findUserByUsernameId(appRealm, "test-user@localhost");
+
+        testUser.roles().clientLevel(thirdParty.toRepresentation().getId()).add(Collections.singletonList(barAppRole));
+        testUser.roles().realmLevel().add(Collections.singletonList(fooRole));
 
         // Assert roles not on grant screen when not requested
-        oauth.clientId("third-party");
+
+        oauth.clientId(THIRD_PARTY_APP);
         oauth.doLoginGrant("test-user@localhost", "password");
         grantPage.assertCurrent();
         Assert.assertFalse(driver.getPageSource().contains("foo-role"));
@@ -313,7 +304,7 @@ public class OAuthGrantTest {
         grantPage.cancel();
 
         events.expectLogin()
-                .client("third-party")
+                .client(THIRD_PARTY_APP)
                 .error("rejected_by_user")
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
@@ -326,27 +317,18 @@ public class OAuthGrantTest {
         grantPage.accept();
 
         events.expectLogin()
-                .client("third-party")
+                .client(THIRD_PARTY_APP)
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
         // Revoke
         accountAppsPage.open();
-        accountAppsPage.revokeGrant("third-party");
+        accountAppsPage.revokeGrant(THIRD_PARTY_APP);
         events.expect(EventType.REVOKE_GRANT)
-                .client("account").detail(Details.REVOKED_CLIENT, "third-party").assertEvent();
-
+                .client("account").detail(Details.REVOKED_CLIENT, THIRD_PARTY_APP).assertEvent();
         // cleanup
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.removeRole(appRealm.getRole("foo-role"));
-                ClientModel thirdparty = appRealm.getClientByClientId("third-party");
-                thirdparty.removeRole(thirdparty.getRole("bar-role"));
-            }
-
-        });
+        appRealm.roles().deleteRole(fooRole.getName());
+        thirdParty.roles().deleteRole(barAppRole.getName());
 
     }
 

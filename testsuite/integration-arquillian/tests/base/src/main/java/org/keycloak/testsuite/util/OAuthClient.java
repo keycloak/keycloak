@@ -122,10 +122,15 @@ public class OAuthClient {
 
     public void doLoginGrant(String username, String password) {
         openLoginForm();
-
-        driver.findElement(By.id("username")).sendKeys(username);
-        driver.findElement(By.id("password")).sendKeys(password);
-        driver.findElement(By.name("login")).click();
+        String src = driver.getPageSource();
+        try {
+            driver.findElement(By.id("username")).sendKeys(username);
+            driver.findElement(By.id("password")).sendKeys(password);
+            driver.findElement(By.name("login")).click();
+        } catch (Throwable t) {
+            System.err.println(src);
+            throw t;
+        }
     }
 
     public AccessTokenResponse doAccessTokenRequest(String code, String password) {

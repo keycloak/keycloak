@@ -6,6 +6,7 @@ import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
+import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
 /**
@@ -90,4 +91,16 @@ public class ProtocolMapperUtil {
 
     }
 
+    public static ProtocolMapperRepresentation createClaimMapper(String name,
+                                                                 String userSessionNote,
+                                                                 String tokenClaimName, String jsonType,
+                                                                 boolean consentRequired, String consentText,
+                                                                 boolean accessToken, boolean idToken) {
+
+        return ModelToRepresentation.toRepresentation(UserSessionNoteMapper.createClaimMapper(name,
+                userSessionNote,
+                tokenClaimName, jsonType,
+                consentRequired, consentText,
+                accessToken, idToken));
+    }
 }

@@ -3,10 +3,14 @@ package org.keycloak.testsuite.util;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
+import static org.keycloak.testsuite.admin.ApiUtil.findProtocolMapperByName;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>.
@@ -72,6 +76,25 @@ public class ClientManager {
             ClientRepresentation app = clientResource.toRepresentation();
             app.setConsentRequired(enable);
             clientResource.update(app);
+        }
+
+        public ClientManagerBuilder addProtocolMapper(ProtocolMapperRepresentation protocolMapper) {
+            clientResource.getProtocolMappers().createMapper(protocolMapper);
+            return this;
+        }
+
+        public void addScopeMapping(RoleRepresentation newRole) {
+            clientResource.getScopeMappings().realmLevel().add(Collections.singletonList(newRole));
+        }
+
+        public ClientManagerBuilder removeProtocolMapper(String protocolMapperName) {
+            ProtocolMapperRepresentation rep = findProtocolMapperByName(clientResource, protocolMapperName);
+            clientResource.getProtocolMappers().delete(rep.getId());
+            return this;
+        }
+
+        public void removeScopeMapping(RoleRepresentation newRole) {
+            clientResource.getScopeMappings().realmLevel().remove(Collections.singletonList(newRole));
         }
     }
 }
