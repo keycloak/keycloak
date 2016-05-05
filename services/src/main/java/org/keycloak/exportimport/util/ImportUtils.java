@@ -33,6 +33,7 @@ import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.RealmManager;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,16 +47,30 @@ public class ImportUtils {
     private static final Logger logger = Logger.getLogger(ImportUtils.class);
 
     public static void importRealms(KeycloakSession session, Collection<RealmRepresentation> realms, Strategy strategy) {
+        boolean masterImported = false;
+
         // Import admin realm first
         for (RealmRepresentation realm : realms) {
             if (Config.getAdminRealm().equals(realm.getRealm())) {
-                importRealm(session, realm, strategy);
+                if (importRealm(session, realm, strategy)) {
+                    masterImported = true;
+                }
             }
         }
 
         for (RealmRepresentation realm : realms) {
             if (!Config.getAdminRealm().equals(realm.getRealm())) {
                 importRealm(session, realm, strategy);
+            }
+        }
+
+        // If master was imported, we may need to re-create realm management clients
+        if (masterImported) {
+            for (RealmModel realm : session.realms().getRealms()) {
+                if (realm.getMasterAdminClient() == null) {
+                    logger.infof("Re-created management client in master realm for realm '%s'", realm.getName());
+                    new RealmManager(session).setupMasterAdminManagement(realm);
+                }
             }
         }
     }

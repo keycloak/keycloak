@@ -267,7 +267,7 @@ public class RealmManager implements RealmImporter {
     }
 
 
-    private void setupMasterAdminManagement(RealmModel realm) {
+    public void setupMasterAdminManagement(RealmModel realm) {
         // Need to refresh masterApp for current realm
         String adminRealmId = Config.getAdminRealm();
         RealmModel adminRealm = model.getRealm(adminRealmId);
