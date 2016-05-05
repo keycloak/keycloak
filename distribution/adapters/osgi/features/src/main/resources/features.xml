@@ -46,10 +46,19 @@
     <feature name="keycloak-jetty8-adapter" version="${project.version}" resolver="(obr)">
         <details>The keycloak Jetty8 adapter</details>
         <feature>keycloak-adapter-core</feature>
-        <feature version="[8.1,9)">jetty</feature>
+        <feature version="[8,9)">jetty</feature>
         <bundle>mvn:org.keycloak/keycloak-jetty-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty-core/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty81-adapter/${project.version}</bundle>
+    </feature>
+
+    <feature name="keycloak-jetty9-adapter" version="${project.version}" resolver="(obr)">
+        <details>The keycloak Jetty9 adapter</details>
+        <feature>keycloak-adapter-core</feature>
+        <feature version="[9,10)">jetty</feature>
+        <bundle>mvn:org.keycloak/keycloak-jetty-adapter-spi/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-jetty-core/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-jetty92-adapter/${project.version}</bundle>
     </feature>
 
     <feature name="keycloak-jaas" version="${project.version}" resolver="(obr)">
@@ -61,17 +70,7 @@
     <feature name="keycloak" version="${project.version}" resolver="(obr)">
         <details>The keycloak adapter core stuff</details>
         <feature>keycloak-osgi-adapter</feature>
-        <feature>keycloak-jetty8-adapter</feature>
         <feature>keycloak-jaas</feature>
-    </feature>
-
-    <!-- This is just simplification to upgrade paxweb to 3.1.2 in JBoss Fuse 6.1 or Karaf 2.3.X environment -->
-    <feature name="keycloak-pax-web-upgrade" version="${project.version}" resolver="(obr)">
-        <details>This is just simplification to upgrade paxweb to 3.1.2 in JBoss Fuse 6.1 or Karaf 2.3.X environment</details>
-        <bundle>mvn:org.ow2.asm/asm-all/5.0</bundle>
-        <bundle>mvn:org.apache.xbean/xbean-bundleutils/3.18</bundle>
-        <bundle>mvn:org.apache.xbean/xbean-reflect/3.18</bundle>
-        <bundle>mvn:org.apache.xbean/xbean-finder/3.18</bundle>
     </feature>
 
 </features>
