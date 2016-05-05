@@ -32,7 +32,6 @@ import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSInput;
@@ -55,6 +54,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.RoleBuilder;
@@ -110,11 +110,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Before
     public void clientConfiguration() {
-        ClientResource clientResource = findClientByClientId(adminClient.realm("test"), "test-app");
-        ClientRepresentation clientRepresentation = new ClientRepresentation();
-        clientRepresentation.setDirectAccessGrantsEnabled(true);
-        clientResource.update(clientRepresentation);
-
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
         /*
          * Configure the default client ID. Seems like OAuthClient is keeping the state of clientID
          * For example: If some test case configure oauth.clientId("sample-public-client"), other tests
