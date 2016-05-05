@@ -21,10 +21,10 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
@@ -358,7 +358,7 @@ public class ResetPasswordTest {
 
         events.expectRequiredAction(EventType.RESET_PASSWORD).user((String) null).session((String) null).detail(Details.USERNAME, "invalid").removeDetail(Details.EMAIL).removeDetail(Details.CODE_ID).error("user_not_found").assertEvent();
     }
-    
+
     @Test
     public void resetPasswordMissingUsername() throws IOException, MessagingException, InterruptedException {
         loginPage.open();
@@ -373,9 +373,9 @@ public class ResetPasswordTest {
         assertEquals("Please specify username.", resetPasswordPage.getErrorMessage());
 
         assertEquals(0, greenMail.getReceivedMessages().length);
-        
+
         events.expectRequiredAction(EventType.RESET_PASSWORD).user((String) null).session((String) null).clearDetails().error("username_missing").assertEvent();
-        
+
     }
 
     @Test
@@ -587,7 +587,7 @@ public class ResetPasswordTest {
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setPasswordPolicy(new PasswordPolicy("length"));
+                appRealm.setPasswordPolicy(new PasswordPolicy("length", manager.getSession()));
             }
         });
 
@@ -644,25 +644,25 @@ public class ResetPasswordTest {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 //Block passwords that are equal to previous passwords. Default value is 3.
-                appRealm.setPasswordPolicy(new PasswordPolicy("passwordHistory"));
+                appRealm.setPasswordPolicy(new PasswordPolicy("passwordHistory", manager.getSession()));
             }
         });
-        
+
         try {
             Time.setOffset(2000000);
             resetPassword("login-test", "password1");
-            
+
             resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
 
             Time.setOffset(4000000);
             resetPassword("login-test", "password2");
-            
+
             resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
             resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
-        
+
             Time.setOffset(8000000);
             resetPassword("login-test", "password3");
-            
+
             resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
             resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
             resetPasswordInvalidPassword("login-test", "password3", "Invalid password: must not be equal to any of last 3 passwords.");
@@ -672,7 +672,7 @@ public class ResetPasswordTest {
             keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
+                    appRealm.setPasswordPolicy(new PasswordPolicy(null, null));
                 }
             });
             Time.setOffset(0);
@@ -681,21 +681,21 @@ public class ResetPasswordTest {
 
     public static String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
     	Multipart multipart = (Multipart) message.getContent();
-    	
+
         final String textContentType = multipart.getBodyPart(0).getContentType();
-        
+
         assertEquals("text/plain; charset=UTF-8", textContentType);
-        
+
         final String textBody = (String) multipart.getBodyPart(0).getContent();
         final String textChangePwdUrl = MailUtil.getLink(textBody);
-        
+
         final String htmlContentType = multipart.getBodyPart(1).getContentType();
-        
+
         assertEquals("text/html; charset=UTF-8", htmlContentType);
-        
+
         final String htmlBody = (String) multipart.getBodyPart(1).getContent();
         final String htmlChangePwdUrl = MailUtil.getLink(htmlBody);
-        
+
         assertEquals(htmlChangePwdUrl, textChangePwdUrl);
 
         return htmlChangePwdUrl;

@@ -15,19 +15,34 @@
  * limitations under the License.
  */
 
-package org.keycloak.hash;
+package org.keycloak.policy;
 
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
 /**
- * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
+ * @author <a href="mailto:roelof.naude@epiuse.com">Roelof Naude</a>
  */
-public interface PasswordHashProvider extends Provider {
+public class PasswordPolicySpi implements Spi {
 
-    UserCredentialValueModel encode(String rawPassword, PasswordPolicy policy);
+    @Override
+    public boolean isInternal() {
+        return false;
+    }
 
-    boolean verify(String rawPassword, UserCredentialValueModel credential);
+    @Override
+    public String getName() {
+        return "password-policy";
+    }
 
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return PasswordPolicyProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return PasswordPolicyProviderFactory.class;
+    }
 }

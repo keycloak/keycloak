@@ -37,7 +37,6 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -50,6 +49,7 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.policy.PasswordPolicy;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
@@ -191,7 +191,7 @@ public class RepresentationToModel {
             newRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         }
 
-        if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
+        if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy(), session));
         if (rep.getOtpPolicyType() != null) newRealm.setOTPPolicy(toPolicy(rep));
         else newRealm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
 
@@ -656,7 +656,7 @@ public class RepresentationToModel {
         return url != null ? url.replace(target, replacement) : null;
     }
 
-    public static void updateRealm(RealmRepresentation rep, RealmModel realm) {
+    public static void updateRealm(KeycloakSession session, RealmRepresentation rep, RealmModel realm) {
         if (rep.getRealm() != null) {
             renameRealm(realm, rep.getRealm());
         }
@@ -704,7 +704,7 @@ public class RepresentationToModel {
         if (rep.isAdminEventsDetailsEnabled() != null) realm.setAdminEventsDetailsEnabled(rep.isAdminEventsDetailsEnabled());
 
 
-        if (rep.getPasswordPolicy() != null) realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
+        if (rep.getPasswordPolicy() != null) realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy(), session));
         if (rep.getOtpPolicyType() != null) realm.setOTPPolicy(toPolicy(rep));
 
         if (rep.getDefaultRoles() != null) {

@@ -23,6 +23,7 @@ import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.policy.PasswordPolicy;
 
 import java.security.Key;
 import java.security.PrivateKey;
@@ -851,9 +852,9 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setEnabledEventTypes(Set<String> enabledEventTypes) {
         getDelegateForUpdate();
-        updated.setEnabledEventTypes(enabledEventTypes);        
+        updated.setEnabledEventTypes(enabledEventTypes);
     }
-    
+
     @Override
     public boolean isAdminEventsEnabled() {
         if (isUpdated()) return updated.isAdminEventsEnabled();
@@ -877,7 +878,7 @@ public class RealmAdapter implements RealmModel {
         getDelegateForUpdate();
         updated.setAdminEventsDetailsEnabled(enabled);
     }
-    
+
     @Override
     public ClientModel getMasterAdminClient() {
         return cached.getMasterAdminClient()==null ? null : cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient());

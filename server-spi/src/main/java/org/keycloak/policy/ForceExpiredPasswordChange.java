@@ -15,19 +15,28 @@
  * limitations under the License.
  */
 
-package org.keycloak.hash;
+package org.keycloak.policy;
 
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.policy.PasswordPolicy;
-import org.keycloak.provider.Provider;
+import org.keycloak.models.KeycloakSession;
 
 /**
- * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
+ * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface PasswordHashProvider extends Provider {
+public class ForceExpiredPasswordChange extends BasePasswordPolicy {
+    public static final String NAME = "forceExpiredPasswordChange";
 
-    UserCredentialValueModel encode(String rawPassword, PasswordPolicy policy);
+    @Override
+    public String description() {
+        return null;
+    }
 
-    boolean verify(String rawPassword, UserCredentialValueModel credential);
+    @Override
+    public PasswordPolicyProvider create(KeycloakSession session) {
+        return this;
+    }
 
+    @Override
+    public String getId() {
+        return NAME;
+    }
 }

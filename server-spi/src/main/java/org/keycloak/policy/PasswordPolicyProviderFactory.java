@@ -15,19 +15,13 @@
  * limitations under the License.
  */
 
-package org.keycloak.hash;
+package org.keycloak.policy;
 
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.policy.PasswordPolicy;
-import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 
 /**
- * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
+ * @author <a href="mailto:roelof.naude@epiuse.com">Roelof Naude</a>
  */
-public interface PasswordHashProvider extends Provider {
-
-    UserCredentialValueModel encode(String rawPassword, PasswordPolicy policy);
-
-    boolean verify(String rawPassword, UserCredentialValueModel credential);
+public interface PasswordPolicyProviderFactory extends ProviderFactory<PasswordPolicyProvider> {
 
 }
