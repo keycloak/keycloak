@@ -94,6 +94,11 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder adminUrl(String adminUrl) {
+        rep.setAdminUrl(adminUrl);
+        return this;
+    }
+
     public ClientBuilder rootUrl(String rootUrl) {
         rep.setRootUrl(rootUrl);
         return this;

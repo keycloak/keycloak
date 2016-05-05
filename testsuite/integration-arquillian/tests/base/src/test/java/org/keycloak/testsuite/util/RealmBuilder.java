@@ -142,4 +142,13 @@ public class RealmBuilder {
         return rep;
     }
 
+    public RealmBuilder accessTokenLifespan(int accessTokenLifespan) {
+        rep.setAccessTokenLifespan(accessTokenLifespan);
+        return this;
+    }
+
+    public RealmBuilder ssoSessionIdleTimeout(int sessionIdleTimeout) {
+        rep.setSsoSessionIdleTimeout(sessionIdleTimeout);
+        return this;
+    }
 }
