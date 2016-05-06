@@ -16,22 +16,23 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
-import org.keycloak.events.Event;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.WebDriver;
 
 import static org.junit.Assert.assertEquals;
@@ -40,38 +41,35 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class SSOTest {
+public class SSOTest extends TestRealmKeycloakTest {
 
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule();
+    @Drone
+    @Different
+    protected WebDriver driver2;
 
-    @Rule
-    public WebRule webRule = new WebRule(this);
-
-    @WebResource
-    protected OAuthClient oauth;
-
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     protected AccountUpdateProfilePage profilePage;
 
     @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
+    public AssertEvents events = new AssertEvents(this);
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+    }
 
     @Test
     public void loginSuccess() {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
-        
+
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
@@ -92,7 +90,7 @@ public class SSOTest {
         assertEquals(sessionId, sessionId2);
 
         // Expire session
-        keycloakRule.removeUserSession(sessionId);
+        testingClient.testing().removeUserSession("test", sessionId);
 
         oauth.doLogin("test-user@localhost", "password");
 
@@ -110,15 +108,18 @@ public class SSOTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        Event login1 = events.expectLogin().assertEvent();
+        EventRepresentation login1 = events.expectLogin().assertEvent();
 
-        WebDriver driver2 = WebRule.createWebDriver();
         try {
-            OAuthClient oauth2 = new OAuthClient(driver2);
+            //OAuthClient oauth2 = new OAuthClient(driver2);
+            OAuthClient oauth2 = new OAuthClient();
+            oauth2.setDriver(driver2);
+            oauth2.setAdminClient(adminClient);
+
             oauth2.state("mystate");
             oauth2.doLogin("test-user@localhost", "password");
 
-            Event login2 = events.expectLogin().assertEvent();
+            EventRepresentation login2 = events.expectLogin().assertEvent();
 
             Assert.assertEquals(RequestType.AUTH_RESPONSE, RequestType.valueOf(driver2.getTitle()));
             Assert.assertNotNull(oauth2.getCurrentQuery().get(OAuth2Constants.CODE));

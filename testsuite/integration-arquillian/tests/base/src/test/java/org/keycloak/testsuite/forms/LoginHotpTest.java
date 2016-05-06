@@ -18,82 +18,58 @@ package org.keycloak.testsuite.forms;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.HmacOTP;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
-import org.keycloak.testsuite.rule.GreenMailRule;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
 
 import java.net.MalformedURLException;
-import java.util.Collections;
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.UserBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class LoginHotpTest {
+public class LoginHotpTest extends TestRealmKeycloakTest {
 
     public static OTPPolicy policy;
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
 
-        @Override
-        public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-            UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
-            policy = appRealm.getOTPPolicy();
-            policy.setType(UserCredentialModel.HOTP);
-            policy.setLookAheadWindow(2);
-            appRealm.setOTPPolicy(policy);
-
-            UserCredentialModel credentials = new UserCredentialModel();
-            credentials.setType(CredentialRepresentation.HOTP);
-            credentials.setValue("hotpSecret");
-            user.updateCredential(credentials);
-
-            user.setOtpEnabled(true);
-            appRealm.setEventsListeners(Collections.singleton("dummy"));
-        }
-
-    });
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        UserRepresentation user = findUserInRealmRep(testRealm, "test-user@localhost");
+        UserBuilder.edit(user)
+                   .hotpSecret("hotpSecret")
+                   .otpEnabled();
+    }
 
     @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
+    public AssertEvents events = new AssertEvents(this);
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     protected LoginTotpPage loginTotpPage;
 
-    private HmacOTP otp = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());
+    private HmacOTP otp; // = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());
 
     private int lifespan;
 
@@ -101,6 +77,19 @@ public class LoginHotpTest {
 
     @Before
     public void before() throws MalformedURLException {
+        RealmRepresentation testRealm = testRealm().toRepresentation();
+        testRealm.setOtpPolicyType(UserCredentialModel.HOTP);
+        testRealm.setOtpPolicyLookAheadWindow(2);
+        testRealm().update(testRealm);
+
+        policy = new OTPPolicy();
+        policy.setAlgorithm(testRealm.getOtpPolicyAlgorithm());
+        policy.setDigits(testRealm.getOtpPolicyDigits());
+        policy.setInitialCounter(testRealm.getOtpPolicyInitialCounter());
+        policy.setLookAheadWindow(testRealm.getOtpPolicyLookAheadWindow());
+        policy.setPeriod(testRealm.getOtpPolicyLookAheadWindow());
+        policy.setType(testRealm.getOtpPolicyType());
+
         otp = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());
     }
 
@@ -109,7 +98,7 @@ public class LoginHotpTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        loginTotpPage.assertCurrent();
+        Assert.assertTrue(loginTotpPage.isCurrent());
 
         loginTotpPage.login("123456");
         loginTotpPage.assertCurrent();
@@ -128,7 +117,7 @@ public class LoginHotpTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        loginTotpPage.assertCurrent();
+        Assert.assertTrue(loginTotpPage.isCurrent());
 
         loginTotpPage.login(null);
         loginTotpPage.assertCurrent();
@@ -147,7 +136,7 @@ public class LoginHotpTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        loginTotpPage.assertCurrent();
+        Assert.assertTrue(loginTotpPage.isCurrent());
 
         loginTotpPage.login(otp.generateHOTP("hotpSecret", counter++));
 
@@ -161,7 +150,7 @@ public class LoginHotpTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "invalid");
 
-        loginPage.assertCurrent();
+        Assert.assertTrue(loginPage.isCurrent());
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 

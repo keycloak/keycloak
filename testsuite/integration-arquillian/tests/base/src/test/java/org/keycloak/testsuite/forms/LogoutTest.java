@@ -16,48 +16,38 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
 
 import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class LogoutTest {
-
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule();
+public class LogoutTest extends TestRealmKeycloakTest {
 
     @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
+    public AssertEvents events = new AssertEvents(this);
 
-    @Rule
-    public WebRule webRule = new WebRule(this);
-
-    @WebResource
-    protected OAuthClient oauth;
-
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+    }
 
     @Test
     public void logoutRedirect() {
