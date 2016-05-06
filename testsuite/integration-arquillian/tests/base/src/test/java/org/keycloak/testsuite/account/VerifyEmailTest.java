@@ -48,7 +48,7 @@ public class VerifyEmailTest extends AbstractAccountManagementTest {
 
     @Before
     public void beforeVerifyEmail() {
-        log.info("enable verify email and configure smpt server in test realm");
+        log.info("enable verify email and configure smtp server in test realm");
         RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
         testRealmRep.setSmtpServer(suiteContext.getSmtpServer());
         testRealmRep.setVerifyEmail(true);
