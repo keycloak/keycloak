@@ -54,7 +54,6 @@ import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.auth.page.WelcomePage;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.util.DeleteMeOAuthClient;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.testsuite.auth.page.AuthServer;
@@ -96,8 +95,6 @@ public abstract class AbstractKeycloakTest {
     @ArquillianResource
     protected OAuthClient oauth;
 
-    protected DeleteMeOAuthClient deleteMeOAuthClient;
-
     protected List<RealmRepresentation> testRealmReps;
 
     @Drone
@@ -131,7 +128,6 @@ public abstract class AbstractKeycloakTest {
     public void beforeAbstractKeycloakTest() throws Exception {
         adminClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
                 MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
-        deleteMeOAuthClient = new DeleteMeOAuthClient(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
 
         getTestingClient();
 
@@ -161,7 +157,7 @@ public abstract class AbstractKeycloakTest {
         }
 
         removeTestRealms(); // Remove realms after tests. Tests should cleanup after themselves!
-//        adminClient.close(); // keeping admin connection open
+        adminClient.close(); // don't keep admin connection open
     }
 
     private void updateMasterAdminPassword() {
