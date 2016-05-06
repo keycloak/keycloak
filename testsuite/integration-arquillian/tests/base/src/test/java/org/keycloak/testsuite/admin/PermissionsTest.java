@@ -137,11 +137,11 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Override
     public void afterAbstractKeycloakTest() {
-        super.afterAbstractKeycloakTest();
-
         for (UserRepresentation u : adminClient.realm("master").users().search("permissions-test-master-", 0, 100)) {
             adminClient.realm("master").users().get(u.getId()).remove();
         }
+
+        super.afterAbstractKeycloakTest();
     }
 
     @Test

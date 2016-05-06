@@ -120,7 +120,11 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
     }
 
     private String getToken(String username, String password) {
-        return deleteMeOAuthClient.getToken(REALM_NAME, Constants.ADMIN_CLI_CLIENT_ID, null, username, password).getToken();
+        try {
+            return oauth.doGrantAccessTokenRequest(REALM_NAME, username, password, null, Constants.ADMIN_CLI_CLIENT_ID, null).getAccessToken();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

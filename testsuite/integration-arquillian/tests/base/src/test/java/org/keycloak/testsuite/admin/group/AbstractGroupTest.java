@@ -26,12 +26,12 @@ import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 
 import java.security.PublicKey;
 import java.util.List;
@@ -47,10 +47,9 @@ public abstract class AbstractGroupTest extends AbstractKeycloakTest {
     public AssertEvents events = new AssertEvents(this);
 
     AccessToken login(String login, String clientId, String clientSecret, String userId) throws Exception {
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test", login, "password", null, clientId, clientSecret);
 
-        AccessTokenResponse tokenResponse = deleteMeOAuthClient.getToken("test", clientId, clientSecret, login, "password");
-
-        String accessToken = tokenResponse.getToken();
+        String accessToken = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();
 
         PublicKey publicKey = PemUtils.decodePublicKey(adminClient.realm("test").toRepresentation().getPublicKey());
@@ -66,7 +65,6 @@ public abstract class AbstractGroupTest extends AbstractKeycloakTest {
         events.expectLogin()
                 .client(clientId)
                 .user(userId)
-                .session(tokenResponse.getSessionState())
                 .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .detail(Details.TOKEN_ID, accessTokenRepresentation.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshTokenRepresentation.getId())
