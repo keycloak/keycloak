@@ -17,6 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 import javax.ws.rs.Consumes;
@@ -28,14 +29,15 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author pedroigor
  */
 public interface IdentityProvidersResource {
 
-    @Path("instances/{id}")
-    IdentityProviderResource get(@PathParam("id") String id);
+    @Path("instances/{alias}")
+    IdentityProviderResource get(@PathParam("alias") String alias);
 
     @GET
     @Path("instances")
@@ -46,4 +48,21 @@ public interface IdentityProvidersResource {
     @Path("instances")
     @Consumes(MediaType.APPLICATION_JSON)
     Response create(IdentityProviderRepresentation identityProvider);
+
+    @GET
+    @Path("/providers/{provider_id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    Response getIdentityProviders(@PathParam("provider_id") String providerId);
+
+    @POST
+    @Path("import-config")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, String> importFrom(MultipartFormDataOutput data);
+
+    @POST
+    @Path("import-config")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, String> importFrom(Map<String, Object> data);
 }
