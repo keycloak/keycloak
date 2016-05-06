@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.keycloak.testsuite.broker.KcOidcBrokerConstants.*;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
 
 public class KcOidcBrokerTest extends AbstractBrokerTest {
 
@@ -39,7 +39,7 @@ public class KcOidcBrokerTest extends AbstractBrokerTest {
         client.setEnabled(true);
 
         client.setRedirectUris(Collections.singletonList(getAuthRoot() +
-                "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_ALIAS + "/endpoint/*"));
+                "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_OIDC_ALIAS + "/endpoint/*"));
 
         return Collections.singletonList(client);
     }
@@ -51,7 +51,7 @@ public class KcOidcBrokerTest extends AbstractBrokerTest {
 
     @Override
     protected IdentityProviderRepresentation setUpIdentityProvider() {
-        IdentityProviderRepresentation idp = createIdentityProvider(IDP_ALIAS, IDP_PROVIDER_ID);
+        IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
 
         Map<String, String> config = idp.getConfig();
 
@@ -95,7 +95,7 @@ public class KcOidcBrokerTest extends AbstractBrokerTest {
 
     @Override
     protected String getIDPAlias() {
-        return IDP_ALIAS;
+        return IDP_OIDC_ALIAS;
     }
 
 }

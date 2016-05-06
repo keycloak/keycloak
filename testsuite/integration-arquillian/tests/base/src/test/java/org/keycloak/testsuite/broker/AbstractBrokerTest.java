@@ -15,6 +15,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
@@ -117,11 +118,13 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
     public void tryToLogInAsUserInIDP() {
         driver.navigate().to(getAuthRoot() + "/auth/realms/" + consumerRealmName() + "/account");
 
+        log.debug("Clicking social " + getIDPAlias());
         accountLoginPage.clickSocial(getIDPAlias());
 
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + providerRealmName() + "/"));
 
+        log.debug("Logging in");
         accountLoginPage.login(getUserLogin(), getUserPassword());
 
         Assert.assertTrue("We must be on update user profile page right now",
@@ -130,21 +133,19 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
         Assert.assertTrue("We must be on correct realm right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + consumerRealmName() + "/"));
 
+        log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation("Firstname", "Lastname");
 
         UsersResource consumerUsers = adminClient.realm(consumerRealmName()).users();
-        List<UserRepresentation> users = consumerUsers.search("", 0, 5);
-        Assert.assertTrue("There must be at least one user", users.size() > 0);
+        Assert.assertTrue("There must be at least one user", consumerUsers.count() > 0);
 
-        boolean foundUser = false;
-        for (UserRepresentation user : users) {
-            if (user.getUsername().equals(getUserLogin()) && user.getEmail().equals(getUserEmail())) {
-                foundUser = true;
-                break;
-            }
-        }
+        List<UserRepresentation> users = consumerUsers.search("", 0, 5);
+
+        List<UserRepresentation> correctUsers = users.stream()
+                .filter(user -> user.getUsername().equals(getUserLogin()) && user.getEmail().equals(getUserEmail()))
+                .collect(Collectors.toList());
 
         Assert.assertTrue("There must be user " + getUserLogin() + " in realm " + consumerRealmName(),
-                foundUser);
+                correctUsers.size() > 0);
     }
 }
