@@ -372,7 +372,11 @@ public class MongoUserProvider implements UserProvider {
         MongoUserEntity userEntity = mongoUser.getUser();
         FederatedIdentityEntity federatedIdentityEntity = findFederatedIdentityLink(userEntity, federatedIdentityModel.getIdentityProvider());
 
+        //pushItemToList updates the whole federatedIdentities array in Mongo so we just need to remove this object from the Java
+        //List and pushItemToList will handle the DB update.
+        userEntity.getFederatedIdentities().remove(federatedIdentityEntity);
         federatedIdentityEntity.setToken(federatedIdentityModel.getToken());
+        getMongoStore().pushItemToList(userEntity, "federatedIdentities", federatedIdentityEntity, true, invocationContext);
     }
 
     @Override
