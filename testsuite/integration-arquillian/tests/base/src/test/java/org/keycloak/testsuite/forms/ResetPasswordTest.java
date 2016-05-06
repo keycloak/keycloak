@@ -19,122 +19,96 @@ package org.keycloak.testsuite.forms;
 import org.junit.*;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.Constants;
-import org.keycloak.testsuite.MailUtil;
-import org.keycloak.testsuite.OAuthClient;
+//import org.keycloak.testsuite.Constants;
+import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
-import org.keycloak.testsuite.rule.GreenMailRule;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.common.util.Time;
-import org.openqa.selenium.WebDriver;
 
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.UserBuilder;
 
 import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class ResetPasswordTest {
+public class ResetPasswordTest extends TestRealmKeycloakTest {
 
     static int lifespan = 0;
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule((new KeycloakRule.KeycloakSetup() {
-        @Override
-        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            UserModel user = manager.getSession().users().addUser(appRealm, "login-test");
-            user.setEmail("login@test.com");
-            user.setEnabled(true);
 
-            userId = user.getId();
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        UserRepresentation user = UserBuilder.create()
+                                             .username("login-test")
+                                             .email("login@test.com")
+                                             .enabled(true)
+                                             .password("password")
+                                             .build();
+        testRealm.getUsers().add(user);
+    }
 
-            UserCredentialModel creds = new UserCredentialModel();
-            creds.setType(CredentialRepresentation.PASSWORD);
-            creds.setValue("password");
+    @Before
+    public void setAccessCodeLifespanUserAction() {
+        // Must do this with adminClient because default is not set until after testRealm.json is loaded.
+        lifespan = testRealm().toRepresentation().getAccessCodeLifespanUserAction();
+    }
 
-            user.updateCredential(creds);
-            appRealm.setEventsListeners(Collections.singleton("dummy"));
-            lifespan = appRealm.getAccessCodeLifespanUserAction();
-        }
-    }));
+    @Before
+    public void setUserId() {
+        userId = findUser("login-test").getId();
+    }
+
 
     private static String userId;
 
     @Rule
-    public WebRule webRule = new WebRule(this);
-
-    @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
-    protected OAuthClient oauth;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     protected ErrorPage errorPage;
 
-    @WebResource
+    @Page
     protected InfoPage infoPage;
 
-    @WebResource
+    @Page
     protected VerifyEmailPage verifyEmailPage;
 
-    @WebResource
+    @Page
     protected LoginPasswordResetPage resetPasswordPage;
 
-    @WebResource
+    @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
 
     @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
-
-    @Before
-    public void resetPasswordToOriginal() {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                UserModel user = session.users().getUserByUsername("login-test", appRealm);
-                UserCredentialModel creds = new UserCredentialModel();
-                creds.setType(CredentialRepresentation.PASSWORD);
-                creds.setValue("password");
-
-                user.updateCredential(creds);
-            }
-        });
-    }
+    public AssertEvents events = new AssertEvents(this);
 
     @Test
     public void resetPasswordLink() throws IOException, MessagingException {
         String username = "login-test";
-        String resetUri = Constants.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
         driver.navigate().to(resetUri);
 
         resetPasswordPage.assertCurrent();
@@ -146,7 +120,7 @@ public class ResetPasswordTest {
 
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
                 .user(userId)
-                .detail(Details.REDIRECT_URI,  Constants.AUTH_SERVER_ROOT + "/realms/test/account/")
+                .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
                 .client("account")
                 .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, "login@test.com")
@@ -166,12 +140,12 @@ public class ResetPasswordTest {
         updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
         String sessionId = events.expectRequiredAction(EventType.UPDATE_PASSWORD)
-                .detail(Details.REDIRECT_URI,  Constants.AUTH_SERVER_ROOT + "/realms/test/account/")
+                .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
                 .client("account")
                 .user(userId).detail(Details.USERNAME, username).assertEvent().getSessionId();
 
         events.expectLogin().user(userId).detail(Details.USERNAME, username)
-                .detail(Details.REDIRECT_URI,  Constants.AUTH_SERVER_ROOT + "/realms/test/account/")
+                .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
                 .client("account")
                 .session(sessionId).assertEvent();
 
@@ -213,7 +187,7 @@ public class ResetPasswordTest {
 
         loginPage.login("login@test.com", "password");
 
-        Event loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
 
         String code = oauth.getCurrentQuery().get("code");
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
@@ -358,7 +332,7 @@ public class ResetPasswordTest {
 
         events.expectRequiredAction(EventType.RESET_PASSWORD).user((String) null).session((String) null).detail(Details.USERNAME, "invalid").removeDetail(Details.EMAIL).removeDetail(Details.CODE_ID).error("user_not_found").assertEvent();
     }
-    
+
     @Test
     public void resetPasswordMissingUsername() throws IOException, MessagingException, InterruptedException {
         loginPage.open();
@@ -373,9 +347,9 @@ public class ResetPasswordTest {
         assertEquals("Please specify username.", resetPasswordPage.getErrorMessage());
 
         assertEquals(0, greenMail.getReceivedMessages().length);
-        
+
         events.expectRequiredAction(EventType.RESET_PASSWORD).user((String) null).session((String) null).clearDetails().error("username_missing").assertEvent();
-        
+
     }
 
     @Test
@@ -401,7 +375,7 @@ public class ResetPasswordTest {
 
             String changePasswordUrl = getPasswordResetEmailLink(message);
 
-            Time.setOffset(1800 + 23);
+            setTimeOffset(1800 + 23);
 
             driver.navigate().to(changePasswordUrl.trim());
 
@@ -411,20 +385,18 @@ public class ResetPasswordTest {
 
             events.expectRequiredAction(EventType.RESET_PASSWORD).error("expired_code").client("test-app").user((String) null).session((String) null).clearDetails().assertEvent();
         } finally {
-            Time.setOffset(0);
+            setTimeOffset(0);
         }
     }
 
     @Test
     public void resetPasswordExpiredCodeShort() throws IOException, MessagingException, InterruptedException {
         final AtomicInteger originalValue = new AtomicInteger();
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                originalValue.set(appRealm.getAccessCodeLifespan());
-                appRealm.setAccessCodeLifespanUserAction(60);
-            }
-        });
+
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        originalValue.set(realmRep.getAccessCodeLifespan());
+        realmRep.setAccessCodeLifespanUserAction(60);
+        testRealm().update(realmRep);
 
         try {
             loginPage.open();
@@ -447,7 +419,7 @@ public class ResetPasswordTest {
 
             String changePasswordUrl = getPasswordResetEmailLink(message);
 
-            Time.setOffset(70);
+            setTimeOffset(70);
 
             driver.navigate().to(changePasswordUrl.trim());
 
@@ -457,139 +429,94 @@ public class ResetPasswordTest {
 
             events.expectRequiredAction(EventType.RESET_PASSWORD).error("expired_code").client("test-app").user((String) null).session((String) null).clearDetails().assertEvent();
         } finally {
-            Time.setOffset(0);
-
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setAccessCodeLifespanUserAction(originalValue.get());
-                }
-            });
+            setTimeOffset(0);
         }
     }
 
     @Test
     public void resetPasswordDisabledUser() throws IOException, MessagingException, InterruptedException {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                session.users().getUserByUsername("login-test", appRealm).setEnabled(false);
-            }
-        });
+        UserRepresentation user = findUser("login-test");
+        user.setEnabled(false);
+        updateUser(user);
 
-        try {
-            loginPage.open();
-            loginPage.resetPassword();
+        loginPage.open();
+        loginPage.resetPassword();
 
-            resetPasswordPage.assertCurrent();
+        resetPasswordPage.assertCurrent();
 
-            resetPasswordPage.changePassword("login-test");
+        resetPasswordPage.changePassword("login-test");
 
-            loginPage.assertCurrent();
-            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+        loginPage.assertCurrent();
+        assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-            assertEquals(0, greenMail.getReceivedMessages().length);
+        assertEquals(0, greenMail.getReceivedMessages().length);
 
-            events.expectRequiredAction(EventType.RESET_PASSWORD).session((String) null).user(userId).detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error("user_disabled").assertEvent();
-        } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    session.users().getUserByUsername("login-test", appRealm).setEnabled(true);
-                }
-            });
-        }
+        events.expectRequiredAction(EventType.RESET_PASSWORD).session((String) null).user(userId).detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error("user_disabled").assertEvent();
     }
 
     @Test
     public void resetPasswordNoEmail() throws IOException, MessagingException, InterruptedException {
         final String[] email = new String[1];
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                UserModel user = session.users().getUserByUsername("login-test", appRealm);
-                email[0] = user.getEmail();
-                user.setEmail(null);
 
-            }
-        });
+        UserRepresentation user = findUser("login-test");
+        email[0] = user.getEmail();
+        user.setEmail("");
+        updateUser(user);
 
-        try {
-            loginPage.open();
-            loginPage.resetPassword();
+        loginPage.open();
+        loginPage.resetPassword();
 
-            resetPasswordPage.assertCurrent();
+        resetPasswordPage.assertCurrent();
 
-            resetPasswordPage.changePassword("login-test");
+        resetPasswordPage.changePassword("login-test");
 
-            loginPage.assertCurrent();
-            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+        loginPage.assertCurrent();
+        assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-            assertEquals(0, greenMail.getReceivedMessages().length);
+        assertEquals(0, greenMail.getReceivedMessages().length);
 
-            events.expectRequiredAction(EventType.RESET_PASSWORD_ERROR).session((String) null).user(userId).detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error("invalid_email").assertEvent();
-        } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    session.users().getUserByUsername("login-test", appRealm).setEmail(email[0]);
-                }
-            });
-        }
+        events.expectRequiredAction(EventType.RESET_PASSWORD_ERROR).session((String) null).user(userId).detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error("invalid_email").assertEvent();
     }
 
     @Test
     public void resetPasswordWrongSmtp() throws IOException, MessagingException, InterruptedException {
         final String[] host = new String[1];
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                Map<String, String> smtpConfig = new HashMap<>();
-                smtpConfig.putAll(appRealm.getSmtpConfig());
-                host[0] =  smtpConfig.get("host");
-                smtpConfig.put("host", "invalid_host");
-                appRealm.setSmtpConfig(smtpConfig);
-            }
-        });
 
-        try {
-            loginPage.open();
-            loginPage.resetPassword();
+        Map<String, String> smtpConfig = new HashMap<>();
+        smtpConfig.putAll(testRealm().toRepresentation().getSmtpServer());
+        host[0] =  smtpConfig.get("host");
+        smtpConfig.put("host", "invalid_host");
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        realmRep.setSmtpServer(smtpConfig);
+        testRealm().update(realmRep);
 
-            resetPasswordPage.assertCurrent();
+        loginPage.open();
+        loginPage.resetPassword();
 
-            resetPasswordPage.changePassword("login-test");
+        resetPasswordPage.assertCurrent();
 
-            errorPage.assertCurrent();
+        resetPasswordPage.changePassword("login-test");
 
-            assertEquals("Failed to send email, please try again later.", errorPage.getError());
+        errorPage.assertCurrent();
 
-            assertEquals(0, greenMail.getReceivedMessages().length);
+        assertEquals("Failed to send email, please try again later.", errorPage.getError());
 
-            events.expectRequiredAction(EventType.SEND_RESET_PASSWORD_ERROR).user(userId)
-                    .session((String)null)
-                    .detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error(Errors.EMAIL_SEND_FAILED).assertEvent();
-        } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    Map<String, String> smtpConfig = new HashMap<>();
-                    smtpConfig.putAll(appRealm.getSmtpConfig());
-                    smtpConfig.put("host",host[0]);
-                    appRealm.setSmtpConfig(smtpConfig);
-                }
-            });
-        }
+        assertEquals(0, greenMail.getReceivedMessages().length);
+
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD_ERROR).user(userId)
+                .session((String)null)
+                .detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error(Errors.EMAIL_SEND_FAILED).assertEvent();
+    }
+
+    private void setPasswordPolicy(String policy) {
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        realmRep.setPasswordPolicy(policy);
+        testRealm().update(realmRep);
     }
 
     @Test
     public void resetPasswordWithLengthPasswordPolicy() throws IOException, MessagingException {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setPasswordPolicy(new PasswordPolicy("length"));
-            }
-        });
+        setPasswordPolicy("length");
 
         loginPage.open();
         loginPage.resetPassword();
@@ -640,62 +567,51 @@ public class ResetPasswordTest {
 
     @Test
     public void resetPasswordWithPasswordHisoryPolicy() throws IOException, MessagingException {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                //Block passwords that are equal to previous passwords. Default value is 3.
-                appRealm.setPasswordPolicy(new PasswordPolicy("passwordHistory"));
-            }
-        });
-        
+        //Block passwords that are equal to previous passwords. Default value is 3.
+        setPasswordPolicy("passwordHistory");
+
         try {
-            Time.setOffset(2000000);
+            setTimeOffset(2000000);
             resetPassword("login-test", "password1");
-            
+
             resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
 
-            Time.setOffset(4000000);
+            setTimeOffset(4000000);
             resetPassword("login-test", "password2");
-            
+
             resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
             resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
-        
-            Time.setOffset(8000000);
+
+            setTimeOffset(8000000);
             resetPassword("login-test", "password3");
-            
+
             resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
             resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
             resetPasswordInvalidPassword("login-test", "password3", "Invalid password: must not be equal to any of last 3 passwords.");
 
             resetPassword("login-test", "password");
         } finally {
-            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
-                }
-            });
-            Time.setOffset(0);
+            setTimeOffset(0);
         }
     }
 
     public static String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
     	Multipart multipart = (Multipart) message.getContent();
-    	
+
         final String textContentType = multipart.getBodyPart(0).getContentType();
-        
+
         assertEquals("text/plain; charset=UTF-8", textContentType);
-        
+
         final String textBody = (String) multipart.getBodyPart(0).getContent();
-        final String textChangePwdUrl = MailUtil.getLink(textBody);
-        
+        final String textChangePwdUrl = MailUtils.getLink(textBody);
+
         final String htmlContentType = multipart.getBodyPart(1).getContentType();
-        
+
         assertEquals("text/html; charset=UTF-8", htmlContentType);
-        
+
         final String htmlBody = (String) multipart.getBodyPart(1).getContent();
-        final String htmlChangePwdUrl = MailUtil.getLink(htmlBody);
-        
+        final String htmlChangePwdUrl = MailUtils.getLink(htmlBody);
+
         assertEquals(htmlChangePwdUrl, textChangePwdUrl);
 
         return htmlChangePwdUrl;

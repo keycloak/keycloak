@@ -18,93 +18,77 @@ package org.keycloak.testsuite.forms;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.rule.GreenMailRule;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.net.MalformedURLException;
-import java.util.Collections;
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.OAuthClient;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class BruteForceTest {
+public class BruteForceTest extends TestRealmKeycloakTest {
 
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        UserRepresentation user = findUserInRealmRep(testRealm, "test-user@localhost");
+        CredentialRepresentation credRep = new CredentialRepresentation();
+        credRep.setType(CredentialRepresentation.TOTP);
+        credRep.setValue("totpSecret");
+        user.getCredentials().add(credRep);
+        user.setTotp(Boolean.TRUE);
 
-        @Override
-        public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-            UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
+        testRealm.setBruteForceProtected(true);
+        testRealm.setFailureFactor(2);
 
-            UserCredentialModel credentials = new UserCredentialModel();
-            credentials.setType(CredentialRepresentation.TOTP);
-            credentials.setValue("totpSecret");
-            user.updateCredential(credentials);
+        findClientInRealmRep(testRealm, "test-app").setDirectAccessGrantsEnabled(true);
+    }
 
-            user.setOtpEnabled(true);
-            appRealm.setEventsListeners(Collections.singleton("dummy"));
+    @Before
+    public void config() {
 
-            appRealm.setBruteForceProtected(true);
-            appRealm.setFailureFactor(2);
+    }
 
-            appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
-        }
-
-    });
 
     @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
+    public AssertEvents events = new AssertEvents(this);
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
+    @Page
     protected AppPage appPage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     private RegisterPage registerPage;
 
-    @WebResource
+    @Page
     protected LoginTotpPage loginTotpPage;
-
-    @WebResource
-    protected OAuthClient oauth;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
 

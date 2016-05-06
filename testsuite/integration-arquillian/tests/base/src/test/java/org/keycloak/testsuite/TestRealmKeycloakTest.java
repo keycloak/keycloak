@@ -21,6 +21,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.List;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
@@ -31,6 +33,36 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public abstract class TestRealmKeycloakTest extends AbstractKeycloakTest {
+
+    protected UserRepresentation findUserInRealmRep(RealmRepresentation testRealm, String userName) {
+        for (UserRepresentation user : testRealm.getUsers()) {
+            if (user.getUsername().equals(userName)) return user;
+        }
+
+        return null;
+    }
+
+    protected ClientRepresentation findClientInRealmRep(RealmRepresentation testRealm, String clientId) {
+        for (ClientRepresentation client : testRealm.getClients()) {
+            if (client.getClientId().equals(clientId)) return client;
+        }
+
+        return null;
+    }
+
+    protected RealmResource testRealm() {
+        return adminClient.realm("test");
+    }
+
+    protected UserRepresentation findUser(String userNameOrEmail) {
+        List<UserRepresentation> repList = testRealm().users().search(userNameOrEmail, -1, -1);
+        if (repList.size() != 1) throw new IllegalStateException("User search expected one result. Found " + repList.size() + " users.");
+        return repList.get(0);
+    }
+
+    protected void updateUser(UserRepresentation user) {
+        testRealm().users().get(user.getId()).update(user);
+    }
 
     protected ClientRepresentation findTestApp(RealmRepresentation testRealm) {
         for (ClientRepresentation client : testRealm.getClients()) {
