@@ -682,7 +682,7 @@ public class UserTest extends AbstractAdminTest {
 
         loginPage.login("user1", "password");
 
-        assertEquals("Keycloak Account Management", driver.getTitle());
+        assertTrue(driver.getTitle().contains("Account Management"));
     }
 
     @Test
