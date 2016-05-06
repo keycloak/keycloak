@@ -18,6 +18,7 @@
 package org.keycloak.testsuite;
 
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -27,6 +28,7 @@ import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentat
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -73,5 +75,35 @@ public class Assert extends org.junit.Assert {
         }
 
         throw new IllegalArgumentException();
+    }
+
+
+    /**
+     * Assert all the fields from map available. Array "expected" contains pairs when first value from pair is expected key
+     * and second is the expected value from the map for target key.
+     *
+     * Example config = {"key1" -> "value1" , "key2" -> "value2" }
+     * then assertMap(config, "key1", "value1", "key2", "value2" will return true
+     *
+     */
+    public static void assertMap(Map<String, String> config, String... expected) {
+        if (expected == null) {
+            expected = new String[] {};
+        }
+
+        Assert.assertEquals(config.size() * 2, expected.length);
+        for (int i=0 ; i<expected.length ; i+=2) {
+            String key = expected[i];
+            String value = expected[i+1];
+            Assert.assertEquals(value, config.get(key));
+        }
+    }
+
+    public static void assertProviderConfigProperty(ConfigPropertyRepresentation property, String name, String label, String defaultValue, String helpText, String type) {
+        Assert.assertEquals(name, property.getName());
+        Assert.assertEquals(label, property.getLabel());
+        Assert.assertEquals(defaultValue, property.getDefaultValue());
+        Assert.assertEquals(helpText, property.getHelpText());
+        Assert.assertEquals(type, property.getType());
     }
 }

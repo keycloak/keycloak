@@ -20,6 +20,8 @@ package org.keycloak.testsuite.admin.authentication;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
+import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +29,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import javax.ws.rs.NotFoundException;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -61,6 +65,58 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         Assert.assertNotNull("Required Action still there", updated);
         compareRequiredAction(forUpdate, updated);
+    }
+
+    @Test
+    public void testCRUDRequiredAction() {
+        // Just Dummy RequiredAction is not registered in the realm
+        List<RequiredActionProviderSimpleRepresentation> result = authMgmtResource.getUnregisteredRequiredActions();
+        Assert.assertEquals(1, result.size());
+        RequiredActionProviderSimpleRepresentation action = result.get(0);
+        Assert.assertEquals(DummyRequiredActionFactory.PROVIDER_ID, action.getProviderId());
+        Assert.assertEquals("Dummy Action", action.getName());
+
+        // Register it
+        authMgmtResource.registerRequiredAction(action);
+
+        // Try to find not-existent action - should fail
+        try {
+            authMgmtResource.getRequiredAction("not-existent");
+            Assert.fail("Didn't expect to find requiredAction of alias 'not-existent'");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        // Find existent
+        RequiredActionProviderRepresentation rep = authMgmtResource.getRequiredAction(DummyRequiredActionFactory.PROVIDER_ID);
+        compareRequiredAction(rep, newRequiredAction(DummyRequiredActionFactory.PROVIDER_ID, "Dummy Action",
+                true, false, Collections.emptyMap()));
+
+        // Update not-existent - should fail
+        try {
+            authMgmtResource.updateRequiredAction("not-existent", rep);
+            Assert.fail("Not expected to update not-existent requiredAction");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        // Update (set it as defaultAction)
+        rep.setDefaultAction(true);
+        authMgmtResource.updateRequiredAction(DummyRequiredActionFactory.PROVIDER_ID, rep);
+        compareRequiredAction(rep, newRequiredAction(DummyRequiredActionFactory.PROVIDER_ID, "Dummy Action",
+                true, true, Collections.emptyMap()));
+
+        // Remove unexistent - should fail
+        try {
+            authMgmtResource.removeRequiredAction("not-existent");
+            Assert.fail("Not expected to remove not-existent requiredAction");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        // Remove success
+        authMgmtResource.removeRequiredAction(DummyRequiredActionFactory.PROVIDER_ID);
+
     }
 
 
