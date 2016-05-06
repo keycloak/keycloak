@@ -132,6 +132,12 @@
                 <module>fuse62</module>
             </modules>
         </profile>                
+        <profile>
+            <id>app-server-fuse63</id>
+            <modules>
+                <module>fuse63</module>
+            </modules>
+        </profile>                
         
     </profiles>
 
