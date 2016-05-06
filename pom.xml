@@ -50,6 +50,7 @@
         <apache.httpcomponents.httpcore.version>4.4.1</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <bouncycastle.version>1.52</bouncycastle.version>
+        <cxf.version>3.1.5</cxf.version>
         <dom4j.version>1.6.1</dom4j.version>
         <github.relaxng.version>2011.1</github.relaxng.version>
         <h2.version>1.3.173</h2.version>
@@ -84,7 +85,7 @@
         <mongo.driver.version>3.2.0</mongo.driver.version>
         <mysql.version>5.1.29</mysql.version>
         <osgi.version>4.2.0</osgi.version>
-        <pax.web.version>3.1.2</pax.web.version>
+        <pax.web.version>4.2.4</pax.web.version>
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
         <mariadb.version>1.3.7</mariadb.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
@@ -619,6 +620,11 @@
             <dependency>
                 <groupId>org.ops4j.pax.web</groupId>
                 <artifactId>pax-web-runtime</artifactId>
+                <version>${pax.web.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.web</groupId>
+                <artifactId>pax-web-api</artifactId>
                 <version>${pax.web.version}</version>
             </dependency>
             <dependency>
