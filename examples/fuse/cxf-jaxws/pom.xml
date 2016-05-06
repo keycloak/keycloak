@@ -32,7 +32,6 @@
     <description/>
 
     <properties>
-        <cxf.version>3.0.4</cxf.version>
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
@@ -50,7 +49,9 @@
             org.apache.cxf.transport.http;version="[2.7,3.2)",
             org.apache.cxf.*;version="[2.7,3.2)",
             org.springframework.beans.factory.config,
-            *;resolution:=optional
+            org.eclipse.jetty.security;version="[8,10)",
+            org.eclipse.jetty.util.security;version="[8,10)",
+            org.keycloak.*;version="${project.version}"
         </keycloak.osgi.import>
         <keycloak.osgi.private>
             org.keycloak.example.ws.*

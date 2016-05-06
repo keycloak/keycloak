@@ -32,15 +32,21 @@
     <description/>
 
     <properties>
-        <camel.version>2.15.1</camel.version>
+
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
-            org.eclipse.jetty.security;version="[8.1,10)",
-            org.eclipse.jetty.util.security;version="[8.1,10)",
-            org.apache.camel;version="[2.12,3)",
+            javax.servlet;version="[3,4)",
+            javax.servlet.http;version="[3,4)",
+            org.apache.camel.*,
+            org.apache.camel;version="[2.13,3)",
+            org.eclipse.jetty.security;version="[8,10)",
+            org.eclipse.jetty.server.nio;version="[8,10)",
+            org.eclipse.jetty.util.security;version="[8,10)",
             org.keycloak.*;version="${project.version}",
-            *;resolution:=optional
+            org.osgi.service.blueprint,
+            org.osgi.service.blueprint.container,
+            org.osgi.service.event,
         </keycloak.osgi.import>
         <keycloak.osgi.private>
             org.keycloak.example.*
@@ -63,7 +69,7 @@
             <version>${camel.version}</version>
         </dependency>
         <dependency><groupId>org.apache.camel</groupId>
-            <artifactId>camel-jetty</artifactId>
+            <artifactId>camel-jetty9</artifactId>
             <version>${camel.version}</version>
         </dependency>
     </dependencies>

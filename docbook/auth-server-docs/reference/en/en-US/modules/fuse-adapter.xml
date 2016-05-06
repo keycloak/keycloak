@@ -19,8 +19,9 @@
     <title>JBoss Fuse and Apache Karaf Adapter</title>
     <para>
         Currently Keycloak supports securing your web applications running inside <ulink url="http://www.jboss.org/products/fuse/overview/">JBoss Fuse</ulink>
-        or <ulink url="http://karaf.apache.org/">Apache Karaf</ulink> . It leverages <link linkend="jetty8-adapter">Jetty 8 adapter</link> as both JBoss Fuse 6.1
+        or <ulink url="http://karaf.apache.org/">Apache Karaf</ulink> . It leverages <link linkend="jetty8-adapter">Jetty 8 adapter</link> as all of JBoss Fuse 6.2.1, JBoss Fuse 6.2.0
         and Apache Karaf 3 are bundled with <ulink url="http://eclipse.org/jetty/">Jetty 8.1 server</ulink> under the covers and Jetty is used for running various kinds of web applications.
+        For JBoss Fuse 6.3 and Karaf 4, bundled with Jetty 9 server, it leverages <link linkend="jetty9-adapter">Jetty 9 adapter</link>.
     </para>
     <para>
         What is supported for Fuse/Karaf is:
