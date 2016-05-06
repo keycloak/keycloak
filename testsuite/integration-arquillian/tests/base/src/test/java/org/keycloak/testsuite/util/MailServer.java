@@ -17,17 +17,21 @@
 
 package org.keycloak.testsuite.util;
 
+import com.icegreen.greenmail.util.DummySSLSocketFactory;
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetup;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.SocketException;
+import java.security.Security;
 import javax.mail.MessagingException;
 
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMessage.RecipientType;
 import javax.mail.internet.MimeMultipart;
 import org.jboss.logging.Logger;
+import org.keycloak.testsuite.arquillian.SuiteContext;
+
 import static org.keycloak.testsuite.util.MailServerConfiguration.*;
 
 public class MailServer {
@@ -35,6 +39,8 @@ public class MailServer {
     private static final Logger log = Logger.getLogger(MailServer.class);
     
     private static GreenMail greenMail;
+
+    private static ServerSetup setup;
 
     public static void main(String[] args) throws Exception {
         MailServer.start();
@@ -61,23 +67,28 @@ public class MailServer {
                     log.info("-------------------------------------------------------");
                 }
             }
-        } catch (IOException | InterruptedException | MessagingException ex) {
+        } catch (IOException | MessagingException ex) {
             throw new RuntimeException(ex);
         }
     }
 
     public static void start() {
-        ServerSetup setup = new ServerSetup(Integer.parseInt(PORT), HOST, "smtp");
+        if (SuiteContext.isSslRequired()){
+            Security.setProperty("ssl.SocketFactory.provider", DummySSLSocketFactory.class.getName());
+            setup = new ServerSetup(Integer.parseInt(PORT_SMTPS), HOST, ServerSetup.PROTOCOL_SMTPS);
+        } else {
+            setup = new ServerSetup(Integer.parseInt(PORT_SMTP), HOST, ServerSetup.PROTOCOL_SMTP);
+        }
 
         greenMail = new GreenMail(setup);
         greenMail.start();
 
-        log.info("Started mail server (" + HOST + ":" + PORT + ")");
+        log.info("Started mail server (" + HOST + ":" + setup.getPort() + ")");
     }
 
     public static void stop() {
         if (greenMail != null) {
-            log.info("Stopping mail server (localhost:3025)");
+            log.info("Stopping mail server (localhost:" + setup.getPort() + ")");
             // Suppress error from GreenMail on shutdown
             Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
                 @Override
