@@ -24,20 +24,26 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
+import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.util.IOUtil;
+import org.openqa.selenium.By;
 import org.w3c.dom.Document;
 
 import javax.ws.rs.core.Response;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
 import static org.keycloak.testsuite.util.IOUtil.*;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author mhajas
@@ -163,6 +169,40 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         testRealmSAMLPostLoginPage.setAuthRealm(SAMLSERVLETDEMO);
     }
 
+    private void assertForbidden(AbstractPage page) {
+        page.navigateTo();
+        waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
+        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
+    }
+
+    private void assertSuccessfullyLoggedIn(AbstractPage page) {
+        page.navigateTo();
+        waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
+    }
+
+    private void assertForbiddenLogin(AbstractPage page, String username, String password, Login loginPage) {
+        page.navigateTo();
+        assertCurrentUrlStartsWith(loginPage);
+        loginPage.form().login(username, password);
+        waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
+        //Different 403 status page on EAP and Wildfly
+        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
+    }
+
+    private void assertSuccessfulLogin(AbstractPage page, UserRepresentation user, Login loginPage) {
+        page.navigateTo();
+        assertCurrentUrlStartsWith(loginPage);
+        loginPage.form().login(user);
+        waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
+    }
+
+    private void testSuccessfulAndUnauthorizedLogin(SAMLServletWithLogout page, Login loginPage) {
+        assertSuccessfulLogin(page, bburkeUser, loginPage);
+        page.logout();
+        assertForbiddenLogin(page, "unauthorized", "password", loginPage);
+        page.logout();
+    }
+
     @Test
     public void disabledClientTest() {
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "http://localhost:8081/sales-post-sig/");
@@ -171,7 +211,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         clientResource.update(client);
 
         salesPostSigServletPage.navigateTo();
-        assertTrue(driver.getPageSource().contains("Login requester not enabled"));
+        waitUntilElement(By.xpath("//body")).text().contains("Login requester not enabled");
 
         client.setEnabled(true);
         clientResource.update(client);
@@ -179,41 +219,20 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Test
     public void unauthorizedSSOTest() {
-        salesPostServletPage.navigateTo();
-        testRealmSAMLRedirectLoginPage.form().login("unauthorized", "password");
-
-        assertFalse(driver.getPageSource().contains("principal="));
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
-
-        employee2ServletPage.navigateTo();
-        assertFalse(driver.getPageSource().contains("principal="));
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
-
-        employeeSigFrontServletPage.navigateTo();
-        assertFalse(driver.getPageSource().contains("principal="));
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
-
-        salesPostSigPersistentServletPage.navigateTo();
-        assertFalse(driver.getPageSource().contains("principal="));
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
+        assertForbiddenLogin(salesPostServletPage, "unauthorized", "password", testRealmSAMLPostLoginPage);
+        assertForbidden(employee2ServletPage);
+        assertForbidden(employeeSigFrontServletPage);
+        assertForbidden(salesPostSigPersistentServletPage);
 
         salesPostServletPage.logout();
     }
 
     @Test
     public void singleLoginAndLogoutSAMLTest() {
-        salesPostServletPage.navigateTo();
-        testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
-
-        salesPostSigServletPage.navigateTo();
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
-
-        employee2ServletPage.navigateTo();
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
-
-        salesPostEncServletPage.navigateTo();
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
+        assertSuccessfulLogin(salesPostServletPage, bburkeUser, testRealmSAMLPostLoginPage);
+        assertSuccessfullyLoggedIn(salesPostSigServletPage);
+        assertSuccessfullyLoggedIn(employee2ServletPage);
+        assertSuccessfullyLoggedIn(salesPostEncServletPage);
 
         employeeSigFrontServletPage.logout();
 
@@ -224,6 +243,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
 
         salesPostPassiveServletPage.navigateTo();
+        waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
         assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().contains("<body><pre></pre></body>"));
 
         salesPostSigEmailServletPage.navigateTo();
@@ -233,7 +253,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Test
     public void badClientSalesPostSigTest() {
         badClientSalesPostSigServletPage.navigateTo();
-        assertTrue(driver.getPageSource().contains("invalidRequesterMessage"));
+        waitUntilElement(By.xpath("//body")).text().contains("invalidRequesterMessage");
     }
 
     @Test
@@ -241,59 +261,24 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         badRealmSalesPostSigServletPage.navigateTo();
         testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
 
+        waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
         //Different 403 status page on EAP and Wildfly
         assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
     }
 
     @Test
     public void employee2Test() {
-        employee2ServletPage.navigateTo();
-        testRealmSAMLPostLoginPage.form().login(bburkeUser);
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
-
-        employee2ServletPage.logout();
-        employee2ServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
-
-        testRealmSAMLPostLoginPage.form().login("unauthorized", "password");
-        assertFalse(driver.getPageSource().contains("principal="));
-        //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
-        employee2ServletPage.logout();
+        testSuccessfulAndUnauthorizedLogin(employee2ServletPage, testRealmSAMLPostLoginPage);
     }
 
     @Test
     public void employeeSigTest() {
-        employeeSigServletPage.navigateTo();
-        testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
-
-        employeeSigServletPage.logout();
-        employeeSigServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
-
-        testRealmSAMLRedirectLoginPage.form().login("unauthorized", "password");
-        assertFalse(driver.getPageSource().contains("principal="));
-        //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
-        employeeSigServletPage.logout();
+        testSuccessfulAndUnauthorizedLogin(employeeSigServletPage, testRealmSAMLRedirectLoginPage);
     }
 
     @Test
     public void employeeSigFrontTest() {
-        employeeSigFrontServletPage.navigateTo();
-        testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
-
-        employeeSigFrontServletPage.logout();
-        employeeSigFrontServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
-
-        testRealmSAMLRedirectLoginPage.form().login("unauthorized", "password");
-        assertFalse(driver.getPageSource().contains("principal="));
-        //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
-        employeeSigFrontServletPage.logout();
+        testSuccessfulAndUnauthorizedLogin(employeeSigFrontServletPage, testRealmSAMLRedirectLoginPage);
     }
 
     @Test
@@ -318,130 +303,64 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertEquals(201, response.getStatus());
         response.close();
 
-        salesMetadataServletPage.navigateTo();
-        testRealmSAMLPostLoginPage.form().login(bburkeUser);
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
-
-        salesMetadataServletPage.logout();
-        salesMetadataServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
-
-        testRealmSAMLPostLoginPage.form().login("unauthorized", "password");
-        assertFalse(driver.getPageSource().contains("principal="));
-        //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
-        salesMetadataServletPage.logout();
+        testSuccessfulAndUnauthorizedLogin(salesMetadataServletPage, testRealmSAMLPostLoginPage);
     }
 
     @Test
     public void salesPostTest() {
-        salesPostServletPage.navigateTo();
-        testRealmSAMLPostLoginPage.form().login(bburkeUser);
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
-
-        salesPostServletPage.logout();
-        salesPostServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
-
-        testRealmSAMLPostLoginPage.form().login("unauthorized", "password");
-        assertFalse(driver.getPageSource().contains("principal="));
-        //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
-        salesPostServletPage.logout();
+        testSuccessfulAndUnauthorizedLogin(salesPostServletPage, testRealmSAMLPostLoginPage);
     }
 
     @Test
     public void salesPostEncTest() {
-        salesPostEncServletPage.navigateTo();
-        testRealmSAMLPostLoginPage.form().login(bburkeUser);
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
-
-        salesPostEncServletPage.logout();
-        salesPostEncServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
-
-        testRealmSAMLPostLoginPage.form().login("unauthorized", "password");
-        assertFalse(driver.getPageSource().contains("principal="));
-        //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
-        salesPostEncServletPage.logout();
+        testSuccessfulAndUnauthorizedLogin(salesPostEncServletPage, testRealmSAMLPostLoginPage);
     }
 
     @Test
     public void salesPostPassiveTest() {
         salesPostPassiveServletPage.navigateTo();
+
+        waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
         //Different 403 status page on EAP and Wildfly
         assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().contains("<body><pre></pre></body>"));
 
-        salesPostServletPage.navigateTo();
-        testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
+        assertSuccessfulLogin(salesPostServletPage, bburkeUser, testRealmSAMLPostLoginPage);
 
-        salesPostPassiveServletPage.navigateTo();
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
+        assertSuccessfullyLoggedIn(salesPostPassiveServletPage);
 
         salesPostPassiveServletPage.logout();
         salesPostPassiveServletPage.navigateTo();
+
+        waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
         //Different 403 status page on EAP and Wildfly
         assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().contains("<body><pre></pre></body>"));
 
-        salesPostServletPage.navigateTo();
-        testRealmSAMLRedirectLoginPage.form().login("unauthorized", "password");
-        salesPostPassiveServletPage.navigateTo();
-        assertFalse(driver.getPageSource().contains("principal="));
-        //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
+        assertForbiddenLogin(salesPostServletPage, "unauthorized", "password", testRealmSAMLPostLoginPage);
+        assertForbidden(salesPostPassiveServletPage);
+
         salesPostPassiveServletPage.logout();
     }
 
     @Test
     public void salesPostSigTest() {
-        salesPostEncServletPage.navigateTo();
-        testRealmSAMLPostLoginPage.form().login(bburkeUser);
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
-
-        salesPostEncServletPage.logout();
-        salesPostEncServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
-
-        testRealmSAMLPostLoginPage.form().login("unauthorized", "password");
-        assertFalse(driver.getPageSource().contains("principal="));
-        //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
-        salesPostEncServletPage.logout();
+        testSuccessfulAndUnauthorizedLogin(salesPostSigServletPage, testRealmSAMLPostLoginPage);
     }
 
     @Test
     public void salesPostSigEmailTest() {
-        salesPostSigEmailServletPage.navigateTo();
-        testRealmSAMLPostLoginPage.form().login(bburkeUser);
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
-
-        salesPostSigEmailServletPage.logout();
-        salesPostSigEmailServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
-
-        testRealmSAMLPostLoginPage.form().login("unauthorized", "password");
-        assertFalse(driver.getPageSource().contains("principal="));
-        //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
-        salesPostSigEmailServletPage.logout();
+        testSuccessfulAndUnauthorizedLogin(salesPostSigEmailServletPage, testRealmSAMLPostLoginPage);
     }
 
     @Test
     public void salesPostSigPersistentTest() {
         salesPostSigPersistentServletPage.navigateTo();
         testRealmSAMLPostLoginPage.form().login(bburkeUser);
-        assertFalse(driver.getPageSource().contains("bburke"));
-        assertTrue(driver.getPageSource().contains("principal=G-"));
+        waitUntilElement(By.xpath("//body")).text().not().contains("bburke");
+        waitUntilElement(By.xpath("//body")).text().contains("principal=G-");
 
         salesPostSigPersistentServletPage.logout();
-        salesPostSigPersistentServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
 
-        testRealmSAMLPostLoginPage.form().login("unauthorized", "password");
-        assertFalse(driver.getPageSource().contains("principal="));
-        //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
+        assertForbiddenLogin(salesPostSigPersistentServletPage, "unauthorized", "password", testRealmSAMLPostLoginPage);
         salesPostSigPersistentServletPage.logout();
     }
 
@@ -449,32 +368,25 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     public void salesPostSigTransientTest() {
         salesPostSigTransientServletPage.navigateTo();
         testRealmSAMLPostLoginPage.form().login(bburkeUser);
-        assertFalse(driver.getPageSource().contains("bburke"));
-        assertTrue(driver.getPageSource().contains("principal=G-"));
+        waitUntilElement(By.xpath("//body")).text().not().contains("bburke");
+        waitUntilElement(By.xpath("//body")).text().contains("principal=G-");
 
         salesPostSigTransientServletPage.logout();
-        salesPostSigTransientServletPage.navigateTo();
-        assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
 
-        testRealmSAMLPostLoginPage.form().login("unauthorized", "password");
-        assertFalse(driver.getPageSource().contains("principal="));
-        //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
+        assertForbiddenLogin(salesPostSigTransientServletPage, "unauthorized", "password", testRealmSAMLPostLoginPage);
         salesPostSigTransientServletPage.logout();
     }
 
     @Test
-    public void  idpInitiatedLogin() {
+    public void idpInitiatedLogin() {
         samlidpInitiatedLogin.setAuthRealm(SAMLSERVLETDEMO);
         samlidpInitiatedLogin.setUrlName("employee2");
         samlidpInitiatedLogin.navigateTo();
         samlidpInitiatedLogin.form().login(bburkeUser);
 
-        employee2ServletPage.navigateTo();
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
+        waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
 
-        salesPostSigServletPage.navigateTo();
-        assertTrue(driver.getPageSource().contains("principal=bburke"));
+        assertSuccessfullyLoggedIn(salesPostSigServletPage);
 
         employee2ServletPage.logout();
     }
@@ -484,15 +396,12 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         samlidpInitiatedLogin.setAuthRealm(SAMLSERVLETDEMO);
         samlidpInitiatedLogin.setUrlName("employee2");
         samlidpInitiatedLogin.navigateTo();
-        samlidpInitiatedLogin.form().login("unauthorized","password");
+        samlidpInitiatedLogin.form().login("unauthorized", "password");
 
-        assertFalse(driver.getPageSource().contains("principal="));
+        waitUntilElement(By.xpath("//body")).text().not().contains("bburke");
         assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
 
-        employee2ServletPage.navigateTo();
-        assertFalse(driver.getPageSource().contains("principal="));
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("Status 403"));
-
+        assertForbidden(employee2ServletPage);
         employee2ServletPage.logout();
     }
 }
