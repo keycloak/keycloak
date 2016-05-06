@@ -17,8 +17,11 @@
 
 package org.keycloak.testsuite.admin.authentication;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
+import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.testsuite.Assert;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +30,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import javax.ws.rs.NotFoundException;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -78,6 +83,41 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "which automatically authenticates hardcoded client (like 'test-app' )");
 
         compareProviders(expected, result);
+    }
+
+    @Test
+    public void testPerClientConfigDescriptions() {
+        Map<String, List<ConfigPropertyRepresentation>> configs = authMgmtResource.getPerClientConfigDescription();
+        Assert.assertTrue(configs.containsKey("client-jwt"));
+        Assert.assertTrue(configs.containsKey("client-secret"));
+        Assert.assertTrue(configs.containsKey("testsuite-client-passthrough"));
+        Assert.assertTrue(configs.get("client-jwt").isEmpty());
+        Assert.assertTrue(configs.get("client-secret").isEmpty());
+        List<ConfigPropertyRepresentation> cfg = configs.get("testsuite-client-passthrough");
+        Assert.assertProviderConfigProperty(cfg.get(0), "passthroughauth.foo", "Foo Property", null,
+                "Foo Property of this authenticator, which does nothing", "String");
+        Assert.assertProviderConfigProperty(cfg.get(1), "passthroughauth.bar", "Bar Property", null,
+                "Bar Property of this authenticator, which does nothing", "boolean");
+    }
+
+    @Test
+    public void testAuthenticatorConfigDescription() {
+        // Try some not-existent provider
+        try {
+            authMgmtResource.getAuthenticatorConfigDescription("not-existent");
+            Assert.fail("Don't expected to find provider 'not-existent'");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        AuthenticatorConfigInfoRepresentation infoRep = authMgmtResource.getAuthenticatorConfigDescription(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID);
+        Assert.assertEquals("Create User If Unique", infoRep.getName());
+        Assert.assertEquals(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID, infoRep.getProviderId());
+        Assert.assertEquals("Detect if there is existing Keycloak account with same email like identity provider. If no, create new user", infoRep.getHelpText());
+        Assert.assertEquals(1, infoRep.getProperties().size());
+        Assert.assertProviderConfigProperty(infoRep.getProperties().get(0), "require.password.update.after.registration", "Require Password Update After Registration",
+                null, "If this option is true and new user is successfully imported from Identity Provider to Keycloak (there is no duplicated email or username detected in Keycloak DB), then this user is required to update his password",
+                "boolean");
     }
 
 
