@@ -151,8 +151,7 @@ public abstract class AbstractKeycloakTest {
 
         importTestRealms();
 
-        oauth.setAdminClient(adminClient);
-        oauth.setDriver(driver);
+        oauth.init(adminClient, driver);
     }
 
     @After

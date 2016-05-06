@@ -113,7 +113,8 @@ public interface ClientResource {
 
     @POST
     @Path("push-revocation")
-    public void pushRevocation();
+    @Produces(MediaType.APPLICATION_JSON)
+    void pushRevocation();
 
     @Path("/scope-mappings")
     public RoleMappingResource getScopeMappings();
@@ -138,6 +139,7 @@ public interface ClientResource {
 
     @Path("test-nodes-available")
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
     GlobalRequestResult testNodesAvailable();
 
 }
