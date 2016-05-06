@@ -35,6 +35,7 @@
                     <!--<property name="adapterImplClass">org.keycloak.testsuite.arquillian.karaf.CustomKarafContainer</property>-->
                     <property name="autostartBundle">false</property>
                     <property name="karafHome">${app.server.home}</property>
+                    <property name="javaHome">${app.server.java.home}</property>
                     <property name="javaVmArguments">
                         -agentlib:jdwp=transport=dt_socket,address=5005,server=y,suspend=n 
                         ${adapter.test.props}
