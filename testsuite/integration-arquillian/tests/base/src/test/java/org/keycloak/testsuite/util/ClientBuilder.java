@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.util;
 
+import org.keycloak.dom.saml.v2.ac.BooleanType;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 import java.util.Arrays;
@@ -58,8 +59,18 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder serviceAccount() {
+        rep.setServiceAccountsEnabled(true);
+        return this;
+    }
+
     public ClientBuilder directAccessGrants() {
         rep.setDirectAccessGrantsEnabled(true);
+        return this;
+    }
+
+    public ClientBuilder fullScopeEnabled(Boolean fullScopeEnabled) {
+        rep.setFullScopeAllowed(fullScopeEnabled);
         return this;
     }
 

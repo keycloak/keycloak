@@ -113,8 +113,7 @@ public class SSOTest extends TestRealmKeycloakTest {
         try {
             //OAuthClient oauth2 = new OAuthClient(driver2);
             OAuthClient oauth2 = new OAuthClient();
-            oauth2.setDriver(driver2);
-            oauth2.setAdminClient(adminClient);
+            oauth2.init(adminClient, driver2);
 
             oauth2.state("mystate");
             oauth2.doLogin("test-user@localhost", "password");
