@@ -141,11 +141,15 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
 
         List<UserRepresentation> users = consumerUsers.search("", 0, 5);
 
-        List<UserRepresentation> correctUsers = users.stream()
-                .filter(user -> user.getUsername().equals(getUserLogin()) && user.getEmail().equals(getUserEmail()))
-                .collect(Collectors.toList());
+        boolean isUserFound = false;
+        for (UserRepresentation user : users) {
+            if (user.getUsername().equals(getUserLogin()) && user.getEmail().equals(getUserEmail())) {
+                isUserFound = true;
+                break;
+            }
+        }
 
         Assert.assertTrue("There must be user " + getUserLogin() + " in realm " + consumerRealmName(),
-                correctUsers.size() > 0);
+                isUserFound);
     }
 }
