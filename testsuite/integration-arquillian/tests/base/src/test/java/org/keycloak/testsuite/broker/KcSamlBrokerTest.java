@@ -50,13 +50,14 @@ public class KcSamlBrokerTest extends AbstractBrokerTest {
         attributes.put("saml.authnstatement", "true");
         attributes.put("saml_single_logout_service_url_post",
                 getAuthRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
-        attributes.put("saml_force_name_id_format",
+        attributes.put("saml_assertion_consumer_url_post",
                 getAuthRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
         attributes.put("saml_force_name_id_format", "true");
         attributes.put("saml_name_id_format", "username");
         attributes.put("saml.assertion.signature", "false");
         attributes.put("saml.server.signature", "false");
         attributes.put("saml.client.signature", "false");
+        attributes.put("saml.encrypt", "false");
 
         client.setAttributes(attributes);
 
@@ -102,6 +103,7 @@ public class KcSamlBrokerTest extends AbstractBrokerTest {
         config.put("postBindingAuthnRequest", "true");
         config.put("validateSignature", "false");
         config.put("wantAuthnRequestsSigned", "false");
+        config.put("backchannelSupported", "true");
 
         return idp;
     }
