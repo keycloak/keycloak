@@ -15,7 +15,6 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
@@ -115,7 +114,7 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void tryToLogInAsUserInIDP() {
+    public void logInAsUserInIDP() {
         driver.navigate().to(getAuthRoot() + "/auth/realms/" + consumerRealmName() + "/account");
 
         log.debug("Clicking social " + getIDPAlias());
@@ -151,5 +150,30 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
 
         Assert.assertTrue("There must be user " + getUserLogin() + " in realm " + consumerRealmName(),
                 isUserFound);
+
+        testSingleLogout();
+    }
+
+    protected void testSingleLogout() {
+        log.debug("Testing single log out");
+
+        driver.navigate().to(getAuthRoot() + "/auth/realms/" + providerRealmName() + "/account");
+
+        Assert.assertTrue("Should be logged in the account page", driver.getTitle().endsWith("Account Management"));
+
+        driver.navigate().to(getAuthRoot()
+                + "/auth/realms/" + providerRealmName()
+                + "/protocol/" + "openid-connect"
+                + "/logout");
+
+        driver.navigate().to(getAuthRoot() + "/auth/realms/" + providerRealmName() + "/account");
+
+        Assert.assertTrue("Should be on login page", driver.getTitle().startsWith("Log in to"));
+        Assert.assertTrue("Should be on " + providerRealmName() + " realm", driver.getCurrentUrl().contains("/auth/realms/" + providerRealmName()));
+
+        driver.navigate().to(getAuthRoot() + "/auth/realms/" + consumerRealmName() + "/account");
+
+        Assert.assertTrue("Should be on login page", driver.getTitle().startsWith("Log in to"));
+        Assert.assertTrue("Should be on " + consumerRealmName() + " realm", driver.getCurrentUrl().contains("/auth/realms/" + consumerRealmName()));
     }
 }
