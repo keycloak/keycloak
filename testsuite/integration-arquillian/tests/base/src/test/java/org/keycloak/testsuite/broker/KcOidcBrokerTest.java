@@ -41,6 +41,9 @@ public class KcOidcBrokerTest extends AbstractBrokerTest {
         client.setRedirectUris(Collections.singletonList(getAuthRoot() +
                 "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_OIDC_ALIAS + "/endpoint/*"));
 
+        client.setAdminUrl(getAuthRoot() +
+                "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_OIDC_ALIAS + "/endpoint");
+
         return Collections.singletonList(client);
     }
 
