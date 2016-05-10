@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 
@@ -37,21 +38,23 @@ public class InstallationTest extends AbstractClientTest {
     private static final String SAML_NAME = "samlInstallationClient";
 
     private ClientResource oidcClient;
+    private String oidcClientId;
     private ClientResource samlClient;
+    private String samlClientId;
 
     @Before
     public void createClients() {
-        createOidcClient(OIDC_NAME);
+        oidcClientId = createOidcClient(OIDC_NAME);
         oidcClient = findClientResource(OIDC_NAME);
 
-        createSamlClient(SAML_NAME);
+        samlClientId = createSamlClient(SAML_NAME);
         samlClient = findClientResource(SAML_NAME);
     }
 
     @After
     public void tearDown() {
-        oidcClient.remove();
-        samlClient.remove();
+        removeClient(oidcClientId);
+        removeClient(samlClientId);
     }
 
     private String authServerUrl() {
