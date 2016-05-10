@@ -59,6 +59,7 @@
             -Dapp.server.ssl.base.url=https://localhost:${app.server.https.port}
             -Dapp.server.ssl.required=${app.server.ssl.required}
             -Dmy.host.name=localhost
+            -Djava.security.krb5.conf=${project.build.directory}/dependency/kerberos/test-krb5.conf
         </adapter.test.props>
         
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
