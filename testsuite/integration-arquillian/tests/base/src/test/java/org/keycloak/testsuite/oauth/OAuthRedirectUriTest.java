@@ -16,202 +16,170 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.openqa.selenium.By;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
  */
-public class OAuthRedirectUriTest {
-
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
-        @Override
-        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            ClientModel installedApp = KeycloakModelUtils.createClient(appRealm, "test-installed");
-            installedApp.setEnabled(true);
-            installedApp.addRedirectUri(Constants.INSTALLED_APP_URN);
-            installedApp.addRedirectUri(Constants.INSTALLED_APP_URL);
-            installedApp.setSecret("password");
-
-            ClientModel installedApp2 = KeycloakModelUtils.createClient(appRealm, "test-installed2");
-            installedApp2.setEnabled(true);
-            installedApp2.addRedirectUri(Constants.INSTALLED_APP_URL + "/myapp");
-            installedApp2.setSecret("password");
-
-            ClientModel installedApp3 = KeycloakModelUtils.createClient(appRealm, "test-wildcard");
-            installedApp3.setEnabled(true);
-            installedApp3.addRedirectUri("http://example.com/foo/*");
-            installedApp3.addRedirectUri("http://with-dash.example.com/foo/*");
-            installedApp3.addRedirectUri("http://localhost:8081/foo/*");
-            installedApp3.setSecret("password");
-
-            ClientModel installedApp4 = KeycloakModelUtils.createClient(appRealm, "test-dash");
-            installedApp4.setEnabled(true);
-            installedApp4.addRedirectUri("http://with-dash.example.com");
-            installedApp4.addRedirectUri("http://with-dash.example.com/foo");
-            installedApp4.setSecret("password");
-
-            ClientModel installedApp5 = KeycloakModelUtils.createClient(appRealm, "test-root-url");
-            installedApp5.setEnabled(true);
-            installedApp5.setRootUrl("http://with-dash.example.com");
-            installedApp5.addRedirectUri("/foo");
-            installedApp5.setSecret("password");
-
-            ClientModel installedApp6 = KeycloakModelUtils.createClient(appRealm, "test-relative-url");
-            installedApp6.setEnabled(true);
-            installedApp6.setRootUrl("");
-            installedApp6.addRedirectUri("/foo");
-            installedApp6.setSecret("password");
-        }
-    });
+public class OAuthRedirectUriTest extends AbstractKeycloakTest {
 
     @Rule
-    public WebRule webRule = new WebRule(this);
+    public AssertEvents events = new AssertEvents(this);
 
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
-    protected OAuthClient oauth;
-
-    @WebResource
+    @Page
+    protected ErrorPage errorPage;
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
-    protected ErrorPage errorPage;
+    @Override
+    public void beforeAbstractKeycloakTest() throws Exception {
+        super.beforeAbstractKeycloakTest();
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+
+        RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
+        RealmBuilder realm = RealmBuilder.edit(realmRepresentation).testEventListener();
+
+        ClientBuilder installedApp = ClientBuilder.create().id("test-installed").name("test-installed")
+                .redirectUris(Constants.INSTALLED_APP_URN, Constants.INSTALLED_APP_URL)
+                .secret("password");
+        realm.client(installedApp);
+
+        ClientBuilder installedApp2 = ClientBuilder.create().id("test-installed2").name("test-installed2")
+                .redirectUris(Constants.INSTALLED_APP_URL + "/myapp")
+                .secret("password");
+        realm.client(installedApp2);
+
+        ClientBuilder installedApp3 = ClientBuilder.create().id("test-wildcard").name("test-wildcard")
+                .redirectUris("http://example.com/foo/*", "http://with-dash.example.com/foo/*", "http://localhost:8180/foo/*")
+                .secret("password");
+        realm.client(installedApp3);
+
+        ClientBuilder installedApp4 = ClientBuilder.create().id("test-dash").name("test-dash")
+                .redirectUris("http://with-dash.example.com", "http://with-dash.example.com/foo")
+                .secret("password");
+        realm.client(installedApp4);
+
+        ClientBuilder installedApp5 = ClientBuilder.create().id("test-root-url").name("test-root-url")
+                .rootUrl("http://with-dash.example.com")
+                .redirectUris("/foo")
+                .secret("password");
+        realm.client(installedApp5);
+
+        ClientBuilder installedApp6 = ClientBuilder.create().id("test-relative-url").name("test-relative-url")
+                .rootUrl("")
+                .redirectUris("/foo")
+                .secret("password");
+        realm.client(installedApp6);
+
+        testRealms.add(realm.build());
+    }
 
     @Test
     public void testNoParam() throws IOException {
         oauth.redirectUri(null);
         OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
-
         Assert.assertNotNull(response.getCode());
-        Assert.assertEquals(oauth.getCurrentRequest(), "http://localhost:8081/app");
+        assertEquals(oauth.getCurrentRequest(), APP_ROOT + "/auth");
     }
 
     @Test
     public void testNoParamMultipleValidUris() throws IOException {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getClientByClientId("test-app").addRedirectUri("http://localhost:8081/app2");
-            }
-        });
-
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris("http://localhost:8180/app2");
         try {
             oauth.redirectUri(null);
             oauth.openLoginForm();
-
             Assert.assertTrue(errorPage.isCurrent());
             Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
         } finally {
-            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.getClientByClientId("test-app").removeRedirectUri("http://localhost:8081/app2");
-                }
-            });
+            ClientManager.realm(adminClient.realm("test")).clientId("test-app").removeRedirectUris("http://localhost:8180/app2");
         }
     }
 
     @Test
     public void testNoParamNoValidUris() throws IOException {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getClientByClientId("test-app").removeRedirectUri("http://localhost:8081/app/*");
-            }
-        });
-
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app")
+                .removeRedirectUris("http://localhost:8180/auth/realms/master/app/auth/*");
         try {
             oauth.redirectUri(null);
             oauth.openLoginForm();
 
             Assert.assertTrue(errorPage.isCurrent());
-            Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+            assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
         } finally {
-            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.getClientByClientId("test-app").addRedirectUri("http://localhost:8081/app/*");
-                }
-            });
+            ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris("http://localhost:8180/auth/realms/master/app/auth/*");
         }
     }
 
     @Test
     public void testNoValidUris() throws IOException {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getClientByClientId("test-app").removeRedirectUri("http://localhost:8081/app/*");
-            }
-        });
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").removeRedirectUris("http://localhost:8180/auth/realms/master/app/auth/*");
 
         try {
             oauth.redirectUri(null);
             oauth.openLoginForm();
 
             Assert.assertTrue(errorPage.isCurrent());
-            Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+            assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
         } finally {
-            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.getClientByClientId("test-app").addRedirectUri("http://localhost:8081/app/*");
-                }
-            });
+            ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris("http://localhost:8180/auth/realms/master/app/auth/*");
         }
     }
 
     @Test
     public void testValid() throws IOException {
-        oauth.redirectUri("http://localhost:8081/app");
+        oauth.redirectUri(APP_ROOT + "/auth");
         OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());
         URL url = new URL(driver.getCurrentUrl());
-        Assert.assertTrue(url.toString().startsWith("http://localhost:8081/app"));
+        Assert.assertTrue(url.toString().startsWith(APP_ROOT));
         Assert.assertTrue(url.getQuery().contains("code="));
         Assert.assertTrue(url.getQuery().contains("state="));
     }
 
     @Test
     public void testInvalid() throws IOException {
-        oauth.redirectUri("http://localhost:8081/app2");
+        oauth.redirectUri("http://localhost:8180/app2");
         oauth.openLoginForm();
 
         Assert.assertTrue(errorPage.isCurrent());
-        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
     }
 
     @Test
     public void testWithParams() throws IOException {
-        oauth.redirectUri("http://localhost:8081/app?key=value");
+        oauth.redirectUri(APP_ROOT + "/auth?key=value");
         OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());
         URL url = new URL(driver.getCurrentUrl());
-        Assert.assertTrue(url.toString().startsWith("http://localhost:8081/app"));
+        Assert.assertTrue(url.toString().startsWith(APP_ROOT));
         Assert.assertTrue(url.getQuery().contains("key=value"));
         Assert.assertTrue(url.getQuery().contains("state="));
         Assert.assertTrue(url.getQuery().contains("code="));
@@ -224,10 +192,10 @@ public class OAuthRedirectUriTest {
         checkRedirectUri("http://localhost:8080", false, true);
         checkRedirectUri("http://example.com/foo", true);
         checkRedirectUri("http://example.com/foo/bar", true);
-        checkRedirectUri("http://localhost:8081/foo", true, true);
-        checkRedirectUri("http://localhost:8081/foo/bar", true, true);
+        checkRedirectUri("http://localhost:8180/foo", true, true);
+        checkRedirectUri("http://localhost:8180/foo/bar", true, true);
         checkRedirectUri("http://example.com/foobar", false);
-        checkRedirectUri("http://localhost:8081/foobar", false, true);
+        checkRedirectUri("http://localhost:8180/foobar", false, true);
     }
 
     @Test
@@ -264,7 +232,7 @@ public class OAuthRedirectUriTest {
         oauth.clientId("test-root-url");
 
         checkRedirectUri("http://with-dash.example.com/foo", true);
-        checkRedirectUri("http://localhost:8081/foo", false);
+        checkRedirectUri("http://localhost:8180/foo", false);
     }
 
     @Test
@@ -272,7 +240,7 @@ public class OAuthRedirectUriTest {
         oauth.clientId("test-relative-url");
 
         checkRedirectUri("http://with-dash.example.com/foo", false);
-        checkRedirectUri("http://localhost:8081/foo", true);
+        checkRedirectUri("http://localhost:8180/foo", true);
     }
 
     @Test
@@ -282,16 +250,15 @@ public class OAuthRedirectUriTest {
         checkRedirectUri("urn:ietf:wg:oauth:2.0:oob", true, true);
         checkRedirectUri("http://localhost", true);
 
-        checkRedirectUri("http://localhost:8081", true, true);
+        checkRedirectUri("http://localhost:8180", true, true);
 
         checkRedirectUri("http://localhosts", false);
         checkRedirectUri("http://localhost/myapp", false);
-        checkRedirectUri("http://localhost:8081/myapp", false, true);
-
+        checkRedirectUri("http://localhost:8180/myapp", false, true);
         oauth.clientId("test-installed2");
 
         checkRedirectUri("http://localhost/myapp", true);
-        checkRedirectUri("http://localhost:8081/myapp", true, true);
+        checkRedirectUri("http://localhost:8180/myapp", true, true);
 
         checkRedirectUri("http://localhosts/myapp", false);
         checkRedirectUri("http://localhost", false);
@@ -317,7 +284,16 @@ public class OAuthRedirectUriTest {
             Assert.assertTrue(loginPage.isCurrent());
 
             if (checkCodeToToken) {
-                loginPage.login("test-user@localhost", "password");
+                oauth.doLogin("test-user@localhost", "password");
+
+                /*
+                 * Dirty workaround. For some reason the form is not being submitted when you have
+                 * redirectUri like http://localhost:8180 or http://localhost:8180/myapp
+                 * TODO: Revisit this, because it's a weird behavior
+                 */
+                if (driver.findElements(By.name("login")).size() != 0) {
+                    driver.findElement(By.name("login")).click();
+                }
 
                 String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
                 Assert.assertNotNull(code);
