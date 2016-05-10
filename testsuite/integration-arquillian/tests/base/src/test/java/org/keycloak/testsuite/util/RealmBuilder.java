@@ -20,6 +20,7 @@ package org.keycloak.testsuite.util;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 import sun.security.krb5.Realm;
 
 import java.util.HashMap;
@@ -80,7 +81,18 @@ public class RealmBuilder {
             rep.setEventsListeners(new LinkedList<String>());
         }
 
-        rep.getEventsListeners().add("event-queue");
+        if (!rep.getEventsListeners().contains(EventsListenerProviderFactory.PROVIDER_ID)) {
+            rep.getEventsListeners().add(EventsListenerProviderFactory.PROVIDER_ID);
+        }
+
+        return this;
+    }
+
+    public RealmBuilder removeTestEventListener() {
+        if (rep.getEventsListeners() != null && rep.getEventsListeners().contains(EventsListenerProviderFactory.PROVIDER_ID)) {
+            rep.getEventsListeners().remove(EventsListenerProviderFactory.PROVIDER_ID);
+        }
+
         return this;
     }
 

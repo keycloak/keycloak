@@ -30,6 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class EventsListenerProvider implements EventListenerProvider {
 
     private static final BlockingQueue<Event> events = new LinkedBlockingQueue<Event>();
+    private static final BlockingQueue<AdminEvent> adminEvents = new LinkedBlockingQueue<>();
 
     @Override
     public void onEvent(Event event) {
@@ -38,7 +39,8 @@ public class EventsListenerProvider implements EventListenerProvider {
 
     @Override
     public void onEvent(AdminEvent event, boolean includeRepresentation) {
-        // TODO: implement if needed
+        // Save the copy for case when same AdminEventBuilder is used more times during same transaction to avoid overwriting previously referenced event
+        adminEvents.add(copy(event));
     }
 
     @Override
@@ -46,7 +48,31 @@ public class EventsListenerProvider implements EventListenerProvider {
 
     }
 
-    public static BlockingQueue<Event> getInstance() {
-        return events;
+    public static Event poll() {
+        return events.poll();
+    }
+
+    public static AdminEvent pollAdminEvent() {
+        return adminEvents.poll();
+    }
+
+    public static void clear() {
+        events.clear();
+    }
+
+    public static void clearAdminEvents() {
+        adminEvents.clear();
+    }
+
+    private AdminEvent copy(AdminEvent adminEvent) {
+        AdminEvent newEvent = new AdminEvent();
+        newEvent.setAuthDetails(adminEvent.getAuthDetails());
+        newEvent.setError(adminEvent.getError());
+        newEvent.setOperationType(adminEvent.getOperationType());
+        newEvent.setRealmId(adminEvent.getRealmId());
+        newEvent.setRepresentation(adminEvent.getRepresentation());
+        newEvent.setResourcePath(adminEvent.getResourcePath());
+        newEvent.setTime(adminEvent.getTime());
+        return newEvent;
     }
 }

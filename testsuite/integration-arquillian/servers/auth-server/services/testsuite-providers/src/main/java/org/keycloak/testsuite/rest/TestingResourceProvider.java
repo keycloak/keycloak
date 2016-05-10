@@ -21,10 +21,12 @@ import org.infinispan.Cache;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.Event;
+import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
@@ -139,7 +141,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/poll-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public EventRepresentation getEvent() {
-        Event event = EventsListenerProvider.getInstance().poll();
+        Event event = EventsListenerProvider.poll();
         if (event != null) {
             return ModelToRepresentation.toRepresentation(event);
         } else {
@@ -148,10 +150,30 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @POST
+    @Path("/poll-admin-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    public AdminEventRepresentation getAdminEvent() {
+        AdminEvent adminEvent = EventsListenerProvider.pollAdminEvent();
+        if (adminEvent != null) {
+            return ModelToRepresentation.toRepresentation(adminEvent);
+        } else {
+            return null;
+        }
+    }
+
+    @POST
     @Path("/clear-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearQueue() {
-        EventsListenerProvider.getInstance().clear();
+    public Response clearEventQueue() {
+        EventsListenerProvider.clear();
+        return Response.ok().build();
+    }
+
+    @POST
+    @Path("/clear-admin-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearAdminEventQueue() {
+        EventsListenerProvider.clearAdminEvents();
         return Response.ok().build();
     }
 

@@ -17,13 +17,20 @@
 
 package org.keycloak.testsuite.admin.client;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.util.JsonSerialization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -93,16 +100,31 @@ public abstract class AbstractProtocolMapperTest extends AbstractClientTest {
         return mappersToAdd;
     }
 
-    protected void testAddAllBuiltinMappers(ProtocolMappersResource resource, String resourceName) {
-        List<ProtocolMapperRepresentation> oldMappers = resource.getMappersPerProtocol(resourceName);
-        List<ProtocolMapperRepresentation> builtins = builtinMappers.get(resourceName);
+    protected void testAddAllBuiltinMappers(ProtocolMappersResource resource, String protocolName, String adminEventPath) {
+        List<ProtocolMapperRepresentation> oldMappers = resource.getMappersPerProtocol(protocolName);
+        List<ProtocolMapperRepresentation> builtins = builtinMappers.get(protocolName);
 
         List<ProtocolMapperRepresentation> mappersToAdd = mappersToAdd(oldMappers, builtins);
 
         // This is used by admin console to add builtin mappers
         resource.createMapper(mappersToAdd);
 
-        List<ProtocolMapperRepresentation> newMappers = resource.getMappersPerProtocol(resourceName);
+        AdminEventRepresentation adminEvent = assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, adminEventPath + "/add-models");
+        try {
+            List<ProtocolMapperRepresentation> eventMappers = JsonSerialization.readValue(new ByteArrayInputStream(adminEvent.getRepresentation().getBytes()), new TypeReference<List<ProtocolMapperRepresentation>>() {
+            });
+            Assert.assertEquals(eventMappers.size(), mappersToAdd.size());
+            for (int i=0 ; i< mappersToAdd.size() ; i++) {
+                ProtocolMapperRepresentation repExpected = mappersToAdd.get(i);
+                ProtocolMapperRepresentation repActual = eventMappers.get(i);
+                assertEqualMappers(repExpected, repActual);
+            }
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+
+
+        List<ProtocolMapperRepresentation> newMappers = resource.getMappersPerProtocol(protocolName);
         assertEquals(oldMappers.size() + mappersToAdd.size(), newMappers.size());
 
         for (ProtocolMapperRepresentation rep : mappersToAdd) {

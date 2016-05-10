@@ -33,6 +33,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
+ * TODO adminEvents: Add adminEvents once resourcePath is added in AttackDetectionResource (server-side) events
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AttackDetectionResourceTest extends AbstractAdminTest {

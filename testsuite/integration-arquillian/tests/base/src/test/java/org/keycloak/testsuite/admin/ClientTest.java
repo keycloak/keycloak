@@ -17,12 +17,14 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
@@ -43,6 +45,8 @@ import java.util.Set;
 
 import org.keycloak.services.resources.admin.ScopeMappedResource;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -75,7 +79,11 @@ public class ClientTest extends AbstractAdminTest {
         Response response = realm.clients().create(rep);
         response.close();
         String id = ApiUtil.getCreatedId(response);
+
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(id), rep);
+
         rep.setId(id);
+
         return rep;
     }
 
@@ -92,6 +100,8 @@ public class ClientTest extends AbstractAdminTest {
         String id = createClient().getId();
 
         realm.clients().get(id).remove();
+
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientResourcePath(id));
     }
 
     @Test
@@ -138,33 +148,35 @@ public class ClientTest extends AbstractAdminTest {
     @Test
     // KEYCLOAK-1110
     public void deleteDefaultRole() {
-        ClientRepresentation rep = new ClientRepresentation();
-        rep.setClientId("my-app");
-        rep.setEnabled(true);
-        Response response = realm.clients().create(rep);
-        response.close();
-        String id = ApiUtil.getCreatedId(response);
+        ClientRepresentation rep = createClient();
+        String id = rep.getId();
 
         RoleRepresentation role = new RoleRepresentation("test", "test", false);
         realm.clients().get(id).roles().create(role);
 
-        rep = realm.clients().get(id).toRepresentation();
-        rep.setDefaultRoles(new String[] { "test" });
-        realm.clients().get(id).update(rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Matchers.startsWith(AdminEventPaths.clientRolesResourcePath(id)), role);
 
-        assertArrayEquals(new String[] { "test" }, realm.clients().get(id).toRepresentation().getDefaultRoles());
+        ClientRepresentation foundClientRep = realm.clients().get(id).toRepresentation();
+        foundClientRep.setDefaultRoles(new String[]{"test"});
+        realm.clients().get(id).update(foundClientRep);
+
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(id), rep);
+
+        assertArrayEquals(new String[]{"test"}, realm.clients().get(id).toRepresentation().getDefaultRoles());
 
         realm.clients().get(id).roles().deleteRole("test");
+
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientRoleResourcePath(id, "test"));
 
         assertNull(realm.clients().get(id).toRepresentation().getDefaultRoles());
     }
 
     @Test
     public void testProtocolMappers() {
-        createClient();
+        String clientDbId = createClient().getId();
         ProtocolMappersResource mappersResource = ApiUtil.findClientByClientId(realm, "my-app").getProtocolMappers();
 
-        protocolMappersTest(mappersResource);
+        protocolMappersTest(clientDbId, mappersResource);
     }
 
     @Test
@@ -178,6 +190,8 @@ public class ClientTest extends AbstractAdminTest {
 
         realm.clients().get(client.getId()).update(newClient);
 
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(client.getId()), newClient);
+
         ClientRepresentation storedClient = realm.clients().get(client.getId()).toRepresentation();
 
         assertClient(client, storedClient);
@@ -185,6 +199,8 @@ public class ClientTest extends AbstractAdminTest {
         newClient.setSecret("new-secret");
 
         realm.clients().get(client.getId()).update(newClient);
+
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(client.getId()), newClient);
 
         storedClient = realm.clients().get(client.getId()).toRepresentation();
         assertClient(client, storedClient);
@@ -202,6 +218,18 @@ public class ClientTest extends AbstractAdminTest {
     public void pushRevocation() {
         testingClient.testApp().clearAdminActions();
 
+        ClientRepresentation client = createAppClient();
+        String id = client.getId();
+
+        realm.clients().get(id).pushRevocation();
+
+        PushNotBeforeAction pushNotBefore = testingClient.testApp().getAdminPushNotBefore();
+        assertEquals(client.getNotBefore().intValue(), pushNotBefore.getNotBefore());
+
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.clientPushRevocationPath(id));
+    }
+
+    private ClientRepresentation createAppClient() {
         String redirectUri = oauth.getRedirectUri().replace("/master/", "/" + REALM_NAME + "/");
 
         ClientRepresentation client = new ClientRepresentation();
@@ -211,40 +239,37 @@ public class ClientTest extends AbstractAdminTest {
         client.setSecret("secret");
 
         int notBefore = Time.currentTime() - 60;
-
         client.setNotBefore(notBefore);
+
         Response response = realm.clients().create(client);
         String id = ApiUtil.getCreatedId(response);
         response.close();
 
-        realm.clients().get(id).pushRevocation();
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(id), client);
 
-        PushNotBeforeAction pushNotBefore = testingClient.testApp().getAdminPushNotBefore();
-        assertEquals(notBefore, pushNotBefore.getNotBefore());
+        client.setId(id);
+        return client;
     }
 
     @Test
     public void nodes() {
         testingClient.testApp().clearAdminActions();
 
-        String redirectUri = oauth.getRedirectUri().replace("/master/", "/" + REALM_NAME + "/");
-
-        ClientRepresentation client = new ClientRepresentation();
-        client.setClientId("test-app");
-        client.setAdminUrl(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/app/admin");
-        client.setRedirectUris(Collections.singletonList(redirectUri));
-        client.setSecret("secret");
-
-        Response response = realm.clients().create(client);
-        String id = ApiUtil.getCreatedId(response);
-        response.close();
+        ClientRepresentation client = createAppClient();
+        String id = client.getId();
 
         realm.clients().get(id).registerNode(Collections.singletonMap("node", suiteContext.getAuthServerInfo().getContextRoot().getHost()));
         realm.clients().get(id).registerNode(Collections.singletonMap("node", "invalid"));
 
+        // TODO adminEvents: should be rather CREATE and include nodePath like in DELETE event
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.clientNodesPath(id));
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.clientNodesPath(id));
+
         GlobalRequestResult result = realm.clients().get(id).testNodesAvailable();
         assertEquals(1, result.getSuccessRequests().size());
         assertEquals(1, result.getFailedRequests().size());
+
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.clientTestNodesAvailablePath(id));
 
         TestAvailabilityAction testAvailable = testingClient.testApp().getTestAvailable();
         assertEquals("test-app", testAvailable.getResource());
@@ -253,24 +278,17 @@ public class ClientTest extends AbstractAdminTest {
 
         realm.clients().get(id).unregisterNode("invalid");
 
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientNodePath(id, "invalid"));
+
         assertEquals(1, realm.clients().get(id).toRepresentation().getRegisteredNodes().size());
     }
 
     @Test
     public void offlineUserSessions() throws IOException {
-        String redirectUri = oauth.getRedirectUri().replace("/master/", "/" + REALM_NAME + "/");
+        ClientRepresentation client = createAppClient();
+        String id = client.getId();
 
-        ClientRepresentation client = new ClientRepresentation();
-        client.setClientId("test-app");
-        client.setAdminUrl(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/app/admin");
-        client.setRedirectUris(Collections.singletonList(redirectUri));
-        client.setSecret("secret");
-
-        Response response = realm.clients().create(client);
-        String id = ApiUtil.getCreatedId(response);
-        response.close();
-
-        response = realm.users().create(UserBuilder.create().username("testuser").build());
+        Response response = realm.users().create(UserBuilder.create().username("testuser").build());
         String userId = ApiUtil.getCreatedId(response);
         response.close();
 
@@ -280,7 +298,7 @@ public class ClientTest extends AbstractAdminTest {
         assertEquals(new Long(0), offlineSessionCount.get("count"));
 
         oauth.realm(REALM_NAME);
-        oauth.redirectUri(redirectUri);
+        oauth.redirectUri(client.getRedirectUris().get(0));
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.doLogin("testuser", "password");
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "secret");
@@ -300,21 +318,37 @@ public class ClientTest extends AbstractAdminTest {
         String id = ApiUtil.getCreatedId(response);
         response.close();
 
+        assertAdminEvents.poll();
+
         RoleMappingResource scopesResource = realm.clients().get(id).getScopeMappings();
 
-        realm.roles().create(RoleBuilder.create().name("role1").build());
-        realm.roles().create(RoleBuilder.create().name("role2").build());
+        RoleRepresentation roleRep1 = RoleBuilder.create().name("role1").build();
+        RoleRepresentation roleRep2 = RoleBuilder.create().name("role2").build();
+        realm.roles().create(roleRep1);
+        realm.roles().create(roleRep2);
 
-        RoleRepresentation roleRep1 = realm.roles().get("role1").toRepresentation();
-        RoleRepresentation roleRep2 = realm.roles().get("role2").toRepresentation();
+        AssertAdminEvents.ExpectedAdminEvent adminEvent = assertAdminEvents.expect()
+                .realmId(realmId)
+                .operationType(OperationType.CREATE)
+                .resourcePath(Matchers.startsWith(AdminEventPaths.rolesResourcePath()));
+        adminEvent.representation(roleRep1).assertEvent();
+        adminEvent.representation(roleRep2).assertEvent();
+
+        roleRep1 = realm.roles().get("role1").toRepresentation();
+        roleRep2 = realm.roles().get("role2").toRepresentation();
 
         realm.roles().get("role1").addComposites(Collections.singletonList(roleRep2));
+
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Matchers.startsWith(AdminEventPaths.roleResourceCompositesPath("role1")));
 
         String accountMgmtId = realm.clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).getId();
         RoleRepresentation viewAccountRoleRep = realm.clients().get(accountMgmtId).roles().get(AccountRoles.VIEW_PROFILE).toRepresentation();
 
         scopesResource.realmLevel().add(Collections.singletonList(roleRep1));
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientScopeMappingsRealmLevelPath(id) + "/" + roleRep1.getId());
+
         scopesResource.clientLevel(accountMgmtId).add(Collections.singletonList(viewAccountRoleRep));
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientScopeMappingsClientLevelPath(id, accountMgmtId) + "/" + viewAccountRoleRep.getId());
 
         Assert.assertNames(scopesResource.realmLevel().listAll(), "role1");
         Assert.assertNames(scopesResource.realmLevel().listEffective(), "role1", "role2");
@@ -328,7 +362,10 @@ public class ClientTest extends AbstractAdminTest {
         Assert.assertNames(scopesResource.getAll().getClientMappings().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(), AccountRoles.VIEW_PROFILE);
 
         scopesResource.realmLevel().remove(Collections.singletonList(roleRep1));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientScopeMappingsRealmLevelPath(id) + "/" + roleRep1.getId());
+
         scopesResource.clientLevel(accountMgmtId).remove(Collections.singletonList(viewAccountRoleRep));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientScopeMappingsClientLevelPath(id, accountMgmtId) + "/" + viewAccountRoleRep.getId());
 
         Assert.assertNames(scopesResource.realmLevel().listAll());
         Assert.assertNames(scopesResource.realmLevel().listEffective());
@@ -338,7 +375,7 @@ public class ClientTest extends AbstractAdminTest {
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listEffective());
     }
 
-    public static void protocolMappersTest(ProtocolMappersResource mappersResource) {
+    public void protocolMappersTest(String clientDbId, ProtocolMappersResource mappersResource) {
         // assert default mappers found
         List<ProtocolMapperRepresentation> protocolMappers = mappersResource.getMappers();
 
@@ -370,6 +407,8 @@ public class ClientTest extends AbstractAdminTest {
         fooMapperId = location.substring(location.lastIndexOf("/") + 1);
         response.close();
 
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(clientDbId, fooMapperId), fooMapper);
+
         fooMapper = mappersResource.getMapperById(fooMapperId);
         assertEquals(fooMapper.getName(), "foo");
 
@@ -377,11 +416,14 @@ public class ClientTest extends AbstractAdminTest {
         fooMapper.setProtocolMapper("foo-mapper-updated");
         mappersResource.update(fooMapperId, fooMapper);
 
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(clientDbId, fooMapperId), fooMapper);
+
         fooMapper = mappersResource.getMapperById(fooMapperId);
         assertEquals(fooMapper.getProtocolMapper(), "foo-mapper-updated");
 
         // Remove foo mapper
         mappersResource.delete(fooMapperId);
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientProtocolMapperPath(clientDbId, fooMapperId));
         try {
             mappersResource.getMapperById(fooMapperId);
             fail("Not expected to find deleted mapper");
