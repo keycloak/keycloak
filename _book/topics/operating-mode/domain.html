@@ -1,0 +1,1144 @@
+<!DOCTYPE HTML>
+<html lang="en" >
+    <!-- Start book  -->
+    <head>
+        <!-- head:start -->
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>Domain Clustered Mode | </title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 2.6.7">
+        
+        
+        <meta name="HandheldFriendly" content="true"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+        <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../gitbook/images/apple-touch-icon-precomposed-152.png">
+        <link rel="shortcut icon" href="../../gitbook/images/favicon.ico" type="image/x-icon">
+        
+    <link rel="stylesheet" href="../../gitbook/style.css">
+    
+        
+        <link rel="stylesheet" href="../../gitbook/plugins/gitbook-plugin-toggle-chapters/toggle.css">
+        
+    
+        
+        <link rel="stylesheet" href="../../gitbook/plugins/gitbook-plugin-splitter/splitter.css">
+        
+    
+        
+        <link rel="stylesheet" href="../../gitbook/plugins/gitbook-plugin-highlight/website.css">
+        
+    
+        
+        <link rel="stylesheet" href="../../gitbook/plugins/gitbook-plugin-search/search.css">
+        
+    
+        
+        <link rel="stylesheet" href="../../gitbook/plugins/gitbook-plugin-fontsettings/website.css">
+        
+    
+    
+
+        
+    
+    
+    <link rel="next" href="../../topics/manage.html" />
+    
+    
+    <link rel="prev" href="../../topics/operating-mode/standalone-ha.html" />
+    
+
+        <!-- head:end -->
+    </head>
+    <body>
+        <!-- body:start -->
+        
+    <div class="book"
+        data-level="3.3"
+        data-chapter-title="Domain Clustered Mode"
+        data-filepath="topics/operating-mode/domain.adoc"
+        data-basepath="../.."
+        data-revision="Tue May 10 2016 12:48:11 GMT+0530 (IST)"
+        data-innerlanguage="">
+    
+
+<div class="book-summary">
+    <nav role="navigation">
+        <ul class="summary">
+            
+            
+            
+            
+
+            
+
+            
+    
+        <li class="chapter " data-level="0" data-path="index.html">
+            
+                
+                    <a href="../../index.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                        Introduction
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="1" data-path="topics/overview.html">
+            
+                
+                    <a href="../../topics/overview.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>1.</b>
+                        
+                        Overview
+                    </a>
+            
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.1" data-path="topics/overview/recommended-reading.html">
+            
+                
+                    <a href="../../topics/overview/recommended-reading.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>1.1.</b>
+                        
+                        Recommended Reading
+                    </a>
+            
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="2" data-path="topics/installation.html">
+            
+                
+                    <a href="../../topics/installation.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>2.</b>
+                        
+                        Installation
+                    </a>
+            
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="2.1" data-path="topics/installation/system-requirements.html">
+            
+                
+                    <a href="../../topics/installation/system-requirements.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>2.1.</b>
+                        
+                        System Requirements
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="2.2" data-path="topics/installation/distribution-files-community.html">
+            
+                
+                    <a href="../../topics/installation/distribution-files-community.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>2.2.</b>
+                        
+                        Installing Distribution Files
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="2.3" data-path="topics/installation/directory-structure.html">
+            
+                
+                    <a href="../../topics/installation/directory-structure.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>2.3.</b>
+                        
+                        Distribution Directory Structure
+                    </a>
+            
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="3" data-path="topics/operating-mode.html">
+            
+                
+                    <a href="../../topics/operating-mode.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>3.</b>
+                        
+                        Choosing an Operating Mode
+                    </a>
+            
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.1" data-path="topics/operating-mode/standalone.html">
+            
+                
+                    <a href="../../topics/operating-mode/standalone.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>3.1.</b>
+                        
+                        Standalone Mode
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="3.2" data-path="topics/operating-mode/standalone-ha.html">
+            
+                
+                    <a href="../../topics/operating-mode/standalone-ha.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>3.2.</b>
+                        
+                        Standalone Clustered Mode
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter active" data-level="3.3" data-path="topics/operating-mode/domain.html">
+            
+                
+                    <a href="../../topics/operating-mode/domain.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>3.3.</b>
+                        
+                        Domain Clustered Mode
+                    </a>
+            
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="4" data-path="topics/manage.html">
+            
+                
+                    <a href="../../topics/manage.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>4.</b>
+                        
+                        Managing Config at Runtime
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="5" data-path="topics/database.html">
+            
+                
+                    <a href="../../topics/database.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>5.</b>
+                        
+                        Relational Database Setup
+                    </a>
+            
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="5.1" data-path="topics/database/checklist.html">
+            
+                
+                    <a href="../../topics/database/checklist.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>5.1.</b>
+                        
+                        Setup Checklist
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="5.2" data-path="topics/database/jdbc.html">
+            
+                
+                    <a href="../../topics/database/jdbc.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>5.2.</b>
+                        
+                        JDBC Setup
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="5.3" data-path="topics/database/datasource.html">
+            
+                
+                    <a href="../../topics/database/datasource.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>5.3.</b>
+                        
+                        Datasource Setup
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="5.4" data-path="topics/database/hibernate.html">
+            
+                
+                    <a href="../../topics/database/hibernate.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>5.4.</b>
+                        
+                        Hibernate Configuration
+                    </a>
+            
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="6" data-path="topics/mongo.html">
+            
+                
+                    <a href="../../topics/mongo.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>6.</b>
+                        
+                        Mongo DB Setup
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="7" data-path="topics/network.html">
+            
+                
+                    <a href="../../topics/network.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>7.</b>
+                        
+                        Network Setup
+                    </a>
+            
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="7.1" data-path="topics/network/bind-address.html">
+            
+                
+                    <a href="../../topics/network/bind-address.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>7.1.</b>
+                        
+                        Bind Addresses
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="7.2" data-path="topics/network/ports.html">
+            
+                
+                    <a href="../../topics/network/ports.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>7.2.</b>
+                        
+                        Socket Port Bindings
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="7.3" data-path="topics/network/https.html">
+            
+                
+                    <a href="../../topics/network/https.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>7.3.</b>
+                        
+                        HTTPS/SSL Setup
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="7.4" data-path="topics/network/outgoing.html">
+            
+                
+                    <a href="../../topics/network/outgoing.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>7.4.</b>
+                        
+                        Outgoing HTTP Requests
+                    </a>
+            
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="8" data-path="topics/clustering.html">
+            
+                
+                    <a href="../../topics/clustering.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>8.</b>
+                        
+                        Clustering
+                    </a>
+            
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="8.1" data-path="topics/clustering/recommended.html">
+            
+                
+                    <a href="../../topics/clustering/recommended.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>8.1.</b>
+                        
+                        Recommended Network Architecture
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="8.2" data-path="topics/clustering/example.html">
+            
+                
+                    <a href="../../topics/clustering/example.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>8.2.</b>
+                        
+                        Cluster Example
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="8.3" data-path="topics/clustering/load-balancer.html">
+            
+                
+                    <a href="../../topics/clustering/load-balancer.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>8.3.</b>
+                        
+                        Setting Up a Load Balancer
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="8.4" data-path="topics/clustering/multicast.html">
+            
+                
+                    <a href="../../topics/clustering/multicast.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>8.4.</b>
+                        
+                        Multicast Network Setup
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="8.5" data-path="topics/clustering/serialized.html">
+            
+                
+                    <a href="../../topics/clustering/serialized.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>8.5.</b>
+                        
+                        Serialized Cluster Startup
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="8.6" data-path="topics/clustering/booting.html">
+            
+                
+                    <a href="../../topics/clustering/booting.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>8.6.</b>
+                        
+                        Booting the Cluster
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="8.7" data-path="topics/clustering/troubleshooting.html">
+            
+                
+                    <a href="../../topics/clustering/troubleshooting.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>8.7.</b>
+                        
+                        Trouble Shooting
+                    </a>
+            
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="9" data-path="topics/cache.html">
+            
+                
+                    <a href="../../topics/cache.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>9.</b>
+                        
+                        Server Cache Configuration
+                    </a>
+            
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="9.1" data-path="topics/cache/eviction.html">
+            
+                
+                    <a href="../../topics/cache/eviction.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>9.1.</b>
+                        
+                        Eviction Policy and Max Entries
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="9.2" data-path="topics/cache/replication.html">
+            
+                
+                    <a href="../../topics/cache/replication.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>9.2.</b>
+                        
+                        Replication and Failover
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="9.3" data-path="topics/cache/disable.html">
+            
+                
+                    <a href="../../topics/cache/disable.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>9.3.</b>
+                        
+                        Disabling Caching
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="9.4" data-path="topics/cache/clear.html">
+            
+                
+                    <a href="../../topics/cache/clear.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>9.4.</b>
+                        
+                        Clearing Caches at Runtime
+                    </a>
+            
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="10" data-path="topics/proxy.html">
+            
+                
+                    <a href="../../topics/proxy.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>10.</b>
+                        
+                        Keycloak Security Proxy
+                    </a>
+            
+            
+        </li>
+    
+
+
+            
+            <li class="divider"></li>
+            <li>
+                <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+                    Published with GitBook
+                </a>
+            </li>
+            
+        </ul>
+    </nav>
+</div>
+
+    <div class="book-body">
+        <div class="body-inner">
+            <div class="book-header" role="navigation">
+    <!-- Actions Left -->
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href="../../" ></a>
+    </h1>
+</div>
+
+            <div class="page-wrapper" tabindex="-1" role="main">
+                <div class="page-inner">
+                
+                
+                    <section class="normal" id="section-">
+                    
+                        <div class="sect2">
+<h3 id="_domain-mode">Domain Clustered Mode</h3>
+<div class="paragraph">
+<p>Domain mode is a way to centrally manage and publish the configuration for your servers.</p>
+</div>
+<div class="paragraph">
+<p>Running a cluster in standard mode can quickly become aggravating as the cluster grows in size.  Every time you need
+to make a configuration change, you have perform it on each node in the cluster.  Domain mode solves this problem by providing
+a central place to store and publish configuration.  It can be quite complex to set up, but it is worth it in the end.
+This capability is built into the Wildfly Application Server which Keycloak derives from.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The guide will go over the very basics of domain mode.  Detailed steps on how to set up domain mode in a cluster should be obtained from the
+       <a href="https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/" target="_blank">JBoss EAP Administration and Configuration Guide</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Here are some of the basic concepts of running in domain mode.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">domain controller</dt>
+<dd>
+<p>The domain controller is a process that is responsible for storing, managing, and publishing the general configuration
+for each node in the cluster.  This process is the central point from which nodes in a cluster obtain their configuration.</p>
+</dd>
+<dt class="hdlist1">host controller</dt>
+<dd>
+<p>The host controller is responsible for managing server instances on a specific machine.  You configure it to run
+one or more server instances.  The domain controller can also interact with the host controllers on each machine to
+manage the cluster.  To reduce the number of running process, a domain controller also acts as a host controller on
+the machine it runs on.</p>
+</dd>
+<dt class="hdlist1">domain profile</dt>
+<dd>
+<p>A domain profile is a named set of configuration that can be used by a server to boot from.  A domain controller
+can define multiple domain profiles that are consumed by different servers.</p>
+</dd>
+<dt class="hdlist1">server group</dt>
+<dd>
+<p>A server group is a collection of servers.  They are managed and configured as one.  You can assign a domain profile to a server group and every service in that
+group will use that domain profile as their configuration.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>In domain mode, a domain controller is started on a master node.  The configuration for the cluster resides in the domain controller.
+Next a host controller is started on each machine in the cluster.  Each host controller deployment configuration specifies how
+many Keycloak server instances will be started on that machine.  When the host controller boots up, it starts
+as many Keycloak server instances as it was configured to do.  These server instances pull their configuration
+from the domain controller.</p>
+</div>
+<div class="sect3">
+<h4 id="_domain_configuration">Domain Configuration</h4>
+<div class="paragraph">
+<p>Various other chapters in this guide walk you through configuring various aspects like databases,
+HTTP network connections, caches, and other infrastructure related things.  While standalone mode uses the <em>standalone.xml</em> file to configure these things,
+domain mode uses the <em>&#x2026;&#x200B;/domain/domain.xml</em> configuration file.  This is
+where the domain profile and server group for the Keycloak server are defined.</p>
+</div>
+<div class="paragraph">
+<div class="title">domain.xml</div>
+<p><span class="image"><img src="../../keycloak-images/domain-file.png" alt="domain-file.png"></span></p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+Any changes you make to this file while the domain controller is running will not take effect and may even be overwritten
+      by the server.  Instead use the the command line scripting or the web console of Wildfly.  See
+      the <a href="https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/" target="_blank">JBoss EAP Administration and Configuration Guide</a> for more information.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Let&#x2019;s look at some aspects of this <em>domain.xml</em> file.  The <code>auth-serve-standalone</code> and <code>auth-server-clustered</code> <code>profile</code> XML block is where you are going to make the bulk of your configuration decisions.
+You&#x2019;ll be configuring things here like network connections, caches, and database connections.</p>
+</div>
+<div class="listingblock">
+<div class="title">auth-server profile</div>
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">    <span class="hljs-tag">&lt;<span class="hljs-title">profiles</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-title">profile</span> <span class="hljs-attribute">name</span>=<span class="hljs-value">&quot;auth-server-standalone&quot;</span>&gt;</span>
+            ...
+         <span class="hljs-tag">&lt;/<span class="hljs-title">profile</span>&gt;</span>
+       <span class="hljs-tag">&lt;<span class="hljs-title">profile</span> <span class="hljs-attribute">name</span>=<span class="hljs-value">&quot;auth-server-clustered&quot;</span>&gt;</span>
+           ...
+        <span class="hljs-tag">&lt;/<span class="hljs-title">profile</span>&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>auth-server-standalone</code> profile is a non-clustered setup.  The <code>auth-server-clustered</code> profile is the clustered setup.</p>
+</div>
+<div class="paragraph">
+<p>If you scroll down further, you&#x2019;ll see various <code>socket-binding-groups</code> defined.</p>
+</div>
+<div class="listingblock">
+<div class="title">socket-binding-groups</div>
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">    <span class="hljs-tag">&lt;<span class="hljs-title">socket-binding-groups</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-title">socket-binding-group</span> <span class="hljs-attribute">name</span>=<span class="hljs-value">&quot;standard-sockets&quot;</span> <span class="hljs-attribute">default-interface</span>=<span class="hljs-value">&quot;public&quot;</span>&gt;</span>
+           ...
+        <span class="hljs-tag">&lt;/<span class="hljs-title">socket-binding-group</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-title">socket-binding-group</span> <span class="hljs-attribute">name</span>=<span class="hljs-value">&quot;ha-sockets&quot;</span> <span class="hljs-attribute">default-interface</span>=<span class="hljs-value">&quot;public&quot;</span>&gt;</span>
+           ...
+        <span class="hljs-tag">&lt;/<span class="hljs-title">socket-binding-group</span>&gt;</span>
+        <span class="hljs-comment">&lt;!-- load-balancer-sockets should be removed in production systems and replaced with a better softare or hardare based one --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-title">socket-binding-group</span> <span class="hljs-attribute">name</span>=<span class="hljs-value">&quot;load-balancer-sockets&quot;</span> <span class="hljs-attribute">default-interface</span>=<span class="hljs-value">&quot;public&quot;</span>&gt;</span>
+           ...
+        <span class="hljs-tag">&lt;/<span class="hljs-title">socket-binding-group</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-title">socket-binding-groups</span>&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This config defines the default port mappings for various connectors that are opened with each
+Keycloak server instance.  Any value that contains <code>${&#x2026;&#x200B;}</code> is a value that can be overriden on the command line
+with the <code>-D</code> switch, i.e.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ domain.sh -Djboss.http.port=80</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The definition of the server group for Keycloak resides in the <code>server-groups</code> XML block.  It specifies the domain profile
+that is used (<code>default</code>) and also some default boot arguments for the Java VM when the host controller boots an instance.  It also
+binds a <code>socket-binding-group</code> to the server group.</p>
+</div>
+<div class="listingblock">
+<div class="title">server group</div>
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">    <span class="hljs-tag">&lt;<span class="hljs-title">server-groups</span>&gt;</span>
+        <span class="hljs-comment">&lt;!-- load-balancer-group should be removed in production systems and replaced with a better softare or hardare based one --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-title">server-group</span> <span class="hljs-attribute">name</span>=<span class="hljs-value">&quot;load-balancer-group&quot;</span> <span class="hljs-attribute">profile</span>=<span class="hljs-value">&quot;load-balancer&quot;</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-title">jvm</span> <span class="hljs-attribute">name</span>=<span class="hljs-value">&quot;default&quot;</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-title">heap</span> <span class="hljs-attribute">size</span>=<span class="hljs-value">&quot;64m&quot;</span> <span class="hljs-attribute">max-size</span>=<span class="hljs-value">&quot;512m&quot;</span>/&gt;</span>
+            <span class="hljs-tag">&lt;/<span class="hljs-title">jvm</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-title">socket-binding-group</span> <span class="hljs-attribute">ref</span>=<span class="hljs-value">&quot;load-balancer-sockets&quot;</span>/&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-title">server-group</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-title">server-group</span> <span class="hljs-attribute">name</span>=<span class="hljs-value">&quot;auth-server-group&quot;</span> <span class="hljs-attribute">profile</span>=<span class="hljs-value">&quot;auth-server-clustered&quot;</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-title">jvm</span> <span class="hljs-attribute">name</span>=<span class="hljs-value">&quot;default&quot;</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-title">heap</span> <span class="hljs-attribute">size</span>=<span class="hljs-value">&quot;64m&quot;</span> <span class="hljs-attribute">max-size</span>=<span class="hljs-value">&quot;512m&quot;</span>/&gt;</span>
+            <span class="hljs-tag">&lt;/<span class="hljs-title">jvm</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-title">socket-binding-group</span> <span class="hljs-attribute">ref</span>=<span class="hljs-value">&quot;ha-sockets&quot;</span>/&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-title">server-group</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-title">server-groups</span>&gt;</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_host_controller_configuration">Host Controller Configuration</h4>
+<div class="paragraph">
+<p>Keycloak comes with two host controller configuration files that reside in the <em>&#x2026;&#x200B;/domain/configuration/</em> directory:
+<em>host-master.xml</em> and <em>host-slave.xml</em>.  <em>host-master.xml</em> is configured to boot up a domain controller, a load balancer, and
+one Keycloak server instance.  <em>host-slave.xml</em> is configured to talk to the domain controller and boot up
+one Keycloak server instance.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The load balancer is not a required service.  It exists so that you can easily test drive clustering on your development
+       machine.  While usable in production, you have the option of replacing it if you have a different hardware or software
+       based load balancer you want to use.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<div class="title">Host Controller Config</div>
+<p><span class="image"><img src="../../keycloak-images/host-files.png" alt="host-files.png"></span></p>
+</div>
+<div class="paragraph">
+<p>To disable the load balancer server instance, edit <em>host-master.xml</em> and comment out or remove the <code>&quot;load-balancer&quot;</code> entry.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">    <span class="hljs-tag">&lt;<span class="hljs-title">servers</span>&gt;</span>
+        <span class="hljs-comment">&lt;!-- remove or comment out next line --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-title">server</span> <span class="hljs-attribute">name</span>=<span class="hljs-value">&quot;load-balancer&quot;</span> <span class="hljs-attribute">group</span>=<span class="hljs-value">&quot;loadbalancer-group&quot;</span>/&gt;</span>
+        ...
+    <span class="hljs-tag">&lt;/<span class="hljs-title">servers</span>&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Another interesting thing to note about this file is the declaration of the authentication server instance.  It has
+a <code>port-offset</code> setting.  Any network port defined in the <em>domain.xml</em> <code>socket-binding-group</code> or the server group
+will have the value of <code>port-offset</code> added to it.  For this example domain setup we do this so that ports opened by
+the load balancer server don&#x2019;t conflict with the authentication server instance that is started.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">    <span class="hljs-tag">&lt;<span class="hljs-title">servers</span>&gt;</span>
+        ...
+        <span class="hljs-tag">&lt;<span class="hljs-title">server</span> <span class="hljs-attribute">name</span>=<span class="hljs-value">&quot;server-one&quot;</span> <span class="hljs-attribute">group</span>=<span class="hljs-value">&quot;auth-server-group&quot;</span>&gt;</span>
+             <span class="hljs-tag">&lt;<span class="hljs-title">socket-bindings</span> <span class="hljs-attribute">port-offset</span>=<span class="hljs-value">&quot;150&quot;</span>/&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-title">server</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-title">servers</span>&gt;</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_server_instance_working_directories">Server Instance Working Directories</h4>
+<div class="paragraph">
+<p>Each Keycloak server instance defined in your host files creates a working directory under <em>&#x2026;&#x200B;/domain/servers/{SERVER NAME}</em>.
+Additional configuration can be put there, and any temporary, log, or data files the server instance needs or creates go there too.
+The structure of these per server directories ends up looking like any other Wildfly booted server.</p>
+</div>
+<div class="paragraph">
+<div class="title">Working Directories</div>
+<p><span class="image"><img src="../../keycloak-images/domain-server-dir.png" alt="domain-server-dir.png"></span></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_keycloak_json_configuration">Keycloak JSon Configuration</h4>
+<div class="paragraph">
+<p>Unfortunately, there is no centralized way to manage the <em>keycloak.json</em> file.  You&#x2019;ll have to manage a copy of this file
+in every server instance you deploy.  This file must exist in the _&#x2026;&#x200B;/domain/servers/{SERVER NAME}/configuration directory.</p>
+</div>
+<div class="paragraph">
+<div class="title">JSON Configuration</div>
+<p><span class="image"><img src="../../keycloak-images/domain-json-config.png" alt="domain-json-config.png"></span></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_domain_boot_script">Domain Boot Script</h4>
+<div class="paragraph">
+<p>When running the server in domain mode, there is a specific script you need to run to boot the server depending on your
+operating system.  These scripts live in the <em>bin/</em> directory of the server distribution.</p>
+</div>
+<div class="paragraph">
+<div class="title">Domain Boot Script</div>
+<p><span class="image"><img src="../../keycloak-images/domain-boot-files.png" alt="domain-boot-files.png"></span></p>
+</div>
+<div class="paragraph">
+<p>To boot the server:</p>
+</div>
+<div class="listingblock">
+<div class="title">Linux/Unix</div>
+<div class="content">
+<pre class="highlight"><code>$ .../bin/domain.sh --host-config=host-master.xml</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Windows</div>
+<div class="content">
+<pre class="highlight"><code>&gt; ...\bin\domain.bat --host-config=host-slave.xml</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When running the boot script you will need pass in the host controlling configuration file you are going to use via the
+<code>--host-config</code> switch.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_clustered-domain-example">Clustered Domain Example</h4>
+<div class="paragraph">
+<p>You can test drive clustering using the out-of-the-box <em>domain.xml</em> configuration.  This example
+domain is meant to run on one machine and boots up:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>a domain controller</p>
+</li>
+<li>
+<p>an HTTP load balancer</p>
+</li>
+<li>
+<p>2 Keycloak server instances</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To simulate running a cluster on two machines, you&#x2019;ll run the <code>domain.sh</code> script twice to start two separate
+host controllers.  The first will be the master host controller which will start a domain controller, an HTTP load balancer, and one
+Keycloak authentication server instance.  The second will be a slave host controller that only starts
+up an authentication server instance.</p>
+</div>
+<div class="sect4">
+<h5 id="_setup_slave_connection_to_domain_controller">Setup Slave Connection to Domain Controller</h5>
+<div class="paragraph">
+<p>Before you can boot things up though, you have to configure the slave host controller so that it can talk securely to the domain
+controller.  If you do not do this, then the slave host will not be able to obtain the centralized configuration from the domain controller.
+To set up a secure connection, you have to create a server admin user and a secret that
+will be shared between the master and the slave.  You do this by running the <code>&#x2026;&#x200B;/bin/add-user.sh</code> script.</p>
+</div>
+<div class="paragraph">
+<p>When you run the script select <code>Management User</code> and answer <code>yes</code> when it asks you if the new user is going to be used
+for one AS process to connect to another.  This will generate a secret that you&#x2019;ll need to cut and paste into the
+<em>&#x2026;&#x200B;/domain/configuration/host-slave.xml</em> file.</p>
+</div>
+<div class="listingblock">
+<div class="title">Add App Server Admin</div>
+<div class="content">
+<pre class="highlight"><code>$ add-user.sh
+ What type of user do you wish to add?
+  a) Management User (mgmt-users.properties)
+  b) Application User (application-users.properties)
+ (a): a
+ Enter the details of the new user to add.
+ Using realm &apos;ManagementRealm&apos; as discovered from the existing property files.
+ Username : admin
+ Password recommendations are listed below. To modify these restrictions edit the add-user.properties configuration file.
+  - The password should not be one of the following restricted values {root, admin, administrator}
+  - The password should contain at least 8 characters, 1 alphabetic character(s), 1 digit(s), 1 non-alphanumeric symbol(s)
+  - The password should be different from the username
+ Password :
+ Re-enter Password :
+ What groups do you want this user to belong to? (Please enter a comma separated list, or leave blank for none)[ ]:
+ About to add user &apos;admin&apos; for realm &apos;ManagementRealm&apos;
+ Is this correct yes/no? yes
+ Added user &apos;admin&apos; to file &apos;/.../standalone/configuration/mgmt-users.properties&apos;
+ Added user &apos;admin&apos; to file &apos;/.../domain/configuration/mgmt-users.properties&apos;
+ Added user &apos;admin&apos; with groups to file &apos;/.../standalone/configuration/mgmt-groups.properties&apos;
+ Added user &apos;admin&apos; with groups to file &apos;/.../domain/configuration/mgmt-groups.properties&apos;
+ Is this new user going to be used for one AS process to connect to another AS process?
+ e.g. for a slave host controller connecting to the master or for a Remoting connection for server to server EJB calls.
+ yes/no? yes
+ To represent the user add the following to the server-identities definition &lt;secret value=&quot;bWdtdDEyMyE=&quot; /&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now cut and paste the secret value into the <em>&#x2026;&#x200B;/domain/configuration/host-slave.xml</em> file as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">     <span class="hljs-tag">&lt;<span class="hljs-title">management</span>&gt;</span>
+         <span class="hljs-tag">&lt;<span class="hljs-title">security-realms</span>&gt;</span>
+             <span class="hljs-tag">&lt;<span class="hljs-title">security-realm</span> <span class="hljs-attribute">name</span>=<span class="hljs-value">&quot;ManagementRealm&quot;</span>&gt;</span>
+                 <span class="hljs-tag">&lt;<span class="hljs-title">server-identities</span>&gt;</span>
+                     <span class="hljs-tag">&lt;<span class="hljs-title">secret</span> <span class="hljs-attribute">value</span>=<span class="hljs-value">&quot;bWdtdDEyMyE=&quot;</span>/&gt;</span>
+                 <span class="hljs-tag">&lt;/<span class="hljs-title">server-identities</span>&gt;</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_run_the_boot_scripts">Run the Boot Scripts</h5>
+<div class="paragraph">
+<p>Since we&#x2019;re simulating a two node cluster on one development machine, you&#x2019;ll run the boot script twice:</p>
+</div>
+<div class="listingblock">
+<div class="title">Boot up master</div>
+<div class="content">
+<pre class="highlight"><code class="language-shell" data-lang="shell">$ domain.sh --host-config=host-master.xml</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Boot up slave</div>
+<div class="content">
+<pre class="highlight"><code class="language-shell" data-lang="shell">$ domain.sh --host-config=host-slave.xml</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To try it out, open your browser and go to <a href="http://localhost:8080/auth" class="bare" target="_blank">http://localhost:8080/auth</a></p>
+</div>
+</div>
+</div>
+</div>
+                    
+                    </section>
+                
+                
+                </div>
+            </div>
+        </div>
+
+        
+        <a href="../../topics/operating-mode/standalone-ha.html" class="navigation navigation-prev " aria-label="Previous page: Standalone Clustered Mode"><i class="fa fa-angle-left"></i></a>
+        
+        
+        <a href="../../topics/manage.html" class="navigation navigation-next " aria-label="Next page: Managing Config at Runtime"><i class="fa fa-angle-right"></i></a>
+        
+    </div>
+</div>
+
+        
+<script src="../../gitbook/app.js"></script>
+
+    
+    <script src="../../gitbook/plugins/gitbook-plugin-toggle-chapters/toggle.js"></script>
+    
+
+    
+    <script src="../../gitbook/plugins/gitbook-plugin-ungrey/ungrey.js"></script>
+    
+
+    
+    <script src="../../gitbook/plugins/gitbook-plugin-splitter/splitter.js"></script>
+    
+
+    
+    <script src="../../gitbook/plugins/gitbook-plugin-search/lunr.min.js"></script>
+    
+
+    
+    <script src="../../gitbook/plugins/gitbook-plugin-search/search.js"></script>
+    
+
+    
+    <script src="../../gitbook/plugins/gitbook-plugin-sharing/buttons.js"></script>
+    
+
+    
+    <script src="../../gitbook/plugins/gitbook-plugin-fontsettings/buttons.js"></script>
+    
+
+    
+    <script src="../../gitbook/plugins/gitbook-plugin-livereload/plugin.js"></script>
+    
+
+<script>
+require(["gitbook"], function(gitbook) {
+    var config = {"toggle-chapters":{},"ungrey":{},"splitter":{},"highlight":{},"search":{"maxIndexSize":1000000},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"livereload":{}};
+    gitbook.start(config);
+});
+</script>
+
+        <!-- body:end -->
+    </body>
+    <!-- End of book  -->
+</html>

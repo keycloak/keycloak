@@ -71,7 +71,7 @@ for the {{book.project.name}} server.  This involves
 
 ===== Creating the Certificate and Java Keystore
 
-In order to allow HTTPS connections, you need to obtain a self signed or third-party signed certificate and import it into a Java keystore before you can enable HTTPS in the web container you are deploying the Keycloak Server to.
+In order to allow HTTPS connections, you need to obtain a self signed or third-party signed certificate and import it into a Java keystore before you can enable HTTPS in the web container you are deploying the {{book.project.name}} Server to.
 
 ====== Self Signed Certificate
 
