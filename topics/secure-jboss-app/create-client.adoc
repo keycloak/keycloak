@@ -1,0 +1,30 @@
+
+=== Create and Register Client
+
+The next step you have to do is to define and register the client in the {{book.project.name}} Admin Console.  Log into
+the Admin Console with your admin account as you did in previous tutorials.  In the top left hand drop down menu select and manage
+the `demo` realm.  Next click the `Clients` left menu.  This will bring you to the `Clients` page.
+
+.Clients
+image:../../{{book.images}}/clients.png[]
+
+On the right hand side you should see a button named `Create`.  Click this button and fill in the fields as shown below:
+
+.Add Client
+image:../../{{book.images}}/add-client.png[]
+
+After clicking the `Save` button your client application entry will be created.  You now have to go back to the JBoss EAP or Wildfly
+instance that the application is deployed on and configure it so that this app is secured by {{book.project.name}}.  You can obtain
+a template for the configuration you need by going to the `Installation` tab in the client entry in the {{book.project.name}} Admin Console.
+
+.Installation Tab
+image:../../{{book.images}}/client-installation.png[]
+
+Select the `Keycloak OIDC JBoss Subsystem XML` option.  This will generate an XML template that you'll need to cut and paste.
+
+.Template XML
+image:../../{{book.images}}/client-install-selected.png[]
+
+
+
+

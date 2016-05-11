@@ -1,0 +1,35 @@
+
+=== Install the Client Adapter
+
+Download the JBoss EAP 7 or Wildfly 10 distribution you are going to use to run your example application and unzip
+it into a directory of your choosing on your machine.  Next download the {{book.clientadapter}} distribution.  Unzip
+this file into the root directory of your JBoss EAP or Wildfly 10 distribution.  Next perform the following actions
+
+.Linux/Unix
+[source]
+----
+$ cd bin
+$ ./jboss-cli.sh --file=adapter-install-offline.cli
+----
+
+.Windows
+[source]
+----
+> cd bin
+> jboss-cli.bat --file=adapter-install-offline.cli
+----
+
+This script will make the appropriate edits to the _.../standalone/configuration/standalone.xml_ file of your app
+server distribution.  Finally, just boot the application server.
+
+.Linux/Unix
+[source]
+----
+$ .../bin/standalone.sh
+----
+
+.Windows
+[source]
+----
+> ...\bin\standalone.bat
+----

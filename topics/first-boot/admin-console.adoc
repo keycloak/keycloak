@@ -2,6 +2,7 @@
 === Login to Admin Console
 
 After you create the initial admin account, click on the _Administration Console_ link on the bottom of the Welcome Page.
+Alternatively you can go to the console url directly at http://localhost:8080/auth/admin/
 
 .Login Page
 image:../../{{book.images}}/login-page.png[]

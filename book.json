@@ -73,6 +73,11 @@
       "name": "Keycloak Adminstration Guide",
       "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
     },
+    "appguide": {
+      "name": "Securing Applications with Keycloak",
+      "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
+    },
+    "clientadapter": "RH-SSO-7.0.0.ER10-eap7-adapter.zip",
     "project": {
       "name": "Keycloak",
       "version": "1.9.3.Final-SNAPSHOT"

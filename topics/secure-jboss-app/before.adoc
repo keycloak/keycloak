@@ -1,0 +1,28 @@
+
+=== Before You Start
+
+Before you can participate in this tutorial, you need to complete the installation of {{book.project.name}} and create the
+initial admin user as shown in the <<fake/../../first-boot.adoc#_install-boot, Install and Boot>> tutorial.  There is one
+caveat to this.  You are going to have to run a separate JBoss EAP 7 or Wildfly 10 instance on the same machine as the
+{{book.project.name}} server.  This separate instance will run your Java Servlet application.  Because of this you will
+have to run the {{book.project.name}} under a different port so that there are no port conflicts when running on the
+same machine.  Use the `jboss.socket.binding.port-offset` system property on the command line.  The value of this property
+is a number that will be added to the base value of every port opened by the {{book.project.name} server.
+
+To boot the {{book.project.name}} server:
+
+.Linux/Unix
+[source]
+----
+$ .../bin/standalone.sh -Djboss.socket.binding.port-offset=100
+----
+
+.Windows
+[source]
+----
+> ...\bin\standalone.bat -Djboss.socket.binding.port-offset=100
+----
+
+After booting up {{book.project.name}}, you can then access the admin console at http://localhost:8180/auth/admin/
+
+

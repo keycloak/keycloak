@@ -1,0 +1,41 @@
+
+=== Download, Build, Deploy Application Code
+
+The project and code for the application you are going to secure it at Github.com.  You will need the following
+installed on your machine and available in your PATH before you can continue:
+
+* Java JDK 8
+* Apache Maven 3.1.1 or higher
+
+You can obtain the code by cloning the
+quickstart repo at git@github.com:jboss-developer/rh-sso-quickstarts.git.  Follow these steps to download the code, build it,
+and deploy it.  Make sure your JBoss EAP or Wildfly app server instance is running before you start these steps!
+
+.clone project
+[source]
+----
+$ git clone git@github.com:jboss-developer/rh-sso-quickstarts.git
+$ cd rh-sso-quickstarts/app-profile-jee-vanilla
+$ mvn clean wildfly:deploy
+----
+
+You should see some text scroll down in the app server console window.  After the app is successfully deployed go to:
+
+http://localhost:8080/vanilla
+
+.app login page
+image:../../{{book.images}}/app-login-page.png[]
+
+If you open up the application's _web.xml_ file you would see that the application is secured via `BASIC` authentication.
+If you click on the login button on the login page, the browser
+will pop up a BASIC auth login dialog.
+
+
+.app login dialog
+image:../../{{book.images}}/client-auth-required.png[]
+
+
+The app is not secured by any identity provider, so anything you enter in the dialog will result in a `Forbidden` message being
+sent back by the server.  The next section describes how you can take this existing deployed app and secure it.
+
+
