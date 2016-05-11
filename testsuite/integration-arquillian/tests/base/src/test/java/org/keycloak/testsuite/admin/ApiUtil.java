@@ -23,6 +23,7 @@ import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -88,6 +89,15 @@ public class ApiUtil {
 
     public static RoleResource findClientRoleByName(ClientResource client, String role) {
         return client.roles().get(role);
+    }
+
+    public static ProtocolMapperRepresentation findProtocolMapperByName(ClientResource client, String name) {
+        for (ProtocolMapperRepresentation p : client.getProtocolMappers().getMappers()) {
+            if (p.getName().equals(name)) {
+                return p;
+            }
+        }
+        return null;
     }
 
     public static RoleResource findRealmRoleByName(RealmResource realm, String role) {
