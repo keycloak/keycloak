@@ -1,5 +1,5 @@
 
-== User Account Service
+=== User Account Service
 
 After creating the user, logout of the management console by clicking the right hand drop down menu and selecting `Sign Off`.
 Next, login to the User Account Service of your `demo` realm with the user you just created by clicking this link:
