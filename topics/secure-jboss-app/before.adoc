@@ -7,7 +7,7 @@ caveat to this.  You are going to have to run a separate JBoss EAP 7 or Wildfly 
 {{book.project.name}} server.  This separate instance will run your Java Servlet application.  Because of this you will
 have to run the {{book.project.name}} under a different port so that there are no port conflicts when running on the
 same machine.  Use the `jboss.socket.binding.port-offset` system property on the command line.  The value of this property
-is a number that will be added to the base value of every port opened by the {{book.project.name} server.
+is a number that will be added to the base value of every port opened by the {{book.project.name}} server.
 
 To boot the {{book.project.name}} server:
 
