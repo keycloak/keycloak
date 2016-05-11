@@ -48,6 +48,11 @@ public class RoleBuilder {
         return this;
     }
 
+    public RoleBuilder scopeParamRequired(Boolean required) {
+        rep.setScopeParamRequired(required);
+        return this;
+    }
+
     public RoleRepresentation build() {
         return rep;
     }
