@@ -26,6 +26,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.testsuite.events.EventsListenerProvider;
@@ -165,4 +166,22 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public void close() {
     }
 
+    /*
+     * Migration from KeycloakRule#verifyCode
+     */
+    @GET
+    @Path("/verify-code")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String verifyCode(@QueryParam("realm") String realmName, @QueryParam("code") String code) {
+        RealmModel realm = session.realms().getRealm(realmName);
+        try {
+            ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
+            if (accessCode == null) {
+                throw new AssertionError("Invalid code");
+            }
+            return accessCode.getClientSession().getId();
+        } catch (Throwable t) {
+            throw new AssertionError("Failed to parse code", t);
+        }
+    }
 }

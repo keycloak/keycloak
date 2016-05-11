@@ -42,7 +42,7 @@ public interface TestingResource {
     @GET
     @Path("/time-offset")
     @Produces(MediaType.APPLICATION_JSON)
-    Map<String, String> getTimeOffset() ;
+    Map<String, String> getTimeOffset();
 
     @PUT
     @Path("/time-offset")
@@ -80,4 +80,8 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     boolean isCached(@PathParam("cache") String cacheName, @PathParam("id") String id);
 
+    @GET
+    @Path("/verify-code")
+    @Produces(MediaType.APPLICATION_JSON)
+    String verifyCode(@QueryParam("realm") String realmName, @QueryParam("code") String code);
 }
