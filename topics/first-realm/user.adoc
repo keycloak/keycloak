@@ -1,3 +1,4 @@
+[[_create-new-user]]
 
 === Create a New User
 
