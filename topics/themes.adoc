@@ -1,24 +1,26 @@
 = Themes
 
-Keycloak provides theme support for web pages and emails.
-This allows customizing the look and feel of end-user facing pages so they can be integrated with your applications. 
+Keycloak provides theme support for web pages and emails. This allows customizing the look and feel of end-user facing pages so they can be integrated with
+your applications.
+
+[[img-sunset]]
+.Login page with sunrise example theme
+image:../../images/login-sunrise.png[]
 
 == Theme types
 
-A theme can support several types to customize different aspects of Keycloak.
-The types currently available are: 
+A theme can support several types to customize different aspects of Keycloak. The types currently available are:
 
 * Account - Account management
 * Admin - Admin console
 * Email - Emails
 * Login - Login forms
-* Welcome - Welcome pages        
+* Welcome - Welcome page
 
 == Configure theme
 
-All theme types, except welcome, is configured through `Keycloak Admin Console`.
-To change the theme used for a realm open the `Keycloak Admin Console`, select your realm from the drop-down box in the top left corner.
-Under `Settings` click on `Theme`. 
+All theme types, except welcome, is configured through `Keycloak Admin Console`. To change the theme used for a realm open the `Keycloak Admin Console`, select
+your realm from the drop-down box in the top left corner. Under `Settings` click on `Theme`.
 
 To set the theme for the `master` Keycloak admin console set the admin console theme for the `master` realm.
 To set the theme for per realm admin access control set the admin console theme for the corresponding realm. 

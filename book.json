@@ -1,0 +1,29 @@
+{
+  "gitbook": "2.x.x",
+  "structure": {
+    "readme": "README.adoc"
+  },
+  "plugins": [
+    "toggle-chapters",
+    "ungrey",
+    "splitter"
+  ],
+  "variables": {
+    "title": "Keycloak Server Developer Guide",
+    "community": true,
+    "product": false,
+    "images": "keycloak-images",
+    "appserver": {
+      "name": "Wildfly",
+      "version": "10"
+    },
+    "adminguide": {
+      "name": "Keycloak Adminstration Guide",
+      "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
+    },
+    "project": {
+      "name": "Keycloak",
+      "version": "1.9.3.Final-SNAPSHOT"
+    }
+  }
+}

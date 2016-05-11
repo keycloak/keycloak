@@ -1,12 +1,63 @@
-= Admin REST API
+== Admin REST API
 
-The Keycloak Admin Console is implemented entirely with a fully functional REST admin API.
-You can invoke this REST API from your Java applications by obtaining an access token.
+Keycloak comes with a fully functional Admin REST API which provides all features provided by the Admin Console.
 
-You must have the appropriate permissions set up as described in <<_admin_permissions>> and <<_per_realm_admin_permissions>>    
+To invoke the API you need to obtain an access token with the appropriate permissions. The required permissions are described in <<_admin_permissions>> and
+<<_per_realm_admin_permissions>>. A token can be obtained by enabling authenticating to your application with Keycloak, see the <<_client_developer_guide_>> for
+more details. Alternatively, you can use direct access grant to obtain an access token, see <<_direct_access_grant_>> for more details.
 
-The documentation for this REST API is auto-generated and is contained in the distribution of keycloak under the docs/rest-api/overview-index.html directory, or directly from the docs page at the keycloak website. 
+Full API documentation is available at http://keycloak.org/docs and can also be downloaded from http://keycloak.org/downloads.
+
+=== Example using CURL
+
+Obtain access token for user with username _admin_ and password _password_:
+....
+DATA="client_id=admin-cli"
+DATA+="&username=admin"
+DATA+="&password=password"
+DATA+="&grant_type=password"
+
+URL="http://localhost:8080/auth/realms/master/protocol/openid-connect/token"
+
+OUTPUT=`curl -s --data $DATA $URL`
+
+ACCESS_TOKEN=`echo $OUTPUT | grep -oE '"access_token":"[^"]*"' | cut -d '"' -f 4`
+....
+
+NOTE: By default this token expires within 1 minutes.
+
+You can then invoke the API by including the token in the authorization header. The following example shows how to get the details of the master realm:
+
+....
+URL="http://localhost:8080/auth/admin/realms/master"
+
+curl -v --header "Authorization: bearer $ACCESS_TOKEN" $URL
+....
 
 There are a number of examples that come with the keycloak distribution that show you how to invoke on this REST API. `examples/preconfigured-demo/admin-access-app` shows you how to access this api from java. `examples/cors/angular-product-app` shows you how to invoke on it from Javascript.
 
-Finally there is example in `example/admin-client`, which contains example for Admin client, that can be used to invoke REST endpoints easily as Java methods. 
+Finally there is example in `example/admin-client`, which contains example for Admin client, that can be used to invoke REST endpoints easily as Java methods.
+
+{% if book.community %}
+=== Example using Java
+
+There's a Java client library for the Admin REST API that makes it easy to use from Java. To use it from your application add a dependency on the
+_keycloak-admin-client_ library.
+
+The following example shows how to use the Java client library to get the details of the master realm:
+
+....
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.RealmRepresentation;
+...
+
+Keycloak keycloak = Keycloak.getInstance(
+    "http://localhost:8080/auth", "master",
+    "admin", "password",
+    "admin-cli");
+RealmRepresentation realm = keycloak.realm("master").toRepresentation();
+....
+
+Complete JavaDocs for the admin client is available at http://keycloak.org/docs and can also be downloaded from http://keycloak.org/downloads. From the downloads
+you can also get the examples distribution that includes `example/admin-client` showing how to use the Java client.
+{% endif %}
