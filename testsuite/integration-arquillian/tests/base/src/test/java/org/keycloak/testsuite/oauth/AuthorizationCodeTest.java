@@ -16,71 +16,67 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.managers.RealmManager;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.OAuthClient.AuthorizationCodeResponse;
 import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AuthorizationCodeTest {
-
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule();
+public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @Rule
-    public WebRule webRule = new WebRule(this);
+    public AssertEvents events = new AssertEvents(this);
 
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
-    protected OAuthClient oauth;
-
-    @WebResource
-    protected LoginPage loginPage;
-
-    @WebResource
+    @Page
     protected ErrorPage errorPage;
 
-    @Rule
-    public AssertEvents events = new AssertEvents(keycloakRule);
+
+    @Override
+    public void beforeAbstractKeycloakTest() throws Exception {
+        super.beforeAbstractKeycloakTest();
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+
+        RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
+
+        testRealms.add(realmRepresentation);
+
+    }
 
     @Test
     public void authorizationRequest() throws IOException {
         oauth.state("mystate");
 
-        AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
         assertEquals("mystate", response.getState());
         Assert.assertNull(response.getError());
 
-        keycloakRule.verifyCode(response.getCode());
+        testingClient.testing().verifyCode("test", response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, response.getCode());
@@ -88,12 +84,7 @@ public class AuthorizationCodeTest {
 
     @Test
     public void authorizationRequestInstalledApp() throws IOException {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getClientByClientId("test-app").addRedirectUri(Constants.INSTALLED_APP_URN);
-            }
-        });
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(Constants.INSTALLED_APP_URN);
         oauth.redirectUri(Constants.INSTALLED_APP_URN);
 
         oauth.doLogin("test-user@localhost", "password");
@@ -102,36 +93,26 @@ public class AuthorizationCodeTest {
         Assert.assertEquals("Success code", title);
 
         String code = driver.findElement(By.id(OAuth2Constants.CODE)).getAttribute("value");
-        keycloakRule.verifyCode(code);
+        testingClient.testing().verifyCode("test", code);
 
-        String codeId = events.expectLogin().detail(Details.REDIRECT_URI, "http://localhost:8081/auth/realms/test/protocol/openid-connect/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
+        String codeId = events.expectLogin().detail(Details.REDIRECT_URI, "http://localhost:8180/auth/realms/test/protocol/openid-connect/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, code);
 
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getClientByClientId("test-app").removeRedirectUri(Constants.INSTALLED_APP_URN);
-            }
-        });
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").removeRedirectUris(Constants.INSTALLED_APP_URN);
     }
 
     @Test
     public void authorizationValidRedirectUri() throws IOException {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getClientByClientId("test-app").addRedirectUri(oauth.getRedirectUri());
-            }
-        });
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(oauth.getRedirectUri());
 
         oauth.state("mystate");
 
-        AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
 
-        keycloakRule.verifyCode(response.getCode());
+        testingClient.testing().verifyCode("test", response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, response.getCode());
@@ -141,14 +122,14 @@ public class AuthorizationCodeTest {
     public void authorizationRequestNoState() throws IOException {
         oauth.state(null);
 
-        AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
         Assert.assertNull(response.getState());
         Assert.assertNull(response.getError());
 
-        keycloakRule.verifyCode(response.getCode());
+        testingClient.testing().verifyCode("test", response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, response.getCode());
@@ -173,8 +154,8 @@ public class AuthorizationCodeTest {
     }
 
     private void assertCode(String expectedCodeId, String actualCode) {
-        ClientSessionCode code = keycloakRule.verifyCode(actualCode);
-        assertEquals(expectedCodeId, code.getClientSession().getId());
+        String code = testingClient.testing().verifyCode("test", actualCode);
+        assertEquals(expectedCodeId, code);
     }
 
 }

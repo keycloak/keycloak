@@ -6,8 +6,10 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.findProtocolMapperByName;
@@ -95,6 +97,23 @@ public class ClientManager {
 
         public void removeScopeMapping(RoleRepresentation newRole) {
             clientResource.getScopeMappings().realmLevel().remove(Collections.singletonList(newRole));
+        }
+
+        public void addRedirectUris(String... redirectUris) {
+            ClientRepresentation app = clientResource.toRepresentation();
+            if (app.getRedirectUris() == null) {
+                app.setRedirectUris(new LinkedList<String>());
+            }
+            app.setRedirectUris(Arrays.asList(redirectUris));
+            clientResource.update(app);
+        }
+
+        public void removeRedirectUris(String... redirectUris) {
+            ClientRepresentation app = clientResource.toRepresentation();
+            for (String redirectUri : redirectUris) {
+                app.getRedirectUris().remove(redirectUri);
+            }
+            clientResource.update(app);
         }
     }
 }
