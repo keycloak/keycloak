@@ -845,7 +845,9 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
             int now = Time.currentTime();
             if (isClaimEnabled("issuedAt")) reqToken.issuedAt(now);
-            if (isClaimEnabled("expiration")) reqToken.expiration(now + getTokenTimeout());
+            // For the time being there's no getter for tokenTimeout in JWTClientCredentialsProvider
+            // This is fine because KC doesn't care when exp claim is missing (see KEYCLOAK-2986)
+            /*if (isClaimEnabled("expiration")) reqToken.expiration(now + getTokenTimeout());*/
             if (isClaimEnabled("notBefore")) reqToken.notBefore(now);
 
             return reqToken;
