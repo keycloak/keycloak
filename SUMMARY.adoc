@@ -1,13 +1,13 @@
-== Keycloak Reference Guide
+= {{book.title}}
 
 //. link:topics/templates/document-attributes.adoc[]
 :imagesdir: images
 
  . link:topics/preface.adoc[Preface]
- . link:topics/Overview.adoc[Overview]
- .. link:topics/overview_key_concepts.adoc[Key Concepts in Keycloak]
- .. link:topics/overview_How_Security_Work_in_Keycloak.adoc[How Security Work in Keycloak?]
- ... link:topics/overview_permission_scopes.adoc[Permission Scopes]
+ . link:topics/overview.adoc[Overview]
+ .. link:topics/features.adoc[Features]
+ .. link:topics/how.adoc[How Does Security Work?]
+ .. link:topics/concepts.adoc[Core Concepts and Terms]
  . link:topics/admin-permissions.adoc[Master Admin Access Control]
  . link:topics/per-realm-admin-permissions.adoc[Per Realm Admin Access Control]
  . link:topics/client-registration.adoc[Client Registration]
