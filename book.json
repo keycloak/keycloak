@@ -1,0 +1,21 @@
+{
+  "gitbook": "2.x.x",
+  "structure": {
+    "readme": "README.adoc"
+  },
+  "plugins": [
+    "toggle-chapters",
+    "ungrey",
+    "splitter"
+  ],
+  "variables": {
+    "title": "Keycloak Authorization Services Guide",
+    "community": true,
+    "product": false,
+    "images": "keycloak-images",
+    "project": {
+      "name": "Keycloak",
+      "version": "1.9.3.Final-SNAPSHOT"
+    }
+  }
+}
