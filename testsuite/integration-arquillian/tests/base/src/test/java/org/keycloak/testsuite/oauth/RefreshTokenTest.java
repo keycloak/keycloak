@@ -149,13 +149,13 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         assertEquals("bearer", tokenResponse.getTokenType());
 
-        Assert.assertThat(token.getExpiration() - Time.currentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
-        int actual = refreshToken.getExpiration() - Time.currentTime();
+        Assert.assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
+        int actual = refreshToken.getExpiration() - getCurrentTime();
         Assert.assertThat(actual, allOf(greaterThanOrEqualTo(1799), lessThanOrEqualTo(1800)));
 
         assertEquals(sessionId, refreshToken.getSessionState());
 
-        Time.setOffset(2);
+        setTimeOffset(2);
 
         OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
@@ -167,7 +167,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertEquals(sessionId, refreshedRefreshToken.getSessionState());
 
         Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
-        Assert.assertThat(refreshedToken.getExpiration() - Time.currentTime(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
+        Assert.assertThat(refreshedToken.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
 
         Assert.assertThat(refreshedToken.getExpiration() - token.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
         Assert.assertThat(refreshedRefreshToken.getExpiration() - refreshToken.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
@@ -190,7 +190,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
 
-        Time.setOffset(0);
+        setTimeOffset(0);
     }
 
     @Test
@@ -210,7 +210,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             events.expectCodeToToken(codeId, sessionId).assertEvent();
 
-            Time.setOffset(2);
+            setTimeOffset(2);
 
             OAuthClient.AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken(), "password");
             assertEquals(200, response2.getStatusCode());
@@ -223,7 +223,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             events.expectRefresh(refreshToken1.getId(), sessionId).assertEvent();
         } finally {
-            Time.setOffset(0);
+            setTimeOffset(0);
         }
     }
 
@@ -247,7 +247,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             events.expectCodeToToken(codeId, sessionId).assertEvent();
 
-            Time.setOffset(2);
+            setTimeOffset(2);
 
             OAuthClient.AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken(), "password");
             RefreshToken refreshToken2 = oauth.verifyRefreshToken(response2.getRefreshToken());
@@ -266,7 +266,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             events.expectRefresh(refreshToken2.getId(), sessionId).assertEvent();
         } finally {
-            Time.setOffset(0);
+            setTimeOffset(0);
             RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
         }
     }
@@ -381,9 +381,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         String refreshId = oauth.verifyRefreshToken(tokenResponse.getRefreshToken()).getId();
 
         int last = testingClient.testing().getLastSessionRefresh("test", sessionId);
-        ;
 
-        Time.setOffset(2);
+        setTimeOffset(2);
 
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
@@ -393,7 +392,6 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertEquals(200, tokenResponse.getStatusCode());
 
         int next = testingClient.testing().getLastSessionRefresh("test", sessionId);
-        ;
 
         Assert.assertNotEquals(last, next);
 
@@ -401,7 +399,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         int lastAccessTokenLifespan = realmResource.toRepresentation().getAccessTokenLifespan();
         RealmManager.realm(realmResource).accessTokenLifespan(100000);
 
-        Time.setOffset(4);
+        setTimeOffset(4);
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
         next = testingClient.testing().getLastSessionRefresh("test", sessionId);
@@ -413,7 +411,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         RealmManager.realm(realmResource).ssoSessionIdleTimeout(1);
 
         events.clear();
-        Time.setOffset(6);
+        setTimeOffset(6);
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
         // test idle timeout
@@ -427,7 +425,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         events.clear();
 
-        Time.setOffset(0);
+        setTimeOffset(0);
     }
 
     @Test
@@ -449,7 +447,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         Integer maxLifespan = realmResource.toRepresentation().getSsoSessionMaxLifespan();
         RealmManager.realm(realmResource).ssoSessionMaxLifespan(1);
 
-        Time.setOffset(1);
+        setTimeOffset(1);
 
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
@@ -463,7 +461,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         events.clear();
 
-        Time.setOffset(0);
+        setTimeOffset(0);
     }
 
     @Test

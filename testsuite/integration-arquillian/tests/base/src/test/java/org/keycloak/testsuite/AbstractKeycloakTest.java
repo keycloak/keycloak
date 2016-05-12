@@ -19,6 +19,7 @@ package org.keycloak.testsuite;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.Time;
 import org.keycloak.testsuite.arquillian.TestContext;
 
 import java.net.URI;
@@ -319,7 +320,13 @@ public abstract class AbstractKeycloakTest {
         log.debugv("Reset time offset, response {0}", response);
     }
 
+    public int getCurrentTime() {
+        return Time.currentTime();
+    }
+
     private String invokeTimeOffset(int offset) {
+        // adminClient depends on Time.offset for auto-refreshing tokens
+        Time.setOffset(offset);
         Map result = testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset)));
         return String.valueOf(result);
     }

@@ -222,7 +222,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         String newRefreshTokenString = testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, sessionId, userId);
 
         // Change offset to very big value to ensure offline session expires
-        Time.setOffset(3000000);
+        setTimeOffset(3000000);
 
         OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(newRefreshTokenString, "secret1");
         Assert.assertEquals(400, response.getStatusCode());
@@ -236,13 +236,13 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 .assertEvent();
 
 
-        Time.setOffset(0);
+        setTimeOffset(0);
     }
 
     private String testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,
                                                final String sessionId, String userId) {
         // Change offset to big value to ensure userSession expired
-        Time.setOffset(99999);
+        setTimeOffset(99999);
         Assert.assertFalse(oldToken.isActive());
         Assert.assertTrue(offlineToken.isActive());
 
@@ -277,7 +277,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 .assertEvent();
         Assert.assertNotEquals(oldToken.getId(), refreshEvent.getDetails().get(Details.TOKEN_ID));
 
-        Time.setOffset(0);
+        setTimeOffset(0);
         return newRefreshToken;
     }
 
