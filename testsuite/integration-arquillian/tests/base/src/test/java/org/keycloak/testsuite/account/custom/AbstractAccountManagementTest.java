@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.account;
+package org.keycloak.testsuite.account.custom;
 
 import org.jboss.arquillian.graphene.page.Page;
 import static org.junit.Assert.assertTrue;
