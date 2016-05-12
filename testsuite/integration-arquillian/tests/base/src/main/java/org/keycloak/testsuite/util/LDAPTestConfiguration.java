@@ -45,6 +45,7 @@ public class LDAPTestConfiguration {
 
     private int sleepTime;
     private boolean startEmbeddedLdapServer = true;
+    private boolean caseSensitiveLogin = true;
     private Map<String, String> config;
 
     protected static final Map<String, String> PROP_MAPPINGS = new HashMap<String, String>();
@@ -150,6 +151,7 @@ public class LDAPTestConfiguration {
 
         startEmbeddedLdapServer = p.getBoolean("idm.test.ldap.start.embedded.ldap.server", true);
         sleepTime = p.getInteger("idm.test.ldap.sleepTime", 1000);
+        caseSensitiveLogin = p.getBoolean("idm.test.kerberos.caseSensitiveLogin", true);
         log.info("Start embedded server: " + startEmbeddedLdapServer);
         log.info("Read config: " + config);
     }
@@ -164,6 +166,10 @@ public class LDAPTestConfiguration {
 
     public int getSleepTime() {
         return sleepTime;
+    }
+
+    public boolean isCaseSensitiveLogin() {
+        return caseSensitiveLogin;
     }
 
 }

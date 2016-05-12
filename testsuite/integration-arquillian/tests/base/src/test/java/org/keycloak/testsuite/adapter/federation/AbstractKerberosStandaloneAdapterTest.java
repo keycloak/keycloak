@@ -76,7 +76,7 @@ public abstract class AbstractKerberosStandaloneAdapterTest extends AbstractKerb
     public void spnegoLoginTest() throws Exception {
         spnegoLoginTestImpl();
         // Assert user was imported and hasn't any required action on him
-        assertUser("hnelson", "hnelson@keycloak.org", null, null, false);
+        assertUser("hnelson", "hnelson@" + getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase(), null, null, false);
     }
 
     @Test
@@ -98,11 +98,11 @@ public abstract class AbstractKerberosStandaloneAdapterTest extends AbstractKerb
         Assert.assertEquals(200, spnegoResponse.getStatus());
         String responseText = spnegoResponse.readEntity(String.class);
         Assert.assertTrue(responseText.contains("You need to update your user profile to activate your account."));
-        Assert.assertTrue(responseText.contains("hnelson@keycloak.org"));
+        Assert.assertTrue(responseText.contains("hnelson@" + getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase()));
         spnegoResponse.close();
 
         // Assert user was imported and has required action on him
-        assertUser("hnelson", "hnelson@keycloak.org", null, null, true);
+        assertUser("hnelson", "hnelson@" + getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase(), null, null, true);
 
         // Switch updateProfileOnFirstLogin to off
 
