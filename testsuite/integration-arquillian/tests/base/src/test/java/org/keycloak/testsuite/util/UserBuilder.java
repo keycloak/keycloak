@@ -56,6 +56,16 @@ public class UserBuilder {
         return this;
     }
 
+    public UserBuilder firstName(String firstName) {
+        rep.setFirstName(firstName);
+        return this;
+    }
+
+    public UserBuilder lastName(String lastName) {
+        rep.setLastName(lastName);
+        return this;
+    }
+
     /**
      * This method adds additional passwords to the user.
      */

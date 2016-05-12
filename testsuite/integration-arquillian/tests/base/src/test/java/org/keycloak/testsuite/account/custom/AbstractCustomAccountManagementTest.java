@@ -23,7 +23,6 @@ import org.junit.Before;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
-import org.keycloak.testsuite.account.AbstractAccountManagementTest;
 
 /**
  *
