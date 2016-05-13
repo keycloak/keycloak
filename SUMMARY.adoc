@@ -8,7 +8,7 @@
  .. link:topics/features.adoc[Features]
  .. link:topics/how.adoc[How Does Security Work?]
  .. link:topics/concepts.adoc[Core Concepts and Terms]
- . link:topics/initialization[Server Initialization]
+ . link:topics/initialization.adoc[Server Initialization]
  . link:topics/admin-permissions.adoc[Master Admin Access Control]
  . link:topics/per-realm-admin-permissions.adoc[Per Realm Admin Access Control]
  . link:topics/client-registration.adoc[Client Registration]
