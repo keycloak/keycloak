@@ -16,36 +16,31 @@
  */
 package org.keycloak.testsuite.forms;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
@@ -185,8 +180,9 @@ public class CustomFlowTest extends AbstractFlowTest {
 
     @Test
     public void loginSuccess() {
-
-        PassThroughAuthenticator.username = "login-test";
+        AuthenticatorState state = new AuthenticatorState();
+        state.setUsername("login-test");
+        testingClient.testing().updateAuthenticator(state);
 
         oauth.openLoginForm();
 
@@ -198,20 +194,28 @@ public class CustomFlowTest extends AbstractFlowTest {
 
     @Test
     public void grantTest() throws Exception {
-        PassThroughAuthenticator.username = "login-test";
+        AuthenticatorState state = new AuthenticatorState();
+        state.setUsername("login-test");
+        testingClient.testing().updateAuthenticator(state);
+
         grantAccessToken("test-app", "login-test");
     }
 
     @Test
     public void clientAuthTest() throws Exception {
-        PassThroughClientAuthenticator.clientId = "dummy-client";
-        PassThroughAuthenticator.username = "login-test";
+        AuthenticatorState state = new AuthenticatorState();
+        state.setClientId("dummy-client");
+        state.setUsername("login-test");
+        testingClient.testing().updateAuthenticator(state);
         grantAccessToken("dummy-client", "login-test");
 
-        PassThroughClientAuthenticator.clientId = "test-app";
+        state.setClientId("test-app");
+        testingClient.testing().updateAuthenticator(state);
         grantAccessToken("test-app", "login-test");
 
-        PassThroughClientAuthenticator.clientId = "unknown";
+        state.setClientId("unknown");
+        testingClient.testing().updateAuthenticator(state);
+
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user", "password");
         assertEquals(400, response.getStatusCode());
         assertEquals("unauthorized_client", response.getError());

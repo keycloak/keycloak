@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.client.resources;
 
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -84,4 +85,9 @@ public interface TestingResource {
     @Path("/verify-code")
     @Produces(MediaType.APPLICATION_JSON)
     String verifyCode(@QueryParam("realm") String realmName, @QueryParam("code") String code);
+
+    @POST
+    @Path("/update-pass-through-auth-state")
+    @Produces(MediaType.APPLICATION_JSON)
+    AuthenticatorState updateAuthenticator(AuthenticatorState state);
 }
