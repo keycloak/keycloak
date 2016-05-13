@@ -1,5 +1,4 @@
 
-
 == Server Initialization
 
 After performing all the installation and configuration tasks defined in the link:{{book.installguide.link}}[{{book.installguide.name}}],
@@ -16,11 +15,42 @@ image:../../{{book.images}}/initial-welcome-page.png[]
 
 Simply specify the username and password you want for this initial admin.
 
-If you cannot access the server via a `localhost` address, or just want to provision {{book.project.name}} form the command line
-you can do this with the `add-user-keycloak` script.
+If you cannot access the server via a `localhost` address, or just want to provision {{book.project.name}} from the command line
+you can do this with the `.../bin/add-user-keycloak` script.
 
 .add-user-keycloak script
-image:../../{{book.images}}/initial-welcome-page.png[]
+image:../../{{book.images}}/add-user-script.png[]
+
+The parameters are a little different depending if you are using the standalone operation mode or domain operation mode.  For
+standalone mode, here is how you use the script.
+
+.Linux/Unix
+[source]
+----
+$ .../bin/add-user-keycloak.sh -r master -u <username> -p <password>
+----
+
+.Windows
+[source]
+----
+> ...\bin\add-user-keycloak.bat -r master -u <username> -p <password>
+----
+
+For domain mode, you have to point the script to one of your server hosts using the `-sc` switch.
+
+.Linux/Unix
+[source]
+----
+$ .../bin/add-user-keycloak.sh --sc domain/servers/server-one/configuration -r master -u <username> -p <password>
+----
+
+.Windows
+[source]
+----
+> ...\bin\add-user-keycloak.bat --sc domain/servers/server-one/configuration -r master -u <username> -p <password>
+----
+
+
 
 
 

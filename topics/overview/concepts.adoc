@@ -1,3 +1,4 @@
+
 === Core Concepts and Terms
 
 There are some key concepts and terms you should be aware of before attempting to use {{book.project.name} to secure your web applications
@@ -30,16 +31,22 @@ clients::
   Clients are entities that can request {{book.project.name}} to authenticate a user.  Most often, clients are applications and services that
   want to use {{book.project.name}} to secure themselves and provide a single sign-on solution.  Clients can also be entities that just want to request
   identity information or an access token so that they can securely invoke other services on the network that are secured by {{book.project.name}}
+client adapters::
+  Client adapters are plugins that you have to install into your application environment to be able to communicate and be secured by {{book.project.name}}.  {{book.project.name}}
+  has a number of ones for different platforms that you can download.  There's also third-party ones you can get for environments that we don't cover.
 consent::
   Consent is when you as an admin want a user to give permission to a client before that client can participate in the authentication process.
   After a user provides their credentials, {{book.project.name}} will pop up a screen identifying the client requesting a login and what identity
   informationis requesting of the user.  User can decide whether or not to grant the request.
-session::
-  When a user logs in, a session is created to manage the login session.  A session contains information like when the user logged in and what
-  applications have participated within single-sign on during that session.  Both admins and users can view session information.
 client templates::
   When a client is registered you need to enter in a bunch of configuration information about that client.  It is often useful to store a template
   of this to make create new clients easier.  {{book.project.name}} provides the concept of a client template for this.
+protocol mappers::
+  For each client you can tailor what claims and assertions are stored in the OIDC token or SAML assertion.  You do this per client by creating and configuring
+  protocol mappers.
+session::
+  When a user logs in, a session is created to manage the login session.  A session contains information like when the user logged in and what
+  applications have participated within single-sign on during that session.  Both admins and users can view session information.
 user federation provider::
   {{book.project.name}} can store and manage users.  Often, companies already have LDAP or Active Directory services that store user and credential
   information.  You can point {{book.project.name}} to validate credentials from those external stores and pull in identity information.
@@ -49,6 +56,9 @@ identity provider federation::
   {{book.project.name}} can be configured to delegate authentication to one or more IDPs.  Social login via
   Facebook or Google+ is an example of identity provider federation.  You can also hook {{boook.project.name}} to delegate
   authentication to any other Open ID Connect or SAML 2.0 IDP.
+identity provider mappers::
+  When doing IDP federation you can map incoming tokens and assertions to user and session attributes.  This helps you propagate identity information from the external IDP
+  to your client requesting authentication.
 required actions::
   Required actions are actions a user must before immediately after they log in.  A user will not be able to complete the authentication process until these actions
   are complete.  For example, an admin may schedule users to reset their passwords every month.  An `update password` required action would be set for all these
@@ -59,3 +69,5 @@ authentication flows::
   must be used to filter out bots.  Credential reset flow defines what actions a user must do before they can reset their password.
 events::
   Events are audit streams that admins can view and hook into.
+themes::
+  Every screen provided by {{book.project.name}} is backed by a theme.  Themes define HTML templates and stylesheets which you can override as needed.
