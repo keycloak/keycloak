@@ -26,7 +26,7 @@ groups::
   inherit the attributes and role mappings that group defines.
 realms::
   A realm manages a set of users, credentials, roles, and groups.  A user belongs to and logs into a realm.  Realms are isolated from one another
-  and can only manage and authenticate the users that they manage
+  and can only manage and authenticate the users that they control.
 clients::
   Clients are entities that can request {{book.project.name}} to authenticate a user.  Most often, clients are applications and services that
   want to use {{book.project.name}} to secure themselves and provide a single sign-on solution.  Clients can also be entities that just want to request

@@ -1,0 +1,24 @@
+[[_create-realm]]
+
+=== Create a New Realm
+
+Creating a new realm is very simple.
+Mouse over the top left corner drop down menu that is titled with `Master`.  If you are logged in the master realm
+this drop down menu lists all the realms created.  The last entry of this drop down menu is always `Add Realm`.  Click
+this to add a realm.
+
+.Add Realm Menu
+image:../../{{book.images}}/add-realm-menu.png[]
+
+This menu option will bring you to the `Add Realm` page.  Specify the realm name you want to define and click the `Create` button.
+Alternatively you and import a JSON document that defines your new realm.  We'll go over this in more detail in the
+<<fake/../../export-import.adoc#_export-import, Export and Import>> chapter.
+
+.Create Realm
+image:../../{{book.images}}/create-realm.png[]
+
+After creating the realm you are brought back to the main Admin Console page. The current realm will now be set to
+the realm you just created.  You can switch between managing different realms by doing a mouse over on the
+top left corner drop down menu.
+
+
