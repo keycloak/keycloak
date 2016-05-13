@@ -28,6 +28,8 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public class EventsListenerProviderFactory implements EventListenerProviderFactory {
 
+    public static final String PROVIDER_ID = "event-queue";
+
     private static final EventsListenerProvider INSTANCE = new EventsListenerProvider();
 
     @Override
@@ -49,6 +51,6 @@ public class EventsListenerProviderFactory implements EventListenerProviderFacto
 
     @Override
     public String getId() {
-        return "event-queue";
+        return PROVIDER_ID;
     }
 }

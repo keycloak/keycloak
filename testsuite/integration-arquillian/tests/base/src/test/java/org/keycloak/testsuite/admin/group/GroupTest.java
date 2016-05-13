@@ -17,10 +17,12 @@
 
 package org.keycloak.testsuite.admin.group;
 
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -30,6 +32,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.URLAssert;
@@ -92,26 +95,47 @@ public class GroupTest extends AbstractGroupTest {
     @Test
     public void testClientRemoveWithClientRoleGroupMapping() throws Exception {
         RealmResource realm = adminClient.realms().realm("test");
+
         ClientRepresentation client = new ClientRepresentation();
         client.setClientId("foo");
         client.setRootUrl("http://foo");
         client.setProtocol("openid-connect");
         Response response = realm.clients().create(client);
         response.close();
+        String clientUuid = ApiUtil.getCreatedId(response);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.clientResourcePath(clientUuid), client);
         client = realm.clients().findByClientId("foo").get(0);
+
         RoleRepresentation role = new RoleRepresentation();
         role.setName("foo-role");
         realm.clients().get(client.getId()).roles().create(role);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, Matchers.startsWith(AdminEventPaths.clientRolesResourcePath(clientUuid)), role);
         role = realm.clients().get(client.getId()).roles().get("foo-role").toRepresentation();
+
         GroupRepresentation group = new GroupRepresentation();
         group.setName("2716");
-        realm.groups().add(group).close();
-        group = realm.getGroupByPath("/2716");
+        group = createGroup(realm, group);
+
         List<RoleRepresentation> list = new LinkedList<>();
         list.add(role);
         realm.groups().group(group.getId()).roles().clientLevel(client.getId()).add(list);
-        realm.clients().get(client.getId()).remove();
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupRolesClientRolesPath(group.getId(), clientUuid));
 
+        realm.clients().get(client.getId()).remove();
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.clientResourcePath(clientUuid));
+    }
+
+    private GroupRepresentation createGroup(RealmResource realm, GroupRepresentation group) {
+        Response response = realm.groups().add(group);
+        String groupId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        // TODO adminEvents: ID of group is missing in create event
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupsPath(), group);
+
+        // Set ID to the original rep
+        group.setId(groupId);
+        return group;
     }
 
 
@@ -137,21 +161,24 @@ public class GroupTest extends AbstractGroupTest {
         }
         RoleRepresentation level3Role = realm.roles().get("level3Role").toRepresentation();
 
+        // Role events tested elsewhere
+        assertAdminEvents.clear();
 
         GroupRepresentation topGroup = new GroupRepresentation();
         topGroup.setName("top");
-        Response response = realm.groups().add(topGroup);
-        response.close();
-        topGroup = realm.getGroupByPath("/top");
-        Assert.assertNotNull(topGroup);
+        topGroup = createGroup(realm, topGroup);
+
         List<RoleRepresentation> roles = new LinkedList<>();
         roles.add(topRole);
         realm.groups().group(topGroup.getId()).roles().realmLevel().add(roles);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, Matchers.startsWith(AdminEventPaths.groupRolesRealmRolesPath(topGroup.getId())));
 
         GroupRepresentation level2Group = new GroupRepresentation();
         level2Group.setName("level2");
-        response = realm.groups().group(topGroup.getId()).subGroup(level2Group);
+        Response response = realm.groups().group(topGroup.getId()).subGroup(level2Group);
         response.close();
+        // TODO adminEvents: Should be CREATE
+        assertAdminEvents.assertEvent("test", OperationType.UPDATE, AdminEventPaths.groupSubgroupsPath(topGroup.getId()), level2Group);
 
         URI location = response.getLocation();
         final String level2Id = ApiUtil.getCreatedId(response);
@@ -172,16 +199,21 @@ public class GroupTest extends AbstractGroupTest {
         roles.clear();
         roles.add(level2Role);
         realm.groups().group(level2Group.getId()).roles().realmLevel().add(roles);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, Matchers.startsWith(AdminEventPaths.groupRolesRealmRolesPath(level2Group.getId())));
 
         GroupRepresentation level3Group = new GroupRepresentation();
         level3Group.setName("level3");
         response = realm.groups().group(level2Group.getId()).subGroup(level3Group);
         response.close();
+        // TODO adminEvents: Should be CREATE
+        assertAdminEvents.assertEvent("test", OperationType.UPDATE, AdminEventPaths.groupSubgroupsPath(level2Group.getId()), level3Group);
+
         level3Group = realm.getGroupByPath("/top/level2/level3");
         Assert.assertNotNull(level3Group);
         roles.clear();
         roles.add(level3Role);
         realm.groups().group(level3Group.getId()).roles().realmLevel().add(roles);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, Matchers.startsWith(AdminEventPaths.groupRolesRealmRolesPath(level3Group.getId())));
 
         topGroup = realm.getGroupByPath("/top");
         assertEquals(1, topGroup.getRealmRoles().size());
@@ -201,6 +233,8 @@ public class GroupTest extends AbstractGroupTest {
 
         UserRepresentation user = realm.users().search("direct-login", -1, -1).get(0);
         realm.users().get(user.getId()).joinGroup(level3Group.getId());
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, Matchers.startsWith(AdminEventPaths.userGroupPath(user.getId(), level3Group.getId())));
+
         List<GroupRepresentation> membership = realm.users().get(user.getId()).groups();
         assertEquals(1, membership.size());
         assertEquals("level3", membership.get(0).getName());
@@ -220,9 +254,11 @@ public class GroupTest extends AbstractGroupTest {
         newUser.setUsername("groupUser");
         newUser.setEmail("group@group.com");
         response = realm.users().create(newUser);
+        String userId = ApiUtil.getCreatedId(response);
         response.close();
-        newUser =  realm.users().search("groupUser", -1, -1).get(0);
-        membership = realm.users().get(newUser.getId()).groups();
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userResourcePath(userId), newUser);
+
+        membership = realm.users().get(userId).groups();
         assertEquals(1, membership.size());
         assertEquals("level3", membership.get(0).getName());
 
@@ -231,6 +267,7 @@ public class GroupTest extends AbstractGroupTest {
         assertEquals(0, defaultGroups.size());
 
         realm.groups().group(topGroup.getId()).remove();
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.groupPath(topGroup.getId()));
 
         try {
             realm.getGroupByPath("/top/level2/level3");
@@ -264,10 +301,9 @@ public class GroupTest extends AbstractGroupTest {
         attrs.put("attr1", Collections.singletonList("attrval1"));
         attrs.put("attr2", Collections.singletonList("attrval2"));
         group.setAttributes(attrs);
-
-        Response response = realm.groups().add(group);
-        response.close();
+        createGroup(realm, group);
         group = realm.getGroupByPath("/group");
+
         Assert.assertNotNull(group);
         assertEquals("group", group.getName());
         assertEquals(2, group.getAttributes().size());
@@ -283,6 +319,7 @@ public class GroupTest extends AbstractGroupTest {
         group.getAttributes().put("attr3", Collections.singletonList("attrval2"));
 
         realm.groups().group(group.getId()).update(group);
+        assertAdminEvents.assertEvent("test", OperationType.UPDATE, AdminEventPaths.groupPath(group.getId()), group);
 
         group = realm.getGroupByPath("/group-new");
 
@@ -298,29 +335,32 @@ public class GroupTest extends AbstractGroupTest {
 
         GroupRepresentation group = new GroupRepresentation();
         group.setName("group");
-        Response response = realm.groups().add(group);
-        String groupId = ApiUtil.getCreatedId(response);
-        response.close();
+        String groupId = createGroup(realm, group).getId();
 
-        response = realm.users().create(UserBuilder.create().username("user-a").build());
+        Response response = realm.users().create(UserBuilder.create().username("user-a").build());
         String userAId = ApiUtil.getCreatedId(response);
         response.close();
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userResourcePath(userAId));
 
         response = realm.users().create(UserBuilder.create().username("user-b").build());
         String userBId = ApiUtil.getCreatedId(response);
         response.close();
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userResourcePath(userBId));
 
         realm.users().get(userAId).joinGroup(groupId);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userGroupPath(userAId, groupId));
 
         List<UserRepresentation> members = realm.groups().group(groupId).members(0, 10);
         assertNames(members, "user-a");
 
         realm.users().get(userBId).joinGroup(groupId);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userGroupPath(userBId, groupId));
 
         members = realm.groups().group(groupId).members(0, 10);
         assertNames(members, "user-a", "user-b");
 
         realm.users().get(userAId).leaveGroup(groupId);
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userGroupPath(userAId, groupId));
 
         members = realm.groups().group(groupId).members(0, 10);
         assertNames(members, "user-b");
@@ -362,11 +402,13 @@ public class GroupTest extends AbstractGroupTest {
         realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-child").build());
         realm.clients().get(clientId).roles().get("client-composite").addComposites(Collections.singletonList(realm.clients().get(clientId).roles().get("client-child").toRepresentation()));
 
+
+        // Roles+clients tested elsewhere
+        assertAdminEvents.clear();
+
         GroupRepresentation group = new GroupRepresentation();
         group.setName("group");
-        response = realm.groups().add(group);
-        String groupId = ApiUtil.getCreatedId(response);
-        response.close();
+        String groupId = createGroup(realm, group).getId();
 
         RoleMappingResource roles = realm.groups().group(groupId).roles();
         assertEquals(0, roles.realmLevel().listAll().size());
@@ -376,10 +418,14 @@ public class GroupTest extends AbstractGroupTest {
         l.add(realm.roles().get("realm-role").toRepresentation());
         l.add(realm.roles().get("realm-composite").toRepresentation());
         roles.realmLevel().add(l);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, Matchers.startsWith(AdminEventPaths.groupRolesRealmRolesPath(group.getId())));
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, Matchers.startsWith(AdminEventPaths.groupRolesRealmRolesPath(group.getId())));
 
         // Add client roles
         roles.clientLevel(clientId).add(Collections.singletonList(realm.clients().get(clientId).roles().get("client-role").toRepresentation()));
         roles.clientLevel(clientId).add(Collections.singletonList(realm.clients().get(clientId).roles().get("client-composite").toRepresentation()));
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupRolesClientRolesPath(group.getId(), clientId));
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupRolesClientRolesPath(group.getId(), clientId));
 
         // List realm roles
         assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite");
@@ -398,11 +444,16 @@ public class GroupTest extends AbstractGroupTest {
         assertNames(all.getClientMappings().get("myclient").getMappings(), "client-role", "client-composite");
 
         // Remove realm role
-        roles.realmLevel().remove(Collections.singletonList(realm.roles().get("realm-role").toRepresentation()));
+        // TODO adminEvents: DEleting group realmRole mapping has ID in the end. For deleting clientRole not.
+        RoleRepresentation realmRoleRep = realm.roles().get("realm-role").toRepresentation();
+        roles.realmLevel().remove(Collections.singletonList(realmRoleRep));
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.groupRolesRealmRolesPath(group.getId()) + "/" + realmRoleRep.getId());
         assertNames(roles.realmLevel().listAll(), "realm-composite");
 
         // Remove client role
-        roles.clientLevel(clientId).remove(Collections.singletonList(realm.clients().get(clientId).roles().get("client-role").toRepresentation()));
+        RoleRepresentation clientRoleRep = realm.clients().get(clientId).roles().get("client-role").toRepresentation();
+        roles.clientLevel(clientId).remove(Collections.singletonList(clientRoleRep));
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.groupRolesClientRolesPath(group.getId(), clientId));
         assertNames(roles.clientLevel(clientId).listAll(), "client-composite");
     }
 

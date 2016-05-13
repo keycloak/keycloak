@@ -19,21 +19,30 @@ package org.keycloak.testsuite.admin.partialimport;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import javax.ws.rs.core.Response;
+
+import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 
@@ -45,7 +54,11 @@ import static org.junit.Assert.assertTrue;
 import org.keycloak.representations.idm.PartialImportRepresentation.Policy;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.AssertAdminEvents;
+import org.keycloak.testsuite.util.RealmBuilder;
 
 /**
  * Tests for the partial import endpoint in admin client.  Also tests the
@@ -55,6 +68,9 @@ import org.keycloak.testsuite.admin.ApiUtil;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class PartialImportTest extends AbstractAuthTest {
+
+    @Rule
+    public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
 
     private static final int NUM_RESOURCE_TYPES = 6;
     private static final String CLIENT_ROLES_CLIENT = "clientRolesClient";
@@ -67,10 +83,21 @@ public class PartialImportTest extends AbstractAuthTest {
     private static final int NUM_ENTITIES = IDP_ALIASES.length;
 
     private PartialImportRepresentation piRep;
+    private String realmId;
 
     @Before
-    public void init() {
+    public void initAdminEvents() {
+        RealmRepresentation realmRep = RealmBuilder.edit(testRealmResource().toRepresentation()).testEventListener().build();
+        realmId = realmRep.getId();
+        adminClient.realm(realmRep.getRealm()).update(realmRep);
+
         piRep = new PartialImportRepresentation();
+    }
+
+    @After
+    public void tearDownAdminEvents() {
+        RealmRepresentation realmRep = RealmBuilder.edit(testRealmResource().toRepresentation()).removeTestEventListener().build();
+        adminClient.realm(realmRep.getRealm()).update(realmRep);
     }
 
     @Before
@@ -251,17 +278,34 @@ public class PartialImportTest extends AbstractAuthTest {
 
     @Test
     public void testAddUsers() {
+        assertAdminEvents.clear();
+
         setFail();
         addUsers();
 
         PartialImportResults results = doImport();
         assertEquals(NUM_ENTITIES, results.getAdded());
 
+        // Need to do this way as admin events from partial import are unsorted
+        Set<String> userIds = new HashSet<>();
+        for (int i=0 ; i<NUM_ENTITIES ; i++) {
+            AdminEventRepresentation adminEvent = assertAdminEvents.poll();
+            Assert.assertEquals(realmId, adminEvent.getRealmId());
+            Assert.assertEquals(OperationType.CREATE.name(), adminEvent.getOperationType());
+            Assert.assertTrue(adminEvent.getResourcePath().startsWith("users/"));
+            String userId = adminEvent.getResourcePath().substring(6);
+            userIds.add(userId);
+        }
+
+        assertAdminEvents.assertEmpty();
+
+
         for (PartialImportResult result : results.getResults()) {
             String id = result.getId();
             UserResource userRsc = testRealmResource().users().get(id);
             UserRepresentation user = userRsc.toRepresentation();
             assertTrue(user.getUsername().startsWith(USER_PREFIX));
+            Assert.assertTrue(userIds.contains(id));
         }
     }
 
