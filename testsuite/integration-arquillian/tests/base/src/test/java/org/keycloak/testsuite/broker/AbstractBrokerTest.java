@@ -14,6 +14,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.List;
 
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
@@ -115,7 +117,7 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
 
     @Test
     public void logInAsUserInIDP() {
-        driver.navigate().to(getAuthRoot() + "/auth/realms/" + consumerRealmName() + "/account");
+        driver.navigate().to(getAccountUrl(consumerRealmName()));
 
         log.debug("Clicking social " + getIDPAlias());
         accountLoginPage.clickSocial(getIDPAlias());
@@ -157,23 +159,32 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
     protected void testSingleLogout() {
         log.debug("Testing single log out");
 
-        driver.navigate().to(getAuthRoot() + "/auth/realms/" + providerRealmName() + "/account");
+        driver.navigate().to(getAccountUrl(providerRealmName()));
 
         Assert.assertTrue("Should be logged in the account page", driver.getTitle().endsWith("Account Management"));
+
+        String encodedAccount;
+        try {
+            encodedAccount = URLEncoder.encode(getAccountUrl(providerRealmName()), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            encodedAccount = getAccountUrl(providerRealmName());
+        }
 
         driver.navigate().to(getAuthRoot()
                 + "/auth/realms/" + providerRealmName()
                 + "/protocol/" + "openid-connect"
-                + "/logout");
+                + "/logout?redirect_uri=" + encodedAccount);
 
-        driver.navigate().to(getAuthRoot() + "/auth/realms/" + providerRealmName() + "/account");
-
-        Assert.assertTrue("Should be on login page", driver.getTitle().startsWith("Log in to"));
+        Assert.assertEquals("Should be on login page of realm " + providerRealmName(), "Log in to " + providerRealmName(), driver.getTitle());
         Assert.assertTrue("Should be on " + providerRealmName() + " realm", driver.getCurrentUrl().contains("/auth/realms/" + providerRealmName()));
 
-        driver.navigate().to(getAuthRoot() + "/auth/realms/" + consumerRealmName() + "/account");
+        driver.navigate().to(getAccountUrl(consumerRealmName()));
 
-        Assert.assertTrue("Should be on login page", driver.getTitle().startsWith("Log in to"));
+        Assert.assertEquals("Should be on login page of realm " + consumerRealmName(), "Log in to " + consumerRealmName(), driver.getTitle());
         Assert.assertTrue("Should be on " + consumerRealmName() + " realm", driver.getCurrentUrl().contains("/auth/realms/" + consumerRealmName()));
+    }
+
+    private String getAccountUrl(String realmName) {
+        return getAuthRoot() + "/auth/realms/" + realmName + "/account";
     }
 }
