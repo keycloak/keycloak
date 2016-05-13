@@ -11,7 +11,7 @@ If your
 server is accessible from `localhost`, you can boot it up and create this admin user by going to the http://localhost:8080/auth URL.
 
 .Welcome Page
-image:../../{{book.images}}/initial-welcome-page.png[]
+image:../{{book.images}}/initial-welcome-page.png[]
 
 Simply specify the username and password you want for this initial admin.
 
@@ -19,7 +19,7 @@ If you cannot access the server via a `localhost` address, or just want to provi
 you can do this with the `.../bin/add-user-keycloak` script.
 
 .add-user-keycloak script
-image:../../{{book.images}}/add-user-script.png[]
+image:../{{book.images}}/add-user-script.png[]
 
 The parameters are a little different depending if you are using the standalone operation mode or domain operation mode.  For
 standalone mode, here is how you use the script.
