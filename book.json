@@ -68,6 +68,10 @@
       "name": "Keycloak Adminstration Guide",
       "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
     },
+    "installguide": {
+      "name": "Keycloak Installation and Configuration Guide",
+      "link": "https://keycloak.gitbooks.io/server-install-guide/content/"
+    },
     "project": {
       "name": "Keycloak",
       "version": "1.9.3.Final"
