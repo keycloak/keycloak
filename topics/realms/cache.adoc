@@ -1,0 +1,12 @@
+
+=== Clearing Server Caches
+
+{{book.project.name}} will cache everything it can in memory within the limits of your JVM and/or the limits you've configured
+it for.  If the {{book.project.name}} database is modified by a third party (i.e. a DBA) outside the scope of the server's REST APIs or Admin Console
+there's a chance parts of the in-memory cache may be stale.  You can clear the realm and user caches from the Admin Console by going
+to the `Realm Settings` left menu item and the `Cache` tab.
+
+.Keys tab
+image:../../{{book.images}}/cache-tab.png[]
+
+Just click the `clear` button on the cache you want to evict.

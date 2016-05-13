@@ -14,6 +14,8 @@
  .. link:topics/master.adoc[The Master Realm]
  .. link:topics/create.adoc[Creating a New Realm]
  .. link:topics/ssl.adoc[Realm SSL Mode]
+ .. link:topics/keys.adoc[Realm Key Pairs]
+ .. link:topics/cache.adoc[Clearing Server Caches]
  . link:topics/admin-permissions.adoc[Master Admin Access Control]
  . link:topics/per-realm-admin-permissions.adoc[Per Realm Admin Access Control]
  . link:topics/client-registration.adoc[Client Registration]
