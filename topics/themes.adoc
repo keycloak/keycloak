@@ -4,7 +4,7 @@
 {{book.project.name}} provides theme support for web pages and emails. This allows customizing the look and feel of end-user facing pages so they can be
 integrated with your applications.
 
-image::../../images/login-sunrise.png[caption="",title="Login page with sunrise example theme"]
+image::../images/login-sunrise.png[caption="",title="Login page with sunrise example theme"]
 
 === Theme Types
 
