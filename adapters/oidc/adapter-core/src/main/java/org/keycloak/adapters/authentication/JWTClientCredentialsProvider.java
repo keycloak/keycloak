@@ -54,10 +54,6 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
         this.tokenTimeout = tokenTimeout;
     }
 
-    public int getTokenTimeout() {
-        return tokenTimeout;
-    }
-
     @Override
     public void init(KeycloakDeployment deployment, Object config) {
         if (config == null || !(config instanceof Map)) {
