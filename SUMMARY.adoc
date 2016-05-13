@@ -16,6 +16,8 @@
  .. link:topics/realms/ssl.adoc[Realm SSL Mode]
  .. link:topics/realms/keys.adoc[Realm Key Pairs]
  .. link:topics/realms/cache.adoc[Clearing Server Caches]
+ .. link:topics/realms/email.adoc[Email Settings]
+ .. link:topics/realms/themes.adoc[Themes]
  . link:topics/admin-permissions.adoc[Master Admin Access Control]
  . link:topics/per-realm-admin-permissions.adoc[Per Realm Admin Access Control]
  . link:topics/client-registration.adoc[Client Registration]

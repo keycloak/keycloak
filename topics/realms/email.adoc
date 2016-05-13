@@ -1,0 +1,13 @@
+[[_email]]
+
+=== Email Settings
+
+{{book.project.name}} will sometimes need to send out emails for example, when a user forgets their password, or when an admin
+needs to receive a notification about a server event.  This is configured per realm.  Go to the `Realm Settings` left menu
+item and click the `Email` tab.
+
+.Themes Tab
+image:../../{{book.images}}/email-tab.png[]
+
+The email settings should be self explanatory.  Consult your sys admin on the settings you need to connect to your email
+server.

@@ -1,0 +1,24 @@
+
+=== Themes
+
+Themes allow you to change the look and feel of any UI in {{book.project.name}}.  Themes are configured per realm.  To change
+a theme go to the `Realm Settings` left menu item and click on the `Themes` tab.
+
+.Themes Tab
+image:../../{{book.images}}/themes-tab.png[]
+
+
+Pick the theme you want for each UI category and click `Save`.
+
+Login Theme::
+  Username password entry, OTP entry, new user registration, and other similar screens related to login.
+Account Theme::
+  Each user has an User Account Management UI.
+Admin Console Theme::
+  The skin of the {{book.project.name}} Admin Console.
+Email Theme::
+  Whenever {{book.project.name}} has to send out an email, it uses templates defined in this theme to craft the email.
+
+
+
+The link:{{book.developerguide.link}}[{{book.developerguide.name}}] goes into how to create a new themes or modify existing ones.
