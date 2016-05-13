@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.oauth;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
@@ -26,16 +25,13 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
-import org.apache.http.entity.mime.content.InputStreamBody;
-import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,12 +40,10 @@ import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.*;
 import org.keycloak.constants.ServiceUrlConstants;
-import org.keycloak.dom.saml.v2.ac.PublicKeyType;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -76,11 +70,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -99,6 +90,11 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     private RealmRepresentation testRealm;
     private ClientRepresentation app1, app2, app3;
     private UserRepresentation defaultUser, serviceAccountUser;
+
+    @BeforeClass
+    public static void beforeClientAuthSignedJWTTest() {
+        BouncyIntegration.init();
+    }
 
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
@@ -285,8 +281,8 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         ClientRepresentation client = app3;
         UserRepresentation user = defaultUser;
         final String keyAlias = "somekey";
-        final String keyPassword = "keypwd";
-        final String storePassword = "storepwd";
+        final String keyPassword = "pwd1";
+        final String storePassword = "pwd2";
 
 
         // Generate new keystore (which is intended for sending to the user and store in a client app)
@@ -349,7 +345,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     @Test
     public void testUploadKeystorePKCS12() throws Exception {
-        testUploadKeystore("PKCS12", "client-auth-test/keystore-client2.p12", "clientkey", "storepass");
+        testUploadKeystore("PKCS12", "client-auth-test/keystore-client2.p12", "clientkey", "pwd2");
     }
 
     @Test
