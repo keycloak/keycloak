@@ -30,7 +30,9 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.testsuite.events.EventsListenerProvider;
-
+import org.keycloak.testsuite.forms.PassThroughAuthenticator;
+import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
+import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -183,5 +185,22 @@ public class TestingResourceProvider implements RealmResourceProvider {
         } catch (Throwable t) {
             throw new AssertionError("Failed to parse code", t);
         }
+    }
+
+    @POST
+    @Path("/update-pass-through-auth-state")
+    @Produces(MediaType.APPLICATION_JSON)
+    public AuthenticatorState updateAuthenticator(AuthenticatorState state) {
+        if (state.getClientId() != null) {
+            PassThroughClientAuthenticator.clientId = state.getClientId();
+        }
+        if (state.getUsername() != null) {
+            PassThroughAuthenticator.username = state.getUsername();
+        }
+
+        AuthenticatorState result = new AuthenticatorState();
+        result.setClientId(PassThroughClientAuthenticator.clientId);
+        result.setUsername(PassThroughAuthenticator.username);
+        return result;
     }
 }
