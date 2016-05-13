@@ -1,19 +1,20 @@
 [[_providers]]
 
-= Providers and SPIs 
+== Service Provider Interfaces (SPI)
 
 Keycloak is designed to cover most use-cases without requiring custom code, but we also want it to be customizable.
-To achive this Keycloak has a number of SPIs which you can implement your own providers for. 
+To achive this Keycloak has a number of Service Provider Interfaces (SPI) which you can implement your own providers for.
 
-== Implementing a SPI
+=== Implementing a SPI
 
-To implement an SPI you need to implement it's ProviderFactory and Provider interfaces.
-You also need to create a provider-configuration file.
-For example to implement the Event Listener SPI you need to implement EventListenerProviderFactory and EventListenerProvider and also provide the file `META-INF/services/org.keycloak.events.EventListenerProviderFactory`        
+To implement an SPI you need to implement it's ProviderFactory and Provider interfaces. You also need to create a service configuration file.
 
-For example to implement the Event Listener SPI you start by implementing EventListenerProviderFactory: 
+For example to implement the Event Listener SPI you need to implement EventListenerProviderFactory and EventListenerProvider and also provide the file
+`META-INF/services/org.keycloak.events.EventListenerProviderFactory`.
 
-[source]
+Example EventListenerProviderFactory:
+
+[source,java]
 ----
 package org.acme.provider;
 
@@ -28,8 +29,7 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
     }
 
     public void init(Config.Scope config) {
-        int max = config.getInt("max");
-        events = new MaxList(max);
+        events = new LinkedList();
     }
 
     public EventListenerProvider create(KeycloakSession session) {
@@ -37,20 +37,16 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
     }
 
     public void close() {
-        events = null;
     }
-
 }
 ----
 
-The example uses an imagined MaxList which has a maximum size and is concurrency safe.
-When the maximum size is reached and new entries are added the oldest entry is removed.
-Keycloak creates a single instance of `EventListenerProviderFactory` which makes it possible to store state for multiple requests.
-`EventListenerProvider` instances are created by calling create on the factory for each requests so these should be light-weight. 
+NOTE: Keycloak creates a single instance of `EventListenerProviderFactory` which makes it possible to store state for multiple requests.
+`EventListenerProvider` instances are created by calling create on the factory for each requests so these should be light-weight object.
 
-Next you would implement `EventListenerProvider`: 
+Example EventListenerProvider:
 
-[source]
+[source,java]
 ----
 package org.acme.provider;
 
@@ -73,45 +69,82 @@ public class MyEventListenerProvider implements EventListenerProvider {
     public void close() {
 
     }
-
 }
-----        
+----
 
-The file `META-INF/services/org.keycloak.events.EventListenerProviderFactory` should contain the full name of your ProviderFactory implementation: 
+Example service configuration file (`META-INF/services/org.keycloak.events.EventListenerProviderFactory`):
 
 [source]
 ----
 org.acme.provider.MyEventListenerProviderFactory
-----        
+----
 
-=== Show info from you SPI implementation in Keycloak admin console
-
-Sometimes it is useful to show additional info about your Provider to a Keycloak administrator.
-You can show provider build time informations (eg. version of custom provider currently installed), current configuration of the provider (eg. url of remote system your provider talks to) or some operational info (average time of response from remote system your provider talks to). Keycloak admin console provides Server Info page to show this kind of information. 
-
-To show info from your provider it is enough to implement `org.keycloak.provider.ServerInfoAwareProviderFactory` interface in your `ProviderFactory`.
-Example implementation for `MyEventListenerProviderFactory` from previous example: 
+You can configure your provider through `keycloak-server.json`. For example by adding the following to `keycloak-server.json`:
 
 [source]
+----
+"eventsListener": {
+  "my-event-listener" {
+     "aNumber": 10,
+     "aString": "Foo"
+  }
+}
+----
+
+Then you can retrieve the config in the `ProviderFactory` init method:
+
+[source,java]
+----
+public void init(Config.Scope config) {
+    Integer aNumber = config.getInt("aNumber");
+    String aString = config.get("aString");
+}
+----
+
+Your provider can also lookup other providers if needed. For example:
+
+[source,java]
+----
+public class MyEventListenerProvider implements EventListenerProvider {
+
+    private KeycloakSession session;
+    private List<Event> events;
+
+    public MyEventListenerProvider(KeycloakSession session, List<Event> events) {
+        this.session = session;
+        this.events = events;
+    }
+
+    public void onEvent(Event event) {
+        RealmModel realm = session.realms().getRealm(event.getRealmId());
+        UserModel user = session.users().getUserById(event.getUserId(), realm);
+
+        EmailSenderProvider emailSender = session.getProvider(EmailSenderProvider.class);
+        emailSender.send(realm, user, "Hello", "Hello plain text", "<h1>Hello html</h1>" );
+    }
+
+}
+----
+
+
+==== Show info from you SPI implementation in Keycloak admin console
+
+Sometimes it is useful to show additional info about your Provider to a Keycloak administrator. You can show provider build time informations (eg. version of
+custom provider currently installed), current configuration of the provider (eg. url of remote system your provider talks to) or some operational info
+(average time of response from remote system your provider talks to). Keycloak admin console provides Server Info page to show this kind of information.
+
+To show info from your provider it is enough to implement `org.keycloak.provider.ServerInfoAwareProviderFactory` interface in your `ProviderFactory`.
+
+Example implementation for `MyEventListenerProviderFactory` from previous example:
+
+[source,java]
 ----
 package org.acme.provider;
 
 import ...
 
 public class MyEventListenerProviderFactory implements EventListenerProviderFactory, ServerInfoAwareProviderFactory {
-
-    private List<Event> events;
-    private int max;
-
-...
-
-    @Override
-    public void init(Config.Scope config) {
-        max = config.getInt("max");
-        events = new MaxList(max);
-    }
-
-...
+    ...
 
     @Override
     public Map<String, String> getOperationalInfo() {
@@ -121,17 +154,16 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
         ret.put("listSizeCurrent", events.size() + "");
         return ret;
     }
-
 }
 ----            
 
-== Registering provider implementations
+=== Registering provider implementations
 
 Keycloak can load provider implementations from JBoss Modules or directly from the file-system.
 Using Modules is recommended as you can control exactly what classes are available to your provider.
 Any providers loaded from the file-system uses a classloader with the Keycloak classloader as its parent. 
 
-=== Register a provider using Modules
+==== Register a provider using Modules
 
 To register a provider using Modules first create a module.
 To do this you can either use the jboss-cli script or manually create a folder inside `KEYCLOAK_HOME/modules` and add your jar and a `module.xml`.
@@ -172,7 +204,7 @@ This is done by editing keycloak-server.json and adding it to the providers:
 }
 ----            
 
-=== Register a provider using file-system
+==== Register a provider using file-system
 
 To register your provider simply copy the JAR including the ProviderFactory and Provider classes and the provider configuration file to server's root `providers` directory. 
 
@@ -203,7 +235,7 @@ Wildcard is also supported allowing loading all jars (files with .jar or .JAR ex
 }
 ----            
 
-=== Configuring a provider
+==== Configuring a provider
 
 You can pass configuration options to your provider by setting them in `keycloak-server.json`.
 For example to set the max value for `my-event-listener` add: 
@@ -219,7 +251,7 @@ For example to set the max value for `my-event-listener` add:
 }
 ----            
 
-=== Disabling a provider
+==== Disabling a provider
 
 You can disable a provider by setting the enabled field for the provider to false in `keycloak-server.json`.
 For example to disable the Infinispan user cache provider add: 
@@ -235,47 +267,25 @@ For example to disable the Infinispan user cache provider add:
 }
 ----            
 
-== Available SPIs
+=== Available SPIs
 
-Here's a list of the available SPIs and a brief description.
-For more details on each SPI refer to individual sections. 
+Here's a list of the available SPIs and a brief description. For more details on each SPI refer to individual sections.
 
-Account::
+|===
+|SPI|Description
 
-Connections Infinispan::
-
-Connections Jpa::
-
-Connections Jpa Updater::
-
-Connections Mongo::
-
-Email::
-
-Events Listener::
-
-Events Store::
-
-Export::
-
-Import::
-
-Login::
-
-Login Protocol::
-
-Realm::
-
-Realm Cache::
-
-Theme::
-
-Timer::
-
-User::
-
-User Cache::
-
-User Federation::
-
-User Sessions::        
+|Connections Infinispan|Loads and configures Infinispan connections. The default implementation can load connections from the Infinispan subsystem, or alternatively can be manually configured in keycloak-server.json
+|Connections Jpa|Loads and configures Jpa connections. The default implementation can load datasources from WildFly/EAP, or alternatively can be manually configured in keycloak-server.json
+|Connections Mongo|Loads and configures MongoDB connections. The default implementation is configured in keycloak-server.json
+|Email Sender|Sends email. The default implementation uses JavaMail
+|Email Template|Format email and uses Email Sender to send the email. The default implementation uses FreeMarker templates
+|Events Listener|Listen to user related events for example user login success and failures. Keycloak provides two implementations out of box. One that logs events to the server log and another that can send email notifications to users on certain events
+|Login Protocol|Provides protocols. Keycloak provides implementations of OpenID Connect and SAML 2.0
+|Realm|Provides realm and application meta-data. Keycloak provides implementations for Relational Databases and MongoDB
+|Realm Cache|Caches realm and application meta-data to improve performance. Default implementation uses Infinispan
+|Timer|Executes scheduled tasks. Keycloak provides a basic implementation based on java.util.Timer
+|User|Provides users and role-mappings. Keycloak provides implementations for Relational Databases and MongoDB
+|User Cache|Caches users to improve performance. Default implementation uses Infinispan
+|User Federation|Support syncing users from an external source. Keycloak provides implementations for LDAP and Active Directory
+|User Sessions|Provides users session information. Keycloak provides implementations for basic in-memory, Infinispan, Relational Databases and MongoDB
+|===

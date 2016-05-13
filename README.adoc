@@ -4,7 +4,7 @@ Keycloak Server Developer Guide
 
 image:images/keycloak_logo.png[alt="Keycloak"]
 
-*Keycloak* _Documentation_ for {{book.versions.swarm}}
+*Keycloak* _Documentation_ for {{book.project.version}}
 
 http://www.keycloak.org
 

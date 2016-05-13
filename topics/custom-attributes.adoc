@@ -1,8 +1,8 @@
-= Custom User Attributes
+== Custom User Attributes
 
 If you have custom user data you want to store and manage in the admin console, registration page, and user account service, you can easily add support for it by extending and modifying various Keycloak <<_themes,themes>>.
 
-== In admin console
+=== In admin console
 
 To be able to enter custom attributes in the admin console, take the following steps
 
@@ -37,7 +37,7 @@ import=common/keycloak
 . Change the theme for the admin console.  Save it, then refresh your browser, and you should
   now see these fields in the User detail page for any user.    
 
-== In registration page
+=== In registration page
 
 To be able to enter custom attributes in the registration page, take the following steps
 
@@ -75,7 +75,7 @@ styles= ../patternfly/lib/patternfly/css/patternfly.css ../patternfly/css/login.
 . Change the theme for the login to your new theme.  Save it, then refresh your browser, and you should
   now see these fields in the registration.    
 
-== In user account profile page
+=== In user account profile page
 
 To be able to manage custom attributes in the user account profile page, take the following steps
 

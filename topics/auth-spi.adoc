@@ -1,5 +1,5 @@
 [[_auth_spi]]
-= Custom Authentication, Registration, and Required Actions
+== Authentication SPI
 
 Keycloak comes out of the box with a bunch of different authentication mechanisms: kerberos, password, and otp.
 These mechanisms may not meet all of your requirements and you may want to plug in your own custom ones.
@@ -17,7 +17,7 @@ After the action is performed successfully, the user doesn't have to perform the
 Keycloak comes with some built in required actions like "reset password".  This action forces the user to change their password after they have logged in.
 You can write and plug in your own required actions. 
 
-== Terms
+=== Terms
 
 To first learn about the Authentication SPI, let's go over some of the terms used to describe it. 
 
@@ -50,7 +50,7 @@ Required Action::
   After authentication completes, the user might have one or more one-time actions he must complete before he is allowed to login.
   The user might be required to set up an OTP token generator or reset an expired password or even accept a Terms and Conditions document.         
 
-== Algorithm Overview
+=== Algorithm Overview
 
 Let's talk about how this all works for browser login.
 Let's assume the following flows, executions and sub flows. 
@@ -127,7 +127,7 @@ Let's walk through the steps from when a client first redirects to keycloak to a
 . After all required actions have been resolved, the user is finally logged in.         
 
 [[_auth_spi_walkthrough]]
-== Authenticator SPI Walk Through
+=== Authenticator SPI Walk Through
 
 In this section, we'll take a look at the Authenticator interface.
 For this, we are going to implement an authenticator that requires that a user enter in the answer to a secret question like "What is your mother's maiden name?".  This example is fully implemented and contained in the examples/providers/authenticator directory of the demo distribution of Keycloak. 
@@ -137,7 +137,7 @@ The Authenticator interface defines the logic.
 The AuthenticatorFactory is responsible for creating instances of an Authenticator.
 They both extend a more generic Provider and ProviderFactory set of interfaces that other Keycloak components like User Federation do. 
 
-=== Packaging Classes and Deployment
+==== Packaging Classes and Deployment
 
 You will package your classes within a single jar.
 This jar must contain a file named  `org.keycloak.authentication.AuthenticatorFactory`                and must be contained in the `META-INF/services/` directory of your jar.
@@ -154,7 +154,7 @@ This services/ file is used by Keycloak to scan the providers it has to load int
 
 To deploy this jar, just copy it to the standalone/configuration/providers directory. 
 
-=== Implementing an Authenticator
+==== Implementing an Authenticator
 
 When implementing the Authenticator interface, the first method that needs to be implemented is the requiresUser() method.
 For our example, this method must return true as we need to validate the secret question associated with the user.
@@ -274,7 +274,7 @@ If configuration exists we pull the max age config out of it.
 We will see how we can define what should be configured when we talk about the AuthenticatorFactory implementation.
 The config values can be defined within the admin console if you set up config definitions in your AuthenticatorFactory implementation. 
 
-=== Implementing an AuthenticatorFactory
+==== Implementing an AuthenticatorFactory
 
 The next step in this process is to implement an AuthenticatorFactory.
 This factory is responsible for instantiating an Authenticator.
@@ -371,7 +371,7 @@ getHelpText() is the tooltip text that will be shown when you are picking the Au
 getDisplayType() is what text that will be shown in the admin console when listing the Authenticator.
 getReferenceCategory() is just a category the Authenticator belongs to. 
 
-=== Adding Authenticator Form
+==== Adding Authenticator Form
 
 Keycloak comes with a Freemarker <<_themes,theme and template engine>>.
 The createForm() method you called within authenticate() of your Authenticator class, builds an HTML page from a file within your login theme: secret-question.ftl.
@@ -410,7 +410,7 @@ If you called, `LoginFormsProvider.setAttribute("foo", "bar")`, the value of "fo
 The value of an attribute can be any Java bean as well. 
 
 [[_adding_authenticator]]
-=== Adding Authenticator to a Flow
+==== Adding Authenticator to a Flow
 
 Adding an Authenticator to a flow must be done in the admin console.
 If you go to the Authentication menu item and go to the Flow tab, you will be able to view the currently defined flows.
@@ -420,13 +420,13 @@ I'm hoping the UI is intuitive enough so that you can figure out for yourself ho
 After you've created your flow, you have to bind it to the login action you want to bind it to.
 If you go to the Authentication menu and go  to the Bindings tab you will see options to bind a flow to the browser, registration, or direct grant flow. 
 
-== Required Action Walkthrough
+=== Required Action Walkthrough
 
 In this section we will discuss how to define a required action.
 In the Authenticator section you may have wondered, "How will we get the user's answer to the secret question entered into the system?".  As we showed in the example, if the answer is not set up, a required action will be triggered.
 This section discusses how to implement the required action for the Secret Question Authenticator. 
 
-=== Packaging Classes and Deployment
+==== Packaging Classes and Deployment
 
 You will package your classes within a single jar.
 This jar does not have to be separate from other provider classes but it must contain a file named  `org.keycloak.authentication.RequiredActionFactory`                and must be contained in the `META-INF/services/` directory of your jar.
@@ -442,7 +442,7 @@ This services/ file is used by Keycloak to scan the providers it has to load int
 
 To deploy this jar, just copy it to the standalone/configuration/providers directory. 
 
-=== Implement the RequiredActionProvider
+==== Implement the RequiredActionProvider
 
 Required actions must first implement the RequiredActionProvider interface.
 The RequiredActionProvider.requiredActionChallenge() is the initial call by the flow manager into the required action.
@@ -489,7 +489,7 @@ A UserCredentialValueModel is created and the type and value of the credential a
 Then UserModel.updateCredentialDirectly() is invoked.
 Finally, RequiredActionContext.success() notifies the container that the required action was successful. 
 
-=== Implement the RequiredActionFactory
+==== Implement the RequiredActionFactory
 
 This class is really simple.
 It is just responsible for creating the required actin provider instance. 
@@ -520,7 +520,7 @@ public class SecretQuestionRequiredActionFactory implements RequiredActionFactor
 
 The getDisplayText() method is just for the admin console when it wants to display a friendly name for the required action. 
 
-=== Enable Required Action
+==== Enable Required Action
 
 The final thing you have to do is go into the admin console.
 Click on the Authentication left menu.
@@ -528,7 +528,7 @@ Click on the Required Actions tab.
 Click on the Register button and choose your new Required Action.
 Your new required action should now be displayed and enabled in the required actions list. 
 
-== Modifying/Extending the Registration Form
+=== Modifying/Extending the Registration Form
 
 It is entirely possible for you to implement your own flow with a set of Authenticators to totally change how regisration is done in Keycloak.
 But what you'll usually want to do is just add a little bit of validation to the out of the box registration page.
@@ -536,7 +536,7 @@ An additional SPI was created to be able to do this.
 It basically allows you to add validation of form elements on the page as well as to initialize UserModel attributes and data after the user has been registered.
 We'll look at both the implementation of the user profile registration processing as well as the registration Google Recaptcha plugin. 
 
-=== Implementation FormAction Interface
+==== Implementation FormAction Interface
 
 The core interface you have to implement is the FormAction interface.
 A FormAction is responsible for rendering and processing a portion of the page.
@@ -697,7 +697,7 @@ The appropriate methods are called to initialize UserModel data.
 Finally, you are also required to define a FormActionFactory class.
 This class is implemented similarly to AuthenticatorFactory, so we won't go over it. 
 
-=== Packaging the Action
+==== Packaging the Action
 
 You will package your classes within a single jar.
 This jar must contain a file named  `org.keycloak.authentication.FormActionFactory`                and must be contained in the `META-INF/services/` directory of your jar.
@@ -715,7 +715,7 @@ This services/ file is used by Keycloak to scan the providers it has to load int
 
 To deploy this jar, just copy it to the standalone/configuration/providers directory. 
 
-=== Adding FormAction to the Registration Flow
+==== Adding FormAction to the Registration Flow
 
 Adding an FormAction to a registration page flow must be done in the admin console.
 If you go to the Authentication menu item and go to the Flow tab, you will be able to view the currently defined flows.
@@ -730,7 +730,7 @@ Make sure your FormAction comes after "Registration User Creation" by using the 
 After you've created your flow, you have to bind it to registration.
 If you go to the Authentication menu and go  to the Bindings tab you will see options to bind a flow to the browser, registration, or direct grant flow. 
 
-== Modifying Forgot Password/Credential Flow
+=== Modifying Forgot Password/Credential Flow
 
 Keycloak also has a specific authentication flow for forgot password, or rather credential reset initiated by a user.
 If you go to the admin console flows page, there is a "reset credentials" flow.
@@ -751,19 +751,19 @@ So, if AuthenticationFlowContext.getUser() returns null, you should proceed with
 I suggest that if you want to add secret questions to this flow, you should ask these questions after the email is sent.
 In other words, add your custom authenticator after the "Send Reset Email" authenticator. 
 
-== Modifying First Broker Login Flow
+=== Modifying First Broker Login Flow
 
 First Broker Login flow is used during first login with some identity provider.
 Term `First Login` means that there is not yet existing Keycloak account linked with the particular authenticated identity provider account.
 More details about this flow are in the <<_identity_broker_first_login,Identity provider chapter>>. 
 
 [[_client_authentication]]
-== Authentication of clients
+=== Authentication of clients
 
 Keycloak actually supports pluggable authentication for http://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect]            client applications.
 Authentication of client (application) is used under the hood by the <<_adapter_config,Keycloak adapter>>            during sending any backchannel requests to the Keycloak server (like the request for exchange code to access token after successful authentication or request to refresh token). But the client authentication can be also used directly by you during <<_direct_access_grants,Direct Access grants>> or during <<_service_accounts,Service account>> authentication. 
 
-=== Default implementations
+==== Default implementations
 
 Actually Keycloak has 2 builtin implementations of client authentication: 
 
@@ -778,7 +778,7 @@ Authentication with signed JWT::
 
 See the demo example and especially the `examples/preconfigured-demo/service-account`                for the example application showing service accounts authentication with both clientId+clientSecret and with signed JWT. 
 
-=== Implement your own client authenticator
+==== Implement your own client authenticator
 
 For plug your own client authenticator, you need to implement few interfaces on both client (adapter) and server side. 
 

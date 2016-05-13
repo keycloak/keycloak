@@ -21,6 +21,21 @@
       "name": "Keycloak Adminstration Guide",
       "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
     },
+    "clientguide": {
+      "name": "Securing Client Applications Guide",
+      "link": "https://keycloak.gitbooks.io/securing-client-applications-guide/content/"
+
+    },
+    "web": {
+      "docs": {
+        "name": "keycloak.org/docs",
+        "link": "http://keycloak.org/docs"
+      },
+      "downloads": {
+        "name": "keycloak.org/downloads",
+        "link": "http://keycloak.org/downloads"
+      }
+    },
     "project": {
       "name": "Keycloak",
       "version": "1.9.3.Final-SNAPSHOT"

@@ -1,15 +1,14 @@
-= Themes
+[[_themes]]
+== Themes
 
-Keycloak provides theme support for web pages and emails. This allows customizing the look and feel of end-user facing pages so they can be integrated with
-your applications.
+{{book.project.name}} provides theme support for web pages and emails. This allows customizing the look and feel of end-user facing pages so they can be
+integrated with your applications.
 
-[[img-sunset]]
-.Login page with sunrise example theme
-image:../../images/login-sunrise.png[]
+image::../../images/login-sunrise.png[caption="",title="Login page with sunrise example theme"]
 
-== Theme types
+=== Theme Types
 
-A theme can support several types to customize different aspects of Keycloak. The types currently available are:
+A theme can provide one or more types to customize different aspects of {{book.project.name}}. The types available are:
 
 * Account - Account management
 * Admin - Admin console
@@ -17,234 +16,333 @@ A theme can support several types to customize different aspects of Keycloak. Th
 * Login - Login forms
 * Welcome - Welcome page
 
-== Configure theme
+=== Configure Theme
 
-All theme types, except welcome, is configured through `Keycloak Admin Console`. To change the theme used for a realm open the `Keycloak Admin Console`, select
+All theme types, except welcome, is configured through the `Admin Console`. To change the theme used for a realm open the `Admin Console`, select
 your realm from the drop-down box in the top left corner. Under `Settings` click on `Theme`.
 
-To set the theme for the `master` Keycloak admin console set the admin console theme for the `master` realm.
-To set the theme for per realm admin access control set the admin console theme for the corresponding realm. 
+NOTE: To set the theme for the `master` admin console you need to set the admin console theme for the `master` realm
 
 To change the welcome theme you need to edit `standalone/configuration/keycloak-server.json` and add `welcomeTheme` to the theme element, for example: 
 
-[source]
+[source,json]
 ----
-
 "theme": {
     ...
-    "welcomeTheme": "custom-theme"
+    "welcomeTheme": "custom-theme",
+    ...
 }
-----        
+----
 
-== Default themes
+=== Default Themes
 
-Keycloak comes bundled with default themes in the server's root `themes` directory.
-You should not edit the bundled themes directly.
-Instead create a new theme that extends a bundled theme. 
+{{book.project.name}} comes bundled with default themes in the server's root `themes` directory. To simplify upgrading you should not edit the bundled themes
+directly. Instead create your own theme that extends one of the bundle themes.
 
-== Creating a theme
+=== Creating a Theme
 
 A theme consists of: 
 
-* FreeMarker
-* Stylesheets
-* Scripts
+* HTML templates (http://freemarker.org[Freemarker Templates])
 * Images
 * Message bundles
-* Theme properties        
+* Stylesheets
+* Scripts
+* Theme properties
 
-A theme can extend another theme.
-When extending a theme you can override individual files (templates, stylesheets, etc.). The recommended way to create a theme is to extend the base theme.
-The base theme provides templates and a default message bundle.
-If you decide to override templates bear in mind that you may need to update your templates when upgrading to a new release to include any changes made to the original template. 
+Unless you plan to replace every single page you should extend another theme. Most likely you will want to extend the {{book.project.name}} theme, but you could also
+consider extending the base theme if you are significantly changing the look and feel of the pages. The base theme primarily consists of HTML templates and
+message bundles, while the {{book.project.name}} theme primarily contains images and stylesheets.
 
-Before creating a theme it's a good idea to disable caching as this makes it possible to edit theme resources without restarting the server.
-To do this open `../standalone/configuration/keycloak-server.json` for `theme` set `staticMaxAge` to `-1` and `cacheTemplates` and `cacheThemes` to `false`.
-For example: 
+When extending a theme you can override individual resources (templates, stylesheets, etc.). If you decide to override HTML templates bear in mind that you may
+need to update your custom template when upgrading to a new release.
 
-[source]
+While creating a theme it's a good idea to disable caching as this makes it possible to edit theme resources directly from the `themes` directory without
+restarting {{book.project.name}}. To do this edit `standalone/configuration/keycloak-server.json` for `theme` set `staticMaxAge` to `-1` and both
+`cacheTemplates` and `cacheThemes` to `false`:
+
+[source,json]
 ----
-[
 "theme": {
-    "default": "keycloak",
+    ...
     "staticMaxAge": -1,
     "cacheTemplates": false,
     "cacheThemes": false,
-    "folder": {
-      "dir": "${jboss.home.dir}/themes"
-    }
-},
----- 
+    ...
+}
+----
+
 Remember to re-enable caching in production as it will significantly impact performance. 
 
-To create a new theme create a directory for the theme in the server's root `themes`.
-The name of the directory should be the name of the theme.
-For example to create a theme called `example-theme`            create the directory `themes/example-theme`.
-Inside the theme directory you then need to create a directory for each of the types your theme is going to provide.
-For example to add the login type to the `example-theme` theme create the directory `themes/example-theme/login`. 
+To create a new theme start by creating a new directory in the `themes` directory. The name of the directory becomes the name of the theme. For example to
+create a theme called `mytheme` create the directory `themes/mytheme`.
 
-For each type create a file `theme.properties` which allows setting some configuration for the theme, for example what theme it overrides and if it should import any themes.
-For the above example we want to override the base theme and import common resources from the Keycloak theme.
-To do this create the file `themes/example-theme/login/theme.properties` with following contents: 
+Inside the theme directory create a directory for each of the types your theme is going to provide. For example to add the login type to the `mytheme`
+theme create the directory `themes/mytheme/login`.
+
+For each type create a file `theme.properties` which allows setting some configuration for the theme, for example what theme it overrides and if it should
+import any themes. For the above example we want to override the base theme and import common resources from the Keycloak theme.
+
+To do this create the file `themes/mytheme/login/theme.properties` with following contents:
 
 [source]
 ----
-[
 parent=base
 import=common/keycloak
-----        
+----
 
-You have now created a theme with support for the login type.
-To check that it works open the admin console.
-Select your realm and click on `Themes`.
-For `Login Theme` select `example-theme` and click `Save`.
-Then open the login page for the realm.
+You have now created a theme with support for the login type. To check that it works open the admin console. Select your realm and click on `Themes`.
+For `Login Theme` select `mytheme` and click `Save`. Then open the login page for the realm.
+
 You can do this either by login through your application or by opening `http://localhost:8080/realms/<realm name>/account`. 
 
 To see the effect of changing the parent theme, set `parent=keycloak` in `theme.properties` and refresh the login page.
-To follow the rest of the documentation set it back to `parent=base` before continuing. 
 
-=== Stylesheets
+==== Theme Properties
 
-A theme can have one or more stylesheets, to add a stylesheet create a file inside `resources/css` (for example `resources/css/styles.css`) inside your theme folder.
-Then registering it in `theme.properties` by adding: 
+Theme properties are set in the file `<THEME TYPE>/theme.properties` in the theme directory.
 
-[source]
+* parent - Parent theme to extend
+* import - Import resources from another theme
+* styles - Space-separated list of styles to include
+* locales - Comma-separated list of supported locales
+
+There are a list of properties that can be used to change the css class used for certain element types. Refer to the theme.properties file in the
+{{book.project.name}} theme for these.
+
+You can also add your own custom properties and use them from custom templates.
+
+==== Stylesheets
+
+A theme can have one or more stylesheets, to add a stylesheet create a file in the `<THEME TYPE>/resources/css` directory of your theme. Then add it to the `styles`
+property in `theme.properties`.
+
+For example to add `styles.css` to the `mytheme` create `themes/mytheme/login/resources/css/styles.css` with the following content:
+
+[source,css]
 ----
-styles=css/styles.css
-----
-
-The `styles` property supports a space separated list so you can add as many as you want.
-For example: 
-
-[source]
-----
-styles=css/styles.css css/more-styles.css
-----
-`example-theme/login/resources/css/styles.css`
-
-[source]
-----
-#kc-form {
-    background-color: #000;
-    color: #fff;
-    padding: 20px;
+.login-pf body {
+    background: DimGrey none;
 }
 ----
-`example-theme/login/theme.properties`
+
+Then edit `themes/mytheme/login/theme.properties` and add:
 
 [source]
 ----
 styles=css/styles.css
 ----
 
-=== Scripts
+To see the changes open the login page for your realm. You will notice that the only styles being applied are those from your custom stylesheet. To include the
+styles from the parent theme you need to load the styles from that theme as well. Do this by editing `themes/mytheme/login/theme.properties` and changing `styles`
+to:
 
-A theme can have one or more scripts, to add a script create a file inside `resources/js` (for example `resources/js/script.js`) inside your theme folder.
-Then registering it in `theme.properties` by adding: 
+[source]
+----
+styles=lib/patternfly/css/patternfly.css lib/zocial/zocial.css css/login.css css/styles.css
+----
+
+NOTE: To override styles from the parent stylesheets it's important that your stylesheet is listed last.
+
+==== Scripts
+
+A theme can have one or more scripts, to add a script create a file in the `<THEME TYPE>/resources/js` directory of your theme. Then add it to the `scripts`
+property in `theme.properties`.
+
+For example to add `script.js` to the `mytheme` create `themes/mytheme/login/resources/js/script.js` with the following content:
+
+[source,javascript]
+----
+alert('Hello');
+----
+
+Then edit `themes/mytheme/login/theme.properties` and add:
 
 [source]
 ----
 scripts=js/script.js
 ----
 
-The `scripts` property supports a space separated list so you can add as many as you want.
-For example: 
+==== Images
 
-[source]
-----
-scripts=js/script.js js/more-script.js
-----
+To make images available to the theme add them to the `<THEME TYPE>/resources/img` directory of your theme. These can be used from within stylesheets or
+directly in HTML templates.
 
-=== Images
+For example to add an image to the `mytheme` copy an image to `themes/mytheme/login/resources/img/image.jpg`.
 
-To make images available to the theme add them to `resources/img`.
-They can then be used through stylesheets.
-For example: 
+You can then use this image from within a custom stylesheet with:
 
-[source]
+[source,css]
 ----
 body {
     background-image: url('../img/image.jpg');
+    background-size: cover;
 }
 ----
 
-Or in templates, for example: 
+Or to use directly in HTML templates add the following to a custom HTML template:
 
-[source]
+[source,html]
 ----
 <img src="${url.resourcesPath}/img/image.jpg">
 ----
 
-=== Messages
+==== Messages
 
-Text in the templates are loaded from message bundles.
-A theme that extends another theme will inherit all messages from the parents message bundle, but can override individual messages.
-For example to replace `Username` on the login form with `Your Username` create the file `messages/messages.properties` inside your theme folder and add the following content: 
+Text in the templates are loaded from message bundles. A theme that extends another theme will inherit all messages from the parents message bundle and you can
+override individual messages by adding `<THEME TYPE>/messages/messages_en.properties` to your theme.
+
+For example to replace `Username` on the login form with `Your Username` for the `mytheme` create the file
+`themes/mytheme/login/messages/messages_en.properties` with the following content:
 
 [source]
 ----
-username=Your Username
+usernameOrEmail=Your Username
 ----
 
-For the admin console, there is a second resource bundle named `admin-messages.properties`.
-This resource bundle is converted to JSON and shipped to the console to be processed by angular-translate.
-It is found in the same directory as messages.properties and can be overridden in the same way as described above. 
+==== Internationalization
 
-=== Modifying HTML
+{{book.project.name}} supports internationalization. To enable internationalization for a realm see {{book.adminguide.link}}[{{book.adminguide.name}}]. This
+section will describe how you can add your own language.
 
-Keycloak uses http://freemarker.org[Freemarker Templates] in order to generate HTML.
-These templates are defined in `.ftl` files and can be overriden from the base theme.
-Check out the Freemarker website on how to form a template file.
-To override the login template for the `example-theme` copy `themes/base/login/login.ftl` to `themes/example-theme/login` and open it in an editor.
-After the first line (<#import ...>) add `<h1>HELLO WORLD!</h1>` then refresh the page. 
+To add a new language create the file `<THEME TYPE>/messages/messages_<LOCALE>` in the directory of your theme. Then add it to the `locales` property in
+`<THEME TYPE>/theme.properties`. For a language to be available to users the realms `login`, `account` and `email` theme has to support the language, so you
+need to add your language for those theme types.
 
-== Deploying themes
+For example to add Norwegian translations to the `mytheme` theme create the file `themes/mytheme/login/messages/messages_no.properties` with the
+following content:
 
-Themes can be deployed to Keycloak by copying the theme directory to `themes` or it can be deployed as a module.
-For a single server or during development just copying the theme is fine, but in a cluster or domain it's recommended to deploy as a module. 
+[source]
+----
+usernameOrEmail=Brukernavn
+password=Passord
+----
 
-To deploy a theme as a module you need to create an jar (it's basically just a zip with jar extension) with the theme resources and a file `META/keycloak-themes.json` that describes the themes contained in the archive.
-For example `example-theme.jar` with the contents: 
+All messages you don't provide a translation for will use the default English translation.
+
+Then edit `themes/mytheme/login/theme.properties` and add:
+
+[source]
+----
+locales=en,no
+----
+
+You also need to do the same for the `account` and `email` theme types. To do this create `themes/mytheme/account/messages/messages_no.properties` and
+`themes/mytheme/email/messages/messages_no.properties`. Leaving these files empty will result in the English messages being used. Then copy
+`themes/mytheme/login/theme.properties` to `themes/mytheme/account/theme.properties` and `themes/mytheme/email/theme.properties`.
+
+Finally you need to add a translation for the language selector. This is done by adding a message to the English translation. To do this add the following to
+`themes/mytheme/account/messages/messages_en.properties` and `themes/mytheme/login/messages/messages_en.properties`:
+
+[source]
+----
+locale_no=Norsk
+----
+
+==== HTML Templates
+
+{{book.project.name}} uses http://freemarker.org[Freemarker Templates] in order to generate HTML. You can override individual templates in your own theme by
+creating `<THEME TYPE>/<TEMPLATE>.ftl`. For a list of templates used see `themes/base/<THEME TYPE>`.
+
+When creating a custom template it is a good idea to copy the template from the base theme to your own theme, then applying the modifications you need. Bear in
+mind when upgrading to a new version of {{book.project.name}} you may need to update your custom templates to apply changes to the original template if
+applicable.
+
+For example to create a custom login form for the `mytheme` theme copy `themes/base/login/login.ftl` to `themes/mytheme/login` and open it in an editor.
+After the first line (<#import ...>) add `<h1>HELLO WORLD!</h1>` like so:
+
+[source,html]
+----
+<#import "template.ftl" as layout>
+<h1>HELLO WORLD!</h1>
+...
+----
+
+Check out the http://freemarker.org/docs/index.html[FreeMarker Manual] for more details on how to edit templates.
+
+==== Emails
+
+To edit the subject and contents for emails, for example password recovery email, add a message bundle to the `email` type of your theme. Each email used three
+messages. One for the subject, one for the plain text body and one for the html body.
+
+To see all emails available take a look at `themes/base/email/messages/messages_en.properties`.
+
+For example to change the password recovery email for the `mytheme` theme create `themes/mytheme/email/messages/messages_en.properties` with the following
+content:
+[source]
+----
+passwordResetSubject=My password recovery
+passwordResetBody=Reset password link: {0}
+passwordResetBodyHtml=<a href="{0}">Reset password</a>
+----
+
+=== Deploying Themes
+
+Themes can be deployed to {{book.project.name}} by copying the theme directory to `themes` or it can be deployed as an archive. During development copying the
+theme to the `themes` directory, but in production you may want to consider using an `archive`. An `archive` makes it simpler to have a versioned copy of
+the theme, especially when you have multiple instances of {{book.project.name}} for example with clustering.
+
+To deploy a theme as an archive you need to create a ZIP archive with the theme resources. You also need to add a file `META/keycloak-themes.json` to the
+archive that lists the available themes in the archive as well as what types each theme provides.
+
+For example for the `mytheme` theme create `mytheme.zip` with the contents:
 
 * META-INF/keycloak-themes.json
-* theme/example-theme/login/theme.properties
-* theme/example-theme/login/login.ftl
-* theme/example-theme/login/resources/css/styles.css
+* theme/mytheme/login/theme.properties
+* theme/mytheme/login/login.ftl
+* theme/mytheme/login/resources/css/styles.css
+* theme/mytheme/login/resources/img/image.png
+* theme/mytheme/login/messages/messages_en.properties
+* theme/mytheme/email/messages/messages_en.properties
 
-The contents of META-INF/keycloak-themes.json in this case would be: 
+The contents of `META-INF/keycloak-themes.json` in this case would be:
 
 [source]
 ----
-[
 {
     "themes": [{
-        "name" : "example-theme",
-        "types": [ "login" ]
+        "name" : "mytheme",
+        "types": [ "login", "email" ]
     }]
 }
+----
+
+A single archive can contain multiple themes and each theme can support one or more types.
+
+The deploy the archive to {{book.project.name}} you can either manually create a module in `modules` or use the `jboss-cli` command. It's simplest to use
+`jboss-cli` as it creates the required directories and module descriptor for you.
+
+To deploy `mytheme.zip` on Linux run:
+
+[source,bash]
+----
+bin/jboss-cli.sh --command="module add --name=org.example.mytheme --resources=mytheme.zip"
 ----            
-As you can see a single jar can contain multiple themes and each theme can support one or more types. 
 
-The deploy the jar as a module to Keycloak you can either manually create the module or use `jboss-cli`.
-It's simplest to use `jboss-cli` as it creates the required directories and module descriptor for you.
-
-To deploy the above jar `jboss-cli` run: 
+On Windows run:
 
 [source]
 ----
-[
-    KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.example.exampletheme --resources=example-theme.jar"
-----            
-If you're on windows run 
+bin\jboss-cli.bat --command="module add --name=org.example.mytheme --resources=mytheme.zip"
+----
 
-[source]
+This command creates `modules/org/example/mytheme/main` directory with the `mytheme.zip` archive and `module.xml`.
+
+To manually create the module create the directory `modules/org/keycloak/example/themes/main`, copy `mytheme.zip` to this directory and create the file
+`modules/org/keycloak/example/themes/main/module.xml` with the contents:
+
+[source,xml]
 ----
-KEYCLOAK_HOME/bin/jboss-cli.bat
+<?xml version="1.0" ?>
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.example.themes">
+    <resources>
+        <resource-root path="theme.zip"/>
+    </resources>
+</module>
 ----
-This command creates `modules/org/example/exampletheme/main` containing `example-theme.jar` and `module.xml`. 
-Once you've created the module you need to register it with Keycloak do this by editing `../standalone/configuration/keycloak-server.json` and adding the module to `theme/module/modules`.
-For example: 
+
+You also need to register the module with {{book.project.name}}. This is done by editing `standalone/configuration/keycloak-server.json` and adding the module
+to `theme/module/modules`. For example:
 
 [source]
 ----
@@ -252,43 +350,9 @@ For example:
 "theme": {
     ...
     "module": {
-        "modules": [ "org.example.exampletheme" ]
+        "modules": [ "org.example.mytheme" ]
     }
 }
 ----        
 
-If a theme is deployed to `themes` and as a module the first is used. 
-
-== SPIs
-
-For full control of login forms and account management Keycloak provides a number of SPIs. 
-
-=== Account SPI
-
-The Account SPI allows implementing the account management pages using whatever web framework or templating engine you want.
-To create an Account provider implement `org.keycloak.account.AccountProviderFactory` and `org.keycloak.account.AccountProvider`. 
-
-Once you have deployed your account provider to Keycloak you need to configure `keycloak-server.json` to specify which provider should be used: 
-
-[source]
-----
-
-"account": {
-    "provider": "custom-provider"
-}
-----            
-
-=== Login SPI
-
-The Login SPI allows implementing the login forms using whatever web framework or templating engine you want.
-To create a Login forms provider implement `org.keycloak.login.LoginFormsProviderFactory` and `org.keycloak.login.LoginFormsProvider` in `forms/login-api`. 
-
-Once you have deployed your account provider to Keycloak you need to configure `keycloak-server.json` to specify which provider should be used: 
-
-[source]
-----
-
-"login": {
-    "provider": "custom-provider"
-}
-----            
+NOTE: If the same theme is deployed to both the `themes` directory and as a module the version in the `themes` directory is used.

@@ -23,6 +23,7 @@ def applyTransformation(input):
     exp = re.compile("[ ]*{% if (.*?) %}(.*?)[ ]*{% endif %}", re.DOTALL)
     input = re.sub(exp, "ifeval::[{\g<1>}==true]\g<2>endif::[]", input)
     input = re.sub(r"image:(\.\./)*", "image:", input)
+    input = re.sub(r"image::(\.\./)*", "image::", input)
     return input
 
 
