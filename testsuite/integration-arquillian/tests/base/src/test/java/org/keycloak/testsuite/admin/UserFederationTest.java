@@ -27,6 +27,7 @@ import javax.ws.rs.core.Response;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserFederationProvidersResource;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -36,6 +37,7 @@ import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserFederationSyncResultRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
+import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.UserFederationProviderBuilder;
 
 /**
@@ -115,8 +117,8 @@ public class UserFederationTest extends AbstractAdminTest {
         assertFederationProvider(providerInstances.get(1), id1, id1, "dummy", 2, 1000, 500, 123);
 
         // Remove providers
-        userFederation().get(id1).remove();
-        userFederation().get(id2).remove();
+        removeUserFederationProvider(id1);
+        removeUserFederationProvider(id2);
     }
 
 
@@ -147,6 +149,7 @@ public class UserFederationTest extends AbstractAdminTest {
 
         // Assert nothing created so far
         Assert.assertTrue(userFederation().getProviderInstances().isEmpty());
+        assertAdminEvents.assertEmpty();
 
 
         // Valid filter. Creation success
@@ -170,8 +173,8 @@ public class UserFederationTest extends AbstractAdminTest {
         assertFederationProvider(providerInstances.get(1), id2, "ldap2", "ldap", 2, -1, -1, -1, LDAPConstants.BIND_DN, "cn=manager", LDAPConstants.BIND_CREDENTIAL, "password");
 
         // Cleanup
-        userFederation().get(id1).remove();
-        userFederation().get(id2).remove();
+        removeUserFederationProvider(id1);
+        removeUserFederationProvider(id2);
     }
 
 
@@ -204,6 +207,7 @@ public class UserFederationTest extends AbstractAdminTest {
         // Change filter to be valid
         ldapRep.getConfig().put(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2)");
         userFederation().get(id).update(ldapRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userFederationResourcePath(id), ldapRep);
 
         // Assert updated successfully
         ldapRep = userFederation().get(id).toRepresentation();
@@ -213,13 +217,15 @@ public class UserFederationTest extends AbstractAdminTest {
         // Assert update displayName
         ldapRep.setDisplayName("ldap2");
         userFederation().get(id).update(ldapRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userFederationResourcePath(id), ldapRep);
+
         assertFederationProvider(userFederation().get(id).toRepresentation(), id, "ldap2", "ldap", 2, -1, -1, -1, LDAPConstants.BIND_DN, "cn=manager-updated", LDAPConstants.BIND_CREDENTIAL, "password",
                 LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2)");
 
 
 
         // Cleanup
-        userFederation().get(id).remove();
+        removeUserFederationProvider(id);
     }
 
 
@@ -249,6 +255,7 @@ public class UserFederationTest extends AbstractAdminTest {
         // update LDAP provider with kerberos
         ldapRep = userFederation().get(id).toRepresentation();
         userFederation().get(id).update(ldapRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userFederationResourcePath(id), ldapRep);
 
         // Assert kerberos authenticator ALTERNATIVE
         kerberosExecution = findKerberosExecution();
@@ -257,7 +264,7 @@ public class UserFederationTest extends AbstractAdminTest {
         // Cleanup
         kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.toString());
         realm.flows().updateExecutions("browser", kerberosExecution);
-        userFederation().get(id).remove();
+        removeUserFederationProvider(id);
     }
 
 
@@ -290,19 +297,23 @@ public class UserFederationTest extends AbstractAdminTest {
         // Sync and assert it happened
         UserFederationSyncResultRepresentation syncResult = userFederation().get(id1).syncUsers("triggerFullSync");
         Assert.assertEquals("0 imported users, 0 updated users", syncResult.getStatus());
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationResourcePath(id1) + "/sync");
+
         int fullSyncTime = userFederation().get(id1).toRepresentation().getLastSync();
         Assert.assertTrue(fullSyncTime > 0);
 
         // Changed sync
         setTimeOffset(50);
         syncResult = userFederation().get(id1).syncUsers("triggerChangedUsersSync");
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationResourcePath(id1) + "/sync");
+
         Assert.assertEquals("0 imported users, 0 updated users", syncResult.getStatus());
         int changedSyncTime = userFederation().get(id1).toRepresentation().getLastSync();
         Assert.assertTrue(fullSyncTime + 50 <= changedSyncTime);
 
         // Cleanup
         resetTimeOffset();
-        userFederation().get(id1).remove();
+        removeUserFederationProvider(id1);
     }
 
 
@@ -310,7 +321,16 @@ public class UserFederationTest extends AbstractAdminTest {
         Response resp = userFederation().create(rep);
         Assert.assertEquals(201, resp.getStatus());
         resp.close();
-        return ApiUtil.getCreatedId(resp);
+        String federationProviderId = ApiUtil.getCreatedId(resp);
+
+        // TODO adminEvents: should be rather whole path include ID (consistency with UPDATE and DELETE)
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationCreateResourcePath(), rep);
+        return federationProviderId;
+    }
+
+    private void removeUserFederationProvider(String id) {
+        userFederation().get(id).remove();
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userFederationResourcePath(id));
     }
 
     private void assertFederationProvider(UserFederationProviderRepresentation rep, String id, String displayName, String providerName,

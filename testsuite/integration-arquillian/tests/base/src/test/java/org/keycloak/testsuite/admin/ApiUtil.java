@@ -162,7 +162,7 @@ public class ApiUtil {
                     + clientName + "\" in realm: \"" + realmName + "\"");
             userResource.roles().clientLevel(clientId).add(roleRepresentations);
         } else {
-            log.warn("client with name " + clientName + "doesn't exist in realm " + realmName);
+            log.warn("client with name " + clientName + " doesn't exist in realm " + realmName);
         }
     }
 
