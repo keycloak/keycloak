@@ -16,21 +16,19 @@
  */
 package org.keycloak.testsuite.oidc;
 
-import org.junit.ClassRule;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.UserInfo;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.util.BasicAuthHelper;
-import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -42,35 +40,44 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
 /**
  * @author pedroigor
  */
-public class UserInfoTest {
-
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
-
-        @Override
-        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
-        }
-
-    });
+public class UserInfoTest extends AbstractKeycloakTest {
 
     @Rule
-    public WebRule webRule = new WebRule(this);
+    public AssertEvents events = new AssertEvents(this);
 
-    @WebResource
-    protected WebDriver driver;
+    @Override
+    public void beforeAbstractKeycloakTest() throws Exception {
+        super.beforeAbstractKeycloakTest();
+    }
+
+    @Before
+    public void clientConfiguration() {
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+
+        RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
+        RealmBuilder realm = RealmBuilder.edit(realmRepresentation).testEventListener();
+        testRealms.add(realm.build());
+
+    }
 
     @Test
     public void testSuccessfulUserInfoRequest() throws Exception {
         Client client = ClientBuilder.newClient();
-        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
         URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
         AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(grantTarget);
@@ -93,14 +100,12 @@ public class UserInfoTest {
     @Test
     public void testSessionExpired() throws Exception {
         Client client = ClientBuilder.newClient();
-        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
         URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
         AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(grantTarget);
 
-        KeycloakSession session = keycloakRule.startSession();
-        keycloakRule.startSession().sessions().removeUserSessions(session.realms().getRealm("test"));
-        keycloakRule.stopSession(session, true);
+        testingClient.testing().removeUserSessions("test");
 
         Response response = executeUserInfoRequest(accessTokenResponse.getToken());
 
@@ -141,7 +146,7 @@ public class UserInfoTest {
     }
 
     private Response executeUserInfoRequest(String accessToken) {
-        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
         UriBuilder uriBuilder = OIDCLoginProtocolService.tokenServiceBaseUrl(builder);
         URI userInfoUri = uriBuilder.path(OIDCLoginProtocolService.class, "issueUserInfo").build("test");
         Client client = ClientBuilder.newClient();

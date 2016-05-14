@@ -84,6 +84,20 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return Response.ok().build();
     }
 
+    @POST
+    @Path("/remove-user-sessions")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response removeUserSessions(@QueryParam("realm") final String realmName) {
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = realmManager.getRealmByName(realmName);
+        if (realm == null) {
+            throw new NotFoundException("Realm not found");
+        }
+
+        session.sessions().removeUserSessions(realm);
+        return Response.ok().build();
+    }
+
     @GET
     @Path("/get-user-session")
     @Produces(MediaType.APPLICATION_JSON)
