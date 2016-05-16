@@ -23,7 +23,7 @@ Click on the 'Configure' button that is to the right of the Recaptcha flow entry
 image:../../{{book.images}}/recaptcha-config.png[]
 
 
-The final step you have to do is to change some default HTTP response headers that {{book.project.name} sets.  {{book.project.name}}
+The final step you have to do is to change some default HTTP response headers that {{book.project.name}} sets.  {{book.project.name}}
 will prevent website from including any login page within an iframe.  This is to prevent clickjacking attacks.  You need to
 authorize Google to use the registration page within an iframe.  Go to
 the `Realm Settings` left menu item and then go to the `Security Defenses` tab.  Y
