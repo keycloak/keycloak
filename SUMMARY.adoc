@@ -3,7 +3,6 @@
 //. link:topics/templates/document-attributes.adoc[]
 :imagesdir: images
 
- . link:topics/preface.adoc[Preface]
  . link:topics/overview.adoc[Overview]
  .. link:topics/features.adoc[Features]
  .. link:topics/how.adoc[How Does Security Work?]
@@ -24,6 +23,8 @@
  .. link:topics/users/credentials.adoc[Credentials]
  .. link:topics/users/required-actions.adoc[Required Actions]
  .. link:topics/users/impersonation.adoc[Impersonation]
+ .. link:topics/users/user-registration.adoc[User Registration]
+ ... link:topics/users/recaptcha.adoc[Recaptcha Support]
  . link:topics/admin-permissions.adoc[Master Admin Access Control]
  . link:topics/per-realm-admin-permissions.adoc[Per Realm Admin Access Control]
  . link:topics/client-registration.adoc[Client Registration]

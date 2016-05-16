@@ -1,0 +1,26 @@
+
+=== User Registration
+
+You can enable {{book.project.name}} to allow user self registration.  When enabled, the login page has a registration
+link the user can click on to create their new account.  Enabling registration is pretty simple.  Go to the
+`Realm Settings` left menu and click it.  Then go to the `Login` tab.  There is a `User Registration` switch on this
+tab.  Turn it on, then click the `Save` button.
+
+.Login Tab
+image:../../{{book.images}}/login-tab.png[]
+
+After you enable this setting, a `Register` link should show up on the login page.
+
+.Registration Link
+image:../../{{book.images}}/registration-link.png[]
+
+Clicking on this link will bring the user to the registration page where they have to enter in some user profile information
+and a new password.
+
+.Registration Form
+image:../../{{book.images}}/registration-form.png[]
+
+You can change the look and feel of the registration form as well as removing or adding additional fields that must be entered.
+See the link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more information.
+
+
