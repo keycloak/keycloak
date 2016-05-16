@@ -29,7 +29,6 @@
  . link:topics/per-realm-admin-permissions.adoc[Per Realm Admin Access Control]
  . link:topics/client-registration.adoc[Client Registration]
  . link:topics/identity-broker.adoc[Identity Broker]
- . link:topics/recaptcha.adoc[Recaptcha Support on Registration]
  . link:topics/access-types.adoc[Client Access Types]
  . link:topics/roles.adoc[Roles]
  . link:topics/groups.adoc[Groups]
