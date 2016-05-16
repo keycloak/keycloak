@@ -23,6 +23,7 @@
  .. link:topics/users/attributes.adoc[User Attributes]
  .. link:topics/users/credentials.adoc[Credentials]
  .. link:topics/users/required-actions.adoc[Required Actions]
+ .. link:topics/users/impersonation.adoc[Impersonation]
  . link:topics/admin-permissions.adoc[Master Admin Access Control]
  . link:topics/per-realm-admin-permissions.adoc[Per Realm Admin Access Control]
  . link:topics/client-registration.adoc[Client Registration]
