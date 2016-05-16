@@ -68,6 +68,11 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>org.subethamail</groupId>
+            <artifactId>subethasmtp</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>com.icegreen</groupId>
             <artifactId>greenmail</artifactId>
             <scope>compile</scope>
