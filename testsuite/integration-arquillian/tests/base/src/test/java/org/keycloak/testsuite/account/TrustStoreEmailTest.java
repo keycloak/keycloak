@@ -17,29 +17,28 @@
 package org.keycloak.testsuite.account;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.auth.page.login.VerifyEmail;
-import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
-import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailServerConfiguration;
+import org.keycloak.testsuite.util.SslMailServer;
+
+import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 
 /**
  *
- * @author vramik
+ * @author fkiss
  */
-public class VerifyEmailTest extends AbstractAccountManagementTest {
+public class TrustStoreEmailTest extends AbstractAccountManagementTest {
 
     @Page
     private VerifyEmail testRealmVerifyEmailPage;
-    
-    private static boolean init = false;
-   
+
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
@@ -47,41 +46,49 @@ public class VerifyEmailTest extends AbstractAccountManagementTest {
     }
 
     @Before
-    public void beforeVerifyEmail() {
-        log.info("enable verify email and configure smpt server in test realm");
+    public void beforeTrustStoreEmailTest() {
+        log.info("enable verify email and configure smtp server to run with ssl in test realm");
         RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
-        testRealmRep.setSmtpServer(suiteContext.getSmtpServer());
+        testRealmRep.setSmtpServer(SslMailServer.getServerConfiguration());
         testRealmRep.setVerifyEmail(true);
+        System.out.println(testRealmRep.getSmtpServer());
         testRealmResource().update(testRealmRep);
+    }
 
-        if (!init) {
-            init = true;
-            MailServer.start();
-            MailServer.createEmailAccount(testUser.getEmail(), "password");
-        }
+    @After
+    public void afterTrustStoreEmailTest() {
+        SslMailServer.stop();
     }
-    
-    @AfterClass
-    public static void afterClass() {
-        MailServer.stop();
-    }
+
 
     @Test
-    public void verifyEmail() {
+    public void verifyEmailWithSslEnabled() {
+        SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.PRIVATE_KEY).getFile());
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
-        
-        assertEquals("You need to verify your email address to activate your account.", 
+
+        assertEquals("You need to verify your email address to activate your account.",
                 testRealmVerifyEmailPage.getFeedbackText());
-        
-        String verifyEmailUrl = assertEmailAndGetUrl(MailServerConfiguration.FROM, testUser.getEmail(), 
-                "Someone has created a Test account with this email address.");
-        
+
+        String verifyEmailUrl = assertEmailAndGetUrl(MailServerConfiguration.FROM, testUser.getEmail(),
+                "Someone has created a Test account with this email address.", true);
+
         log.info("navigating to url from email: " + verifyEmailUrl);
         driver.navigate().to(verifyEmailUrl);
         assertCurrentUrlStartsWith(testRealmAccountManagementPage);
         testRealmAccountManagementPage.signOut();
         testRealmLoginPage.form().login(testUser);
         assertCurrentUrlStartsWith(testRealmAccountManagementPage);
+    }
+
+    @Test
+    public void verifyEmailWithSslWrongCertificate() {
+        SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.INVALID_KEY).getFile());
+        testRealmAccountManagementPage.navigateTo();
+        testRealmLoginPage.form().login(testUser);
+
+        assertEquals("Failed to send email, please try again later.\n" +
+                        "« Back to Application",
+                testRealmVerifyEmailPage.getErrorMessage());
     }
 }
