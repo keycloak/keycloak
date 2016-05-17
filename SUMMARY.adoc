@@ -28,6 +28,8 @@
  . link:topics/login-settings.adoc[Login Page Settings]
  .. link:topics/login-settings/forgot-password.adoc[Forgot Password]
  .. link:topics/login-settings/remember-me.adoc[Remember Me]
+ . link:topics/authentication.adoc[Authentication]
+ .. link:topics/authentication/password-policies.adoc[Password Policies]
  . link:topics/admin-permissions.adoc[Master Admin Access Control]
  . link:topics/per-realm-admin-permissions.adoc[Per Realm Admin Access Control]
  . link:topics/client-registration.adoc[Client Registration]
