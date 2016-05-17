@@ -183,7 +183,7 @@ public class AuthServerTestEnricher {
     }
 
     public void checkServerLogs(@Observes(precedence = -1) BeforeSuite event) throws IOException, InterruptedException {
-        boolean checkLog = System.getProperty("auth.server.log.check", "true").equals("true");
+        boolean checkLog = Boolean.parseBoolean(System.getProperty("auth.server.log.check", "true"));
         if (checkLog && suiteContext.getAuthServerInfo().isJBossBased()) {
             String jbossHomePath = suiteContext.getAuthServerInfo().getProperties().get("jbossHome");
             LogChecker.checkJBossServerLog(jbossHomePath);
