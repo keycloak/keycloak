@@ -17,7 +17,12 @@
 
 package org.keycloak.testsuite.util;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation.Composites;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -50,6 +55,51 @@ public class RoleBuilder {
 
     public RoleBuilder scopeParamRequired(Boolean required) {
         rep.setScopeParamRequired(required);
+        return this;
+    }
+
+    public RoleBuilder composite() {
+        rep.setComposite(true);
+        return this;
+    }
+
+    private void checkCompositesNull() {
+        if (rep.getComposites() == null) {
+            rep.setComposites(new Composites());
+        }
+    }
+
+    public RoleBuilder realmComposite(RoleRepresentation role) {
+        return realmComposite(role.getName());
+    }
+
+    public RoleBuilder realmComposite(String compositeRole) {
+        checkCompositesNull();
+
+        if (rep.getComposites().getRealm() == null) {
+            rep.getComposites().setRealm(new HashSet<String>());
+        }
+
+        rep.getComposites().getRealm().add(compositeRole);
+        return this;
+    }
+
+    public RoleBuilder clientComposite(String client, RoleRepresentation compositeRole) {
+        return clientComposite(client, compositeRole.getName());
+    }
+
+    public RoleBuilder clientComposite(String client, String compositeRole) {
+        checkCompositesNull();
+
+        if (rep.getComposites().getClient() == null) {
+            rep.getComposites().setClient(new HashMap<String, List<String>>());
+        }
+
+        if (rep.getComposites().getClient().get(client) == null) {
+            rep.getComposites().getClient().put(client, new LinkedList<String>());
+        }
+
+        rep.getComposites().getClient().get(client).add(compositeRole);
         return this;
     }
 
