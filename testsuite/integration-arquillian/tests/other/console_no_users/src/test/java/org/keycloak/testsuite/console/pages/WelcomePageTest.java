@@ -7,10 +7,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runners.MethodSorters;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -43,6 +40,12 @@ public class WelcomePageTest extends AbstractKeycloakTest {
     public void beforeAbstractKeycloakTest() {
         setDefaultPageUriParameters();
         driverSettings();
+    }
+
+    @After
+    @Override
+    public void afterAbstractKeycloakTest() {
+        // no need for this either
     }
 
     /**
