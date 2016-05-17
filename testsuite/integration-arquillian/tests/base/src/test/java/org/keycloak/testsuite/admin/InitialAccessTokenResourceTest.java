@@ -21,8 +21,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
+import org.keycloak.testsuite.util.AdminEventPaths;
 
 import java.util.List;
 
@@ -52,6 +54,7 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         int time = Time.currentTime();
 
         ClientInitialAccessPresentation response = resource.create(rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep);
 
         assertNotNull(response.getId());
         assertEquals(new Integer(2), response.getCount());
@@ -61,10 +64,12 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         assertNotNull(response.getToken());
 
         rep.setCount(3);
-        resource.create(rep);
+        response = resource.create(rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep);
 
         rep.setCount(4);
-        resource.create(rep);
+        response = resource.create(rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep);
 
         List<ClientInitialAccessPresentation> list = resource.list();
         assertEquals(3, list.size());

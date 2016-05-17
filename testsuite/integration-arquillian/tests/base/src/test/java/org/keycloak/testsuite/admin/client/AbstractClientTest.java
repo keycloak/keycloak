@@ -19,12 +19,21 @@ package org.keycloak.testsuite.admin.client;
 
 import java.util.List;
 import javax.ws.rs.core.Response;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.events.EventsListenerProviderFactory;
+import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.AssertAdminEvents;
+import org.keycloak.testsuite.util.RealmBuilder;
 
 /**
  *
@@ -32,8 +41,30 @@ import org.keycloak.testsuite.admin.ApiUtil;
  */
 public abstract class AbstractClientTest extends AbstractAuthTest {
 
+    @Rule
+    public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
+
+    @Before
+    public void setupAdminEvents() {
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        if (realm.getEventsListeners() == null || !realm.getEventsListeners().contains(EventsListenerProviderFactory.PROVIDER_ID)) {
+            realm = RealmBuilder.edit(testRealmResource().toRepresentation()).testEventListener().build();
+            testRealmResource().update(realm);
+        }
+    }
+
+    @After
+    public void tearDownAdminEvents() {
+        RealmRepresentation realm = RealmBuilder.edit(testRealmResource().toRepresentation()).removeTestEventListener().build();
+        testRealmResource().update(realm);
+    }
+
     protected RealmRepresentation realmRep() {
         return testRealmResource().toRepresentation();
+    }
+
+    protected String getRealmId() {
+        return "master";
     }
 
     // returns UserRepresentation retrieved from server, with all fields, including id
@@ -64,7 +95,17 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     protected String createClient(ClientRepresentation clientRep) {
         Response resp = testRealmResource().clients().create(clientRep);
         resp.close();
-        return ApiUtil.getCreatedId(resp);
+        String id = ApiUtil.getCreatedId(resp);
+
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), clientRep);
+
+        return id;
+    }
+
+    protected void removeClient(String clientDbId) {
+        testRealmResource().clients().get(clientDbId).remove();
+
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientResourcePath(clientDbId));
     }
 
     protected ClientRepresentation findClientRepresentation(String name) {

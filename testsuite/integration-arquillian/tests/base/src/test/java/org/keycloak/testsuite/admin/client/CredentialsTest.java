@@ -24,9 +24,11 @@ import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.KeyStoreConfig;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.testsuite.util.AdminEventPaths;
 
 import javax.ws.rs.core.MediaType;
 
@@ -53,16 +55,23 @@ import static org.junit.Assert.assertTrue;
 public class CredentialsTest extends AbstractClientTest {
 
     private ClientResource accountClient;
+    private String accountClientDbId;
 
     @Before
     public void init() {
         accountClient = findClientResourceById("account");
+        accountClientDbId = accountClient.toRepresentation().getId();
     }
 
     @Test
     public void testGetAndRegenerateSecret() {
         CredentialRepresentation oldCredential = accountClient.getSecret();
         CredentialRepresentation newCredential = accountClient.generateNewSecret();
+
+        CredentialRepresentation secretRep = new CredentialRepresentation();
+        secretRep.setType(CredentialRepresentation.SECRET);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.ACTION, AdminEventPaths.clientGenerateSecretPath(accountClientDbId), secretRep);
+
         assertNotNull(oldCredential);
         assertNotNull(newCredential);
         assertNotEquals(newCredential.getValue(), oldCredential.getValue());
@@ -77,6 +86,12 @@ public class CredentialsTest extends AbstractClientTest {
         assertNull(oldToken); // registration access token not saved in ClientRep
         assertNotNull(newToken); // it's only available via regenerateRegistrationAccessToken()
         assertNull(accountClient.toRepresentation().getRegistrationAccessToken());
+
+        // Test event
+        ClientRepresentation testedRep = new ClientRepresentation();
+        testedRep.setClientId(rep.getClientId());
+        testedRep.setRegistrationAccessToken(newToken);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.ACTION, AdminEventPaths.clientRegenerateRegistrationAccessTokenPath(accountClientDbId), testedRep);
     }
 
     @Test
@@ -86,6 +101,8 @@ public class CredentialsTest extends AbstractClientTest {
         CertificateRepresentation certFromGet = certRsc.getKeyInfo();
         assertEquals(cert.getCertificate(), certFromGet.getCertificate());
         assertEquals(cert.getPrivateKey(), certFromGet.getPrivateKey());
+
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.ACTION, AdminEventPaths.clientCertificateGenerateSecretPath(accountClientDbId, "jwt.credential"), cert);
     }
 
     @Test

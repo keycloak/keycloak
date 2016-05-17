@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.client.resources;
 
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 
@@ -57,9 +58,19 @@ public interface TestingResource {
     EventRepresentation pollEvent();
 
     @POST
+    @Path("/poll-admin-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    AdminEventRepresentation pollAdminEvent();
+
+    @POST
     @Path("/clear-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
-    Response clearQueue();
+    Response clearEventQueue();
+
+    @POST
+    @Path("/clear-admin-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    Response clearAdminEventQueue();
 
     @POST
     @Path("/remove-user-session")

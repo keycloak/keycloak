@@ -184,11 +184,15 @@ public abstract class AbstractKeycloakTest {
         loginPage.setAuthRealm(MASTER);
     }
 
-    protected KeycloakTestingClient getTestingClient() {
+    public KeycloakTestingClient getTestingClient() {
         if (testingClient == null) {
             testingClient = KeycloakTestingClient.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
         }
         return testingClient;
+    }
+
+    public Keycloak getAdminClient() {
+        return adminClient;
     }
 
     public abstract void addTestRealms(List<RealmRepresentation> testRealms);

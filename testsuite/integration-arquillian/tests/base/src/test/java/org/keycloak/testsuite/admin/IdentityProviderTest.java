@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.hamcrest.Matchers;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -25,6 +26,7 @@ import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -32,6 +34,7 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLEntityDescriptorParser;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.util.AdminEventPaths;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.MediaType;
@@ -61,27 +64,21 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
     @Test
     public void testFindAll() {
-        Response response = realm.identityProviders().create(create("google", "google"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
+        create(createRep("google", "google"));
 
-        response = realm.identityProviders().create(create("facebook", "facebook"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
+        create(createRep("facebook", "facebook"));
 
         Assert.assertNames(realm.identityProviders().findAll(), "google", "facebook");
     }
 
     @Test
     public void testCreate() {
-        IdentityProviderRepresentation newIdentityProvider = create("new-identity-provider", "oidc");
+        IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
 
         newIdentityProvider.getConfig().put("clientId", "clientId");
         newIdentityProvider.getConfig().put("clientSecret", "clientSecret");
 
-        Response response = realm.identityProviders().create(newIdentityProvider);
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
+        create(newIdentityProvider);
 
         IdentityProviderResource identityProviderResource = realm.identityProviders().get("new-identity-provider");
 
@@ -103,14 +100,12 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
     @Test
     public void testUpdate() {
-        IdentityProviderRepresentation newIdentityProvider = create("update-identity-provider", "oidc");
+        IdentityProviderRepresentation newIdentityProvider = createRep("update-identity-provider", "oidc");
 
         newIdentityProvider.getConfig().put("clientId", "clientId");
         newIdentityProvider.getConfig().put("clientSecret", "clientSecret");
 
-        Response response = realm.identityProviders().create(newIdentityProvider);
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
+        create(newIdentityProvider);
 
         IdentityProviderResource identityProviderResource = realm.identityProviders().get("update-identity-provider");
 
@@ -128,6 +123,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         representation.getConfig().put("clientId", "changedClientId");
 
         identityProviderResource.update(representation);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.identityProviderPath("update-identity-provider"), representation);
 
         identityProviderResource = realm.identityProviders().get(representation.getInternalId());
 
@@ -140,15 +136,13 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertEquals("changedClientId", representation.getConfig().get("clientId"));
     }
 
-    @Test(expected = NotFoundException.class)
+    @Test
     public void testRemove() {
-        IdentityProviderRepresentation newIdentityProvider = create("remove-identity-provider", "saml");
+        IdentityProviderRepresentation newIdentityProvider = createRep("remove-identity-provider", "saml");
 
-        Response response = realm.identityProviders().create(newIdentityProvider);
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
+        create(newIdentityProvider);
 
-        IdentityProviderResource identityProviderResource = realm.identityProviders().get("update-identity-provider");
+        IdentityProviderResource identityProviderResource = realm.identityProviders().get("remove-identity-provider");
 
         assertNotNull(identityProviderResource);
 
@@ -157,16 +151,30 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertNotNull(representation);
 
         identityProviderResource.remove();
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.identityProviderPath("remove-identity-provider"));
 
-        realm.identityProviders().get("update-identity-provider");
+        try {
+            realm.identityProviders().get("remove-identity-provider").toRepresentation();
+            Assert.fail("Not expected to found");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
     }
 
+    private void create(IdentityProviderRepresentation idpRep) {
+        Response response = realm.identityProviders().create(idpRep);
+        Assert.assertNotNull(ApiUtil.getCreatedId(response));
+        response.close();
 
-    private IdentityProviderRepresentation create(String id, String providerId) {
-        return create(id, providerId, null);
+        // TODO adminEvents: should rather use alias instead of internalId (same issue like for roles)
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Matchers.startsWith(AdminEventPaths.identityProviderCreatePath()), idpRep);
     }
 
-    private IdentityProviderRepresentation create(String id, String providerId, Map<String, String> config) {
+    private IdentityProviderRepresentation createRep(String id, String providerId) {
+        return createRep(id, providerId, null);
+    }
+
+    private IdentityProviderRepresentation createRep(String id, String providerId, Map<String, String> config) {
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
 
         idp.setAlias(id);
@@ -184,82 +192,52 @@ public class IdentityProviderTest extends AbstractAdminTest {
         IdentityProviderResource provider;
         Map<String, IdentityProviderMapperTypeRepresentation> mapperTypes;
 
-        Response response = realm.identityProviders().create(create("google", "google"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
-
+        create(createRep("google", "google"));
         provider = realm.identityProviders().get("google");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "google-user-attribute-mapper");
 
-        response = realm.identityProviders().create(create("facebook", "facebook"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
-
+        create(createRep("facebook", "facebook"));
         provider = realm.identityProviders().get("facebook");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "facebook-user-attribute-mapper");
 
-        response = realm.identityProviders().create(create("github", "github"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
-
+        create(createRep("github", "github"));
         provider = realm.identityProviders().get("github");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "github-user-attribute-mapper");
 
-        response = realm.identityProviders().create(create("twitter", "twitter"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
-
+        create(createRep("twitter", "twitter"));
         provider = realm.identityProviders().get("twitter");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes);
 
-        response = realm.identityProviders().create(create("linkedin", "linkedin"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
-
+        create(createRep("linkedin", "linkedin"));
         provider = realm.identityProviders().get("linkedin");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "linkedin-user-attribute-mapper");
 
-        response = realm.identityProviders().create(create("microsoft", "microsoft"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
-
+        create(createRep("microsoft", "microsoft"));
         provider = realm.identityProviders().get("microsoft");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "microsoft-user-attribute-mapper");
 
-        response = realm.identityProviders().create(create("stackoverflow", "stackoverflow"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
-
+        create(createRep("stackoverflow", "stackoverflow"));
         provider = realm.identityProviders().get("stackoverflow");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "stackoverflow-user-attribute-mapper");
 
-        response = realm.identityProviders().create(create("keycloak-oidc", "keycloak-oidc"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
-
+        create(createRep("keycloak-oidc", "keycloak-oidc"));
         provider = realm.identityProviders().get("keycloak-oidc");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "keycloak-oidc-role-to-role-idp-mapper", "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper");
 
-        response = realm.identityProviders().create(create("oidc", "oidc"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
-
+        create(createRep("oidc", "oidc"));
         provider = realm.identityProviders().get("oidc");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper");
 
-        response = realm.identityProviders().create(create("saml", "saml"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
-
+        create(createRep("saml", "saml"));
         provider = realm.identityProviders().get("saml");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "saml-user-attribute-idp-mapper", "saml-role-idp-mapper", "saml-username-idp-mapper");
@@ -278,11 +256,9 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
     @Test
     public void testNoExport() {
-        Response response = realm.identityProviders().create(create("keycloak-oidc", "keycloak-oidc"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
+        create(createRep("keycloak-oidc", "keycloak-oidc"));
 
-        response = realm.identityProviders().get("keycloak-oidc").export("json");
+        Response response = realm.identityProviders().get("keycloak-oidc").export("json");
         Assert.assertEquals("status", 204, response.getStatus());
         String body = response.readEntity(String.class);
         Assert.assertNull("body", body);
@@ -306,9 +282,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertSamlImport(result);
 
         // Create new SAML identity provider using configuration retrieved from import-config
-        Response response = realm.identityProviders().create(create("saml", "saml", result));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
+        create(createRep("saml", "saml", result));
 
         IdentityProviderResource provider = realm.identityProviders().get("saml");
         IdentityProviderRepresentation rep = provider.toRepresentation();
@@ -321,7 +295,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertEqual(rep, providers.get(0));
 
         // Perform export, and make sure some of the values are like they're supposed to be
-        response = realm.identityProviders().get("saml").export("xml");
+        Response response = realm.identityProviders().get("saml").export("xml");
         Assert.assertEquals(200, response.getStatus());
         body = response.readEntity(String.class);
         response.close();
@@ -331,9 +305,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
     @Test
     public void testMappers() {
-        Response response = realm.identityProviders().create(create("google", "google"));
-        Assert.assertNotNull(ApiUtil.getCreatedId(response));
-        response.close();
+        create(createRep("google", "google"));
 
         IdentityProviderResource provider = realm.identityProviders().get("google");
 
@@ -345,11 +317,12 @@ public class IdentityProviderTest extends AbstractAdminTest {
         config.put("role", "offline_access");
         mapper.setConfig(config);
 
-        // create and add mapper
-        response = provider.addMapper(mapper);
+        // createRep and add mapper
+        Response response = provider.addMapper(mapper);
         String id = ApiUtil.getCreatedId(response);
         Assert.assertNotNull(id);
         response.close();
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderMapperPath("google", id), mapper);
 
         // list mappers
         List<IdentityProviderMapperRepresentation> mappers = provider.getMappers();
@@ -366,16 +339,20 @@ public class IdentityProviderTest extends AbstractAdminTest {
         // update mapper
         mapper.getConfig().put("role", "master-realm.manage-realm");
         provider.update(id, mapper);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.identityProviderMapperPath("google", id), mapper);
+
         mapper = provider.getMapperById(id);
         Assert.assertNotNull("mapperById not null", mapper);
         Assert.assertEquals("config changed", "master-realm.manage-realm", mapper.getConfig().get("role"));
 
         // delete mapper
         provider.delete(id);
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.identityProviderMapperPath("google", id));
         try {
             provider.getMapperById(id);
             Assert.fail("Should fail with NotFoundException");
         } catch (NotFoundException e) {
+            // Expected
         }
     }
 
