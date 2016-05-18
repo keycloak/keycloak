@@ -135,15 +135,15 @@ See details https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#k
 
 ==== Credential delegation
 
-One scenario supported by Kerberos 5 is credential delegation.  Your applications may want access to the Kerberos ticket so that
+Kerberos 5 supports the concept of credential delegation.  In this scenario, your applications may want access to the Kerberos ticket so that
 they can re-use it to interact with other services secured by Kerberos.  Since the SPNEGO protocol is processed in the {{book.project.name}} server,
 you have to propagate the GSS credential to your application
-within an OpenID Connect token claim or a SAML assertion attribute.  Each application that wants the GSS credential is going to have
-to enable the built-in protocol mapper called `gss delegation credential`.  This is enabled in the `Mappers` tab of the application's
+within the  OpenID Connect token claim or a SAML assertion attribute that is transmitted to your application from the {{book.project.name}} server.
+To have this claim inserted into the token or assertion, each application will need to enable the built-in protocol mapper called `gss delegation credential`.
+This is enabled in the `Mappers` tab of the application's
 client page.  See <<fake/../../clients/protocol-mappers.adoc#_protocol-mappers, Protocol Mappers>> chapter for more details.
 
-Enabling this mapper add the GSS credential to a token claim or SAML assertion attribute.
-Applications will ned to deserialize it and use it for further GSS calls against other services.
+Applications will ned to deserialize the claim it receives from {{book.project.name}} before it can use it to make GSS calls against other services.
 We have an example, that shows this in detail.
 It's in `examples/kerberos` in the {{book.project.name}} example distribution or demo distribution download.
 You can also check the example sources directly https://github.com/keycloak/keycloak/blob/master/examples/kerberos[here] . 
@@ -160,14 +160,13 @@ GSSContext context = gssManager.createContext(serviceName, krb5Oid,
 Note that you also need to configure `forwardable` kerberos tickets in `krb5.conf` file and add support for delegated credentials to your browser.
 For details, see the kerberos example from {{book.project.name}} examples set as mentioned above.
 
-WARNING: Credential delegation has some security implications.
-So enable the protocol claim and support in browser just if you really need it.
-It's highly recommended to use it together with HTTPS.
-See for example http://www.microhowto.info/howto/configure_firefox_to_authenticate_using_spnego_and_kerberos.html#idp27072[this article]                for details. 
+WARNING: Credential delegation has some security implications so only use it if you really need it.
+         It's highly recommended to use it together with HTTPS.
+         See for example http://www.microhowto.info/howto/configure_firefox_to_authenticate_using_spnego_and_kerberos.html#idp27072[this article] for more details.
 
 ==== Troubleshooting
 
-If you have issues, we recommend to enable more logging by: 
+If you have issues, we recommend that you enable additional logging to debug the problem:
 
 * Enable `Debug` flag in admin console for Kerberos or LDAP federation providers 
 * Enable TRACE logging for category `org.keycloak` in logging section of `$WILDFLY_HOME/standalone/configuration/standalone.xml` to receive more info `$WILDFLY_HOME/standalone/log/server.log`                    
