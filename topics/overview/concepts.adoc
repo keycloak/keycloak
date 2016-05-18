@@ -7,6 +7,10 @@ and REST services.
 users::
   Users are entities that are able to log into your system.  They can have attributes associated with themselves like email,
   username, address, phone number, and birth day.  They can be assign group membership and have specific roles assigned to them.
+authentication::
+  The process of identifying and validating a user.
+authorization::
+  The process of granting access to a user.
 credentials:
   Credentials are pieces of data that {{book.project.name}} uses to verify the identity of a user.  Some examples are passwords,
   one-time-passwords, digital certificates, or even fingerprints.
