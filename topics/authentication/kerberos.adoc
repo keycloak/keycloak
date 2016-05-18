@@ -1,0 +1,174 @@
+[[_kerberos]]
+
+=== Kerberos
+
+{{book.project.name}} supports login with a Kerberos ticket through the SPNEGO protocol.
+SPNEGO (Simple and Protected GSSAPI Negotiation Mechanism) is used to authenticate transparently through the web browser after the user
+has been authenticated when logging-in his session.
+For non-web cases or when ticket is not available during login, {{book.project.name}} also supports login with Kerberos username/password.
+
+A typical use case for web authentication is the following: 
+
+. User logs into his desktop (Such as a Windows machine in Active Directory domain or Linux machine with Kerberos integration enabled). 
+. User then uses his browser (IE/Firefox/Chrome) to access a web application secured by {{book.project.name}}.
+. Application redirects to {{book.project.name}} login.
+. {{book.project.name}} renders HTML login screen together with status 401 and HTTP header `WWW-Authenticate: Negotiate`
+. In case that the browser has Kerberos ticket from desktop login, it transfers the desktop sign on information to the {{book.project.name}}
+  in header `Authorization: Negotiate 'spnego-token'` . Otherwise it just displays the login screen.
+. {{book.project.name}} validates token from the browser and authenticates the user.
+  It provisions user data from LDAP (in case of LDAPFederationProvider with Kerberos authentication support) or let user
+  to update his profile and prefill data (in case of KerberosFederationProvider).
+. {{book.project.name}} returns back to the application.
+  Communication between {{book.project.name}} and application happens through OpenID Connect or SAML messages.
+  The fact that {{book.project.name}} was authenticated through Kerberos is hidden from the application.
+  So {{book.project.name}} acts as broker to Kerberos/SPNEGO login.
+
+For setup there are 3 main parts: 
+
+. Setup and configuration of Kerberos server (KDC) 
+. Setup and configuration of {{book.project.name}} server
+. Setup and configuration of client machines     
+
+==== Setup of Kerberos server
+
+This is platform dependent.
+Exact steps depend on your OS and the Kerberos vendor you're going to use.
+Consult Windows Active Directory, MIT Kerberos and your OS documentation for how exactly to setup and configure Kerberos server. 
+
+At least you will need to: 
+
+* Add some user principals to your Kerberos database.
+  You can also integrate your Kerberos with LDAP, which means that user accounts will be provisioned from LDAP server. 
+* Add service principal for "HTTP" service.
+  For example if your {{book.project.name}} server will be running on `www.mydomain.org` you may need to add principal `HTTP/www.mydomain.org@MYDOMAIN.ORG`
+  assuming that MYDOMAIN.ORG will be your Kerberos realm.
++
+For example on MIT Kerberos you can run "kadmin" session.
+If you are on same machine where is MIT Kerberos, you can simply use command: 
+
+[source]
+----
+sudo kadmin.local
+----                        
+Then add HTTP principal and export his key to keytab file with the commands like: 
+
+[source]
+----
+
+addprinc -randkey HTTP/www.mydomain.org@MYDOMAIN.ORG
+ktadd -k /tmp/http.keytab HTTP/www.mydomain.org@MYDOMAIN.ORG
+----                        
+
+Keytab file `/tmp/http.keytab` will need to be accessible on the host where {{book.project.name}} server will be running.
+        
+==== Setup and configuration of {{book.project.name}} server
+
+You need to install a kerberos client on your machine.  This is also platform dependent.
+If you are on Fedora, Ubuntu or RHEL, you can install package `freeipa-client`, which contains Kerberos client and bunch of other stuff.
+Configure kerberos client (on linux it's in file `/etc/krb5.conf` ). You need to put your Kerberos realm and at least configure the Http domains your server will be running on.
+For the example realm MYDOMAIN.ORG you may configure `domain_realm` section like this: 
+
+[source]
+----
+[domain_realm]
+  .mydomain.org = MYDOMAIN.ORG
+  mydomain.org = MYDOMAIN.ORG
+----             
+   
+Next you need to export the keytab file with the HTTP principal and make sure the file is accessible to the process under which {{book.project.name}} server is running.
+For production, it's ideal if it's readable just by this process and not by someone else.
+For MIT Kerberos example above, we already exported keytab to `/tmp/http.keytab` . If your KDC and {{book.project.name}} are running on same host, you have file already available.
+
+Next you need to run the {{book.project.name}} server and configure SPNEGO/Kerberos authentication in {{book.project.name}} admin console.
+{{book.project.name}} supports Kerberos authentication through <<_user_federation,Federation provider SPI>> . We have 2 federation providers with Kerberos authentication support:
+
+Kerberos::
+  This provider is useful if you want to authenticate with Kerberos `NOT` backed by aLDAP server.
+  In this case, users are usually created in the {{book.project.name}} database after first successful SPNEGO/Kerberos login
+  and they may need to update profile after first login, as Kerberos protocol itself doesn't provision any data like first name, last name or email.
+
+LDAP::
+  This provider is useful if you want to authenticate with Kerberos backed by LDAP server.
+  In this case, data about users are provisioned from LDAP server after successful Kerberos authentication.
+
+Finally you may need to check the Kerberos authenticator correctly configured.
+You can go to `Authentication` tab in admin console and select `Browser` flow.
+Here you will see `Kerberos` authenticator, which is used by {{book.project.name}} for SPNEGO handshake with client (exchange `Negotiate` header etc.).
+By default it's disabled, so {{book.project.name}} doesn't ask for the Negotiate header, however once you configured federation provider in previous step,
+it's automatically switched to _alternative_.
+You should make sure that it is switched to _alternative_.
+
+image:../../{{book.images}}/kerberos-browser-flow.png[]
+
+_Alternative_ means that {{book.project.name}} tries to ask the browser for Negotiate header, but if it's not available,
+it will continue on to next authenticator (which usually means displaying username/password form to user).
+You can switch the Kerberos authentication type to _required_ if you want to enforce login with kerberos ticket and not allow any fallback to the username/password form.
+
+
+==== Setup and configuration of client machines
+
+Clients need to install kerberos client and setup krb5.conf as described above.
+Additionally they need to enable SPNEGO login support in their browser.
+See link:http://www.microhowto.info/howto/configure_firefox_to_authenticate_using_spnego_and_kerberos.html[configuring Firefox for Kerberos] if you are using that browser.
+URI `.mydomain.org` must be allowed in `network.negotiate-auth.trusted-uris` config option.
+
+In windows domain, clients usually don't need to configure anything special as IE is already able to participate in SPNEGO authentication for the windows domain. 
+
+{% if book.community %}
+==== Example setups
+
+For easier testing with Kerberos, we provided some example setups to test. 
+
+===== {{book.project.name}} and FreeIPA docker image
+
+Once you install https://www.docker.com/[docker], you can run docker image with http://www.freeipa.org/[FreeIPA]         server installed.
+FreeIPA provides integrated security solution with MIT Kerberos and 389 LDAP server among other things . The image provides also {{book.project.name}}
+server configured with LDAP Federation provider and enabled SPNEGO/Kerberos authentication against the FreeIPA server.
+See details https://github.com/mposolda/keycloak-freeipa-docker/blob/master/README.md[here] . 
+
+===== ApacheDS testing Kerberos server
+
+For quick testing and unit tests, we use very simple http://directory.apache.org/apacheds/[ApacheDS] Kerberos server.
+You need to build {{book.project.name}} from sources and then run Kerberos server with maven-exec-plugin from our testsuite.
+See details https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#kerberos-server[here] .
+{% endif %}
+
+==== Credential delegation
+
+One scenario supported by Kerberos 5 is credential delegation.  Your applications may want access to the Kerberos ticket so that
+they can re-use it to interact with other services secured by Kerberos.  Since the SPNEGO protocol is processed in the {{book.project.name}} server,
+you have to propagate the GSS credential to your application
+within an OpenID Connect token claim or a SAML assertion attribute.  Each application that wants the GSS credential is going to have
+to enable the built-in protocol mapper called `gss delegation credential`.  This is enabled in the `Mappers` tab of the application's
+client page.  See <<fake/../../clients/protocol-mappers.adoc#_protocol-mappers, Protocol Mappers>> chapter for more details.
+
+Enabling this mapper add the GSS credential to a token claim or SAML assertion attribute.
+Applications will ned to deserialize it and use it for further GSS calls against other services.
+We have an example, that shows this in detail.
+It's in `examples/kerberos` in the {{book.project.name}} example distribution or demo distribution download.
+You can also check the example sources directly https://github.com/keycloak/keycloak/blob/master/examples/kerberos[here] . 
+
+Once you deserialize the credential from the access token to the GSSCredential object, then GSSContext will need to be created with this credential
+passed to the method `GSSManager.createContext` for example like this:
+
+[source]
+----
+GSSContext context = gssManager.createContext(serviceName, krb5Oid,
+    deserializedGssCredFromKeycloakAccessToken, GSSContext.DEFAULT_LIFETIME);
+----        
+
+Note that you also need to configure `forwardable` kerberos tickets in `krb5.conf` file and add support for delegated credentials to your browser.
+For details, see the kerberos example from {{book.project.name}} examples set as mentioned above.
+
+WARNING: Credential delegation has some security implications.
+So enable the protocol claim and support in browser just if you really need it.
+It's highly recommended to use it together with HTTPS.
+See for example http://www.microhowto.info/howto/configure_firefox_to_authenticate_using_spnego_and_kerberos.html#idp27072[this article]                for details. 
+
+==== Troubleshooting
+
+If you have issues, we recommend to enable more logging by: 
+
+* Enable `Debug` flag in admin console for Kerberos or LDAP federation providers 
+* Enable TRACE logging for category `org.keycloak` in logging section of `$WILDFLY_HOME/standalone/configuration/standalone.xml` to receive more info `$WILDFLY_HOME/standalone/log/server.log`                    
+* Add system properties `-Dsun.security.krb5.debug=true` and `-Dsun.security.spnego.debug=true`                            

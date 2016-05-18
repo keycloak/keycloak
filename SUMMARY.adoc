@@ -1,8 +1,5 @@
 = {{book.title}}
 
-//. link:topics/templates/document-attributes.adoc[]
-:imagesdir: images
-
  . link:topics/overview.adoc[Overview]
  .. link:topics/features.adoc[Features]
  .. link:topics/how.adoc[How Does Security Work?]
@@ -31,6 +28,8 @@
  . link:topics/authentication.adoc[Authentication]
  .. link:topics/authentication/password-policies.adoc[Password Policies]
  .. link:topics/authentication/otp-policies.adoc[OTP Policies]
+ .. link:topics/authentication/flows.adoc[Authentication Flows]
+ .. link:topics/authentication/kerberos.adoc[Kerberos]
  . link:topics/admin-permissions.adoc[Master Admin Access Control]
  . link:topics/per-realm-admin-permissions.adoc[Per Realm Admin Access Control]
  . link:topics/client-registration.adoc[Client Registration]
@@ -43,7 +42,6 @@
  . link:topics/timeouts.adoc[Cookie settings, Session Timeouts, and Token Lifespans]
  . link:topics/events.adoc[Auditing and Events]
  . link:topics/ldap.adoc[LDAP/AD Integration]
- . link:topics/kerberos.adoc[Kerberos brokering]
  . link:topics/export-import.adoc[Export and Import]
  . link:topics/saml.adoc[SAML SSO]
  . link:topics/security-vulnerabilities.adoc[Security Vulnerabilities]
