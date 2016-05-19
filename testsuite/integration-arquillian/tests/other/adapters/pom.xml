@@ -56,8 +56,11 @@
         
         <adapter.test.props>
             -Dapp.server.base.url=http://localhost:${app.server.http.port}
+            -Dauth.server.base.url=http://localhost:${auth.server.http.port}
             -Dapp.server.ssl.base.url=https://localhost:${app.server.https.port}
             -Dapp.server.ssl.required=${app.server.ssl.required}
+            -Dauth.server.ssl.base.url=https://localhost:${auth.server.https.port}
+            -Dauth.server.ssl.required=${auth.server.ssl.required}
             -Dmy.host.name=localhost
             -Djava.security.krb5.conf=${project.build.directory}/dependency/kerberos/test-krb5.conf
         </adapter.test.props>

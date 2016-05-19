@@ -7,7 +7,6 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -19,24 +18,27 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.util.TokenUtil;
+import org.openqa.selenium.By;
 
 import javax.ws.rs.core.UriBuilder;
 import java.util.List;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>.
  */
 public abstract class AbstractOfflineServletsAdapterTest extends AbstractServletsAdapterTest {
 
-    private static final String OFFLINE_CLIENT_APP_URI = "http://localhost:8280/offline-client";
-
     @Rule
     public AssertEvents events = new AssertEvents(this);
     @Page
-    protected OfflineToken offlineToken;
+    protected OfflineToken offlineTokenPage;
     @Page
     protected LoginPage loginPage;
     @Page
@@ -64,74 +66,80 @@ public abstract class AbstractOfflineServletsAdapterTest extends AbstractServlet
 
     @Test
     public void testServlet() throws Exception {
-        String servletUri = UriBuilder.fromUri(OFFLINE_CLIENT_APP_URI)
+        String servletUri = UriBuilder.fromUri(offlineTokenPage.toString())
                 .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.OFFLINE_ACCESS)
                 .build().toString();
-        oauth.doLogin("test-user@localhost", "password");
 
         driver.navigate().to(servletUri);
+        waitUntilElement(By.tagName("body")).is().visible();
 
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(OFFLINE_CLIENT_APP_URI));
+        loginPage.login("test-user@localhost", "password");
 
-        Assert.assertEquals(offlineToken.getRefreshToken().getType(), TokenUtil.TOKEN_TYPE_OFFLINE);
-        Assert.assertEquals(offlineToken.getRefreshToken().getExpiration(), 0);
+        assertCurrentUrlStartsWith(offlineTokenPage);
 
-        String accessTokenId = offlineToken.getAccessToken().getId();
-        String refreshTokenId = offlineToken.getRefreshToken().getId();
+        Assert.assertEquals(offlineTokenPage.getRefreshToken().getType(), TokenUtil.TOKEN_TYPE_OFFLINE);
+        Assert.assertEquals(offlineTokenPage.getRefreshToken().getExpiration(), 0);
 
-        setAdapterTimeOffset(9999);
+        String accessTokenId = offlineTokenPage.getAccessToken().getId();
+        String refreshTokenId = offlineTokenPage.getRefreshToken().getId();
 
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(OFFLINE_CLIENT_APP_URI));
-        Assert.assertNotEquals(offlineToken.getRefreshToken().getId(), refreshTokenId);
-        Assert.assertNotEquals(offlineToken.getAccessToken().getId(), accessTokenId);
+        setAdapterAndServerTimeOffset(9999);
+
+        assertCurrentUrlStartsWith(offlineTokenPage);
+        Assert.assertNotEquals(offlineTokenPage.getRefreshToken().getId(), refreshTokenId);
+        Assert.assertNotEquals(offlineTokenPage.getAccessToken().getId(), accessTokenId);
 
         // Ensure that logout works for webapp (even if offline token will be still valid in Keycloak DB)
-        driver.navigate().to(OFFLINE_CLIENT_APP_URI + "/logout");
+        offlineTokenPage.logout();
         loginPage.assertCurrent();
-        driver.navigate().to(OFFLINE_CLIENT_APP_URI);
+        offlineTokenPage.navigateTo();
         loginPage.assertCurrent();
 
-        setAdapterTimeOffset(0);
+        setAdapterAndServerTimeOffset(0);
         events.clear();
     }
 
     @Test
     public void testServletWithRevoke() {
         // Login to servlet first with offline token
-        String servletUri = UriBuilder.fromUri(OFFLINE_CLIENT_APP_URI)
+        String servletUri = UriBuilder.fromUri(offlineTokenPage.toString())
                 .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.OFFLINE_ACCESS)
                 .build().toString();
         driver.navigate().to(servletUri);
-        loginPage.login("test-user@localhost", "password");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(OFFLINE_CLIENT_APP_URI));
+        waitUntilElement(By.tagName("body")).is().visible();
 
-        Assert.assertEquals(offlineToken.getRefreshToken().getType(), TokenUtil.TOKEN_TYPE_OFFLINE);
+        loginPage.login("test-user@localhost", "password");
+        assertCurrentUrlStartsWith(offlineTokenPage);
+
+        Assert.assertEquals(offlineTokenPage.getRefreshToken().getType(), TokenUtil.TOKEN_TYPE_OFFLINE);
 
         // Assert refresh works with increased time
-        setAdapterTimeOffset(9999);
-        driver.navigate().to(OFFLINE_CLIENT_APP_URI);
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(OFFLINE_CLIENT_APP_URI));
-        setAdapterTimeOffset(0);
+        setAdapterAndServerTimeOffset(9999);
+        offlineTokenPage.navigateTo();
+        assertCurrentUrlStartsWith(offlineTokenPage);
+        setAdapterAndServerTimeOffset(0);
 
         events.clear();
 
         // Go to account service and revoke grant
         accountAppPage.open();
+
         List<String> additionalGrants = accountAppPage.getApplications().get("offline-client").getAdditionalGrants();
         Assert.assertEquals(additionalGrants.size(), 1);
         Assert.assertEquals(additionalGrants.get(0), "Offline Token");
         accountAppPage.revokeGrant("offline-client");
+        pause(500);
         Assert.assertEquals(accountAppPage.getApplications().get("offline-client").getAdditionalGrants().size(), 0);
 
         events.expect(EventType.REVOKE_GRANT)
                 .client("account").detail(Details.REVOKED_CLIENT, "offline-client").assertEvent();
 
         // Assert refresh doesn't work now (increase time one more time)
-        setAdapterTimeOffset(9999);
-        driver.navigate().to(OFFLINE_CLIENT_APP_URI);
-        Assert.assertFalse(driver.getCurrentUrl().startsWith(OFFLINE_CLIENT_APP_URI));
+        setAdapterAndServerTimeOffset(9999);
+        offlineTokenPage.navigateTo();
+        assertCurrentUrlDoesntStartWith(offlineTokenPage);
         loginPage.assertCurrent();
-        setAdapterTimeOffset(0);
+        setAdapterAndServerTimeOffset(0);
     }
 
     @Test
@@ -139,24 +147,27 @@ public abstract class AbstractOfflineServletsAdapterTest extends AbstractServlet
         ClientManager.realm(adminClient.realm("test")).clientId("offline-client").consentRequired(true);
 
         // Assert grant page doesn't have 'Offline Access' role when offline token is not requested
-        driver.navigate().to(OFFLINE_CLIENT_APP_URI);
+        offlineTokenPage.navigateTo();
         loginPage.login("test-user@localhost", "password");
         oauthGrantPage.assertCurrent();
-        Assert.assertFalse(driver.getPageSource().contains("Offline access"));
+        waitUntilElement(By.xpath("//body")).text().not().contains("Offline access");
         oauthGrantPage.cancel();
 
         // Assert grant page has 'Offline Access' role now
-        String servletUri = UriBuilder.fromUri(OFFLINE_CLIENT_APP_URI)
+        String servletUri = UriBuilder.fromUri(offlineTokenPage.toString())
                 .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.OFFLINE_ACCESS)
                 .build().toString();
         driver.navigate().to(servletUri);
+        waitUntilElement(By.tagName("body")).is().visible();
+
         loginPage.login("test-user@localhost", "password");
         oauthGrantPage.assertCurrent();
-        Assert.assertTrue(driver.getPageSource().contains("Offline access"));
+        waitUntilElement(By.xpath("//body")).text().contains("Offline access");
+
         oauthGrantPage.accept();
 
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(OFFLINE_CLIENT_APP_URI));
-        Assert.assertEquals(offlineToken.getRefreshToken().getType(), TokenUtil.TOKEN_TYPE_OFFLINE);
+        assertCurrentUrlStartsWith(offlineTokenPage);
+        Assert.assertEquals(offlineTokenPage.getRefreshToken().getType(), TokenUtil.TOKEN_TYPE_OFFLINE);
 
         accountAppPage.open();
         AccountApplicationsPage.AppEntry offlineClient = accountAppPage.getApplications().get("offline-client");
@@ -164,7 +175,7 @@ public abstract class AbstractOfflineServletsAdapterTest extends AbstractServlet
         Assert.assertTrue(offlineClient.getAdditionalGrants().contains("Offline Token"));
 
         //This was necessary to be introduced, otherwise other testcases will fail
-        driver.navigate().to(OFFLINE_CLIENT_APP_URI + "/logout");
+        offlineTokenPage.logout();
         loginPage.assertCurrent();
 
         events.clear();
@@ -174,13 +185,15 @@ public abstract class AbstractOfflineServletsAdapterTest extends AbstractServlet
 
     }
 
-    private void setAdapterTimeOffset(int timeOffset) {
-        Time.setOffset(timeOffset);
-        String timeOffsetUri = UriBuilder.fromUri(OFFLINE_CLIENT_APP_URI)
+    private void setAdapterAndServerTimeOffset(int timeOffset) {
+        setTimeOffset(timeOffset);
+        String timeOffsetUri = UriBuilder.fromUri(offlineTokenPage.toString())
                 .queryParam("timeOffset", timeOffset)
                 .build().toString();
 
         driver.navigate().to(timeOffsetUri);
+        waitUntilElement(By.tagName("body")).is().visible();
+
     }
 
 }
