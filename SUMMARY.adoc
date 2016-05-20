@@ -37,7 +37,7 @@
  . link:topics/clients.adoc[Managing Clients]
  .. link:topics/clients/client-oidc.adoc[OIDC Clients]
  ... link:topics/clients/oidc/confidential.adoc[Confidential Client Credentials]
- ... link:topics/clients/service-accounts.adoc[Service Accounts]
+ ... link:topics/clients/oidc/service-accounts.adoc[Service Accounts]
  .. link:topics/clients/client-saml.adoc[SAML Clients]
  ... link:topics/clients/saml/idp-initiated-login.adoc[IDP Initiated Login]
  ... link:topics/clients/saml/entity-descriptors.adoc[SAML Entity Descriptors]
