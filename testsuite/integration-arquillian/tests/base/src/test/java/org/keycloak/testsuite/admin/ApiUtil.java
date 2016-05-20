@@ -110,6 +110,13 @@ public class ApiUtil {
         if (ur.size() == 1) {
             user = ur.get(0);
         }
+
+        if (ur.size() > 1) { // try to be more specific
+            for (UserRepresentation rep : ur) {
+                if (rep.getUsername().equalsIgnoreCase(username)) return rep;
+            }
+        }
+
         return user;
     }
 
