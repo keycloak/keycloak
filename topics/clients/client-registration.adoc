@@ -32,7 +32,7 @@ The following permissions are required to invoke the endpoints (see <<_admin_per
 +`manage-client`
 * manage-client                
 
-If you are using a regular bearer token to create clients we recommend using a token from on behalf of a Service Account with only the `create-client` role. See the <<oidc/service-accounts.adoc#_service_accounts,Service Accounst>> section for more details.
+If you are using a regular bearer token to create clients we recommend using a token from on behalf of a Service Account with only the `create-client` role. See the <<fake/../../../clients/oidc/service-accounts.adoc#_service_accounts,Service Accounts>> section for more details.
 
 ===== Initial Access Token
 
