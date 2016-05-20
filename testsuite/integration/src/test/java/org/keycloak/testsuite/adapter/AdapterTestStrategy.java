@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.adapter;
 
+import org.apache.http.conn.params.ConnManagerParams;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 import org.keycloak.OAuth2Constants;
@@ -426,6 +427,29 @@ public class AdapterTestStrategy extends ExternalResource {
 
         client.close();
 
+    }
+
+    /**
+     * KEYCLOAK-3016
+     * @throws Exception
+     */
+    public void testBasicAuthErrorHandling() throws Exception {
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(APP_SERVER_BASE_URL + "/customer-db/");
+        Response response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // The number of iterations should be HttpClient's connection pool size + 1.
+        final int LIMIT = ConnManagerParams.DEFAULT_MAX_TOTAL_CONNECTIONS + 1;
+        for (int i = 0; i < LIMIT; i++) {
+            System.out.println("Testing Basic Auth with bad credentials " + i);
+            response = target.request().header(HttpHeaders.AUTHORIZATION, "Basic dXNlcm5hbWU6cGFzc3dvcmQ=").get();
+            Assert.assertEquals(401, response.getStatus());
+            response.close();
+        }
+
+        client.close();
     }
 
     /**

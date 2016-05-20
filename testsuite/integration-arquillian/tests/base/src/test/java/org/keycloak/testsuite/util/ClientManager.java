@@ -6,7 +6,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -104,14 +103,18 @@ public class ClientManager {
             if (app.getRedirectUris() == null) {
                 app.setRedirectUris(new LinkedList<String>());
             }
-            app.setRedirectUris(Arrays.asList(redirectUris));
+            for (String redirectUri : redirectUris) {
+                app.getRedirectUris().add(redirectUri);
+            }
             clientResource.update(app);
         }
 
         public void removeRedirectUris(String... redirectUris) {
             ClientRepresentation app = clientResource.toRepresentation();
             for (String redirectUri : redirectUris) {
-                app.getRedirectUris().remove(redirectUri);
+                if (app.getRedirectUris() != null) {
+                    app.getRedirectUris().remove(redirectUri);
+                }
             }
             clientResource.update(app);
         }

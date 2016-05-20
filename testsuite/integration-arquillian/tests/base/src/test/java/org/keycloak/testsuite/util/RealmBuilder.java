@@ -21,15 +21,11 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.events.EventsListenerProviderFactory;
-import sun.security.krb5.Realm;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-
-import static org.keycloak.testsuite.util.MailServerConfiguration.FROM;
-import static org.keycloak.testsuite.util.MailServerConfiguration.HOST;
-import static org.keycloak.testsuite.util.MailServerConfiguration.PORT;
+import org.keycloak.representations.idm.RolesRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -64,6 +60,15 @@ public class RealmBuilder {
 
     public RealmBuilder privateKey(String privateKey) {
         rep.setPrivateKey(privateKey);
+        return this;
+    }
+
+    public RealmBuilder roles(RolesBuilder roles) {
+        return roles(roles.build());
+    }
+    
+    public RealmBuilder roles(RolesRepresentation roles) {
+        rep.setRoles(roles);
         return this;
     }
 
@@ -156,6 +161,26 @@ public class RealmBuilder {
 
     public RealmBuilder accessTokenLifespan(int accessTokenLifespan) {
         rep.setAccessTokenLifespan(accessTokenLifespan);
+        return this;
+    }
+
+    public RealmBuilder ssoSessionMaxLifespan(int ssoSessionMaxLifespan) {
+        rep.setSsoSessionMaxLifespan(ssoSessionMaxLifespan);
+        return this;
+    }
+
+    public RealmBuilder accessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
+        rep.setAccessCodeLifespanUserAction(accessCodeLifespanUserAction);
+        return this;
+    }
+
+    public RealmBuilder accessCodeLifespan(int accessCodeLifespan) {
+        rep.setAccessCodeLifespan(accessCodeLifespan);
+        return this;
+    }
+
+    public RealmBuilder sslRequired(String sslRequired) {
+        rep.setSslRequired(sslRequired);
         return this;
     }
 
