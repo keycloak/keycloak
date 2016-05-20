@@ -54,7 +54,6 @@
  . link:topics/ldap.adoc[LDAP/AD Integration]
  . link:topics/export-import.adoc[Export and Import]
  . link:topics/security-vulnerabilities.adoc[Security Vulnerabilities]
- . link:topics/protocol-mappers.adoc[OIDC Token and SAML Assertion Mappings]
  . link:topics/MigrationFromOlderVersions.adoc[Migration from older versions]
 
 
