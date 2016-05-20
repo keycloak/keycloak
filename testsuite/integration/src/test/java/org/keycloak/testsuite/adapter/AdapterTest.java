@@ -144,6 +144,11 @@ public class AdapterTest {
         testStrategy.testNullBearerTokenCustomErrorPage();
     }
 
+    @Test
+    public void testBasicAuthErrorHandling() throws Exception {
+        testStrategy.testBasicAuthErrorHandling();
+    }
+
     /**
      * KEYCLOAK-518
      * @throws Exception
