@@ -2,7 +2,7 @@
 
 ==== Confidential Client Credentials
 
-If you've set the client's <<fake/../../../client-oidc.adoc#_access-type, access type_>> to `confidential` in the client's
+If you've set the client's <<fake/../../../clients/client-oidc.adoc#_access-type, access type_>> to `confidential` in the client's
 `Settings` tab, a new `Credentials` tab will show up. As part of dealing with this
 type of client you have to configure the client's credentials.
 
