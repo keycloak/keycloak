@@ -68,6 +68,11 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder defaultRoles(String... roles) {
+        rep.setDefaultRoles(roles);
+        return this;
+    }
+
     public ClientBuilder serviceAccount() {
         rep.setServiceAccountsEnabled(true);
         return this;
