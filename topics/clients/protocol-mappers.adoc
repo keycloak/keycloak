@@ -6,7 +6,7 @@ Keycloak allows you to define what exactly is transferred.
 You can hardcode roles, claims and custom attributes.
 You can pull user metadata into a token or assertion.
 You can rename roles.
-Basicall you have a lot of control of what exactly goes back to the client. 
+Basically you have a lot of control of what exactly goes back to the client.
 
 Within the admin console, if you go to an application you've registered, you'll see a "Mappers" sub-menu item.
 This is the place where you can control how a OIDC ID Token, Access Token, and SAML login response assertions look like.

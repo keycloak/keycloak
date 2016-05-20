@@ -1,0 +1,12 @@
+
+==== IDP Initiated Login
+
+IDP Initiated Login is a feature that where you can set up a URL on the Keycloak server that will log you into a specific application/client.
+In the `Settings` tab for your client, you need to specify the `IDP Initiated SSO URL Name`.
+This is a simple string with no whitespace in it.
+After this you can reference your client at the following URL: `root/auth/realms/{realm}/protocol/saml/clients/{url-name}`
+
+If your client requires a special relay state, you can also configure this on the `Settings` tab in the `IDP Initiated SSO Relay State` field.
+Alternatively, browsers can specify the relay state in a `RelayState` query parameter, i.e.
+`root/auth/realms/{realm}/protocol/saml/clients/{url-name}?RelayState=thestate`.
+

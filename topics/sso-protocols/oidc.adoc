@@ -1,3 +1,4 @@
+[[_oidc]]
 
 === Open ID Connect
 
@@ -18,6 +19,8 @@ then asks the user for consent to grant access to the client requesting it.  The
 is digitally signed by the realm.  The client can make REST invocations on remote services using this _access token_.  The REST service
 extracts the _access token_, verifies the signature of the token, then decides based on access information within the token whether or not to process
 the request.
+
+[[_oidc-auth-flows]]
 
 ==== OIDC Auth Flows
 
