@@ -103,7 +103,7 @@
       "enabled": true,
       "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
       "redirectUris": [
-        "http://localhost:8180/auth/realms/master/app/*"
+        "http://localhost:8180/auth/realms/master/app/auth/*"
       ],
       "adminUrl": "http://localhost:8180/auth/realms/master/app/logout",
       "secret": "password"
