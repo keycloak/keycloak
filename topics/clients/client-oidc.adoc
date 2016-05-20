@@ -52,6 +52,7 @@ If this is on, then users will get a consent page which asks the user if they gr
 display the metadata that the client is interested in so that the user knows exactly what information the client is getting access to.
 If you've ever done a social login to Google, you'll often see a similar page.  {{book.project.name}} provides the same functionality.
 
+[[_access-type]]
 *Access Type*
 
 This defines the type of the OIDC client.

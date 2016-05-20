@@ -49,6 +49,7 @@ refresh protocol is important in the situation of a compromised system.  If acce
 vulnerable to a stolen token for the lifetime of the access token.  Future refresh token requests will fail if an admin
 has revoked access.  This makes things more secure and more scalable.
 
+[[_confidential-clients]]
 Another important aspect of this flow is the concept of a _public_ vs. a _confidential_ client.  _Confidential_ clients are required
 to provide a client secret when they exchange the temporary codes for tokens.  _Public_ clients are not required to provide this client secret.
 _Public_ clients are perfectly fine so long as HTTPS is strictly enforced and you are very strict about what redirect URIs are registered for the
@@ -79,7 +80,7 @@ the credentials of the user as well as the id of the client and the client's sec
 are sent within form parameters.  The HTTP response contains
 _identity_, _access_, and _refresh_ tokens.
 
-===== Client Credential Grant (Client Grants)
+===== Client Credentials Grant
 
 This is also used by REST clients, but instead of obtaining a token that works on behalf
 of an external user, a token is created based on the metadata and permissions of a service account that is associated with the client.

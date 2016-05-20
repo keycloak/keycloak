@@ -1,4 +1,5 @@
 [[_mappers]]
+
 = OIDC Token and SAML Assertion Mappings
 
 Applications that receive ID Tokens, Access Tokens, or SAML assertions may need or want different user metadata and roles.
