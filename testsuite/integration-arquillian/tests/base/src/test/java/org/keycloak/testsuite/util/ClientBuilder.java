@@ -17,11 +17,14 @@
 
 package org.keycloak.testsuite.util;
 
+import java.util.ArrayList;
 import org.keycloak.dom.saml.v2.ac.BooleanType;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,14 +32,20 @@ import java.util.Map;
  */
 public class ClientBuilder {
 
-    private ClientRepresentation rep = new ClientRepresentation();
+    private ClientRepresentation rep;
 
     public static ClientBuilder create() {
-        return new ClientBuilder();
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setEnabled(Boolean.TRUE);
+        return new ClientBuilder(rep);
     }
 
-    private ClientBuilder() {
-        rep.setEnabled(true);
+    public static ClientBuilder edit(ClientRepresentation rep) {
+        return new ClientBuilder(rep);
+    }
+
+    private ClientBuilder(ClientRepresentation rep) {
+        this.rep = rep;
     }
 
     public ClientBuilder id(String id) {
@@ -97,6 +106,26 @@ public class ClientBuilder {
 
     public ClientBuilder authenticatorType(String providerId) {
         rep.setClientAuthenticatorType(providerId);
+        return this;
+    }
+
+    public ClientBuilder addWebOrigin(String webOrigin) {
+        List<String> uris = rep.getWebOrigins();
+        if (uris == null) {
+            uris = new LinkedList<>();
+            rep.setWebOrigins(uris);
+        }
+        uris.add(webOrigin);
+        return this;
+    }
+
+    public ClientBuilder addRedirectUri(String redirectUri) {
+        List<String> uris = rep.getRedirectUris();
+        if (uris == null) {
+            uris = new LinkedList<>();
+            rep.setRedirectUris(uris);
+        }
+        uris.add(redirectUri);
         return this;
     }
 

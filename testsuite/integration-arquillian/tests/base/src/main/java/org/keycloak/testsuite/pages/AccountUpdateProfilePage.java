@@ -56,7 +56,7 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
     @FindBy(className = "alert-error")
     private WebElement errorMessage;
 
-    private String getPath() {
+    public String getPath() {
         return RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build("test").toString();
     }
 

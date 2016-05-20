@@ -101,7 +101,7 @@
     {
       "clientId": "test-app",
       "enabled": true,
-      "baseUrl": "http://localhost:8180/auth/realms/master/app",
+      "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
       "redirectUris": [
         "http://localhost:8180/auth/realms/master/app/*"
       ],
