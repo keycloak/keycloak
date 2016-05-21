@@ -107,8 +107,6 @@
                 promise.setError();
             });
 
-            var configPromise = loadConfig(config);
-
             function onLoad() {
                 var doLogin = function(prompt) {
                     if (!prompt) {
@@ -180,8 +178,7 @@
                 }
             }
 
-            configPromise.success(processInit);
-            configPromise.error(function() {
+            var configPromise = loadConfig(config,processInit,function() {
                 promise.setError();
             });
 
@@ -531,8 +528,8 @@
 
         }
 
-        function loadConfig(url) {
-            var promise = createPromise();
+        function loadConfig(url,successCallback,fallCallback) {
+            var promise = createPromise(successCallback,fallCallback);
             var configUrl;
 
             if (!config) {
@@ -715,7 +712,7 @@
             }
         }
 
-        function createPromise() {
+        function createPromise(successCallback,errorCallback) {
             var p = {
                 setSuccess: function(result) {
                     p.success = true;
@@ -752,6 +749,8 @@
                     }
                 }
             }
+            if (successCallback) p.success(successCallback);
+            if (errorCallback) p.error(errorCallback);
             return p;
         }
 
