@@ -129,9 +129,8 @@
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>org.wildfly</groupId>
+                    <groupId>org.wildfly.arquillian</groupId>
                     <artifactId>wildfly-arquillian-container-${app.server.type}</artifactId>
-                    <version>${arquillian-wildfly-container.version}</version>
                 </dependency>                
             </dependencies>            
         </profile>

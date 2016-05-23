@@ -62,8 +62,24 @@
         <profile>
             <id>standalone-ha</id>
             <properties>
-                <auth.server.config>standalone-ha.xml</auth.server.config>
+                <auth.server.config.property.value>standalone-ha.xml</auth.server.config.property.value>
             </properties>
+        </profile>
+        <profile>
+            <id>domain</id>
+            <properties>
+                <auth.server.config.property.name>domainConfig</auth.server.config.property.name>
+                <auth.server.config.property.value>domain.xml</auth.server.config.property.value>
+                <auth.server.config.dir>${auth.server.home}/domain/configuration</auth.server.config.dir>
+                <auth.server.adapter.impl.class>org.jboss.as.arquillian.container.domain.managed.ManagedDomainDeployableContainer</auth.server.adapter.impl.class>
+                <auth.server.management.port>9990</auth.server.management.port>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly.arquillian</groupId>
+                    <artifactId>wildfly-arquillian-container-domain-managed</artifactId>
+                </dependency>
+            </dependencies>
         </profile>
     </profiles>
 </project>
