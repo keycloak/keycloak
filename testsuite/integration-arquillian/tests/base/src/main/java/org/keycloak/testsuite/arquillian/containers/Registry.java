@@ -34,8 +34,11 @@ import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
 import org.jboss.arquillian.core.api.Injector;
 import org.jboss.arquillian.core.spi.ServiceLoader;
 import org.jboss.arquillian.core.spi.Validate;
+import static org.keycloak.testsuite.arquillian.containers.RegistryCreator.ADAPTER_IMPL_CONFIG_STRING;
 import static org.keycloak.testsuite.arquillian.containers.RegistryCreator.getAdapterImplClassValue;
 import static org.keycloak.testsuite.arquillian.containers.RegistryCreator.getContainerAdapter;
+import static org.keycloak.testsuite.arquillian.containers.SecurityActions.isClassPresent;
+import static org.keycloak.testsuite.arquillian.containers.SecurityActions.loadClass;
 
 /**
  * This class registers all adapters which are specified in the arquillian.xml.
@@ -78,6 +81,10 @@ public class Registry implements ContainerRegistry {
                 // just one container on cp
                 dcService = containerAdapters.iterator().next();
             } else {
+                Container domainContainer = domainContainer(loader, definition);
+                if (domainContainer != null) {
+                    return domainContainer;
+                }
                 if (dcService == null) {
                     dcService = getContainerAdapter(getAdapterImplClassValue(definition), containerAdapters);
                 }
@@ -93,6 +100,42 @@ public class Registry implements ContainerRegistry {
         } catch (Exception e) {
             throw new ContainerCreationException("Could not create Container " + definition.getContainerName(), e);
         }
+    }
+    
+    private Container domainContainer(ServiceLoader loader, ContainerDef definition) {
+        for (Container container : containers) {
+            String adapterImplClassValue = container.getContainerConfiguration().getContainerProperties()
+                    .get(ADAPTER_IMPL_CONFIG_STRING);
+
+            if (isServiceLoaderClassAssignableFromAdapterImplClass(loader, adapterImplClassValue.trim())) {
+                try {
+                    return addContainer((Container) injector.inject(
+                            new ContainerImpl(
+                                    definition.getContainerName(),
+                                    (DeployableContainer) loader.onlyOne(DeployableContainer.class),
+                                    definition)));
+                } catch (Exception ex) {
+                    throw new ContainerCreationException(
+                            "Could not create Container " + definition.getContainerName(), ex);
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean isServiceLoaderClassAssignableFromAdapterImplClass(ServiceLoader loader, String adapterImplClassValue) {
+        if (adapterImplClassValue == null && loader == null) {
+            return false;
+        }
+        if (isClassPresent(adapterImplClassValue)) {
+            Class<?> aClass = loadClass(adapterImplClassValue);
+            String loaderClassName = loader.getClass().getName();
+            if (loaderClassName.contains("$")) {
+                loaderClassName = loaderClassName.substring(0, loaderClassName.indexOf("$"));
+            }
+            return loadClass(loaderClassName).isAssignableFrom(aClass);
+        }
+        return false;
     }
 
     @Override
