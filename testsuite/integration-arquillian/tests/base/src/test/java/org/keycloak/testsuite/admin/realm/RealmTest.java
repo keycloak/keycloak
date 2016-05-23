@@ -133,6 +133,26 @@ public class RealmTest extends AbstractAdminTest {
     }
 
     @Test
+    public void createRealmCheckDefaultPasswordPolicy() {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("new-realm");
+
+        adminClient.realms().create(rep);
+
+        assertEquals("hashIterations(20000)", adminClient.realm("new-realm").toRepresentation().getPasswordPolicy());
+
+        adminClient.realms().realm("new-realm").remove();
+
+        rep.setPasswordPolicy("length(8)");
+
+        adminClient.realms().create(rep);
+
+        assertEquals("length(8)", adminClient.realm("new-realm").toRepresentation().getPasswordPolicy());
+
+        adminClient.realms().realm("new-realm").remove();
+    }
+
+    @Test
     public void createRealmFromJson() {
         RealmRepresentation rep = loadJson(getClass().getResourceAsStream("/admin-test/testrealm.json"), RealmRepresentation.class);
         adminClient.realms().create(rep);

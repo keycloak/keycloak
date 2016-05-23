@@ -163,7 +163,7 @@ public class AdapterTest extends AbstractModelTest {
         user.updateCredential(cred);
         Assert.assertTrue(userProvider.validCredentials(session, realmModel, user, UserCredentialModel.password("geheim")));
         List<UserCredentialValueModel> creds = user.getCredentialsDirectly();
-        Assert.assertEquals(creds.get(0).getHashIterations(), 1);
+        Assert.assertEquals(creds.get(0).getHashIterations(), 20000);
         realmModel.setPasswordPolicy(new PasswordPolicy("hashIterations(200)"));
         Assert.assertTrue(userProvider.validCredentials(session, realmModel, user, UserCredentialModel.password("geheim")));
         creds = user.getCredentialsDirectly();
