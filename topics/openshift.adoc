@@ -29,7 +29,7 @@ If this is not done anyone can easily gain admin rights to your {{book.project.n
 rhc app create <APPLICATION NAME> http://cartreflect-claytondev.rhcloud.com/github/keycloak/openshift-keycloak-cartridge
 ----	
             
-. Replace `<APPLICATION NAME>` with the name you want (for example keycloak). 
+. Replace `<APPLICATION NAME>` with the name you want (for example {{book.project.name}}). 
 
 Once the instance is created the rhc tool outputs details about it.
 Open the returned `URL` in a browser to open the {{book.project.name}} servers homepage. 
