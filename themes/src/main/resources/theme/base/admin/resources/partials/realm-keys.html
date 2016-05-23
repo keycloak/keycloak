@@ -7,41 +7,82 @@
 
         <fieldset class="border-top">
             <div class="form-group">
-                <label class="col-md-2 control-label" for="privateKey">{{:: 'privateKey' | translate}}</label>
-
-                <div class="col-md-10">
-                    <textarea type="password" id="privateKey" name="privateKey" class="form-control" rows="{{!realm.privateKey ? 1 : 8}}" data-ng-model="realm.privateKey"></textarea>
-                </div>
-            </div>
-            <div class="form-group">
                 <label class="col-md-2 control-label" for="publicKey">{{:: 'publicKey' | translate}}</label>
 
                 <div class="col-md-10">
                     <textarea type="text" id="publicKey" name="publicKey" class="form-control" rows="4"
-                              kc-select-action="click" data-ng-model="realm.publicKey"></textarea>
+                              kc-select-action="click" data-ng-model="realm.publicKey" readonly></textarea>
                 </div>
             </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="certificate">{{:: 'certificate' | translate}}</label>
 
                 <div class="col-md-10">
-                    <textarea type="text" id="certificate" name="certificate" class="form-control" rows="8" kc-select-action="click" data-ng-model="realm.certificate"></textarea>
+                    <textarea type="text" id="certificate" name="certificate" class="form-control" rows="8" kc-select-action="click" data-ng-model="realm.certificate" readonly></textarea>
                 </div>
             </div>
         </fieldset>
 
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">
-                <button class="btn btn-danger" type="button" data-ng-click="generate()" data-ng-disabled="enableUpload">{{:: 'gen-new-keys' | translate}}</button>
+                <button class="btn btn-danger" type="button" data-ng-click="generate()">{{:: 'gen-new-keys' | translate}}</button>
             </div>
         </div>
-        <div class="form-group" data-ng-show="access.manageRealm">
-            <div class="col-md-10 col-md-offset-2">
-                <button class="btn btn-danger" type="button" data-ng-click="save()" data-ng-disabled="!enableUpload">{{:: 'upload-keys' | translate}}</button>
-                <button class="btn btn-default" type="button" data-ng-click="cancel()" data-ng-disabled="!enableUpload">{{:: 'cancel' | translate}}</button>
+
+        <fieldset>
+            <legend>Import keys</legend>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="privateKeyUpload">{{:: 'privateKey' | translate}}</label>
+                <div class="col-md-6">
+                    <div class="controls kc-button-input-file" data-ng-show="!privateKeyUploadContent">
+                        <label for="privateKeyUpload" class="btn btn-default">{{:: 'select-file' | translate}} <i class="pficon pficon-import"></i></label>
+                        <input id="privateKeyUpload" type="file" class="hidden" ng-file-select="privateKeyUpload($files)">
+                    </div>
+                        <span class="kc-uploaded-file">
+                            {{privateKeyUploadName}}
+                        </span>
+                </div>
             </div>
-        </div>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="publicKeyUpload">{{:: 'publicKey' | translate}}</label>
+                <div class="col-md-6">
+                    <div class="controls kc-button-input-file" data-ng-show="!publicKeyUploadContent">
+                        <label for="publicKeyUpload" class="btn btn-default">{{:: 'select-file' | translate}} <i class="pficon pficon-import"></i></label>
+                        <input id="publicKeyUpload" type="file" class="hidden" ng-file-select="publicKeyUpload($files)">
+                    </div>
+                        <span class="kc-uploaded-file">
+                            {{publicKeyUploadName}}
+                        </span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="certificateUpload">{{:: 'certificate' | translate}}</label>
+                <div class="col-md-6">
+                    <div class="controls kc-button-input-file" data-ng-show="!certificateUploadContent">
+                        <label for="certificateUpload" class="btn btn-default">{{:: 'select-file' | translate}} <i class="pficon pficon-import"></i></label>
+                        <input id="certificateUpload" type="file" class="hidden" ng-file-select="certificateUpload($files)">
+                    </div>
+                        <span class="kc-uploaded-file">
+                            {{certificateUploadName}}
+                        </span>
+                </div>
+            </div>
+
+            <div class="form-group" data-ng-show="access.manageRealm">
+                <div class="col-md-10 col-md-offset-2">
+                    <button class="btn btn-danger" type="button" data-ng-click="import()" data-ng-disabled="!((privateKeyUploadContent && publicKeyUploadContent) || certificateUploadContent)">{{:: 'upload-keys' | translate}}</button>
+                    <button class="btn btn-default" type="button" data-ng-click="clearImport()" data-ng-disabled="!privateKeyUploadContent && !publicKeyUploadContent && !certificateUploadContent">{{:: 'clear' | translate}}</button>
+                </div>
+            </div>
+        </fieldset>
     </form>
+
+
+
+
 </div>
 
 

@@ -1024,19 +1024,50 @@ module.controller('RealmKeysDetailCtrl', function($scope, Realm, realm, $http, $
     $scope.generate = function() {
         Dialog.confirmGenerateKeys($scope.realm.realm, 'realm', function() {
                 Realm.update({ realm: realm.realm, publicKey : 'GENERATE' }, function () {
-                Notifications.success('New keys generated for realm.');
-                Realm.get({ id : realm.realm }, function(updated) {
-                    $scope.realm = updated;
-                })
+                    $route.reload();
+                    Notifications.success('New keys generated for realm.');
             });
         });
     };
 
-    $scope.cancel = function() {
+    $scope.privateKeyUpload = function($files){
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            $scope.$apply(function() {
+                $scope.privateKeyUploadContent = e.target.result;
+            });
+        };
+        reader.readAsText($files[0]);
+        $scope.privateKeyUploadName = $files[0].name;
+    };
+
+    $scope.publicKeyUpload = function($files){
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            $scope.$apply(function() {
+                $scope.publicKeyUploadContent = e.target.result;
+            });
+        };
+        reader.readAsText($files[0]);
+        $scope.publicKeyUploadName = $files[0].name;
+    };
+
+    $scope.certificateUpload = function($files){
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            $scope.$apply(function() {
+                $scope.certificateUploadContent = e.target.result;
+            });
+        };
+        reader.readAsText($files[0]);
+        $scope.certificateUploadName = $files[0].name;
+    };
+
+    $scope.clearImport = function() {
         $route.reload();
     }
 
-    $scope.save = function() {
+    $scope.import = function() {
         var title = 'Upload keys for realm';
         var msg = 'Are you sure you want to upload keys for ' + $scope.realm.realm + '?';
         var btns = {
@@ -1051,11 +1082,20 @@ module.controller('RealmKeysDetailCtrl', function($scope, Realm, realm, $http, $
         };
 
         Dialog.open(title, msg, btns, function() {
-                Realm.update($scope.realm, function () {
-                Notifications.success('Keys uploaded for realm.');
-                Realm.get({ id : realm.realm }, function(updated) {
-                    $scope.realm = updated;
-                })
+            var upload = { realm : $scope.realm.realm };
+
+            if ($scope.privateKeyUploadContent && $scope.publicKeyUploadContent) {
+                upload.privateKey = $scope.privateKeyUploadContent;
+                upload.publicKey = $scope.publicKeyUploadContent;
+            }
+
+            if ($scope.certificateUploadContent) {
+                upload.certificate = $scope.certificateUploadContent;
+            }
+
+            Realm.update(upload, function () {
+                $route.reload();
+                Notifications.success('Keys imported for realm.');
             });
         });
     };
