@@ -366,7 +366,6 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
             throw new IOException("File not found: " + filePath);
         }
         File keystoreFile = new File(fileUrl.getFile());
-        ContentType keystoreContentType = ContentType.create(Files.probeContentType(keystoreFile.toPath()));
 
         // Get admin access token, no matter it's master realm's admin
         OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(
@@ -378,7 +377,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
                 + "/clients/" + client.getId() + "/certificates/jwt.credential/upload-certificate";
 
         // Prepare the HTTP request
-        FileBody fileBody = new FileBody(keystoreFile, keystoreContentType);
+        FileBody fileBody = new FileBody(keystoreFile);
         HttpEntity entity = MultipartEntityBuilder.create()
                 .addPart("file", fileBody)
                 .addTextBody("keystoreFormat", keystoreFormat)
