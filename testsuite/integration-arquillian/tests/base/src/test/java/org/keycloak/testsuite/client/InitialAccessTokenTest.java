@@ -50,7 +50,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         ClientRepresentation rep = new ClientRepresentation();
 
-        Thread.sleep(2);
+        setTimeOffset(10);
 
         ClientRepresentation created = reg.create(rep);
         Assert.assertNotNull(created);
@@ -91,12 +91,12 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         ClientRepresentation rep = new ClientRepresentation();
 
-        Thread.sleep(2);
+        setTimeOffset(10);
 
         try {
             reg.create(rep);
         } catch (ClientRegistrationException e) {
-            Assert.assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            Assert.assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
     }
 
