@@ -60,6 +60,8 @@
 
         <!--used in profile auth-server-cluster. profile jpa sets this to true-->
         <skip.h2.tcp>false</skip.h2.tcp>
+
+        <security.xsl>security.xsl</security.xsl>
     </properties>
 
     <profiles>
@@ -372,7 +374,7 @@
                                                 <includes>
                                                     <include>standalone.xml</include>
                                                 </includes>
-                                                <stylesheet>${common.resources}/security.xsl</stylesheet>
+                                                <stylesheet>${common.resources}/${security.xsl}</stylesheet>
                                                 <outputDir>${auth.server.home}/standalone/configuration</outputDir>
                                             </transformationSet>
                                         </transformationSets>
@@ -712,6 +714,9 @@
 
         <profile>
             <id>auth-server-wildfly</id>
+            <properties>
+                <security.xsl>security-wildfly.xsl</security.xsl>
+            </properties>
             <modules>
                 <module>wildfly</module>
             </modules>
