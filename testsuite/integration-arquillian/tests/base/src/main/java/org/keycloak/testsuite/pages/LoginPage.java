@@ -184,7 +184,7 @@ public class LoginPage extends AbstractPage {
     }
 
     public void openLanguage(String language){
-        WebElement langLink = localeDropdown.findElement(By.id("kc-locale-" + language));
+        WebElement langLink = localeDropdown.findElement(By.xpath("//a[text()='" +language +"']"));
         String url = langLink.getAttribute("href");
         driver.navigate().to(url);
     }
