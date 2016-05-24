@@ -19,11 +19,14 @@ package org.keycloak.testsuite.util;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
+import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 import org.keycloak.common.util.ObjectUtil;
@@ -205,12 +208,27 @@ public class AssertAdminEvents implements TestRule {
                     try {
                         Object actualRep = JsonSerialization.readValue(actual.getRepresentation(), expectedRep.getClass());
 
-                        for (Method method : Reflections.getAllDeclaredMethods(expectedRep.getClass())) {
-                            if (method.getName().startsWith("get") || method.getName().startsWith("is")) {
-                                Object expectedValue = Reflections.invokeMethod(method, expectedRep);
+                        if (expectedRep instanceof Map) {
+                            // Special comparing of representations of type map. All of "expected" must be available on "actual"
+                            Map<?, ?> expectedRepMap = (Map) expectedRep;
+                            Map<?, ?> actualRepMap = (Map) actualRep;
+
+                            for (Map.Entry entry : expectedRepMap.entrySet()) {
+                                Object expectedValue = entry.getValue();
                                 if (expectedValue != null) {
-                                    Object actualValue = Reflections.invokeMethod(method, actualRep);
-                                    Assert.assertEquals("Property " + method.getName() + " of representation not equal.", expectedValue, actualValue);
+                                    Object actualValue = actualRepMap.get(entry.getKey());
+                                    Assert.assertEquals("Map item with key '" + entry.getKey() + "' not equal.", expectedValue, actualValue);
+                                }
+                            }
+                        } else {
+                            // Reflection-baseed comparing for other types
+                            for (Method method : Reflections.getAllDeclaredMethods(expectedRep.getClass())) {
+                                if (method.getName().startsWith("get") || method.getName().startsWith("is")) {
+                                    Object expectedValue = Reflections.invokeMethod(method, expectedRep);
+                                    if (expectedValue != null) {
+                                        Object actualValue = Reflections.invokeMethod(method, actualRep);
+                                        Assert.assertEquals("Property method '" + method.getName() + "' of representation not equal.", expectedValue, actualValue);
+                                    }
                                 }
                             }
                         }
@@ -239,6 +257,23 @@ public class AssertAdminEvents implements TestRule {
         } catch (JWSInputException jwe) {
             throw new RuntimeException(jwe);
         }
+    }
+
+    public static Matcher<String> isExpectedPrefixFollowedByUuid(final String prefix) {
+        return new TypeSafeMatcher<String>() {
+
+            @Override
+            protected boolean matchesSafely(String item) {
+                int expectedLength = prefix.length() + 1 + org.keycloak.models.utils.KeycloakModelUtils.generateId().length();
+                return item.startsWith(prefix) && expectedLength == item.length();
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("resourcePath in the format like \"" + prefix + "/<UUID>\"");
+            }
+
+        };
     }
 
 

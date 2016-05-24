@@ -28,6 +28,7 @@ import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormAuthenticator;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -212,7 +213,10 @@ public class AuthenticationManagementResource {
             return ErrorResponse.exists("Flow " + flow.getAlias() + " already exists");
         }
 
-        realm.addAuthenticationFlow(RepresentationToModel.toModel(flow));
+        AuthenticationFlowModel createdModel = realm.addAuthenticationFlow(RepresentationToModel.toModel(flow));
+
+        flow.setId(createdModel.getId());
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, createdModel.getId()).representation(flow).success();
         return Response.status(201).build();
     }
 
@@ -263,6 +267,9 @@ public class AuthenticationManagementResource {
         	realm.removeAuthenticatorExecution(execution);
         }
         realm.removeAuthenticationFlow(flow);
+
+        // Use just one event for top-level flow. Using separate events won't work properly for flows of depth 2 or bigger
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
     /**
@@ -298,6 +305,9 @@ public class AuthenticationManagementResource {
         copy.setTopLevel(flow.isTopLevel());
         copy = realm.addAuthenticationFlow(copy);
         copy(newName, flow, copy);
+
+        data.put("id", copy.getId());
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(data).success();
 
         return Response.status(201).build();
 
@@ -362,8 +372,10 @@ public class AuthenticationManagementResource {
         execution.setAuthenticatorFlow(true);
         execution.setAuthenticator(provider);
         execution.setPriority(getNextPriority(parentFlow));
+        execution = realm.addAuthenticatorExecution(execution);
 
-        realm.addAuthenticatorExecution(execution);
+        data.put("id", execution.getId());
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(data).success();
     }
 
     private int getNextPriority(AuthenticationFlowModel parentFlow) {
@@ -413,7 +425,10 @@ public class AuthenticationManagementResource {
         execution.setAuthenticator(provider);
         execution.setPriority(getNextPriority(parentFlow));
 
-        realm.addAuthenticatorExecution(execution);
+        execution = realm.addAuthenticatorExecution(execution);
+
+        data.put("id", execution.getId());
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(data).success();
     }
 
     /**
@@ -519,6 +534,7 @@ public class AuthenticationManagementResource {
         if (!model.getRequirement().name().equals(rep.getRequirement())) {
             model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
             realm.updateAuthenticatorExecution(model);
+            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
         }
     }
 
@@ -541,6 +557,8 @@ public class AuthenticationManagementResource {
         }
         model.setPriority(getNextPriority(parentFlow));
         model = realm.addAuthenticatorExecution(model);
+
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(execution).success();
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
 
@@ -592,6 +610,8 @@ public class AuthenticationManagementResource {
         realm.updateAuthenticatorExecution(previous);
         model.setPriority(tmp);
         realm.updateAuthenticatorExecution(model);
+
+        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).success();
     }
 
     public List<AuthenticationExecutionModel> getSortedExecutions(AuthenticationFlowModel parentFlow) {
@@ -635,6 +655,8 @@ public class AuthenticationManagementResource {
         realm.updateAuthenticatorExecution(model);
         next.setPriority(tmp);
         realm.updateAuthenticatorExecution(next);
+
+        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).success();
     }
 
 
@@ -666,6 +688,8 @@ public class AuthenticationManagementResource {
         }
 
         realm.removeAuthenticatorExecution(model);
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
 
@@ -693,6 +717,9 @@ public class AuthenticationManagementResource {
         config = realm.addAuthenticatorConfig(config);
         model.setAuthenticatorConfig(config.getId());
         realm.updateAuthenticatorExecution(model);
+
+        json.setId(config.getId());
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(json).success();
         return Response.created(uriInfo.getAbsolutePathBuilder().path(config.getId()).build()).build();
     }
 
@@ -772,7 +799,10 @@ public class AuthenticationManagementResource {
         requiredAction.setProviderId(providerId);
         requiredAction.setDefaultAction(false);
         requiredAction.setEnabled(true);
-        realm.addRequiredActionProvider(requiredAction);
+        requiredAction = realm.addRequiredActionProvider(requiredAction);
+
+        data.put("id", requiredAction.getId());
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(data).success();
     }
 
 
@@ -850,6 +880,8 @@ public class AuthenticationManagementResource {
         update.setEnabled(rep.isEnabled());
         update.setConfig(rep.getConfig());
         realm.updateRequiredActionProvider(update);
+
+        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
     }
 
     /**
@@ -866,6 +898,8 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Failed to find required action.");
         }
         realm.removeRequiredActionProvider(model);
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
     /**
@@ -947,6 +981,7 @@ public class AuthenticationManagementResource {
         auth.requireManage();
 
         AuthenticatorConfigModel config = realm.addAuthenticatorConfig(RepresentationToModel.toModel(rep));
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, config.getId()).representation(rep).success();
         return Response.created(uriInfo.getAbsolutePathBuilder().path(config.getId()).build()).build();
     }
 
@@ -995,6 +1030,8 @@ public class AuthenticationManagementResource {
         }
 
         realm.removeAuthenticatorConfig(config);
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
     /**
@@ -1017,5 +1054,6 @@ public class AuthenticationManagementResource {
         exists.setAlias(rep.getAlias());
         exists.setConfig(rep.getConfig());
         realm.updateAuthenticatorConfig(exists);
+        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
     }
 }

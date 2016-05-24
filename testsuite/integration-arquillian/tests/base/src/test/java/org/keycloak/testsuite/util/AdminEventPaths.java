@@ -21,6 +21,7 @@ import java.net.URI;
 
 import javax.ws.rs.core.UriBuilder;
 
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -349,6 +350,85 @@ public class AdminEventPaths {
         URI uri = UriBuilder.fromUri(groupPath(groupId))
                 .path(GroupResource.class, "subGroup")
                 .build();
+        return uri.toString();
+    }
+
+
+    // AUTHENTICATION FLOWS
+
+    public static String authMgmtBasePath() {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "flows")
+                .build();
+        return uri.toString();
+    }
+
+    public static String authFlowsPath() {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "getFlows")
+                .build();
+        return uri.toString();
+    }
+
+    public static String authFlowPath(String flowId) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "getFlow")
+                .build(flowId);
+        return uri.toString();
+    }
+
+    public static String authCopyFlowPath(String flowAlias) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "copy")
+                .build(flowAlias);
+        return uri.toString();
+    }
+
+    public static String authAddExecutionFlowPath(String flowAlias) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "addExecutionFlow")
+                .build(flowAlias);
+        return uri.toString();
+    }
+
+    public static String authAddExecutionPath(String flowAlias) {
+        return authFlowPath(flowAlias) + "/executions/execution";
+    }
+
+    public static String authUpdateExecutionPath(String flowAlias) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "updateExecutions")
+                .build(flowAlias);
+        return uri.toString();
+    }
+
+    public static String authExecutionPath(String executionId) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "removeExecution")
+                .build(executionId);
+        return uri.toString();
+    }
+
+    public static String authAddExecutionConfigPath(String executionId) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "newExecutionConfig")
+                .build(executionId);
+        return uri.toString();
+    }
+
+    public static String authExecutionConfigPath(String configId) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "getAuthenticatorConfig")
+                .build(configId);
+        return uri.toString();
+    }
+
+    public static String authRaiseExecutionPath(String executionId) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "raisePriority")
+                .build(executionId);
+        return uri.toString();
+    }
+
+    public static String authLowerExecutionPath(String executionId) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "lowerPriority")
+                .build(executionId);
+        return uri.toString();
+    }
+
+    public static String authRequiredActionPath(String requiredActionAlias) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "getRequiredAction")
+                .build(requiredActionAlias);
         return uri.toString();
     }
 
