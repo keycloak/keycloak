@@ -250,7 +250,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         checkRedirectUri("urn:ietf:wg:oauth:2.0:oob", true, true);
         checkRedirectUri("http://localhost", true);
 
-        checkRedirectUri("http://localhost:8180", true, true);
+        checkRedirectUri("http://localhost:8280", true, true);
 
         checkRedirectUri("http://localhosts", false);
         checkRedirectUri("http://localhost/myapp", false);
@@ -258,7 +258,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         oauth.clientId("test-installed2");
 
         checkRedirectUri("http://localhost/myapp", true);
-        checkRedirectUri("http://localhost:8180/myapp", true, true);
+        checkRedirectUri("http://localhost:8280/myapp", true, true);
 
         checkRedirectUri("http://localhosts/myapp", false);
         checkRedirectUri("http://localhost", false);
