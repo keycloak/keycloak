@@ -1,5 +1,5 @@
 
-=== Generated Client Adapter Config
+=== Generating Client Adapter Config
 
 The {{book.project.name}} can pre-generate configure files that you can use to install a client adapter for in your application's
 deployment environment.  A number of adapter types are supported for both OIDC and SAML.  Go to the `Installation` tab of the
