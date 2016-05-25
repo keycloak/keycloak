@@ -17,12 +17,18 @@
 
 package org.keycloak.testsuite.util;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
@@ -37,7 +43,9 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.util.JsonSerialization;
@@ -200,16 +208,34 @@ public class AssertAdminEvents implements TestRule {
                 Assert.assertEquals(expectedAuth.getClientId(), actualAuth.getClientId());
             }
 
-            // Representation - compare the non-null fields of "expected" representation with the actual representation
+            // Representation comparison
             if (expectedRep != null) {
                 if (actual.getRepresentation() == null) {
                     Assert.fail("Expected representation " + expectedRep + " but no representation was available on actual event");
                 } else {
                     try {
-                        Object actualRep = JsonSerialization.readValue(actual.getRepresentation(), expectedRep.getClass());
 
-                        if (expectedRep instanceof Map) {
-                            // Special comparing of representations of type map. All of "expected" must be available on "actual"
+                        if (expectedRep instanceof List) {
+                            // List of roles. All must be available in actual representation
+                            List<RoleRepresentation> expectedRoles = (List<RoleRepresentation>) expectedRep;
+                            List<RoleRepresentation> actualRoles = JsonSerialization.readValue(new ByteArrayInputStream(actual.getRepresentation().getBytes()), new TypeReference<List<RoleRepresentation>>() {
+                            });
+
+                            Map<String, String> expectedRolesMap = new HashMap<>();
+                            for (RoleRepresentation role : expectedRoles) {
+                                expectedRolesMap.put(role.getId(), role.getName());
+                            }
+
+                            Map<String, String> actualRolesMap = new HashMap<>();
+                            for (RoleRepresentation role : actualRoles) {
+                                actualRolesMap.put(role.getId(), role.getName());
+                            }
+                            Assert.assertEquals(expectedRolesMap, actualRolesMap);
+
+                        } else if (expectedRep instanceof Map) {
+                            Object actualRep = JsonSerialization.readValue(actual.getRepresentation(), Map.class);
+
+                            // Comparing of map representations. All of "expected" key-values must be available on "actual" map from the event
                             Map<?, ?> expectedRepMap = (Map) expectedRep;
                             Map<?, ?> actualRepMap = (Map) actualRep;
 
@@ -221,7 +247,9 @@ public class AssertAdminEvents implements TestRule {
                                 }
                             }
                         } else {
-                            // Reflection-baseed comparing for other types
+                            Object actualRep = JsonSerialization.readValue(actual.getRepresentation(), expectedRep.getClass());
+
+                            // Reflection-based comparing for other types - compare the non-null fields of "expected" representation with the "actual" representation from the event
                             for (Method method : Reflections.getAllDeclaredMethods(expectedRep.getClass())) {
                                 if (method.getName().startsWith("get") || method.getName().startsWith("is")) {
                                     Object expectedValue = Reflections.invokeMethod(method, expectedRep);
