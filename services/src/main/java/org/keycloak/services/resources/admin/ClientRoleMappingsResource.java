@@ -43,6 +43,7 @@ import javax.ws.rs.core.UriInfo;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -196,12 +197,15 @@ public class ClientRoleMappingsResource {
 
         if (roles == null) {
             Set<RoleModel> roleModels = user.getClientRoleMappings(client);
+            roles = new LinkedList<>();
+
             for (RoleModel roleModel : roleModels) {
-                if (!(roleModel.getContainer() instanceof ClientModel)) {
+                if (roleModel.getContainer() instanceof ClientModel) {
                     ClientModel client = (ClientModel) roleModel.getContainer();
                     if (!client.getId().equals(this.client.getId())) continue;
                 }
                 user.deleteRoleMapping(roleModel);
+                roles.add(ModelToRepresentation.toRepresentation(roleModel));
             }
 
         } else {
@@ -220,6 +224,7 @@ public class ClientRoleMappingsResource {
                 }
             }
         }
+
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(roles).success();
     }
 }

@@ -282,7 +282,7 @@ public class RealmTest extends AbstractAdminTest {
     public void deleteDefaultRole() {
         RoleRepresentation role = new RoleRepresentation("test", "test", false);
         realm.roles().create(role);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Matchers.startsWith(AdminEventPaths.rolesResourcePath()));
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("test"), role);
 
         assertNotNull(realm.roles().get("test").toRepresentation());
 
