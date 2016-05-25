@@ -102,8 +102,9 @@
             <simplesect>
                 <title>Default password hashing interval increased to 20K</title>
                 <para>
-                    The default password hashing interval for new realms is increased to 20K (from 1 previously). This will have a significant performance
-                    when users login.
+                    The default password hashing interval for new realms has been increased to 20K (from 1 previously). This change will have an impact on
+                    performance when users authenticate. For example with the old default (1) it takes less than 1 ms to hash a password, but with the new
+                    default (20K) the same operation can take 50-100 ms.  
                 </para>
             </simplesect>
         </section>
