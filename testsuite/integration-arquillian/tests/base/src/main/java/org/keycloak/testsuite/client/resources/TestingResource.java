@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.client.resources;
 
+import java.util.Date;
+import java.util.List;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
@@ -32,6 +34,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Map;
+import org.jboss.resteasy.annotations.cache.NoCache;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -71,6 +74,99 @@ public interface TestingResource {
     @Path("/clear-admin-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     Response clearAdminEventQueue();
+
+    @GET
+    @Path("/clear-event-store")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearEventStore();
+
+    @GET
+    @Path("/clear-event-store-for-realm")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearEventStore(@QueryParam("realmId") String realmId);
+
+    @GET
+    @Path("/clear-event-store-older-than")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
+
+    /**
+     * Query events
+     *
+     * Returns all events, or filters them based on URL query parameters listed here
+     *
+     * @param realmId The realm
+     * @param types The types of events to return
+     * @param client App or oauth client name
+     * @param user User id
+     * @param dateFrom From date
+     * @param dateTo To date
+     * @param ipAddress IP address
+     * @param firstResult Paging offset
+     * @param maxResults Paging size
+     * @return
+     */
+    @Path("query-events")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
+            @QueryParam("user") String user, @QueryParam("dateFrom") Date dateFrom, @QueryParam("dateTo") Date dateTo,
+            @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults);
+
+    @PUT
+    @Path("/on-event")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void onEvent(final EventRepresentation rep);
+
+    @GET
+    @Path("/clear-admin-event-store")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearAdminEventStore();
+
+    @GET
+    @Path("/clear-admin-event-store-for-realm")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearAdminEventStore(@QueryParam("realmId") String realmId);
+
+    @GET
+    @Path("/clear-admin-event-store-older-than")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
+
+    /**
+     * Get admin events
+     *
+     * Returns all admin events, or filters events based on URL query parameters listed here
+     *
+     * @param realmId
+     * @param operationTypes
+     * @param authRealm
+     * @param authClient
+     * @param authUser user id
+     * @param authIpAddress
+     * @param resourcePath
+     * @param dateFrom
+     * @param dateTo
+     * @param firstResult
+     * @param maxResults
+     * @return
+     */
+    @Path("query-admin-events")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<AdminEventRepresentation> getAdminEvents(@QueryParam("realmId") String realmId, @QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
+            @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
+            @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") Date dateFrom,
+            @QueryParam("dateTo") Date dateTo, @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults);
+
+    @POST
+    @Path("/on-admin-event")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void onAdminEvent(final AdminEventRepresentation rep, @QueryParam("includeRepresentation") boolean includeRepresentation);
 
     @POST
     @Path("/remove-user-session")
