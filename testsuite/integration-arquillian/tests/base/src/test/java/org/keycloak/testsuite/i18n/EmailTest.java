@@ -17,58 +17,45 @@
 package org.keycloak.testsuite.i18n;
 
 import org.junit.Assert;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
-import org.keycloak.testsuite.rule.GreenMailRule;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.GreenMailRule;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class EmailTest {
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
-        @Override
-        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            UserModel user = manager.getSession().users().addUser(appRealm, "login-test");
-            user.setEmail("login@test.com");
-            user.setEnabled(true);
-
-            UserCredentialModel creds = new UserCredentialModel();
-            creds.setType(CredentialRepresentation.PASSWORD);
-            creds.setValue("password");
-
-            user.updateCredential(creds);
-        }
-    });
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
+public class EmailTest extends AbstractI18NTest {
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
-    @WebResource
+    @Page
     protected LoginPasswordResetPage resetPasswordPage;
+
+    private void changeUserLocale(String locale) {
+        UserRepresentation user = findUser("login-test");
+        if (user.getAttributes() == null) user.setAttributes(new HashMap<String, Object>());
+        user.getAttributes().put(UserModel.LOCALE, Collections.singletonList(locale));
+        ApiUtil.findUserByUsernameId(testRealm(), "login-test").update(user);
+    }
 
     @Test
     public void restPasswordEmail() throws IOException, MessagingException {
@@ -82,12 +69,7 @@ public class EmailTest {
 
         Assert.assertEquals("Reset password", message.getSubject());
 
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                manager.getSession().users().getUserByUsername("login-test", appRealm).setSingleAttribute(UserModel.LOCALE, "en");
-            }
-        });
+        changeUserLocale("en");
 
         loginPage.open();
         loginPage.resetPassword();
@@ -103,12 +85,7 @@ public class EmailTest {
 
     @Test
     public void restPasswordEmailGerman() throws IOException, MessagingException {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                manager.getSession().users().getUserByUsername("login-test", appRealm).setSingleAttribute(UserModel.LOCALE, "de");
-            }
-        });
+        changeUserLocale("de");
 
         loginPage.open();
         loginPage.resetPassword();
@@ -119,12 +96,6 @@ public class EmailTest {
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
         Assert.assertEquals("Passwort zurückzusetzen", message.getSubject());
-
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                manager.getSession().users().getUserByUsername("login-test", appRealm).setSingleAttribute(UserModel.LOCALE, "en");
-            }
-        });
     }
+
 }

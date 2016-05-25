@@ -17,7 +17,9 @@
 
 package org.keycloak.testsuite.pages;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -44,6 +46,8 @@ public abstract class AbstractAccountPage extends AbstractPage {
     }
 
     public void openLanguage(String language){
-        localeDropdown.findElement(By.linkText(language)).click();
+        WebElement langLink = localeDropdown.findElement(By.xpath("//a[text()='" +language +"']"));
+        String url = langLink.getAttribute("href");
+        driver.navigate().to(url);
     }
 }
