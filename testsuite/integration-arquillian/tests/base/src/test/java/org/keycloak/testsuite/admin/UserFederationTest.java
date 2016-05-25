@@ -17,8 +17,10 @@
 
 package org.keycloak.testsuite.admin;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
@@ -251,6 +253,7 @@ public class UserFederationTest extends AbstractAdminTest {
         // Switch kerberos authenticator to DISABLED
         kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.toString());
         realm.flows().updateExecutions("browser", kerberosExecution);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution);
 
         // update LDAP provider with kerberos
         ldapRep = userFederation().get(id).toRepresentation();
@@ -264,6 +267,7 @@ public class UserFederationTest extends AbstractAdminTest {
         // Cleanup
         kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.toString());
         realm.flows().updateExecutions("browser", kerberosExecution);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution);
         removeUserFederationProvider(id);
     }
 
@@ -297,7 +301,10 @@ public class UserFederationTest extends AbstractAdminTest {
         // Sync and assert it happened
         UserFederationSyncResultRepresentation syncResult = userFederation().get(id1).syncUsers("triggerFullSync");
         Assert.assertEquals("0 imported users, 0 updated users", syncResult.getStatus());
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationResourcePath(id1) + "/sync");
+
+        Map<String, Object> eventRep = new HashMap<>();
+        eventRep.put("action", "triggerFullSync");
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationResourcePath(id1) + "/sync", eventRep);
 
         int fullSyncTime = userFederation().get(id1).toRepresentation().getLastSync();
         Assert.assertTrue(fullSyncTime > 0);
@@ -305,7 +312,9 @@ public class UserFederationTest extends AbstractAdminTest {
         // Changed sync
         setTimeOffset(50);
         syncResult = userFederation().get(id1).syncUsers("triggerChangedUsersSync");
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationResourcePath(id1) + "/sync");
+
+        eventRep.put("action", "triggerChangedUsersSync");
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationResourcePath(id1) + "/sync", eventRep);
 
         Assert.assertEquals("0 imported users, 0 updated users", syncResult.getStatus());
         int changedSyncTime = userFederation().get(id1).toRepresentation().getLastSync();
@@ -323,8 +332,7 @@ public class UserFederationTest extends AbstractAdminTest {
         resp.close();
         String federationProviderId = ApiUtil.getCreatedId(resp);
 
-        // TODO adminEvents: should be rather whole path include ID (consistency with UPDATE and DELETE)
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationCreateResourcePath(), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationResourcePath(federationProviderId), rep);
         return federationProviderId;
     }
 

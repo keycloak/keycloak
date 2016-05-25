@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.hamcrest.Matchers;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -166,8 +165,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertNotNull(ApiUtil.getCreatedId(response));
         response.close();
 
-        // TODO adminEvents: should rather use alias instead of internalId (same issue like for roles)
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Matchers.startsWith(AdminEventPaths.identityProviderCreatePath()), idpRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderPath(idpRep.getAlias()), idpRep);
     }
 
     private IdentityProviderRepresentation createRep(String id, String providerId) {

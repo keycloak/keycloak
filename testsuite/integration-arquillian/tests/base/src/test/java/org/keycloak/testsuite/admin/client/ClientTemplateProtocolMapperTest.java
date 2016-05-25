@@ -26,7 +26,6 @@ import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.ClientTemplatesResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.events.admin.OperationType;
