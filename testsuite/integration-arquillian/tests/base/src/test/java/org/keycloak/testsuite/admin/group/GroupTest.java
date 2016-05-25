@@ -130,8 +130,7 @@ public class GroupTest extends AbstractGroupTest {
         String groupId = ApiUtil.getCreatedId(response);
         response.close();
 
-        // TODO adminEvents: ID of group is missing in create event
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupsPath(), group);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupPath(groupId), group);
 
         // Set ID to the original rep
         group.setId(groupId);
@@ -177,8 +176,7 @@ public class GroupTest extends AbstractGroupTest {
         level2Group.setName("level2");
         Response response = realm.groups().group(topGroup.getId()).subGroup(level2Group);
         response.close();
-        // TODO adminEvents: Should be CREATE
-        assertAdminEvents.assertEvent("test", OperationType.UPDATE, AdminEventPaths.groupSubgroupsPath(topGroup.getId()), level2Group);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupSubgroupsPath(topGroup.getId()), level2Group);
 
         URI location = response.getLocation();
         final String level2Id = ApiUtil.getCreatedId(response);
@@ -205,8 +203,7 @@ public class GroupTest extends AbstractGroupTest {
         level3Group.setName("level3");
         response = realm.groups().group(level2Group.getId()).subGroup(level3Group);
         response.close();
-        // TODO adminEvents: Should be CREATE
-        assertAdminEvents.assertEvent("test", OperationType.UPDATE, AdminEventPaths.groupSubgroupsPath(level2Group.getId()), level3Group);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupSubgroupsPath(level2Group.getId()), level3Group);
 
         level3Group = realm.getGroupByPath("/top/level2/level3");
         Assert.assertNotNull(level3Group);
@@ -233,7 +230,7 @@ public class GroupTest extends AbstractGroupTest {
 
         UserRepresentation user = realm.users().search("direct-login", -1, -1).get(0);
         realm.users().get(user.getId()).joinGroup(level3Group.getId());
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, Matchers.startsWith(AdminEventPaths.userGroupPath(user.getId(), level3Group.getId())));
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userGroupPath(user.getId(), level3Group.getId()));
 
         List<GroupRepresentation> membership = realm.users().get(user.getId()).groups();
         assertEquals(1, membership.size());
@@ -245,6 +242,7 @@ public class GroupTest extends AbstractGroupTest {
         assertTrue(token.getRealmAccess().getRoles().contains("level3Role"));
 
         realm.addDefaultGroup(level3Group.getId());
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.defaultGroupPath(level3Group.getId()));
 
         List<GroupRepresentation> defaultGroups = realm.getDefaultGroups();
         assertEquals(1, defaultGroups.size());
@@ -263,6 +261,8 @@ public class GroupTest extends AbstractGroupTest {
         assertEquals("level3", membership.get(0).getName());
 
         realm.removeDefaultGroup(level3Group.getId());
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.defaultGroupPath(level3Group.getId()));
+
         defaultGroups = realm.getDefaultGroups();
         assertEquals(0, defaultGroups.size());
 
@@ -348,19 +348,19 @@ public class GroupTest extends AbstractGroupTest {
         assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userResourcePath(userBId));
 
         realm.users().get(userAId).joinGroup(groupId);
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userGroupPath(userAId, groupId));
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userGroupPath(userAId, groupId), group);
 
         List<UserRepresentation> members = realm.groups().group(groupId).members(0, 10);
         assertNames(members, "user-a");
 
         realm.users().get(userBId).joinGroup(groupId);
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userGroupPath(userBId, groupId));
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userGroupPath(userBId, groupId), group);
 
         members = realm.groups().group(groupId).members(0, 10);
         assertNames(members, "user-a", "user-b");
 
         realm.users().get(userAId).leaveGroup(groupId);
-        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userGroupPath(userAId, groupId));
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userGroupPath(userAId, groupId), group);
 
         members = realm.groups().group(groupId).members(0, 10);
         assertNames(members, "user-b");

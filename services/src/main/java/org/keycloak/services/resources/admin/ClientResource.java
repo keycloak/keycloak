@@ -485,7 +485,7 @@ public class ClientResource {
         }
         if (logger.isDebugEnabled()) logger.debug("Register node: " + node);
         client.registerNode(node, Time.currentTime());
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, node).success();
     }
 
     /**
@@ -532,9 +532,9 @@ public class ClientResource {
         }
 
         logger.debug("Test availability of cluster nodes");
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
-        return new ResourceAdminManager(session).testNodesAvailability(uriInfo.getRequestUri(), realm, client);
-
+        GlobalRequestResult result = new ResourceAdminManager(session).testNodesAvailability(uriInfo.getRequestUri(), realm, client);
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(result).success();
+        return result;
     }
 
 }

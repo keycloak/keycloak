@@ -189,7 +189,8 @@ public class IdentityProvidersResource {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation);
             this.realm.addIdentityProvider(identityProvider);
 
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, identityProvider.getInternalId())
+            representation.setInternalId(identityProvider.getInternalId());
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, identityProvider.getAlias())
                     .representation(representation).success();
             
             return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
