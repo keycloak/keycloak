@@ -1,0 +1,24 @@
+
+=== Realm Roles
+
+Realm level roles are a global namespace to define your roles.  You can see the list of built-in and created roles
+by clicking on the `Roles` left menu item.
+
+image:../../{{book.images}}/roles.png[]
+
+To create a role just click on the `Add Role` button on this page, enter in the name and description of the role
+and hit the `Save` button.
+
+.Add Role
+image:../../{{book.images}}/role.png[]
+
+The value for the `description` field is localizable by specifying a substitution variable with `$\{var-name}}` strings.
+The localized value is then configured within property files in your theme.  See the link:{{book.developerguide.link}}[book.developerguide.name]
+for more information on localization.  If a client requires user _consent_, this description string will be displayed on the
+consent page for the user.
+
+=== Client Roles
+
+Client roles are basically a namespace dedicated to clients.  Each client gets its own namespace.  Client roles are managed
+under the `Roles` tab under each individual client.  You interact with this UI the same way you do for realm level roles.
+

@@ -1,4 +1,6 @@
-= Identity Broker
+[[_identity-brokering]]
+
+== Identity Brokering
 
 An Identity Broker is an intermediary service that connects multiple service providers with different identity providers.
 As an intermediary service, the identity broker is responsible to create a trust relationship with an external identity provider in order to use its identities to access internal services exposed by service providers. 
@@ -21,7 +23,7 @@ In the next sections we'll see how to configure and use Keycloak as an identity 
 * `Identity Federation`            
 
 [[_identity_broker_overview]]
-== Overview
+=== Overview
 
 When using Keycloak as an identity broker, users are not forced to provide their credentials in order to authenticate in a specific realm.
 Instead of that, they are presented with a list of identity providers from where they can pick one and authenticate.
@@ -62,7 +64,7 @@ As you may notice, at the end of the authentication process Keycloak will always
 They don't need to know which protocol (eg.: SAML, OpenID Connect, oAuth, etc) was used or how the user's identity was validated.
 They only need to know about Keycloak ! 
 
-== Configuration
+=== Configuration
 
 The identity broker configuration is all based on identity providers.
 Identity providers are created for each realm and by default they are enabled for every single application.
@@ -163,14 +165,14 @@ Regardless the identity provider you are creating, you'll see the following conf
 
 On the next sections, we'll see how to configure each type of identity provider individually. 
 
-== Social Identity Providers
+=== Social Identity Providers
 
 Forcing users to register to your realm when they want to access applications is hard.
 So is trying to remember yet another username and password combination.
 Social identity providers makes it easy for users to register on your realm and quickly sign in using a social network.
 Keycloak provides built-in support for the most common social networks out there, such as Google, Facebook, Twitter, Github, LinkedId, Microsoft and StackOverflow. 
 
-=== Google
+==== Google
 
 To enable login with Google you first have to create a project and a client in the https://cloud.google.com/console/project[Google Developer Console].
 Then you need to copy the client id and secret into the Keycloak Admin Console. 
@@ -235,7 +237,7 @@ The table below lists some additional configuration options you may use when con
                             
 |===
 
-=== Facebook
+==== Facebook
 
 To enable login with Facebook you first have to create an application in the https://developers.facebook.com/[Facebook Developer Console].
 Then you need to copy the client id and secret into the Keycloak Admin Console. 
@@ -297,7 +299,7 @@ The table below lists some additional configuration options you may use when con
                             
 |===
 
-=== Twitter
+==== Twitter
 
 To enable login with Twtter you first have to create an application in the https://dev.twitter.com/apps[Twitter Developer Console].
 Then you need to copy the consumer key and secret into the Keycloak Admin Console. 
@@ -342,7 +344,7 @@ The table below lists some additional configuration options you may use when con
                             
 |===
 
-=== Github
+==== Github
 
 To enable login with GitHub you first have to create an application in https://github.com/settings/applications[GitHub Settings].
 Then you need to copy the client id and secret into the Keycloak Admin Console. 
@@ -392,7 +394,7 @@ The table below lists some additional configuration options you may use when con
                             
 |===
 
-=== LinkedIn
+==== LinkedIn
 
 To enable login with LinkedIn you first have to create an application in https://www.linkedin.com/secure/developer[LinkedIn Developer Network].
 Then you need to copy the client id and secret into the Keycloak Admin Console. 
@@ -444,7 +446,7 @@ The table below lists some additional configuration options you may use when con
                             
 |===
 
-=== Microsoft
+==== Microsoft
 
 To enable login with Microsoft account you first have to register an OAuth application on https://account.live.com/developers/applications/index[Microsoft account Developer Center].
 Then you need to copy the client id and secret into the Keycloak Admin Console. 
@@ -493,7 +495,7 @@ The table below lists some additional configuration options you may use when con
                             
 |===
 
-=== StackOverflow
+==== StackOverflow
 
 To enable login with StackOverflow you first have to register an OAuth application on https://stackapps.com/[StackApps].
 Then you need to copy the client id, secret and key into the Keycloak Admin Console. 
@@ -536,7 +538,7 @@ The table below lists some additional configuration options you may use when con
                             
 |===
 
-== SAML v2.0 Identity Providers
+=== SAML v2.0 Identity Providers
 
 Keycloak can broker identity providers based on the SAML v2.0 protocol. 
 
@@ -607,7 +609,7 @@ You can also import all this configuration data by providing a URL or XML file t
 Once you create a SAML provider, there is an `EXPORT` button that appears when viewing that provider.
 Clicking this button will export a SAML entity descriptor which you can use to 
 
-=== SP Descriptor
+==== SP Descriptor
 
 The SAML SP Descriptor XML file for the broker is available publically by going to this URL
 
@@ -619,7 +621,7 @@ The SAML SP Descriptor XML file for the broker is available publically by going 
 
 This URL is useful if you need to import this information into an IDP that needs or is more user friendly to load from a remote URL. 
 
-== OpenID Connect v1.0 Identity Providers
+=== OpenID Connect v1.0 Identity Providers
 
 Keycloak can broker identity providers based on the OpenID Connect v1.0 protocol. 
 
@@ -686,7 +688,7 @@ In this case, the brokered identity provider must support the Authorization Code
 
 You can also import all this configuration data by providing a URL or file that points to OpenID Provider Metadata (see OIDC Discovery specification) 
 
-== Retrieving Tokens from Identity Providers
+=== Retrieving Tokens from Identity Providers
 
 Keycloak allows you to store tokens and responses from identity providers during the authentication process.
 For that, you can use the `Store Token` configuration option, as mentioned before. 
@@ -712,7 +714,7 @@ In the broker configuration page you can automatically assign this role to newly
 
 NOTE: If your application is not at the same origin as the authentication server, make sure you have properly configured CORS. 
 
-== Automatically Select and Identity Provider
+=== Automatically Select and Identity Provider
 
 Each Identity provider has option `Authenticate By Default`, which allows that Identity provider is automatically selected during authentication.
 User won't even see Keycloak login page, but is automatically redirected to the identity provider. 
@@ -743,7 +745,7 @@ keycloak.createLoginUrl({
 });
 ----
 
-== Mapping/Importing SAML and OIDC Metadata
+=== Mapping/Importing SAML and OIDC Metadata
 
 You can import SAML assertion data, OpenID Connect ID Token claims, and Keycloak access token claims into new users that are imported from a brokered IDP.
 After you configure a broker, you'll see a `Mappers`            button appear.
@@ -754,7 +756,7 @@ Broker mappers can import SAML attributes or OIDC ID/Access token claims into us
 You can assign a role mapping to a user if a claim or external role exists.
 There's a bunch of options here so just mouse over the tool tips to see what each mapper can do for you. 
 
-== Mapping/Importing User profile data from Social Identity Provider
+=== Mapping/Importing User profile data from Social Identity Provider
 
 You can import user profile data provided by social identity providers like Google, GitHub, LinkedIn, Microsoft, Stackoverflow and Facebook  into new Keycloak user created from given social accounts.
 After you configure a broker, you'll see a `Mappers`            button appear.
@@ -769,7 +771,7 @@ To investigate structure of user profile JSON data provided by social providers 
 Then you can find user profile  JSON structure in Keycloak log file.
  
 
-== User Session Data
+=== User Session Data
 
 After a user logs in from the external IDP, there's some additional user session note data that Keycloak stores that you can access.
 This data can be propagated to the client requesting a login via the token or SAML assertion being passed back to it by using an appropriate client mapper. 
@@ -778,7 +780,7 @@ BROKER_PROVIDER_ID::
   This is the IDP alias of the broker used to perform the login.         
 
 [[_identity_broker_first_login]]
-== First Login Flow
+=== First Login Flow
 
 When Keycloak successfully authenticates user through identity provider (step 8 in <<_identity_broker_overview,Overview>> chapter), there can be two situations: 
 
@@ -800,7 +802,7 @@ See <<_auth_spi,Authentication Flows SPI>> for more details on how to do it.
 For `First Broker Login` case, it might be useful if your Authenticator is subclass of `org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator`            so you have access to all details about authenticated Identity provider account.
 But it's not a requirement. 
 
-=== Default First Login Flow
+==== Default First Login Flow
 
 Let's describe the default behaviour provided by `First Broker Login` flow.
 There are those authenticators: 
@@ -834,7 +836,7 @@ Verify Existing Account By Re-authentication::
   User can also re-authenticate with some different identity provider, which is already linked to his keycloak account.
   You can also force users to use OTP, otherwise it's optional and used only if OTP is already set for user account.             
 
-== Examples
+=== Examples
 
 Keycloak provides some useful examples about how to use it as an identity broker.
 Take a look at `{KEYCLOAK_HOME}/examples/broker` for more details. 
