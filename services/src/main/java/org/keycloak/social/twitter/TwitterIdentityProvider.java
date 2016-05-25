@@ -113,6 +113,9 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         public Response authResponse(@QueryParam("state") String state,
                                      @QueryParam("denied") String denied,
                                      @QueryParam("oauth_verifier") String verifier) {
+            if (denied != null) {
+                return callback.cancelled(state);
+            }
 
             try {
                 Twitter twitter = new TwitterFactory().getInstance();
