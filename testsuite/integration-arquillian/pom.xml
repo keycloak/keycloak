@@ -45,7 +45,7 @@
         <selenium.version>2.52.0</selenium.version>
         <arquillian-drone.version>2.0.0.Beta1</arquillian-drone.version>
         <arquillian-graphene.version>2.1.0.Alpha3</arquillian-graphene.version>
-        <arquillian-wildfly-container.version>8.2.0.Final</arquillian-wildfly-container.version>
+        <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
         <version.shrinkwrap.resolvers>2.2.2</version.shrinkwrap.resolvers>
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
     </properties>
@@ -74,13 +74,18 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>org.wildfly.arquillian</groupId>
                 <artifactId>wildfly-arquillian-container-managed</artifactId>
                 <version>${arquillian-wildfly-container.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>org.wildfly.arquillian</groupId>
                 <artifactId>wildfly-arquillian-container-remote</artifactId>
+                <version>${arquillian-wildfly-container.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.arquillian</groupId>
+                <artifactId>wildfly-arquillian-container-domain-managed</artifactId>
                 <version>${arquillian-wildfly-container.version}</version>
             </dependency>
         </dependencies>
