@@ -6,7 +6,7 @@ Default groups allow you to automatically assign group membership whenever any n
 To specify _default groups go to the `Groups` left menu item, and click the `Default Groups` tab.
 
 .Default Roles
-image:../../../{{book.images}}/default-groups.png[]
+image:../../{{book.images}}/default-groups.png[]
 
 
 
