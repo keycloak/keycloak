@@ -108,6 +108,7 @@ public class ClientInitialAccessResource {
         auth.requireManage();
 
         session.sessions().removeClientInitialAccessModel(realm, id);
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
     private ClientInitialAccessPresentation wrap(ClientInitialAccessModel model) {

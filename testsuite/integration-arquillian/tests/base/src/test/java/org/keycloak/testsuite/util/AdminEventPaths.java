@@ -21,6 +21,7 @@ import java.net.URI;
 
 import javax.ws.rs.core.UriBuilder;
 
+import org.keycloak.admin.client.resource.AttackDetectionResource;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
@@ -52,6 +53,11 @@ public class AdminEventPaths {
 
     public static String deleteSessionPath(String userSessionId) {
         URI uri = UriBuilder.fromUri("").path(RealmResource.class, "deleteSession").build(userSessionId);
+        return uri.toString();
+    }
+
+    public static String defaultGroupPath(String groupId) {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "addDefaultGroup").build(groupId);
         return uri.toString();
     }
 
@@ -429,6 +435,22 @@ public class AdminEventPaths {
     public static String authRequiredActionPath(String requiredActionAlias) {
         URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "getRequiredAction")
                 .build(requiredActionAlias);
+        return uri.toString();
+    }
+
+    // ATTACK DETECTION
+
+    public static String attackDetectionClearBruteForceForUserPath(String username) {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "attackDetection")
+                .path(AttackDetectionResource.class, "clearBruteForceForUser")
+                .build(username);
+        return uri.toString();
+    }
+
+    public static String attackDetectionClearAllBruteForcePath() {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "attackDetection")
+                .path(AttackDetectionResource.class, "clearAllBruteForce")
+                .build();
         return uri.toString();
     }
 

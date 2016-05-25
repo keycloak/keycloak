@@ -190,7 +190,11 @@ public class UserFederationProviderResource {
             throw new NotFoundException("Unknown action: " + action);
         }
 
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+        Map<String, Object> eventRep = new HashMap<>();
+        eventRep.put("action", action);
+        eventRep.put("result", syncResult);
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(eventRep).success();
+
         return syncResult;
     }
 
@@ -422,7 +426,10 @@ public class UserFederationProviderResource {
             throw new NotFoundException("Unknown direction: " + direction);
         }
 
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+        Map<String, Object> eventRep = new HashMap<>();
+        eventRep.put("action", direction);
+        eventRep.put("result", syncResult);
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(eventRep).success();
         return syncResult;
     }
 

@@ -258,18 +258,18 @@ public class ClientTest extends AbstractAdminTest {
         ClientRepresentation client = createAppClient();
         String id = client.getId();
 
-        realm.clients().get(id).registerNode(Collections.singletonMap("node", suiteContext.getAuthServerInfo().getContextRoot().getHost()));
+        String myhost = suiteContext.getAuthServerInfo().getContextRoot().getHost();
+        realm.clients().get(id).registerNode(Collections.singletonMap("node", myhost));
         realm.clients().get(id).registerNode(Collections.singletonMap("node", "invalid"));
 
-        // TODO adminEvents: should be rather CREATE and include nodePath like in DELETE event
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.clientNodesPath(id));
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.clientNodesPath(id));
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientNodePath(id, myhost));
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientNodePath(id, "invalid"));
 
         GlobalRequestResult result = realm.clients().get(id).testNodesAvailable();
         assertEquals(1, result.getSuccessRequests().size());
         assertEquals(1, result.getFailedRequests().size());
 
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.clientTestNodesAvailablePath(id));
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.clientTestNodesAvailablePath(id), result);
 
         TestAvailabilityAction testAvailable = testingClient.testApp().getTestAvailable();
         assertEquals("test-app", testAvailable.getResource());

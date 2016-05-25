@@ -182,8 +182,8 @@ public class AssertAdminEvents implements TestRule {
 
         public AdminEventRepresentation assertEvent(AdminEventRepresentation actual) {
             Assert.assertEquals(expected.getRealmId(), actual.getRealmId());
-            Assert.assertEquals(expected.getOperationType(), actual.getOperationType());
             Assert.assertThat(actual.getResourcePath(), resourcePath);
+            Assert.assertEquals(expected.getOperationType(), actual.getOperationType());
 
             Assert.assertTrue(ObjectUtil.isEqualOrBothNull(expected.getError(), actual.getError()));
 

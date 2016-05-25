@@ -353,7 +353,7 @@ public class UserTest extends AbstractAdminTest {
         rep.setProviderId("social-provider-type");
 
         realm.identityProviders().create(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Matchers.startsWith(AdminEventPaths.identityProviderCreatePath()), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderPath(rep.getAlias()), rep);
     }
 
     private void removeSampleIdentityProvider() {
@@ -742,6 +742,7 @@ public class UserTest extends AbstractAdminTest {
         RequiredActionProviderRepresentation updatePasswordReqAction = realm.flows().getRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         updatePasswordReqAction.setDefaultAction(true);
         realm.flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePasswordReqAction);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(UserModel.RequiredAction.UPDATE_PASSWORD.toString()), updatePasswordReqAction);
 
         // Create user
         String userId = createUser("user1", "user1@localhost");
@@ -754,6 +755,7 @@ public class UserTest extends AbstractAdminTest {
         updatePasswordReqAction = realm.flows().getRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         updatePasswordReqAction.setDefaultAction(true);
         realm.flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePasswordReqAction);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(UserModel.RequiredAction.UPDATE_PASSWORD.toString()), updatePasswordReqAction);
     }
 
     @Test

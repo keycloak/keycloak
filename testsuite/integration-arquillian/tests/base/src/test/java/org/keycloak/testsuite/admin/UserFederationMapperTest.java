@@ -65,7 +65,7 @@ public class UserFederationMapperTest extends AbstractAdminTest {
         Response resp = realm.userFederation().create(ldapRep);
         this.ldapProviderId = ApiUtil.getCreatedId(resp);
         resp.close();
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationCreateResourcePath(), ldapRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationResourcePath(this.ldapProviderId), ldapRep);
 
         UserFederationProviderRepresentation dummyRep = UserFederationProviderBuilder.create()
                 .displayName("dummy-1")
@@ -75,7 +75,7 @@ public class UserFederationMapperTest extends AbstractAdminTest {
         resp = realm.userFederation().create(dummyRep);
         this.dummyProviderId = ApiUtil.getCreatedId(resp);
         resp.close();
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationCreateResourcePath(), dummyRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationResourcePath(this.dummyProviderId), dummyRep);
     }
 
     @After
@@ -254,11 +254,16 @@ public class UserFederationMapperTest extends AbstractAdminTest {
         // Try fed To Keycloak sync
         UserFederationSyncResultRepresentation result = ldapProviderResource().syncMapperData(mapperId, "fedToKeycloak");
         Assert.assertEquals("dummyFedToKeycloakSuccess mapper=some-dummy", result.getStatus());
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId) + "/sync");
+
+        Map<String, Object> eventRep = new HashMap<>();
+        eventRep.put("action", "fedToKeycloak");
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId) + "/sync", eventRep);
 
         // Try keycloak to fed
         result = ldapProviderResource().syncMapperData(mapperId, "keycloakToFed");
         Assert.assertEquals("dummyKeycloakToFedSuccess mapper=some-dummy", result.getStatus());
+
+        eventRep.put("action", "keycloakToFed");
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId) + "/sync");
 
     }

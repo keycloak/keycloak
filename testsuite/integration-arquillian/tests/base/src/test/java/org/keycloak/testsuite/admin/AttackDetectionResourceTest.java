@@ -17,13 +17,12 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AttackDetectionResource;
-import org.keycloak.common.util.Time;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -33,7 +32,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * TODO adminEvents: Add adminEvents once resourcePath is added in AttackDetectionResource (server-side) events
  *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -69,11 +67,13 @@ public class AttackDetectionResourceTest extends AbstractAdminTest {
         assertBruteForce(detection.bruteForceUserStatus("nosuchuser"), 0, false, false);
 
         detection.clearBruteForceForUser("test-user@localhost");
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.attackDetectionClearBruteForceForUserPath("test-user@localhost"));
 
         assertBruteForce(detection.bruteForceUserStatus("test-user@localhost"), 0, false, false);
         assertBruteForce(detection.bruteForceUserStatus("test-user2"), 2, true, true);
 
         detection.clearAllBruteForce();
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.attackDetectionClearAllBruteForcePath());
 
         assertBruteForce(detection.bruteForceUserStatus("test-user@localhost"), 0, false, false);
         assertBruteForce(detection.bruteForceUserStatus("test-user2"), 0, false, false);
