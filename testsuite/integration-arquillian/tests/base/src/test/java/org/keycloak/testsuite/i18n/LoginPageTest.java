@@ -21,44 +21,20 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
 import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.adapters.HttpClientBuilder;
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.Response;
+import org.jboss.arquillian.graphene.page.Page;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class LoginPageTest {
+public class LoginPageTest extends AbstractI18NTest {
 
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
-        @Override
-        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-
-        }
-    });
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
-
-    @WebResource
-    protected OAuthClient oauth;
-
-    @WebResource
-    protected WebDriver driver;
-
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
     @Test
