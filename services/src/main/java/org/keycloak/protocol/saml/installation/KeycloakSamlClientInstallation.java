@@ -96,6 +96,7 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
         buffer.append(">\n");
         buffer.append("            <SingleSignOnService signRequest=\"").append(Boolean.toString(samlClient.requiresClientSignature())).append("\"\n");
         buffer.append("                                 validateResponseSignature=\"").append(Boolean.toString(samlClient.requiresRealmSignature())).append("\"\n");
+        buffer.append("                                 validateAssertionSignature=\"").append(Boolean.toString(samlClient.requiresAssertionSignature())).append("\"\n");
         buffer.append("                                 requestBinding=\"POST\"\n");
         UriBuilder bindingUrlBuilder = UriBuilder.fromUri(baseUri);
         String bindingUrl = RealmsResource.protocolUrl(bindingUrlBuilder)
