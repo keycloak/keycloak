@@ -33,6 +33,7 @@ public class IDP implements Serializable {
         private String requestBinding;
         private String responseBinding;
         private String bindingUrl;
+        private boolean validateAssertionSignature;
 
         public boolean isSignRequest() {
             return signRequest;
@@ -48,6 +49,14 @@ public class IDP implements Serializable {
 
         public void setValidateResponseSignature(boolean validateResponseSignature) {
             this.validateResponseSignature = validateResponseSignature;
+        }
+
+        public boolean isValidateAssertionSignature() {
+            return validateAssertionSignature;
+        }
+
+        public void setValidateAssertionSignature(boolean validateAssertionSignature) {
+            this.validateAssertionSignature = validateAssertionSignature;
         }
 
         public String getRequestBinding() {
