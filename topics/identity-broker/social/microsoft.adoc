@@ -1,49 +1,34 @@
 
 ==== Microsoft
 
-To enable login with Microsoft account you first have to register an OAuth application on https://account.live.com/developers/applications/index[Microsoft account Developer Center].
-Then you need to copy the client id and secret into the Keycloak Admin Console.
+There are a number of steps you have to complete to be able to login to Microsoft.  First, go to the `Identity Providers` left menu item
+and selected `Microsoft` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
-Let's see first how to create an application with Microsoft.
+.Add Identity Provider
+image:../../../{{book.images}}/microsoft-add-identity-provider.png[]
 
-. Go to https://account.live.com/developers/applications/create[create new application on Microsoft account Developer Center] url and login here.
-  Use any value for `Application Name`, `Application Logo` and `URLs` you want.
-  In `API Settings` set `Target Domain` to the domain where your Keycloak instance runs.
-. Copy `Client Id` and `Client Secret` from `App Settings` page.
+You can't click save yet, as you'll need to obtain a `Client ID` and `Client Secret` from Microsoft.  One piece of data you'll need from this
+page is the `Redirect URI`.  You'll have to provide that to Microsoft when you register {{book.project.name}} as a client there, so
+copy this URI to your clipboard.
 
-Now that you have the client id and secret you can proceed with the creation of a Microsoft Identity Provider in Keycloak.
-As follows:
+To enable login with Microsoft account you first have to register an OAuth application at Microsoft.
+Go to the https://account.live.com/developers/applications/create[Microsoft Application Registration] url.
 
-. Select the `Microsoft` identity provider from the drop-down box on the top right corner of the identity providers table in Keycloak's Admin Console.
-  You should be presented with a specific page to configure the selected provided.
-. Copy the client id and client secret to their corresponding fields in the Keycloak Admin Console.
-  Click `Save`.
+NOTE: Microsoft often changes the look and feel of application registration, so these directions might not always be up to date and the
+      configuration steps might be slightly different.
 
-Once you create the identity provider in Keycloak, you must update your Microsoft application with the redirect url that was generated to your identity provider.
+.Register Application
+image:../../../images/microsoft-app-register.png[]
 
-. Open the Microsoft account Developer Center and select `API Settings` of your application.
-  In `Redirect URLs`                        insert the redirect uri created by Keycloak.
-  The redirect uri usually have the following format: `http://{host}:{port}/auth/realms/{realm}/broker/microsoft/endpoint`.
+Enter in the application name and click `Create application`.  This will bring you to the application settings page of your
+new application.
 
-NOTE: You can always get the redirect url for a specific identity provider from the table presented when you click on the 'Identity Provider' tab in _Realm > Settings_.
+.Settings
+image:../../../images/microsoft-app-settings.png[]
 
-That is it! This pretty much what you need to do in order to setup this identity provider.
+You'll have to copy the `Redirect URI` from the {{book.project.name}} `Add Identity Provider` page and add it to the
+`Redirect URIs` field on the Microsoft application page.  Be sure to click the `Add Url` button and `Save` your changes.
 
-The table below lists some additional configuration options you may use when configuring this provider.
+Finally, you will need to obtain the Application ID and secret from this page so you can enter them back on the {{book.project.name}} `Add identity provider` page.
+Go back to {{book.project.name}} and specify those items.
 
-.Configuration Options
-[cols="1,1", options="header"]
-|===
-|
-                                Configuration
-
-|
-                                Description
-
-|
-                                Default Scopes
-
-|
-                                Allows you to manually specify the scopes that users must authorize when authenticating with this provider. For a complete list of scopes, please take a look at https://msdn.microsoft.com/en-us/library/hh243646.aspx. By default, Keycloak uses the following scopes: wl.basic,wl.emails
-
-|===

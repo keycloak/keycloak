@@ -14,6 +14,10 @@ copy this URI to your clipboard.
 To enable login with Github you first have to register an application project in the and a client in
 https://github.com/settings/applications[GitHub Application Settings].  Select the `Developer applications` tab.
 
+NOTE: Github often changes the look and feel of application registration, so these directions might not always be up to date and the
+      configuration steps might be slightly different.
+
+
 .Add a New App
 image:../../../images/github-developer-applications.png[]
 
