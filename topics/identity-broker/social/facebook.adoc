@@ -1,62 +1,50 @@
 
 ==== Facebook
 
-To enable login with Facebook you first have to create an application in the https://developers.facebook.com/[Facebook Developer Console].
-Then you need to copy the client id and secret into the Keycloak Admin Console.
+There are a number of steps you have to complete to be able to login to Facebook.  First, go to the `Identity Providers` left menu item
+and selected `Facebook` fro the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
-Let's see first how to create an application with Facebook.
+.Add Identity Provider
+image:../../../{{book.images}}/facebook-add-identity-provider.png[]
 
-. Log in to the https://developers.facebook.com/[Facebook Developer Console].
-  Click `Apps` in the menu and select `Create a New App`.
-  Use any value for `Display Name` and `Category` you want, then click the `Create App` button.
-  Wait for the project to be created (this may take a while). If after creating the app you are not redirected to the app settings, click on `Apps` in the menu and select the app you created.
-. Once the app has been created click on `Settings` in sidebar on the left.
-  You must specify a contact email.
-  Save your changes.
-  Then click on `Advanced`.
-  Under `Security` make sure `Client OAuth Login` is enabled.
-  Scroll down and click on the `Save Changes` button.
-. Click `Status & Review` and select `YES` for `Do you want
-  to make this app and all its live features available to the general public?`.
-  You will not be able to set this until you have provided a contact email in the general settings of this application.
-. Click `Basic`.
-  Copy `App ID` and `App Secret`                        (click `show`) from the https://developers.facebook.com/[Facebook Developer Console].
+You can't click save yet, as you'll need to obtain a `Client ID` and `Client Secret` from Facebook.  One piece of data you'll need from this
+page is the `Redirect URI`.  You'll have to provide that to Facebook when you register {{book.project.name}} as a client there, so
+copy this URI to your clipboard.
 
-Now that you have the client id and secret, you can proceed with the creation of a Facebook Identity Provider in Keycloak.
-As follows:
+To enable login with Face you first have to create a project and a client in the https://developers.facebook.com/[Facebook Developer Console].
 
-. Select the `Facebook` identity provider from the drop-down box on the top right corner of the identity providers table in Keycloak's Admin Console.
-  You should be presented with a specific page to configure the selected provided.
-. Copy the client id and secret to their corresponding fields in the Keycloak Admin Console.
-  Click `Save`.
+NOTE: Facebook often changes the look and feel of the Facebook Developer Console, so these directions might not always be up to date and the
+      configuration steps might be slightly different.
 
-Once you create the identity provider in Keycloak, you must update your Facebook application with the redirect url that was generated to your identity provider.
+Once you've logged into the console there is a pull down menu in the top right corner of the screen that says `My Apps`.  Select the `Add a New App`
+menu item.
 
-. Open the Facebook Developer Console and select your application.
-  Click on `Advanced`.
-  Under `Security` make sure `Client OAuth Login` is enabled.
-  In `Valid OAuth redirect URIs` insert the redirect uri created by Keycloak.
-  The redirect uri usually have the following format: `http://{host}:{port}/auth/realms/{realm}/broker/{provider_alias}`.
+.Add a New App
+image:../../../images/facebook-add-new-app.png[]
 
-NOTE: You can always get the redirect url for a specific identity provider from the table presented when you click on the 'Identity Provider' tab in _Realm > Settings_.
 
-That is it! This pretty much what you need to do in order to setup this identity 		provider.
+Select the `Website` icon.  Click the `Skip and Create App ID` button.
 
-The table below lists some additional configuration options you may use when configuring this provider.
+.Create a New App ID
+image:../../../images/facebook-create-app-id.png[]
 
-.Configuration Options
-[cols="1,1", options="header"]
-|===
-|
-                                Configuration
+The email address and app category are required fields.  Once you're done with that, you will be brought to the dashboard
+for the application.  Click the `Settings` left menu item.
 
-|
-                                Description
+.Create a New App ID
+image:../../../images/facebook-app-settings.png[]
 
-|
-                                Default Scopes
+Click on the `+ Add Platform` button at the end of this page and select the `Website` icon.  Cut and past the `Redirect URI` from the
+{{book.project.name}} `Add identity provider` page into the `Site URL` of the Facebook `Website` settings block.
 
-|
-                                Allows you to manually specify the scopes that users must authorize when authenticating with this provider. For a complete list of scopes, please take a look at https://developers.facebook.com/docs/graph-api. By default, Keycloak uses the following scopes: email
+.Specify Website
+image:../../../images/facebook-app-settings-website.png[]
 
-|===
+
+You will need also to obtain the App ID and App Secret from this page so you can enter them into the {{book.project.name}} `Add identity provider` page.
+Go back to {{book.project.name}} and specify those items and finally save your Facebook Identity Provider.
+
+One config option to note on the `Add identity provider` page for Facebook is the `Default Scopes` field.
+This field allows you to manually specify the scopes that users must authorize when authenticating with this provider.
+For a complete list of scopes, please take a look at https://developers.facebook.com/docs/graph-api. By default, {{book.project.name}}
+uses the following scopes: `email`.
