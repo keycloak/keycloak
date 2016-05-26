@@ -20,6 +20,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
@@ -150,6 +151,7 @@ public class TomcatSamlTest {
     }
 
     @Test
+    @Ignore
     public void testPostEncryptedLoginLogout() {
         testStrategy.testPostEncryptedLoginLogout();
     }
