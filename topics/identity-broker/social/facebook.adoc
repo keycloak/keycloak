@@ -2,7 +2,7 @@
 ==== Facebook
 
 There are a number of steps you have to complete to be able to login to Facebook.  First, go to the `Identity Providers` left menu item
-and selected `Facebook` fro the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+and selected `Facebook` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
 image:../../../{{book.images}}/facebook-add-identity-provider.png[]
@@ -11,7 +11,7 @@ You can't click save yet, as you'll need to obtain a `Client ID` and `Client Sec
 page is the `Redirect URI`.  You'll have to provide that to Facebook when you register {{book.project.name}} as a client there, so
 copy this URI to your clipboard.
 
-To enable login with Face you first have to create a project and a client in the https://developers.facebook.com/[Facebook Developer Console].
+To enable login with Facebook you first have to create a project and a client in the https://developers.facebook.com/[Facebook Developer Console].
 
 NOTE: Facebook often changes the look and feel of the Facebook Developer Console, so these directions might not always be up to date and the
       configuration steps might be slightly different.

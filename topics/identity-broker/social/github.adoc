@@ -1,51 +1,33 @@
 
-
 ==== Github
 
-To enable login with GitHub you first have to create an application in https://github.com/settings/applications[GitHub Settings].
-Then you need to copy the client id and secret into the Keycloak Admin Console.
+There are a number of steps you have to complete to be able to login to Github.  First, go to the `Identity Providers` left menu item
+and selected `Github` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
-Let's see first how to create an application with GitHub.
+.Add Identity Provider
+image:../../../{{book.images}}/github-add-identity-provider.png[]
 
-. Log in to https://github.com/settings/applications[GitHub Settings].
-  Click the `Register new application` button.
-  Use any value for `Application name`, `Homepage URL` and `Application Description` you want.
-  Click the `Register application` button.
-. Copy `Client ID` and `Client Secret` from the https://github.com/settings/applications[GitHub Settings].
+You can't click save yet, as you'll need to obtain a `Client ID` and `Client Secret` from Github.  One piece of data you'll need from this
+page is the `Redirect URI`.  You'll have to provide that to Github when you register {{book.project.name}} as a client there, so
+copy this URI to your clipboard.
 
-Now that you have the client id and secret, you can proceed with the creation of a Github Identity Provider in Keycloak.
-As follows:
+To enable login with Github you first have to register an application project in the and a client in
+https://github.com/settings/applications[GitHub Application Settings].  Select the `Developer applications` tab.
 
-. Select the `Github` identity provider from the drop-down box on the top right corner of the identity providers table in Keycloak's Admin Console.
-  You should be presented with a specific page to configure the selected provided.
-. Copy the client id and secret to their corresponding fields in the Keycloak Admin Console.
-  Click `Save`.
+.Add a New App
+image:../../../images/github-developer-applications.png[]
 
-Once you create the identity provider in Keycloak, you must update your GitHub application with the redirect url that was generated to your identity provider.
+Click the `Register a new application` button.
 
-. Open the GitHub Settings and select your application.
-  In `Authorization callback URL`                        insert the redirect uri created by Keycloak.
-  The redirect uri usually have the following format: `http://{host}:{port}/auth/realms/{realm}/broker/{provider_alias}`.
+.Register App
+image:../../../images/github-register-app.png[]
 
-NOTE: You can always get the redirect url for a specific identity provider from the table presented when you click on the 'Identity Provider' tab in _Realm > Settings_.
+You'll have to copy the `Redirect URI` from the {{book.project.name}} `Add Identity Provider` page and enter it into the
+`Authorization callback URL` field on the Github `Register a new OAuth application` page.  Once you've completed this
+page you will be brough to the application's management page.
 
-That is it! This pretty much what you need to do in order to setup this identity 		provider.
+.Github App Page
+image:../../../images/gitbook-app-page.png[]
 
-The table below lists some additional configuration options you may use when configuring this provider.
-
-.Configuration Options
-[cols="1,1", options="header"]
-|===
-|
-                                Configuration
-
-|
-                                Description
-
-|
-                                Default Scopes
-
-|
-                                Allows you to manually specify the scopes that users must authorize when authenticating with this provider. For a complete list of scopes, please take a look at https://developer.github.com/v3/oauth/#scopes. By default, Keycloak uses the following scopes: user:email
-
-|===
+You will need to obtain the client ID and secret from this page so you can enter them into the {{book.project.name}} `Add identity provider` page.
+Go back to {{book.project.name}} and specify those items.
