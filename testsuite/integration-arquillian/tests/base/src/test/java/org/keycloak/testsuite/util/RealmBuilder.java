@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.util;
 
+import java.util.Collections;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -66,9 +67,15 @@ public class RealmBuilder {
     public RealmBuilder roles(RolesBuilder roles) {
         return roles(roles.build());
     }
-    
+
     public RealmBuilder roles(RolesRepresentation roles) {
         rep.setRoles(roles);
+        return this;
+    }
+
+    public RealmBuilder events() {
+        rep.setEventsEnabled(true);
+        rep.setEnabledEventTypes(Collections.<String>emptyList()); // enables all types
         return this;
     }
 
