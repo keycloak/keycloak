@@ -19,18 +19,25 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.AssertAdminEvents;
+import org.keycloak.testsuite.util.RealmBuilder;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+
+import javax.ws.rs.core.Response;
 
 
 /**
@@ -48,6 +55,9 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
     RealmResource realmResource;
     AuthenticationManagementResource authMgmtResource;
 
+    @Rule
+    public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
+
     @Before
     public void before() {
         realmResource = adminClient.realms().realm(REALM_NAME);
@@ -56,9 +66,8 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation testRealmRep = new RealmRepresentation();
-        testRealmRep.setRealm(REALM_NAME);
-        testRealmRep.setEnabled(true);
+        RealmRepresentation testRealmRep = RealmBuilder.create().name(REALM_NAME).testEventListener().build();
+        testRealmRep.setId(REALM_NAME);
         testRealms.add(testRealmRep);
     }
 
@@ -181,5 +190,12 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
         }
         config.setConfig(params);
         return config;
+    }
+
+    void createFlow(AuthenticationFlowRepresentation flowRep) {
+        Response response = authMgmtResource.createFlow(flowRep);
+        org.keycloak.testsuite.Assert.assertEquals(201, response.getStatus());
+        response.close();
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AssertAdminEvents.isExpectedPrefixFollowedByUuid(AdminEventPaths.authFlowsPath()), flowRep);
     }
 }

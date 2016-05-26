@@ -144,7 +144,7 @@ public class GroupResource {
             if (child == null) {
                 throw new NotFoundException("Could not find child by id");
             }
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE);
         } else {
             child = realm.createGroup(rep.getName());
             updateGroup(rep, child);
@@ -152,10 +152,13 @@ public class GroupResource {
                                            .path(uriInfo.getMatchedURIs().get(2))
                                            .path(child.getId()).build();
             builder.status(201).location(uri);
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
+            rep.setId(child.getId());
+            adminEvent.operation(OperationType.CREATE);
 
         }
         realm.moveGroup(child, group);
+        adminEvent.resourcePath(uriInfo).representation(rep).success();
+
         GroupRepresentation childRep = ModelToRepresentation.toGroupHierarchy(child, true);
         return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
     }

@@ -37,11 +37,9 @@ import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
-import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.UsersSyncManager;
-import org.keycloak.timer.TimerProvider;
 import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.Consumes;
@@ -211,8 +209,8 @@ public class UserFederationProvidersResource {
             logger.addedKerberosToRealmCredentials();
         }
 
-
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(rep).success();
+        rep.setId(model.getId());
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
 
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }

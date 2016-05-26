@@ -115,7 +115,8 @@ public class RoleContainerResource extends RoleResource {
             boolean scopeParamRequired = rep.isScopeParamRequired()==null ? false : rep.isScopeParamRequired();
             role.setScopeParamRequired(scopeParamRequired);
 
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, role.getId()).representation(rep).success();
+            rep.setId(role.getId());
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, role.getName()).representation(rep).success();
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
         } catch (ModelDuplicateException e) {
@@ -332,8 +333,7 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
-        deleteComposites(roles, role);
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        deleteComposites(adminEvent, uriInfo, roles, role);
     }
 
 }

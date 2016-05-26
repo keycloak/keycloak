@@ -50,6 +50,7 @@ import javax.ws.rs.core.UriInfo;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -236,8 +237,9 @@ public class RoleMapperResource {
                 throw new NotFoundException("Role not found");
             }
             roleMapper.grantRole(roleModel);
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, role.getId()).representation(roles).success();
         }
+
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
     }
 
     /**
@@ -258,10 +260,13 @@ public class RoleMapperResource {
         logger.debug("deleteRealmRoleMappings");
         if (roles == null) {
             Set<RoleModel> roleModels = roleMapper.getRealmRoleMappings();
+            roles = new LinkedList<>();
+
             for (RoleModel roleModel : roleModels) {
                 roleMapper.deleteRoleMapping(roleModel);
+                roles.add(ModelToRepresentation.toRepresentation(roleModel));
             }
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
+
         } else {
             for (RoleRepresentation role : roles) {
                 RoleModel roleModel = realm.getRole(role.getName());
@@ -276,10 +281,11 @@ public class RoleMapperResource {
                     throw new ErrorResponseException(me.getMessage(), MessageFormat.format(messages.getProperty(me.getMessage(), me.getMessage()), me.getParameters()),
                             Response.Status.BAD_REQUEST);
                 }
-
-                adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo, role.getId()).representation(roles).success();
             }
+
         }
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(roles).success();
 
     }
 

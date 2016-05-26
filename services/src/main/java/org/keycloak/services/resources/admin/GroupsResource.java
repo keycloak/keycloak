@@ -108,16 +108,20 @@ public class GroupsResource {
             if (child == null) {
                 throw new NotFoundException("Could not find child by id");
             }
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo);
         } else {
             child = realm.createGroup(rep.getName());
             GroupResource.updateGroup(rep, child);
             URI uri = uriInfo.getAbsolutePathBuilder()
                     .path(child.getId()).build();
             builder.status(201).location(uri);
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(rep).success();
+
+            rep.setId(child.getId());
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, child.getId());
         }
         realm.moveGroup(child, null);
+
+        adminEvent.representation(rep).success();
         return builder.build();
     }
 }

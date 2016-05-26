@@ -282,7 +282,7 @@ public class RealmTest extends AbstractAdminTest {
     public void deleteDefaultRole() {
         RoleRepresentation role = new RoleRepresentation("test", "test", false);
         realm.roles().create(role);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Matchers.startsWith(AdminEventPaths.rolesResourcePath()));
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("test"), role);
 
         assertNotNull(realm.roles().get("test").toRepresentation());
 
@@ -523,7 +523,7 @@ public class RealmTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
 
         GlobalRequestResult globalRequestResult = realm.pushRevocation();
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "push-revocation");
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "push-revocation", globalRequestResult);
 
         assertEquals(1, globalRequestResult.getSuccessRequests().size());
         assertEquals("http://localhost:8180/auth/realms/master/app/admin", globalRequestResult.getSuccessRequests().get(0));
@@ -548,7 +548,7 @@ public class RealmTest extends AbstractAdminTest {
         oauth.doLogin("user", "password");
 
         GlobalRequestResult globalRequestResult = realm.logoutAll();
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "logout-all");
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "logout-all", globalRequestResult);
 
         assertEquals(1, globalRequestResult.getSuccessRequests().size());
         assertEquals("http://localhost:8180/auth/realms/master/app/admin", globalRequestResult.getSuccessRequests().get(0));

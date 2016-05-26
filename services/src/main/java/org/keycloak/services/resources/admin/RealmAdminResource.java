@@ -354,8 +354,9 @@ public class RealmAdminResource {
     public GlobalRequestResult pushRevocation() {
         auth.requireManage();
 
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
-        return new ResourceAdminManager(session).pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
+        GlobalRequestResult result = new ResourceAdminManager(session).pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(result).success();
+        return result;
     }
 
     /**
@@ -369,8 +370,9 @@ public class RealmAdminResource {
         auth.init(RealmAuth.Resource.USER).requireManage();
 
         session.sessions().removeUserSessions(realm);
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
-        return new ResourceAdminManager(session).logoutAll(uriInfo.getRequestUri(), realm);
+        GlobalRequestResult result = new ResourceAdminManager(session).logoutAll(uriInfo.getRequestUri(), realm);
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(result).success();
+        return result;
     }
 
     /**
@@ -730,6 +732,8 @@ public class RealmAdminResource {
             throw new NotFoundException("Group not found");
         }
         realm.addDefaultGroup(group);
+
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).success();
     }
 
     @DELETE
@@ -743,6 +747,8 @@ public class RealmAdminResource {
             throw new NotFoundException("Group not found");
         }
         realm.removeDefaultGroup(group);
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
 
@@ -794,11 +800,12 @@ public class RealmAdminResource {
     public void clearRealmCache() {
         auth.requireManage();
 
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
         CacheRealmProvider cache = session.getProvider(CacheRealmProvider.class);
         if (cache != null) {
             cache.clear();
         }
+
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }
 
     /**
@@ -810,11 +817,12 @@ public class RealmAdminResource {
     public void clearUserCache() {
         auth.requireManage();
 
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
         CacheUserProvider cache = session.getProvider(CacheUserProvider.class);
         if (cache != null) {
             cache.clear();
         }
+
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }
 
 }

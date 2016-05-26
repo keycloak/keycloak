@@ -115,7 +115,7 @@ public class AttackDetectionResource {
         UsernameLoginFailureModel model = session.sessions().getUserLoginFailure(realm, username.toLowerCase());
         if (model != null) {
             session.sessions().removeUserLoginFailure(realm, username);
-            adminEvent.operation(OperationType.DELETE).success();
+            adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
         }
     }
 
@@ -131,7 +131,7 @@ public class AttackDetectionResource {
         auth.requireManage();
 
         session.sessions().removeAllUserLoginFailures(realm);
-        adminEvent.operation(OperationType.DELETE).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
 

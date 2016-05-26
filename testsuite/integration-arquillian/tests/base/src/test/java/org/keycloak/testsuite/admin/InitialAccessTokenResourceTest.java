@@ -69,13 +69,22 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
 
         rep.setCount(4);
         response = resource.create(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep);
+        String lastId = response.getId();
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(lastId), rep);
 
         List<ClientInitialAccessPresentation> list = resource.list();
         assertEquals(3, list.size());
 
         assertEquals(9, list.get(0).getCount() + list.get(1).getCount() + list.get(2).getCount());
         assertNull(list.get(0).getToken());
+
+        // Delete last and assert it was deleted
+        resource.delete(lastId);
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientInitialAccessPath(lastId));
+
+        list = resource.list();
+        assertEquals(2, list.size());
+        assertEquals(5, list.get(0).getCount() + list.get(1).getCount());
     }
 
 }

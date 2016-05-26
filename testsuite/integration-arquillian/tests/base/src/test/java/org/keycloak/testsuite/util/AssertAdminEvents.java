@@ -17,13 +17,22 @@
 
 package org.keycloak.testsuite.util;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 import org.keycloak.common.util.ObjectUtil;
@@ -34,7 +43,9 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.util.JsonSerialization;
@@ -179,8 +190,8 @@ public class AssertAdminEvents implements TestRule {
 
         public AdminEventRepresentation assertEvent(AdminEventRepresentation actual) {
             Assert.assertEquals(expected.getRealmId(), actual.getRealmId());
-            Assert.assertEquals(expected.getOperationType(), actual.getOperationType());
             Assert.assertThat(actual.getResourcePath(), resourcePath);
+            Assert.assertEquals(expected.getOperationType(), actual.getOperationType());
 
             Assert.assertTrue(ObjectUtil.isEqualOrBothNull(expected.getError(), actual.getError()));
 
@@ -197,20 +208,55 @@ public class AssertAdminEvents implements TestRule {
                 Assert.assertEquals(expectedAuth.getClientId(), actualAuth.getClientId());
             }
 
-            // Representation - compare the non-null fields of "expected" representation with the actual representation
+            // Representation comparison
             if (expectedRep != null) {
                 if (actual.getRepresentation() == null) {
                     Assert.fail("Expected representation " + expectedRep + " but no representation was available on actual event");
                 } else {
                     try {
-                        Object actualRep = JsonSerialization.readValue(actual.getRepresentation(), expectedRep.getClass());
 
-                        for (Method method : Reflections.getAllDeclaredMethods(expectedRep.getClass())) {
-                            if (method.getName().startsWith("get") || method.getName().startsWith("is")) {
-                                Object expectedValue = Reflections.invokeMethod(method, expectedRep);
+                        if (expectedRep instanceof List) {
+                            // List of roles. All must be available in actual representation
+                            List<RoleRepresentation> expectedRoles = (List<RoleRepresentation>) expectedRep;
+                            List<RoleRepresentation> actualRoles = JsonSerialization.readValue(new ByteArrayInputStream(actual.getRepresentation().getBytes()), new TypeReference<List<RoleRepresentation>>() {
+                            });
+
+                            Map<String, String> expectedRolesMap = new HashMap<>();
+                            for (RoleRepresentation role : expectedRoles) {
+                                expectedRolesMap.put(role.getId(), role.getName());
+                            }
+
+                            Map<String, String> actualRolesMap = new HashMap<>();
+                            for (RoleRepresentation role : actualRoles) {
+                                actualRolesMap.put(role.getId(), role.getName());
+                            }
+                            Assert.assertEquals(expectedRolesMap, actualRolesMap);
+
+                        } else if (expectedRep instanceof Map) {
+                            Object actualRep = JsonSerialization.readValue(actual.getRepresentation(), Map.class);
+
+                            // Comparing of map representations. All of "expected" key-values must be available on "actual" map from the event
+                            Map<?, ?> expectedRepMap = (Map) expectedRep;
+                            Map<?, ?> actualRepMap = (Map) actualRep;
+
+                            for (Map.Entry entry : expectedRepMap.entrySet()) {
+                                Object expectedValue = entry.getValue();
                                 if (expectedValue != null) {
-                                    Object actualValue = Reflections.invokeMethod(method, actualRep);
-                                    Assert.assertEquals("Property " + method.getName() + " of representation not equal.", expectedValue, actualValue);
+                                    Object actualValue = actualRepMap.get(entry.getKey());
+                                    Assert.assertEquals("Map item with key '" + entry.getKey() + "' not equal.", expectedValue, actualValue);
+                                }
+                            }
+                        } else {
+                            Object actualRep = JsonSerialization.readValue(actual.getRepresentation(), expectedRep.getClass());
+
+                            // Reflection-based comparing for other types - compare the non-null fields of "expected" representation with the "actual" representation from the event
+                            for (Method method : Reflections.getAllDeclaredMethods(expectedRep.getClass())) {
+                                if (method.getName().startsWith("get") || method.getName().startsWith("is")) {
+                                    Object expectedValue = Reflections.invokeMethod(method, expectedRep);
+                                    if (expectedValue != null) {
+                                        Object actualValue = Reflections.invokeMethod(method, actualRep);
+                                        Assert.assertEquals("Property method '" + method.getName() + "' of representation not equal.", expectedValue, actualValue);
+                                    }
                                 }
                             }
                         }
@@ -239,6 +285,23 @@ public class AssertAdminEvents implements TestRule {
         } catch (JWSInputException jwe) {
             throw new RuntimeException(jwe);
         }
+    }
+
+    public static Matcher<String> isExpectedPrefixFollowedByUuid(final String prefix) {
+        return new TypeSafeMatcher<String>() {
+
+            @Override
+            protected boolean matchesSafely(String item) {
+                int expectedLength = prefix.length() + 1 + org.keycloak.models.utils.KeycloakModelUtils.generateId().length();
+                return item.startsWith(prefix) && expectedLength == item.length();
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("resourcePath in the format like \"" + prefix + "/<UUID>\"");
+            }
+
+        };
     }
 
 

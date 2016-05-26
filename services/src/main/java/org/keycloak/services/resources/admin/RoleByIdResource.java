@@ -226,9 +226,7 @@ public class RoleByIdResource extends RoleResource {
         auth.requireManage();
 
         RoleModel role = getRoleModel(id);
-        deleteComposites(roles, role);
-
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(roles).success();
+        deleteComposites(adminEvent, uriInfo, roles, role);
     }
 
 }
