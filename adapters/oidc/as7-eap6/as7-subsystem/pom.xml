@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-as7-integration-pom</artifactId>
-        <version>1.9.5.Final</version>
+        <version>1.9.6.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

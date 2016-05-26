@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server-jboss</artifactId>
-        <version>1.9.5.Final</version>
+        <version>1.9.6.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 

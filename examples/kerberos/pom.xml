@@ -22,7 +22,7 @@
     <parent>
         <artifactId>keycloak-examples-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.9.5.Final</version>
+        <version>1.9.6.Final-SNAPSHOT</version>
     </parent>
 
     <name>Keycloak Examples - Kerberos Credential Delegation</name>
