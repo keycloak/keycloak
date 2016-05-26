@@ -1,52 +1,36 @@
 
 ==== LinkedIn
 
+There are a number of steps you have to complete to be able to login to LinkedIn.  First, go to the `Identity Providers` left menu item
+and selected `LinkedIn` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+
+.Add Identity Provider
+image:../../../{{book.images}}/linked-in-add-identity-provider.png[]
+
+You can't click save yet, as you'll need to obtain a `Client ID` and `Client Secret` from LinkedIn.  One piece of data you'll need from this
+page is the `Redirect URI`.  You'll have to provide that to LinkedIn when you register {{book.project.name}} as a client there, so
+copy this URI to your clipboard.
+
 To enable login with LinkedIn you first have to create an application in https://www.linkedin.com/secure/developer[LinkedIn Developer Network].
-Then you need to copy the client id and secret into the Keycloak Admin Console.
 
-Let's see first how to create an application with LinkedIn.
+.Developer Network
+image:../../../images/linked-in-developer-network.png[]
 
-. Log in to https://www.linkedin.com/secure/developer[LinkedIn Developer Network].
-  Click the `Add New Application` link.
-  Use any value for `Application Name`, `Website URL`, `Description`, `Developer Contact Email` and `Phone` you want.
-  Select `r_basicprofile` and `r_emailaddress` in the `Default Scope` section.
-  Click the `Add Application` button.
-. Copy `Consumer Key / API Key` and `Consumer Secret / Secret Key` from the shown page.
+Click on the `Create Application` button.  This will bring you to the `Create a New Application` Page.
 
-Now that you have the client id and secret, you can proceed with the creation of a LinkedIn Identity Provider in Keycloak.
-As follows:
+.Create App
+image:../../../images/linked-in-create-app.png[]
 
-. Select the `LinkedIn` identity provider from the drop-down box on the top right corner of the identity providers table in Keycloak's Admin Console.
-  You should be presented with a specific page to configure the selected provided.
-. Copy the client id and secret to their corresponding fields in the Keycloak Admin Console.
-  Click `Save`.
+Use any value for `Application Name`, `Website URL`, `Description`, `Developer Contact Email` and `Phone` you want.
+Select `r_basicprofile` and `r_emailaddress` in the `Default Scope` section.
+Click the `Add Application` button.  This will bring you to the new application's settings page.
 
-Once you create the identity provider in Keycloak, you must update your LinkedIn application with the redirect url that was generated to your identity provider.
+.App Settings
+image:../../../images/linked-in-app-settings.png[]
 
-. Open the LinkedIn Developer Network and select your application.
-  In `OAuth 2.0 Redirect URLs`                        insert the redirect uri created by Keycloak.
-  The redirect uri usually have the following format: `http://{host}:{port}/auth/realms/{realm}/broker/{provider_alias}/endpoint`.
+You'll have to copy the `Redirect URI` from the {{book.project.name}} `Add Identity Provider` page and enter it into the
+`OAuth 2.0` `Authorized Redirect URLs` field on the LinkedIn app settings page.  Don't forget to click `Update` button after
+you do this!
 
-NOTE: You can always get the redirect url for a specific identity provider from the table presented when you click on the 'Identity Provider' tab in _Realm > Settings_.
-
-That is it! This pretty much what you need to do in order to setup this identity provider.
-
-The table below lists some additional configuration options you may use when configuring this provider.
-
-.Configuration Options
-[cols="1,1", options="header"]
-|===
-|
-                                Configuration
-
-|
-                                Description
-
-|
-                                Default Scopes
-
-|
-                                Allows you to manually specify the scopes that users must authorize when authenticating with this provider.
-                                For a complete list of scopes, please take a look at application configuration in LinkedIn Developer Network. By default, Keycloak uses the following scopes: r_basicprofile r_emailaddress
-
-|===
+You will then need to obtain the client ID and secret from this page so you can enter them into the {{book.project.name}} `Add identity provider` page.
+Go back to {{book.project.name}} and specify those items.
