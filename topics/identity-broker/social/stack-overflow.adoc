@@ -1,44 +1,31 @@
 
 ==== StackOverflow
 
+There are a number of steps you have to complete to be able to login to StackOverflow.  First, go to the `Identity Providers` left menu item
+and selected `StackOverflow` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+
+.Add Identity Provider
+image:../../../{{book.images}}/stack-overflow-add-identity-provider.png[]
+
+You can't click save yet, as you'll need to obtain a `Client ID`, `Client Secret`, and `Key` from StackOverflow.  One piece of data you'll need from this
+page is the `Redirect URI`.  You'll have to provide that to StackOverflow when you register {{book.project.name}} as a client there, so
+copy this URI to your clipboard.
+
 To enable login with StackOverflow you first have to register an OAuth application on https://stackapps.com/[StackApps].
-Then you need to copy the client id, secret and key into the Keycloak Admin Console.
+Go to http://stackapps.com/apps/oauth/register[registering your application on Stack Apps] url and login.
 
-Let's see first how to create an application with StackOverflow.
+NOTE: StackOverflow often changes the look and feel of application registration, so these directions might not always be up to date and the
+      configuration steps might be slightly different.
 
-. Go to http://stackapps.com/apps/oauth/register[registering your application on Stack Apps] url and login here.
-  Use any value for `Application Name`, `Application Website` and `Description` you want.
-  Set `OAuth Domain` to the domain where your Keycloak instance runs.
-  Click the `Register Your Application` button.
-. Copy `Client Id`, `Client Secret` and `Key` from the shown page.
+.Register Application
+image:../../../images/stack-overflow-app-register.png[]
 
-Now that you have the client id, secret and key, you can proceed with the creation of a StackOverflow Identity Provider in Keycloak.
-As follows:
+Enter in the application name and the dns domain name of your application and click `Register your Application`.  Type in anything you want
+for the other items.
 
-. Select the `StackOverflow` identity provider from the drop-down box on the top right corner of the identity providers table in Keycloak's Admin Console.
-  You should be presented with a specific page to configure the selected provided.
-. Copy the client id, client secret and key to their corresponding fields in the Keycloak Admin Console.
-  Click `Save`.
+.Settings
+image:../../../images/stack-overflow-app-settings.png[]
 
-That is it! This pretty much what you need to do in order to setup this identity provider.
-
-The table below lists some additional configuration options you may use when configuring this provider.
-
-.Configuration Options
-[cols="1,1", options="header"]
-|===
-|
-                                Configuration
-
-|
-                                Description
-
-|
-                                Default Scopes
-
-|
-                                Allows you to manually specify the scopes that users must authorize when authenticating with this provider.
-                                For a complete list of scopes, please take a look at application configuration in StackExchange API Authentication documentation. Keycloak uses the empty scope by default.
-
-|===
+Finally, you will need to obtain the client ID, secret, and key from this page so you can enter them back on the {{book.project.name}} `Add identity provider` page.
+Go back to {{book.project.name}} and specify those items.
 
