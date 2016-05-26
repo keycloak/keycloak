@@ -1,0 +1,46 @@
+
+==== Twitter
+
+To enable login with Twtter you first have to create an application in the https://dev.twitter.com/apps[Twitter Developer Console].
+Then you need to copy the consumer key and secret into the Keycloak Admin Console.
+
+Let's see first how to create an application with Twitter.
+
+. Log in to the https://dev.twitter.com/apps[Twitter Developer Console].
+  Click the `Create a new application` button.
+  Use any value for `Name`, `Description` and `Website` you want.
+  Insert the social callback url in `Callback URL`.
+  Then click `Create your Twitter application`.
+. Now click on `Settings` and tick the box `Allow this application to be used to Sign in with Twitter`, then click on `Update this Twitter application's settings`.
+. Now click `API Keys` tab.
+  Copy `API key` and `API secret` from the https://dev.twitter.com/apps[Twitter Developer Console].
+
+NOTE: Twitter doesn't allow `localhost` in the redirect URI.
+To test on a local server replace `localhost` with `127.0.0.1`.
+
+Now that you have the client id and secret, you can proceed with the creation of a Twitter Identity Provider in Keycloak.
+As follows:
+
+. Select the `Twitter` identity provider from the drop-down box on the top right corner of the identity providers table in Keycloak's Admin Console.
+  You should be presented with a specific page to configure the selected provided.
+. Copy the client id and secret to their corresponding fields in the Keycloak Admin Console.
+  Click `Save`.
+
+That is it! This pretty much what you need to do in order to setup this identity 		provider.
+
+The table below lists some additional configuration options you may use when configuring this provider.
+
+.Configuration Options
+[cols="1,1", options="header"]
+|===
+|
+                                Configuration
+
+|
+                                Description
+
+|
+                                Default Scopes
+
+|===
+

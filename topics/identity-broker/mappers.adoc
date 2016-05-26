@@ -1,0 +1,25 @@
+
+=== Mapping/Importing SAML and OIDC Metadata
+
+You can import SAML assertion data, OpenID Connect ID Token claims, and Keycloak access token claims into new users that are imported from a brokered IDP.
+After you configure a broker, you'll see a `Mappers`            button appear.
+Click on that and you'll get to the list of mappers that are assigned to this broker.
+There is a `Create` button on this page.
+Clicking on this create button allows you to create a broker mapper.
+Broker mappers can import SAML attributes or OIDC ID/Access token claims into user attributes.
+You can assign a role mapping to a user if a claim or external role exists.
+There's a bunch of options here so just mouse over the tool tips to see what each mapper can do for you.
+
+=== Mapping/Importing User profile data from Social Identity Provider
+
+You can import user profile data provided by social identity providers like Google, GitHub, LinkedIn, Microsoft, Stackoverflow and Facebook  into new Keycloak user created from given social accounts.
+After you configure a broker, you'll see a `Mappers`            button appear.
+Click on that and you'll get to the list of mappers that are assigned to this broker.
+There is a `Create` button on this page.
+Clicking on this create button allows you to create a broker mapper.
+"Attribute Importer" mapper allows you to define path in JSON user profile data provided by the provider to get value from.
+You can use dot notation for nesting and square brackets to access fields in array by index.
+For example 'contact.address[0].country'.  Then you can define name of Keycloak's user profile attribute this value is stored into.
+
+To investigate structure of user profile JSON data provided by social providers you can enable `DEBUG` level for  logger `org.keycloak.social.user_profile_dump` and login using given provider.
+Then you can find user profile  JSON structure in Keycloak log file.

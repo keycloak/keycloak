@@ -1,0 +1,26 @@
+=== Retrieving Tokens from Identity Providers
+
+Keycloak allows you to store tokens and responses from identity providers during the authentication process.
+For that, you can use the `Store Token` configuration option, as mentioned before.
+
+It also allows you to retrieve these tokens and responses once the user is authenticated in order to use their information or use them to invoke external resources protected by these tokens.
+The latter case is usually related with social providers, where you usually need to use their tokens to invoke methods on their APIs.
+
+To retrieve a token for a particular identity provider you need to send a request as follows:
+
+[source,java]
+----
+GET /auth/realms/{realm}/broker/{provider_alias}/token HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer {keycloak_access_token}
+----
+
+In this case, given that you are accessing an protected service in Keycloak, you need to send the access token issued by Keycloak during the user authentication.
+
+By default, the Keycloak access token issued for the application can't be automatically used for retrieve thirdparty token.
+A user will have to have the `broker.read-token` role.
+The client will also have to have that role in its scope.
+In the broker configuration page you can automatically assign this role to newly imported users by turning on the `Stored Tokens Readable` switch.
+
+NOTE: If your application is not at the same origin as the authentication server, make sure you have properly configured CORS.
+

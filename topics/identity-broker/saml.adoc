@@ -1,0 +1,84 @@
+
+=== SAML v2.0 Identity Providers
+
+Keycloak can broker identity providers based on the SAML v2.0 protocol.
+
+In order to configure a SAML identity provider, follow these steps:
+
+. Select the `SAML v2.0` identity provider from the drop-down box on the top right corner of the identity providers table in Keycloak's Admin Console.
+  You should be presented with a specific page to configure the selected provider.
+
+When configuring a SAML identity provider you are presented with different configuration options in order to properly communicate and integrate with the external identity provider.
+In this case, you must keep in mind that Keycloak will act as an Service Provider that issues authentication requests(AuthnRequest) to the external identity provider.
+
+.Configuration Options
+[cols="1,1", options="header"]
+|===
+|
+                            Configuration
+
+|
+                            Description
+
+|
+                            Import IdP SAML Metadata
+
+
+|
+                            Single Sign-On Service Url
+
+
+|
+                            Single Logout Service Url
+
+
+|
+                            Backchannel Logout
+
+
+|
+                            NameID Policy Format
+
+
+|
+                            Validating X509 Certificate
+
+
+|
+                            Want AuthnRequests Signed
+
+
+|
+                            Force Authentication
+
+
+|
+                            Validate Signature
+
+
+|
+                            HTTP-POST Binding Response
+
+
+|
+                            HTTP-POST Binding for AuthnReques
+
+|===
+
+You can also import all this configuration data by providing a URL or XML file that points to the entity descriptor of the external SAML IDP you want to connect to.
+
+Once you create a SAML provider, there is an `EXPORT` button that appears when viewing that provider.
+Clicking this button will export a SAML entity descriptor which you can use to
+
+==== SP Descriptor
+
+The SAML SP Descriptor XML file for the broker is available publically by going to this URL
+
+[source]
+----
+
+                http[s]://{host:port}/auth/realms/{realm-name}/broker/{broker-alias}/endpoint/descriptor
+----
+
+This URL is useful if you need to import this information into an IDP that needs or is more user friendly to load from a remote URL.
+

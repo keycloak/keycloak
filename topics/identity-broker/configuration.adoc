@@ -1,0 +1,80 @@
+
+=== General Configuration
+
+The identity broker configuration is all based on identity providers.
+Identity providers are created for each realm and by default they are enabled for every single application.
+That means that users from a realm can use any of the registered identity providers when signing in to an application.
+
+In order to create an identity provider click the `Identity Providers` left menu item.
+
+.Identity Providers
+image:../../{{book.images}}/identity-providers.png[]
+
+In the right hand drop down list box, choose the identity provider you want to add.  This will bring you to the
+configuration page for that identity provider type.
+
+.Add Identity Provider
+image:../../{{book.images}}/add-identity-provider.png[]
+
+Above is an example of configuring a Google social login provider.  Once you configure an IDP, it will appear on the {{book.project.name}}
+login page as an option.
+
+.IDP login page
+image:../../{{book.images}}/identity-provider-login-page.png[]
+
+
+Social::
+  Social providers allows you to enable social authentication to your realm.
+  {{book.project.name}} makes it easy to let users log in to your application using an existing account with a social network.
+  Currently Facebook, Google, Twitter, GitHub, LinkedIn, Microsoft and StackOverflow are supported with more planned for the future.
+
+Protocol-based::
+  Protocol-based providers are those that rely on a specific protocol in order to authenticate and authorize users.
+  They allow you to connect to any identity provider compliant with a specific protocol.
+  {{book.project.name}} provides support for SAML v2.0 and OpenID Connect v1.0 protocols.
+  It makes it easy to configure and broker any identity provider based on these open standards.
+
+Although each type of identity provider has its own configuration options, all of them share some very common configuration.
+Regardless the identity provider you are creating, you'll see the following configuration options avaivable:
+
+.Common Configuration
+[cols="1,1", options="header"]
+|===
+|Configuration|Description
+
+|Alias
+|The alias is an unique identifier for an identity provider. It is used to reference internally an identity provider.
+ Some protocols require a redirect uri or callback url in order to communicate with an identity provider. For instance, OpenID Connect.
+ In this case, the alias is used to build the redirect uri.
+ Every single identity provider must have an alias. For example, facebook, google, idp.acme.com, etc.
+
+|Enabled
+|Turn the provider on/off
+
+|Store Tokens
+|Whether or not to store the token received from the identity provider.
+
+|Stored Tokens Readable
+|Whether or not users are allowed to retrieve the stored identity provider token.  This also applies the _broker_ client-level
+ role _read token_
+
+|Trust email
+|If the identity provider supplies an email address this email address will be trusted.  If the realm required email validation
+ users that log in from this IDP will not have to go through the email verification process.
+
+|Authenticate By Default
+|If checked, the {{book.project.name}} login screen will be completely bypassed and the browser will be redirected directly
+ to the IDP.
+
+|GUI order
+|The order number that sorts how the available IDPs are listed on the {{book.project.name}} login page.
+
+|First Login Flow
+|This is the authentication flow that will be triggered for users that log into {{book.project.name}} through this IDP
+ for the first time ever
+
+|Post Login Flow
+|Authentication flow that is triggered after the user finishes logging in with the external identity provider
+|===
+
+

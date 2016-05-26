@@ -1,0 +1,51 @@
+
+
+==== Github
+
+To enable login with GitHub you first have to create an application in https://github.com/settings/applications[GitHub Settings].
+Then you need to copy the client id and secret into the Keycloak Admin Console.
+
+Let's see first how to create an application with GitHub.
+
+. Log in to https://github.com/settings/applications[GitHub Settings].
+  Click the `Register new application` button.
+  Use any value for `Application name`, `Homepage URL` and `Application Description` you want.
+  Click the `Register application` button.
+. Copy `Client ID` and `Client Secret` from the https://github.com/settings/applications[GitHub Settings].
+
+Now that you have the client id and secret, you can proceed with the creation of a Github Identity Provider in Keycloak.
+As follows:
+
+. Select the `Github` identity provider from the drop-down box on the top right corner of the identity providers table in Keycloak's Admin Console.
+  You should be presented with a specific page to configure the selected provided.
+. Copy the client id and secret to their corresponding fields in the Keycloak Admin Console.
+  Click `Save`.
+
+Once you create the identity provider in Keycloak, you must update your GitHub application with the redirect url that was generated to your identity provider.
+
+. Open the GitHub Settings and select your application.
+  In `Authorization callback URL`                        insert the redirect uri created by Keycloak.
+  The redirect uri usually have the following format: `http://{host}:{port}/auth/realms/{realm}/broker/{provider_alias}`.
+
+NOTE: You can always get the redirect url for a specific identity provider from the table presented when you click on the 'Identity Provider' tab in _Realm > Settings_.
+
+That is it! This pretty much what you need to do in order to setup this identity 		provider.
+
+The table below lists some additional configuration options you may use when configuring this provider.
+
+.Configuration Options
+[cols="1,1", options="header"]
+|===
+|
+                                Configuration
+
+|
+                                Description
+
+|
+                                Default Scopes
+
+|
+                                Allows you to manually specify the scopes that users must authorize when authenticating with this provider. For a complete list of scopes, please take a look at https://developer.github.com/v3/oauth/#scopes. By default, Keycloak uses the following scopes: user:email
+
+|===

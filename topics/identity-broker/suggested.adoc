@@ -1,0 +1,32 @@
+
+=== Client Suggested Identity Provider
+
+Each Identity provider has option `Authenticate By Default`, which allows that Identity provider is automatically selected during authentication.
+User won't even see Keycloak login page, but is automatically redirected to the identity provider.
+
+Applications can also automatically select an identity provider in order to authenticate an user.
+Selection per application is preferred over `Authenticate By Default` option if you need more control on when exactly is Identity provider automatically selected.
+
+Keycloak supports a specific HTTP query parameter that you can use as a hint to tell the server which identity provider should be used to authenticate the user.
+
+For that, you can append the `kc_idp_hint` as a query parameter to your application url, as follows:
+
+[source,java]
+----
+GET /myapplication.com?kc_idp_hint=facebook HTTP/1.1
+Host: localhost:8080
+----
+
+In this case, is expected that your realm has an identity provider with an alias `facebook`.
+
+If you are using `keycloak.js` adapter, you can also achieve the same behavior:
+
+[source,java]
+----
+var keycloak = new Keycloak('keycloak.json');
+
+keycloak.createLoginUrl({
+	idpHint: 'facebook'
+});
+----
+

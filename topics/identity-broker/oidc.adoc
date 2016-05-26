@@ -1,0 +1,66 @@
+=== OpenID Connect v1.0 Identity Providers
+
+Keycloak can broker identity providers based on the OpenID Connect v1.0 protocol.
+
+In order to configure a OIDC identity provider, follow these steps:
+
+. Select the `OpenID Connect v1.0` identity provider from the drop-down box on the top right corner of the identity providers table in Keycloak's Admin Console.
+  You should be presented with a specific page to configure the selected provider.
+
+When configuring an OIDC identity provider you are presented with different configuration options in order to send authentication requests to the external identity provider.
+In this case, the brokered identity provider must support the Authorization Code Flow (as defined by the specification) in order to authenticate the user and authorize access for the scopes specified in the configuration.
+
+.Configuration Options
+[cols="1,1", options="header"]
+|===
+|
+                            Configuration
+
+|
+                            Description
+
+|
+                            Authorization Url
+
+
+|
+                            Token Url
+
+
+|
+                            Logout Url
+
+
+|
+                            Backchannel Logout
+
+
+|
+                            User Info Url
+
+
+|
+                            Client ID
+
+
+|
+                            Client Secret
+
+
+|
+                            Issuer
+
+
+|
+                            Default Scopes
+
+|
+                            Allows you to specify additional scopes when asking for user authentication and consent. By default, scope openid is always appended to the list of the scopes.
+
+
+|
+                            Prompt
+
+|===
+
+You can also import all this configuration data by providing a URL or file that points to OpenID Provider Metadata (see OIDC Discovery specification)

@@ -1,0 +1,58 @@
+[[_identity_broker_first_login]]
+
+=== First Login Flow
+
+When Keycloak successfully authenticates user through identity provider (step 8 in <<_identity_broker_overview,Overview>> chapter), there can be two situations:
+
+. There is already Keycloak user account linked with the authenticated identity provider account.
+  In this case, Keycloak will just authenticate as the existing user and redirect back to application (step 9 in <<_identity_broker_overview,Overview>> chapter).
+. There is not yet existing Keycloak user account linked with the identity provider account.
+  This situation is more tricky.
+  Usually you just want to register new account into Keycloak database, but what if there is existing Keycloak account with same email like the identity provider account? Automatically link identity provider account with existing Keycloak account is not very good option as there are possible security flaws related to that...
+
+Because we had various requirements what to do in second case, we changed the behaviour to be flexible and configurable through <<_auth_spi,Authentication Flows SPI>>.
+In admin console in Identity provider settings, there is option `First Login Flow`, which allows you to choose, which workflow will be used after "first login" with this identity provider account.
+By default it points to `first broker login` flow, but you can configure and use your own flow and use different flows for different identity providers etc.
+
+The flow itself is configured in admin console under `Authentication` tab.
+When you choose `First Broker Login` flow, you will see what authenticators are used by default.
+You can either re-configure existing flow (For example disable some authenticators, mark some of them as `required`, configure some authenticators etc). Or you can even create new authentication flow and/or write your own Authenticator implementations and use it in your flow.
+See <<_auth_spi,Authentication Flows SPI>> for more details on how to do it.
+
+For `First Broker Login` case, it might be useful if your Authenticator is subclass of `org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator`            so you have access to all details about authenticated Identity provider account.
+But it's not a requirement.
+
+==== Default First Login Flow
+
+Let's describe the default behaviour provided by `First Broker Login` flow.
+There are those authenticators:
+
+Review Profile::
+  This authenticator might display the profile info page, where user can review his profile retrieved from identity provider.
+  The authenticator is configurable.
+  You can set `Update Profile On First Login` option.
+  When `On`, users will be always presented with the profile page asking for additional information in order to federate their identities.
+  When `missing`, users will be presented with the profile page only if some mandatory information (email, first name, last name) is not provided by identity provider.
+  If `Off`, the profile page won't be displayed, unless user clicks in later phase on `Review profile info`                                link (page displayed in later phase by `Confirm Link Existing Account` authenticator)
+
+Create User If Unique::
+  This authenticator checks if there is already existing Keycloak account with same email or username like the account from identity provider.
+  If it's not, then authenticator just creates new Keyclok account and link it with identity provider and whole flow is finished.
+  Otherwise it goes to the next `Handle Existing Account` subflow.
+  If you always want to ensure that there is no duplicated account, you can mark this authenticator as `REQUIRED` . In this case, the user will see the error page if there is existing Keycloak account and user needs to link his identity provider account through Account management.
+
+Confirm Link Existing Account::
+  User will see the info page, that there is existing Keycloak account with same email.
+  He can either review his profile again and use different email or username (flow is restarted and goes back to `Review Profile` authenticator). Or he can confirm that he wants to link identity provider account with his existing Keycloak account.
+  Disable this authenticator if you don't want users to see this confirmation page, but go straight to linking identity provider account by email verification or re-authentication.
+
+Verify Existing Account By Email::
+  This authenticator is `ALTERNATIVE` by default, so it's used only if realm has SMTP setup configured.
+  It will send mail to user, where he can confirm that he wants to link identity provider with his Keycloak account.
+  Disable this if you don't want to confirm linking by email, but instead you always want users to reauthenticate with their password (and alternatively OTP).
+
+Verify Existing Account By Re-authentication::
+  This authenticator is used if email authenticator is disabled or non-available (SMTP not configured for realm). It will display login screen where user needs to authenticate with his password to link his Keycloak account with Identity provider.
+  User can also re-authenticate with some different identity provider, which is already linked to his keycloak account.
+  You can also force users to use OTP, otherwise it's optional and used only if OTP is already set for user account.
+
