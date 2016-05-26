@@ -370,7 +370,8 @@ public class XMLSignatureUtil {
         NodeList nl = signedDoc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
 
         if (nl == null || nl.getLength() == 0) {
-            throw logger.nullValueError("Cannot find Signature element");
+            logger.debug("Cannot find Signature element");
+            return false;
         }
 
         if (publicKey == null)

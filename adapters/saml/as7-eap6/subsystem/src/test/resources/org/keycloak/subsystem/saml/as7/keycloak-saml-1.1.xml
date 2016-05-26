@@ -42,6 +42,7 @@
             <IDP entityID="idp">
                 <SingleSignOnService signRequest="true"
                                      validateResponseSignature="true"
+                                     validateAssertionSignature="true"
                                      requestBinding="POST"
                                      bindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"/>
                 <SingleLogoutService
