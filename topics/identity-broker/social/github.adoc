@@ -31,7 +31,7 @@ You'll have to copy the `Redirect URI` from the {{book.project.name}} `Add Ident
 page you will be brough to the application's management page.
 
 .Github App Page
-image:../../../images/gitbook-app-page.png[]
+image:../../../images/github-app-page.png[]
 
 You will need to obtain the client ID and secret from this page so you can enter them into the {{book.project.name}} `Add identity provider` page.
 Go back to {{book.project.name}} and specify those items.
