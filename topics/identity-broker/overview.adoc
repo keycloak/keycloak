@@ -9,7 +9,7 @@ In this case the user will not be given a choice, but instead be redirected dire
 The following diagram demonstrates the steps involved when using {{book.project.name}} to broker an external identity provider:
 
 .Identity Broker Flow
-image:../../images/identity_broker-flow.png[]
+image:../../images/identity_broker_flow.png[]
 
 . User is not authenticated and requests a protected resource in a client application.
 . The client applications redirects the user to {{book.project.name}} to authenticate.
