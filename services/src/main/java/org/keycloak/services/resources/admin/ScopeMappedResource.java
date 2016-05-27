@@ -42,6 +42,7 @@ import javax.ws.rs.core.MediaType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -220,8 +221,9 @@ public class ScopeMappedResource {
                 throw new NotFoundException("Role not found");
             }
             scopeContainer.addScopeMapping(roleModel);
-            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), role.getId()).representation(roles).success();
         }
+
+        adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(roles).success();
     }
 
     /**
@@ -241,10 +243,13 @@ public class ScopeMappedResource {
 
         if (roles == null) {
             Set<RoleModel> roleModels = scopeContainer.getRealmScopeMappings();
+            roles = new LinkedList<>();
+
             for (RoleModel roleModel : roleModels) {
                 scopeContainer.deleteScopeMapping(roleModel);
+                roles.add(ModelToRepresentation.toRepresentation(roleModel));
             }
-            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roles).success();
+
        } else {
             for (RoleRepresentation role : roles) {
                 RoleModel roleModel = realm.getRoleById(role.getId());
@@ -252,9 +257,10 @@ public class ScopeMappedResource {
                     throw new NotFoundException("Client not found");
                 }
                 scopeContainer.deleteScopeMapping(roleModel);
-                adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri(), roleModel.getId()).representation(roles).success();
             }
         }
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roles).success();
 
     }
 

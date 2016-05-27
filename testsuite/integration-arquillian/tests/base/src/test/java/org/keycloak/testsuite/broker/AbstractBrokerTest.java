@@ -14,6 +14,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.List;
 
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
@@ -113,12 +115,27 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
         return identityProviderRepresentation;
     }
 
+    private void waitForPage(String title) {
+        long startAt = System.currentTimeMillis();
+
+        while (!driver.getTitle().toLowerCase().contains(title)
+                && System.currentTimeMillis() - startAt < 200) {
+            try {
+                Thread.sleep(5);
+            } catch (InterruptedException ignore) {}
+        }
+    }
+
     @Test
     public void logInAsUserInIDP() {
-        driver.navigate().to(getAuthRoot() + "/auth/realms/" + consumerRealmName() + "/account");
+        driver.navigate().to(getAccountUrl(consumerRealmName()));
 
         log.debug("Clicking social " + getIDPAlias());
         accountLoginPage.clickSocial(getIDPAlias());
+
+        if (!driver.getCurrentUrl().contains("/auth/realms/" + providerRealmName() + "/")) {
+            log.debug("Not on provider realm page, url: " + driver.getCurrentUrl());
+        }
 
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + providerRealmName() + "/"));
@@ -126,9 +143,9 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
         log.debug("Logging in");
         accountLoginPage.login(getUserLogin(), getUserPassword());
 
-        Assert.assertTrue("We must be on update user profile page right now",
-                updateAccountInformationPage.isCurrent());
+        waitForPage("update account information");
 
+        Assert.assertTrue(updateAccountInformationPage.isCurrent());
         Assert.assertTrue("We must be on correct realm right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + consumerRealmName() + "/"));
 
@@ -157,23 +174,33 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
     protected void testSingleLogout() {
         log.debug("Testing single log out");
 
-        driver.navigate().to(getAuthRoot() + "/auth/realms/" + providerRealmName() + "/account");
+        driver.navigate().to(getAccountUrl(providerRealmName()));
 
         Assert.assertTrue("Should be logged in the account page", driver.getTitle().endsWith("Account Management"));
+
+        String encodedAccount;
+        try {
+            encodedAccount = URLEncoder.encode(getAccountUrl(providerRealmName()), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            encodedAccount = getAccountUrl(providerRealmName());
+        }
 
         driver.navigate().to(getAuthRoot()
                 + "/auth/realms/" + providerRealmName()
                 + "/protocol/" + "openid-connect"
-                + "/logout");
+                + "/logout?redirect_uri=" + encodedAccount);
 
-        driver.navigate().to(getAuthRoot() + "/auth/realms/" + providerRealmName() + "/account");
+        waitForPage("log in to " + providerRealmName());
 
-        Assert.assertTrue("Should be on login page", driver.getTitle().startsWith("Log in to"));
         Assert.assertTrue("Should be on " + providerRealmName() + " realm", driver.getCurrentUrl().contains("/auth/realms/" + providerRealmName()));
 
-        driver.navigate().to(getAuthRoot() + "/auth/realms/" + consumerRealmName() + "/account");
+        driver.navigate().to(getAccountUrl(consumerRealmName()));
 
-        Assert.assertTrue("Should be on login page", driver.getTitle().startsWith("Log in to"));
-        Assert.assertTrue("Should be on " + consumerRealmName() + " realm", driver.getCurrentUrl().contains("/auth/realms/" + consumerRealmName()));
+        Assert.assertTrue("Should be on " + consumerRealmName() + " realm on login page",
+                driver.getCurrentUrl().contains("/auth/realms/" + consumerRealmName() + "/protocol/openid-connect/"));
+    }
+
+    private String getAccountUrl(String realmName) {
+        return getAuthRoot() + "/auth/realms/" + realmName + "/account";
     }
 }

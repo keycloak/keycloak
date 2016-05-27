@@ -842,6 +842,10 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
         <section id="proxy-address-forwarding">
             <title>Configure reverse proxy for address forwarding</title>
             <para>
+                Keycloak needs to know the original request URL as this is needed for example to set the correct issuer in tokens as well as redirects, links, etc.
+                This requires the reverse proxy to pass the original <literal>Host</literal> header.
+            </para>
+            <para>
                 Keycloak has some functionalities (for example <link linkend='events'>Events</link> or <link linkend="brute-force-attacks">Brute Force protector</link>)
                 that relies on the fact, that remote address of the HTTP connection is the real IP address of the client machine. This may be a bit tricky when you have setup
                 with reverse proxy or loadbalancer.

@@ -16,49 +16,22 @@
  */
 package org.keycloak.testsuite.i18n;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
+ * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class AccountPageTest {
+public class AccountPageTest extends AbstractI18NTest {
 
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
-        @Override
-        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            UserModel user = manager.getSession().users().addUser(appRealm, "login-test");
-            user.setEmail("login@test.com");
-            user.setEnabled(true);
-
-            UserCredentialModel creds = new UserCredentialModel();
-            creds.setType(CredentialRepresentation.PASSWORD);
-            creds.setValue("password");
-
-            user.updateCredential(creds);
-        }
-    });
-
-    @Rule
-    public WebRule webRule = new WebRule(this);
-
-    @WebResource
+    @Page
     protected AccountUpdateProfilePage accountUpdateProfilePage;
 
-    @WebResource
+    @Page
     protected LoginPage loginPage;
 
     @Test

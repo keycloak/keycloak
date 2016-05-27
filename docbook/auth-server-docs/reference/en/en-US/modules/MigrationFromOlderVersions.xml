@@ -98,6 +98,18 @@
         <title>Version specific migration</title>
 
         <section>
+            <title>Migrating to 1.9.5</title>
+            <simplesect>
+                <title>Default password hashing interval increased to 20K</title>
+                <para>
+                    The default password hashing interval for new realms has been increased to 20K (from 1 previously). This change will have an impact on
+                    performance when users authenticate. For example with the old default (1) it takes less than 1 ms to hash a password, but with the new
+                    default (20K) the same operation can take 50-100 ms.  
+                </para>
+            </simplesect>
+        </section>
+
+        <section>
             <title>Migrating to 1.9.3</title>
             <simplesect>
                 <title>Add User script renamed</title>

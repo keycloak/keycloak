@@ -17,6 +17,10 @@
 
 package org.keycloak.testsuite.rest;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import org.infinispan.Cache;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -47,7 +51,19 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.BadRequestException;
+import org.keycloak.events.EventQuery;
+import org.keycloak.events.EventStoreProvider;
+import org.keycloak.events.EventType;
+import org.keycloak.events.admin.AdminEventQuery;
+import org.keycloak.events.admin.AuthDetails;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.representations.idm.AuthDetailsRepresentation;
+import org.keycloak.services.resources.admin.RealmAuth;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -189,6 +205,280 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearAdminEventQueue() {
         EventsListenerProvider.clearAdminEvents();
         return Response.ok().build();
+    }
+
+    @GET
+    @Path("/clear-event-store")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearEventStore() {
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+        eventStore.clear();
+        return Response.ok().build();
+    }
+
+    @GET
+    @Path("/clear-event-store-for-realm")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearEventStore(@QueryParam("realmId") String realmId) {
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+        eventStore.clear(realmId);
+        return Response.ok().build();
+    }
+
+    @GET
+    @Path("/clear-event-store-older-than")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan) {
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+        eventStore.clear(realmId, olderThan);
+        return Response.ok().build();
+    }
+
+    /**
+     * Query events
+     *
+     * Returns all events, or filters them based on URL query parameters listed here
+     *
+     * @param realmId The realm
+     * @param types The types of events to return
+     * @param client App or oauth client name
+     * @param user User id
+     * @param dateFrom From date
+     * @param dateTo To date
+     * @param ipAddress IP address
+     * @param firstResult Paging offset
+     * @param maxResults Paging size
+     * @return
+     */
+    @Path("query-events")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
+            @QueryParam("user") String user, @QueryParam("dateFrom") Date dateFrom, @QueryParam("dateTo") Date dateTo,
+            @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults) {
+
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+
+        EventQuery query = eventStore.createQuery();
+
+        if (realmId != null) {
+            query.realm(realmId);
+        }
+
+        if (client != null) {
+            query.client(client);
+        }
+
+        if (types != null & !types.isEmpty()) {
+            EventType[] t = new EventType[types.size()];
+            for (int i = 0; i < t.length; i++) {
+                t[i] = EventType.valueOf(types.get(i));
+            }
+            query.type(t);
+        }
+
+        if (user != null) {
+            query.user(user);
+        }
+
+        if(dateFrom != null) {
+            query.fromDate(dateFrom);
+        }
+
+        if(dateTo != null) {
+            query.toDate(dateTo);
+        }
+
+        if (ipAddress != null) {
+            query.ipAddress(ipAddress);
+        }
+        if (firstResult != null) {
+            query.firstResult(firstResult);
+        }
+        if (maxResults != null) {
+            query.maxResults(maxResults);
+        }
+
+        return toEventListRep(query.getResultList());
+    }
+
+    private List<EventRepresentation> toEventListRep(List<Event> events) {
+        List<EventRepresentation> reps = new ArrayList<>();
+        for (Event event : events) {
+            reps.add(ModelToRepresentation.toRepresentation(event));
+        }
+        return reps;
+    }
+
+    @PUT
+    @Path("/on-event")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void onEvent(final EventRepresentation rep) {
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+
+        eventStore.onEvent(repToModel(rep));
+    }
+
+    private Event repToModel(EventRepresentation rep) {
+        Event event = new Event();
+        event.setClientId(rep.getClientId());
+        event.setDetails(rep.getDetails());
+        event.setError(rep.getError());
+        event.setIpAddress(rep.getIpAddress());
+        event.setRealmId(rep.getRealmId());
+        event.setSessionId(rep.getSessionId());
+        event.setTime(rep.getTime());
+        event.setType(EventType.valueOf(rep.getType()));
+        event.setUserId(rep.getUserId());
+        return event;
+    }
+
+    @GET
+    @Path("/clear-admin-event-store")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearAdminEventStore() {
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+        eventStore.clearAdmin();
+        return Response.ok().build();
+    }
+
+    @GET
+    @Path("/clear-admin-event-store-for-realm")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearAdminEventStore(@QueryParam("realmId") String realmId) {
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+        eventStore.clearAdmin(realmId);
+        return Response.ok().build();
+    }
+
+    @GET
+    @Path("/clear-admin-event-store-older-than")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan) {
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+        eventStore.clearAdmin(realmId, olderThan);
+        return Response.ok().build();
+    }
+
+    /**
+     * Get admin events
+     *
+     * Returns all admin events, or filters events based on URL query parameters listed here
+     *
+     * @param realmId
+     * @param operationTypes
+     * @param authRealm
+     * @param authClient
+     * @param authUser user id
+     * @param authIpAddress
+     * @param resourcePath
+     * @param dateFrom
+     * @param dateTo
+     * @param firstResult
+     * @param maxResults
+     * @return
+     */
+    @Path("query-admin-events")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<AdminEventRepresentation> getAdminEvents(@QueryParam("realmId") String realmId, @QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
+            @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
+            @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") Date dateFrom,
+            @QueryParam("dateTo") Date dateTo, @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults) {
+
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+        AdminEventQuery query = eventStore.createAdminQuery();
+
+        if (realmId != null) {
+            query.realm(realmId);
+        };
+
+        if (authRealm != null) {
+            query.authRealm(authRealm);
+        }
+
+        if (authClient != null) {
+            query.authClient(authClient);
+        }
+
+        if (authUser != null) {
+            query.authUser(authUser);
+        }
+
+        if (authIpAddress != null) {
+            query.authIpAddress(authIpAddress);
+        }
+
+        if (resourcePath != null) {
+            query.resourcePath(resourcePath);
+        }
+
+        if (operationTypes != null && !operationTypes.isEmpty()) {
+            OperationType[] t = new OperationType[operationTypes.size()];
+            for (int i = 0; i < t.length; i++) {
+                t[i] = OperationType.valueOf(operationTypes.get(i));
+            }
+            query.operation(t);
+        }
+
+        if(dateFrom != null) {
+            query.fromTime(dateFrom);
+        }
+
+        if(dateTo != null) {
+            query.toTime(dateTo);
+        }
+
+        if (firstResult != null) {
+            query.firstResult(firstResult);
+        }
+        if (maxResults != null) {
+            query.maxResults(maxResults);
+        }
+
+        return toAdminEventRep(query.getResultList());
+    }
+
+    private List<AdminEventRepresentation> toAdminEventRep(List<AdminEvent> events) {
+        List<AdminEventRepresentation> reps = new ArrayList<>();
+        for (AdminEvent event : events) {
+            reps.add(ModelToRepresentation.toRepresentation(event));
+        }
+
+        return reps;
+    }
+
+    @POST
+    @Path("/on-admin-event")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void onAdminEvent(final AdminEventRepresentation rep, @QueryParam("includeRepresentation") boolean includeRepresentation) {
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+        eventStore.onEvent(repToModel(rep), includeRepresentation);
+    }
+
+    private AdminEvent repToModel(AdminEventRepresentation rep) {
+        AdminEvent event = new AdminEvent();
+        event.setAuthDetails(repToModel(rep.getAuthDetails()));
+        event.setError(rep.getError());
+        event.setOperationType(OperationType.valueOf(rep.getOperationType()));
+        event.setRealmId(rep.getRealmId());
+        event.setRepresentation(rep.getRepresentation());
+        event.setResourcePath(rep.getResourcePath());
+        event.setTime(rep.getTime());
+        return event;
+    }
+
+    private AuthDetails repToModel(AuthDetailsRepresentation rep) {
+        AuthDetails details = new AuthDetails();
+        details.setClientId(rep.getClientId());
+        details.setIpAddress(rep.getIpAddress());
+        details.setRealmId(rep.getRealmId());
+        details.setUserId(rep.getUserId());
+        return details;
     }
 
     @GET

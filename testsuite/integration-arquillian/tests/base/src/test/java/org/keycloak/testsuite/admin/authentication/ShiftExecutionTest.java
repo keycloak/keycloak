@@ -19,7 +19,9 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.testsuite.util.AdminEventPaths;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.BadRequestException;
@@ -39,6 +41,7 @@ public class ShiftExecutionTest extends AbstractAuthenticationTest {
         HashMap<String, String> params = new HashMap<>();
         params.put("newName", "Copy of browser");
         Response response = authMgmtResource.copy("browser", params);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params);
         try {
             Assert.assertEquals("Copy flow", 201, response.getStatus());
         } finally {
@@ -61,6 +64,7 @@ public class ShiftExecutionTest extends AbstractAuthenticationTest {
 
         // shift last execution up
         authMgmtResource.raisePriority(last.getId());
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authRaiseExecutionPath(last.getId()));
 
         List<AuthenticationExecutionInfoRepresentation> executions2 = authMgmtResource.getExecutions("Copy of browser");
 
@@ -80,6 +84,7 @@ public class ShiftExecutionTest extends AbstractAuthenticationTest {
 
         // shift one before last down
         authMgmtResource.lowerPriority(oneButLast2.getId());
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authLowerExecutionPath(oneButLast2.getId()));
 
         executions2 = authMgmtResource.getExecutions("Copy of browser");
 

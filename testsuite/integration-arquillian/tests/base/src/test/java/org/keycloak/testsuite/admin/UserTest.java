@@ -353,7 +353,7 @@ public class UserTest extends AbstractAdminTest {
         rep.setProviderId("social-provider-type");
 
         realm.identityProviders().create(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Matchers.startsWith(AdminEventPaths.identityProviderCreatePath()), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderPath(rep.getAlias()), rep);
     }
 
     private void removeSampleIdentityProvider() {
@@ -742,6 +742,7 @@ public class UserTest extends AbstractAdminTest {
         RequiredActionProviderRepresentation updatePasswordReqAction = realm.flows().getRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         updatePasswordReqAction.setDefaultAction(true);
         realm.flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePasswordReqAction);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(UserModel.RequiredAction.UPDATE_PASSWORD.toString()), updatePasswordReqAction);
 
         // Create user
         String userId = createUser("user1", "user1@localhost");
@@ -754,6 +755,7 @@ public class UserTest extends AbstractAdminTest {
         updatePasswordReqAction = realm.flows().getRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         updatePasswordReqAction.setDefaultAction(true);
         realm.flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePasswordReqAction);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(UserModel.RequiredAction.UPDATE_PASSWORD.toString()), updatePasswordReqAction);
     }
 
     @Test
@@ -794,14 +796,16 @@ public class UserTest extends AbstractAdminTest {
         l.add(realm.roles().get("realm-role").toRepresentation());
         l.add(realm.roles().get("realm-composite").toRepresentation());
         roles.realmLevel().add(l);
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, Matchers.startsWith(AdminEventPaths.userRealmRoleMappingsPath(userId)));
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, Matchers.startsWith(AdminEventPaths.userRealmRoleMappingsPath(userId)));
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userRealmRoleMappingsPath(userId), l);
 
         // Add client roles
-        roles.clientLevel(clientUuid).add(Collections.singletonList(realm.clients().get(clientUuid).roles().get("client-role").toRepresentation()));
-        roles.clientLevel(clientUuid).add(Collections.singletonList(realm.clients().get(clientUuid).roles().get("client-composite").toRepresentation()));
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, Matchers.startsWith(AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid)));
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, Matchers.startsWith(AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid)));
+        List<RoleRepresentation> list = Collections.singletonList(realm.clients().get(clientUuid).roles().get("client-role").toRepresentation());
+        roles.clientLevel(clientUuid).add(list);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), list);
+
+        list = Collections.singletonList(realm.clients().get(clientUuid).roles().get("client-composite").toRepresentation());
+        roles.clientLevel(clientUuid).add(list);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), list);
 
         // List realm roles
         assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite", "user", "offline_access");
@@ -823,16 +827,14 @@ public class UserTest extends AbstractAdminTest {
         // Remove realm role
         RoleRepresentation realmRoleRep = realm.roles().get("realm-role").toRepresentation();
         roles.realmLevel().remove(Collections.singletonList(realmRoleRep));
-        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userRealmRoleMappingsPath(userId) + "/" + realmRoleRep.getId());
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userRealmRoleMappingsPath(userId), Collections.singletonList(realmRoleRep));
 
         assertNames(roles.realmLevel().listAll(), "realm-composite", "user", "offline_access");
 
         // Remove client role
         RoleRepresentation clientRoleRep = realm.clients().get(clientUuid).roles().get("client-role").toRepresentation();
         roles.clientLevel(clientUuid).remove(Collections.singletonList(clientRoleRep));
-
-        // TODO: Inconsistency between event for delete realm role mapping and client role mapping (the latter doesn't have roleRep.getId() in the path)
-        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid));
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), Collections.singletonList(clientRoleRep));
 
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-composite");
     }

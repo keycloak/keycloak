@@ -28,11 +28,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticator;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.AssertAdminEvents;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -43,24 +46,18 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
 
     @Before
     public void beforeConfigTest() {
-        Response response = authMgmtResource.createFlow(newFlow("firstBrokerLogin2", "firstBrokerLogin2", "basic-flow", true, false));
-        Assert.assertEquals(201, response.getStatus());
-        response.close();
+        AuthenticationFlowRepresentation flowRep = newFlow("firstBrokerLogin2", "firstBrokerLogin2", "basic-flow", true, false);
+        createFlow(flowRep);
 
         HashMap<String, String> params = new HashMap<>();
         params.put("provider", IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID);
         authMgmtResource.addExecution("firstBrokerLogin2", params);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("firstBrokerLogin2"), params);
 
         List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions("firstBrokerLogin2");
         AuthenticationExecutionInfoRepresentation exec = findExecutionByProvider(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID, executionReps);
         Assert.assertNotNull(exec);
         executionId = exec.getId();
-    }
-
-    @Override
-    public void afterAbstractKeycloakTest() {
-        AuthenticationFlowRepresentation flowRep = findFlowByAlias("firstBrokerLogin2", authMgmtResource.getFlows());
-        authMgmtResource.deleteFlow(flowRep.getId());
     }
 
 
@@ -82,6 +79,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
 
         // Cleanup
         authMgmtResource.removeAuthenticatorConfig(cfgId);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authExecutionConfigPath(cfgId));
     }
 
 
@@ -107,6 +105,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         cfgRep.setAlias("foo2");
         cfgRep.getConfig().put("configKey2", "configValue2");
         authMgmtResource.updateAuthenticatorConfig(cfgRep.getId(), cfgRep);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authExecutionConfigPath(cfgId), cfgRep);
 
         // Assert updated
         cfgRep = authMgmtResource.getAuthenticatorConfig(cfgRep.getId());
@@ -137,7 +136,8 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         }
 
         // Test remove our config
-        authMgmtResource.removeAuthenticatorConfig(cfgRep.getId());
+        authMgmtResource.removeAuthenticatorConfig(cfgId);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authExecutionConfigPath(cfgId));
 
         // Assert config not found
         try {
@@ -159,6 +159,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         Assert.assertEquals(201, resp.getStatus());
         String cfgId = ApiUtil.getCreatedId(resp);
         Assert.assertNotNull(cfgId);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionId), cfg);
         return cfgId;
     }
 

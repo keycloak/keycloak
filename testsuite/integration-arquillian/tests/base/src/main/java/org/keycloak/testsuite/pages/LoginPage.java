@@ -30,7 +30,7 @@ public class LoginPage extends AbstractPage {
 
     @ArquillianResource
     protected OAuthClient oauth;
-    
+
     @FindBy(id = "username")
     private WebElement usernameInput;
 
@@ -184,7 +184,9 @@ public class LoginPage extends AbstractPage {
     }
 
     public void openLanguage(String language){
-        localeDropdown.findElement(By.linkText(language)).click();
+        WebElement langLink = localeDropdown.findElement(By.xpath("//a[text()='" +language +"']"));
+        String url = langLink.getAttribute("href");
+        driver.navigate().to(url);
     }
 
 }

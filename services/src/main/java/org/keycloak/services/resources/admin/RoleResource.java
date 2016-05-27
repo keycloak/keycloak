@@ -65,9 +65,9 @@ public abstract class RoleResource {
                 throw new NotFoundException("Could not find composite role");
             }
             role.addCompositeRole(composite);
-
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, rep.getId()).representation(roles).success();
         }
+
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
     }
 
     protected Set<RoleRepresentation> getRoleComposites(RoleModel role) {
@@ -102,7 +102,7 @@ public abstract class RoleResource {
         return composites;
     }
 
-    protected void deleteComposites(List<RoleRepresentation> roles, RoleModel role) {
+    protected void deleteComposites(AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {
         for (RoleRepresentation rep : roles) {
             RoleModel composite = realm.getRoleById(rep.getId());
             if (composite == null) {
@@ -110,5 +110,7 @@ public abstract class RoleResource {
             }
             role.removeCompositeRole(composite);
         }
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(roles).success();
     }
 }
