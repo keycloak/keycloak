@@ -9,7 +9,7 @@ there can be two situations:
 * There is already a {{book.project.name}} user account imported and linked with the authenticated identity provider account.
   In this case, {{book.project.name}} will just authenticate as the existing user and redirect back to application.
 * There is not yet an existing {{book.project.name}} user account imported and linked for this external user.
-  Usually you just want to register and import the new account into {{book.project.name} database, but what if there is existing
+  Usually you just want to register and import the new account into {{book.project.name}} database, but what if there is existing
   {{book.project.name}} account with the same email? Automatically linking the existing local account to the external
   identity provider is a potential security hole as you can't always trust the information you get from the external identity provider.
 
