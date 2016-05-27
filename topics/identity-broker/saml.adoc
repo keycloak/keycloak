@@ -7,7 +7,7 @@ To begin configuring an OIDC provider, go to the `Identity Providers` left menu 
 and selected `OpenID Connect v1.0` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
-image:../../../{{book.images}}/saml-add-identity-provider.png[]
+image:../../{{book.images}}/saml-add-identity-provider.png[]
 
 The initial configuration options on this page are described in <<fake/../../identity-broker/configuration.adoc#_general-idp-config, General IDP Configuration>>.
 You must define the SAML configuration options as well.  They basically describe the SAML IDP you are communicating with.
