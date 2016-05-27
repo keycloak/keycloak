@@ -7,10 +7,6 @@ and selected `StackOverflow` from the `Add provider` drop down list.  This will 
 .Add Identity Provider
 image:../../../{{book.images}}/stack-overflow-add-identity-provider.png[]
 
-You can't click save yet, as you'll need to obtain a `Client ID`, `Client Secret`, and `Key` from StackOverflow.  One piece of data you'll need from this
-page is the `Redirect URI`.  You'll have to provide that to StackOverflow when you register {{book.project.name}} as a client there, so
-copy this URI to your clipboard.
-
 To enable login with StackOverflow you first have to register an OAuth application on https://stackapps.com/[StackApps].
 Go to http://stackapps.com/apps/oauth/register[registering your application on Stack Apps] url and login.
 
