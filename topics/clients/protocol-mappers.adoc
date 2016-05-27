@@ -1,4 +1,4 @@
-[[_mappers]]
+[[_protocol-mappers]]
 
 === OIDC Token and SAML Assertion Mappings
 

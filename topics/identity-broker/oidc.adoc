@@ -1,66 +1,56 @@
+
 === OpenID Connect v1.0 Identity Providers
 
-Keycloak can broker identity providers based on the OpenID Connect v1.0 protocol.
+{{book.project.name}} can broker identity providers based on the OpenID Connect protocol.  These IDPs must support the <<fake/../../sso-protocols/oidc.adoc, Authorization Code Flow>>
+as defined by the specification in order to authenticate the user and authorize access.
 
-In order to configure a OIDC identity provider, follow these steps:
+To begin configuring an OIDC provider, go to the `Identity Providers` left menu item
+and selected `OpenID Connect v1.0` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
-. Select the `OpenID Connect v1.0` identity provider from the drop-down box on the top right corner of the identity providers table in Keycloak's Admin Console.
-  You should be presented with a specific page to configure the selected provider.
+.Add Identity Provider
+image:../../../{{book.images}}/oidc-add-identity-provider.png[]
 
-When configuring an OIDC identity provider you are presented with different configuration options in order to send authentication requests to the external identity provider.
-In this case, the brokered identity provider must support the Authorization Code Flow (as defined by the specification) in order to authenticate the user and authorize access for the scopes specified in the configuration.
+The initial configuration options on this page are described in <<fake/../../identity-broker/configuration.adoc#_general-idp-config, General IDP Configuration>>.
+You must define the OpenID Connection configuration options as well.  They basically describe the OIDC IDP you are communicating with.
 
-.Configuration Options
-[cols="1,1", options="header"]
+.OpenID Connect Config
 |===
-|
-                            Configuration
+|Configuration|Description
 
-|
-                            Description
+|Authorization URL
+|Authorization URL endpoint required by the OIDC protocol
 
-|
-                            Authorization Url
+|Token URL
+|Token URL endpoint required by the OIDC protocol
 
+|Logout URL
+|Logout URL endpoint defined in the OIDC protocol.  This value is optional.
 
-|
-                            Token Url
+|Backchannel Logout
+|Backchannel logout is a background, out-of-band, REST invocation to the IDP to logout the user.  Some IDPs can only perform logout through browser redirects as they may
+ only be able to identity sessions via a browser cookie.
 
+|User Info URL
+|User Info URL endpoint defined by the OIDC protocol.  This is an endpoint from which user profile information can be downloaded.
 
-|
-                            Logout Url
+|Client ID
+|This realm will act as an OIDC client to the external federation IDP you are configuring here.  Your realm will need a OIDC client ID when using the Authorization Code Flow
+ to interact with the external IDP
 
+|Client Secret
+|This realm will need a client secret to use when using the Authorization Code Flow.
 
-|
-                            Backchannel Logout
+|Issuer
+|Responses from the IDP may contain an issuer claim.  This config value is optional.  If specified, this claim will be validated against the value you provide.
 
+|Default Scopes
+|Space-separated list of OIDC scopes to send with the authentication request.  The default is `openid`
 
-|
-                            User Info Url
-
-
-|
-                            Client ID
-
-
-|
-                            Client Secret
-
-
-|
-                            Issuer
-
-
-|
-                            Default Scopes
-
-|
-                            Allows you to specify additional scopes when asking for user authentication and consent. By default, scope openid is always appended to the list of the scopes.
-
-
-|
-                            Prompt
-
+|Prompt
+|Another optional switch.  This is the prompt parameter defined by the OIDC specification. Through it you can force re-authentication and other options.  See the specification for
+ more details
 |===
 
-You can also import all this configuration data by providing a URL or file that points to OpenID Provider Metadata (see OIDC Discovery specification)
+You can also import all this configuration data by providing a URL or file that points to OpenID Provider Metadata (see OIDC Discovery specification).
+If you are connecting to a {{book.project.name}} external IDP, you can import the IDP setttings from the url `<root>/auth/realms/\{realm-name}/.well-known/openid-configuration`.
+This link is a JSON document describing metadata about the IDP.

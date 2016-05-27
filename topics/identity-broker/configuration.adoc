@@ -1,3 +1,4 @@
+[[_general-idp-config]]
 
 === General Configuration
 

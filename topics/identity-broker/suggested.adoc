@@ -1,15 +1,17 @@
 
 === Client Suggested Identity Provider
 
-Each Identity provider has option `Authenticate By Default`, which allows that Identity provider is automatically selected during authentication.
-User won't even see Keycloak login page, but is automatically redirected to the identity provider.
+Each identity provider has an option `Authenticate By Default`, which allows that Identity provider is automatically selected during authentication.
+User won't even see the {{book.project.name}} login page and will instead be automatically redirected to the default identity provider.
 
-Applications can also automatically select an identity provider in order to authenticate an user.
-Selection per application is preferred over `Authenticate By Default` option if you need more control on when exactly is Identity provider automatically selected.
+OIDC applications can also bypass the {{book.project.name}} login page by specifying a hint on which
+identity provider they want to use.
+This is done by appending the `kc_idp_hint` query parameter in the Authorization Code Flow authorization endpoint.
 
-Keycloak supports a specific HTTP query parameter that you can use as a hint to tell the server which identity provider should be used to authenticate the user.
+{{book.project.name}} OIDC client adapters also allow you to specify this query parameter when you access a secured resource
+at the application.
 
-For that, you can append the `kc_idp_hint` as a query parameter to your application url, as follows:
+For example
 
 [source,java]
 ----
