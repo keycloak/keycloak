@@ -28,7 +28,7 @@ image:../../images/identity_broker_flow.png[]
   This is what we call _identity federation_.
   If the user already exists Keycloak may ask him to link the identity returned from the identity provider with his existing account.
   A process that we call _account linking_.
-  What exactly is done is configurable and can be specified by setup of <<_identity_broker_first_login,First Login Flow>> . At the end of this step, Keycloak authenticates the user and issues its own token in order to access the requested resource in the service provider.
+  What exactly is done is configurable and can be specified by setup of <<fake/../../identity-broker/first-login-flow.adoc#_identity_broker_first_login,First Login Flow>> . At the end of this step, Keycloak authenticates the user and issues its own token in order to access the requested resource in the service provider.
 . Once the user is locally authenticated, Keycloak redirects the user to the service provider by sending the token previously issued during the local authentication.
 . The service provider receives the token from Keycloak and allows access to the protected resource.
 
