@@ -63,8 +63,7 @@ This metadata is also available publically by going to the URL
 
 [source]
 ----
-
-                http[s]://{host:port}/auth/realms/{realm-name}/broker/{broker-alias}/endpoint/descriptor
+http[s]://{host:port}/auth/realms/{realm-name}/broker/{broker-alias}/endpoint/descriptor
 ----
 
 
