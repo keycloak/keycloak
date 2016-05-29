@@ -79,7 +79,7 @@
  . link:topics/sessions.adoc[User Session Management]
  .. link:topics/sessions/administering.adoc[Administering Sessions]
  .. link:topics/sessions/revocation.adoc[Revocation Policies]
- .. link:topics/sessions/timeout.adoc[Session and Token Timeouts]
+ .. link:topics/sessions/timeouts.adoc[Session and Token Timeouts]
  .. link:topics/sessions/offline.adoc[Offline Access]
  . link:topics/events.adoc[Auditing and Events]
  . link:topics/ldap.adoc[LDAP/AD Integration]
