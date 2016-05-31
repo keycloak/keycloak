@@ -1,5 +1,6 @@
+[[_ldap]]
 
-=== LDAP and Active Directory Plugin
+=== LDAP and Active Directory
 
 {{book.project.name}} comes with a built-in LDAP/AD plugin.
 By default, it is set up only to import username, email, first and last name, but you are free to configure additional <<_ldap_mappers,mappers>>

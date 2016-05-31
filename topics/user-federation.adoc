@@ -1,3 +1,4 @@
+[[_user-storage-federation]]
 
 == User Storage Federation
 
@@ -18,3 +19,13 @@ Some federation plugins may only import the username into {{book.project.name}} 
 Some plugins might want to import credentials directly into {{book.project.name}} storage and let {{book.project.name}} handle credential validation.
 Others might want to handle credential validation themselves.
 The goal of the User Storage Federation SPI is to support all of these scenarios.
+
+=== Adding a Provider
+
+To add a storage provider go to the `User Federation` left menu item in the Admin Console.
+
+.User Federation
+image:../{{book.images}}/user-federation.png[]
+
+On the right side, there is a `Add Provider` list box.  Choose the provider you want to add and you will be brought to the configuration page of that provider.
+

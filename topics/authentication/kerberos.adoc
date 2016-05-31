@@ -64,8 +64,8 @@ Keytab file `/tmp/http.keytab` will need to be accessible on the host where {{bo
 ==== Setup and configuration of {{book.project.name}} server
 
 You need to install a kerberos client on your machine.  This is also platform dependent.
-If you are on Fedora, Ubuntu or RHEL, you can install package `freeipa-client`, which contains Kerberos client and bunch of other stuff.
-Configure kerberos client (on linux it's in file `/etc/krb5.conf` ). You need to put your Kerberos realm and at least configure the Http domains your server will be running on.
+If you are on Fedora, Ubuntu or RHEL, you can install the package `freeipa-client`, which contains a Kerberos client and bunch of other utilities.
+Configure kerberos client (on linux it's in file `/etc/krb5.conf` ). You need to put your Kerberos realm and at least configure the HTTP domains your server will be running on.
 For the example realm MYDOMAIN.ORG you may configure `domain_realm` section like this: 
 
 [source]
@@ -77,33 +77,43 @@ For the example realm MYDOMAIN.ORG you may configure `domain_realm` section like
    
 Next you need to export the keytab file with the HTTP principal and make sure the file is accessible to the process under which {{book.project.name}} server is running.
 For production, it's ideal if it's readable just by this process and not by someone else.
-For MIT Kerberos example above, we already exported keytab to `/tmp/http.keytab` . If your KDC and {{book.project.name}} are running on same host, you have file already available.
+For MIT Kerberos example above, we already exported keytab to `/tmp/http.keytab` . If your KDC and {{book.project.name}} are running on same host,
+you have that file already available.
 
-Next you need to run the {{book.project.name}} server and configure SPNEGO/Kerberos authentication in {{book.project.name}} admin console.
-{{book.project.name}} supports Kerberos authentication through <<_user_federation,Federation provider SPI>> . We have 2 federation providers with Kerberos authentication support:
+===== Enable SPNEGO Processing
 
-Kerberos::
-  This provider is useful if you want to authenticate with Kerberos `NOT` backed by aLDAP server.
-  In this case, users are usually created in the {{book.project.name}} database after first successful SPNEGO/Kerberos login
-  and they may need to update profile after first login, as Kerberos protocol itself doesn't provision any data like first name, last name or email.
+{{book.project.name}} does not have SPNEGO protocol support turned on by default.  So, you have to go to the <<../../authentication/flows.adoc#_authentication-flows, browser flow>>
+and enable `Kerberos`.
 
-LDAP::
-  This provider is useful if you want to authenticate with Kerberos backed by LDAP server.
-  In this case, data about users are provisioned from LDAP server after successful Kerberos authentication.
+.browser flow
+image:../../{{book.images}}/browser-flow.png[]
 
-Finally you may need to check the Kerberos authenticator correctly configured.
-You can go to `Authentication` tab in admin console and select `Browser` flow.
-Here you will see `Kerberos` authenticator, which is used by {{book.project.name}} for SPNEGO handshake with client (exchange `Negotiate` header etc.).
-By default it's disabled, so {{book.project.name}} doesn't ask for the Negotiate header, however once you configured federation provider in previous step,
-it's automatically switched to _alternative_.
-You should make sure that it is switched to _alternative_.
+Switch the `Kerbros` requirement from _disabled_ to either _alternative_ or _required_.  _Alternative_ basically means that Kerberos is optional.  If
+the user's browser hasn't been configured to work with SPNEGO/Kerberos, then {{book.project.name}} will fall back to the regular login screens.  If you set the requirement
+to _required_ then all users must have Kerberos enabled for their browser.
 
-image:../../{{book.images}}/kerberos-browser-flow.png[]
+===== Configure Kerberos User Storage Federation Provider
 
-_Alternative_ means that {{book.project.name}} tries to ask the browser for Negotiate header, but if it's not available,
-it will continue on to next authenticator (which usually means displaying username/password form to user).
-You can switch the Kerberos authentication type to _required_ if you want to enforce login with kerberos ticket and not allow any fallback to the username/password form.
+Now that the SPNEGO protocol is turned on at the authentication server, you'll need to configure how {{book.project.name}} interprets the Kerberos ticket.
+This is done through <../../user-federation.adoc#_user-storage-federation,User Storage Federation>>. We have 2 different federation providers with Kerberos authentication support.
 
+If you want to authenticate with Kerberos backed by an LDAP server, you have to first configure the <<fake/../../user-federation/ldap.adoc#_ldap, LDAP Federation Provider>>.
+If you look at the configuration page for your LDAP provider you'll see a `Kerberos Integration` section.
+
+.LDAP Kerberos Integration
+image:../../{{book.images}}/ldap-kerberos.png[]
+
+Turning on the switch `Allow Kerberos authentication` will make {{book.project.name}} use the Kerberos principal to lookup information about the user so that it can
+be imported into the {{book.project.name}} environment.
+
+If your Kerberos solution is not backed by an LDAP server, you have to use the `Kerberos` User Storage Federation Provider.  Go to the `User Federation`
+left menu item and select `Kerberos` from the right `Add provider` select box.
+
+.Kerberos User Storage Provider
+image:../../{{book.images}}/kerberos-provider.png[]
+
+This provider simply parses the Kerberos ticket for principal information and does a small import into the local {{book.project.name}} database.
+User profile information like first name, last name, and email are not provisioned.  Just simple user principal information.
 
 ==== Setup and configuration of client machines
 
