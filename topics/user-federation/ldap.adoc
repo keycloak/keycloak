@@ -14,7 +14,7 @@ Selecting _ldap_ will bring you to the ldap configuration page.
 
 ==== Edit Mode
 
-Users, through the <<fake/../../account.adoc#_user-account-server, User Account Service, and admins through the Admin Console
+Users, through the <<fake/../../account.adoc#_account-service, User Account Service, and admins through the Admin Console
 have the ability to modify user metadata.  Depending on your setup you may or may not have LDAP update privileges.  The
 `Edit Mode` configuration option defines the edit policy you have with your LDAP store.t privileges you have.
 
