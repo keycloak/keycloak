@@ -1,0 +1,31 @@
+== Architecture
+
+image:../../images/authz-arch-overview.png[alt="Keycloak AuthZ Architecture Overview"]
+
+From a design perspective, the {{book.project.module}} are based on a well defined set of authorization patterns providing a:
+
+* **Policy Administration Point (PAP)**
++
+Provides a set of UIs based on the Keycloak Administration Console to manage resource servers, resources, scopes, permissions and policies.
+Part of this also accomplished remotely through the use of the link:../service/protection-api.html[Protection API].
++
+
+* **Policy Decision Point (PDP)**
++
+Provides a distributable policy decision point, where authorization requests are sent to and policies are evaluated accordingly with the permissions being requested. Part of this also accomplished remotely through the use of the
+link:../service/authorization-api.html[Authorization] and link:../service/entitlement-api.html[Entitlement] APIs.
++
+
+* **Policy Enforcement Point (PEP)**
++
+Provides implementations for different environments to actually enforce authorization decisions on the resource server side.
+Keycloak provides some built-in link:../enforcer/overview.html[Policy Enforcers].
++
+
+* **Policy Information Point (PIP)**
++
+Being based on {{book.project.name}} Authentication Server, you can obtain attributes from identities and from the runtime environment.
+
+Instead of doing authorization by your own, {{book.project.name}} provides a centralized but still distributable server
+to govern protected resources and their respective policies within an application or organization using some well-known authorization patterns and standards such as
+_OAuth2_ and https://docs.kantarainitiative.org/uma/rec-uma-core.html[User-Managed Access (UMA)].

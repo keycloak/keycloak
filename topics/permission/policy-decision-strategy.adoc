@@ -1,0 +1,15 @@
+== Policy Decision Strategies
+
+When associating policies to a permission, you may also define a decision strategy to decide how the outcome from the associated policies should be interpreted to build a final decision.
+
+* *Unanimous*
++
+This is the default strategy if none is provided. In this case, _all_ policies must evaluate to a positive decision in order to the final decision be also positive.
++
+* *Affirmative*
++
+In this case, _at least one_ policy must evaluate to a positive decision in order to the final decision be also positive.
++
+* *Consensus*
++
+In this case, the number of positive decisions must be greater than the number of negative decisions. If the number of positive and negative decisions is the same, the final decision will be negative.

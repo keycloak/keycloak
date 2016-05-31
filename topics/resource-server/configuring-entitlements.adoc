@@ -1,0 +1,6 @@
+== Configuring Entitlements
+
+Entitlements are very useful when you want to obtain all permissions for a specific user based on the resources managed by a resource server.
+More on link:../service/entitlement-api.html[Entitlements] and link:../service/authorization-api.html[Incremental Authorization] later.
+
+When configuring a resource server you may enable/disable entitlements by clicking the *Entitlements* switch.

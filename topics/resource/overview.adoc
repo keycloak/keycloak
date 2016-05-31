@@ -1,0 +1,14 @@
+== Managing Resources and Scopes
+
+After creating a resource server, you can start creating resources - and their respective scopes - that you want to protect. Resources and scopes can be managed
+by clicking on the *Resource* and *Scope* tabs, respectively.
+
+Resource management is pretty straight forward and generic. The main thing you should care about is the granularity of the resources you create. In other words, resources can
+be created to represent a set of one or more resources and the way you define them is crucial to start managing permissions.
+
+Resources also have an owner. By default, resources created from the adminstration console are owned by the resource server itself. However, resources can also be associated with your users, so you can
+create permissions based on the resource owner. For instance, only the resource owner is allowed to delete or update a given resource.
+
+Resource management is also exposed through the *Protection API* to allow resource servers to remotely manage their resources. This is a very important
+feature that allows resource servers to obtain the list of protected resources in order to actually enforce the authorization decisions. We'll see more on that
+later when we talk about _Policy Enforcers_.

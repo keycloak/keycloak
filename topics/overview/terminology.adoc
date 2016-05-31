@@ -1,0 +1,106 @@
+== Terminology
+
+Before going further, it is important to understand some terms and concepts introduced with {{book.project.name}} {{book.project.module}}.
+
+==== Resource Server
+
+If you are familiar with OAuth2, a Resource Server is the server hosting the protected resources, capable of accepting
+and responding to protected resource requests.
+
+Resource servers usually rely on some kind of information to decide whether access to a protected resource should be granted or not. For RESTful-based resource servers,
+that information is usually obtained from a security token, usually sent as a bearer token on every single request to the server. For web applications that rely on a session to
+authenticate their users, that information is usually stored into user's session and retrieved from there on every single request.
+
+In Keycloak, any *confidential* client application may act as a resource server. Whose resources and their respective scopes are
+protected and ruled by a set of authorization policies.
+
+==== Resource Server
+
+A resource is part of the assets of an application and the organization. It may be a single API
+endpoint, a set of API endpoints, a classic web resource such as an HTML page, and so on.
+In authorization policy terminology, a resource is the _object_ being protected.
+
+Every single resource has a unique identifier, where a resource may also be used to represent a single
+or a set of resources. For instance, you may want to manage a _Banking Account Resource_ that represents and defines a set of authorization policies for all banking accounts.
+But you may also have a _Alice Banking Account_, which represents a single resource owned by a single customer, which may have its own set of authorization policies.
+
+In {{book.project.name}}, a resource defines a small set of information that is common to different types of resources, such as:
+
+* *Name*
++
+A human-readable and unique string describing a set of one or more resources.
++
+* *Type*
++
+A string uniquely identifying the type of a set of one or more resources. Usually, the type is a URN that can be used to
+group different resource instances.
++
+* *URI*
++
+A URI that provides the location/address for the resource. For HTTP resources, the URI
+is usually the relative path used to serve these resources.
++
+* *Scopes*
++
+A bounded extent of access that is possible to perform on a resource. In authorization
+policy terminology, a scope is one of the potentially many <literal>verbs</literal> that can logically
+apply to a resource.
++
+* *Owner*
++
+An entity that owns the resource. It can be the resource server itself or even a
+specific user.
+
+==== Scope
+
+A bounded extent of access that is possible to perform on a resource. In authorization policy
+terminology, a scope is one of the potentially many _verbs_ that can logically apply to a resource.
+
+Usually, a scope is defined as a URN that indicates what can be done with a given resource. Example of scopes are _urn:domain:resource:scope:view_,
+_urn:domain:scopes:admin:manage_, etc.
+
+Scopes have a small set of information as follows:
+
+* *Name*
++
+A human-readable and unique string describing the scope.
+
+A single scope may be associated with zero or more resources.
+
+==== Permission
+
+A permission associates the object being protected and the policies that must be evaluated in order to decide whether access should be granted or not.
+
+In {{book.project.name}}, a permission can be defined for a:
+
+* *Resource*
++
+In this case, the permission is associated with a set of one or more resources. Here you can define that only a specific
+resource with a specific _name_ or _identifier_ is protected or even use a _type_ to protect any resource with a given type.
+
+
+* *Scope*
++
+In this case, the permission is associated with a set of one or more scopes. Where you may want to protect scopes associated with a
+specific resource or any scope regardless the resources they are associated.
+
+When associating policies to permissions, you can also define the _decision strategy_ that will be used during the evaluation of these
+policies in order to decide whether a permission is granted or not depending on the outcome of each associated policy.
+
+==== Policy
+
+A policy defines the conditions that must be satisfied to grant access to an object. Different than permissions, you don't really specify the object being protected
+but the conditions that must be satisfied to get access to a given object (eg.: resource, scope or both).
+Policies are strongly related with the different _access control mechanism_ that you can use to actually protect your resources.
+Within a policy you can use ABAC, RBAC, Context-based Access Control or any combination of these.
+
+Keycloak leverages the concept of policies and how you define them by providing the concept of *Aggregated Policies*, where you can build a "policy of policies" and still control the behavior of the evaluation.
+Instead of writing a single and huge policy with all conditions that must be satisfied to get access to a given resource, policies in Keycloak follows the *divide-and-conquer* technique,
+so you can create individual policies, reuse them on different permissions and build more complex policies by combining them into a single one.
+
+==== Policy Provider
+
+Policy providers are responsible to support a specific policy type. Although {{book.project.name}} provides some built-in policies, backed by their corresponding
+policy providers, nothing stops you to create your own policy types in order to better support your requirements or a specific use case.
+
+{{book.project.name}} provides a *SPI* (Service Provider Interface) that you can use to plug your own policy providers.

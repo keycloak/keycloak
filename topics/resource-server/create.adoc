@@ -1,0 +1,18 @@
+== Creating Resource Servers
+
+As mentioned before, everything is based on the existence of a resource server. And a resource server is basically a
+*confidential* client application in {{book.project.name}}.
+
+To enable a client application as a resource server you need to make sure:
+
+* Your client application is configured as a *confidential* client.
+* Your client application is configured with *Service Accounts*.
+
+The reason why you need to use a confidential client and enable client credentials is that resource servers must be able to access the
+_Protection API_ to manage their resources and issue _Permission Tickets_ for their clients. More about permission tickets later.
+
+In {{book.project.name}} Administration Console, resource servers can be managed by clicking the _Authorization_ menu item on the left side menu. There you have a
+list of any existing resource server and options to create a new one.
+
+When creating a new resource server, you just need to select a client application from the _Client_ combobox. There are a few other configuration
+options that you can provide, but the defaults should be enough to get started.

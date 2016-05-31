@@ -1,0 +1,30 @@
+== Aggregated Policies
+
+As mentioned before, Keycloak allows you to build a policy of policies, a concept that we call *Aggregated Policies*. Policy aggregation allows you to reuse existing policies to build more complex ones and keep your permissions even more decoupled from the
+policies that are actually evaluated during the processing of authorization requests.
+
+Let's suppose you have a resource called _Confidential Resource_ that can be accessed only by users with a _confidential_ role and from
+a well known network. You may want to create a single policy, let's say using Javascript or Drools, with both conditions. However, you may want to reuse the _confidential_ role
+part of this policy to apply to other permissions despite the network.
+
+In this case, Keycloak allows you to create separate policies for both _confidential_ role and network conditions and create another one based on
+them. You can easily achieve that by using a *Aggregate Policy* that combines other policies and then apply this aggregate policy to any permission you want.
+
+[NOTE]
+When creating aggregated policies, make sure you don't introduce a circular reference/dependency between policies. If you do so, Keycloak will not let you create or update the policy.
+
+=== Decision Strategy for Aggregated Policies
+
+When creating aggregated policies, you can also define the decision strategy that will be used during to calculate the final decision based on the outcome from each policy.
+
+* *Unanimous*
++
+This is the default strategy if none is provided. In this case, _all_ policies must evaluate to a positive decision in order to the final decision be also positive.
++
+* *Affirmative*
++
+In this case, _at least one_ policy must evaluate to a positive decision in order to the final decision be also positive.
++
+* *Consensus*
++
+In this case, the number of positive decisions must be greater than the number of negative decisions. If the number of positive and negative decisions is the same, the final decision will be negative.

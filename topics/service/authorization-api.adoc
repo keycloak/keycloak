@@ -1,0 +1,57 @@
+== Authorization API
+
+The <literal>Authorization API</literal> consists of a single endpoint responsible to issue a special type of token with all the requested permissions given
+a <literal>permission ticket</literal> and a OAuth2 <literal>access_token</literal>.
+
+```bash
+curl -X POST -H "Authorization: Bearer ${access_token}" -H "Content-Type: application/json" -d '{
+    "ticket": "${permission_ticket}"
+}' "http://localhost:8080/auth/realms/photoz/authz/authorize"
+```
+
+As mentioned before, the permission ticket contains the resources and scopes the client is requesting access. Based on it, the authorization endpoint is going
+to evaluate all the policies associated with these resources and scopes and return back a final token with all the granted permissions.
+
+```json
+{
+    "permissions": [
+        {
+            "resource_set_id": "87852cb2-700f-45d1-a9ab-786564aa123a",
+            "scopes": [
+                "urn:photoz.com:scopes:album:view",
+                "urn:photoz.com:scopes:album:create"
+            ]
+        },
+        {
+            "resource_set_id": "fe372a25-65ef-4140-926c-96d9523ee40b",
+            "scopes": [
+                "urn:photoz.com:scopes:profile:view"
+            ]
+        }
+    ],
+    "accessToken": "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJmOTNlMjhjOC1kMDIzLTRhMTQtYjViZS03NGY0ZjljMjI2NmYiLCJleHAiOjE0NjA0ODg1MDcsIm5iZiI6MCwiaWF0IjoxNDYwNDg4NDQ3LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAvYXV0aC9yZWFsbXMvcGhvdG96IiwiYXVkIjoicGhvdG96LWh0bWw1LWNsaWVudCIsInN1YiI6ImJkMzBlNDA5LTM4YjItNDM5Yy1iOTdlLTFhYzk0MzE2YWRmMCIsInR5cCI6IkJlYXJlciIsImF6cCI6InBob3Rvei1odG1sNS1jbGllbnQiLCJub25jZSI6IjkzY2JlMjA2LTg4Y2UtNGMxNi04NGEzLWE0NWMzNzNkY2FjNSIsInNlc3Npb25fc3RhdGUiOiI3NmQwYTdlMi03YWY0LTQ3NmYtOTZlZS1kMjE1NjQ0ZTIxOTIiLCJjbGllbnRfc2Vzc2lvbiI6IjRjMDZkZTZjLTkyZGUtNGIzYi04MGZhLWIzMjZiNjYyMWIwNyIsImFsbG93ZWQtb3JpZ2lucyI6WyIiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbInVzZXIiXX0sInJlc291cmNlX2FjY2VzcyI6eyJwaG90b3otaHRtbDUtY2xpZW50Ijp7InJvbGVzIjpbImtjX2VudGl0bGVtZW50IiwidW1hX2F1dGhvcml6YXRpb24iXX19LCJuYW1lIjoiQWxpY2UgSW4gQ2hhaW5zIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYWxpY2UiLCJnaXZlbl9uYW1lIjoiQWxpY2UiLCJmYW1pbHlfbmFtZSI6IkluIENoYWlucyIsImVtYWlsIjoiYWxpY2VAa2V5Y2xvYWsub3JnIn0.Bllirh-Lr9Q1hgMIZGzT1gR0uVPGhby5L92B6zSu4Zj22UMMV_JlxR-2l7lI5qHYdMgUhm2vdLKZ0axhSKT63OUsWV1cN6exkNAUcjfS3sCJIEljUAmDDh-2pw3f6oE5l7llHzatNH8VNqbZs-Z6TXj2fyrta-fUyu6IDgCaKoQ",
+    "jti": "0975d59a-4550-45a4-a535-6d520b1ffa77-1460488455577",
+    "exp": 1460488507,
+    "nbf": 0,
+    "iat": 1460488447,
+    "sub": "bd30e409-38b2-439c-b97e-1ac94316adf0",
+    "typ": "kc_ett",
+    "azp": "photoz-html5-client"
+}
+```
+
+Following the UMA specification, this token is called <literal>Requesting Party Token</literal> or just <literal>RPT</literal>. With a RPT, a client
+can send this token as a bearer token to a resource server, which in turn will introspect the RPT sent by the client and check if the resource the client
+is trying to access can be mapped to the any permission within the RPT.
+
+When asking for RPTs using the <literal>Authorization API</literal>, the corresponding <literal>access_token</literal> must contain a <literal>uma_authorization</literal> scope. In other words, the client asking for
+RPTs on behalf of an user must be granted with this scope.
+
+=== Incremental Authorization
+
+As mentioned before, when asking for a RPT you must send a <literal>permission ticket</literal> and a OAuth2 <literal>access_token</literal>. However, accordingly
+with UMA specification, you may also send some previous (and still valid) RPT. In this case, the resulting RPT will consist of all permissions being requested within the
+permission ticket plus those that are present on a previous RPT.
+
+That process is what we call <literal>incremental authorization</literal>, given that the final RPT consists of permissions previously granted (based on the previous RPT) and the new permissions
+from a permission ticket.

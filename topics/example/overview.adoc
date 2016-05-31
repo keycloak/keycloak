@@ -1,0 +1,5 @@
+== Examples
+
+We provide a few examples about how to use the {{book.project.name}} {{book.project.module}}. These examples are very useful to understand the concepts here introduced.
+
+The examples are located at *examples/authz*. They contain a README.md file with more details about how to build and deploy them.

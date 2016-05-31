@@ -1,0 +1,7 @@
+== Positive and Negative Logic
+
+Policies may be configured with a *Positive* or *Negative* logic. In a nutshell, this option allows you to define whether the policy result should be kept as it is or be negated.
+
+For instance, suppose you want to create a policy where only users *not* granted with a specific role should be allowed to do something. In this case,
+you may create a _Role-based Policy_ using that role and set its *Logic* field to *Negative*. If you keep *Positive*, which
+is the default behavior, the policy result will be kept as it is.

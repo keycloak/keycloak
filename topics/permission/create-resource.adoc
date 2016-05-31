@@ -1,0 +1,3 @@
+== Creating Resource-based Permissions
+
+You can create permissions by selecting which type of permission you want to create: resource or scope.

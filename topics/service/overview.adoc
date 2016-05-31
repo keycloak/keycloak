@@ -1,0 +1,11 @@
+== Authorization Services
+
+Keycloak Authorization Services are based on OAuth2 and User-Managed Access (UMA). Where the latter is basically a OAuth2 profile
+that defines new terms, tokens and flows in order to define how resource owners can control protected-resource access by clients operated
+by arbitrary requesting parties, where the resources reside on any number of resource servers, and where a centralized authorization server governs access based on resource owner policies.
+
+However, our implementation of UMA is limited to provide a protocol to enable clients and resource servers to obtain and exchange permissions for their users. In the future,
+we are planning to also support other functionalities and flows provided with UMA such as authorization flows and resource owner's resource sharing. In other words, for now our focus
+is API security and for that UMA provides a very simple and easy-to-use extension to OAuth2 to support fine-grained authorization.
+
+That said, we strongly recommend you to take a look at https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA specification].

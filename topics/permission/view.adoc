@@ -1,0 +1,4 @@
+== Viewing Permissions
+
+You can view all permissions associated with a resource server by clicking on the *Permission* tab when editing a resource server. On this tab, you'll find the list of permissions
+and options to create and edit a permission.

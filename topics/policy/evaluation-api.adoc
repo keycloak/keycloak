@@ -1,0 +1,42 @@
+== Evaluation API
+
+When writing rule-based policies such as when you are using Javascript or JBoss Drools, Keycloak provides an *Evaluation API* from where you
+can obtain useful information.
+
+This API consists of a few interfaces that provides you access to information such as:
+
+* Information about the identity asking for a permission. Here you can obtain the identity identifier (eg.: username) or any other claim/attribute about it.
+* Information about the runtime environment and any other attribute associated with the execution context.
+
+The main interface is *org.keycloak.authorization.policy.evaluation.Evaluation*, which defines the following contract:
+
+```java
+public interface Evaluation {
+
+    /**
+     * Returns the {@link ResourcePermission} to be evaluated.
+     *
+     * @return the permission to be evaluated
+     */
+    ResourcePermission getPermission();
+
+    /**
+     * Returns the {@link EvaluationContext}. Which provides access to the whole evaluation runtime context.
+     *
+     * @return the evaluation context
+     */
+    EvaluationContext getContext();
+
+    /**
+     * Grants the requested permission to the caller.
+     */
+    void grant();
+
+    /**
+     * Denies the requested permission.
+     */
+    void deny();
+}
+```
+
+For full instructions on using the Evaluation API refer to JavaDocs.

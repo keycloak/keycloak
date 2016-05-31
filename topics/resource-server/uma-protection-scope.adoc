@@ -1,0 +1,5 @@
+== Defining uma_protection scope
+
+As mentioned before, resource servers must have access to the *Protection API* to manage their resources and issue *Permission Tickets*.
+
+For that, you must create a _realm role_ with name *uma_protection* and map this role to the client application that you want to configure as a resource server.

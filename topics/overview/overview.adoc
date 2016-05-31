@@ -1,0 +1,28 @@
+== Overview
+
+{{book.project.name}} supports fine-grained permissions and policies with a mix and match of different access control
+mechanisms such as:
+
+* **Attribute-based Access Control**
+* **Role-based Access Control**
+* **User-based Access Control**
+* **Context-based Access Control**
+* **Rule-based Access Control**
+    ** Using Javascript
+    ** Using JBoss Drools
+* **Support for custom ACMs through a Policy Provider SPI**
+
+Being based on a set of administrative UIs and a RESTful API, {{book.project.name}} provides the necessary means to create permissions
+for your protected resources and scopes, associate these permissions with authorization policies and enforce authorization
+decisions in your application and services.
+
+Considering that today we need to consider a very heterogeneous environment, where users are distributed across different regions, with different local policies,
+using different devices and with a high demand for information sharing, Keycloak Authorization Services can be used as great tool to:
+
+* Control your protected resources and the actions that can be performed on them
+* Centralized Policy Management
+* Resource Management
+* Auditing
+* Authorization Workflows and User-Managed Access
+* Avoid code replication across projects
+* Avoid redeploys of your applications when your security requirements need to change thus the permissions and policies associated with your protected resources

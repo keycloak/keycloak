@@ -1,0 +1,20 @@
+== Entitlements API
+
+An entitlement in the context of an access control decision is a privilege for an user or a process to
+perform or have rights to an action on a resource. The concept is pretty much similar to what we were calling a permission.
+
+However, the Entitlements API allows you to obtain all the entitlements or permissions given an OAuth2 _access_token_. Different
+than the Authorization API, which is strongly based on UMA, this API provides a more simple way to obtain the permissions for a given user
+or entity in possession of a OAuth2 _access_token.
+
+In this case, {{book.project.name}} will evaluate policies associated with any resource within a resource server and return the permissions that were granted during this process.
+
+```bash
+curl -X GET -H "Authorization: Bearer ${access_token}" "http://localhost:8080/auth/realms/photoz/authz/entitlement?resourceServerId=photoz-restful-api"
+```
+
+The resulting token from a "entitlements request" is the same when you are using the Authorization API. At end you will get a RPT with all the permissions
+or entitlements for a given user.
+
+When asking for entitlements, the corresponding _access_token_ must contain a *kc_entitlement* scope. In other words, the client asking for
+entitlements on behalf of an user must be granted with this scope.

@@ -1,0 +1,14 @@
+== Policy Enforcement Modes
+
+Resource servers provide a *Policy Enforcement Mode* configuration option that dictates how policies are enforced when processing authorization requests sent to the server.
+
+* *Enforcing*
++
+This is the default mode. Requests are denied by default even when there is no policy associated with a given resource.
++
+* *Permissive*
++
+Requests are allowed even when there is no policy associated with a given resource.
+* *Disabled*
++
+Completely disables the evaluation of policies and allow access to any resource.
