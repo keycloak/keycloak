@@ -85,6 +85,8 @@
  .. link:topics/user-federation/ldap.adoc[LDAP/AD Integration]
  .. link:topics/user-federation/custom.adoc[Custom Providers]
  . link:topics/events.adoc[Auditing and Events]
+ .. link:topics/events/login.adoc[Login Events]
+ .. link:topics/events/admin.adoc[Admin Events]
  . link:topics/export-import.adoc[Export and Import]
  . link:topics/account.adoc[User Account Service]
  . link:topics/security-vulnerabilities.adoc[Security Vulnerabilities]
