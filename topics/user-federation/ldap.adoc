@@ -8,13 +8,15 @@ and add more attributes or delete the default ones.
 It supports password validation via LDAP/AD protocols and different user metadata synchronization modes.
 To configure a federated LDAP store go to the Admin Console.
 Click on the `User Federation` left menu option.
-When you get to this page there is an "Add Provider" select box.
+When you get to this page there is an `Add Provider` select box.
 You should see _ldap_ within this list.
 Selecting _ldap_ will bring you to the ldap configuration page.
 
 ==== Edit Mode
 
-Edit mode defines various synchronization options with your LDAP store depending on what privileges you have. 
+Users, through the <<fake/../../account.adoc#_user-account-server, User Account Service, and admins through the Admin Console
+have the ability to modify user metadata.  Depending on your setup you may or may not have LDAP update privileges.  The
+`Edit Mode` configuration option defines the edit policy you have with your LDAP store.t privileges you have.
 
 READONLY::
   Username, email, first and last name and other mapped attributes will be unchangeable.
@@ -26,7 +28,8 @@ WRITABLE::
 
 UNSYNCED::
   Any changes to username, email, first and last name, and passwords will be stored in {{book.project.name}} local storage.
-  It is up to you to figure out how to synchronize back to LDAP.             
+  It is up to you to figure out how to synchronize back to LDAP. This allows {{book.project.name}} deployments to support
+  updates of user metadata on a read-only LDAP server.
 
 ==== Other config options
 
@@ -68,7 +71,7 @@ LDAP Federation Provider will automatically take care of synchronization (import
 As users log in, the LDAP Federation provider will import the LDAP user
 into then {{book.project.name}} database and then authenticate against the LDAP password. This is the only time users will be imported.
 If you go to the `Users` left menu item in the Admin Consoel and click the `View all users` button, you will only see those LDAP users that
-have been authenticated at least once by {{book.project.name}}.  It is implemented this way so that admins don't accidently try and import a huge LDAP DB of users.
+have been authenticated at least once by {{book.project.name}}.  It is implemented this way so that admins don't accidentally try and import a huge LDAP DB of users.
 
 If you want to sync all LDAP users into the {{book.project.name}} database, you may configure and enable the `Sync Settings` of the LDAP provider you configured.
 There are 2 types of sychronization:
