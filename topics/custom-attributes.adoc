@@ -1,66 +1,17 @@
 == Custom User Attributes
 
-If you have custom user data you want to store and manage in the admin console, registration page, and user account service, you can easily add support for it by extending and modifying various Keycloak <<_themes,themes>>.
+You can add custom user attributes to the registration page and account management console with a custom theme. This chapter describes how to add attributes
+to a custom theme, but you should refer to the link:themes.html[Themes] chapter on how to create a custom theme.
 
-=== In admin console
+=== Registration Page
 
-To be able to enter custom attributes in the admin console, take the following steps
+To be able to enter custom attributes in the registration page copy the template `themes/base/login/register.ftl` to the login type of your custom theme. Then
+open the copy in an editor.
 
+As an example to add a mobile number to the registration page add the following snippet to the form:
 
-
-. themes/mytheme/admin
-+`mytheme`
-. theme.properties
-+
-[source]
+[source,html]
 ----
-parent=keycloak
-import=common/keycloak
-----
-
-. themes/base/admin/resources/partials/user-attributes.html
-+`themes/mytheme/admin/resources/partials/user-attributes.html`
-. user-attributes.html
-+
-[source]
-----
-    <div class="form-group clearfix block">
-        <label class="col-sm-2 control-label" for="mobile">Mobile</label>
-        <div class="col-sm-6">
-            <input ng-model="user.attributes.mobile" class="form-control" type="text" name="mobile" id="mobile" />
-        </div>
-        <span tooltip-placement="right" tooltip="Mobile number." class="fa fa-info-circle"></span>
-    </div>
-----
-+`ng-model`
-+`user.attributes.ATTR_NAME`
-. Change the theme for the admin console.  Save it, then refresh your browser, and you should
-  now see these fields in the User detail page for any user.    
-
-=== In registration page
-
-To be able to enter custom attributes in the registration page, take the following steps
-
-
-
-. themes/mytheme/login
-+`mytheme`
-. theme.properties
-+
-[source]
-----
-parent=keycloak
-import=common/keycloak
-styles= ../patternfly/lib/patternfly/css/patternfly.css ../patternfly/css/login.css ../patternfly/lib/zocial/zocial.css css/login.css
-----
-
-. themes/base/login/register.ftl
-+`themes/mytheme/login/register.ftl`
-. register.ftl
-+
-[source]
-----
-
 <div class="form-group">
    <div class="${properties.kcLabelWrapperClass!}">
        <label for="user.attributes.mobile" class="${properties.kcLabelClass!}">Mobile number</label>
@@ -71,35 +22,18 @@ styles= ../patternfly/lib/patternfly/css/patternfly.css ../patternfly/css/login.
    </div>
 </div>
 ----
-+`user.attributes.ATTR_NAME`
-. Change the theme for the login to your new theme.  Save it, then refresh your browser, and you should
-  now see these fields in the registration.    
 
-=== In user account profile page
+To see the changes make sure your realm is using your custom theme for the login theme and open the registration page.
 
-To be able to manage custom attributes in the user account profile page, take the following steps
+=== Account Management Console
 
+To be able to manage custom attributes in the user profile page in the account management console copy the template `themes/base/account/account.flt` to the
+account type of your custom theme. Then open the copy in an editor.
 
+As an example to add a mobile number to the account page add the following snippet to the form:
 
-. themes/mytheme/account
-+`mytheme`
-. theme.properties
-+
-[source]
+[source,html]
 ----
-parent=patternfly
-import=common/keycloak
-
-styles= ../patternfly/lib/patternfly/css/patternfly.css ../patternfly/css/account.css css/account.css
-----
-
-. themes/base/account/account.ftl
-+`themes/mytheme/account/account.ftl`
-. account.ftl
-+
-[source]
-----
-
 <div class="form-group">
    <div class="col-sm-2 col-md-2">
        <label for="user.attributes.mobile" class="control-label">Mobile number</label>
@@ -110,6 +44,5 @@ styles= ../patternfly/lib/patternfly/css/patternfly.css ../patternfly/css/accoun
    </div>
 </div>
 ----
-+`user.attributes.ATTR_NAME`
-. Change the theme for the account to your new theme.  Save it, then refresh your browser, and you should
-  now see these fields in the account profile page.    
+
+To see the changes make sure your realm is using your custom theme for the account theme and open the user profile page in the account management console.

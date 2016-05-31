@@ -19,9 +19,10 @@ A theme can provide one or more types to customize different aspects of {{book.p
 === Configure Theme
 
 All theme types, except welcome, is configured through the `Admin Console`. To change the theme used for a realm open the `Admin Console`, select
-your realm from the drop-down box in the top left corner. Under `Settings` click on `Theme`.
+your realm from the drop-down box in the top left corner. Under `Settings` click on `Themes`.
 
-NOTE: To set the theme for the `master` admin console you need to set the admin console theme for the `master` realm
+NOTE: To set the theme for the `master` admin console you need to set the admin console theme for the `master` realm. To see the changes to the admin console
+refresh the page.
 
 To change the welcome theme you need to edit `standalone/configuration/keycloak-server.json` and add `welcomeTheme` to the theme element, for example: 
 
@@ -80,10 +81,8 @@ create a theme called `mytheme` create the directory `themes/mytheme`.
 Inside the theme directory create a directory for each of the types your theme is going to provide. For example to add the login type to the `mytheme`
 theme create the directory `themes/mytheme/login`.
 
-For each type create a file `theme.properties` which allows setting some configuration for the theme, for example what theme it overrides and if it should
-import any themes. For the above example we want to override the base theme and import common resources from the Keycloak theme.
-
-To do this create the file `themes/mytheme/login/theme.properties` with following contents:
+For each type create a file `theme.properties` which allows setting some configuration for the theme. For example to configure the theme `themes/mytheme/login`
+that we just created to extend the base theme and import some common resources create the file `themes/mytheme/login/theme.properties` with following contents:
 
 [source]
 ----
@@ -107,8 +106,8 @@ Theme properties are set in the file `<THEME TYPE>/theme.properties` in the them
 * styles - Space-separated list of styles to include
 * locales - Comma-separated list of supported locales
 
-There are a list of properties that can be used to change the css class used for certain element types. Refer to the theme.properties file in the
-{{book.project.name}} theme for these.
+There are a list of properties that can be used to change the css class used for certain element types. For a list of these properties look at the theme.properties
+file in the corresponding type of the keycloak theme (`themes/keycloak/<THEME TYPE>/theme.properties`).
 
 You can also add your own custom properties and use them from custom templates.
 
@@ -199,6 +198,9 @@ For example to replace `Username` on the login form with `Your Username` for the
 ----
 usernameOrEmail=Your Username
 ----
+
+Within a message values like `{0}` and `{1}` are replaced with arguments when the message is used. For example `{0} in `Log in to {0}` is replaced with the name
+of the realm.
 
 ==== Internationalization
 
@@ -334,7 +336,7 @@ To manually create the module create the directory `modules/org/keycloak/example
 [source,xml]
 ----
 <?xml version="1.0" ?>
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.example.themes">
+<module xmlns="urn:jboss:module:1.3" name="org.keycloak.example.themes">
     <resources>
         <resource-root path="theme.zip"/>
     </resources>

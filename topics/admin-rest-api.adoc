@@ -19,7 +19,7 @@ Obtain access token for user in the realm `master` with username `admin` and pas
 curl \
   -d "client_id=admin-cli" \
   -d "username=admin" \
-  -d "password=admin" \
+  -d "password=password" \
   -d "grant_type=password" \
   "http://localhost:8080/auth/realms/master/protocol/openid-connect/token"
 ----
@@ -53,8 +53,10 @@ import org.keycloak.representations.idm.RealmRepresentation;
 ...
 
 Keycloak keycloak = Keycloak.getInstance(
-    "http://localhost:8080/auth", "master",
-    "admin", "password",
+    "http://localhost:8080/auth",
+    "master",
+    "admin",
+    "password",
     "admin-cli");
 RealmRepresentation realm = keycloak.realm("master").toRepresentation();
 ----
