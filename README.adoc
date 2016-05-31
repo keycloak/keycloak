@@ -1,4 +1,3 @@
-
 Keycloak Authorization Services Guide
 ======================
 

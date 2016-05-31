@@ -1,0 +1,4 @@
+== Viewing Policies
+
+You can view all policies associated with a resource server by clicking on the *Policy* tab when editing a resource server. On this tab, you'll find the list of policies
+and options to create and edit a policy.

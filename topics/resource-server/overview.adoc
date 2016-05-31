@@ -1,0 +1,3 @@
+== Managing Resource Servers
+
+This section describes the administration functions for managing resource servers.
