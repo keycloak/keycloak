@@ -1,0 +1,44 @@
+
+==== Twitter
+
+There are a number of steps you have to complete to be able to login to Twitter.  First, go to the `Identity Providers` left menu item
+and selected `Twitter` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+
+.Add Identity Provider
+image:../../../{{book.images}}/twitter-add-identity-provider.png[]
+
+You can't click save yet, as you'll need to obtain a `Client ID` and `Client Secret` from Twitter.  One piece of data you'll need from this
+page is the `Redirect URI`.  You'll have to provide that to Twitter when you register {{book.project.name}} as a client there, so
+copy this URI to your clipboard.
+
+To enable login with Twtter you first have to create an application in the https://dev.twitter.com/apps[Twitter Developer Console].
+
+.Register Application
+image:../../../images/twitter-app-register.png[]
+
+
+Click on the `Create New App` button.  This will bring you to the `Create an Application` page.
+
+.Register Application
+image:../../../images/twitter-app-create.png[]
+
+
+Enter in a Name and Description.  The Website can be anything, but cannot have a `localhost` address.  For the
+`Callback URL` you must copy the `Redirect URI` from the {{book.project.name}} `Add Identity Provider` page.
+
+WARNING: You cannot use `localhost` in the `Callback URL`.  Instead replace it with `127.0.0.1` if you are trying to
+         testdrive Twitter login on your laptop.
+
+After clicking save you will be brought to the `Details` page.
+
+.App Details
+image:../../../images/twitter-details.png[]
+
+
+Next go to the `Keys and Access Tokens` tab.
+
+.Keys and Access Tokens
+image:../../../images/twitter-keys.png[]
+
+Finally, you will need to obtain the API Key and secret from this page and copy them back into the `Client ID` and `Client Secret` fields on the {{book.project.name}} `Add identity provider` page.
+

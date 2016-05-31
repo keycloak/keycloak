@@ -72,6 +72,10 @@
       "name": "Keycloak Installation and Configuration Guide",
       "link": "https://keycloak.gitbooks.io/server-install-guide/content/"
     },
+    "adapterguide": {
+      "name": "Securing Client Applications Guide",
+      "link": "https://keycloak.gitbooks.io/securing-client-applications-guide/content/"
+    },
     "project": {
       "name": "Keycloak",
       "version": "1.9.3.Final"

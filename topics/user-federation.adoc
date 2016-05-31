@@ -1,0 +1,20 @@
+
+== User Storage Federation
+
+{{book.project.name}} can federate external user databases.
+Out of the box we have support for LDAP and Active Directory.
+Before you dive into this, you should understand how {{book.project.name}} does federation.
+
+{{book.project.name}} performs federation a bit differently than other products/projects.
+The vision of {{book.project.name}} is that it is an out of the box solution that should provide a core set of feature irregardless of the backend user storage you want to use.
+Because of this requirement/vision, {{book.project.name}} has a set data model that all of its services use.
+Most of the time when you want to federate an external user store, much of the metadata that would be needed to provide this complete feature set does not exist in that external store.
+For example your LDAP server may only provide password validation, but not support TOTP or user role mappings.
+The {{book.project.name}} User Federation SPI was written to support these completely variable configurations.
+
+The way user federation works is that {{book.project.name}} will import your federated users on demand to its local storage.
+How much metadata that is imported depends on the underlying federation plugin and how that plugin is configured.
+Some federation plugins may only import the username into {{book.project.name}} storage, others might import everything from name, address, and phone number, to user role mappings.
+Some plugins might want to import credentials directly into {{book.project.name}} storage and let {{book.project.name}} handle credential validation.
+Others might want to handle credential validation themselves.
+The goal of the User Storage Federation SPI is to support all of these scenarios.

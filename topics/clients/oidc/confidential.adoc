@@ -1,0 +1,41 @@
+[[_client-credentials]]
+
+==== Confidential Client Credentials
+
+If you've set the client's <<fake/../../../clients/client-oidc.adoc#_access-type, access type_>> to `confidential` in the client's
+`Settings` tab, a new `Credentials` tab will show up. As part of dealing with this
+type of client you have to configure the client's credentials.
+
+.Credentials Tab
+image:../../../{{book.images}}/client-credentials.png[]
+
+The `Client Authenticator` list box is the type of credential you are going to use for your confidential client.
+It defaults to client ID and secret.  The secret is automatically generated for you and the `Regenerate Secret`
+button allows you to recreate this secret if you want or need to.
+
+Alternatively, you can opt to use a signed Json Web Token (JWT) instead of a secret.
+
+.Signed JWT
+image:../../../{{book.images}}/client-credentials-jwt.png[]
+
+When choosing this credential type you will have to also generate a private key and certificate for the client.  The private key
+will be used to sign the JWT, while the certificate is used by the server to verify the signature.  Click on the
+`Generate new keys and certificate` button to start this process.
+
+.Generate Keys
+image:../../../{{book.images}}/generate-client-keys.png[]
+
+When you generate these keys, {{book.project.name}} will store the certificate, and you'll need to download the private key
+and certificate for your client to use.  Pick the archive format you want and specify the password for the private key
+and store.
+
+You can also opt to
+generate these via an external tool and just import the client's certificate.
+
+.Import Certificate
+image:../../../{{book.images}}/import-client-cert.png[]
+
+There's multiple formats you can import from, just choose the archive format you have the certificate stored in,
+select the file, and click the `Import` button.
+
+

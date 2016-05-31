@@ -1,10 +1,10 @@
-= Security Vulnerabilities
+== Security Vulnerabilities
 
 This chapter discusses possible security vulnerabilities Keycloak could have, how Keycloak mitigates those vulnerabilities, and what steps you need to do to configure Keycloak to mitigate some vulnerabilities.
 A good list of potential vulnerabilities and what security implementations should do to mitigate them can be found in the http://tools.ietf.org/html/rfc6819[OAuth 2.0 Threat Model] document put out by the IETF.
 Many of those vulnerabilities are discussed here. 
 
-== SSL/HTTPS Requirement
+=== SSL/HTTPS Requirement
 
 If you do not use SSL/HTTPS for all communication between the Keycloak auth server and the clients it secures you will be very vulnerable to man in the middle attacks.
 OAuth 2.0/OpenID Connect uses access tokens for security.
@@ -21,7 +21,7 @@ It checks the DNS domain name against the server's certificate.
 In production you should make sure that each of your client adapters is configured to use a truststore.
 Otherwise you are vulnerable to DNS man in the middle attacks. 
 
-== CSRF Attacks
+=== CSRF Attacks
 
 Cross-site request forgery (CSRF) is a web-based attack whereby HTTP requests are transmitted from a user that the web site trusts or has authenticated (e.g., via HTTP redirects or HTML forms).  Any site that uses cookie based authentication is vulnerable for these types of attacks.
 These attacks are mitigated by matching a state cookie against a posted form or query parameter. 
@@ -38,7 +38,7 @@ The only part of Keycloak that really falls into CSRF is the user account manage
 To mitigate this Keycloak sets a state cookie and also embeds the value of this state cookie within hidden form fields or query parameters in action links.
 This query or form parameter is checked against the state cookie to verify that the call was made by the user. 
 
-== Clickjacking
+=== Clickjacking
 
 With clickjacking, a malicious site loads the target site in a transparent iFrame overlaid on top of a set of dummy buttons that are carefully constructed to be placed directly under important buttons on the target site.
 When a user clicks a visible button, they are actually clicking a button (such as an "Authorize" button) on the hidden page.
@@ -47,9 +47,17 @@ An attacker can steal a user's authentication credentials and access their resou
 By default, every response by Keycloak sets some specific browser headers that can prevent this from happening specifically http://tools.ietf.org/html/rfc7034[X-FRAME_OPTIONS] and http://www.w3.org/TR/CSP/[Content-Security-Policy].
 You should take a look at both of these headers.
 In the admin console you can specify the values these headers will have.
-By default, Keycloak only sets up a same-origin policy for iframes. 
+By default, Keycloak only sets up a same-origin policy for iframes.
 
-== Compromised Access Codes
+[[_unspecific-redirect-uris]]
+=== Unspecific Redirect URIs
+
+For the <<fake/../sso-protocols/oidc.adoc#_oidc-auth-flows,Authorization Code Flow>>, if you register redirect URIs that
+are too general, then it would be possible for a rogue client to impersonate a different client that has a broader scope
+of access.  This could happen for instance if two clients live under the same domain.  So, its a good idea to make your
+registered redirect URIs as specific as feasible.
+
+=== Compromised Access Codes
 
 It would be very hard for an attacker to compromise Keycloak access codes.
 Keycloak generates a cryptographically strong random value for its access codes so it would be very hard to guess an access token.
@@ -59,7 +67,7 @@ This value should be really short.
 Like a seconds.
 Just long enough for the client to make the request to turn the code into an token. 
 
-== Compromised access and refresh tokens
+=== Compromised access and refresh tokens
 
 There's a few things you can do to mitigate access tokens and refresh tokens from being stolen.
 Most importantly is to enforce SSL/HTTPS communication between Keycloak and its clients and applications.
@@ -70,7 +78,7 @@ If an access token or refresh token is compromised, the first thing you should d
 This will enforce that any tokens issued prior to that date are now invalid.
 You can also disable specific applications, clients, and users if you feel that any one of those entities is completely compromised. 
 
-== Open redirectors
+=== Open redirectors
 
 An attacker could use the end-user authorization endpoint and the redirect URI parameter to abuse the authorization server as an open redirector.
 An open redirector is an endpoint using a parameter to automatically redirect a user agent to the location specified by the parameter value without any validation.

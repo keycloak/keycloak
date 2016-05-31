@@ -1,0 +1,48 @@
+[[_account-service]]
+
+== User Account Service
+
+{{book.project.name}} has a built in User Account Service which every user has access to.  This service allows users to manage their account,
+change their credentials, update their profile, and view their login sessions.  The URL to this service is `<server-root/auth/realms/\{realm-name}/account`.
+
+.Account Service
+image:../{{book.images}}/account-service-profile.png[]
+
+The initial page is the user's profile, which is the `Account` left menu item.  This is where they specify basic data about themselves.  This screen can be extended
+to allow the user to manage additional attributes.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more details.
+
+The `Password` left menu item allows the user to change their password.
+
+.Password Update
+image:../{{book.images}}/account-service-password.png[]
+
+The `Authenticator` menu item allows the user to set up OTP if they desire.  This will only show up if OTP is a valid authentication mechanism for your realm.
+Users are given directions to install https://fedorahosted.org/freeotp/[FreeOTP] or https://play.google.com/[Google Authenticator] on their mobile device to be their OTP generator.
+The bar code you see in the screen shot can be scanned into the FreeOTP or Google Authenticator mobile application for nice and easy setup.
+
+.OTP Authenticator
+image:../{{book.images}}/account-service-authenticator.png[]
+
+The `Federated Identity` menu item allows the user to link their account with an <<identity-broker.adoc#_identity-broker, identity broker>> (this is usually used to link social provier
+accounts together).  This will show the list of external identity providers you have configured for your realm.
+
+.Federated Identity
+image:../{{book.images}}/account-service-federated-identity.png[]
+
+The `Sessions` menu item allows the user to view and manage which devices are logged in and from where.  They can perform logout of these sessions from this screen too.
+
+.Sessions
+image:../{{book.images}}/account-service-sessions.png[]
+
+The `Applications` menu item shows users which applications they have access to.
+
+.Applications
+image:../{{book.images}}/account-service-apps.png[]
+
+=== Themeable
+
+Like all UIs in {{book.project.name}} the User Account Service is completely themeable and internationalizable.
+See the link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more details.
+
+
+

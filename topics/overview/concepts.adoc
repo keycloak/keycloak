@@ -7,6 +7,10 @@ and REST services.
 users::
   Users are entities that are able to log into your system.  They can have attributes associated with themselves like email,
   username, address, phone number, and birth day.  They can be assign group membership and have specific roles assigned to them.
+authentication::
+  The process of identifying and validating a user.
+authorization::
+  The process of granting access to a user.
 credentials:
   Credentials are pieces of data that {{book.project.name}} uses to verify the identity of a user.  Some examples are passwords,
   one-time-passwords, digital certificates, or even fingerprints.
@@ -41,6 +45,20 @@ consent::
 client templates::
   When a client is registered you need to enter in a bunch of configuration information about that client.  It is often useful to store a template
   of this to make create new clients easier.  {{book.project.name}} provides the concept of a client template for this.
+client role::
+  Clients can define roles that are specific to them.  This is basically a role namespace dedicated to the client.
+identity token::
+  A token that provides identity information about the user.  Part of the OpenID Connect specification.
+access token::
+  A token that can be provided as part of an HTTP request that grants access to the service being invoked on.  This is part of
+  the OpenID Connect and OAuth 2.0 specification.
+assertion::
+  Information about a user.  This usually pertains to an XML blob that is included in a SAML authentication response that
+  provided identity metadata about an authenticated user.
+service account::
+  Each client has a built in service account which allows them to obtain an access token.
+direct grant::
+  A way for a client to obtain an access token on behalf of a user via a REST invocation.
 protocol mappers::
   For each client you can tailor what claims and assertions are stored in the OIDC token or SAML assertion.  You do this per client by creating and configuring
   protocol mappers.

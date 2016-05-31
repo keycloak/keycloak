@@ -1,0 +1,133 @@
+
+=== OIDC Clients
+
+<<fake/../../sso-protocols/oidc.adoc#_oidc,OpenID Connect>> is the preferred protocol to secure applications.  It was designed from the ground up to be web friendly
+and works best with HTML5/Javascript applications.
+
+To create a OIDC client go to the `Clients` left menu item.  On this page you'll see a `create` button on the right.
+
+.Clients
+image:../../{{book.images}}/clients.png[]
+
+This will bring you to the `Add Client` page.
+
+
+.Add Client
+image:../../{{book.images}}/add-client-oidc.png[]
+
+Enter in the `Client ID` of the client.  This should be a simple string
+alpha-numeric string that will be used in requests and in the {{book.project.name}} database to identity the client.
+Next select `openid-connect` in the `Client Protocol` drop down box.
+Ignore the `Client Template` listbox for now,
+we'll go over that later in this chapter.
+Finally enter in the base URL of your
+application in the `Root URL` field and click `Save`.  This will create the client and bring you to the client `Settings`
+tab.
+
+.Client Settings
+image:../../{{book.images}}/client-settings-oidc.png[]
+
+Let's walk through each configuration item on this page.
+
+*Client ID*
+
+This specifies an alpha-numeric string that will be used as the client identifier for OIDC requests.
+
+*Name*
+
+This is the display name for the client whenever it is displayed in a {{book.project.name}} UI screen.  You can localize
+the value of this field by setting up a replacement string value i.e. $\{myapp}.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}]
+for more information.
+
+*Description*
+This specifies the description of the client.  This can also be localized.
+
+*Enabled*
+
+If this is turned off, the client will not be allowed to request authentication.
+
+*Consent Required*
+
+If this is on, then users will get a consent page which asks the user if they grant access to that application.  It will also
+display the metadata that the client is interested in so that the user knows exactly what information the client is getting access to.
+If you've ever done a social login to Google, you'll often see a similar page.  {{book.project.name}} provides the same functionality.
+
+[[_access-type]]
+*Access Type*
+
+This defines the type of the OIDC client.
+
+_confidential_::
+  Confidential access type is for clients that need to perform a browser login and that you want to require a client secret when they turn an access code into an access token,
+  (see http://tools.ietf.org/html/rfc6749#section-4.1.3[Access Token Request] in the OAuth 2.0 spec for more details).  The advantages of this is that it is a little extra security.
+  Since {{book.project.name}} requires you to register valid redirect-uris, we're not exactly sure what this little extra security is though.
+  :) The disadvantages of this access type is that confidential access type is pointless for pure Javascript clients as anybody could easily figure out your client's secret!
+
+_public_::
+  Public access type is for clients that need to perform a browser login and that you feel that the added extra security of confidential access type is not needed.
+  FYI, Pure javascript clients are by nature public.
+
+_bearer-only_::
+  Bearer-only access type means that the application only allows bearer token requests.
+  If this is turned on, this application cannot participate in browser logins.
+
+_direct access only_::
+       This switch is for clients that only use the  <<fake/../../sso-protocols/oidc.adoc#_oidc-auth-flows,Direct Access Grant>> protocol to obtain access tokens.
+
+*Root URL*
+
+     If {{book.project.name}} uses any configured relative URLs, this value is prepended to them.
+
+*Valid Redirect URIs*
+
+This is a required field.  Enter in a URL pattern and click the + sign to add.  Click the - sign next to URLs you want to remove.
+Remember that you still have to click the `Save` button!
+Only wildcards, * ,are allowed at the end of of a URI, i.e. http://host.com/*
+
+You should take extra precautions when registering valid redirect URI patterns as if you make
+them too general you are vulnerable to attacks.  See <<fake/../../security-vulnerabilities.adoc#_unspecific-redirect-uris, Security Vulnerabilities>> chapter
+for more information.
+
+*Base URL*
+
+If {{book.project.name}} needs to link to the client, this URL would be used.
+
+*Standard Flow Enabled*
+
+If this is on, clients are allowed to use the OIDC <<fake/../../sso-protocols/oidc.adoc#_oidc-auth-flows,Authorization Code Flow>>.
+
+*Implicit Flow Enabled*
+
+If this is on, clients are allowed to use the OIDC <<fake/../../sso-protocols/oidc.adoc#_oidc-auth-flows,Implicit Flow>>.
+
+*Direct Grants Enabled*
+
+If this is on, clients are allowed to use the OIDC <<fake/../../sso-protocols/oidc.adoc#_oidc-auth-flows,Direct Grants>>.
+
+*Admin URL*
+
+For {{book.project.name}} specific client adapters, this is the callback endpoint for the client.  The {{book.project.name}}
+server will use this URI to make callbacks like pushing revocation policies, performing backchannel logout, and other
+administrative operations.  For {{book.project.name}} servlet adapters, this can be the root URL of the servlet application.
+See link:{{book.adapterguide.link}}[{{book.adapterguide.name}}] for more information.
+
+*Web Origins*
+
+This setting is related to browser Javascript making cross-domain XHR HTTP requests to your application.  It is central
+place to maintain a list
+of domains that are allowed to make link:http://www.w3.org/TR/cors/[CORS] requests to your application.  This information is stuffed in the
+access token.  {{book.project.name}} specific client adapters can make use of this token information to decide whether to allow
+a CORS request to process.  See link:{{book.adapterguide.link}}[{{book.adapterguide.name}}] for more information.
+
+Enter in a base URL and click the + sign to add.  Click the - sign next to URLs you want to remove.
+Remember that you still have to click the `Save` button!
+
+
+
+
+
+
+
+
+
+

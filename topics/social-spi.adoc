@@ -1,8 +1,0 @@
-
-[[_social_spi]]
-= Social Provider SPI
-
-Keycloak provides an SPI to make it easy to add additional social providers.
-This is done by implementing `org.keycloak.social.SocialProvider` in `social/core`        and adding a provider configuration file (`META-INF/services/org.keycloak.social.SocialProvider`). 
-
-A good reference for implementing a Social Provider is the Google provider which you can find in `social/google`        on GitHub or in the source download. 

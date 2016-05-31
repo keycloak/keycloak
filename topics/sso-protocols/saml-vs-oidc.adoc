@@ -1,0 +1,18 @@
+
+=== OIDC vs. SAML
+
+Choosing between OIDC and SAML is not just a matter of using a newer, sexier protocol (OIDC) instead of the old, mature, dinosaur (SAML).
+{{book.project.name}} has chosen OIDC as the protocol we use to both recommend and write all our extensions on top of.
+SAML tends to be a bit more verbose than OIDC.
+
+Beyond verbosity of exchanged data, if you compare the specifications you'll find that OIDC was designed to work with the
+web while SAML was retrofitted to work on top of the web.  For example,
+OIDC is also much better suited for HTML5/Javascript applications because it is
+much much simpler to implement on the client side than SAML.  Since tokens are in the JSON format,
+they can be directly consumed by Javascript.  Also, you'll find many nice little switches and features that
+make implementing security in your web applications easier.  For example, check out the iframe trick that the specification
+uses to easily determine if a user is still logged in or not.
+
+SAML has its uses though.  As you see the OIDC specifications evolve you see they implement more and more features that
+SAML has had for years.  What we often see is that people pick SAML over OIDC because of the perception that it is more mature
+and also because they already have existing applications that are secured by it.
