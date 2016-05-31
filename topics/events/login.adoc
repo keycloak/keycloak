@@ -101,7 +101,7 @@ You can exclude one or more events by editing the `keycloak-server.json` that co
 }
 ----
 
-See the link:{{book.installguide.link}}[book.installguide.name}}] for more details on where the `keycloak-server.json` file lives.
+See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on where the `keycloak-server.json` file lives.
 
 
 
