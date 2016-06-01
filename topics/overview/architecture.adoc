@@ -42,6 +42,8 @@ Resource Servers.
 
 Resource Servers are managed using the {{book.project.name}} Administration Console, where you can enable any registered client application as a resource server and start managing the resources and scopes you want to protect.
 
+image:../../images/rs-r-scopes.png[alt="Resource Server Overview"]
+
 A Resource can be a web page, a RESTFul resource, a file in your filesystem, an EJB, etc. They can represent a group of resources (just like a Class in Java) or they can represent a single and specific resource.
 
 For instance, you may have a _Bank Account_ resource that represents all banking accounts define authorization policies that apply to all banking accounts. However
@@ -79,7 +81,3 @@ Authorization Services consist of the following RESTFul services:
 * link:../service/entitlement-api.html[Entitlement Services]
 
 Each of these services provide a specific API covering the different steps involved in the process of authorization.
-
-
-
-image:../../images/rs-r-scopes.png[alt="Resource Server Overview"]
