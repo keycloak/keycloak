@@ -23,6 +23,7 @@ def applyTransformation(input):
     exp = re.compile("[ ]*{% if (.*?) %}(.*?)[ ]*{% endif %}", re.DOTALL)
     input = re.sub(exp, "ifeval::[{\g<1>}==true]\g<2>endif::[]", input)
     input = re.sub(r"image:(\.\./)*", "image:", input)
+    input = re.sub(r"image::(\.\./)*", "image::", input)
     return input
 
 
@@ -33,9 +34,13 @@ if len(sys.argv) > 1:
 
 if os.path.exists(targetdir):
     shutil.rmtree(targetdir)
-shutil.copytree('images',os.path.join(targetdir, 'images'))
-shutil.copytree('keycloak-images',os.path.join(targetdir, 'keycloak-images'))
-shutil.copytree('rhsso-images',os.path.join(targetdir, 'rhsso-images'))
+
+if os.path.isdir('images'):
+    shutil.copytree('images',os.path.join(targetdir, 'images'))
+if os.path.isdir('keycloak-images'):
+    shutil.copytree('keycloak-images',os.path.join(targetdir, 'keycloak-images'))
+if os.path.isdir('rhsso-images'):
+    shutil.copytree('rhsso-images',os.path.join(targetdir, 'rhsso-images'))
 
 tmp = os.path.join(targetdir, 'topics')
 if not os.path.exists(tmp):
