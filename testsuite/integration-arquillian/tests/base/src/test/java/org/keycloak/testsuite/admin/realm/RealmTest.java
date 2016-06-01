@@ -444,6 +444,19 @@ public class RealmTest extends AbstractAdminTest {
 
         Assert.assertEquals(PUBLIC_KEY, realm.toRepresentation().getPublicKey());
 
+        rep.setPrivateKey("{}{}{}{}{}{}324re9gvj0r");
+        rep.setPublicKey("{}{}{}{}{}{}324re9gvj0r");
+        try {
+            realm.update(rep);
+            fail("Expected BadRequestException");
+        } catch (BadRequestException e) {
+            // Expected
+            assertAdminEvents.assertEmpty();
+        }
+
+        Assert.assertEquals(PUBLIC_KEY, realm.toRepresentation().getPublicKey());
+
+        rep.setPrivateKey(privateKey2048);
         rep.setPublicKey(publicKey2048);
 
         realm.update(rep);
@@ -478,7 +491,27 @@ public class RealmTest extends AbstractAdminTest {
         realm.update(rep);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
 
-        assertEquals(certificate, rep.getCertificate());
+        assertEquals(certificate, realm.toRepresentation().getCertificate());
+
+        rep.setCertificate("{}{}{}{}{}{}324re9gvj0r");
+        try {
+            realm.update(rep);
+            fail("Expected BadRequestException");
+        } catch (BadRequestException e) {
+            // Expected
+            assertAdminEvents.assertEmpty();
+        }
+
+        rep.setCertificate("invalid");
+        try {
+            realm.update(rep);
+            fail("Expected BadRequestException");
+        } catch (BadRequestException e) {
+            // Expected
+            assertAdminEvents.assertEmpty();
+        }
+
+        assertEquals(certificate, realm.toRepresentation().getCertificate());
     }
 
     @Test
