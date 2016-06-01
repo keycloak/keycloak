@@ -31,7 +31,7 @@
   into a OIDC ID Token, Access Token, SAML attribute statements, etc.  This feature allows you to basically
   tailor how you want auth responses to look.
 * Can support any platform that has an Open ID Connect or SAML 2.0 client adapter.  {{book.project.name}} does provide
-  client adapters for Pure HTML5/Javascript apps, JBoss AS7, JBoss EAP 6.x, JBoss EAP 7, Wildfly, Tomcat 7,
+  client adapters for Pure HTML5/JavaScript apps, JBoss AS7, JBoss EAP 6.x, JBoss EAP 7, Wildfly, Tomcat 7,
   Tomcat 8, Jetty 9.1.x, Jetty 9.2.x, and Jetty 8.1.x.
 * Tons of SPIs for customizing every aspect of the server.
 

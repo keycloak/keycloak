@@ -53,9 +53,9 @@ has revoked access.  This makes things more secure and more scalable.
 Another important aspect of this flow is the concept of a _public_ vs. a _confidential_ client.  _Confidential_ clients are required
 to provide a client secret when they exchange the temporary codes for tokens.  _Public_ clients are not required to provide this client secret.
 _Public_ clients are perfectly fine so long as HTTPS is strictly enforced and you are very strict about what redirect URIs are registered for the
-client.  HTML5/Javascript clients actually always have to be _public_ clients because there is no way to transmit the client secret to them in a secure
+client.  HTML5/JavaScript clients actually always have to be _public_ clients because there is no way to transmit the client secret to them in a secure
 manner.  Again, this is ok so long as you use HTTPS and strictly enforce redirect URI registration.  This guide goes more detail
-into this in the 
+into this in the
 
 // DOCS REMARK: Please update the cross-reference as it does not resolve correctly. <<fake/../../client.adoc,Client>> chapter.
 
