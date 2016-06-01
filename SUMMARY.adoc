@@ -1,9 +1,9 @@
 = {{book.title}}
 
  . link:topics/overview.adoc[Overview]
- .. link:topics/features.adoc[Features]
- .. link:topics/how.adoc[How Does Security Work?]
- .. link:topics/concepts.adoc[Core Concepts and Terms]
+ .. link:topics/overview/features.adoc[Features]
+ .. link:topics/overview/how.adoc[How Does Security Work?]
+ .. link:topics/overview/concepts.adoc[Core Concepts and Terms]
  . link:topics/initialization.adoc[Server Initialization]
  . link:topics/admin-console.adoc[Admin Console]
  .. link:topics/realms/master.adoc[The Master Realm]
