@@ -1,4 +1,4 @@
-[[_client-scope]]
+[[_client_scope]]
 
 === Client Scope
 
@@ -20,7 +20,7 @@ image:../../{{book.images}}/full-client-scope.png[]
 
 As you can see from the picture, you can see that the effect roles of the scope are every declared role in the realm.
 To change this default behavior, you must explicitly turn off the `Full Scope Allowed` switch and declare the specific roles you want in each individual
-client.  Alternatively, you can also use <<fake/../../clients/client-templates.adoc#_client-templates, client templates>>
+client.  Alternatively, you can also use <<fake/../../clients/clienttemplates.adoc#_client_templates, client templates>>
 to define the scope for a whole set of clients.
 
 .Partial Scope

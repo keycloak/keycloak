@@ -2,7 +2,7 @@
 ==== Default Roles
 
 Default roles allow you to automatically assign user role mappings when any user is newly created or imported through
-<<fake/../../../user-federation.adoc#_user-federation, User Federation>> or <<fake/../../../identity-broker.adoc_identity-broker, Identity Brokering>>.
+<<fake/../../../user-federation.adoc#_user_federation, User Federation>> or <<fake/../../../identity-broker.adoc#_identity_broker, Identity Brokering>>.
 To specify _default roles_ go to the `Roles` left menu item, and click the `Default Roles` tab.
 
 .Default Roles

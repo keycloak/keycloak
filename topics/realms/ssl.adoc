@@ -1,4 +1,4 @@
-[[_ssl-mode]]
+[[_ssl_modes]]
 
 === SSL Mode
 

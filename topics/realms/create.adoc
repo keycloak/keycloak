@@ -12,7 +12,7 @@ image:../../{{book.images}}/add-realm-menu.png[]
 
 This menu option will bring you to the `Add Realm` page.  Specify the realm name you want to define and click the `Create` button.
 Alternatively you and import a JSON document that defines your new realm.  We'll go over this in more detail in the
-<<fake/../../export-import.adoc#_export-import, Export and Import>> chapter.
+<<fake/../../export-import.adoc#_export_import, Export and Import>> chapter.
 
 .Create Realm
 image:../../{{book.images}}/create-realm.png[]

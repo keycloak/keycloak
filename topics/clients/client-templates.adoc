@@ -1,15 +1,15 @@
-
+[[_client_templates]]
 === Client Templates
 
 If you have a lot of applications you need to secure and register within your organization it can become quite tedious
-to configure the <<fake/../../clients/protocol-mappers.adoc#_protocol-mappers, protocol mappers>> and <<fake/../../roles/client-scope.adoc#_client-scope, scope>>
+to configure the <<fake/../../clients/protocol-mappers.adoc#_protocol-mappers, protocol mappers>> and <<fake/../../roles/client-scope.adoc#_client_scope, scope>>
 for each of these clients.  {{book.project.name}} allows you to define shared client configuration in an entity called a _client template_.
 
 To create a client template, go to the `Client Templates` left menu item.  This initial screen shows you a list of currently defined templates.
 
 To create a template click the `Create` button.  This brings you to a simple screen in which you name the template and hit save.
 A _client template_ will have similar tabs to regular clients.  You'll be able to define <<fake/../../clients/protocol-mappers.adoc#_protocol-mappers, protocol mappers>>
-and <<fake/../../roles/client-scope.adoc#_client-scope, scope>> which can be inherited by other clients.
+and <<fake/../../roles/client-scope.adoc#_client_scope, scope>> which can be inherited by other clients.
 
 Having a client inherit from a template is as simple as choosing the template from the `Client Template` drop down list on either the
 `Add Client` or client `Settings` tab.  You will see the `Mappers` and `Scope` tabs get additional switches which allow you

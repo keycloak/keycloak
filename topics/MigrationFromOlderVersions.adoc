@@ -112,7 +112,9 @@ Keycloak SAML SP Client Adapter now requires a specific endpoint, `/saml` to be 
 
 In previous releases we shipped with a default admin user with a default password, this has now been removed.
 If you are doing a new installation of 1.8 you will have to create an admin user as a first step.
-This can be done easily by following the steps in <<_create_admin_user,Admin User>>. 
+This can be done easily by following the steps in 
+
+// DOCS REMARK: Please add the chapter as the referenced topic does not exist. <<_create_admin_user,Admin User>>. 
 
 ===== OAuth2 Token Introspection
 
@@ -257,7 +259,9 @@ There are now 3 separate adapter downloads for WildFly, JBoss EAP and JBoss AS7:
 Make sure you grab the correct one. 
 
 You also need to update standalone.xml as the extension module and subsystem definition has changed.
-See <<_jboss_adapter_installation,Adapter Installation>> for details. 
+See 
+
+// DOCS REMARK: Topic not found <<_jboss_adapter_installation,Adapter Installation>> for details. 
 
 ==== Migrating from 1.2.0.Beta1 to 1.2.0.RC1
 
@@ -339,7 +343,9 @@ Facebook admin console).
 ==== Migrating from 1.1.0.Beta2 to 1.1.0.Final
 
 * WEB-INF/lib
-+`standalone/configuration/providers`<<_providers,+providers>>
++`standalone/configuration/providers` 
+
+// DOCS REMARK: Cross Reference not resolved. Please check and update <<_providers,+providers>>
 
 
 ==== Migrating from 1.1.0.Beta1 to 1.1.0.Beta2
