@@ -102,6 +102,5 @@
  .. link:topics/threat/scope.adoc[Limiting Scope]
  .. link:topics/threat/sql.adoc[SQL Injection Attacks]
  . link:topics/MigrationFromOlderVersions.adoc[Migration from older versions]
- . link:topics/cors.adoc[CORS]
 
 
