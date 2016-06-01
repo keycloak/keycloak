@@ -11,7 +11,7 @@ In {{book.project.name}} SAML serves two types of use cases: browser application
 
 There is really two types of use cases when using SAML.  The first is an application that asks the {{book.project.name}} server to authenticate
 a user for them.  After a successful login, the application will receive an XML document that contains
-something called a SAML assertion that specify various attributes about the user.  THis XML document is digitally signed by
+something called a SAML assertion that specify various attributes about the user.  This XML document is digitally signed by
 the realm and contains access information (like user role mappings) that the application can use to determine what resources the user
 is allowed to access on the application.
 
