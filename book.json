@@ -1,0 +1,39 @@
+{
+  "gitbook": "2.x.x",
+  "structure": {
+    "readme": "README.adoc"
+  },
+  "plugins": [
+    "toggle-chapters",
+    "ungrey",
+    "splitter"
+  ],
+  "variables": {
+    "title": "Keycloak Securing Client Applications Guide",
+    "community": true,
+    "product": false,
+    "images": "keycloak-images",
+    "appserver": {
+      "name": "Wildfly",
+      "version": "10"
+    },
+    "adminguide": {
+      "name": "Keycloak Administration Guide",
+      "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
+    },
+    "web": {
+      "docs": {
+        "name": "keycloak.org/docs",
+        "link": "http://keycloak.org/docs"
+      },
+      "downloads": {
+        "name": "keycloak.org/downloads",
+        "link": "http://keycloak.org/downloads"
+      }
+    },
+    "project": {
+      "name": "Keycloak",
+      "version": "1.9.5.Final"
+    }
+  }
+}
