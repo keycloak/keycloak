@@ -45,8 +45,8 @@ Regardless the identity provider you are creating, you'll see the following conf
 
 |Alias
 |The alias is an unique identifier for an identity provider. It is used to reference internally an identity provider.
- Some protocols require a redirect uri or callback url in order to communicate with an identity provider. For instance, OpenID Connect.
- In this case, the alias is used to build the redirect uri.
+ Some protocols require a redirect URI or callback url in order to communicate with an identity provider. For instance, OpenID Connect.
+ In this case, the alias is used to build the redirect URI.
  Every single identity provider must have an alias. For example, facebook, google, idp.acme.com, etc.
 
 |Enabled
