@@ -68,10 +68,10 @@ We've moved the themes and providers directories from `standalone/configuration/
 If you have added custom themes and providers you need to move them to the new location.
 You also need to update `keycloak-server.json` as it's changed due to this. 
 
-===== Adapter Subsystems only bring in dependencies if {{book.project.name}} is on
+===== Adapter Subsystems only bring in dependencies if keycloak is on
 
 Previously, if you had installed our saml or oidc keycloak subsystem adapters into Wildfly or JBoss EAP, we would automatically include {{book.project.name}} client jars into EVERY application irregardless if you were using {{book.project.name}} or not.
-These libraries are now only added to your deployment if you have {{book.project.name}} authentication turned on for that adapter (via the subsystem, or auth-method in web.xml 
+These libraries are now only added to your deployment if you have keycloak authentication turned on for that adapter (via the subsystem, or auth-method in web.xml 
 
 ===== Client Registration service endpoints moved
 
@@ -114,7 +114,7 @@ In previous releases we shipped with a default admin user with a default passwor
 If you are doing a new installation of 1.8 you will have to create an admin user as a first step.
 This can be done easily by following the steps in 
 
-// DOCS REMARK: Please add the chapter as the referenced topic does not exist. <<_create_admin_user,Admin User>>. 
+// <<_create_admin_user,Admin User>>. 
 
 ===== OAuth2 Token Introspection
 
@@ -261,7 +261,7 @@ Make sure you grab the correct one.
 You also need to update standalone.xml as the extension module and subsystem definition has changed.
 See 
 
-// DOCS REMARK: Topic not found <<_jboss_adapter_installation,Adapter Installation>> for details. 
+//<<_jboss_adapter_installation,Adapter Installation>> for details. 
 
 ==== Migrating from 1.2.0.Beta1 to 1.2.0.RC1
 
