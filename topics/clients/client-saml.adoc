@@ -56,7 +56,7 @@ Include AuthnStatement::
   Setting this to on will include that statement in the response document. 
 
 Sign Documents::
-  When turned on, Keycloak will sign the document using the realm's private key. 
+  When turned on, {{book.project.name}} will sign the document using the realm's private key. 
 
 Sign Assertions::
   The `Sign Documents` switch signs the whole document.

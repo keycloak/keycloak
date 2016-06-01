@@ -1,12 +1,12 @@
 == Migration from older versions
 
-To upgrade to a new version of Keycloak first download and install the new version of Keycloak.
+To upgrade to a new version of {{book.project.name}} first download and install the new version of {{book.project.name}}.
 You then have to migrate the database, keycloak-server.json, providers, themes and applications from the old version. 
 
 === Migrate database
 
-Keycloak provides automatic migration of the database.
-It's highly recommended that you backup your database prior to upgrading Keycloak. 
+{{book.project.name}} provides automatic migration of the database.
+It's highly recommended that you backup your database prior to upgrading {{book.project.name}}. 
 
 To enable automatic upgrading of the database if you're using a relational database make sure `databaseSchema` is set to `update` for `connectionsJpa`: 
 
@@ -54,8 +54,8 @@ If there is you may have to update your themes accordingly.
 
 === Migrate application
 
-If you deploy applications directly to the Keycloak server you should copy them to the new server.
-For any applications including those not deployed directly to the Keycloak server you should upgrade the adapter.
+If you deploy applications directly to the {{book.project.name}} server you should copy them to the new server.
+For any applications including those not deployed directly to the {{book.project.name}} server you should upgrade the adapter.
 The version specific section below will mention if any changes are required to applications. 
 
 === Version specific migration
@@ -68,10 +68,10 @@ We've moved the themes and providers directories from `standalone/configuration/
 If you have added custom themes and providers you need to move them to the new location.
 You also need to update `keycloak-server.json` as it's changed due to this. 
 
-===== Adapter Subsystems only bring in dependencies if keycloak is on
+===== Adapter Subsystems only bring in dependencies if {{book.project.name}} is on
 
-Previously, if you had installed our saml or oidc keycloak subsystem adapters into Wildfly or JBoss EAP, we would automatically include Keycloak client jars into EVERY application irregardless if you were using Keycloak or not.
-These libraries are now only added to your deployment if you have keycloak authentication turned on for that adapter (via the subsystem, or auth-method in web.xml 
+Previously, if you had installed our saml or oidc keycloak subsystem adapters into Wildfly or JBoss EAP, we would automatically include {{book.project.name}} client jars into EVERY application irregardless if you were using {{book.project.name}} or not.
+These libraries are now only added to your deployment if you have {{book.project.name}} authentication turned on for that adapter (via the subsystem, or auth-method in web.xml 
 
 ===== Client Registration service endpoints moved
 
@@ -104,7 +104,7 @@ You can turn off this behavior check adapter config switches.
 
 ===== SAML SP Client Adapter Changes
 
-Keycloak SAML SP Client Adapter now requires a specific endpoint, `/saml` to be registered with your IDP. 
+{{book.project.name}} SAML SP Client Adapter now requires a specific endpoint, `/saml` to be registered with your IDP. 
 
 ==== Migrating to 1.8.0
 
@@ -139,11 +139,11 @@ The `Direct Grants Only` flag was removed as if you enable Direct Access Grants 
 
 We also added builtin client `admin-cli` to each realm.
 This client has `Direct Access Grants` enabled.
-So if you're using Admin REST API or Keycloak admin-client, you should update your configuration to use `admin-cli` instead of `security-admin-console` as the latter one doesn't have direct access grants enabled anymore by default. 
+So if you're using Admin REST API or {{book.project.name}} admin-client, you should update your configuration to use `admin-cli` instead of `security-admin-console` as the latter one doesn't have direct access grants enabled anymore by default. 
 
 ===== Option 'Update Profile On First Login' moved from Identity provider to Review Profile authenticator
 
-In this version, we added `First Broker Login`, which allows you to specify what exactly should be done when new user is logged through Identity provider (or Social provider), but there is no existing Keycloak user yet linked to the social account.
+In this version, we added `First Broker Login`, which allows you to specify what exactly should be done when new user is logged through Identity provider (or Social provider), but there is no existing {{book.project.name}} user yet linked to the social account.
 As part of this work, we added option `First Login Flow` to identity providers where you can specify the flow and then you can configure this flow under `Authentication` tab in admin console. 
 
 We also removed the option `Update Profile On First Login` from the Identity provider settings and moved it to the configuration of `Review Profile` authenticator.
@@ -166,8 +166,8 @@ So if you want to have any attribute available in `Review Profile` page, you wou
 
 ===== Option that refresh tokens are not reusable anymore
 
-Old versions of Keycloak allowed reusing refresh tokens multiple times.
-Keycloak still permits this, but also have an option `Revoke refresh token` to disallow it.
+Old versions of {{book.project.name}} allowed reusing refresh tokens multiple times.
+{{book.project.name}} still permits this, but also have an option `Revoke refresh token` to disallow it.
 Option is in in admin console under token settings.
 When a refresh token is used to obtain a new access token a new refresh token is also included.
 When option is enabled, then this new refresh token should be used next time the access token is refreshed.
@@ -243,7 +243,7 @@ Changes are really minor, but were needed to improve performance of federation.
 
 ===== WildFly 9.0.0.Final
 
-Following on from the distribution changes that was done in the last release the standalone download of Keycloak is now based on WildFly 9.0.0.Final.
+Following on from the distribution changes that was done in the last release the standalone download of {{book.project.name}} is now based on WildFly 9.0.0.Final.
 This als affects the overlay which can only be deployed to WildFly 9.0.0.Final or JBoss EAP 6.4.0.GA.
 WildFly 8.2.0.Final is no longer supported for the server. 
 
@@ -267,11 +267,11 @@ See
 
 ===== Distribution changes
 
-Keycloak is now available in 3 downloads: standalone, overlay and demo bundle.
+{{book.project.name}} is now available in 3 downloads: standalone, overlay and demo bundle.
 The standalone is intended for production and non-JEE developers.
-Overlay is aimed at adding Keycloak to an existing WildFly 8.2 or EAP 6.4 installation and is mainly for development.
-Finally we have a demo (or dev) bundle that is aimed at developers getting started with Keycloak.
-This bundle contains a WildFly server, with Keycloak server and adapter included.
+Overlay is aimed at adding {{book.project.name}} to an existing WildFly 8.2 or EAP 6.4 installation and is mainly for development.
+Finally we have a demo (or dev) bundle that is aimed at developers getting started with {{book.project.name}}.
+This bundle contains a WildFly server, with {{book.project.name}} server and adapter included.
 It also contains all documentation and examples. 
 
 ===== Database changed
@@ -336,7 +336,7 @@ Again you don't need to care about migration of database from previous version s
 Both configuration of social providers and "social links" to your users will be converted to corresponding Identity providers. 
 
 Only required action from you would be to change allowed `Redirect URI` in the admin console of particular 3rd party social providers.
-You can first go to the Keycloak admin console and copy Redirect URI from the page where you configure the identity provider.
+You can first go to the {{book.project.name}} admin console and copy Redirect URI from the page where you configure the identity provider.
 Then you can simply paste this as allowed Redirect URI to the admin console of 3rd party provider (IE.
 Facebook admin console). 
 
@@ -402,7 +402,7 @@ Facebook admin console).
 
 * DB Schema has changed.  We have added export of the database to Beta 1, but not the ability to import
   the database from older versions. This will be supported in future releases.
-* For all clients except bearer-only applications, you must specify at least one redirect uri.  Keycloak
+* For all clients except bearer-only applications, you must specify at least one redirect uri.  {{book.project.name}}
   will not allow you to log in unless you have specified a valid redirect uri for that application.
 * Direct Grant API
 +`ON`

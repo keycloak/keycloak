@@ -6,7 +6,7 @@ OAuth 2.0/OpenID Connect uses access tokens for security.
 Without SSL/HTTPS, attackers can sniff your network and obtain an access token.
 Once they have an access token they can do any operation that the token has been given permission for.
 
-Keycloak has <<fake/../../realms/ssl.adoc#_ssl_modes,three modes for SSL/HTTPS>>.
+{{book.project.name}} has <<fake/../../realms/ssl.adoc#_ssl_modes,three modes for SSL/HTTPS>>.
 SSL can be hard to set up, so out of the box, {{book.project.name}} allows non-HTTPS communication over private IP addresses like
 localhost, 192.168.x.x, and other private IP addresses.
 In production, you should make sure SSL is enabled and required across the board.
