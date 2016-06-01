@@ -86,6 +86,7 @@ import javax.ws.rs.core.UriInfo;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -265,6 +266,17 @@ public class RealmAdminResource {
                     KeyPairVerifier.verify(rep.getPrivateKey(), rep.getPublicKey());
                 } catch (VerificationException e) {
                     return ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+                }
+            }
+
+            if (!"GENERATE".equals(rep.getPublicKey()) && (rep.getCertificate() != null)) {
+                try {
+                    X509Certificate cert = PemUtils.decodeCertificate(rep.getCertificate());
+                    if (cert == null) {
+                        return ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
+                    }
+                } catch (Exception e)  {
+                    return ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
                 }
             }
 
