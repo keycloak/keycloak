@@ -2,16 +2,20 @@ import sys, os, re, json, shutil, errno
 
 def transform(root, f, targetdir):
     full = os.path.join(root, f)
-    print full
     input = open(full, 'r').read()
     dir = os.path.join(targetdir, root)
     if not os.path.exists(dir):
         os.makedirs(dir)
     output = open(os.path.join(dir, f), 'w')
+    input = applyTransformation(input)
+    output.write(input)
+
+
+def applyTransformation(input):
     for variable in re.findall(r"\{\{(.*?)\}\}", input):
         tmp = variable.replace('.', '_')
         input = input.replace(variable, tmp)
-    input = input.replace('{{', '{').replace('}}','}')
+    input = input.replace('{{', '{').replace('}}', '}')
     input = re.sub(r"<<fake.+#", "<<", input)
     for variable in re.findall(r"[ ]*{% if (.*?) %}", input):
         tmp = variable.replace('.', '_')
@@ -19,16 +23,16 @@ def transform(root, f, targetdir):
     exp = re.compile("[ ]*{% if (.*?) %}(.*?)[ ]*{% endif %}", re.DOTALL)
     input = re.sub(exp, "ifeval::[{\g<1>}==true]\g<2>endif::[]", input)
     input = re.sub(r"image:(\.\./)*", "image:", input)
-    output.write(input)
+    return input
+
 
 indir = 'topics'
 targetdir = 'target'
 if len(sys.argv) > 1:
     targetdir = sys.argv[1]
 
-shutil.rmtree(os.path.join(targetdir, 'images'))
-shutil.rmtree(os.path.join(targetdir, 'keycloak-images'))
-shutil.rmtree(os.path.join(targetdir, 'rhsso-images'))
+if os.path.exists(targetdir):
+    shutil.rmtree(targetdir)
 shutil.copytree('images',os.path.join(targetdir, 'images'))
 shutil.copytree('keycloak-images',os.path.join(targetdir, 'keycloak-images'))
 shutil.copytree('rhsso-images',os.path.join(targetdir, 'rhsso-images'))
@@ -55,11 +59,7 @@ include::document-attributes.adoc[]
 """)
 
 input = re.sub(r"[ ]*\.+\s*link:(.*)\[(.*)\]", "include::\g<1>[]", input)
-for variable in re.findall(r"[ ]*{% if (.*?) %}", input):
-    tmp = variable.replace('.', '_')
-    input = input.replace(variable, tmp)
-exp = re.compile("[ ]*{% if (.*?) %}(.*?)[ ]*{% endif %}", re.DOTALL)
-input = re.sub(exp, "ifeval::[{\g<1>}==true]\g<2>endif::[]", input)
+input = applyTransformation(input)
 output.write(input)
 
 # parse book.json file and create document attributes
@@ -92,6 +92,8 @@ output = open(os.path.join(targetdir, 'document-attributes.adoc'), 'w')
 for attribute in attributeList:
     for k in attribute.keys():
         output.write(':book_' + k + ": " + attribute[k] + "\n")
+
+print "Transformation complete!"
 
 
 

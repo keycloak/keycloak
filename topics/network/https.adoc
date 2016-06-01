@@ -22,45 +22,6 @@ all::
 
 The SSL mode for each realm can be configured in the {{book.project.name}} admin console.
 
-==== Enable HTTPS/SSL with a Reverse Proxy
-
-It is general best practice that {{book.project.name}} will be run in a cluster with a reverse proxy or hardware load balancer
-setting in front of {{book.project.name}} server instances.
-
-To enable SSL/HTTPS in this deployment scenario, it is important that you make sure your reverse proxy sets the `X-Forwarded-For` and `X-Forwarded-Proto` headers on the requests made to {{book.project.name}}.
-To make sure that {{book.project.name}} honors these headers, you need to enable the `proxy-address-forwarding` setting of the {{book.project.name}} http connector in {{book.project.name}} configuration.
-Assuming that your reverse proxy doesn't use port 8443 for SSL you also need to configure what port http traffic is redirected to.
-
-. Open _standalone.xml_, _standalone-ha.xml_, or _domain.xml_ file (depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>).
-
-. Add `proxy-address-forwarding` and `redirect-socket` to the `http-listener` element:
-
-[source]
-----
-<subsystem xmlns="urn:jboss:domain:undertow:3.0">
-    ...
-    <http-listener name="default" socket-binding="http"
-        proxy-address-forwarding="true" redirect-socket="proxy-https"/>
-    ...
-</subsystem>
-----
-
-Then add a new `socket-binding` element to the `socket-binding-group` element:
-
-[source]
-----
-
-<socket-binding-group name="standard-sockets" default-interface="public"
-    port-offset="${jboss.socket.binding.port-offset:0}">
-    ...
-    <socket-binding name="proxy-https" port="443"/>
-    ...
-</socket-binding-group>
-----
-
-Also remember that when running in <<fake/../../operating-mode/domain.adoc#_domain-mode,domain mode>> what `socket-binding-group`
-you modify depends on how you have your server groups configured.
-
 ==== Enabling SSL/HTTPS for the {{book.project.name}} Server
 
 If you are not using a reverse proxy or load balancer to handle HTTPS traffic for you, you'll need to enable HTTPS
