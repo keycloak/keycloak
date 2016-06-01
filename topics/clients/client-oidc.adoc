@@ -85,7 +85,7 @@ Remember that you still have to click the `Save` button!
 Only wildcards, * ,are allowed at the end of of a URI, i.e. http://host.com/*
 
 You should take extra precautions when registering valid redirect URI patterns as if you make
-them too general you are vulnerable to attacks.  See <<fake/../../threat/redirect.adoc#_unspecific-redirect-uris, Security Vulnerabilities>> chapter
+them too general you are vulnerable to attacks.  See <<fake/../../threat/redirect.adoc#_unspecific-redirect-uris, Threat Model Mitigation>> chapter
 for more information.
 
 *Base URL*

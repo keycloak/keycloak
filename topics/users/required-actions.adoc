@@ -27,7 +27,7 @@ action name.  Also remember to click the `Save` button after you've decided what
 ==== Default Required Actions
 
 You can also specify required actions that will be added to an account whenever a new user is created, i.e. through the `Add User` button the user
-list screen, or via the <<fake/../../registration.adoc#_registration, user registration>> link on the login page.  To specify
+list screen, or via the <<fake/../../users/user-registration.adoc#_user-registration, user registration>> link on the login page.  To specify
 the default required actions go to the `Authentication` left menu item and click on the `Required Actions` tab.
 
 .Default Required Actions

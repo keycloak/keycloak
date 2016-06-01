@@ -82,7 +82,7 @@ you have that file already available.
 
 ===== Enable SPNEGO Processing
 
-{{book.project.name}} does not have SPNEGO protocol support turned on by default.  So, you have to go to the <<../../authentication/flows.adoc#_authentication-flows, browser flow>>
+{{book.project.name}} does not have SPNEGO protocol support turned on by default.  So, you have to go to the <<fake/../../authentication/flows.adoc#_authentication-flows, browser flow>>
 and enable `Kerberos`.
 
 .browser flow
@@ -95,7 +95,7 @@ to _required_ then all users must have Kerberos enabled for their browser.
 ===== Configure Kerberos User Storage Federation Provider
 
 Now that the SPNEGO protocol is turned on at the authentication server, you'll need to configure how {{book.project.name}} interprets the Kerberos ticket.
-This is done through <../../user-federation.adoc#_user-storage-federation,User Storage Federation>>. We have 2 different federation providers with Kerberos authentication support.
+This is done through <fake/../../user-federation.adoc#_user-storage-federation,User Storage Federation>>. We have 2 different federation providers with Kerberos authentication support.
 
 If you want to authenticate with Kerberos backed by an LDAP server, you have to first configure the <<fake/../../user-federation/ldap.adoc#_ldap, LDAP Federation Provider>>.
 If you look at the configuration page for your LDAP provider you'll see a `Kerberos Integration` section.
