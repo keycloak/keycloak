@@ -31,7 +31,7 @@ how it works.
 
 . The user visits the application and the application finds the user is not authenticated.  It generates an XML authentication
   request document and encodes it as a query param in a URI that is used to redirect to the {{book.project.name}} server.
-  Depending on your settings, the application may also digitially sign this XML document and also stuffs this signature as a query
+  Depending on your settings, the application may also digitally sign this XML document and also stuffs this signature as a query
   param in the redirect URI to {{book.project.name}}.  This is signature is used to validate the client that sent this
   request.
 . The browser is redirected to {{book.project.name}}.  The server extracts the XML auth request document and verifies
