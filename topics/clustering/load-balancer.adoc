@@ -27,7 +27,7 @@ any black or white listing of IP addresses.
 Beyond the proxy itself, there are a few things you need to configure on the {{book.project.name}} side of things.
 If your proxy is forwarding requests via the HTTP protocol, then you need to configure {{book.project.name}} to pull the client's
 IP address from the `X-Forwarded-For` header rather than from the network packet.
-To do this, open up the profile configuration file (_standalone.xml, _standalone-ha.xml_, or _domain.xml_ depending on your
+To do this, open up the profile configuration file (_standalone.xml_, _standalone-ha.xml_, or _domain.xml_ depending on your
 <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>) and look for the `"urn:jboss:domain:undertow:3.0` XML block.
 
 .`X-Forwarded-For` HTTP Config
@@ -55,7 +55,7 @@ pull this information from the AJP packets.
 .`X-Forwarded-For` AJP Config
 [source,xml]
 ----
-<<subsystem xmlns="urn:jboss:domain:undertow:3.0">
+<subsystem xmlns="urn:jboss:domain:undertow:3.0">
      <buffer-cache name="default"/>
      <server name="default-server">
          <ajp-listener name="ajp" socket-binding="ajp"/>
@@ -93,7 +93,7 @@ socket binding you also need to define.
 
 Then add a new `socket-binding` element to the `socket-binding-group` element:
 
-[source]
+[source,xml]
 ----
 
 <socket-binding-group name="standard-sockets" default-interface="public"
