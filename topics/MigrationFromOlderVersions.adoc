@@ -68,10 +68,10 @@ We've moved the themes and providers directories from `standalone/configuration/
 If you have added custom themes and providers you need to move them to the new location.
 You also need to update `keycloak-server.json` as it's changed due to this. 
 
-===== Adapter Subsystems only bring in dependencies if keycloak is on
+===== Adapter Subsystems only bring in dependencies if Keycloak is on
 
-Previously, if you had installed our saml or oidc keycloak subsystem adapters into Wildfly or JBoss EAP, we would automatically include Keycloak client jars into EVERY application irregardless if you were using Keycloak or not.
-These libraries are now only added to your deployment if you have keycloak authentication turned on for that adapter (via the subsystem, or auth-method in web.xml 
+Previously, if you had installed our SAML or OIDC Keycloak subsystem adapters into Wildfly or JBoss EAP, we would automatically include Keycloak client jars into EVERY application irregardless if you were using Keycloak or not.
+These libraries are now only added to your deployment if you have Keycloak authentication turned on for that adapter (via the subsystem, or auth-method in web.xml 
 
 ===== Client Registration service endpoints moved
 
@@ -95,11 +95,11 @@ Feedback in template.ftl has been moved and format has changed slightly.
 Most of our modules and source code have been consolidated into two maven modules:  keycloak-server-spi and keycloak-services.
 SPI interfaces are in server-spi, implementations are in keycloak-services.
 All JPA dependent modules have been consolidated under keycloak-model-jpa.
-Same goes with mongo and infinispan under modules keycloak-model-mongo and keycloak-model-infinispan. 
+Same goes with mongo and Infinispan under modules keycloak-model-mongo and keycloak-model-infinispan. 
 
 ===== For adapters, session id changed after login
 
-To plug a security attack vector, for platforms that support it (Tomcat 8, Undertow/Wildfly, Jetty 9), the keycloak oidc and saml adapters will change the session id after login.
+To plug a security attack vector, for platforms that support it (Tomcat 8, Undertow/Wildfly, Jetty 9), the Keycloak OIDC and SAML adapters will change the session id after login.
 You can turn off this behavior check adapter config switches. 
 
 ===== SAML SP Client Adapter Changes
@@ -396,8 +396,8 @@ Facebook admin console).
 
 * DB Schema has changed.  We have added export of the database to Beta 1, but not the ability to import
   the database from older versions. This will be supported in future releases.
-* For all clients except bearer-only applications, you must specify at least one redirect uri.  Keycloak
-  will not allow you to log in unless you have specified a valid redirect uri for that application.
+* For all clients except bearer-only applications, you must specify at least one redirect URI.  Keycloak
+  will not allow you to log in unless you have specified a valid redirect URI for that application.
 * Direct Grant API
 +`ON`
 
