@@ -264,7 +264,7 @@ $ add-user.sh
  To represent the user add the following to the server-identities definition <secret value="bWdtdDEyMyE=" />
 ----
 
-NOTE: The add-user.sh does not add user to {{book.project.name}} Server but to the underlying Enterprise Application Platform. The credentials used and generated in the above script are only for example purpose. Please use the ones generated on your system. 
+NOTE: The add-user.sh does not add user to {{book.project.name}} server but to the underlying JBoss Enterprise Application Platform. The credentials used and generated in the above script are only for example purpose. Please use the ones generated on your system. 
 
 Now cut and paste the secret value into the _.../domain/configuration/host-slave.xml_ file as follows:
 
