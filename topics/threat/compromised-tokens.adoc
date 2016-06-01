@@ -9,7 +9,7 @@ might not realize they have to do this.
 Another thing you can do to mitigate leaked access tokens is to shorten their lifespans.  You can specify this
 within the <<fake/../../sessions/timeouts.adoc#_timeouts, timeouts page>>.
 Short lifespans (minutes) for access tokens for clients and applications to refresh their access tokens after a short amount of time.
-If an admin detects a leak, they can logout all user sessions to invalidate these referesh tokens or set up a revocation policy.
+If an admin detects a leak, they can logout all user sessions to invalidate these refresh tokens or set up a revocation policy.
 Making sure refresh tokens always stay private to the client and are never transmitted ever is very important as well.
 
 If an access token or refresh token is compromised, the first thing you should do is go to the admin console and push a not-before revocation policy to all applications.

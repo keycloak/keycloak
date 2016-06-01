@@ -88,7 +88,7 @@ and enable `Kerberos`.
 .browser flow
 image:../../{{book.images}}/browser-flow.png[]
 
-Switch the `Kerbros` requirement from _disabled_ to either _alternative_ or _required_.  _Alternative_ basically means that Kerberos is optional.  If
+Switch the `Kerberos` requirement from _disabled_ to either _alternative_ or _required_.  _Alternative_ basically means that Kerberos is optional.  If
 the user's browser hasn't been configured to work with SPNEGO/Kerberos, then {{book.project.name}} will fall back to the regular login screens.  If you set the requirement
 to _required_ then all users must have Kerberos enabled for their browser.
 

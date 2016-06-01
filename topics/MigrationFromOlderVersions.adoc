@@ -156,7 +156,7 @@ See documentation for more details if you want to catch and handle adapter error
 ===== IdentityProviderMapper changes
 
 There is no change in the interface itself or method signatures.
-However there is some change in behaviour.
+However there is some change in behavior.
 We added `First Broker Login` flow in this release and the method `IdentityProviderMapper.importNewUser` is now called after `First Broker Login` flow is finished.
 So if you want to have any attribute available in `Review Profile` page, you would need to use the method `preprocessFederatedIdentity` instead of `importNewUser` . You can set any attribute by invoke `BrokeredIdentityContext.setUserAttribute` and that will be available on `Review profile` page. 
 
@@ -242,7 +242,7 @@ Changes are really minor, but were needed to improve performance of federation.
 ===== WildFly 9.0.0.Final
 
 Following on from the distribution changes that was done in the last release the standalone download of Keycloak is now based on WildFly 9.0.0.Final.
-This als affects the overlay which can only be deployed to WildFly 9.0.0.Final or JBoss EAP 6.4.0.GA.
+This also affects the overlay which can only be deployed to WildFly 9.0.0.Final or JBoss EAP 6.4.0.GA.
 WildFly 8.2.0.Final is no longer supported for the server. 
 
 ===== WildFly, JBoss EAP and JBoss AS7 adapters

@@ -8,8 +8,8 @@ These attacks are mitigated by matching a state cookie against a posted form or 
 OAuth 2.0 login specification requires that a state cookie be used and matched against a transmitted state parameter.
 {{book.project.name}} fully implements this part of the specification so all logins are protected.
 
-The {{book.project.name}} Adin Consnole is a pure Javascript/HTML5 application that makes REST calls to the backend {{book.project.name}} admin REST API.
-These calls all require bearer token authentication and are made via Javascript Ajax calls.
+The {{book.project.name}} Admin Console is a pure JavaScript/HTML5 application that makes REST calls to the backend {{book.project.name}} admin REST API.
+These calls all require bearer token authentication and are made via JavaScript Ajax calls.
 CSRF does not apply here.
 The admin REST API can also be configured to validate the CORS origins as well.
 
