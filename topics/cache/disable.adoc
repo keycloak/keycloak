@@ -10,13 +10,13 @@ Here's what the config looks like initially.
 ----
 
     "userCache": {
-        "infinispan" : {
+        "default" : {
             "enabled": true
         }
     },
 
     "realmCache": {
-        "infinispan" : {
+        "default" : {
             "enabled": true
         }
     },

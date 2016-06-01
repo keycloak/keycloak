@@ -46,7 +46,7 @@ WARNING: Any changes you make to this file while the server is running will not 
 ==== Standalone {{book.project.name}} JSON Configuration
 
 {{book.project.name}} has a json configuration file that is specific to {{book.project.name}} components.  This configuration is located within
-the file_.../standalone/configuration/keycloak.json_.  This file is used to configure non-infrastructure level things that are
+the file.../standalone/configuration/keycloak-server.json.  This file is used to configure non-infrastructure level things that are
 only applicable to {{book.project.name}}
 
 .Standalone {{book.project.name}} Config File
