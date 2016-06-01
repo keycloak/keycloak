@@ -6,26 +6,80 @@ From a design perspective, the {{book.project.module}} are based on a well defin
 
 * **Policy Administration Point (PAP)**
 +
-Provides a set of UIs based on the Keycloak Administration Console to manage resource servers, resources, scopes, permissions and policies.
+Provides a set of UIs based on {{book.project.name}} Administration Console to manage resource servers, resources, scopes, permissions and policies.
 Part of this also accomplished remotely through the use of the link:../service/protection-api.html[Protection API].
 +
 
 * **Policy Decision Point (PDP)**
 +
-Provides a distributable policy decision point, where authorization requests are sent to and policies are evaluated accordingly with the permissions being requested. Part of this also accomplished remotely through the use of the
+Provides a distributable policy decision point to where authorization requests are sent and policies are evaluated accordingly with the permissions being requested. Part of this also accomplished remotely through the use of the
 link:../service/authorization-api.html[Authorization] and link:../service/entitlement-api.html[Entitlement] APIs.
 +
 
 * **Policy Enforcement Point (PEP)**
 +
-Provides implementations for different environments to actually enforce authorization decisions on the resource server side.
+Provides implementations for different environments to actually enforce authorization decisions at the resource server side.
 Keycloak provides some built-in link:../enforcer/overview.html[Policy Enforcers].
 +
 
 * **Policy Information Point (PIP)**
 +
-Being based on {{book.project.name}} Authentication Server, you can obtain attributes from identities and from the runtime environment.
+Being based on {{book.project.name}} Authentication Server, you can obtain attributes from identities and runtime environment during the evaluation of authorization policies.
 
-Instead of doing authorization by your own, {{book.project.name}} provides a centralized but still distributable server
-to govern protected resources and their respective policies within an application or organization using some well-known authorization patterns and standards such as
-_OAuth2_ and https://docs.kantarainitiative.org/uma/rec-uma-core.html[User-Managed Access (UMA)].
+=== The Authorization Process
+
+Two main process define the necessary steps to understand how to use KC to enable fine-grained authorization to your applications:
+
+* *Resource Management*
+* *Permission and Policy Management*
+
+*Resource Management* involves all the necessary steps to define what is being protected.
+
+image:../../images/resource-mgmt-process.png[alt="Resource Management Overview"]
+
+First, you need to tell to {{book.project.name}} what are you looking to protect, which usually represents a web application or a set of one or more services. See link:../overview/terminology.html[Terminology] for more information about
+Resource Servers.
+
+Resource Servers are managed using the {{book.project.name}} Administration Console, where you can enable any registered client application as a resource server and start managing the resources and scopes you want to protect.
+
+A Resource can be a web page, a RESTFul resource, a file in your filesystem, an EJB, etc. They can represent a group of resources (just like a Class in Java) or they can represent a single and specific resource.
+
+For instance, you may have a _Bank Account_ resource that represents all banking accounts define authorization policies that apply to all banking accounts. However
+you may want to define specific policies for _Alice Account_, where only the owner is allowed to access some information or perform an operation.
+
+Resources can be managed using {{book.project.name}} Administration Console or the link:../service/protection-api.html[Protection API]. In the latter case, resource servers are able to
+manage their resources remotely.
+
+Scopes usually represent the actions that can be performed on a resource, but they are not limited to that. You can also use scopes to represent a single or multiple attributes belonging to a resource.
+
+Once you have your resource server and all the resources you want to protect configured, you can start working with the fun part: *Permission and Policy Management*.
+
+*Permission and Policy Management* involves all the necessary steps to actually define the security and access requirements that govern your resources.
+
+image:../../images/policy-mgmt-process.png[alt="Permission and Policy Management Overview"]
+
+Policies define the conditions that must be satisfied to access or perform operations on something (resource or scope), but they are not tied with what they are protecting. They are generic and can be reused
+to build permissions or even other more complex policies.
+
+For instance, we may want to allow access to a group of resources only for users granted with a role "User Premium". In this case, we define a simple policy, based on Role-based Access Control (RBAC), that
+tells exactly that.
+
+{{book.project.name}} provides a few built-in policies covering the most common access control mechanisms. You can even create policies based on rules written using JavaScript or JBoss Drools.
+
+Once you have your policies defined, you can start defining your permissions. Differently than policies, permissions are tied coupled with the resource they are protecting. Here you specify
+what you want to protect (resource or scope) and the policies that must be satisfied in order to _GRANT_ or _DENY_ that permission to someone asking for it.
+
+
+=== Authorization Services
+
+Authorization Services consist of the following RESTFul services:
+
+* link:../service/protection-api.html[Protection Services]
+* link:../service/authorization-api.html[Authorization Services]
+* link:../service/entitlement-api.html[Entitlement Services]
+
+Each of these services provide a specific API covering the different steps involved in the process of authorization.
+
+
+
+image:../../images/rs-r-scopes.png[alt="Resource Server Overview"]

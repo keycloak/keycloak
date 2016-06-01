@@ -1,6 +1,6 @@
 == Overview
 
-{{book.project.name}} supports fine-grained permissions and policies with a mix and match of different access control
+{{book.project.name}} supports fine-grained authorization policies with a mix and match of different access control
 mechanisms such as:
 
 * **Attribute-based Access Control**
@@ -19,10 +19,8 @@ decisions in your application and services.
 Considering that today we need to consider a very heterogeneous environment, where users are distributed across different regions, with different local policies,
 using different devices and with a high demand for information sharing, Keycloak Authorization Services can be used as great tool to:
 
-* Control your protected resources and the actions that can be performed on them
-* Centralized Policy Management
-* Resource Management
-* Auditing
+* Control your protected resources and the actions that can be performed on them with fine-grained authorization policies
+* Centralized Resource, Permission and Policy Management
 * Authorization Workflows and User-Managed Access
-* Avoid code replication across projects
-* Avoid redeploys of your applications when your security requirements need to change thus the permissions and policies associated with your protected resources
+* Avoid code replication across projects (and redeploys) and quickly adapt to changes in your requirements
+* Auditing
