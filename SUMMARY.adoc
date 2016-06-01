@@ -50,7 +50,7 @@
  .. link:topics/roles/realm-client-roles.adoc[Realm and Client Roles]
  .. link:topics/roles/composite.adoc[Composite Roles]
  .. link:topics/roles/user-role-mappings.adoc[User Role Mappings]
- ... link:topics/roles/default-roles.adoc[Default Roles]
+ ... link:topics/roles/user-role-mappings/default-roles.adoc[Default Roles]
  .. link:topics/roles/client-scope.adoc[Client Scope]
  . link:topics/groups.adoc[Groups]
  .. link:topics/groups/groups-vs-roles.adoc[Groups Vs. Roles]
