@@ -1,5 +1,5 @@
 
-= Javascript Adapter
+== Javascript Adapter
 
 The Keycloak Server comes with a Javascript library you can use to secure HTML/Javascript applications.
 This library is referenceable directly from the keycloak server.

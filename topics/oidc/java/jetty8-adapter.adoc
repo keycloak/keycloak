@@ -1,13 +1,13 @@
 
 [[_jetty8_adapter]]
-= Jetty 8.1.x Adapter
+=== Jetty 8.1.x Adapter
 
 Keycloak has a separate adapter for Jetty 8.1.x that you will have to install into your Jetty installation.
 You then have to provide some extra configuration in each WAR you deploy to Jetty.
 Let's go over these steps. 
 
 [[_jetty8_adapter_installation]]
-== Adapter Installation
+==== Adapter Installation
 
 Adapters are no longer included with the appliance or war distribution.Each adapter is a separate download on the Keycloak download site.
 They are also available as a maven artifact. 
@@ -40,7 +40,7 @@ Edit start.ini and add keycloak to the options
 OPTIONS=Server,jsp,jmx,resources,websocket,ext,plus,annotations,keycloak
 ----        
 
-== Required Per WAR Configuration
+==== Required Per WAR Configuration
 
 Enabling Keycloak for your WARs is the same as the Jetty 9.x adapter.
 Our 8.1.x adapter supports both keycloak.json and the jboss-web.xml advanced configuration.

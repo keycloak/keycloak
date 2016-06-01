@@ -1,25 +1,49 @@
-== Securing Client Applications Guide
-
-//. link:topics/templates/document-attributes.adoc[]
-:imagesdir: images
+= {{book.title}}
 
  . link:topics/preface.adoc[Preface]
- . link:topics/Overview.adoc[Overview]
- . link:topics/oidc.adoc[OpenID Connect Client Adapters]
- .. link:topics/jboss-adapter.adoc[JBoss/Wildfly Adapter]
- .. link:topics/tomcat-adapter.adoc[Tomcat 6, 7 and 8 Adapters]
- .. link:topics/jetty9-adapter.adoc[Jetty 9.x Adapters]
- .. link:topics/jetty8-adapter.adoc[Jetty 8.1.x Adapter]
- .. link:topics/servlet-filter-adapter.adoc[Java Servlet Filter Adapter]
- .. link:topics/fuse-adapter.adoc[JBoss Fuse and Apache Karaf Adapter]
- .. link:topics/javascript-adapter.adoc[Javascript Adapter]
- .. link:topics/spring-boot-adapter.adoc[Spring Boot Adapter]
- .. link:topics/spring-security-adapter.adoc[Spring Security Adapter]
- .. link:topics/installed-applications.adoc[Installed Applications]
- .. link:topics/logout.adoc[Logout]
- .. link:topics/adapter_error_handling.adoc[Error Handling]
- .. link:topics/multi-tenancy.adoc[ Multi Tenancy]
- .. link:topics/jaas.adoc[JAAS plugin]
- . link:topics/saml.adoc[SAML Client Adapters]
+ . link:topics/overview/overview.adoc[Overview]
+   .. link:topics/overview/what-are-client-adapters.adoc[What are Client Adapters?]
+   .. link:topics/overview/supported-protocols.adoc[Supported Protocols]
+
+ . link:topics/oidc/oidc-overview.adoc[OpenID Connect]
+
+   .. link:topics/oidc/java/java-adapters.adoc[Java Adapters]
+      ... link:topics/oidc/java/java-adapter-config.adoc[Java Adapters Config]
+      ... link:topics/oidc/java/jboss-adapter.adoc[JBoss EAP/Wildfly Adapter]
+      ... link:topics/oidc/java/fuse-adapter.adoc[JBoss Fuse and Apache Karaf Adapter]
+      {% if book.community %}
+      ... link:topics/oidc/java/tomcat-adapter.adoc[Tomcat 6, 7 and 8 Adapters]
+      ... link:topics/oidc/java/jetty9-adapter.adoc[Jetty 9.x Adapters]
+      ... link:topics/oidc/java/jetty8-adapter.adoc[Jetty 8.1.x Adapter]
+      ... link:topics/oidc/java/spring-boot-adapter.adoc[Spring Boot Adapter]
+      ... link:topics/oidc/java/spring-security-adapter.adoc[Spring Security Adapter]
+      {% endif %}
+      ... link:topics/oidc/java/servlet-filter-adapter.adoc[Java Servlet Filter Adapter]
+      ... link:topics/oidc/java/jaas.adoc[JAAS plugin]
+      ... link:topics/oidc/java/adapter-context.adoc[Keycloak Security Context]
+      ... link:topics/oidc/java/adapter_error_handling.adoc[Error Handling]
+      ... link:topics/oidc/java/logout.adoc[Logout]
+      ... link:topics/oidc/java/multi-tenancy.adoc[Multi Tenancy]
+
+   .. link:topics/oidc/javascript-adapter.adoc[JavaScript Adapter]
+
+   .. link:topics/oidc/oidc-generic.adoc[Other OpenID Connect libraries]
+
+ . link:topics/saml/saml-overview.adoc[SAML]
+
+
+// . link:topics/oidc.adoc[OpenID Connect Client Adapters]
+
+//
+//
+//{% if book.community %}
+//
+//
+//{% endif %}
+// .. link:topics/installed-applications.adoc[Installed Applications]
+//
+//
+//
+// . link:topics/saml.adoc[SAML Client Adapters]
 
 

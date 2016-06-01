@@ -1,5 +1,5 @@
 
-= Multi Tenancy
+=== Multi Tenancy
 
 Multi Tenancy, in our context, means that one single target application (WAR) can be secured by a single (or clustered) Keycloak server, authenticating its users against different realms.
 In practice, this means that one application needs to use different `keycloak.json` files.

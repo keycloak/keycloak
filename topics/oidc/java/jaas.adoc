@@ -1,6 +1,6 @@
 
 [[_jaas_adapter]]
-= JAAS plugin
+=== JAAS plugin
 
 It's generally not needed to use JAAS for most of the applications, especially if they are HTTP based, but directly choose one of our adapters.
 However some applications and systems may still rely on pure legacy JAAS solution.

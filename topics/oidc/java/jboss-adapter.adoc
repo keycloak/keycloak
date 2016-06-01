@@ -1,6 +1,6 @@
 
 [[_jboss_adapter]]
-= JBoss/Wildfly Adapter
+=== JBoss/Wildfly Adapter
 
 To be able to secure WAR apps deployed on JBoss AS 7.1.1, JBoss EAP 6.x, or Wildfly, you must install and configure the Keycloak Subsystem.
 You then have two options to secure your WARs.
@@ -9,7 +9,7 @@ Alternatively, you don't have to crack open your WARs at all and can apply Keycl
 Both methods are described in this section. 
 
 [[_jboss_adapter_installation]]
-== Adapter Installation
+==== Adapter Installation
 
 Adapters are no longer included with the appliance or war distribution.
 Each adapter is a separate download on the Keycloak download site.
@@ -144,7 +144,7 @@ public class CustomerService {
 
 We hope to improve our integration in the future so that you don't have to specify the @SecurityDomain annotation when you want to propagate a keycloak security context to the EJB tier. 
 
-== Required Per WAR Configuration
+==== Required Per WAR Configuration
 
 This section describes how to secure a WAR directly by adding config and editing files within your WAR package. 
 
@@ -206,7 +206,7 @@ Here's an example pulled from one of the examples that comes distributed with Ke
 </web-app>
 ----        
 
-== Securing WARs via Keycloak Subsystem
+==== Securing WARs via Keycloak Subsystem
 
 You do not have to crack open a WAR to secure it with Keycloak.
 Alternatively, you can externally secure it via the Keycloak Adapter Subsystem.

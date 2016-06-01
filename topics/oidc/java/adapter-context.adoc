@@ -1,10 +1,4 @@
-= KeycloakSecurityContext
-:doctype: book
-:sectnums:
-:toc: left
-:icons: font
-:experimental:
-:sourcedir: .
+=== Keycloak Security Context
 
 The `KeycloakSecurityContext` interface is available if you need to look at the access token directly.
 This context is also useful if you need to get the encoded access token so you can make additional REST invocations.
