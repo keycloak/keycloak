@@ -10,5 +10,6 @@ It is recommended that you do not use the _master_ realm to manage the users and
 as a place for _super_ admins to create and manage the realms in your system.  This keeps things clean and organized.
 
 It is possible to disable the _master_ realm and define admin accounts at each individual new realm you create.  Each realm has its own
-dedicated Admin Console that you can log into with local accounts.  This guide talks more about this in the <<fake/../../managing-realms.adoc#_managing_realms, Managing Realms>>
+dedicated Admin Console that you can log into with local accounts.  This guide talks more about this in the
+<<fake/../../admin-console-permissions/per-realm.adoc#_per_realm_admin_permissions, Dedicated Realm Admin Consoles>>
 chapter.

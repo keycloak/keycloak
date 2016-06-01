@@ -1,0 +1,107 @@
+
+=== Login Events
+
+Login events occur for things like when a user logs in successfully, when somebody enters in a bad password, when a user account
+is updated.  Really every single event that happens to a user can be recorded and viewed.  By default, no events are stored
+or are viewable in the Admin Console.  Only error events are logged to the console and the server's log file.  To start
+persisting  you'll need to enable storage.  Go to the `Events` left menu item and select the `Config` tab.
+
+.Event Configuration
+image:../../{{book.images}}/login-events-config.png[]
+
+To start storing events you'll need to turn the `Save Events` switch to on under the `Login Events Settings`.
+
+.Save Events
+image:../../{{book.images}}/login-events-settings.png[]
+
+The `Saved Types` field allows you to specify which event types you want to store in the event store.  The `Clear events`
+button allows you to delete all the events in the database. The `Expiration` file allows you to specify how long you want
+to keep events stored for.  Once you've enabled storage of login events and decided on you settings, don't forget to click
+the `Save` button on the button of this page.
+
+To view events, go to the `Login Events` tab.
+
+.Login Events
+image:../../{{book.images}}/login-events.png[]
+
+As you can see, there's a lot of information stored and, if you are storing every event, there's a lot of events stored for
+each login action.  The `Filter` button on this page allows you to filter which events you are actually interested in.
+
+.Login Event Filter
+image:../../{{book.images}}/login-events-filter.png[]
+
+In this screenshot, we're filtering only `Login` events.  Clicking the `Update` button runs the filter.
+
+
+==== Event Types
+
+Login events:
+
+* Login - A user has logged in
+* Register - A user has registered
+* Logout - A user has logged out
+* Code to Token - An application/client has exchanged a code for a token
+* Refresh Token - An application/client has refreshed a token
+
+Account events:
+
+* Social Link - An account has been linked to a social provider
+* Remove Social Link - A social provider has been removed from an account
+* Update Email - The email address for an account has changed
+* Update Profile - The profile for an account has changed
+* Send Password Reset - A password reset email has been sent
+* Update Password - The password for an account has changed
+* Update TOTP - The TOTP settings for an account has changed
+* Remove TOTP - TOTP has been removed from an account
+* Send Verify Email - A email verification email has been sent
+* Verify Email - The email address for an account has been verified
+
+For all events there is a corresponding error event.
+
+==== Event Listener
+
+Event listeners listen for events and perform an action based on that event.  There are two built in
+ones that come with {{book.project.name}}: Logging Event Listener and an Email Event Listener.
+
+The Logging Event Listener writes to a log file whenever an error event occurs and is enabled by default.
+Here's an example log message:
+
+----
+11:36:09,965 WARN  [org.keycloak.events] (default task-51) type=LOGIN_ERROR, realmId=master,
+                    clientId=myapp,
+                    userId=19aeb848-96fc-44f6-b0a3-59a17570d374, ipAddress=127.0.0.1,
+                    error=invalid_user_credentials, auth_method=openid-connect, auth_type=code,
+                    redirect_uri=http://localhost:8180/myapp,
+                    code_id=b669da14-cdbb-41d0-b055-0810a0334607, username=admin
+----
+
+This logging is very useful if you want to use a tool like Fail2Ban to detect if there is a hacker bot somewhere that
+is trying to guess user passwords.  You can parse the log file for `LOGIN_ERROR` and pull out the IP Address, feed this information
+into Fail2Ban so that it do what it does to prevent attacks.
+
+The Email Event Listener sends an email to the users account when an event occurs.
+The Email Event Listener only supports the following events at the moment:
+
+* Login Error
+* Update Password
+* Update TOTP
+* Remove TOTP
+
+To enable the Email Listener go to the `Config` tab and click on the `Event Listeners` field.  This will show a drop down list box
+where you can select email.
+
+You can exclude one or more events by editing the `keycloak-server.json` that comes with your distribution and adding for example:
+
+[source]
+----
+"eventsListener": {
+    "email": {
+        "exclude-events": [ "UPDATE_TOTP", "REMOVE_TOTP" ]
+    }
+}
+----
+
+See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on where the `keycloak-server.json` file lives.
+
+
+

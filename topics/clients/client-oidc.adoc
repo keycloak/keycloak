@@ -85,7 +85,7 @@ Remember that you still have to click the `Save` button!
 Only wildcards, * ,are allowed at the end of of a URI, i.e. http://host.com/*
 
 You should take extra precautions when registering valid redirect URI patterns as if you make
-them too general you are vulnerable to attacks.  See <<fake/../../security-vulnerabilities.adoc#_unspecific-redirect-uris, Security Vulnerabilities>> chapter
+them too general you are vulnerable to attacks.  See <<fake/../../threat/redirect.adoc#_unspecific-redirect-uris, Threat Model Mitigation>> chapter
 for more information.
 
 *Base URL*
@@ -113,13 +113,19 @@ See link:{{book.adapterguide.link}}[{{book.adapterguide.name}}] for more informa
 
 *Web Origins*
 
-This setting is related to browser Javascript making cross-domain XHR HTTP requests to your application.  It is central
-place to maintain a list
-of domains that are allowed to make link:http://www.w3.org/TR/cors/[CORS] requests to your application.  This information is stuffed in the
-access token.  {{book.project.name}} specific client adapters can make use of this token information to decide whether to allow
-a CORS request to process.  See link:{{book.adapterguide.link}}[{{book.adapterguide.name}}] for more information.
+This option centers around link:http://www.w3.org/TR/cors/[CORS] which stands for Cross-Origin Resource Sharing.
+If executing browser Javascript tries to make an AJAX HTTP request to a server whose domain is different than the one the
+Javascript code came from, then the request uses the CORS.
+The server must handle CORS requests in a special way, otherwise the browser will not display or allow the request to be processed.
+This protocol exists to protect against XSS, CSRF and other Javascript-based attacks.
 
-Enter in a base URL and click the + sign to add.  Click the - sign next to URLs you want to remove.
+{{book.project.name}} has support for validated CORS requests.  The way it works is that the domains listed in the
+`Web Origins` setting for the client are embedded within the access token sent to the client application.  The client
+application can then use this information to decide whether or not to allow a CORS request to be invoked on it.  This is
+an extension to the OIDC protocol so only {{book.project.name}} client adapters support this feature.
+See link:{{book.adapterguide.link}}[{{book.adapterguide.name}}] for more information.
+
+To fill in the `Web Origins` data, enter in a base URL and click the + sign to add.  Click the - sign next to URLs you want to remove.
 Remember that you still have to click the `Save` button!
 
 

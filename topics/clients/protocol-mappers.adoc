@@ -34,7 +34,7 @@ Consent::
 Consent Text::
   If your client requires consent and the `Consent` switch is on, this is the text that will be displayed by the user.
   The value for this text is localizable by specifying a substitution variable with `$\{var-name}}` strings.  The
-  localized value is then configured within property files in your theme.  See the link:{{book.developerguide.link}}[book.developerguide.name]
+  localized value is then configured within property files in your theme.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}]
   for more information on localization.
 
 Most OIDC mappers also allow you to control where the claim gets put.  You can opt to include or exclude the claim from both the
@@ -43,7 +43,7 @@ _id_ and _access_ tokens by fiddling with the `Add to ID token` and `Add to acce
 Finaly, you can also add other mapper types.  if you go back to the `Mappers` tab, click the `Create` button.
 
 .Add Mapper
-image:../../{{book.images}}/add-mapper[]
+image:../../{{book.images}}/add-mapper.png[]
 
 Pick a `Mapper Type` from the list box.  If you hover over the tooltip, you'll see a description of what that mapper type does.
 Different config parameters will appear for different mapper types.

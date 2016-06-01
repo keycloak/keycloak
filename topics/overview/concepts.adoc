@@ -1,7 +1,7 @@
 
 === Core Concepts and Terms
 
-There are some key concepts and terms you should be aware of before attempting to use {{book.project.name} to secure your web applications
+There are some key concepts and terms you should be aware of before attempting to use {{book.project.name}} to secure your web applications
 and REST services.
 
 users::

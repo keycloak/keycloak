@@ -24,7 +24,7 @@ The token can be a standard bearer token, a initial access token or a registrati
 ===== Bearer Token
 
 The bearertoken can be issued on behalf of a user or a Service Account.
-The following permissions are required to invoke the endpoints (see <<_admin_permissions,Admin Permissions>> for more details): 
+The following permissions are required to invoke the endpoints (see <<fake/../../admin-console-permissions.adoc#_admin_permissions,Admin Permissions>> for more details):
 
 * create-client
 +`manage-client`
@@ -32,7 +32,8 @@ The following permissions are required to invoke the endpoints (see <<_admin_per
 +`manage-client`
 * manage-client                
 
-If you are using a regular bearer token to create clients we recommend using a token from on behalf of a Service Account with only the `create-client` role. See the <<fake/../../clients/oidc/service-accounts.adoc#_service_accounts,Service Accounts>> section for more details.
+If you are using a regular bearer token to create clients we recommend using a token from on behalf of a Service Account with only the `create-client` role.
+See the <<fake/../../clients/oidc/service-accounts.adoc#_service_accounts,Service Accounts>> section for more details.
 
 ===== Initial Access Token
 
