@@ -4,13 +4,13 @@
 
 In the upcoming chapters, you'll often be provided two options for applying application server configuration changes to your deployment.  You'll be
 shown how to edit the _standalone.xml_ or _domain.xml_ directly.  This must be done when the server (or servers) are offline.
-Additionally, you may be shown how to apply config changes on a running server using the app server's command line interface ({{books.appserver.name}} CLI).  This chapter discusses
+Additionally, you may be shown how to apply config changes on a running server using the app server's command line interface ({{book.appserver.name}} CLI).  This chapter discusses
 how you will do this.
 
 
 === Start the {{book.appserver.name}} CLI
 
-To start the {{books.appserver.name}} CLI, you need to run the `jboss-cli` script.
+To start the {{book.appserver.name}} CLI, you need to run the `jboss-cli` script.
 
 .Linux/Unix
 [source]
