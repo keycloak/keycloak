@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.9.6.Final-SNAPSHOT</version>
+        <version>1.9.6.Final</version>
     </parent>
 
     <artifactId>keycloak-docs-dist</artifactId>
