@@ -1,24 +1,27 @@
 [[_export_import]]
-= Export and Import
 
-== Startup export/import
+== Export and Import
 
-Export/import is useful especially if you want to migrate your whole Keycloak database from one environment to another or migrate to different database (For example from MySQL to Oracle). You can trigger export/import at startup of Keycloak server and it's configurable with System properties right now.
-The fact it's done at server startup means that no-one can access Keycloak UI or REST endpoints and edit Keycloak database on the fly when export or import is in progress.
-Otherwise it could lead to inconsistent results. 
+{{book.project.name}} has the ability export and import the entire database.
+This can be especially useful if you want to migrate your whole {{book.project.name}} database from one environment to another
+or migrate to different database (for example from MySQL to Oracle). Export and import
+is triggered at server boot time  and it's parameters are past in via Java System properties.
+Its important to note that because import and export happens at server startup, that no other actions should be taken on the server
+or the database while this happens.
 
 You can export/import your database either to: 
 
 * Directory on local filesystem
-* Single JSON file on your filesystem            When importing using the "dir" strategy, note that the files need to follow the naming convention specified below.
+* Single JSON file on your filesystem
+
+When importing using the directory strategy, note that the files need to follow the naming convention specified below.
 If you are importing files which were previously exported, the files already follow this convention. 
 
 * {REALM_NAME}-realm.json, such as "acme-roadrunner-affairs-realm.json" for the realm named "acme-roadrunner-affairs"
 * {REALM_NAME}-users-{INDEX}.json, such as "acme-roadrunner-affairs-users-0.json" for the first users file of the realm named "acme-roadrunner-affairs"        
 
-If you import to Directory, you can specify also the number of users to be stored in each JSON file.
+If you export to a directory, you can also specify the number of users that will be stored in each JSON file.
 So if you have very large amount of users in your database, you likely don't want to import them into single file as the file might be very big.
-Processing of each file is done in separate transaction as exporting/importing all users at once could also lead to memory issues. 
 
 To export into unencrypted directory you can use: 
 
@@ -52,12 +55,11 @@ Other available options are:
   If not specified, then all realms will be exported. 
 
 -Dkeycloak.migration.usersExportStrategy::
-can be used to specify for Directory providers to specify where to import users.
-Possible values are: 
-
-* DIFFERENT_FILES - Users will be exported into more different files according to maximum number of users per file. This is default value
-* SKIP - exporting of users will be skipped completely
-* REALM_FILE - All users will be exported to same file with realm (So file like "foo-realm.json" with both realm data and users)
+  can be used to specify for Directory providers to specify where to import users.
+  Possible values are:
+  * DIFFERENT_FILES - Users will be exported into more different files according to maximum number of users per file. This is default value
+  * SKIP - exporting of users will be skipped completely
+  * REALM_FILE - All users will be exported to same file with realm (So file like "foo-realm.json" with both realm data and users)
   * SAME_FILE - All users will be exported to same file but different than realm (So file like "foo-realm.json" with realm data and "foo-users.json" with users)                        
 
 -Dkeycloak.migration.usersPerFile::
@@ -65,14 +67,13 @@ Possible values are:
   It's used only if usersExportStrategy is DIFFERENT_FILES 
 
 -Dkeycloak.migration.strategy::
-is used during import.
-It can be used to specify how to proceed if realm with same name already exists in the database where you are going to import data.
-Possible values are: 
-
-* IGNORE_EXISTING - Ignore importing if realm of this name already exists
-* OVERWRITE_EXISTING - Remove existing realm and import it again with new data from JSON file.
-  If you want to fully migrate one environment to another and ensure that the new environment will contain same data
-    like the old one, you can specify this.                                
+  is used during import.
+  It can be used to specify how to proceed if realm with same name already exists in the database where you are going to import data.
+  Possible values are:
+  * IGNORE_EXISTING - Ignore importing if realm of this name already exists
+  * OVERWRITE_EXISTING - Remove existing realm and import it again with new data from JSON file.
+     If you want to fully migrate one environment to another and ensure that the new environment will contain same data
+     like the old one, you can specify this.
 
 When importing realm files that weren't exported before, the option `keycloak.import` can be used.
 If more than one realm file needs to be imported, a comma separated list of file names can be specified.
@@ -82,7 +83,7 @@ Examples:
 * -Dkeycloak.import=/tmp/realm1.json
 * -Dkeycloak.import=/tmp/realm1.json,/tmp/realm2.json        
 
-== Admin console export/import
+=== Admin console export/import
 
 Import of most resources can be performed from the admin console.
 Exporting resources will be supported in future versions. 
