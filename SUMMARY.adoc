@@ -3,6 +3,7 @@
  . link:topics/preface.adoc[Preface]
  . link:topics/overview/overview.adoc[Overview]
    .. link:topics/overview/what-are-client-adapters.adoc[What are Client Adapters?]
+   .. link:topics/overview/supported-platforms.adoc[Supported Platforms]
    .. link:topics/overview/supported-protocols.adoc[Supported Protocols]
 
  . link:topics/oidc/oidc-overview.adoc[OpenID Connect]
