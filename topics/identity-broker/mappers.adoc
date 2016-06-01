@@ -1,4 +1,4 @@
-
+[[_mappers]]
 === Mapping Claims and Assertions
 
 You can import the SAML and OpenID Connect metadata provided by the external IDP you are authenticating with into the environment

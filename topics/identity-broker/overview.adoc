@@ -26,11 +26,11 @@ image:../../images/identity_broker_flow.png[]
   If valid, it will import and create a new user or just skip that if the user already exists.
   If it is a new user, {{book.project.name}} may ask the identity provider for information about the user if that info doesn't already exist in the token.
   This is what we call _identity federation_.
-  If the user already exists Keycloak may ask him to link the identity returned from the identity provider with his existing account.
+  If the user already exists {{book.project.name}} may ask him to link the identity returned from the identity provider with his existing account.
   A process that we call _account linking_.
-  What exactly is done is configurable and can be specified by setup of <<fake/../../identity-broker/first-login-flow.adoc#_identity_broker_first_login,First Login Flow>> . At the end of this step, Keycloak authenticates the user and issues its own token in order to access the requested resource in the service provider.
-. Once the user is locally authenticated, Keycloak redirects the user to the service provider by sending the token previously issued during the local authentication.
-. The service provider receives the token from Keycloak and allows access to the protected resource.
+  What exactly is done is configurable and can be specified by setup of <<fake/../../identity-broker/first-login-flow.adoc#_identity_broker_first_login,First Login Flow>> . At the end of this step, {{book.project.name}} authenticates the user and issues its own token in order to access the requested resource in the service provider.
+. Once the user is locally authenticated, {{book.project.name}} redirects the user to the service provider by sending the token previously issued during the local authentication.
+. The service provider receives the token from {{book.project.name}} and allows access to the protected resource.
 
 There are some variations of this flow that we will talk about later.
 For instance, instead of presenting a list of identity providers, the client application request a specific one.

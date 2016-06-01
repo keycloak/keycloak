@@ -1,4 +1,4 @@
-[[_identity-brokering]]
+[[_identity_broker]]
 
 == Identity Brokering
 

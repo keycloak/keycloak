@@ -101,6 +101,7 @@
  .. link:topics/threat/password-db-compromised.adoc[Password database compromised]
  .. link:topics/threat/scope.adoc[Limiting Scope]
  .. link:topics/threat/sql.adoc[SQL Injection Attacks]
+ {% if book.community %}
  . link:topics/MigrationFromOlderVersions.adoc[Migration from older versions]
-
+ {% endif %}
 

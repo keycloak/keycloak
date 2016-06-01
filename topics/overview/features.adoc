@@ -26,7 +26,7 @@
 * Deployable as a WAR, appliance, or on Openshift.  Completely clusterable.
 * Multitenancy support.  You can host and manage multiple realms for multiple organizations.   In the same auth server
   and even within the same deployed application.
-* Identity brokering/chaining.  You can make the Keycloak server a child IDP to another SAML 2.0 or OpenID Connect IDP.
+* Identity brokering/chaining.  You can make the {{book.project.name}} server a child IDP to another SAML 2.0 or OpenID Connect IDP.
 * Token claim, assertion, and attribute mappings.  You can map user attributes, roles, and role names however you want
   into a OIDC ID Token, Access Token, SAML attribute statements, etc.  This feature allows you to basically
   tailor how you want auth responses to look.

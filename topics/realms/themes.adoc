@@ -1,4 +1,4 @@
-
+[[_themes]]
 === Themes and Internationalization
 
 Themes allow you to change the look and feel of any UI in {{book.project.name}}.  Themes are configured per realm.  To change
