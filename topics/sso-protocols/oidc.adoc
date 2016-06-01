@@ -5,17 +5,17 @@
 link:http://openid.net/connect/[Open ID Connect] (OIDC) is an authentication protocol that is an extension of link:https://tools.ietf.org/html/rfc6749[OAuth 2.0].
 While OAuth 2.0 is only a framework for building authorization protocols and is mainly incomplete, OIDC is a full-fledged authentication and authorization
 protocol.  OIDC also makes heavy use of the link:https://jwt.io[Json Web Token] (JWT) set of standards.  These standards define a
-identity token JSON format and ways to digitially sign and encrypt that data in a compact and web-friendly way.
+identity token JSON format and ways to digitally sign and encrypt that data in a compact and web-friendly way.
 
 There is really two types of use cases when using OIDC.  The first is an application that asks the {{book.project.name}} server to authenticate
 a user for them.  After a successful login, the application will receive an _identity token_ and an _access token_.  The _identity token_
-contains information about the user such as username, email, and other profile information.  The _access token_ is digitially signed by
+contains information about the user such as username, email, and other profile information.  The _access token_ is digitally signed by
 the realm and contains access information (like user role mappings) that the application can use to determine what resources the user
 is allowed to access on the application.
 
 The second type of use cases is that of a client that wants to gain access to remote services.  In this case, the client asks {{book.project.name}}
 to obtain an _access token_ it can use to invoke on other remote services on behalf of the user.  {{book.project.name}} authenticates the user
-then asks the user for consent to grant access to the client requesting it.  The clien then receives the _access token_.  This _access token_
+then asks the user for consent to grant access to the client requesting it.  The client then receives the _access token_.  This _access token_
 is digitally signed by the realm.  The client can make REST invocations on remote services using this _access token_.  The REST service
 extracts the _access token_, verifies the signature of the token, then decides based on access information within the token whether or not to process
 the request.
@@ -31,7 +31,7 @@ OIDC and OAuth 2.0 specifications so only a brief overview will be provided here
 ===== Authorization Code Flow
 
 This is a browser-based protocol and what we recommend you use to authenticate and authorize browser-based applications.  It makes
-heavy use of browser redirects to obtain an _identiy_ and _access_ token.  Here's a brief summary
+heavy use of browser redirects to obtain an _identity_ and _access_ token.  Here's a brief summary
 
 . Browser visits application.  The application notices the user is not logged in, so it redirects the browser to {{book.project.name}}
   to be authenticated.  The application passes along a callback URL (a redirect URL) as a query parameter in this browser redirect
@@ -62,7 +62,7 @@ into this in the
 ===== Implicit Flow
 
 This is a browser-based protocol that is similar to Authorization Code Flow except there are fewer requests and no refresh tokens involved.
-We do not recommend this flow as there remains the possiblity of _access_ tokens being leaked in the browser history as tokens are transmitted
+We do not recommend this flow as there remains the possibility of _access_ tokens being leaked in the browser history as tokens are transmitted
 via redirect URIs (see below).  Also, since this flow doesn't provide the client with a refresh token, access tokens would either have to
 be long-lived or users would have to re-authenticate when they expired.  This flow is supported because its in the OIDC and OAuth 2.0 specification.
 Here's a brief summary of the protocol:
@@ -71,7 +71,7 @@ Here's a brief summary of the protocol:
   to be authenticated.  The application passes along a callback URL (a redirect URL) as a query parameter in this browser redirect
   that {{book.project.name}} will use when it finishes authentication.
 . {{book.project.name}} authenticates the user and creates an _identity_ and _access_ token.  {{book.project.name}}
-  redirects back to the appliciation using the callback URL provided earlier and additionally adding the _identity_ and
+  redirects back to the application using the callback URL provided earlier and additionally adding the _identity_ and
   _access_ tokens as query parameters in the callback URL.
 . The application extracts the the _identity_ and _access_ tokens from the callback URL.
 

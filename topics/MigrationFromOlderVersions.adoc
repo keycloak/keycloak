@@ -156,7 +156,7 @@ See documentation for more details if you want to catch and handle adapter error
 ===== IdentityProviderMapper changes
 
 There is no change in the interface itself or method signatures.
-However there is some change in behaviour.
+However there is some change in behavior.
 We added `First Broker Login` flow in this release and the method `IdentityProviderMapper.importNewUser` is now called after `First Broker Login` flow is finished.
 So if you want to have any attribute available in `Review Profile` page, you would need to use the method `preprocessFederatedIdentity` instead of `importNewUser` . You can set any attribute by invoke `BrokeredIdentityContext.setUserAttribute` and that will be available on `Review profile` page. 
 
