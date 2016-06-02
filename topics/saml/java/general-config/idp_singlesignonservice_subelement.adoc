@@ -1,7 +1,9 @@
 
 ===== IDP SingleSignOnService sub element
 
-The `SignleSignOnService` sub element defines the login SAML endpoint of the IDP. 
+The `SingleSignOnService` sub element defines the login SAML endpoint of the IDP.
+The client adapter will send requests
+to the IDP formatted via the settings within this element when it wants to login.
 
 [source,xml]
 ----
@@ -11,23 +13,27 @@ The `SignleSignOnService` sub element defines the login SAML endpoint of the IDP
                      requestBinding="post"
                      bindingUrl="url"/>
 ----
+
+Here are the config attributes you can define on this element:
+
 signRequest::
-  Should the client sign authn requests? _OPTIONAL._.
+  Should the client sign authn requests? This setting is _OPTIONAL._.
   Defaults to whatever the IDP `signaturesRequired` element value is. 
 
 validateResponseSignature::
-  Should the client expect the IDP to sign the assertion response document sent back from an auhtn request? _OPTIONAL._ Defaults to whatever the IDP `signaturesRequired` element value is. 
+  Should the client expect the IDP to sign the assertion response document sent back from an auhtn request?
+  This setting _OPTIONAL._ Defaults to whatever the IDP `signaturesRequired` element value is.
 
 requestBinding::
-  This is the SAML binding type used for communicating with the IDP _OPTIONAL._.
-  The default value is POST, but you can set it to REDIRECT as well. 
+  This is the SAML binding type used for communicating with the IDP.  This setting is _OPTIONAL._.
+  The default value is `POST`, but you can set it to `REDIRECT` as well.
 
 responseBinding::
   SAML allows the client to request what binding type it wants authn responses to use.
-  The values of this can be POST or REDIRECT _OPTIONAL._.
+  The values of this can be `POST` or `REDIRECT`.  This setting is _OPTIONAL._.
   The default is that the client will not request a specific binding type for responses. 
 
 bindingUrl::
-  This is the URL for the ID login service that the client will send requests to. _REQUIRED._.         
+  This is the URL for the IDP login service that the client will send requests to. This setting is _REQUIRED._.
 
 

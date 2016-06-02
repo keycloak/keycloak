@@ -1,6 +1,9 @@
 
 ===== RoleIdentifiers element
 
+The `RoleIdentifiers` element defines what SAML attributes within the assertion received from the user should be used
+as role identifiers within the Java EE Security Context for the user.
+
 [source,xml]
 ----
 
@@ -11,10 +14,8 @@
 </RoleIdentifiers>
 ----
 
-This element is optional.
-It defines which SAML attribute values in the assertion should be mapped to a Java EE role.
 By default `Role` attribute values are converted to Java EE roles.
 Some IDPs send roles via a `member` or `memberOf` attribute assertion.
-You define one or more `Attribute` elements to specify which SAML attributes must be converted into roles. 
+You can define one or more `Attribute` elements to specify which SAML attributes must be converted into roles.
 
 

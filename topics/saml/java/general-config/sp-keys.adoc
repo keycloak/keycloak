@@ -2,22 +2,19 @@
 
 ===== SP Keys and Key elements
 
-If the IDP requires that the SP sign all of its requests and/or if the IDP will encrypt assertions, you must define the keys used to do this.
+If the IDP requires that the client application (SP) sign all of its requests and/or if the IDP will encrypt assertions, you must define the keys used to do this.
 For client signed documents you must define both the private and public key or certificate that will be used to sign documents.
 For encryption, you only have to define the private key that will be used to decrypt. 
 
 There are two ways to describe your keys.
-Either they are stored within a Java KeyStore or you can cut and paste the keys directly within `keycloak-saml.xml`            in the PEM format. 
+They can be stored within a Java KeyStore or you can  or you can cut and paste the keys directly within `keycloak-saml.xml` in the PEM format.
 
 [source,xml]
 ----
 
         <Keys>
             <Key signing="true" >
-                <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
-                    <PrivateKey alias="http://localhost:8080/sales-post-sig/" password="test123"/>
-                    <Certificate alias="http://localhost:8080/sales-post-sig/"/>
-                </KeyStore>
+               ...
             </Key>
         </Keys>
 ----
