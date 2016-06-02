@@ -1,0 +1,11 @@
+
+===== SP PrincipalNameMapping element
+
+This element is optional.
+When creating a Java Principal object that you obtain from methods like HttpServletRequest.getUserPrincipal(), you can define what name that is returned by the Principal.getName() method.
+The `policy` attribute defines the policy used to populate this value.
+The values are `FROM_NAME_ID`.
+This policy just grabs whatever the SAML subject value is.
+The other is `FROM_ATTRIBUTE`.
+This will pull the value of Principal.getName() from one of the attributes in the SAML assertion received from the server.
+The default value is `FROM_NAME_ID`. 

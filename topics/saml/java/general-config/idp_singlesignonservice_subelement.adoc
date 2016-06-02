@@ -1,0 +1,33 @@
+
+===== IDP SingleSignOnService sub element
+
+The `SignleSignOnService` sub element defines the login SAML endpoint of the IDP. 
+
+[source,xml]
+----
+
+<SingleSignOnService signRequest="true"
+                     validateResponseSignature="true"
+                     requestBinding="post"
+                     bindingUrl="url"/>
+----
+signRequest::
+  Should the client sign authn requests? _OPTIONAL._.
+  Defaults to whatever the IDP `signaturesRequired` element value is. 
+
+validateResponseSignature::
+  Should the client expect the IDP to sign the assertion response document sent back from an auhtn request? _OPTIONAL._ Defaults to whatever the IDP `signaturesRequired` element value is. 
+
+requestBinding::
+  This is the SAML binding type used for communicating with the IDP _OPTIONAL._.
+  The default value is POST, but you can set it to REDIRECT as well. 
+
+responseBinding::
+  SAML allows the client to request what binding type it wants authn responses to use.
+  The values of this can be POST or REDIRECT _OPTIONAL._.
+  The default is that the client will not request a specific binding type for responses. 
+
+bindingUrl::
+  This is the URL for the ID login service that the client will send requests to. _REQUIRED._.         
+
+

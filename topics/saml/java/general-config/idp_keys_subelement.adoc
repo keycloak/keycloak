@@ -1,0 +1,6 @@
+
+===== IDP Keys subelement
+
+The Keys sub element of IDP is only used to define the certificate or public key to use to verify documents signed by the IDP.
+It is defined in the same way as the <<_sp_keys,SP's Key's element>>.
+But again, you only have to define one certificate or public key reference. 

@@ -1,0 +1,49 @@
+
+===== SP Element
+
+Here is the explanation of the SP element attributes 
+
+[source,xml]
+----
+
+<SP entityID="sp"
+    sslPolicy="ssl"
+    nameIDPolicyFormat="format"
+    forceAuthentication="true"
+    isPassive="false">
+...
+</SP>
+----
+entityID::
+  This is the identifier for this client.
+  The IDP needs this value to determine who the client is that is communicating with it. _REQUIRED._                        
+
+sslPolicy::
+  This is the SSL policy the adapter will enforce.
+  Valid values are: ALL, EXTERNAL, and NONE.
+  For ALL, all requests must come in via HTTPS.
+  For EXTERNAL, only non-private IP addresses must come over the wire via HTTPS.
+  For NONE, no requests are required to come over via HTTPS.
+  This is _OPTIONAL._ and defaults to EXTERNAL. 
+
+nameIDPolicyFormat::
+  SAML clients can request a specific NameID Subject format.
+  Fill in this value if you want a specific format.
+  It must be a standard SAML format identifier, i.e. `urn:oasis:names:tc:SAML:2.0:nameid-format:transient` _OPTIONAL._.
+  By default, no special format is requested. 
+
+forceAuthentication::
+  SAML clients can request that a user is re-authenticated even if they are already logged in at the IDP.
+  Set this to `true` if you want this. _OPTIONAL._.
+  Set to `false` by default. 
+
+isPassive::
+  SAML clients can request that a user is never asked to authenticate even if they are not logged in at the IDP.
+  Set this to `true` if you want this.
+  Do not use together with `forceAuthentication` as they are opposite. _OPTIONAL._.
+  Set to `false` by default. 
+
+turnOffChangeSessionIdOnLogin::
+  The session id is changed by default on a successful login on some platforms to plug a security attack vector (Tomcat 8, Jetty9, Undertow/Wildfly).  Change this to true if you want to turn this off This is _OPTIONAL_.
+  The default value is _false_.         
+

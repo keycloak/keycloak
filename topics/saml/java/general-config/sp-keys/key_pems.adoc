@@ -1,0 +1,6 @@
+
+====== Key PEMS
+
+Within the `Key` element you alternatively declare your keys and certificates directly using the sub elements `PrivateKeyPem`, `PublicKeyPem`, and `CertificatePem`.
+The values contained in these elements must conform to the PEM key format.
+You usually use this option if you are generating keys using `openssl`   
