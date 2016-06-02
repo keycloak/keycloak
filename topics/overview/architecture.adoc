@@ -74,10 +74,63 @@ what you want to protect (resource or scope) and the policies that must be satis
 
 === Authorization Services
 
-Authorization Services consist of the following RESTFul services:
+Authorization Services consist of the following RESTFul APIs:
 
-* link:../service/protection-api.html[Protection Services]
-* link:../service/authorization-api.html[Authorization Services]
-* link:../service/entitlement-api.html[Entitlement Services]
+* *Protection API*
+* *Authorization API*
+* *Entitlement API*
 
 Each of these services provide a specific API covering the different steps involved in the process of authorization.
+
+==== Protection API
+
+The *Protection API* is a https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA-compliant] endpoint providing a small set of operations
+for resource servers in order help them managing their resources and scopes. Only resource servers are allowed to access this API, which also requires a
+*uma_protection* scope.
+
+The operations provided by the Protection API can be organized in two main groups:
+
+* Resource Management
+    ** Create Resource
+    ** Delete Resource
+    ** Find by Id
+    ** Find All
+    ** Find with filters (eg.: search by name, type or URI)
+* Permission Management
+    ** Issue Permission Tickets
+
+[NOTE]
+By default, Remote Resource Management is enabled. But you can also disable that from the administration console.
+
+The issuance of Permission Tickets by the Protection API is an important part of the whole authorization process. As we'll see later, they represent the permissions
+being requested by client and that are sent to the server in order to obtain a final token with all permissions granted during the evaluation of the permissions and policies
+associated with the resources and scopes being requested.
+
+For more information, see link:../service/protection-api.html[Protection API].
+
+==== Authorization API
+
+The *Authorization API* is also a https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA-compliant] endpoint providing a single operation that exchanges an ID Token and _Permission Ticket_
+with a Requesting Party Token or RPT.
+
+The RPT holds all permissions granted to a client and can be used to call a resource server in order to get access to its protected resources.
+
+When asking a RPT you can also provide a previously issued RPT. In this case, the resulting RPT will consist of a union of the permissions from the previously RPT and the new ones
+within a Permission Ticket.
+
+image:../../images/authz-calls.png[alt="Authorization API Overview"]
+
+For more information, see link:../service/authorization-api.html[Authorization API].
+
+=== Entitlement API
+
+The *Entitlement API* provides a 1-legged protocol to issue RPTs. Differently than the_Authorization API, the Entitlement API only expects an ID Token and the resulting RPT
+consists of all permissions granted based on all resources belonging to a resource server.
+
+image:../../images/entitlement-calls.png[alt="Entitlement API Overview"]
+
+For more informationm, see link:../service/entitlement-api.html[Entitlement API].
+
+
+
+
