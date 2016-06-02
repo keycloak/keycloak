@@ -13,18 +13,19 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.performance.page.AppProfileJEE;
 import org.openqa.selenium.By;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.AVERAGE_LOGIN_TIME_LIMIT;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.AVERAGE_LOGOUT_TIME_LIMIT;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.LOGIN_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.LOGOUT_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.ACCESS_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.LOGIN_VERIFY_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.LOGOUT_VERIFY_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGIN_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGOUT_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.ACCESS_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGIN_VERIFY_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGOUT_VERIFY_REQUEST_TIME;
 import org.keycloak.testsuite.performance.PerformanceTest;
-import static org.junit.Assert.assertTrue;
 import org.keycloak.testsuite.performance.OperationTimeoutException;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import org.openqa.selenium.TimeoutException;
+import org.keycloak.testsuite.performance.PerformanceMeasurement;
+import org.keycloak.testsuite.performance.LoginLogoutTestParameters;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.PASSWORD_HASH_ITERATIONS;
+import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 
 /**
  *
@@ -65,7 +66,9 @@ public class HtmlUnitLoginLogoutPerfTest extends HtmlUnitPerformanceTest {
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(loadRealm("/examples-realm.json"));
+        RealmRepresentation examplesRealm = loadRealm("/examples-realm.json");
+        examplesRealm.setPasswordPolicy("hashIterations(" + PASSWORD_HASH_ITERATIONS + ")");
+        testRealms.add(examplesRealm);
     }
 
     @Before
@@ -83,16 +86,15 @@ public class HtmlUnitLoginLogoutPerfTest extends HtmlUnitPerformanceTest {
     }
 
     @Override
-    protected boolean isLatestResultsWithinLimits() {
-        return getLatestResults().get(LOGIN_REQUEST_TIME).getAverage() < AVERAGE_LOGIN_TIME_LIMIT
-                && getLatestResults().get(LOGOUT_REQUEST_TIME).getAverage() < AVERAGE_LOGOUT_TIME_LIMIT;
+    protected boolean isMeasurementWithinLimits(PerformanceMeasurement measurement) {
+        return LoginLogoutTestParameters.isMeasurementWithinLimits(measurement);
     }
 
     public class Runnable extends HtmlUnitPerformanceTest.Runnable {
 
         @Override
         public void performanceScenario() throws Exception {
-            LOG.debug(String.format("Starting login-logout scenario #%s", getRepeatCounter()));
+            LOG.trace(String.format("Starting login-logout scenario #%s", getLoopCounter()));
             driver.manage().deleteAllCookies();
 
             // ACCESS
@@ -104,7 +106,7 @@ public class HtmlUnitLoginLogoutPerfTest extends HtmlUnitPerformanceTest {
             } catch (TimeoutException ex) {
                 throw new OperationTimeoutException(ACCESS_REQUEST_TIME, ex);
             }
-            metrics.addValue(ACCESS_REQUEST_TIME, timer.getElapsedTime());
+            statistics.addValue(ACCESS_REQUEST_TIME, timer.getElapsedTime());
 
             // LOGIN
             LOG.trace("Logging in");
@@ -119,7 +121,7 @@ public class HtmlUnitLoginLogoutPerfTest extends HtmlUnitPerformanceTest {
             } catch (TimeoutException ex) {
                 throw new OperationTimeoutException(LOGIN_REQUEST_TIME, ex);
             }
-            metrics.addValue(LOGIN_REQUEST_TIME, timer.getElapsedTime());
+            statistics.addValue(LOGIN_REQUEST_TIME, timer.getElapsedTime());
 
             // VERIFY LOGIN
             LOG.trace("Verifying login");
@@ -130,7 +132,7 @@ public class HtmlUnitLoginLogoutPerfTest extends HtmlUnitPerformanceTest {
             } catch (TimeoutException ex) {
                 throw new OperationTimeoutException(LOGIN_VERIFY_REQUEST_TIME, ex);
             }
-            metrics.addValue(LOGIN_VERIFY_REQUEST_TIME, timer.getElapsedTime());
+            statistics.addValue(LOGIN_VERIFY_REQUEST_TIME, timer.getElapsedTime());
 
             // LOGOUT
             LOG.trace("Logging out");
@@ -141,7 +143,7 @@ public class HtmlUnitLoginLogoutPerfTest extends HtmlUnitPerformanceTest {
             } catch (TimeoutException ex) {
                 throw new OperationTimeoutException(LOGOUT_REQUEST_TIME, ex);
             }
-            metrics.addValue(LOGOUT_REQUEST_TIME, timer.getElapsedTime());
+            statistics.addValue(LOGOUT_REQUEST_TIME, timer.getElapsedTime());
 
             // VERIFY LOGOUT
             LOG.trace("Verifying logout");
@@ -152,7 +154,7 @@ public class HtmlUnitLoginLogoutPerfTest extends HtmlUnitPerformanceTest {
             } catch (TimeoutException ex) {
                 throw new OperationTimeoutException(LOGOUT_VERIFY_REQUEST_TIME, ex);
             }
-            metrics.addValue(LOGOUT_VERIFY_REQUEST_TIME, timer.getElapsedTime());
+            statistics.addValue(LOGOUT_VERIFY_REQUEST_TIME, timer.getElapsedTime());
 
             LOG.trace("Logged out");
         }

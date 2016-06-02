@@ -12,6 +12,7 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -45,6 +46,7 @@ public abstract class HttpClientPerformanceTest extends PerformanceTest {
                 .setDefaultCookieStore(new BasicCookieStore())
                 .setDefaultRequestConfig(getDefaultRequestConfig())
                 .setRedirectStrategy(new CustomRedirectStrategy())
+                .setRetryHandler(new DefaultHttpRequestRetryHandler(0, false))
                 .build();
     }
 

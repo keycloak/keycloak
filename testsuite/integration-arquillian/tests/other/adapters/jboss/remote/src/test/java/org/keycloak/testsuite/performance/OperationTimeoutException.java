@@ -6,21 +6,21 @@ package org.keycloak.testsuite.performance;
  */
 public class OperationTimeoutException extends Exception {
 
-    private final String metric;
+    private final String statistic;
     private final long value;
 
-    public OperationTimeoutException(String metric, Throwable cause) {
-        this(metric, 0, cause);
+    public OperationTimeoutException(String statistic, Throwable cause) {
+        this(statistic, 0, cause);
     }
 
-    public OperationTimeoutException(String metric, long value, Throwable cause) {
+    public OperationTimeoutException(String statistic, long value, Throwable cause) {
         super(cause);
-        this.metric = metric;
+        this.statistic = statistic;
         this.value = value;
     }
 
-    public String getMetric() {
-        return metric;
+    public String getStatistic() {
+        return statistic;
     }
 
     public long getValue() {
