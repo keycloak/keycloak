@@ -2,11 +2,10 @@
 [[_java_adapter_config]]
 === Java Adapter Config
 
-Each adapter supported by Keycloak can be configured by a simple JSON text file.
+Each Java adapter supported by Keycloak can be configured by a simple JSON file.
 This is what one might look like:
 
-
-[source]
+[source,json]
 ----
 {
   "realm" : "demo",
@@ -36,84 +35,75 @@ This is what one might look like:
 }
 ----
 
-Some of these configuration switches may be adapter specific and some are common across all adapters.
-For Java adapters you can use `${...}` enclosure as System property replacement.
-For example `${jboss.server.config.dir}`.
-Also, you can obtain a template for this config file from the admin console.
-Go to the realm and select the application you want a template for.
-Go to the `Installation` tab and this will provide you with a template that includes the public key of the realm.
+You can use `${...}` enclosure for system property replacement. For example `${jboss.server.config.dir}` would be replaced by `/path/to/{{book.project.name}}`.
 
-Here is a description of each item:
+The initial config file can be ontained from the the admin console. This can be done by opening the admin console, select `Clients` from the menu and clicking
+on the corresponding client. Once the page for the client is opened click on the `Installation` tab and select `Keycloak OIDC JSON`.
 
-
+Here is a description of each configuration option:
 
 realm::
   Name of the realm representing the users of your distributed applications and services.
   This is _REQUIRED._
 
 resource::
-  Username of the application.
-  Each application has a username that is used when the application connects with the Keycloak server to turn an access code into an access token (part of the OAuth 2.0 protocol). This is _REQUIRED._
-
-realm-public-key::
-  PEM format of public key.
-  You can obtain this from the administration console.
+  The client-id of the application. Each application has a client-id that is used to identify the application.
   This is _REQUIRED._
 
+realm-public-key::
+  PEM format of the realm public key. You can obtain this from the administration console.
+  This is OPTION._
+
 auth-server-url::
-  The base URL of the Keycloak Server.
-  All other Keycloak pages and REST services are derived from this.
-  It is usually of the form `https://host:port/auth`                        This is _REQUIRED._
+  The base URL of the {{book.project.name}} server. All other {{book.project.name}} pages and REST service endpoints are derived from this. It is usually of the form `https://host:port/auth`.
+  This is _REQUIRED._
 
 ssl-required::
-  Ensures that all communication to and from the Keycloak server from the adapter is over HTTPS.
+  Ensures that all communication to and from the {{book.project.name}} server is over HTTPS.
+  In production this should be set to `all`.
   This is _OPTIONAL_.
-  The default value is _external_                        meaning that HTTPS is required by default for external requests.
+  The default value is _external_ meaning that HTTPS is required by default for external requests.
   Valid values are 'all', 'external' and 'none'.
 
 use-resource-role-mappings::
-  If set to true, the adapter will look inside the token for application level role mappings for the user.
-  If false, it will look at the realm level for user role mappings.
+  If set to true, the adapter will look inside the token for application level role mappings for the user. If false, it will look at the realm level for user role mappings.
   This is _OPTIONAL_.
   The default value is _false_.
 
 public-client::
   If set to true, the adapter will not send credentials for the client to Keycloak.
+  This is _OPTIONAL_.
   The default value is _false_.
 
 enable-cors::
-  This enables CORS support.
-  It will handle CORS preflight requests.
-  It will also look into the access token to determine valid origins.
+  This enables CORS support. It will handle CORS preflight requests. It will also look into the access token to determine valid origins.
   This is _OPTIONAL_.
   The default value is _false_.
 
 cors-max-age::
-  If CORS is enabled, this sets the value of the `Access-Control-Max-Age`                        header.
+  If CORS is enabled, this sets the value of the `Access-Control-Max-Age` header.
   This is _OPTIONAL_.
   If not set, this header is not returned in CORS responses.
 
 cors-allowed-methods::
-  If CORS is enabled, this sets the value of the `Access-Control-Allow-Methods`                        header.
+  If CORS is enabled, this sets the value of the `Access-Control-Allow-Methods` header.
   This should be a comma-separated string.
   This is _OPTIONAL_.
   If not set, this header is not returned in CORS responses.
 
 cors-allowed-headers::
-  If CORS is enabled, this sets the value of the `Access-Control-Allow-Headers`                        header.
+  If CORS is enabled, this sets the value of the `Access-Control-Allow-Headers` header.
   This should be a comma-separated string.
   This is _OPTIONAL_.
   If not set, this header is not returned in CORS responses.
 
 bearer-only::
-  This tells the adapter to only do bearer token authentication.
-  That is, it will not do OAuth 2.0 redirects, but only accept bearer tokens through the `Authorization`                        header.
+  This should be set to _true_ for services. If enabled the adapter will not attempt to authenticate users, but only verify bearer tokens.
   This is _OPTIONAL_.
   The default value is _false_.
 
 enable-basic-auth::
-  This tells the adapter to also support basic authentication.
-  If this option is enabled, then _secret_ must also be provided.
+  This tells the adapter to also support basic authentication. If this option is enabled, then _secret_ must also be provided.
   This is _OPTIONAL_.
   The default value is _false_.
 
@@ -123,9 +113,8 @@ expose-token::
   The default value is _false_.
 
 credentials::
-  Specify the credentials of the application.
-  This is an object notation where the key is the credential type and the value is the value of the credential type.
-  Currently only `password`                        is supported.
+  Specify the credentials of the application. This is an object notation where the key is the credential type and the value is the value of the credential type.
+  Currently `password` and `jwt` is supported.
   This is _REQUIRED_.
 
 connection-pool-size::
@@ -135,69 +124,63 @@ connection-pool-size::
   The default value is `20`.
 
 disable-trust-manager::
-  If the Keycloak Server requires HTTPS and this config option is set to `true`                        you do not have to specify a truststore.
-  While convenient,  this setting is not recommended as you will not be verifying the host name of the Keycloak Server.
+  If the {{book.project.name}} server requires HTTPS and this config option is set to `true` you do not have to specify a truststore.
+  This setting should only be used during development and *never* in production as it will disable verification of SSL certificates.
   This is _OPTIONAL_.
   The default value is `false`.
 
 allow-any-hostname::
-  If the Keycloak Server requires HTTPS and this config option is set to `true`                        the Keycloak Server's certificate is validated via the truststore, but host name validation is not done.
-  This is not a recommended.
+  If the {{book.project.name}} server requires HTTPS and this config option is set to `true` the Keycloak Server's certificate is validated via the truststore,
+  but host name validation is not done.
+  This setting should only be used during development and *never* in production as it will disable verification of SSL certificates.
   This seting may be useful in test environments This is _OPTIONAL_.
   The default value is `false`.
 
 truststore::
-  This setting is for Java adapters.
-  The value is the file path to a Java keystore file.
+  The value is the file path to a keystore file.
   If you prefix the path with `classpath:`, then the truststore will be obtained from the deployment's classpath instead.
-  Used for outgoing HTTPS communications to the Keycloak server.
+  Used for outgoing HTTPS communications to the {{book.project.name}} server.
   Client making HTTPS requests need a way to verify the host of the server they are talking to.
   This is what the trustore does.
   The keystore contains one or more trusted host certificates or certificate authorities.
   You can create this truststore by extracting the public certificate of the Keycloak server's SSL keystore.
-  This is _OPTIONAL_                        if `ssl-required`                        is `none`                        or `disable-trust-manager`                        is `true`.
+  This is _OPTIONAL_ if `ssl-required` is `none` or `disable-trust-manager` is `true`.
 
 truststore-password::
   Password for the truststore keystore.
-  This is _REQUIRED_                        if `truststore`                        is set.
+  This is _REQUIRED_ if `truststore` is set and the truststore requires a password.
 
 client-keystore::
-  _Not supported yet, but we will support in future versions._                        This setting is for Java adapters.
-  This is the file path to a Java keystore file.
-  This keystore contains client certificate for two-way SSL when the adapter makes HTTPS requests to the Keycloak server.
+  This is the file path to a keystore file.
+  This keystore contains client certificate for two-way SSL when the adapter makes HTTPS requests to the {{book.project.name}} server.
   This is _OPTIONAL_.
 
 client-keystore-password::
-  _Not supported yet, but we will support in future versions._                        Password for the client keystore.
-  This is _REQUIRED_                        if `client-keystore`                        is set.
+  Password for the client keystore.
+  This is _REQUIRED_ if `client-keystore` is set.
 
 client-key-password::
-  _Not supported yet, but we will support in future versions._                        Password for the client's key.
-  This is _REQUIRED_                        if `client-keystore`                        is set.
-
-auth-server-url-for-backend-requests::
-  Alternative location of auth-server-url used just for backend requests.
-  It must be absolute URI.
-  Useful especially in cluster (see <<_relative_uri_optimization,Relative URI Optimization>>) or if you would like to use _https_ for browser requests but stick with _http_ for backend requests etc.
+  Password for the client's key.
+  This is _REQUIRED_ if `client-keystore` is set.
 
 always-refresh-token::
-  If _true_, Keycloak will refresh token in every request.
-  More info in <<_refresh_token_each_req,Refresh token in each request>> .
+  If _true_, the adapter will refresh token in every request.
 
 register-node-at-startup::
   If _true_, then adapter will send registration request to Keycloak.
-  It's _false_                        by default and useful just in cluster (See <<_registration_app_nodes,Registration of application nodes to Keycloak>>)
+  It's _false_ by default and useful only when application is clustered.
+  See link:application-clustering.html[Application Clustering] for details
 
 register-node-period::
   Period for re-registration adapter to Keycloak.
-  Useful in cluster.
-  See <<_registration_app_nodes,Registration of application nodes to Keycloak>> for details.
+  Useful when application is clustered.
+  See link:application-clustering.html[Application Clustering] for details
 
 token-store::
   Possible values are _session_ and _cookie_.
   Default is _session_, which means that adapter stores account info in HTTP Session.
   Alternative _cookie_ means storage of info in cookie.
-  See <<_stateless_token_store,Stateless token store>> for details.
+  See link:application-clustering.html[Application Clustering] for details
 
 principal-attribute::
   OpenID Connection ID Token attribute to populate the UserPrincipal name with.
@@ -205,5 +188,5 @@ principal-attribute::
   Possible values are `sub`, `preferred_username`, `email`, `name`, `nickname`, `given_name`, `family_name`.
 
 turn-off-change-session-id-on-login::
-  The session id is changed by default on a successful login on some platforms to plug a security attack vector (Tomcat 8, Jetty9, Undertow/Wildfly).  Change this to true if you want to turn this off This is _OPTIONAL_.
+  The session id is changed by default on a successful login on some platforms to plug a security attack vector.  Change this to true if you want to turn this off This is _OPTIONAL_.
   The default value is _false_.
