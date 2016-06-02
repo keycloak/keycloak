@@ -31,20 +31,3 @@
    .. link:topics/oidc/oidc-generic.adoc[Other OpenID Connect libraries]
 
  . link:topics/saml/saml-overview.adoc[SAML]
-
-
-// . link:topics/oidc.adoc[OpenID Connect Client Adapters]
-
-//
-//
-//{% if book.community %}
-//
-//
-//{% endif %}
-// .. link:topics/installed-applications.adoc[Installed Applications]
-//
-//
-//
-// . link:topics/saml.adoc[SAML Client Adapters]
-
-
