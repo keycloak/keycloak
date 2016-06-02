@@ -6,6 +6,4 @@ in their organization.  Security features that developers normally have to write
 and are easily tailorable to the individual requirements of your organization.  {{book.project.name}} provides customizable
 user interfaces for login, registration, administration, and account management.  You can also use {{book.project.name}} as an
 integration platform to hook it into existing LDAP and Active Directory servers.  You can also delegate authentication to third
-party identity providers like Facebook and Google+.  {{book.project.name}} has tons of SPIs that you can use to customize every
-aspect of the server.
-
+party identity providers like Facebook and Google+.
