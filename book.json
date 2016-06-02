@@ -60,16 +60,16 @@
 
     },
     "developerguide": {
-      "name": "Keycloak Server Developer Guide",
+      "name": "Server Developer Guide",
       "link": "https://keycloak.gitbooks.io/server-developer-guide/content/"
 
     },
     "adminguide": {
-      "name": "Keycloak Administration Guide",
+      "name": "Server Administration Guide",
       "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
     },
     "installguide": {
-      "name": "Keycloak Installation and Configuration Guide",
+      "name": "Server Installation and Configuration Guide",
       "link": "https://keycloak.gitbooks.io/server-install-guide/content/"
     },
     "adapterguide": {
