@@ -14,7 +14,7 @@ authenticate their users, that information is usually stored into user's session
 In Keycloak, any *confidential* client application may act as a resource server. Whose resources and their respective scopes are
 protected and ruled by a set of authorization policies.
 
-==== Resource Server
+==== Resource
 
 A resource is part of the assets of an application and the organization. It may be a single API
 endpoint, a set of API endpoints, a classic web resource such as an HTML page, and so on.
@@ -23,33 +23,6 @@ In authorization policy terminology, a resource is the _object_ being protected.
 Every single resource has a unique identifier, where a resource may also be used to represent a single
 or a set of resources. For instance, you may want to manage a _Banking Account Resource_ that represents and defines a set of authorization policies for all banking accounts.
 But you may also have a _Alice Banking Account_, which represents a single resource owned by a single customer, which may have its own set of authorization policies.
-
-In {{book.project.name}}, a resource defines a small set of information that is common to different types of resources, such as:
-
-* *Name*
-+
-A human-readable and unique string describing a set of one or more resources.
-+
-* *Type*
-+
-A string uniquely identifying the type of a set of one or more resources. Usually, the type is a URN that can be used to
-group different resource instances.
-+
-* *URI*
-+
-A URI that provides the location/address for the resource. For HTTP resources, the URI
-is usually the relative path used to serve these resources.
-+
-* *Scopes*
-+
-A bounded extent of access that is possible to perform on a resource. In authorization
-policy terminology, a scope is one of the potentially many <literal>verbs</literal> that can logically
-apply to a resource.
-+
-* *Owner*
-+
-An entity that owns the resource. It can be the resource server itself or even a
-specific user.
 
 ==== Scope
 
@@ -70,22 +43,6 @@ A single scope may be associated with zero or more resources.
 ==== Permission
 
 A permission associates the object being protected and the policies that must be evaluated in order to decide whether access should be granted or not.
-
-In {{book.project.name}}, a permission can be defined for a:
-
-* *Resource*
-+
-In this case, the permission is associated with a set of one or more resources. Here you can define that only a specific
-resource with a specific _name_ or _identifier_ is protected or even use a _type_ to protect any resource with a given type.
-
-
-* *Scope*
-+
-In this case, the permission is associated with a set of one or more scopes. Where you may want to protect scopes associated with a
-specific resource or any scope regardless the resources they are associated.
-
-When associating policies to permissions, you can also define the _decision strategy_ that will be used during the evaluation of these
-policies in order to decide whether a permission is granted or not depending on the outcome of each associated policy.
 
 ==== Policy
 

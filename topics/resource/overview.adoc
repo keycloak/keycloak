@@ -9,6 +9,33 @@ be created to represent a set of one or more resources and the way you define th
 Resources also have an owner. By default, resources created from the adminstration console are owned by the resource server itself. However, resources can also be associated with your users, so you can
 create permissions based on the resource owner. For instance, only the resource owner is allowed to delete or update a given resource.
 
+In {{book.project.name}}, a resource defines a small set of information that is common to different types of resources, such as:
+
+* *Name*
++
+A human-readable and unique string describing a set of one or more resources.
++
+* *Type*
++
+A string uniquely identifying the type of a set of one or more resources. Usually, the type is a URN that can be used to
+group different resource instances.
++
+* *URI*
++
+A URI that provides the location/address for the resource. For HTTP resources, the URI
+is usually the relative path used to serve these resources.
++
+* *Scopes*
++
+A bounded extent of access that is possible to perform on a resource. In authorization
+policy terminology, a scope is one of the potentially many <literal>verbs</literal> that can logically
+apply to a resource.
++
+* *Owner*
++
+An entity that owns the resource. It can be the resource server itself or even a
+specific user.
+
 Resource management is also exposed through the *Protection API* to allow resource servers to remotely manage their resources. This is a very important
 feature that allows resource servers to obtain the list of protected resources in order to actually enforce the authorization decisions. We'll see more on that
 later when we talk about _Policy Enforcers_.
