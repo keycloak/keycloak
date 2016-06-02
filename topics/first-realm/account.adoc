@@ -7,7 +7,7 @@ Next, login to the User Account Service of your `demo` realm with the user you j
 User Account Link::
   http://localhost:8080/auth/realms/demo/account
 
-Enter in the username and temporary password you created.  You will be asked to change and create a permanent password after you
+Enter the username and temporary password you created.  You will be asked to change and create a permanent password after you
 successfully login.
 
 .Update Password

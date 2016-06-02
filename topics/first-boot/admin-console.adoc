@@ -7,7 +7,7 @@ Alternatively you can go to the console url directly at http://localhost:8080/au
 .Login Page
 image:../../{{book.images}}/login-page.png[]
 
-Enter the username and password you created on the Welcome Page.  This will bring you to the {{book.project.name}} Admin Console
+Enter the username and password you created on the Welcome Page.  This will bring you to the {{book.project.name}} Admin Console.
 
 .Admin Console
 image:../../{{book.images}}/admin-console.png[]

@@ -8,7 +8,7 @@ Login to the {{book.project.name}} Admin Console using the account you created i
 Admin Console Link::
   http://localhost:8080/auth/admin/
 
-Mouse over the top left corner drop down menu that is titled with `Master`.  If you are logged in the master realm
+Place the mouse over the top left corner drop down menu that is titled with `Master`.  If you are logged in the master realm
 this drop down menu lists all the realms created.  The last entry of this drop down menu is always `Add Realm`.  Click
 this to add a realm.
 
@@ -22,7 +22,7 @@ enter in `demo` for the realm name and click `Create`.
 image:../../{{book.images}}/create-realm.png[]
 
 After creating the realm you are brought back to the main Admin Console page. The current realm will now be set to
-`demo`.  You can switch between managing the `master` realm and the realm you just created by doing a mouse over on the
+`demo`.  You can switch between managing the `master` realm and the realm you just created by doing a mouseover on the
 top left corner drop down menu.
 
 
