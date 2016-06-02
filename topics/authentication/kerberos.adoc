@@ -88,7 +88,7 @@ and enable `Kerberos`.
 .browser flow
 image:../../{{book.images}}/browser-flow.png[]
 
-Switch the `Kerbros` requirement from _disabled_ to either _alternative_ or _required_.  _Alternative_ basically means that Kerberos is optional.  If
+Switch the `Kerberos` requirement from _disabled_ to either _alternative_ or _required_.  _Alternative_ basically means that Kerberos is optional.  If
 the user's browser hasn't been configured to work with SPNEGO/Kerberos, then {{book.project.name}} will fall back to the regular login screens.  If you set the requirement
 to _required_ then all users must have Kerberos enabled for their browser.
 
@@ -153,7 +153,7 @@ To have this claim inserted into the token or assertion, each application will n
 This is enabled in the `Mappers` tab of the application's
 client page.  See <<fake/../../clients/protocol-mappers.adoc#_protocol-mappers, Protocol Mappers>> chapter for more details.
 
-Applications will ned to deserialize the claim it receives from {{book.project.name}} before it can use it to make GSS calls against other services.
+Applications will need to deserialize the claim it receives from {{book.project.name}} before it can use it to make GSS calls against other services.
 We have an example, that shows this in detail.
 It's in `examples/kerberos` in the {{book.project.name}} example distribution or demo distribution download.
 You can also check the example sources directly https://github.com/keycloak/keycloak/blob/master/examples/kerberos[here] . 

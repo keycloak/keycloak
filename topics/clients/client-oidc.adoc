@@ -2,7 +2,7 @@
 === OIDC Clients
 
 <<fake/../../sso-protocols/oidc.adoc#_oidc,OpenID Connect>> is the preferred protocol to secure applications.  It was designed from the ground up to be web friendly
-and works best with HTML5/Javascript applications.
+and works best with HTML5/JavaScript applications.
 
 To create a OIDC client go to the `Clients` left menu item.  On this page you'll see a `create` button on the right.
 
@@ -61,7 +61,7 @@ _confidential_::
   Confidential access type is for clients that need to perform a browser login and that you want to require a client secret when they turn an access code into an access token,
   (see http://tools.ietf.org/html/rfc6749#section-4.1.3[Access Token Request] in the OAuth 2.0 spec for more details).  The advantages of this is that it is a little extra security.
   Since {{book.project.name}} requires you to register valid redirect-uris, we're not exactly sure what this little extra security is though.
-  :) The disadvantages of this access type is that confidential access type is pointless for pure Javascript clients as anybody could easily figure out your client's secret!
+  :) The disadvantages of this access type is that confidential access type is pointless for pure JavaScript clients as anybody could easily figure out your client's secret!
 
 _public_::
   Public access type is for clients that need to perform a browser login and that you feel that the added extra security of confidential access type is not needed.
@@ -114,10 +114,10 @@ See link:{{book.adapterguide.link}}[{{book.adapterguide.name}}] for more informa
 *Web Origins*
 
 This option centers around link:http://www.w3.org/TR/cors/[CORS] which stands for Cross-Origin Resource Sharing.
-If executing browser Javascript tries to make an AJAX HTTP request to a server whose domain is different than the one the
-Javascript code came from, then the request uses the CORS.
+If executing browser JavaScript tries to make an AJAX HTTP request to a server whose domain is different than the one the
+JavaScript code came from, then the request uses the CORS.
 The server must handle CORS requests in a special way, otherwise the browser will not display or allow the request to be processed.
-This protocol exists to protect against XSS, CSRF and other Javascript-based attacks.
+This protocol exists to protect against XSS, CSRF and other JavaScript-based attacks.
 
 {{book.project.name}} has support for validated CORS requests.  The way it works is that the domains listed in the
 `Web Origins` setting for the client are embedded within the access token sent to the client application.  The client

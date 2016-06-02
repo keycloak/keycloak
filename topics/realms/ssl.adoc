@@ -18,7 +18,7 @@ The `Require SSL` option allows you to pick the SSL Mode you want.  Here is an e
 
 external requests::
   Users can interact with {{book.project.name}} so long as they stick to private IP addresses like `localhost`, `127.0.0.1`, `10.0.x.x`, `192.168.x.x`, and `172..16.x.x`.
-  If you try to access {{book.project.name}} from a non-private IP adress you will get an error.
+  If you try to access {{book.project.name}} from a non-private IP address you will get an error.
 
 none::
   {{book.project.name}} does not require SSL.  This should really only be used in development when you are playing around with things and don't want to bother

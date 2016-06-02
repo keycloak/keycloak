@@ -7,9 +7,9 @@ SAML tends to be a bit more verbose than OIDC.
 
 Beyond verbosity of exchanged data, if you compare the specifications you'll find that OIDC was designed to work with the
 web while SAML was retrofitted to work on top of the web.  For example,
-OIDC is also much better suited for HTML5/Javascript applications because it is
+OIDC is also much better suited for HTML5/JavaScript applications because it is
 much much simpler to implement on the client side than SAML.  Since tokens are in the JSON format,
-they can be directly consumed by Javascript.  Also, you'll find many nice little switches and features that
+they can be directly consumed by JavaScript.  Also, you'll find many nice little switches and features that
 make implementing security in your web applications easier.  For example, check out the iframe trick that the specification
 uses to easily determine if a user is still logged in or not.
 

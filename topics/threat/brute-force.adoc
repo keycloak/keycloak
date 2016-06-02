@@ -13,12 +13,12 @@ image:../../{{book.images}}/brute-force.png[]
 The way this works is that if there are `Max Login Failures` during a period of `Failure Reset Time`,
 the account is temporarily disabled for the `Wait Increment` multiplied by the number of failures over the max.  After
 `Failure Reset Time` is reached all failures are wiped clean.  The `Max Wait` is the maximum amount of time
-an account can be disabled for.  Another preventitive measure is that if there is subsequent login failures for one
+an account can be disabled for.  Another preventive measure is that if there is subsequent login failures for one
 account that are too quick for a human to initiate the account will be disabled then.  This is controlled by the
 `Quick Login Check Milli Seconds` value.  So, if there are two login failures for the same account within that value,
 the account will be disabled for `Minimum Quick Login Wait`.
 
-The downside of {{book.project.name}} brute force detection is that the server becomes vulnerble to denial of service attacks.
+The downside of {{book.project.name}} brute force detection is that the server becomes vulnerable to denial of service attacks.
 An attacker can simply try to guess passwords for as many accounts it knows and these account will be disabled.  Eventually
 Eventually we will expand this functionality to take client IP address into account when deciding whether to block a user.
 

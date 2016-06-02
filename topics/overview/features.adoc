@@ -1,37 +1,29 @@
 
 === Features
 
-* SSO and Single Log Out for browser applications
-* Social Login.  Enable Google, GitHub, Facebook, Twitter, and other social providers with no code required.
-* LDAP and Active Directory support.
-* Optional User Registration
-* Password and TOTP support (via Google Authenticator).  Client cert auth coming soon.
-* Forgot password support.  User can have an email sent to them
-* Reset password/totp.  Admin can force a password reset, or set up a temporary password.
-* Not-before revocation policies per realm, application, or user.
-* User session management.  Admin can view user sessions and what applications/clients have an access token.  Sessions can be invalidated
-  per realm or per user.
-* Pluggable theme and style support for user facing screens. Login, grant pages, account mgmt, and admin console all
-  can be styled, branded, and tailored to your application and organizational needs.
-* Integrated Browser App to REST Service token propagation
-* OAuth Bearer token auth for REST Services
-* OAuth 2.0 Grant requests
-* OpenID Connect Support.
-* SAML Support.
-* CORS Support
-* CORS Web Origin management and validation
-* Completely centrally managed user and role mapping metadata.  Minimal configuration at the application side
-* Admin Console for managing users, roles, role mappings, clients, user sessions and allowed CORS web origins.
-* Account Management console that allows users to manage their own account, view their open sessions, reset passwords, etc.
-* Deployable as a WAR, appliance, or on Openshift.  Completely clusterable.
-* Multitenancy support.  You can host and manage multiple realms for multiple organizations.   In the same auth server
-  and even within the same deployed application.
-* Identity brokering/chaining.  You can make the {{book.project.name}} server a child IDP to another SAML 2.0 or OpenID Connect IDP.
-* Token claim, assertion, and attribute mappings.  You can map user attributes, roles, and role names however you want
-  into a OIDC ID Token, Access Token, SAML attribute statements, etc.  This feature allows you to basically
-  tailor how you want auth responses to look.
-* Can support any platform that has an Open ID Connect or SAML 2.0 client adapter.  {{book.project.name}} does provide
-  client adapters for Pure HTML5/Javascript apps, JBoss AS7, JBoss EAP 6.x, JBoss EAP 7, Wildfly, Tomcat 7,
-  Tomcat 8, Jetty 9.1.x, Jetty 9.2.x, and Jetty 8.1.x.
-* Tons of SPIs for customizing every aspect of the server.
-
+* Single-Sign On and Single-Sign Out for browser applications
+* OpenID Connect support.
+* OAuth 2.0 support.
+* SAML support.
+* Identity Brokering - Authenticate with external OpenID Connect or SAML Identity Providers.
+* Social Login - Enable login with Google, GitHub, Facebook, Twitter, and other social networks.
+* User Federation - Sync users from LDAP and Active Directory servers.
+* Kerberos bridge - Automatically authenticate users that are logged-in to a Kerberos server.
+* Admin Console for central management of users, roles, role mappings, clients and configuration.
+* Account Management console that allows users to centrally manage their account.
+* Theme support - Customize all user facing pages to integrate with your applications and branding.
+* 2nd Factory Authentication - Support for TOTP/HOTP via Google Authenticator or FreeOTP
+* Login flows - optional user self-registration, recover password, verify email, require password update, etc.
+* Session management - Admins and users themselves can view and manage user sessions.
+* Token mappers - Map user attributes, roles, etc how you want into tokens and statements.
+* Not-before revocation policies per realm, application and user.
+* CORS support - Client adapters have built-in support for CORS
+{% if book.community %}
+* Service Provider Interfaces (SPI) - A number of SPIs to enable customizing various aspects of the server. Authentication flows, user federation providers,
+protocol mappers and many more.
+* Client adapters for JavaScript applications, WildFly, JBoss EAP, Fuse, Tomcat, Jetty, Spring, etc.
+{% endif %}
+{% if book.product %}
+* Client adapters for JavaScript applications, JBoss EAP, Fuse, etc.
+{% endif %}
+* Supports any platform/language that has an OpenID Connect Resource Provider library or SAML 2.0 Service Provider library

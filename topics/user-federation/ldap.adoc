@@ -70,11 +70,11 @@ if the connection to LDAP starts with `ldaps`.
 LDAP Federation Provider will automatically take care of synchronization (import) of needed LDAP users into the {{book.project.name}} local database.
 As users log in, the LDAP Federation provider will import the LDAP user
 into then {{book.project.name}} database and then authenticate against the LDAP password. This is the only time users will be imported.
-If you go to the `Users` left menu item in the Admin Consoel and click the `View all users` button, you will only see those LDAP users that
+If you go to the `Users` left menu item in the Admin Console and click the `View all users` button, you will only see those LDAP users that
 have been authenticated at least once by {{book.project.name}}.  It is implemented this way so that admins don't accidentally try and import a huge LDAP DB of users.
 
 If you want to sync all LDAP users into the {{book.project.name}} database, you may configure and enable the `Sync Settings` of the LDAP provider you configured.
-There are 2 types of sychronization:
+There are 2 types of synchronization:
 
 Periodic Full sync::
   This will synchronize all LDAP users into {{book.project.name}} DB.
@@ -82,9 +82,9 @@ Periodic Full sync::
   (For example if user `Mary Kelly` was changed in LDAP to `Mary Smith`).
 
 Periodic Changed users sync::
-  When synching occurs, only those users that were created or updated after the last sync will be updated and/or imported.
+  When syncing occurs, only those users that were created or updated after the last sync will be updated and/or imported.
 
-The best way to handle synching is to click the `Synchronize all users` button when you first create the LDAP provider,
+The best way to handle syncing is to click the `Synchronize all users` button when you first create the LDAP provider,
 then set up a periodic sync of changed users.  The configuration page for your LDAP Provider has a bunch of options to support you here.
 
 [[_ldap_mappers]]
@@ -101,7 +101,7 @@ User Attribute Mapper::
   For this mapper implementation, there is always one-to-one mapping (one LDAP attribute is mapped to one {{book.project.name}} attribute)
 
 FullName Mapper::
-  This allows to specify that the fullname of user, which is saved in some LDAP attribute (usualy `cn` ) will be mapped to `firstName` and `lastname` attributes in the {{book.project.name}} database.
+  This allows to specify that the full name of user, which is saved in some LDAP attribute (usually `cn` ) will be mapped to `firstName` and `lastname` attributes in the {{book.project.name}} database.
   Having `cn` to contain full name of user is common case for some LDAP deployments. 
 
 Role Mapper::
