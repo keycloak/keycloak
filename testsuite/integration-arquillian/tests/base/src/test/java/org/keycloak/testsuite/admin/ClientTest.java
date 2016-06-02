@@ -294,6 +294,9 @@ public class ClientTest extends AbstractAdminTest {
         Map<String, Long> offlineSessionCount = realm.clients().get(id).getOfflineSessionCount();
         assertEquals(new Long(0), offlineSessionCount.get("count"));
 
+        List<UserSessionRepresentation> userSessions = realm.users().get(userId).getOfflineSessions(id);
+        assertEquals("There should be no offline sessions", 0, userSessions.size());
+
         oauth.realm(REALM_NAME);
         oauth.redirectUri(client.getRedirectUris().get(0));
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
@@ -307,6 +310,17 @@ public class ClientTest extends AbstractAdminTest {
         List<UserSessionRepresentation> offlineUserSessions = realm.clients().get(id).getOfflineUserSessions(0, 100);
         assertEquals(1, offlineUserSessions.size());
         assertEquals("testuser", offlineUserSessions.get(0).getUsername());
+
+        userSessions = realm.users().get(userId).getOfflineSessions(id);
+        assertEquals("There should be one offline session", 1, userSessions.size());
+        assertOfflineSession(offlineUserSessions.get(0), userSessions.get(0));
+    }
+
+    private void assertOfflineSession(UserSessionRepresentation expected, UserSessionRepresentation actual) {
+        assertEquals("id", expected.getId(), actual.getId());
+        assertEquals("userId", expected.getUserId(), actual.getUserId());
+        assertEquals("userName", expected.getUsername(), actual.getUsername());
+        assertEquals("clients", expected.getClients(), actual.getClients());
     }
 
     @Test
