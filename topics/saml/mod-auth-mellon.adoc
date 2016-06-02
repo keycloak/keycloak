@@ -1,0 +1,25 @@
+[[_mod_auth_mellon]]
+
+=== mod_auth_mellon Apache HTTPD Module
+
+The https://github.com/UNINETT/mod_auth_mellon[mod_auth_mellon] is an Apache HTTPD plugin for SAML.  If your language/environment supports using Apache HTTPD
+as a proxy, then you can use _mod_auth_mellon_ to secure your web application with SAML.  Configuration of this adapter
+is beyond the scope of this document.  Please see the _mod_auth_mellon_ Github repo for more details on configuration.
+
+To configure _mod_auth_mellon_ you'll need
+
+* IDP entity descriptor XML file.  This describes the connection to {{book.project.name}} or another SAML IDP
+* SP entity descriptor XML file.  This describes the SAML connections and config for the application you are securing.
+* Private key PEM file.  This is a text file that defines the private key the application will use to sign documents.  It is
+  in the PEM format
+* Certificate PEM file.  This is a text file that defines the certificate for your application.
+* _mod_auth_mellon_ specific Apache HTTPD module config.
+
+If you have already defined and registered the client application within a realm on the {{book.project.name}} application server,
+{{book.project.name}} can generate all the files you need except the Apache HTTPD module config.
+Go to the `Installation` tab of your SAML client and select the `Mod Auth Mellon files` option.
+
+.mod_auth_mellon config download
+image:../../{{book.images}}/mod-auth-mellon-config-download.png[]
+
+Click the `Download` button and you will download a zip file that contains the XML descriptor and pem files you need.

@@ -66,4 +66,5 @@
  {% if book.community %}
  ... link:topics/saml/java/MigrationFromOlderVersions.adoc[Migration from older versions]
  {% endif %}
+ .. link:topics/saml/mod-auth-mellon.adoc[mod_auth_mellon Apache HTTPD Module]
  . link:topics/client-registration.adoc[Client Registration]
