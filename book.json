@@ -9,7 +9,7 @@
     "splitter"
   ],
   "variables": {
-    "title": "Keycloak Securing Client Applications Guide",
+    "title": "Securing Applications and Services Guide",
     "community": true,
     "product": false,
     "images": "keycloak-images",
