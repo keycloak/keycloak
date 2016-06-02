@@ -8,7 +8,7 @@ Login to the {{book.project.name}} Admin Console using the account you created i
 Admin Console Link::
   http://localhost:8080/auth/admin/
 
-Mouseover the top left corner drop down menu that is titled with `Master`.  If you are logged in the master realm
+Place the mouse over the top left corner drop down menu that is titled with `Master`.  If you are logged in the master realm
 this drop down menu lists all the realms created.  The last entry of this drop down menu is always `Add Realm`.  Click
 this to add a realm.
 
