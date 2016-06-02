@@ -50,12 +50,12 @@
  {% if book.community %}
  ... link:topics/saml/java/tomcat-adapter.adoc[Tomcat SAML adapters]
  .... link:topics/saml/java/tomcat-adapter/tomcat_adapter_installation.adoc[Adapter Installation]
- .... link:topics/saml/java/tomcat-adapter/tomcat_adapter_per_war_config.adoc[Required Per WAR Configuration]
+ .... link:topics/saml/java/tomcat-adapter/tomcat_adapter_per_war_config.adoc[Per WAR Configuration]
  ... link:topics/saml/java/jetty-adapter.adoc[Jetty SAML Adapters]
  .... link:topics/saml/java/jetty-adapter/jetty9_installation.adoc[Jetty 9 Adapter Installation]
- .... link:topics/saml/java/jetty-adapter/jetty9_per_war_config.adoc[Jetty 9 Required Per WAR Configuration]
+ .... link:topics/saml/java/jetty-adapter/jetty9_per_war_config.adoc[Jetty 9 Per WAR Configuration]
  .... link:topics/saml/java/jetty-adapter/jetty8-installation.adoc[Jetty 8 Adapter Installation]
- .... link:topics/saml/java/jetty-adapter/jetty8-per_war_config.adoc[Jetty 8 Required Per WAR Configuration]
+ .... link:topics/saml/java/jetty-adapter/jetty8-per_war_config.adoc[Jetty 8 Per WAR Configuration]
  {% endif %}
  ... link:topics/saml/java/servlet-filter-adapter.adoc[Java Servlet Filter Adapter]
  ... link:topics/saml/java/idp-registration.adoc[Registering with an IDP]

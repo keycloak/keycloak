@@ -1,5 +1,5 @@
 
-===== Jetty 8 Required Per WAR Configuration
+===== Jetty 8 Per WAR Configuration
 
 Enabling Keycloak for your WARs is the same as the Jetty 9.x adapter.
-See <<_jetty9_per_war,Required Per WAR Configuration>>        
+See <<fake/../../../../saml/java/jetty-adapter/jetty9_per_war_config.adoc#_saml-jetty9-per-war,Per War Configuration>>

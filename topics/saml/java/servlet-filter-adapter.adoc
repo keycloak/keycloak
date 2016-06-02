@@ -1,14 +1,15 @@
 
 ==== Java Servlet Filter Adapter
 
-If you want to use  SAML with a Java servlet application that doesn't have an adapter for that servlet platform, you can opt to use the servlet filter adapter that Keycloak has.
+If you want to use SAML with a Java servlet application that doesn't have an adapter for that servlet platform, you can
+opt to use the servlet filter adapter that {{book.project.name}} has.
 This adapter works a little differently than the other adapters.
 You do not define security constraints in web.xml.
-Instead you define a filter mapping using the Keycloak servlet filter adapter to secure the url patterns you want to secure. 
+Instead you define a filter mapping using the {{book.project.name}} servlet filter adapter to secure the url patterns you want to secure.
 
-WARNING: Backchannel logout works a bit differently than the standard adapters.
-Instead of invalidating the http session it instead marks the session id as logged out.
-There's just no way of arbitrarily invalidating an http session based on a session id. 
+NOTE: Backchannel logout works a bit differently than the standard adapters.
+      Instead of invalidating the http session it instead marks the session id as logged out.
+      There's just no way of arbitrarily invalidating an http session based on a session id.
 
 WARNING: Backchannel logout does not currently work when you have a clustered application that uses the SAML filter. 
 
@@ -32,12 +33,13 @@ WARNING: Backchannel logout does not currently work when you have a clustered ap
 </web-app>
 ----
 
-The Keycloak filter has the same configuration parameters available as the other adapters except you must define them as filter init params instead of context params. 
+The {{book.project.name}} filter has the same configuration parameters available as the other adapters except you must
+define them as filter init params instead of context params.
 
 You can define multiple filter mappings if you have various different secure and unsecure url patterns. 
 
 WARNING: You must have a filter mapping that covers `/saml`.
-This mapping covers all server callbacks. 
+         This mapping covers all server callbacks.
 
 When registering SPs with an IDP, you must register `http[s]://hostname/{context-root}/saml` as your Assert Consumer Service URL and Single Logout Service URL. 
 
@@ -45,9 +47,9 @@ To use this filter, include this maven artifact in your WAR poms
 
 [source,xml]
 ----
-           <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
-                <version>&project.version;</version>
-            </dependency>
+<dependency>
+   <groupId>org.keycloak</groupId>
+   <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
+   <version>&project.version;</version>
+</dependency>
 ----

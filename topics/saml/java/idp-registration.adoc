@@ -2,4 +2,4 @@
 ==== Registering with an IDP
 
 For each servlet based adapter, the endpoint you register for the assert consumer service url and and single logout service
-must be the base url of your servlet application with `/saml` appended to it i.e. https://example.com/contextPath/saml
+must be the base url of your servlet application with `/saml` appended to it i.e. `https://example.com/contextPath/saml`

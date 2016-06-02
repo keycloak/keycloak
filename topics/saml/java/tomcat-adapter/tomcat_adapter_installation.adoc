@@ -7,7 +7,8 @@ Each adapter is a separate download on the Keycloak download site.
 They are also available as a maven artifact. 
 
 You must unzip the adapter distro into Tomcat's `lib/` directory.
-Including adapter's jars within your WEB-INF/lib directory will not work!  The Keycloak SAML adapter is implemented as a Valve and valve code must reside in Tomcat's main lib/ directory. 
+Including adapter's jars within your WEB-INF/lib directory will not work!  The Keycloak SAML adapter is implemented as
+a Valve and valve code must reside in Tomcat's main lib/ directory.
 
 
 [source]
