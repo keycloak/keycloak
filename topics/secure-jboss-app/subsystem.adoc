@@ -7,14 +7,14 @@ Open this file and search for the following text:
 
 [source,xml]
 ----
-<subsystem xmlns="urn:jboss:domain:keycloak:1.1"/>
+<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1"/>
 ----
 
 Modify this a little bit to prepare it for pasting in your template from the `Installation` tab.
 
 [source,xml]
 ----
-<subsystem xmlns="urn:jboss:domain:keycloak:1.1">
+<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
 </subsystem>
 ----
 
@@ -22,7 +22,7 @@ Within the `subsystem` element, paste in the template.  It will look something l
 
 [source,xml]
 ----
-<subsystem xmlns="urn:jboss:domain:keycloak:1.1">
+<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
   <secure-deployment name="WAR MODULE NAME.war">
     <realm>demo</realm>
     <realm-public-key>MIIBIjANBgkqhkiG9B</realm-public-key>
@@ -38,7 +38,7 @@ Change the `WAR MODULE NAME` text to be `vanilla` as follows:
 
 [source,xml]
 ----
-<subsystem xmlns="urn:jboss:domain:keycloak:1.1">
+<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
   <secure-deployment name="vanilla.war">
   ...
 </subsystem>

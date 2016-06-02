@@ -22,9 +22,9 @@ the page that will allo you to do this.
 .Set Temporary Password
 image:../../{{book.images}}/credentials.png[]
 
-Enter in a new password and retype it within the `Password Confirmation` field.  Once you do this a red `Reset Password`
+Enter a new password and retype it within the `Password Confirmation` field.  Once you do this a red `Reset Password`
 button should reappear.  Clicking on that will reset the user's password to the new one you specified.  Please note that
-this is a temporary password and the user will be required to change it after they first log in.  You can make it permanent
+this is a temporary password and the users are required to change it after they first log in.  You can make it permanent
 by flipping the `Temporary` switch from `On` to `Off` before you click the `Reset Password` button.
 
 

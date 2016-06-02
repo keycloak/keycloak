@@ -11,7 +11,7 @@ You can obtain the code by cloning the
 quickstart repo at git@github.com:jboss-developer/rh-sso-quickstarts.git.  Follow these steps to download the code, build it,
 and deploy it.  Make sure your JBoss EAP or Wildfly app server instance is running before you start these steps!
 
-.clone project
+.Clone Project
 [source]
 ----
 $ git clone git@github.com:jboss-developer/rh-sso-quickstarts.git
@@ -23,7 +23,7 @@ You should see some text scroll down in the app server console window.  After th
 
 http://localhost:8080/vanilla
 
-.app login page
+.App Login Page
 image:../../{{book.images}}/app-login-page.png[]
 
 If you open up the application's _web.xml_ file you would see that the application is secured via `BASIC` authentication.
@@ -31,7 +31,7 @@ If you click on the login button on the login page, the browser
 will pop up a BASIC auth login dialog.
 
 
-.app login dialog
+.App Login Dialog
 image:../../{{book.images}}/client-auth-required.png[]
 
 
