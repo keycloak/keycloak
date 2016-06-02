@@ -131,7 +131,8 @@
                 <dependency>
                     <groupId>org.wildfly.arquillian</groupId>
                     <artifactId>wildfly-arquillian-container-${app.server.type}</artifactId>
-                </dependency>                
+                    <version>${arquillian-wildfly-container.version}</version>
+                </dependency>
             </dependencies>            
         </profile>
 
