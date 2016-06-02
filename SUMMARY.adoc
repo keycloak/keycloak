@@ -65,6 +65,6 @@
  ... link:topics/saml/java/error_handling.adoc[Error Handling]
  ... link:topics/saml/java/debugging.adoc[Troubleshooting]
  {% if book.community %}
- ... link:topics/saml/java/saml_adapter_MigrationFromOlderVersions.adoc[Migration from older versions]
+ ... link:topics/saml/java/MigrationFromOlderVersions.adoc[Migration from older versions]
  {% endif %}
  . link:topics/client-registration.adoc[Client Registration]
