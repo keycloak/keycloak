@@ -1,5 +1,5 @@
 [[_applicationclustering]]
-= Application Clustering
+=== Application Clustering
 
 This chapter is focused on clustering support for your own AS7, EAP6 or Wildfly applications, which are secured by Keycloak.
 We support various deployment scenarios according if your application is: 
@@ -13,7 +13,7 @@ The situation is a bit tricky as application communicates with Keycloak directly
 NOTE: To enable distributable (replicated) HTTP Sessions in your application, you may need to do some additional steps.
 Usually you need to put tag into `WEB-INF/web.xml` file of your application and possibly do some additional steps to configure underlying cluster cache (In case of Wildfly, the implementation of cluster cache is based on Infinispan). These steps are server specific, so consult documentation of your application server for more details. 
 
-== Stateless token store
+==== Stateless token store
 
 By default, the servlet web application secured by Keycloak uses HTTP session to store information about authenticated user account.
 This means that this info could be replicated across cluster and your application will safely survive failover of some cluster node. 
@@ -42,7 +42,7 @@ It works without issues if you init servlet logout (HttpServletRequest.logout) f
 But back-channel logout initialized from different application can't be propagated by Keycloak to this application with cookie store.
 Hence it's recommended to use very short value of access token timeout (1 minute for example). 
 
-== Relative URI optimization
+==== Relative URI optimization
 
 In many deployment scenarios will be Keycloak and secured applications deployed on same cluster hosts.
 For this case Keycloak already provides option to use relative URI as value of option _auth-server-url_ in `WEB-INF/keycloak.json` . In this case, the URI of Keycloak server is resolved from the URI of current request. 
@@ -63,7 +63,7 @@ This would mean that browser requests (like redirecting to Keycloak login screen
 
 Note that additionally to network optimization, you may not need "https" in this case as application and keycloak are communicating directly within same cluster host. 
 
-== Admin URL configuration
+==== Admin URL configuration
 
 Admin URL for particular application can be configured in Keycloak admin console.
 It's used by Keycloak server to send backend requests to application for various tasks, like logout users or push revocation policies. 
@@ -88,7 +88,7 @@ http://${application.session.host}:8080/myapp::
   Keycloak will track hosts where is particular HTTP Session served and it will send session invalidation message to proper cluster node.             
 
 [[_registration_app_nodes]]
-== Registration of application nodes to Keycloak
+==== Registration of application nodes to Keycloak
 
 Previous section describes how can Keycloak send logout request to proper application node.
 However in some cases admin may want to propagate admin tasks to all registered cluster nodes, not just one of them.
@@ -116,7 +116,7 @@ which means that registration is sent at startup (accurately when 1st request is
 In Keycloak admin console you can specify the maximum node re-registration timeout (makes sense to have it bigger than _register-node-period_ from adapter configuration for particular application). Also you can manually add and remove cluster nodes in admin console, which is useful if you don't want to rely on adapter's automatic registration or if you want to remove stale application nodes, which weren't unregistered (for example due to forced shutdown). 
 
 [[_refresh_token_each_req]]
-== Refresh token in each request
+==== Refresh token in each request
 
 By default, application adapter tries to refresh access token when it's expired (period can be specified as <<_token_timeouts,Access Token Lifespan>>) . However if you don't want to rely on the fact, that Keycloak is able to successfully propagate admin events like logout to your application nodes, then you have possibility to configure adapter to refresh access token in each HTTP request. 
 
