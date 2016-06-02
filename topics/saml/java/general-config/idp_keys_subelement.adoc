@@ -2,7 +2,7 @@
 ===== IDP Keys subelement
 
 The Keys sub element of IDP is only used to define the certificate or public key to use to verify documents signed by the IDP.
-It is defined in the same way as the <<fake/../../../../saml/java/general-cnfig/sp-keys.adoc#_saml-sp-keys,SP's Key's element>>.
+It is defined in the same way as the <<fake/../../../../saml/java/general-config/sp-keys.adoc#_saml-sp-keys,SP's Key's element>>.
 But again, you only have to define one certificate or public key reference.
 
 [source,xml]
