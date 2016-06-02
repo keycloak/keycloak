@@ -1,6 +1,5 @@
 = {{book.title}}
 
- . link:topics/preface.adoc[Preface]
  . link:topics/overview/overview.adoc[Overview]
    .. link:topics/overview/what-are-client-adapters.adoc[What are Client Adapters?]
    .. link:topics/overview/supported-platforms.adoc[Supported Platforms]
