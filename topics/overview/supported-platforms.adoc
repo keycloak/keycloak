@@ -1,1 +1,73 @@
 == Supported Platforms
+
+=== OpenID Connect
+
+==== Java
+* link:oidc/java/jboss-adapters.html[JBoss EAP]
+{% if book.community %}
+  * link:oidc/java/jboss-adapters.html[WildFly]
+{% endif %}
+* link:oidc/java/fuse-adapter.html[Fuse]
+{% if book.community %}
+  * link:oidc/java/tomcat-adapter.html[Tomcat]
+  * link:oidc/java/jetty-adapter.html[Jetty]
+{% endif %}
+* link:oidc/java/servlet-filter-adapter.html[Servlet Filter]
+{% if book.community %}
+  * link:oidc/java/spring-adapter.html[Spring Security] (community)
+  * link:oidc/java/spring-boot-adapter.html[Spring Boot] (community)
+{% endif %}
+
+==== JavaScript (client-side)
+* link:oidc/javascript-adapter.html[JavaScript]
+
+=== Apache Cordova
+* link:oidc/javascript-adapter.html[JavaScript]
+
+{% if book.community %}
+==== Node.js
+* https://github.com/keycloak/keycloak-nodejs-connect[{{book.project.title}} Connect] (community)
+* https://github.com/keycloak/keycloak-nodejs-connect[{{book.project.title}} Auth Utils] (community)
+{% endif %}
+
+{% if book.community %}
+=== C#
+* https://github.com/dylanplecki/KeycloakOwinAuthentication[OWIN] (community)
+{% endif %}
+
+{% if book.community %}
+=== Python
+* https://pypi.python.org/pypi/python-openid/[python-openid] (generic)
+{% endif %}
+
+{% if book.community %}
+=== Android
+* https://github.com/openid/AppAuth-Android[AppAuth] (generic)
+* https://github.com/aerogear/aerogear-android-authz[AeroGear] (generic)
+{% endif %}
+
+{% if book.community %}
+=== iOS
+* https://github.com/openid/AppAuth-iOS[AppAuth] (generic)
+* https://github.com/aerogear/aerogear-ios-oauth2[AeroGear] (generic)
+{% endif %}
+
+{% if book.community %}
+==== Apache HTTP Server
+* https://github.com/pingidentity/mod_auth_openidc[mod_auth_openidc]
+{% endif %}
+
+=== SAML
+
+==== Java
+
+* link:oidc/java/jboss-adapters.html[JBoss EAP]
+{% if book.community %}
+* link:oidc/java/jboss-adapters.html[WildFly]
+* link:oidc/java/tomcat-adapter.html[Tomcat]
+* link:oidc/java/jetty-adapter.html[Jetty]
+{% endif %}
+
+==== Apache HTTP Server
+
+* https://github.com/UNINETT/mod_auth_mellon[mod_auth_mellon]
