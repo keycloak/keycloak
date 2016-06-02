@@ -8,7 +8,7 @@ To enable {{book.project.name}} to send emails you need to provide {{book.projec
 This is configured per realm.  Go to the `Realm Settings` left menu
 item and click the `Email` tab.
 
-.Themes Tab
+.Email Tab
 image:../../{{book.images}}/email-tab.png[]
 
 As emails are used for recovering usernames and passwords it's recommended to use SSL or TLS, especially if the SMTP server is on an external network.

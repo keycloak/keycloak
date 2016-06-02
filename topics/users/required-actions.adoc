@@ -33,7 +33,7 @@ the default required actions go to the `Authentication` left menu item and click
 .Default Required Actions
 image:../../{{book.images}}/default-required-actions.png[]
 
-Simple click the checkbox in the `Default Action` column of the required actions that you want to be executed when a brand new user logs in.
+Simply click the checkbox in the `Default Action` column of the required actions that you want to be executed when a brand new user logs in.
 
 ==== Terms and Conditions
 

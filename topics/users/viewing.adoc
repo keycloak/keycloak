@@ -1,7 +1,7 @@
 
 === Searching For Users
 
-If you need to manage a specific user, click on `Users` in the left menu bar.  T
+If you need to manage a specific user, click on `Users` in the left menu bar.
 
 .Users
 image:../../{{book.images}}/users.png[]
