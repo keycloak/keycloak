@@ -2,7 +2,7 @@
 === User Attributes
 
 Beyond basic user metadata like name and email, you can store arbitrary user attributes.  Choose a user to manage
-then click on their `Attributes` tab.
+then click on the `Attributes` tab.
 
 .Users
 image:../../{{book.images}}/user-attributes.png[]

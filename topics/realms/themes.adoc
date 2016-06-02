@@ -25,7 +25,7 @@ The link:{{book.developerguide.link}}[{{book.developerguide.name}}] goes into ho
 
 ==== Internationalization
 
-Every UI screen is internationalized in {{book.project.name}}.  The default language is english, but if you turn on the
+Every UI screen is internationalized in {{book.project.name}}.  The default language is English, but if you turn on the
 `Internationalization` switch on the `Theme` tab you can choose which locales you want to support and what the default locale
 will be.  The next time a user logs in, they will be able to choose a language on the login page to use for the login screens,
 User Account Management UI, and Admin Console.  The link:{{book.developerguide.link}}[{{book.developerguide.name}}] explains

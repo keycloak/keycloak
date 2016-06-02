@@ -2,10 +2,10 @@
 === Realm Key Pairs
 
 The authentication protocols that are used by {{book.project.name}} require cryptographic signatures and sometimes even
-encryption.  {{book.project.name}} uses a asymmetric key pair, a private and public key to accomplish this.  When a realm
+encryption.  {{book.project.name}} uses an asymmetric key pair, a private and public key to accomplish this.  When a realm
 is created a key pair is automatically generated.  It is recommended that you cycle this key pair occasionally.  How often
 you do this is dependent on your organizational needs and security requirements as you have to make sure every application
-that needs the public or certificate of your realm get this updated.  This can be a lot of work!
+that needs the public key or certificate of your realm gets this updated.  This can be a lot of work!
 
 To cycle a key pair click on the `Realm Settings` left menu item, go to the `Keys` tab, and push the `Generate new keys` button.
 

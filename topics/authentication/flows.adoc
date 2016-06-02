@@ -6,9 +6,9 @@ An _authentication flow_ is a container for all authentications, screens, and ac
 {{book.project.name}} work flows.
 If you go to the admin console `Authentication` left menu item and go to the `Flows` tab, you can view all the defined flows
 in the system and what actions and checks each flow requires.  This section does a walk through of the browser login flow.  In the
-left drop down list selected `browser` to come to the screen shown below:
+left drop down list select `browser` to come to the screen shown below:
 
-.browser flow
+.Browser Flow
 image:../../{{book.images}}/browser-flow.png[]
 
 If you hover over the tooltip (the tiny question mark) to the right of the flow selection list, this will describe what the
@@ -38,10 +38,10 @@ This is better described in an example.  Let's walk through the `browser` authen
   Since the cookie provider returned success and each execution at this level of the flow is _alternative_, no other execution is executed and this results in a successful login.
 . Next the flow looks at the Kerberos execution.  This authenticator is disabled by default and will be skipped.
 . The next execution is a subflow called Forms.  Since this subflow is marked as _alternative_ it will not be executed if the `Cookie` authentication type passed.
-  This subflow contains additional authentication type that need to be executed.
+  This subflow contains additional authentication type that needs to be executed.
   The executions for this subflow are loaded and the same processing logic occurs
 . The first execution in the Forms subflow is the Username Password Form.  This authentication type renders the username and password page.
-  it is marked as _required_ so the use must enter in a valid username and password.
+  It is marked as _required_ so the user must enter in a valid username and password.
 . The next execution is the OTP Form.
   This is marked as _optional_.  If the user has OTP set up, then this authentication type must run and be successful.  If the user doesn't
   have OTP set up, this authentication type is ignored.
