@@ -2,30 +2,52 @@
 [[_saml-jboss-adapter-installation]]
 ===== Adapter Installation
 
-SAML Adapters are no longer included with the appliance or war distribution.Each adapter is a separate download on the Keycloak download site.
-They are also available as a maven artifact. 
+Each adapter is a separate download on the {{book.project.name}} download site.
 
-Install on Wildfly 9 or 10: 
+{% if book.community %}
+Install on Wildfly 9 or 10, or JBoss EAP 7:
 
 [source]
 ----
 
 $ cd $WILDFLY_HOME
 $ unzip keycloak-saml-wildfly-adapter-dist.zip
-----    
+----
+{% endif %}
 
-Install on JBoss EAP 6.x: 
 
+{% if book.community %}
+Install on JBoss EAP 6.x:
 [source]
 ----
 
 $ cd $JBOSS_HOME
 $ unzip keycloak-saml-eap6-adapter-dist.zip
-----    
+----
+{% endif %}
 
-This zip file creates new JBoss Modules specific to the Wildfly Keycloak SAML Adapter within your Wildfly distro. 
+{% if book.product %}
+Install on JBoss EAP 6.x:
+[source]
+----
 
-After adding the Keycloak modules, you must then enable the Keycloak SAML Subsystem within your app server's server configuration: `domain.xml` or `standalone.xml`. 
+$ cd $JBOSS_HOME
+$ unzip RH-SSO-saml-eap6-adapter.zip
+----
+
+Install on JBoss EAP 7.x:
+[source]
+----
+
+$ cd $JBOSS_HOME
+$ unzip RH-SSO-saml-eap7-adapter.zip
+----
+{% endif %}
+
+
+These zip files create new JBoss Modules specific to the Wildfly/JBoss EPKeycloak SAML Adapter within your Wildfly or JBoss EAP distro.
+
+After adding the modules, you must then enable the {{book.project.name}} SAML Subsystem within your app server's server configuration: `domain.xml` or `standalone.xml`.
 
 There is a CLI script that will help you modify your server configuration.
 Start the server and run the script  from the server's bin directory: 
@@ -53,7 +75,8 @@ The script will add the extension, subsystem, and optional security-domain as de
     </profile>
 ----    
 
-The keycloak security domain should be used with EJBs and other components when you need the security context created in the secured web tier to be propagated to the EJBs (other EE component) you are invoking.
+The `keycloak` security domain should be used with EJBs and other components when you need the security context created
+in the secured web tier to be propagated to the EJBs (other EE component) you are invoking.
 Otherwise this configuration is optional. 
 
 [source,xml]
@@ -72,7 +95,8 @@ Otherwise this configuration is optional.
     </security-domains>
 ----
 
-For example, if you have a JAX-RS service that is an EJB within your WEB-INF/classes directory, you'll want to annotate it with the @SecurityDomain annotation as follows: 
+For example, if you have a JAX-RS service that is an EJB within your WEB-INF/classes directory,
+you'll want to annotate it with the `@SecurityDomain` annotation as follows:
 
 [source,xml]
 ----
@@ -107,5 +131,6 @@ public class CustomerService {
 }
 ----
 
-We hope to improve our integration in the future so that you don't have to specify the @SecurityDomain annotation when you want to propagate a keycloak security context to the EJB tier. 
+We hope to improve our integration in the future so that you don't have to specify the
+`@SecurityDomain` annotation when you want to propagate a keycloak security context to the EJB tier.
 

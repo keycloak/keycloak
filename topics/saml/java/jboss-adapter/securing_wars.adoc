@@ -1,11 +1,11 @@
 
-===== Securing WARs via Keycloak SAML Subsystem
+===== Securing WARs via {{book.project.name}} SAML Subsystem
 
-You do not have to crack open a WAR to secure it with Keycloak.
-Alternatively, you can externally secure it via the Keycloak SAML Adapter Subsystem.
+You do not have to crack open a WAR to secure it with {{book.project.name}}.
+Alternatively, you can externally secure it via the {{book.project.name}} SAML Adapter Subsystem.
 While you don't have to specify KEYCLOAK-SAML as an `auth-method`, you still have to define the `security-constraints` in `web.xml`.
 You do not, however, have to create a `WEB-INF/keycloak-saml.xml` file.
-This metadata is instead defined within XML in your server's `domain.xml` or `standalone.xml` subsystem configuration section. 
+This metadata is instead defined within the XML in your server's `domain.xml` or `standalone.xml` subsystem configuration section.
 
 [source,xml]
 ----
@@ -27,7 +27,7 @@ This metadata is instead defined within XML in your server's `domain.xml` or `st
 
 The `secure-deployment` `name` attribute identifies the WAR you want to secure.
 Its value is the `module-name` defined in `web.xml` with `.war` appended.
-The rest of the configuration uses the same XML syntax as `keycloak-saml.xml` configuration defined in <<_adapter_config,general adapter configuration>>. 
+The rest of the configuration uses the same XML syntax as `keycloak-saml.xml` configuration defined in <<fake/../../../../saml/java/general-config.adoc#_saml-general-config,General Adapter Config>>.
 
 An example configuration: 
 

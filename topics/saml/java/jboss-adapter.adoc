@@ -2,7 +2,7 @@
 
 ==== JBoss/Wildfly Adapter
 
-To be able to secure WAR apps deployed on JBoss EAP 6.x or Wildfly, you must install and configure the Keycloak SAML Adapter Subsystem.
+To be able to secure WAR apps deployed on JBoss EAP 6.x or Wildfly, you must install and configure the {{book.project.name}} SAML Adapter Subsystem.
 You then provide a keycloak config, `/WEB-INF/keycloak-saml.xml` file in your WAR and change the auth-method to KEYCLOAK-SAML within web.xml.
 Both methods are described in this section. 
 

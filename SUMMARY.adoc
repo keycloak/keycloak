@@ -45,7 +45,7 @@
  .... link:topics/saml/java/general-config/idp_keys_subelement.adoc[IDP Keys subelement]
  ... link:topics/saml/java/jboss-adapter.adoc[JBoss EAP/Wildfly Adapter]
  .... link:topics/saml/java/jboss-adapter/jboss_adapter_installation.adoc[Adapter Installation]
- .... link:topics/saml/java/jboss-adapter/required_per_war_configuration.adoc[Required Per WAR Configuration]
+ .... link:topics/saml/java/jboss-adapter/required_per_war_configuration.adoc[Per WAR Configuration]
  .... link:topics/saml/java/jboss-adapter/securing_wars.adoc[Securing WARs via SAML Subsystem]
  {% if book.community %}
  ... link:topics/saml/java/tomcat-adapter.adoc[Tomcat SAML adapters]
