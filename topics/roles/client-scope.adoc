@@ -10,7 +10,7 @@ client registered with the realm, attackers can get access tokens that have a br
 network is compromised.  This is where _client scope_ becomes important.
 
 _Client scope_ is a way to limit the roles that get declared inside an access token.  When a client requests that a user
-be authenticated the access token they receive back will only contain the role mappings you've explicitly specified
+be authenticated, the access token they receive back will only contain the role mappings you've explicitly specified
 for the client's scope.  This allows you to limit the permissions each individual access token has rather than giving the
 client access to all of the user's permissions.  By default, each client gets all the role mappings of the user.
 You can view this in the `Scope` tab of each client.
@@ -18,7 +18,7 @@ You can view this in the `Scope` tab of each client.
 .Full Scope
 image:../../{{book.images}}/full-client-scope.png[]
 
-As you can see from the picture, you can see that the effect roles of the scope are every declared role in the realm.
+You can see from the picture that the effective roles of the scope are every declared role in the realm.
 To change this default behavior, you must explicitly turn off the `Full Scope Allowed` switch and declare the specific roles you want in each individual
 client.  Alternatively, you can also use <<fake/../../clients/clienttemplates.adoc#_client_templates, client templates>>
 to define the scope for a whole set of clients.
