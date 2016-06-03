@@ -25,13 +25,13 @@ Click on the `Create Application` button.  This will bring you to the `Create a 
 .Create App
 image:../../../images/linked-in-create-app.png[]
 
-Use any value for `Application Name`, `Website URL`, `Description`, `Developer Contact Email` and `Phone` you want.
-Select `r_basicprofile` and `r_emailaddress` in the `Default Scope` section.
-Click the `Add Application` button.  This will bring you to the new application's settings page.
+Use any value for `Company Name`, `Name`, `Description`, and `Application Use`.
+Click the `Submit` button.  This will bring you to the new application's settings page.
 
 .App Settings
 image:../../../images/linked-in-app-settings.png[]
 
+Select `r_basicprofile` and `r_emailaddress` in the `Default Application Permissions` section.
 You'll have to copy the `Redirect URI` from the {{book.project.name}} `Add Identity Provider` page and enter it into the
 `OAuth 2.0` `Authorized Redirect URLs` field on the LinkedIn app settings page.  Don't forget to click `Update` button after
 you do this!

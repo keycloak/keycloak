@@ -16,7 +16,7 @@ NOTE: StackOverflow often changes the look and feel of application registration,
 .Register Application
 image:../../../images/stack-overflow-app-register.png[]
 
-Enter in the application name and the dns domain name of your application and click `Register your Application`.  Type in anything you want
+Enter in the application name and the OAuth Domain Name of your application and click `Register your Application`.  Type in anything you want
 for the other items.
 
 .Settings

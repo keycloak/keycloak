@@ -34,7 +34,7 @@ for the application.  Click the `Settings` left menu item.
 .Create a New App ID
 image:../../../images/facebook-app-settings.png[]
 
-Click on the `+ Add Platform` button at the end of this page and select the `Website` icon.  Cut and past the `Redirect URI` from the
+Click on the `+ Add Platform` button at the end of this page and select the `Website` icon.  Copy and paste the `Redirect URI` from the
 {{book.project.name}} `Add identity provider` page into the `Site URL` of the Facebook `Website` settings block.
 
 .Specify Website

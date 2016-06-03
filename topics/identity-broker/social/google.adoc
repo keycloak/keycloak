@@ -38,7 +38,7 @@ and click the `Google+ API` link.
 image:../../../images/google-api-list.png[]
 
 Click the `Enable` button on this page.  You will get a message that you must create the credentials of your project.
-So click the `Go to Credentials` button
+So click the `Go to Credentials` button.
 
 .Go To Credentials
 image:../../../images/google-go-to-credentials.png[]
@@ -59,7 +59,7 @@ Select `Web server` and `User data` and click the `What credentials do I need?` 
 image:../../../images/google-create-oauth-id.png[]
 
 Next you'll need to create an OAuth 2.0 client ID.  Specify the name you want for your client.  You'll also need to
-cut and paste the `Redirect URI` from the {{book.project.name}} `Add Identity Provider` page into the
+copy and paste the `Redirect URI` from the {{book.project.name}} `Add Identity Provider` page into the
 `Authorized redirect URIs` field.  After you do this, click the `Create client ID` button.
 
 When users log into Google from {{book.project.name}} they will see a consent screen from Google which will ask the user
@@ -78,5 +78,5 @@ Go back to {{book.project.name}} and specify those items.
 
 One config option to note on the `Add identity provider` page for Google is the `Default Scopes` field.
 This field allows you to manually specify the scopes that users must authorize when authenticating with this provider.
-For a complete list of scopes, please take a look at link:https://developers.google.com/oauthplayground/. By default, {{book.project.name}}
+For a complete list of scopes, please take a look at https://developers.google.com/oauthplayground/. By default, {{book.project.name}}
 uses the following scopes: `openid` `profile` `email`.
