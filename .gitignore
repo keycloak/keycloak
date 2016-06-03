@@ -1,3 +1,7 @@
+_book
+node_modules
+
+
 # Intellij
 ###################
 .idea
