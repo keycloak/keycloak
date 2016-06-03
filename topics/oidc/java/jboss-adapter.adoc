@@ -174,7 +174,7 @@ public class CustomerService {
 This section describes how to secure a WAR directly by adding config and editing files within your WAR package. 
 
 The first thing you must do is create a `keycloak.json` adapter config file within the `WEB-INF` directory of your WAR.
-The format of this config file is describe in the <<_saml-general-config,general adapter configuration>> section.
+The format of this config file is describe in the <<_java_adapter_config,general adapter configuration>> section.
 
 Next you must set the `auth-method` to `KEYCLOAK` in `web.xml`.
 You also have to use standard servlet security to specify role-base constraints on your URLs.
@@ -259,7 +259,7 @@ This metadata is instead defined within server configuration (i.e. `standalone.x
 
 The `secure-deployment` `name` attribute identifies the WAR you want to secure.
 Its value is the `module-name` defined in `web.xml` with `.war` appended.
-The rest of the configuration corresponds pretty much one to one with the `keycloak.json` configuration options defined in <<_saml-general-config,general adapter configuration>>.
+The rest of the configuration corresponds pretty much one to one with the `keycloak.json` configuration options defined in <<_java_adapter_config,general adapter configuration>>.
 The exception is the `credential` element. 
 
 To make it easier for you, you can go to the {{book.project.title}} Administration Console and go to the Application/Installation tab of the application this WAR is aligned with.
