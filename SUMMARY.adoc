@@ -5,6 +5,7 @@
   .. link:topics/overview/terminology.adoc[Terminology]
  . link:topics/getting-started/getting-started.adoc[Getting Started]
  .. link:topics/getting-started/hello-world.adoc[Hello Authorization World]
+ .. link:topics/getting-started/hello-world-servlet-authz.adoc[Securing a Servlet Application]
  . link:topics/resource-server/overview.adoc[Managing Resource Servers]
  .. link:topics/resource-server/view.adoc[Viewing Resource Servers]
  .. link:topics/resource-server/create.adoc[Creating Resource Servers]

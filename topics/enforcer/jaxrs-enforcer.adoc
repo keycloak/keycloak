@@ -1,1 +1,0 @@
-== JAX-RS Policy Enforcer
