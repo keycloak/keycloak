@@ -4,10 +4,10 @@
 
 link:http://openid.net/connect/[Open ID Connect] (OIDC) is an authentication protocol that is an extension of link:https://tools.ietf.org/html/rfc6749[OAuth 2.0].
 While OAuth 2.0 is only a framework for building authorization protocols and is mainly incomplete, OIDC is a full-fledged authentication and authorization
-protocol.  OIDC also makes heavy use of the link:https://jwt.io[Json Web Token] (JWT) set of standards.  These standards define a
+protocol.  OIDC also makes heavy use of the link:https://jwt.io[Json Web Token] (JWT) set of standards.  These standards define an
 identity token JSON format and ways to digitally sign and encrypt that data in a compact and web-friendly way.
 
-There is really two types of use cases when using OIDC.  The first is an application that asks the {{book.project.name}} server to authenticate
+There are really two types of use cases when using OIDC.  The first is an application that asks the {{book.project.name}} server to authenticate
 a user for them.  After a successful login, the application will receive an _identity token_ and an _access token_.  The _identity token_
 contains information about the user such as username, email, and other profile information.  The _access token_ is digitally signed by
 the realm and contains access information (like user role mappings) that the application can use to determine what resources the user
@@ -30,14 +30,14 @@ OIDC and OAuth 2.0 specifications so only a brief overview will be provided here
 
 ===== Authorization Code Flow
 
-This is a browser-based protocol and what we recommend you use to authenticate and authorize browser-based applications.  It makes
-heavy use of browser redirects to obtain an _identity_ and _access_ token.  Here's a brief summary
+This is a browser-based protocol and it is what we recommend you use to authenticate and authorize browser-based applications.  It makes
+heavy use of browser redirects to obtain an _identity_ and _access_ token.  Here's a brief summary:
 
 . Browser visits application.  The application notices the user is not logged in, so it redirects the browser to {{book.project.name}}
   to be authenticated.  The application passes along a callback URL (a redirect URL) as a query parameter in this browser redirect
   that {{book.project.name}} will use when it finishes authentication.
 . {{book.project.name}} authenticates the user and creates a one-time, very short lived, temporary code.  {{book.project.name}}
-  redirects back to the application using the callback URL provided earlier and additionally adding the temporary code
+  redirects back to the application using the callback URL provided earlier and additionally adds the temporary code
   as a query parameter in the callback URL.
 . The application extracts the temporary code and makes a background out of band REST invocation to {{book.project.name}}
   to exchange the code for an _identity_, _access_ and _refresh_ token.  Once this temporary code has been used once
@@ -53,7 +53,7 @@ has revoked access.  This makes things more secure and more scalable.
 Another important aspect of this flow is the concept of a _public_ vs. a _confidential_ client.  _Confidential_ clients are required
 to provide a client secret when they exchange the temporary codes for tokens.  _Public_ clients are not required to provide this client secret.
 _Public_ clients are perfectly fine so long as HTTPS is strictly enforced and you are very strict about what redirect URIs are registered for the
-client.  HTML5/JavaScript clients actually always have to be _public_ clients because there is no way to transmit the client secret to them in a secure
+client.  HTML5/JavaScript clients always have to be _public_ clients because there is no way to transmit the client secret to them in a secure
 manner.  Again, this is ok so long as you use HTTPS and strictly enforce redirect URI registration.  This guide goes more detail
 into this in the <<fake/../../clients.adoc#_clients, Managing Clients>> chapter.
 
@@ -62,7 +62,7 @@ into this in the <<fake/../../clients.adoc#_clients, Managing Clients>> chapter.
 This is a browser-based protocol that is similar to Authorization Code Flow except there are fewer requests and no refresh tokens involved.
 We do not recommend this flow as there remains the possibility of _access_ tokens being leaked in the browser history as tokens are transmitted
 via redirect URIs (see below).  Also, since this flow doesn't provide the client with a refresh token, access tokens would either have to
-be long-lived or users would have to re-authenticate when they expired.  This flow is supported because its in the OIDC and OAuth 2.0 specification.
+be long-lived or users would have to re-authenticate when they expired.  This flow is supported because it is in the OIDC and OAuth 2.0 specification.
 Here's a brief summary of the protocol:
 
 . Browser visits application.  The application notices the user is not logged in, so it redirects the browser to {{book.project.name}}
@@ -75,7 +75,7 @@ Here's a brief summary of the protocol:
 
 ===== Resource Owner Password Credentials Grant (Direct Grants)
 
-This is referred to in the Admin Console as _Direct Grants_ This is used by REST clients that want to obtain a token on behalf of a user.  It is one HTTP POST request that contains
+This is referred to in the Admin Console as _Direct Grants_. This is used by REST clients that want to obtain a token on behalf of a user.  It is one HTTP POST request that contains
 the credentials of the user as well as the id of the client and the client's secret (if it is a confidential client).  The user's credentials
 are sent within form parameters.  The HTTP response contains
 _identity_, _access_, and _refresh_ tokens.

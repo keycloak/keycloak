@@ -9,7 +9,7 @@ type of client you have to configure the client's credentials.
 .Credentials Tab
 image:../../../{{book.images}}/client-credentials.png[]
 
-The `Client Authenticator` list box is the type of credential you are going to use for your confidential client.
+The `Client Authenticator` list box specifies the type of credential you are going to use for your confidential client.
 It defaults to client ID and secret.  The secret is automatically generated for you and the `Regenerate Secret`
 button allows you to recreate this secret if you want or need to.
 
@@ -35,7 +35,7 @@ generate these via an external tool and just import the client's certificate.
 .Import Certificate
 image:../../../{{book.images}}/import-client-cert.png[]
 
-There's multiple formats you can import from, just choose the archive format you have the certificate stored in,
+There are multiple formats you can import from, just choose the archive format you have the certificate stored in,
 select the file, and click the `Import` button.
 
 

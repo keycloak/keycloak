@@ -15,19 +15,19 @@ an OIDC based client.
 .Mappers Tab
 image:../../{{book.images}}/mappers-oidc.png[]
 
-Every client has a bunch of built-in mappers that are created for it by default.  They map things like, for example, email address to
-a specific claim in the identity and access token.  Their function should each be self explanatory from their name.  There's
-is additional pre-configured mappers that are not attached to the client that you can add
+Each client has several built-in mappers that are created for it by default.  They map things like, for example, email address to
+a specific claim in the identity and access token.  Their function should each be self explanatory from their name.  There
+are additional pre-configured mappers that are not attached to the client that you can add
 by clicking the `Add Builtin` button.
 
-Each mapper has common settings as well as additional ones depending on which type of mapper you are adding.  Click the `edit` button
+Each mapper has common settings as well as additional ones depending on which type of mapper you are adding.  Click the `Edit` button
 next to one of the mappers in the list to get to the config screen.
 
 .Mapper Config
 image:../../{{book.images}}/mapper-config.png[]
 
-The best way to find out what a config option is is to moveover the tooltips.  There are a few config options that
-are common to all mappers.
+The best way to learn about a config option is to hover over its tooltip.  There are a few config options that
+are common to all mappers:
 
 Consent::
   If your client requires consent, this mapper will be displayed on the consent screen shown to the user.
@@ -40,7 +40,7 @@ Consent Text::
 Most OIDC mappers also allow you to control where the claim gets put.  You can opt to include or exclude the claim from both the
 _id_ and _access_ tokens by fiddling with the `Add to ID token` and `Add to access token` switches.
 
-Finaly, you can also add other mapper types.  if you go back to the `Mappers` tab, click the `Create` button.
+Finally, you can also add other mapper types.  If you go back to the `Mappers` tab, click the `Create` button.
 
 .Add Mapper
 image:../../{{book.images}}/add-mapper.png[]
