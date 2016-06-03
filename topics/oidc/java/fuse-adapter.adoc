@@ -1,17 +1,17 @@
 
 [[_fuse_adapter]]
-=== JBoss Fuse and Apache Karaf Adapter
+=== JBoss Fuse Adapter
 
 NOTE: JBoss Fuse is a Technology Preview feature and is not fully supported
 
-Currently Keycloak supports securing your web applications running inside http://www.jboss.org/products/fuse/overview/[JBoss Fuse]        or http://karaf.apache.org/[Apache Karaf] .
-It leverages <<_jetty8_adapter,Jetty 8 adapter>> as both JBoss Fuse 6.2 and Apache Karaf 3 are bundled with http://eclipse.org/jetty/[Jetty 8.1 server]
+Currently {{book.project.name}} supports securing your web applications running inside http://www.jboss.org/products/fuse/overview/[JBoss Fuse] .
+It leverages <<fake/../jetty8-adapter.adoc#_jetty8_adapter,Jetty 8 adapter>> as both JBoss Fuse 6.2 are bundled with http://eclipse.org/jetty/[Jetty 8.1 server]
 under the covers and Jetty is used for running various kinds of web applications.
 
-What is supported for Fuse/Karaf is: 
+What is supported for Fuse is:
 
-* Security for classic WAR applications deployed on Fuse/Karaf with https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+War[Pax Web War Extender]. 
-* Security for servlets deployed on Fuse/Karaf as OSGI services with https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+Whiteboard[Pax Web Whiteboard Extender]. 
+* Security for classic WAR applications deployed on Fuse with https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+War[Pax Web War Extender].
+* Security for servlets deployed on Fuse as OSGI services with https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+Whiteboard[Pax Web Whiteboard Extender].
 * Security for http://camel.apache.org/[Apache Camel] Jetty endpoints running with http://camel.apache.org/jetty.html[Camel Jetty] component. 
 * Security for http://cxf.apache.org/[Apache CXF] endpoints running on their own separate http://cxf.apache.org/docs/jetty-configuration.html[Jetty engine]. 
 * Security for http://cxf.apache.org/[Apache CXF] endpoints running on default engine provided by CXF servlet. 
@@ -19,84 +19,10 @@ What is supported for Fuse/Karaf is:
 
 ==== How to secure your web applications inside Fuse
 
-The best place to start is look at Fuse demo bundled as part of Keycloak examples in directory `fuse` . Most of the steps should be understandable from testing and
+Basically all mentioned web applications require to inject {{book.project.name}} Jetty authenticator into underlying Jetty server . The steps to achieve it are bit different
+according to application type. The details are described in individual sub-chapters.
+
+{% if book.community %}
+The best place to start is look at Fuse demo bundled as part of {{book.project.name}} examples in directory `fuse` . Most of the steps should be understandable from testing and
 understanding the demo.
-
-Basically all mentioned web applications require to inject Keycloak Jetty authenticator into underlying Jetty server . The steps to achieve it are bit different
-according to application type.
-
-
-===== Classic WAR application
-
-The needed steps are:
-
-* Declare needed constraints in `/WEB-INF/web.xml`
-* Add `jetty-web.xml` file with the authenticator to `/WEB-INF/jetty-web.xml` and add `/WEB-INF/keycloak.json` with your Keycloak configuration
-* Make sure your WAR imports `org.keycloak.adapters.jetty` and maybe some more packages in MANIFEST.MF file in header `Import-Package`. It's
-recommended to use maven-bundle-plugin similarly like Fuse examples are doing, but note that "*" resolution for package doesn't import `org.keycloak.adapters.jetty` package
-as it's not used by application or Blueprint or Spring descriptor, but it's used just in jetty-web.xml file.
-
-Take a look at `customer-portal-app` from fuse example for inspiration.
-
-===== Servlet web application deployed by pax-whiteboard-extender
-
-The needed steps are:
-
-* Keycloak provides PaxWebIntegrationService, which allows to inject jetty-web.xml and configure security constraints for your application.
-Example `product-portal-app` declares this in `OSGI-INF/blueprint/blueprint.xml` . Note that your servlet needs to depend on it.
-* Steps 2,3 are same like for classic WAR
-
-Take a look at `product-portal-app` for inspiration.
-
-===== Apache camel application
-
-You can secure your Apache camel endpoint using http://camel.apache.org/jetty.html[camel-jetty] endpoint by adding securityHandler with `KeycloakJettyAuthenticator` and
-proper security constraints injected. Take a look at `OSGI-INF/blueprint/blueprint.xml` configuration in `camel` application on example of how it can be done in details.
-
-===== Apache CXF endpoint
-
-It's recommended to run your CXF endpoints secured by Keycloak on separate Jetty engine. You need to add `META-INF/spring/beans.xml` to your application
-and then declare `httpj:engine-factory` with Jetty SecurityHandler with injected `KeycloakJettyAuthenticator` inside.
-
-Fore more details, take a look at example application `cxf-ws` from Keycloak Fuse demo, which is using separate endpoint on
-http://localhost:8282 . All the important configuration inside this application is declared in `META-INF/spring/beans.xml` .
-
-===== Builtin CXF web applications
-
-Some services automatically come with deployed servlets on startup. One of such examples is CXF servlet running on
-http://localhost:8181/cxf context. Securing such endpoints is quite tricky. The approach, which Keycloak is currently using,
-is providing ServletReregistrationService, which undeploys builtin servlet at startup, so you are able to re-deploy it again on context secured by Keycloak.
-You can see the `OSGI-INF/blueprint/blueprint.xml` inside `cxf-jaxrs` example, which adds JAX-RS `customerservice` endpoint and more importantly, it secures whole `/cxf` context.
-
-As a side effect, all other CXF services running on default CXF HTTP destination will be secured too. Once you uninstall feature `keycloak-fuse-6.2-example`, the
-original unsecured servlet on `/cxf` context is deployed back and hence context will become unsecured again.
-
-It's recommended to use your own Jetty engine for your apps (similarly like `cxf-jaxws` application is doing).
-
-
-==== How to secure Fuse admin services
-
-===== SSH authentication to Fuse terminal with Keycloak credentials
-
-Keycloak mainly addresses usecases for authentication of web applications, however if your admin services (like fuse admin console) are protected
-with Keycloak, it may be good to protect non-web services like SSH with Keycloak credentials too. It's possible to do it by using JAAS login module, which
-allows to remotely connect to Keycloak and verify credentials based on <<_direct_access_grants,Direct Access Grants>> .
-
-Example steps for enable SSH authentication require changing the configuration of `sshRealm` in `$FUSE_HOME/etc/org.apache.karaf.shell.cfg`, then adding
-file `$FUSE_HOME/etc/keycloak-direct-access.json` (this is default location, which can be changed) and install the needed feature `keycloak-jaas`. It's described in details
-in the README file of Fuse example, which in example distribution is inside `fuse/fuse-admin/README.md` .
-
-
-===== JMX authentication with Keycloak credentials
-
-This may be needed in case if you really want to use jconsole or other external tool to perform remote connection to JMX through RMI. Otherwise it may
-be better to use just hawt.io/jolokia as jolokia agent is installed in http://hawt.io by default.
-
-You need to configure `jmxRealm` in `$FUSE_HOME/etc/org.apache.karaf.management.cfg`, then adding file `$FUSE_HOME/etc/keycloak-direct-access.json`
-(this is default location, which can be changed) and install the needed feature `keycloak-jaas`.
-It's described in details in the README file of Fuse example, which in example distribution is inside `fuse/fuse-admin/README.md` .
-
-
-===== Secure Fuse admin console
-
-Fuse admin console is Hawt.io. See http://hawt.io/configuration/index.html[Hawt.io documentation] for more info about how to secure it with Keycloak.
+{% endif %}
