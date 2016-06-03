@@ -10,14 +10,14 @@ If you try to access {{book.project.name}} out of the box via a non-private IP a
 This default behavior is defined by the SSL/HTTPS mode of each {{book.project.name}} realm.  This is discussed in more detail in the
 link:{{book.adminguide.link}}[{{book.adminguide.name}}], but let's give some context and a brief overview of these modes.
 
-external::
+external requests::
   {{book.project.name}} can run out of the box without SSL so long as you stick to private IP addresses like `localhost`, `127.0.0.1`, `10.0.x.x`, `192.168.x.x`, and `172..16.x.x`.
   If you try to access {{book.project.name}} from a non-private IP adress you will get an error.
 
 none::
   {{book.project.name}} does not require SSL.  This should really only be used in development when you are playing around with things.
 
-all::
+all requests::
   {{book.project.name}} requires SSL for all IP addresses.
 
 The SSL mode for each realm can be configured in the {{book.project.name}} admin console.
