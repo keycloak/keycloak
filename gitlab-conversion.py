@@ -32,12 +32,15 @@ targetdir = 'target'
 if len(sys.argv) > 1:
     targetdir = sys.argv[1]
 
-shutil.rmtree(os.path.join(targetdir, 'images'), ignore_errors=True)
-shutil.rmtree(os.path.join(targetdir, 'keycloak-images'), ignore_errors=True)
-shutil.rmtree(os.path.join(targetdir, 'rhsso-images'), ignore_errors=True)
-shutil.copytree('images',os.path.join(targetdir, 'images'))
-shutil.copytree('keycloak-images',os.path.join(targetdir, 'keycloak-images'))
-shutil.copytree('rhsso-images',os.path.join(targetdir, 'rhsso-images'))
+if os.path.exists(targetdir):
+    shutil.rmtree(targetdir)
+
+if os.path.isdir('images'):
+    shutil.copytree('images',os.path.join(targetdir, 'images'))
+if os.path.isdir('keycloak-images'):
+    shutil.copytree('keycloak-images',os.path.join(targetdir, 'keycloak-images'))
+if os.path.isdir('rhsso-images'):
+    shutil.copytree('rhsso-images',os.path.join(targetdir, 'rhsso-images'))
 
 tmp = os.path.join(targetdir, 'topics')
 if not os.path.exists(tmp):

@@ -1,7 +1,7 @@
 == Custom User Attributes
 
 You can add custom user attributes to the registration page and account management console with a custom theme. This chapter describes how to add attributes
-to a custom theme, but you should refer to the link:themes.html[Themes] chapter on how to create a custom theme.
+to a custom theme, but you should refer to the <<fake/../themes.adoc#_themes,Themes>> chapter on how to create a custom theme.
 
 === Registration Page
 
