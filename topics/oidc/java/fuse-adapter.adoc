@@ -80,7 +80,9 @@ It's recommended to use your own Jetty engine for your apps (similarly like `cxf
 
 Keycloak mainly addresses usecases for authentication of web applications, however if your admin services (like fuse admin console) are protected
 with Keycloak, it may be good to protect non-web services like SSH with Keycloak credentials too. It's possible to do it by using JAAS login module, which
-allows to remotely connect to Keycloak and verify credentials based on <<_direct_access_grants,Direct Access Grants>> .
+allows to remotely connect to Keycloak and verify credentials based on 
+
+// <<_direct_access_grants,Direct Access Grants>> .
 
 Example steps for enable SSH authentication require changing the configuration of `sshRealm` in `$FUSE_HOME/etc/org.apache.karaf.shell.cfg`, then adding
 file `$FUSE_HOME/etc/keycloak-direct-access.json` (this is default location, which can be changed) and install the needed feature `keycloak-jaas`. It's described in details
