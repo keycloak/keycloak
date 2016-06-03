@@ -1,0 +1,1 @@
+== Obtaining Permissions using the Entitlement API
