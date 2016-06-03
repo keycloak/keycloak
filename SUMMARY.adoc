@@ -20,7 +20,7 @@
       {% endif %}
       ... link:topics/oidc/java/servlet-filter-adapter.adoc[Java Servlet Filter Adapter]
       ... link:topics/oidc/java/jaas.adoc[JAAS plugin]
-      ... link:topics/oidc/java/adapter-context.adoc[Keycloak Security Context]
+      ... link:topics/oidc/java/adapter-context.adoc[Security Context]
       ... link:topics/oidc/java/adapter_error_handling.adoc[Error Handling]
       ... link:topics/oidc/java/logout.adoc[Logout]
       ... link:topics/oidc/java/multi-tenancy.adoc[Multi Tenancy]

@@ -1,4 +1,4 @@
-
+[[_javascript_adapter]]
 == Javascript Adapter
 
 The Keycloak Server comes with a Javascript library you can use to secure HTML/Javascript applications.

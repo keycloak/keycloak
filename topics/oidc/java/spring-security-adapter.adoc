@@ -1,4 +1,4 @@
-
+[[_spring_security_adapter]]
 === Spring Security Adapter
 
 To secure an application with Spring Security and Keycloak, add this adapter as a dependency to your project.

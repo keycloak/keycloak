@@ -3,26 +3,26 @@
 === OpenID Connect
 
 ==== Java
-* link:oidc/java/jboss-adapters.html[JBoss EAP]
+* <<fake/../../oidc/java/jboss-adapter.adoc#_jboss_adapter,JBoss EAP>>
 {% if book.community %}
-  * link:oidc/java/jboss-adapters.html[WildFly]
+  * <<fake/../../oidc/java/jboss-adapter.adoc#_jboss_adapter,WildFly>>
 {% endif %}
-* link:oidc/java/fuse-adapter.html[Fuse]
+* <<fake/../../oidc/java/fuse-adapter.adoc#_fuse_adapter,Fuse>>
 {% if book.community %}
-  * link:oidc/java/tomcat-adapter.html[Tomcat]
-  * link:oidc/java/jetty-adapter.html[Jetty]
+  * <<fake/../../oidc/java/tomcat-adapter.adoc#_tomcat_adapter,Tomcat>>
+  * <<fake/../../oidc/java/jetty9-adapter.adoc#_jetty9_adapter,Jetty 9>>, <<fake/../../oidc/java/jetty8-adapter.adoc#_jetty8_adapter,Jetty 8>>
 {% endif %}
-* link:oidc/java/servlet-filter-adapter.html[Servlet Filter]
+* <<fake/../../oidc/java/servlet-filter-adapter.adoc#_servlet_filter_adapter,Servlet Filter>>
 {% if book.community %}
-  * link:oidc/java/spring-adapter.html[Spring Security] (community)
-  * link:oidc/java/spring-boot-adapter.html[Spring Boot] (community)
+  * <<fake/../../oidc/java/spring-security-adapter.adoc#_spring_security_adapter,Spring Security>> (community)
+  * <<fake/../../oidc/java/spring-boot-adapter.adoc#_spring_boot_adapter,Spring Boot>> (community)
 {% endif %}
 
 ==== JavaScript (client-side)
-* link:oidc/javascript-adapter.html[JavaScript]
+* <<fake/../../oidc/javascript-adapter.adoc#_javascript_adapter,JavaScript>>
 
 === Apache Cordova
-* link:oidc/javascript-adapter.html[JavaScript]
+* <<fake/../../oidc/javascript-adapter.adoc#_javascript_adapter,JavaScript>>
 
 {% if book.community %}
 ==== Node.js
@@ -61,11 +61,11 @@
 
 ==== Java
 
-* link:oidc/java/jboss-adapters.html[JBoss EAP]
+* <<fake/../../saml/java/jboss-adapter.adoc#_jboss_adapter,JBoss EAP>>
 {% if book.community %}
-* link:oidc/java/jboss-adapters.html[WildFly]
-* link:oidc/java/tomcat-adapter.html[Tomcat]
-* link:oidc/java/jetty-adapter.html[Jetty]
+* <<fake/../../saml/java/jboss-adapter.adoc#_jboss_adapter,WildFly>>
+* <<fake/../../saml/java/tomcat-adapter.adoc#_tomcat_adapter,Tomcat>>
+* <<fake/../../saml/java/jetty-adapter.adoc#_jetty_adapter,Jetty>>
 {% endif %}
 
 ==== Apache HTTP Server
