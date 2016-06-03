@@ -45,3 +45,8 @@ catalog.xml
 #########
 target
 
+
+# Gitbook
+
+_book
+node_modules
