@@ -447,10 +447,14 @@ public class TestingResourceProvider implements RealmResourceProvider {
             query.toTime(to);
         }
 
-        if (firstResult != null) {
+        if (firstResult != null || maxResults != null) {
+            if (firstResult == null) {
+                firstResult = 0;
+            }
+            if (maxResults == null) {
+                maxResults = 100;
+            }
             query.firstResult(firstResult);
-        }
-        if (maxResults != null) {
             query.maxResults(maxResults);
         }
 
