@@ -1,4 +1,4 @@
-
+[[_spring_boot_adapter]]
 === Spring Boot Adapter
 
 To be able to secure Spring Boot apps you must add the Keycloak Spring Boot adapter JAR to your app.

@@ -1,4 +1,4 @@
-
+[[_servlet_filter_adapter]]
 === Java Servlet Filter Adapter
 
 If you want to use Keycloak with a Java servlet application that doesn't have an adapter for that servlet platform, you can opt to use the servlet filter adapter that Keycloak has.

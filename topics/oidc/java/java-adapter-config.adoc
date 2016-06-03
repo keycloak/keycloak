@@ -169,18 +169,18 @@ always-refresh-token::
 register-node-at-startup::
   If _true_, then adapter will send registration request to Keycloak.
   It's _false_ by default and useful only when application is clustered.
-  See link:application-clustering.html[Application Clustering] for details
+  See <<fake/../../oid/java/application-clustering.adoc#_applicationclustering,Application Clustering>> for details
 
 register-node-period::
   Period for re-registration adapter to Keycloak.
   Useful when application is clustered.
-  See link:application-clustering.html[Application Clustering] for details
+  See <<fake/../../oid/java/application-clustering.adoc#_applicationclustering,Application Clustering>> for details
 
 token-store::
   Possible values are _session_ and _cookie_.
   Default is _session_, which means that adapter stores account info in HTTP Session.
   Alternative _cookie_ means storage of info in cookie.
-  See link:application-clustering.html[Application Clustering] for details
+  See <<fake/../../oid/java/application-clustering.adoc#_applicationclustering,Application Clustering>> for details
 
 principal-attribute::
   OpenID Connection ID Token attribute to populate the UserPrincipal name with.
