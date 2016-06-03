@@ -25,5 +25,4 @@ Here's what the config looks like initially.
 To disable the cache set the `enabled` field to false for the cache you want to disable.  You must reboot your
 server for this change to take effect.
 
-NOTE: You must also remove the line like `"provider": "default"` from the `realmCache` configuration. Otherwise disabling cache won't work.
 
