@@ -2,7 +2,7 @@
 [[_java_adapter_config]]
 === Java Adapter Config
 
-Each Java adapter supported by Keycloak can be configured by a simple JSON file.
+Each Java adapter supported by {{book.project.name}} can be configured by a simple JSON file.
 This is what one might look like:
 
 [source,json]
@@ -71,7 +71,7 @@ use-resource-role-mappings::
   The default value is _false_.
 
 public-client::
-  If set to true, the adapter will not send credentials for the client to Keycloak.
+  If set to true, the adapter will not send credentials for the client to {{book.project.name}}.
   This is _OPTIONAL_.
   The default value is _false_.
 
@@ -118,8 +118,8 @@ credentials::
   This is _REQUIRED_.
 
 connection-pool-size::
-  Adapters will make separate HTTP invocations to the Keycloak Server to turn an access code into an access token.
-  This config option defines how many connections to the Keycloak Server should be pooled.
+  Adapters will make separate HTTP invocations to the {{book.project.name}} server to turn an access code into an access token.
+  This config option defines how many connections to the {{book.project.name}} server should be pooled.
   This is _OPTIONAL_.
   The default value is `20`.
 
@@ -130,7 +130,7 @@ disable-trust-manager::
   The default value is `false`.
 
 allow-any-hostname::
-  If the {{book.project.name}} server requires HTTPS and this config option is set to `true` the Keycloak Server's certificate is validated via the truststore,
+  If the {{book.project.name}} server requires HTTPS and this config option is set to `true` the {{book.project.name}} server's certificate is validated via the truststore,
   but host name validation is not done.
   This setting should only be used during development and *never* in production as it will disable verification of SSL certificates.
   This seting may be useful in test environments This is _OPTIONAL_.
@@ -143,7 +143,7 @@ truststore::
   Client making HTTPS requests need a way to verify the host of the server they are talking to.
   This is what the trustore does.
   The keystore contains one or more trusted host certificates or certificate authorities.
-  You can create this truststore by extracting the public certificate of the Keycloak server's SSL keystore.
+  You can create this truststore by extracting the public certificate of the {{book.project.name}} server's SSL keystore.
   This is _OPTIONAL_ if `ssl-required` is `none` or `disable-trust-manager` is `true`.
 
 truststore-password::
@@ -167,12 +167,12 @@ always-refresh-token::
   If _true_, the adapter will refresh token in every request.
 
 register-node-at-startup::
-  If _true_, then adapter will send registration request to Keycloak.
+  If _true_, then adapter will send registration request to {{book.project.name}}.
   It's _false_ by default and useful only when application is clustered.
   See <<fake/../../oid/java/application-clustering.adoc#_applicationclustering,Application Clustering>> for details
 
 register-node-period::
-  Period for re-registration adapter to Keycloak.
+  Period for re-registration adapter to {{book.project.name}}.
   Useful when application is clustered.
   See <<fake/../../oid/java/application-clustering.adoc#_applicationclustering,Application Clustering>> for details
 
