@@ -1,12 +1,19 @@
-=== Keycloak Security Context
+=== Security Context
 
-The `KeycloakSecurityContext` interface is available if you need to look at the access token directly.
-This context is also useful if you need to get the encoded access token so you can make additional REST invocations.
-In servlet environments it is available in secured invocations as an attribute in HttpServletRequest.
-Or, it is available in secure and insecure requests in the HttpSession for browser apps. 
+The `KeycloakSecurityContext` interface is available if you need to access to the tokens directly. This could be useful if you want to retrieve additional
+details from the token (such as user profile information) or you want to invoke a RESTful service that is protected by {{book.project.title}}.
 
-[source]
+In servlet environments it is available in secured invocations as an attribute in HttpServletRequest:
+[source,java]
 ----
-httpServletRequest.getAttribute(KeycloakSecurityContext.class.getName());
-httpServletRequest.getSession().getAttribute(KeycloakSecurityContext.class.getName());
-----    
+httpServletRequest
+    .getAttribute(KeycloakSecurityContext.class.getName());
+----
+
+Or, it is available in secure and insecure requests in the HttpSession:
+
+[source,java]
+----
+httpServletRequest.getSession()
+    .getAttribute(KeycloakSecurityContext.class.getName());
+----

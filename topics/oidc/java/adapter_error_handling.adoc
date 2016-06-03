@@ -2,59 +2,33 @@
 [[_adapter_error_handling]]
 === Error Handling
 
-Keycloak has some error handling facilities for servlet based client adapters.
-When an error is encountered in authentication, keycloak will call `HttpServletResponse.sendError()`.
+{{book.project.name}} has some error handling facilities for servlet based client adapters.
+When an error is encountered in authentication, {{book.project.title}} will call `HttpServletResponse.sendError()`.
 You can set up an error-page within your `web.xml` file to handle the error however you want.
-Keycloak may throw 400, 401, 403, and 500 errors. 
+{{book.project.title}} may throw 400, 401, 403, and 500 errors.
 
-
-[source]
+[source,xml]
 ----
-
-
 <error-page>
     <error-code>404</error-code>
     <location>/ErrorHandler</location>
 </error-page>
 ----    
 
-Keycloak also sets an `HttpServletRequest` attribute that you can retrieve.
-The attribute name is `org.keycloak.adapters.spi.AuthenticationError`.
-Typecast this object to: `org.keycloak.adapters.OIDCAuthenticationError`.
-This class can tell you exactly what happened.
-If this attribute is not set, then the adapter was not responsible for the error code. 
+{{book.project.name}} also sets a `HttpServletRequest` attribute that you can retrieve.
+The attribute name is `org.keycloak.adapters.spi.AuthenticationError`, which should be casted to to `org.keycloak.adapters.OIDCAuthenticationError`.
 
+For example:
 
-[source]
+[source,java]
 ----
+import org.keycloak.adapters.OIDCAuthenticationError;
+import org.keycloak.adapters.OIDCAuthenticationError.Reason;
+...
 
-public class OIDCAuthenticationError implements AuthenticationError {
-    public static enum Reason {
-        NO_BEARER_TOKEN,
-        NO_REDIRECT_URI,
-        INVALID_STATE_COOKIE,
-        OAUTH_ERROR,
-        SSL_REQUIRED,
-        CODE_TO_TOKEN_FAILURE,
-        INVALID_TOKEN,
-        STALE_TOKEN,
-        NO_AUTHORIZATION_HEADER
-    }
+OIDCAuthenticationError error = (OIDCAuthenticationError) httpServletRequest
+    .getAttribute('org.keycloak.adapters.spi.AuthenticationError');
 
-    private Reason reason;
-    private String description;
-
-    public OIDCAuthenticationError(Reason reason, String description) {
-        this.reason = reason;
-        this.description = description;
-    }
-
-    public Reason getReason() {
-        return reason;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-}
-----    
+Reason reason = error.getReason();
+System.out.println(reason.name());
+----

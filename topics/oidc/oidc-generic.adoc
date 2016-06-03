@@ -14,6 +14,7 @@ TODO
 
 ==== Implicit
 
+[[_resource_owner_password_credentials_flow]]
 ==== Resource Owner Password Credentials
 
 ==== Client Credentials

@@ -1,131 +1,113 @@
 [[_applicationclustering]]
 === Application Clustering
 
-This chapter is focused on clustering support for your own AS7, EAP6 or Wildfly applications, which are secured by Keycloak.
-We support various deployment scenarios according if your application is: 
+This chapter is related to supporting clustered applications deployed to JBoss EAP{% if book.community %}, WildFly and JBoss AS{% endif %}.
 
-* stateless or stateful 
-* distributable (replicated http session) or non-distributable and just relying on sticky sessions provided by loadbalancer 
-* deployed on same or different cluster hosts where keycloak servers are deployed     
+There are several options depending on if your application is:
 
-The situation is a bit tricky as application communicates with Keycloak directly within user's browser (for example redirecting to login screen), but there is also backend (out-of-bound) communication between keycloak and application, which is hidden from end-user and his browser and hence can't rely on sticky sessions. 
+* Stateless or stateful
+* Distributable (replicated http session) or non-distributable
+* Relying on sticky sessions provided by load balancer
+* Hosted on same domain as {{book.project.name}}
 
-NOTE: To enable distributable (replicated) HTTP Sessions in your application, you may need to do some additional steps.
-Usually you need to put tag into `WEB-INF/web.xml` file of your application and possibly do some additional steps to configure underlying cluster cache (In case of Wildfly, the implementation of cluster cache is based on Infinispan). These steps are server specific, so consult documentation of your application server for more details. 
+Dealing with clustering is not quite as simple as for a regular application. Mainly due to the fact that both the browser and the server-side application
+sends requests to {{book.project.name}}, so it's not as simple as enabling sticky sessions on your load balancer.
 
 ==== Stateless token store
 
-By default, the servlet web application secured by Keycloak uses HTTP session to store information about authenticated user account.
-This means that this info could be replicated across cluster and your application will safely survive failover of some cluster node. 
+By default, the web application secured by {{book.project.name}} uses the HTTP session to store security context. This means that you either have to
+enable sticky sessions or replicate the HTTP session.
 
-However if you don't need or don't want to use HTTP Session, you may alternatively save all info about authenticated account into cookie.
-This is useful especially if your application is: 
+As an alternative to storing the security context in the HTTP session the adapter can be configured to store this in a cookie instead. This is useful if you want
+to make your application stateless or if you don't want to store the security context in the HTTP session.
 
-* stateless application without need of HTTP Session, but with requirement to be safe to failover of some cluster node 
-* stateful application, but you don't want sensitive token data to be saved in HTTP session 
-* stateless application relying on loadbalancer, which is not aware of sticky sessions (in this case cookie is your only way)         
-
-To configure this, you can add this line to configuration of your adapter in `WEB-INF/keycloak.json` of your application: 
-[source]
+To use the cookie store for saving the security context, edit your applications `WEB-INF/keycloak.json` and add:
+[source,json]
 ----
-
-
 "token-store": "cookie"
 ----        
 
-Default value of `token-store` is `session`, hence saving data in HTTP session. 
+NOTE: The default value for `token-store` is `session`, which stores the security context in the HTTP session.
 
-One limitation of cookie store is, that whole info about account is passed in cookie KEYCLOAK_ADAPTER_STATE in each HTTP request.
-Hence it's not the best for network performance.
-Another small limitation is limited support for Single-Sign out.
-It works without issues if you init servlet logout (HttpServletRequest.logout) from this application itself as the adapter will delete the KEYCLOAK_ADAPTER_STATE cookie.
-But back-channel logout initialized from different application can't be propagated by Keycloak to this application with cookie store.
-Hence it's recommended to use very short value of access token timeout (1 minute for example). 
+One limitation of using the cookie store is that the whole security context is passed in the cookie for every HTTP request. This may impact performance.
+
+Another small limitation is limited support for Single-Sign Out. It works without issues if you init servlet logout (HttpServletRequest.logout) from the
+application itself as the adapter will delete the KEYCLOAK_ADAPTER_STATE cookie. However, back-channel logout initialized from a different application isn't
+propagated by {{book.project.name}} to applications using cookie store. Hence it's recommended to use a short value for the access token timeout (for example 1 minute).
 
 ==== Relative URI optimization
 
-In many deployment scenarios will be Keycloak and secured applications deployed on same cluster hosts.
-For this case Keycloak already provides option to use relative URI as value of option _auth-server-url_ in `WEB-INF/keycloak.json` . In this case, the URI of Keycloak server is resolved from the URI of current request. 
+In deployment scenarios where {{book.project.name}} and the application is hosted on the same domain (through a reverse proxy or load balancer) it can be
+convenient to use relative URI options in your client configuration.
 
-For example if your loadbalancer is on _https://loadbalancer.com/myapp_ and auth-server-url is _/auth_, then relative URI of Keycloak is resolved to be  _https://loadbalancer.com/auth_ . 
+With relative URIs the URI is resolved as relative to the URL of the URL used to access {{book.project.name}}.
 
-For cluster setup, it may be even better to use option _auth-server-url-for-backend-request_ . This allows to configure that backend requests between Keycloak and your application will be sent directly to same cluster host without additional round-trip through loadbalancer.
-So for this, it's good to configure values in `WEB-INF/keycloak.json` like this: 
-[source]
-----
-
-
-"auth-server-url": "/auth",
-"auth-server-url-for-backend-requests": "http://${jboss.host.name}:8080/auth"
-----        
-
-This would mean that browser requests (like redirecting to Keycloak login screen) will be still resolved relatively to current request URI like _https://loadbalancer.com/myapp_, but backend (out-of-bound) requests between keycloak and your app are sent always to same cluster host with application . 
-
-Note that additionally to network optimization, you may not need "https" in this case as application and keycloak are communicating directly within same cluster host. 
+For example if the URL to your application is `https://acme.org/myapp` and the URL to {{book.project.name}} is `https://acme.org/auth`, then you can use
+the redirect-uri `/myapp` instead of `https://acme.org/myapp`.
 
 ==== Admin URL configuration
 
-Admin URL for particular application can be configured in Keycloak admin console.
-It's used by Keycloak server to send backend requests to application for various tasks, like logout users or push revocation policies. 
+Admin URL for a particular application can be configured in the {{book.project.name}} Administration Console.
+It's used by the {{book.project.name}} server to send backend requests to the application for various tasks, like logout users or push revocation policies.
 
-For example logout of user from Keycloak works like this: 
+For example the way backchannel logout works is:
 
-. User sends logout request from one of applications where he is logged. 
-. Then application will send logout request to Keycloak 
-. Keycloak server logout user in itself, and then it re-sends logout request by backend channel to all applications where user is logged.
-  Keycloak is using admin URL for this.
-  So logout is propagated to all apps.             
+. User sends logout request from one application
+. The application sends logout request to {{book.project.name}}
+. The {{book.project.name}} server invalidates the user session
+. The {{book.project.name}} server then sends a backchannel request to application with a admin url that are associated with the session
+. When an application receives the logout request it invalidates the corresponding HTTP session
 
-You may again use relative values for admin URL, but in cluster it may not be the best similarly like in <<_relative_uri_optimization,previous section>> . 
-
-Some examples of possible values of admin URL are: 
-
-http://${jboss.host.name}:8080/myapp::
-  This is best choice if "myapp" is deployed on same cluster hosts like Keycloak and is distributable.
-  In this case Keycloak server sends logout request to itself, hence no communication with loadbalancer or other cluster nodes and no additional network traffic. 
+Some examples of possible values of admin URL are:
 
 http://${application.session.host}:8080/myapp::
-  Keycloak will track hosts where is particular HTTP Session served and it will send session invalidation message to proper cluster node.             
+  {{book.project.name}} tracks hosts associated with the HTTP Session and will send session invalidation message to the associated node.
 
 [[_registration_app_nodes]]
-==== Registration of application nodes to Keycloak
+==== Registration of application nodes
 
-Previous section describes how can Keycloak send logout request to proper application node.
-However in some cases admin may want to propagate admin tasks to all registered cluster nodes, not just one of them.
-For example push new notBefore for realm or application, or logout all users from all applications on all cluster nodes. 
+The previous describes how {{book.project.name}} can send logout request to node associated with a specific HTTP session.
+However, in some cases admin may want to propagate admin tasks to all registered cluster nodes, not just one of them.
+For example to push a new not before policy to the application or to logout all users from the application.
 
-In this case Keycloak should be aware of all application cluster nodes, so it could send event to all of them.
+In this case {{book.project.name}} needs to be aware of all application cluster nodes, so it can send the event to all of them.
 To achieve this, we support auto-discovery mechanism: 
 
-. Once new application node joins cluster, it sends registration request to Keycloak server 
-. The request may be re-sent to Keycloak in configured periodic intervals 
-. If Keycloak won't receive re-registration request within specified timeout (should be greater than period from point 2) then it automatically unregister particular node 
-. Node is also unregistered in Keycloak when it sends unregistration request, which is usually during node shutdown or application undeployment.
-  This may not work properly for forced shutdown when undeployment listeners are not invoked, so here you need to rely on automatic unregistration from point 3 .         
+. When a new application node joins the cluster, it sends a registration request to the {{book.project.name}} server
+. The request may be re-sent to {{book.project.name}} in configured periodic intervals
+. If the {{book.project.name}} server doesn't receive a re-registration request within a specified timeout then it automatically unregisters the specific node
+. The node is also unregistered in {{book.project.name}} when it sends an unregistration request, which is usually during node shutdown or application undeployment.
+  This may not work properly for forced shutdown when undeployment listeners are not invoked, which results in the need for automatic unregistration
 
-Sending startup registrations and periodic re-registration is disabled by default, as it's main usecase is just cluster deployment.
-In `WEB-INF/keycloak.json` of your application, you can specify: 
+Sending startup registrations and periodic re-registration is disabled by default as it's only required for some clustered applications.
+
+To enable the feature edit the `WEB-INF/keycloak.json` file for your application and add:
 
 [source]
 ----
 "register-node-at-startup": true,
 "register-node-period": 600,
-----                
-which means that registration is sent at startup (accurately when 1st request is served by the application node) and then it's resent each 10 minutes. 
+----
 
-In Keycloak admin console you can specify the maximum node re-registration timeout (makes sense to have it bigger than _register-node-period_ from adapter configuration for particular application). Also you can manually add and remove cluster nodes in admin console, which is useful if you don't want to rely on adapter's automatic registration or if you want to remove stale application nodes, which weren't unregistered (for example due to forced shutdown). 
+This means the adapter will send the registration request on startup and re-register every 10 minutes.
+
+In the {{book.project.name}} Administration Console you can specify the maximum node re-registration timeout (should be larger than _register-node-period_ from
+the adapter configuration). You can also manually add and remove cluster nodes in through the Adminstration Console, which is useful if you don't want to rely
+on the automatic registration feature or if you want to remove stale application nodes in the event your not using the automatic unregistration feature.
 
 [[_refresh_token_each_req]]
 ==== Refresh token in each request
 
-By default, application adapter tries to refresh access token when it's expired (period can be specified as <<_token_timeouts,Access Token Lifespan>>) . However if you don't want to rely on the fact, that Keycloak is able to successfully propagate admin events like logout to your application nodes, then you have possibility to configure adapter to refresh access token in each HTTP request. 
+By default the application adapter will only refresh the access token when it's expired. However, you can also configure the adapter to refresh the token on every
+request. This may have a performance impact as your application will send more requests to the {{book.project.name}} server.
 
-In `WEB-INF/keycloak.json` you can configure: 
+To enable the feature edit the `WEB-INF/keycloak.json` file for your application and add:
 
 [source]
 ----
 "always-refresh-token": true
 ----        
 
-Note that this has big performance impact.
-It's useful just if performance is not priority, but security is critical and you can't rely on logout and push notBefore propagation from Keycloak to applications. 
+NOTE: This may have a significant impact on performance. Only enable this feature if you can't rely on backchannel messages to propagate logout and not before
+    policies. Another thing to consider is that by default access tokens has a short expiration so even if logout is not propagated the token will expire within
+    minutes of the logout.
