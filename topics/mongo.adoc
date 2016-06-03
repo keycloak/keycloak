@@ -69,7 +69,7 @@ And at the end of the file add the snippet like this where you can configure det
 All configuration options are optional.
 Default values for host and port are localhost and 27017.
 Default name of database is `keycloak` . You can also specify properties `user` and `password` if you want authenticate against your MongoDB.
-If user and password are not specified, Keycloak will connect unauthenticated to your MongoDB.
+If user and password are not specified, {{book.project.name}} will connect unauthenticated to your MongoDB.
 
 Finally there is set of optional configuration options, which can be used to specify connection-pooling capabilities of Mongo client.
 Supported int options are: `connectionsPerHost`, `threadsAllowedToBlockForConnectionMultiplier`, `maxWaitTime`, `connectTimeout` `socketTimeout`.
@@ -80,7 +80,7 @@ See http://api.mongodb.org/java/2.11.4/com/mongodb/MongoClientOptions.html[Mongo
 Alternatively, you can configure MongoDB using a MongoDB http://docs.mongodb.org/manual/reference/connection-string/[connection URI].
 In this case, you define all information concerning the connection and authentication within the URI, as described in the MongoDB documentation.
 Please note that the database specified within the URI is only used for authentication.
-To change the database used by keycloak you have to set `db` property as before.
+To change the database used by {{book.project.name}} you have to set `db` property as before.
 Therefore, a configuration like the following
 
 [source]
@@ -93,8 +93,8 @@ Therefore, a configuration like the following
     }
 }
 ----
-will authenticate the user against the authentication database, but store all keycloak related data in the keycloak database.
+will authenticate the user against the authentication database, but store all {{book.project.name}} related data in the keycloak database.
 
 === MongoDB Replica Sets
 
-In order to use a mongo replica set for Keycloak, one has to use URI based configuration, which supports the definition of replica sets out of the box: `mongodb://host1:27017,host2:27017,host3:27017/`.
+In order to use a mongo replica set for {{book.project.name}}, one has to use URI based configuration, which supports the definition of replica sets out of the box: `mongodb://host1:27017,host2:27017,host3:27017/`.

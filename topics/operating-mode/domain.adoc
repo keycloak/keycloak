@@ -42,7 +42,7 @@ from the domain controller.
 
 Various other chapters in this guide walk you through configuring various aspects like databases,
 HTTP network connections, caches, and other infrastructure related things.  While standalone mode uses the _standalone.xml_ file to configure these things,
-domain mode uses the _.../domain/domain.xml_ configuration file.  This is
+domain mode uses the _.../domain/configuration/domain.xml_ configuration file.  This is
 where the domain profile and server group for the {{book.project.name}} server are defined.
 
 
@@ -53,7 +53,7 @@ WARNING: Any changes you make to this file while the domain controller is runnin
       by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
       the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
 
-Let's look at some aspects of this _domain.xml_ file.  The `auth-serve-standalone` and `auth-server-clustered` `profile` XML block is where you are going to make the bulk of your configuration decisions.
+Let's look at some aspects of this _domain.xml_ file.  The `auth-server-standalone` and `auth-server-clustered` `profile` XML blocks are where you are going to make the bulk of your configuration decisions.
 You'll be configuring things here like network connections, caches, and database connections.
 
 
@@ -174,10 +174,10 @@ The structure of these per server directories ends up looking like any other {{b
 .Working Directories
 image:../../{{book.images}}/domain-server-dir.png[]
 
-==== {{book.project.name}} JSon Configuration
+==== {{book.project.name}} JSON Configuration
 
 Unfortunately, there is no centralized way to manage the _keycloak.json_ file.  You'll have to manage a copy of this file
-in every server instance you deploy.  This file must exist in the _.../domain/servers/{SERVER NAME}/configuration directory.
+in every server instance you deploy.  This file must exist in the _.../domain/servers/{SERVER NAME}/configuration directory._
 
 .JSON Configuration
 image:../../{{book.images}}/domain-json-config.png[]
@@ -263,6 +263,8 @@ $ add-user.sh
  yes/no? yes
  To represent the user add the following to the server-identities definition <secret value="bWdtdDEyMyE=" />
 ----
+
+NOTE: The add-user.sh does not add user to {{book.project.name}} server but to the underlying JBoss Enterprise Application Platform. The credentials used and generated in the above script are only for example purpose. Please use the ones generated on your system. 
 
 Now cut and paste the secret value into the _.../domain/configuration/host-slave.xml_ file as follows:
 

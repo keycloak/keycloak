@@ -4,15 +4,12 @@
 WARNING:  {{book.project.name}} is not set up by default to handle SSL/HTTPS.
           It is highly recommended that you either enable SSL on the {{book.project.name}} server itself or on a reverse proxy in front of the {{book.project.name}} server.
 
-{{book.project.name}} can run out of the box without SSL/HTTPS so long as you stick to private IP addresses like localhost, 127.0.0.1, 10.0.x.x, 192.168.x.x, and 172..16.x.x.
-If you try to access {{book.project.name}} out of the box via a non-private IP address you will get an error.
-
 This default behavior is defined by the SSL/HTTPS mode of each {{book.project.name}} realm.  This is discussed in more detail in the
 link:{{book.adminguide.link}}[{{book.adminguide.name}}], but let's give some context and a brief overview of these modes.
 
 external requests::
   {{book.project.name}} can run out of the box without SSL so long as you stick to private IP addresses like `localhost`, `127.0.0.1`, `10.0.x.x`, `192.168.x.x`, and `172..16.x.x`.
-  If you try to access {{book.project.name}} from a non-private IP adress you will get an error.
+  If you don’t have SSL/HTTPS configured on the server or you try to access {{book.project.name}} over HTTP from a non-private IP adress you will get an error.
 
 none::
   {{book.project.name}} does not require SSL.  This should really only be used in development when you are playing around with things.
@@ -32,7 +29,7 @@ for the {{book.project.name}} server.  This involves
 
 ===== Creating the Certificate and Java Keystore
 
-In order to allow HTTPS connections, you need to obtain a self signed or third-party signed certificate and import it into a Java keystore before you can enable HTTPS in the web container you are deploying the Keycloak Server to.
+In order to allow HTTPS connections, you need to obtain a self signed or third-party signed certificate and import it into a Java keystore before you can enable HTTPS in the web container you are deploying the {{book.project.name}} Server to.
 
 ====== Self Signed Certificate
 

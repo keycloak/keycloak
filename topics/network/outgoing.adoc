@@ -72,7 +72,7 @@ You can use _keytool_ to create a new truststore file or add trusted host certif
 $ keytool -import -alias HOSTDOMAIN -keystore truststore.jks -file host-certificate.cer
 ----
 
-The truststore is configured within the_keycloak-server.json_ file.  The location of this file depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>.
+The truststore is configured within the _keycloak-server.json_ file.  The location of this file depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>.
 You can add your truststore configuration by using the following template:
 
 [source]
