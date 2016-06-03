@@ -17,7 +17,7 @@ credentials::
 roles::
   Roles identify a type or category of user.  `Admin`, `user`, `manager`, and `employee` are all typical roles that may exist
   in an organization.  Applications often assign access and permissions to specific roles rather than individual users as dealing
-  with users can be too fine grained and hard to manage
+  with users can be too fine grained and hard to manage.
 user role mapping::
   A user role mapping defines a mapping between a role and a user.  A user can be associated with zero or more roles.  This
   role mapping information can be encapsulated into tokens and assertions so that applications can decide access permissions on

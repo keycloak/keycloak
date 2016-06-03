@@ -1,3 +1,4 @@
+[[_clients]]
 
 == Managing Clients
 

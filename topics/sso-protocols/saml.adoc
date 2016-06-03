@@ -2,12 +2,10 @@
 
 === SAML
 
-link://https://saml.org/fill/this/in[SAML 2.0] is a similar specification to OIDC but a lot older and more mature.  It has its roots in SOAP and the plethora
+link:http://saml.xml.org/saml-specifications[SAML 2.0] is a similar specification to OIDC but a lot older and more mature.  It has its roots in SOAP and the plethora
 of WS-* specifications so it tends to be a bit more verbose than OIDC.  SAML 2.0 is primarily an authentication protocol
 that works by exchanging XML documents between the authentication server and the application.  XML signatures and encryption
 is used to verify requests and responses.
-
-In {{book.project.name}} SAML serves two types of use cases: browser applications and REST invocations.
 
 There is really two types of use cases when using SAML.  The first is an application that asks the {{book.project.name}} server to authenticate
 a user for them.  After a successful login, the application will receive an XML document that contains
@@ -55,7 +53,8 @@ You really don't need to know about this stuff, but it is a pretty clever trick.
 
 ===== ECP
 
-TODO.  Ask Pedro to fill in.
+ECP stands for "Enhanced Client or Proxy", a SAML v.2.0 profile which allows for the exchange of SAML attributes outside the context of a web browser.
+This is used most often for REST or SOAP-based clients.
 
 ====  {{book.project.name}} Server OIDC URI Endpoints
 
