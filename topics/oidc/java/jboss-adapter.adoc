@@ -1,110 +1,137 @@
 
 [[_jboss_adapter]]
-=== JBoss/Wildfly Adapter
+{% if book.community %}
+=== JBoss EAP/Wildfly Adapter
+{% endif %}
+{% if book.product %}
+=== JBoss EAP Adapter
+{% endif %}
 
-To be able to secure WAR apps deployed on JBoss AS 7.1.1, JBoss EAP 6.x, or Wildfly, you must install and configure the Keycloak Subsystem.
-You then have two options to secure your WARs.
-You can provide a keycloak config file in your WAR and change the auth-method to KEYCLOAK within web.xml.
-Alternatively, you don't have to crack open your WARs at all and can apply Keycloak via the Keycloak Subsystem configuration in standalone.xml.
-Both methods are described in this section. 
+To be able to secure WAR apps deployed on JBoss EAP {% if book.community %}, WildFly or JBoss AS{% endif %}, you must install and configure the
+{{book.project.name}} adapter subsystem. You then have two options to secure your WARs.
+
+You can provide an adapter config file in your WAR and change the auth-method to KEYCLOAK within web.xml.
+
+Alternatively, you don't have to modify your WAR at all and you can secure it via the {{book.project.name}} adapter subsystem configuration in `standalone.xml`.
+Both methods are described in this section.
 
 [[_jboss_adapter_installation]]
 ==== Adapter Installation
 
-Adapters are no longer included with the appliance or war distribution.
-Each adapter is a separate download on the Keycloak download site.
-They are also available as a maven artifact. 
+Adapters are available as a separate archive and are also available as Maven artifacts.
 
-Install on Wildfly 9 or 10: 
+{% if book.community %}
+Install on Wildfly 9 or 10:
 
-[source]
+[source,bash]
 ----
-
 $ cd $WILDFLY_HOME
-$ unzip keycloak-wildfly-adapter-dist.zip
-----    
-Install on Wildfly 8: 
-
-[source]
+$ unzip keycloak-wildfly-adapter-dist-{{book.project.version}}.zip
 ----
 
+Install on Wildfly 8:
+
+[source,bash]
+----
 $ cd $WILDFLY_HOME
-$ unzip keycloak-wf8-adapter-dist.zip
-----    
-Install on JBoss EAP 6.x: 
+$ unzip keycloak-wf8-adapter-dist-{{book.project.version}}.zip
+----
+
+Install on JBoss EAP 7:
 
 [source]
 ----
+$ cd $EAP_HOME
+$ unzip keycloak-eap7-adapter-dist-{{book.project.version}}.zip
+----
 
+Install on JBoss EAP 6:
+
+[source]
+----
+$ cd $EAP_HOME
+$ unzip keycloak-eap6-adapter-dist-{{book.project.version}}.zip
+----
+
+Install on JBoss AS 7.1:
+
+[source]
+----
 $ cd $JBOSS_HOME
-$ unzip keycloak-eap6-adapter-dist.zip
-----    
-Install on JBoss AS 7.1.1: 
+$ unzip keycloak-as7-adapter-dist-{{book.project.version}}.zip
+----
+{% endif %}
+
+{% if book.product %}
+Install on JBoss EAP 7:
 
 [source]
 ----
+$ cd $EAP_HOME
+$ unzip RH-SSO-{{book.project.version}}-eap7-adapter.zip
+----
 
-$ cd $JBOSS_HOME
-$ unzip keycloak-as7-adapter-dist.zip
-----    
-
-This zip file creates new JBoss Modules specific to the Wildfly Keycloak Adapter within your Wildfly distro. 
-
-After adding the Keycloak modules, you must then enable the Keycloak Subsystem within your app server's server configuration: `domain.xml` or `standalone.xml`. 
-
-There is a CLI script that will help you modify your server configuration.
-Start the server and run the script  from the server's bin directory: 
+Install on JBoss EAP 6:
 
 [source]
 ----
+$ cd $EAP_HOME
+$ unzip RH-SSO-{{book.project.version}}-eap6-adapter.zip
+----
+{% endif %}
 
-$ cd $JBOSS_HOME/bin
-$ jboss-cli.sh -c --file=adapter-install.cli
-----        
-The script will add the extension, subsystem, and optional security-domain as described below. 
+This ZIP archive contains JBoss Modules specific to the {{book.project.name}} adapter. It also contains JBoss CLI scripts to install and configure the adapter.
 
-For more recent versions of WildFly there's also a offline CLI script that can be used to install the adapter while the server is not running: 
+Once the ZIP archive is extracted you have to enable the {{book.project.name}} subystem in the server configuration (i.e. `standalone.xml`). The easiest way to
+do this is to use the supplied JBoss CLI scripts.
+
+To install and configure the adapter, first start the server and then run the JBoss CLI installation script :
 
 [source]
 ----
+$ ./bin/jboss-cli.sh -c --file=adapter-install.cli
+----
 
-$ cd $JBOSS_HOME/bin
-$ jboss-cli.sh -c --file=adapter-install-offline.cli
-----    
+The script will add the required configuration to the server configuration file.
+
+For JBoss EAP 7 {% if book.community %} and WildFly 9+{% endif %} there is also an offline CLI script that can be used to install the adapter while the server
+is not running:
 
 [source]
 ----
-
-<server xmlns="urn:jboss:domain:1.4">
-
-    <extensions>
-        <extension module="org.keycloak.keycloak-adapter-subsystem"/>
-          ...
-    </extensions>
-
-    <profile>
-        <subsystem xmlns="urn:jboss:domain:keycloak:1.1"/>
-         ...
-    </profile>
+$ ./bin/jboss-cli.sh -c --file=adapter-install-offline.cli
 ----    
 
-The keycloak security domain should be used with EJBs and other components when you need the security context created in the secured web tier to be propagated to the EJBs (other EE component) you are invoking.
-Otherwise this configuration is optional. 
+If you are planning to add it manually you need to add the extension and subsystem definition to the server configuration:
 
-[source]
+[source,xml]
+----
+<extensions>
+    <extension module="org.keycloak.keycloak-adapter-subsystem"/>
+    ...
+</extensions>
+
+<profile>
+    <subsystem xmlns="urn:jboss:domain:keycloak:1.1"/>
+    ...
+</profile>
 ----
 
-<server xmlns="urn:jboss:domain:1.4">
- <subsystem xmlns="urn:jboss:domain:security:1.2">
+If you need to be able to propagate the security context from the web tier to the EJB tier you also need to add the `keycloak` security domain:
+
+[source,xml]
+----
+<subsystem xmlns="urn:jboss:domain:security:...">
     <security-domains>
-...
-      <security-domain name="keycloak">
-         <authentication>
-           <login-module code="org.keycloak.adapters.jboss.KeycloakLoginModule"
-                         flag="required"/>
-          </authentication>
-      </security-domain>
+        ...
+        <security-domain name="keycloak">
+            <authentication>
+                <login-module code="org.keycloak.adapters.jboss.KeycloakLoginModule"
+                              flag="required"/>
+            </authentication>
+        </security-domain>
     </security-domains>
+    ...
 ----
 
 For example, if you have a JAX-RS service that is an EJB within your WEB-INF/classes directory, you'll want to annotate it with the @SecurityDomain annotation as follows: 
@@ -142,30 +169,27 @@ public class CustomerService {
 }
 ----
 
-We hope to improve our integration in the future so that you don't have to specify the @SecurityDomain annotation when you want to propagate a keycloak security context to the EJB tier. 
-
 ==== Required Per WAR Configuration
 
 This section describes how to secure a WAR directly by adding config and editing files within your WAR package. 
 
 The first thing you must do is create a `keycloak.json` adapter config file within the `WEB-INF` directory of your WAR.
-The format of this config file is describe in the <<_adapter_config,general adapter configuration>>            section. 
+The format of this config file is describe in the <<_adapter_config,general adapter configuration>> section.
 
 Next you must set the `auth-method` to `KEYCLOAK` in `web.xml`.
 You also have to use standard servlet security to specify role-base constraints on your URLs.
-Here's an example pulled from one of the examples that comes distributed with Keycloak. 
 
+Here's an example:
 
-[source]
+[source,xml]
 ----
-
 
 <web-app xmlns="http://java.sun.com/xml/ns/javaee"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
       version="3.0">
 
-	<module-name>customer-portal</module-name>
+    <module-name>application</module-name>
 
     <security-constraint>
         <web-resource-collection>
@@ -208,16 +232,13 @@ Here's an example pulled from one of the examples that comes distributed with Ke
 
 ==== Securing WARs via Keycloak Subsystem
 
-You do not have to crack open a WAR to secure it with Keycloak.
-Alternatively, you can externally secure it via the Keycloak Adapter Subsystem.
+You do not have to modify your WAR to secure it with {{book.project.title}}. Instead you can externally secure it via the {{book.project.title}} Adapter Subsystem.
 While you don't have to specify KEYCLOAK as an `auth-method`, you still have to define the `security-constraints` in `web.xml`.
 You do not, however, have to create a `WEB-INF/keycloak.json` file.
-This metadata is instead defined within XML in your server's `domain.xml` or `standalone.xml` subsystem configuration section. 
+This metadata is instead defined within server configuration (i.e. `standalone.xml`) in the {{book.project.title}} subsystem definition.
 
-
-[source]
+[source,xml]
 ----
-
 <extensions>
   <extension module="org.keycloak.keycloak-adapter-subsystem"/>
 </extensions>
@@ -236,25 +257,22 @@ This metadata is instead defined within XML in your server's `domain.xml` or `st
 </profile>
 ----
 
-
 The `secure-deployment` `name` attribute identifies the WAR you want to secure.
 Its value is the `module-name` defined in `web.xml` with `.war` appended.
 The rest of the configuration corresponds pretty much one to one with the `keycloak.json` configuration options defined in <<_adapter_config,general adapter configuration>>.
 The exception is the `credential` element. 
 
-To make it easier for you, you can go to the Keycloak Adminstration Console and go to the Application/Installation tab of the application this WAR is aligned with.
+To make it easier for you, you can go to the {{book.project.title}} Administration Console and go to the Application/Installation tab of the application this WAR is aligned with.
 It provides an example XML file you can cut and paste. 
 
 There is an additional convenience format for this XML if you have multiple WARs you are deployment that are secured by the same domain.
 This format allows you to define common configuration items in one place under the `realm` element. 
 
-
-[source]
+[source,xml]
 ----
-
 <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
     <realm name="demo">
-        <realm-public-key>MIGfMA0GCSqGSIb3DQEBA</realm-public-key>
+        <realm-public-key>MIGfMA0GCSqGSIb3DQEBA...</realm-public-key>
         <auth-server-url>http://localhost:8080/auth</auth-server-url>
         <ssl-required>external</ssl-required>
     </realm>
