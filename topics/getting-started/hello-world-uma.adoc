@@ -1,0 +1,126 @@
+== Obtaining Permissions using UMA
+
+One of the main features provided by {{book.project.name}} {{book.project.module}} is support for https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA] specification. UMA defines :
+
+"`... how resource owners can control protected-resource access by clients operated by arbitrary requesting parties, where the resources reside on any number of resource servers, and where a centralized authorization server governs access based on resource owner policies.`"
+
+[NOTE]
+For now, {{book.project.name}} focus on API security and doesn't fully implement UMA. We don't support, yet, authorization flows where the user can manage their own resources and policies, share resources, and so forth.
+
+=== Obtaining a Protection API Token (PAT)
+The authorization process begins with a special type of token: the *Permission Ticket*. A permission ticket can only be obtained by a resource server using a OAuth2 access token with the scope
+*uma_protection*. In UMA, the access token with the scope *uma_protection* is called a Protection API Token or PAT.
+
+When we created the *hello-world-authz* realm, we also granted the scope *uma_protection* to the *hello-world-authz-service* client application. Considering that this application is also a *confidential* client,
+you can obtain a PAT as follows:
+
+```curl
+curl -X POST \
+    -H "Authorization: Basic aGVsbG8td29ybGQtYXV0aHotc2VydmljZTpwYXNzd29yZA==" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d 'grant_type=client_credentials' \
+    "http://localhost:8080/auth/realms/hello-world-authz/protocol/openid-connect/token"
+```
+
+As a result, you will get the following response from the server:
+
+```json
+{
+  "access_token": ${access_token},
+  "expires_in": 300,
+  "refresh_expires_in": 1800,
+  "refresh_token": ${refresh_token},
+  "token_type": "bearer",
+  "id_token": ${id_token},
+  "not-before-policy": 0,
+  "session_state": "ccea4a55-9aec-4024-b11c-44f6f168439e"
+}
+```
+
+Here, the ${access_token} represents a PAT, which is basically an OAuth2 access token with the scope *uma_protection*. With this token, you can now obtain a permission ticket from the
+Protection API.
+
+=== Obtaining a Permission Ticket
+
+Once you have a PAT, you can use it to access the Protection API in order to obtain a permission ticket as follows:
+
+```json
+curl -X POST \
+    -H "Authorization: Bearer ${access_token}" \
+    -d '
+        {
+            "resource_set_id" : "Hello World Resource"
+        }
+    ' \
+    "http://localhost:8080/auth/realms/hello-world-authz/authz/protection/permission"
+```
+
+As a result, you will get the following response from the server:
+
+```json
+{
+  "ticket": ${permission_ticket}
+}
+```
+
+Here, we are asking the Protection API for a permission ticket representing the same extent of requested access that the resource server registered. In this case, the access request to
+the _Hello World Resource_ resource.
+
+=== Obtaining an Authorization API Token
+
+The final step is obtain a *Requesting Party Token* or *RPT* with a set of authorization data, that will be used to actually gain access to protected resources at the resource server.
+
+A RPT is obtained from the link:../service/authorization-api.html[Authorization API]. Just like the Protection API and Permission Tickets, the Authorization API also requires a special
+OAuth2 access token to obtain a RPT. In UMA, this access token is called a *Authorization API Token* or *AAT*, which contains a scope *uma_authorization* in it.
+
+The *uma_authorization* scope indicates that an user consented to allow a given client application to access authorization data on his behalf. When we created the *hello-world-authz* realm,
+we also defined a client role to the users:
+
+```json
+"clientRoles" : {
+  "hello-world-authz-service" : [ "uma_authorization" ]
+}
+```
+
+To obtain an AAT you can send a request to {{book.project.name}} as follows:
+
+```bash
+curl -X POST \
+    -H "Authorization: Basic aGVsbG8td29ybGQtYXV0aHotc2VydmljZTpwYXNzd29yZA==" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d 'username=alice&password=password&grant_type=password' \
+    "http://localhost:8080/auth/realms/hello-world-authz/protocol/openid-connect/token"
+```
+As a result, you will get the following response from the server:
+
+```json
+{
+  "access_token": ${access_token},
+  "expires_in": 300,
+  "refresh_expires_in": 1800,
+  "refresh_token": ${refresh_token},
+  "token_type": "bearer",
+  "id_token": ${id_token},
+  "not-before-policy": 0,
+  "session_state": "3cad2afc-855b-47b7-8e4d-a21c66e312fb"
+}
+```
+
+=== Obtaining a Requesting Party Token or RPT
+
+Now that we have a AAT we can call the Authorization API and ask for a RPT.
+
+```bash
+curl -X POST
+    -H "Authorization: Bearer ${AAT}" -d '{
+    "ticket" : ${permission_ticket}
+}' "http://localhost:8080/auth/realms/hello-world-authz/authz/authorize"
+```
+
+As a result, you will get the follow response from the server:
+
+```json
+{"rpt":"${rpt}"}
+```
+
+=== Obtaining Permissions using the Entitlement API

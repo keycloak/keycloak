@@ -2,7 +2,9 @@
 
  . link:topics/overview/overview.adoc[Overview]
  .. link:topics/overview/architecture.adoc[Architecture]
- .. link:topics/overview/terminology.adoc[Terminology]
+  .. link:topics/overview/terminology.adoc[Terminology]
+ . link:topics/getting-started/getting-started.adoc[Getting Started]
+ .. link:topics/getting-started/hello-world.adoc[Hello Authorization World]
  . link:topics/resource-server/overview.adoc[Managing Resource Servers]
  .. link:topics/resource-server/view.adoc[Viewing Resource Servers]
  .. link:topics/resource-server/create.adoc[Creating Resource Servers]

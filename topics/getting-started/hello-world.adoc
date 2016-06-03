@@ -1,0 +1,350 @@
+== Hello Authorization World
+
+This guide will show you how to:
+
+* Create a realm with the necessary configuration to enable fine-grained authorization to your applications
+* Create a resource server and the resources that must be protected
+* Create permissions, authorization policies and how to apply them to your protected resources
+* Access the {{book.project.name}} {{book.project.module}} and enforce authorization decisions
+
+The purpose of this guide is to give you a generic overview of {{book.project.name}} {{book.project.module}} so you can understand
+some core concepts and start protecting your applications and services despite the platform they are running on.
+
+=== Creating the Hello World AuthZ Realm
+
+For this guide, we are going to create a *hello-world-authz* realm. Just import the following JSON file to create the new realm:
+
+```json
+{
+  "realm" : "hello-world-authz",
+  "enabled" : true,
+  "privateKey" : "MIIEpQIBAAKCAQEAzMhNM9HXNQWhVf1m64zS67SIyQjj+tV5GR+MqlRTWDXdo8GAWHd+alY1urRhfRoqMy4F499+8wh2REKFykNt0ng6s6wWnEaKDboS3SAUV6lybcOAkwIOCtCZj1ItddKG3m64fzxDDQrcpkbiAvw3S8KJ4UJK+pyh9iX01duSDtM/HhPawsPdY8JSMfuo1IxQ2Vxw+8RKwbbdUeew6cyYGYAeFYwA66mlM3otB0RBHh4bjwg8297+2g53TdwM2rbCHRbrorMQD3031OTyFSp7lXCtoMLWRfAFnOP/2yZWZMXbiJheC0R3sLbU7Ef0/cUbYyk4Ckfq6pcYDR+VZBF7AwIDAQABAoIBAAwa4wVnKBOIS6srmYPfBTDNsTBBCEjxiYEErmn7JhoWxQ1DCPUxyxU6F177/q9Idqoj1FFOCtEO9P6/9+ym470HQmEQkR2Xxd1d3HOZy9oKuCro3ZbTDkVxY0JnlyxZz4MihGFxDH2e4MArfHy0sAgYbdIU+x2pWKGWSMzDd/TMSOExhc/sIQAg6ljbPCLLXCPQFAncoHRyGPrkRZs6UTZi5SJuCglVa2/3G+0drDdPuA83/mwsZfIBqQgbGbFgtq5T5C6CKMkPOQ42Rcclm7kEr6riTkJRo23EO1iOJVpxzI0tbxZsJAsW7zeqv0wWRyUgVfQAje6OdsNexp5aCtECgYEA6nMHCQ9xXvufCyzpIbYGxdAGqH6m1AR5gXerHqRiGNx+8UUt/E9cy/HTOhmZDK/eC4BT9tImeF01l1oSU/+wGKfux0SeAQchBhhq8GD6jmrtgczKAfZHp0Zrht7o9qu9KE7ZNWRmY1foJN9yNYmzY6qqHEy+zNo9amcqT7UZKO8CgYEA35sp9fMpMqkJE+NEJ9Ph/t2081BEkC0DYIuETZRSi+Ek5AliWTyEkg+oisTbWzi6fMQHS7W+M1SQP6djksLQNPP+353DKgup5gtKS+K/y2xNd7fSsNmkjW1bdJJpID7WzwwmwdahHxpcnFFuEXi5FkG3Vqmtd3cD0TYL33JlRy0CgYEA0+a3eybsDy9Zpp4m8IM3R98nxW8DlimdMLlafs2QpGvWiHdAgwWwF90wTxkHzgG+raKFQVbb0npcj7mnSyiUnxRZqt2H+eHZpUq4jR76F3LpzCGui2tvg+8QDMy4vwqmYyIxDCL8r9mqRnl3HpChBPoh2oY7BahTTjKEeZpzbR0CgYEAoNnVjX+mGzNNvGi4Fo5s/BIwoPcU20IGM+Uo/0W7O7Rx/Thi7x6BnzB0ZZ7GzRA51paNSQEsGXCzc5bOIjzR2cXLisDKK+zIAxwMDhrHLWZzM7OgdGeb38DTEUBhLzkE/VwYZUgoD1+/TxOkwhy9yCzt3gGhL1cF//GJCOwZvuECgYEAgsO4rdYScgCpsyePnHsFk+YtqtdORnmttF3JFcL3w2QneXuRwg2uW2Kfz8CVphrR9eOU0tiw38w6QTHIVeyRY8qqlHtiXj6dEYz7frh/k4hI29HwFx43rRpnAnN8kBEJYBYdbjaQ35Wsqkfu1tvHJ+6fxSwvQu/TVdGp0OfilAY=",
+  "publicKey" : "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzMhNM9HXNQWhVf1m64zS67SIyQjj+tV5GR+MqlRTWDXdo8GAWHd+alY1urRhfRoqMy4F499+8wh2REKFykNt0ng6s6wWnEaKDboS3SAUV6lybcOAkwIOCtCZj1ItddKG3m64fzxDDQrcpkbiAvw3S8KJ4UJK+pyh9iX01duSDtM/HhPawsPdY8JSMfuo1IxQ2Vxw+8RKwbbdUeew6cyYGYAeFYwA66mlM3otB0RBHh4bjwg8297+2g53TdwM2rbCHRbrorMQD3031OTyFSp7lXCtoMLWRfAFnOP/2yZWZMXbiJheC0R3sLbU7Ef0/cUbYyk4Ckfq6pcYDR+VZBF7AwIDAQAB",
+  "certificate" : "MIICsTCCAZkCBgFVETX4AzANBgkqhkiG9w0BAQsFADAcMRowGAYDVQQDDBFIZWxsbyBXb3JsZCBBdXRoWjAeFw0xNjA2MDIxMzAxMzdaFw0yNjA2MDIxMzAzMTdaMBwxGjAYBgNVBAMMEUhlbGxvIFdvcmxkIEF1dGhaMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzMhNM9HXNQWhVf1m64zS67SIyQjj+tV5GR+MqlRTWDXdo8GAWHd+alY1urRhfRoqMy4F499+8wh2REKFykNt0ng6s6wWnEaKDboS3SAUV6lybcOAkwIOCtCZj1ItddKG3m64fzxDDQrcpkbiAvw3S8KJ4UJK+pyh9iX01duSDtM/HhPawsPdY8JSMfuo1IxQ2Vxw+8RKwbbdUeew6cyYGYAeFYwA66mlM3otB0RBHh4bjwg8297+2g53TdwM2rbCHRbrorMQD3031OTyFSp7lXCtoMLWRfAFnOP/2yZWZMXbiJheC0R3sLbU7Ef0/cUbYyk4Ckfq6pcYDR+VZBF7AwIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQANm5gIT/c50lwjawM686gNXpppLA928WsCOn9NIIWjSKekP8Bf9S73kf7vWcsEppm5B8rRyRxolXmzwghv74L7uVDg8Injjgj+XbPVQP+cJqWpSaMZHF7UfWe0/4M945Xcbmsl5q+m9PmrPG0AaaZhqXHcp4ehB1H+awyRqiERpJUuwZNycw2+2kjDADpsFf8hZVUd1F6ReYyOkqUyUjbL+jYTC7ZBNa7Ok+w6HCXWgkgVATAgQXJRM3w14IOc5MH/vfMCrCl/eNQLbjGl9y7u8PKwh3MXHDO2OLqtg6hOTSrOGUPJZGmGtUAl+2/R7FzoWkML/BNe2hjsL6UJwg91",
+  "requiredCredentials" : [ "password" ],
+  "roles" : {
+    "realm" : [
+      {
+        "name" : "uma_protection", "kc_entitlements"
+      }
+    ]
+  },
+  "users" :
+    [
+      {
+        "username" : "alice",
+        "enabled" : true,
+        "credentials" : [ {
+          "type" : "password",
+          "value" : "password"
+          } ],
+        "clientRoles" : {
+          "hello-world-authz-service" : [ "uma_authorization", "kc_entitlement" ]
+        }
+      },
+      {
+        "username" : "jdoe",
+        "enabled" : true,
+        "credentials" : [ {
+          "type" : "password",
+          "value" : "password"
+          } ],
+        "clientRoles" : {
+          "hello-world-authz-service" : [ "uma_authorization", "kc_entitlement" ]
+        }
+      },
+      {
+        "username" : "service-account-hello-world-authz-service",
+        "enabled" : true,
+        "serviceAccountClientId" : "hello-world-authz-service",
+        "realmRoles" : [ "uma_protection"]
+      }
+    ],
+  "clients" : [
+    {
+      "clientId" : "hello-world-authz-service",
+      "secret" : "password",
+      "serviceAccountsEnabled" : true,
+      "enabled" : true,
+      "redirectUris" : [ "http://localhost:8080/hello-world-authz-service" ],
+      "directAccessGrantsEnabled" : true,
+      "publicClient" : false
+    }
+  ]
+}
+```
+The realm *hello-world-authz* consists of:
+
+** Two users: _alice_ and _jdoe_
+** One client application: _hello-world-authz-service_
+** One global role: _uma_protection_
+** One client role: _uma_authorization_
+
+The _hello-world-authz-service_ is the application with the resources we want to protect. In other words, it will act as a link:../overview/terminology.html[Resource Server].
+
+In {{book.project.name}} a resource server is just a regular client application with some specific characteristics. It _must_ be a *confidential* client application as defined by:
+
+```json
+"publicClient" : false
+```
+
+It must have a  *client_id*, *client_secret* and *Service Account* enabled:
+
+```json
+"clients" : [
+    {
+      "clientId" : "hello-world-authz-service",
+      "secret" : "7801be7c-437a-44ae-be34-67da32f024eb",
+      "serviceAccountsEnabled" : true,
+      ...
+    }
+]
+```
+
+And finally, an user mapping to the client's service account:
+
+```json
+{
+    "username" : "service-account-my-resource-server",
+    "enabled" : true,
+    "serviceAccountClientId" : "hello-world-authz-service",
+    "realmRoles" : [ "uma_protection"]
+}
+```
+
+In the latter case, we are also granting the *uma_protection* role to the client's service account. As you'll see, that will be necessary in order to get access to the link:../service/protection-api.html[Protection API].
+
+=== Creating a Resource Server and Protecting Resources
+
+Now that we have the *hello-world-authz* realm properly configured, we need to enable the *hello-world-authz-service* as a resource server. For that, click on the *Authorization* in the left menu bar.
+
+image:../../images/gs-keycloak-authz-page.png[alt="Keycloak Authorization Page"]
+
+To create a resource server you can click on the *Create* button.
+
+image:../../images/gs-keycloak-authz-create-rs-page.png[alt="Create Resource Server"]
+
+From that page you can create a resource server by manually filling that form or you can just import a JSON file with the configuration you want. For this guide, we'll just import a JSON file as follows:
+
+```json
+{
+  "clientId": "hello-world-authz-service",
+  "resources": [
+    {
+      "name": "Hello World Resource"
+    }
+  ],
+  "policies": [
+    {
+      "name": "Only Special Users Policy",
+      "type": "user",
+      "logic": "POSITIVE",
+      "config": {
+        "users": "[\"alice\"]"
+      }
+    },
+    {
+      "name": "Hello World Resource Permission",
+      "type": "resource",
+      "config": {
+        "resources": "[\"Hello World Resource\"]",
+        "applyPolicies": "[\"Only Special Users Policy\"]"
+      }
+    }
+  ]
+}
+
+```
+
+After importing the JSON file above, you would see a page like that:
+
+image:../../images/gs-authz-hello-rs-created-page.png[alt="Resource Server Successfully Created"]
+
+You may take some time now exploring the resource server we just created. But first, let's understand what we just created.
+
+The resource server was created based on the *hello-world-authz-service* client application, as you can see from the following configuration:
+
+```json
+{
+  "clientId": "hello-world-authz-service",
+  ...
+}
+```
+
+What we did was basically tell {{book.project.name}} that we want that client application acting as a resource server, so we can start creating the resources we want to protect as well the permissions
+ and authorization policies we want to use to actually protect the resources.
+
+The purpose of this guide is keep things simple to get you started, so our newly created resource server has a single protected resource, as defined by the following configuration:
+
+```json
+{
+  ...
+  "resources": [
+    {
+      "name": "Hello World Resource"
+    }
+  ],
+  ...
+}
+```
+
+The *Hello World Resource* represents a set of one or more resources we want to protect. It can map to a single or to multiple resources in an application.
+
+In order to protect it, we need to create the authorization policies and permissions we want to apply. Policies define the conditions that must be satisfied to grant a permission. Where a
+permission is the link between a resource and the policies(or conditions) we want to enforce when someone wants to access a resource.
+
+In this example, we have a single policy *Only Special Users Policy*. This policy tells that only the specified users are allowed to access _something_ (we don't know what, yet. That is up to the permission).
+
+[NOTE]
+{{book.project.name}} provides a few link:../policy/overview.html[policy types] that you can start using out-of-the-box. There are policies for RBAC, time constraints or even rules written using JavaScript or JBoss Drools.
+
+The last step when protecting a resource is to define a permission. For that, we have defined a *Hello World Resource Permission* that links the resource we want to protect, _Hello World Resource_, with the
+policy we want to apply to that resource, _Only Special Users Policy_.
+
+```json
+{
+  "name": "Hello World Resource Permission",
+  "type": "resource",
+  "config": {
+    "resources": "[\"Hello World Resource\"]",
+    "applyPolicies": "[\"Only Special Users Policy\"]"
+  }
+}
+
+```
+
+== Obtaining Permissions using the Entitlement API
+
+In {{book.project.name}}, authorization data is represented by a special security token called a *Requesting Party* Token or *RPT*. This token consists of all the permissions granted
+to an user as a result of the evaluation of the permissions and authorization policies associated with the resource being requested. In this guide, we'll see how to obtain a RPT using the link:../service/entitlement-api.html[Entitlement API].
+
+Now that the *hello-world-authz* realm is properly configured with the resources we want to protected and their corresponding permissions and authorization policies, we can ask the server for what an user
+is entitled to do. In other words, what are the permissions the user has.
+
+The Entitlement API consists of a single endpoint. This endpoint expects an OAuth2 Access Token with a scope *kc_entitlement* representing the user identity and the identifier of the resource server we want to access. The *kc_entitlement*
+scope is necessary to indicate that the user consented access to his authorization data from a given client application. The access token with a scope *kc_entitlement* is called *Entitlement API Token* or *EAT*.
+
+In this case, for the sake of simplicity, our resource server *hello-world-authz-service* is also acting as a client application. What means that the user allowed this application to access his
+authorization data and obtain RPTs on his behalf.
+
+The first step is obtain a EAT as follows:
+
+```bash
+curl -X POST
+    -H "Authorization: Basic aGVsbG8td29ybGQtYXV0aHotc2VydmljZTpwYXNzd29yZA=="
+    -H "Content-Type: application/x-www-form-urlencoded"
+    -d 'username=alice&password=password&grant_type=password'
+    "http://localhost:8080/auth/realms/hello-world-authz/protocol/openid-connect/token"
+```
+
+Here we are using the _Resource Owner Password Credentials Grant Type_ (Direct Access Grant in Keycloak terminology), as defined by OAuth2 specification, to obtain an EAT on behalf of _alice_. As a result, you
+would get a response from the server as follows:
+
+```json
+{
+  "access_token": ${EAT},
+  "expires_in": 300,
+  "refresh_expires_in": 1800,
+  "refresh_token": ${refresh_token},
+  "token_type": "bearer",
+  "id_token": ${id_token},
+  "not-before-policy": 0,
+  "session_state": "1ad4d54c-7758-4698-92d3-d57d821f130b"
+}
+```
+
+[NOTE]
+Resource Owner Password Credentials Grant Type is only used here for demonstration purposes. In the real world, you'll usually obtain an access token using a more secure grant type such as _authorization_code_.
+The idea here is demonstrate that you need to obtain an access token with the scope *kc_entitlement* prior to access the Entitlement API to ask for a RPT.
+
+Finally, the last step is obtain a RPT from the Entitlement API as follows:
+
+```bash
+curl -X GET \
+    -H "Authorization: Bearer ${EAT}" \
+    "http://localhost:8080/auth/realms/hello-world-authz/authz/entitlement/hello-world-authz-service"
+```
+
+As result, you'll get a response from the server as follows:
+
+```json
+{
+  "rpt": ${RPT}
+}
+```
+
+By default, {{book.project.name}} issues a RPT consisting of permissions for every single resource protected/managed by the resource server. If you want to limit the permissions to only a specific
+ set of resources you can request a RPT as follows:
+
+```bash
+curl -X POST \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer %{EAT}" \
+    -d '{
+            "permissions" : [
+                {
+                    "resource_set_name" : "Hello World Resource"
+                }
+            ]
+    }' \
+    "http://localhost:8080/auth/realms/hello-world-authz/authz/entitlement/hello-world-authz-service"
+```
+
+Let's see now what happens when the user does not have access to a protected resource at the resource server. For that, let's obtain a new EAT but now using _jdoe_ credentials.
+
+```bash
+curl -X POST
+    -H "Authorization: Basic aGVsbG8td29ybGQtYXV0aHotc2VydmljZTpwYXNzd29yZA=="
+    -H "Content-Type: application/x-www-form-urlencoded"
+    -d 'username=jdoe&password=password&grant_type=password'
+    "http://localhost:8080/auth/realms/hello-world-authz/protocol/openid-connect/token"
+```
+
+Just like we did with _alice_, the server will return an EAT that we can use to obtain a RPT. But _jdoe_ is not supposed to access the protected resource, so the server is going to give you a response as follows:
+
+```json
+{
+  "error_description": "Authorization denied.",
+  "error": "not_authorized"
+}
+```
+
+The reason for that is that the _Hello World Resource_ is protected by a _Only Special Users Policy_ that says that only _alice_ is allowed to access the resource. You can play around now by changing that policy to
+ include _jdoe_ as a valid user and see the results.
+
+== Enforcing Authorization Decisions
+
+A RPT is basically a https://tools.ietf.org/html/rfc7519[JSON Web Token (JWT)] digitally signed using https://www.rfc-editor.org/rfc/rfc7515.txt[JSON Web Signature (JWS)]. Its lifetime is the same as with the OAuth2 access token (EAT) that was used to obtain it.
+
+When you decode a RPT you will see something like that:
+
+```json
+{
+  "permissions": [
+    {
+      "resource_set_id": "152251e6-f4cf-4464-8d91-f1b7960fa5fc",
+      "resource_set_name": "Hello World Resource"
+      "scopes": []
+    }
+  ],
+  "accessToken": ${EAT},
+  "jti": "d6109a09-78fd-4998-bf89-95730dfd0892-1464906679405",
+  "exp": 1464906971,
+  "nbf": 0,
+  "iat": 1464906671,
+  "sub": "f1888f4d-5172-4359-be0c-af338505d86c",
+  "typ": "kc_ett",
+  "azp": "hello-world-authz-service"
+}
+```
+
+The *permissions* claim lists all resource (and their respective scopes if any) permissions granted by the server. There is also a *accessToken* property holding the EAT that was used to issue the RPT.
+
+The RPT provides everything you need to enforce authorization decisions at the resource server side. That can be easily accomplished by:
+
+* Validating the RPT signature (based on realm's public key)
+* Checking the token validity
+* Decoding the RPT and extracting the permissions
+* Checking if a request sent to the resource server trying to access a protected resource matches any permissions within the RPT
+
+You can even use the information within a RPT to protect resources within a page like buttons or any other visual component.
