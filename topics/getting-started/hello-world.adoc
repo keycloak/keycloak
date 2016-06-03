@@ -10,6 +10,9 @@ This guide will show you how to:
 The purpose of this guide is to give you a generic overview of {{book.project.name}} {{book.project.module}} so you can understand
 some core concepts and start protecting your applications and services despite the platform they are running on.
 
+[NOTE]
+Before going further, make sure you followed all the instructions in the link:../getting-started/getting-started.html[Getting Started] guide.
+
 === Creating the Hello World AuthZ Realm
 
 For this guide, we are going to create a *hello-world-authz* realm. Just import the following JSON file to create the new realm:
@@ -94,7 +97,7 @@ It must have a  *client_id*, *client_secret* and *Service Account* enabled:
 "clients" : [
     {
       "clientId" : "hello-world-authz-service",
-      "secret" : "7801be7c-437a-44ae-be34-67da32f024eb",
+      "secret" : "password",
       "serviceAccountsEnabled" : true,
       ...
     }
@@ -155,6 +158,9 @@ From that page you can create a resource server by manually filling that form or
 }
 
 ```
+
+[NOTE]
+All this configuration can also be done using the {{book.project.name}} Administration Console. We are using the import tool just for demonstration purposes
 
 After importing the JSON file above, you would see a page like that:
 

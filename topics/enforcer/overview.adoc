@@ -1,1 +1,7 @@
 == Policy Enforcers
+
+PEP is a design pattern and as such you can implement it in different ways. {{book.project.name}} provides all the necessary means
+to implement PEPs for different platforms, environments and using different programming languages. After all, {{book.project.name}} {{book.project.module}} is
+fully RESTFUL-based, leveraging OAuth2 authorization capabilities to also support fine-grained authorization using a centralized authorization server.
+
+image:../../images/pep-pattern-diagram.png[alt="PEP Overview"]
