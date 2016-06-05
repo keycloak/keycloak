@@ -22,6 +22,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 
 import java.lang.reflect.Method;
@@ -31,6 +32,8 @@ import java.lang.reflect.Method;
  * @version $Revision: 1 $
  */
 public class ProtocolMapperUtils {
+
+    public static final String USER_ROLE = "user.role";
     public static final String USER_ATTRIBUTE = "user.attribute";
     public static final String USER_SESSION_NOTE = "user.session.note";
     public static final String MULTIVALUED = "multivalued";
@@ -38,6 +41,19 @@ public class ProtocolMapperUtils {
     public static final String USER_MODEL_PROPERTY_HELP_TEXT = "usermodel.prop.tooltip";
     public static final String USER_MODEL_ATTRIBUTE_LABEL = "usermodel.attr.label";
     public static final String USER_MODEL_ATTRIBUTE_HELP_TEXT = "usermodel.attr.tooltip";
+
+    public static final String USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID = "usermodel.clientRoleMapping.clientId";
+    public static final String USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID_LABEL = "usermodel.clientRoleMapping.clientId.label";
+    public static final String USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID_HELP_TEXT = "usermodel.clientRoleMapping.clientId.tooltip";
+
+    public static final String USER_MODEL_CLIENT_ROLE_MAPPING_ROLE_PREFIX = "usermodel.clientRoleMapping.rolePrefix";
+    public static final String USER_MODEL_CLIENT_ROLE_MAPPING_ROLE_PREFIX_LABEL = "usermodel.clientRoleMapping.rolePrefix.label";
+    public static final String USER_MODEL_CLIENT_ROLE_MAPPING_ROLE_PREFIX_HELP_TEXT = "usermodel.clientRoleMapping.rolePrefix.tooltip";
+
+    public static final String USER_MODEL_REALM_ROLE_MAPPING_ROLE_PREFIX = "usermodel.realmRoleMapping.rolePrefix";
+    public static final String USER_MODEL_REALM_ROLE_MAPPING_ROLE_PREFIX_LABEL = "usermodel.realmRoleMapping.rolePrefix.label";
+    public static final String USER_MODEL_REALM_ROLE_MAPPING_ROLE_PREFIX_HELP_TEXT = "usermodel.realmRoleMapping.rolePrefix.tooltip";
+
     public static final String USER_SESSION_MODEL_NOTE_LABEL = "userSession.modelNote.label";
     public static final String USER_SESSION_MODEL_NOTE_HELP_TEXT = "userSession.modelNote.tooltip";
     public static final String MULTIVALUED_LABEL = "multivalued.label";
