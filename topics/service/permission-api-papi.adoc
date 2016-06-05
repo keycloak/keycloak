@@ -1,0 +1,21 @@
+== Managing Permission Requests
+
+Resources servers using the UMA protocol can use a specific endpoint to manage permission requests. This endpoint provides a UMA-compliant flow for registering permissions requests and obtaining a *Permission Ticket*.
+
+```bash
+http://${host}:${port}/auth/realms/${realm_name}/authz/protection/permission
+```
+
+A Permission ticket is a special security token type representing a permission request.  Accordingly with UMA specification, a permission ticket is:
+
+`A correlation handle that is conveyed from an authorization server to a resource server, from a resource server to a client, and ultimately from a client back to an authorization server, to enable the authorization server to assess the correct policies to apply to a request for authorization data.`
+
+[NOTE]
+_Permission ticket support is limited_.
+When using UMA protocol, resource servers can register permission requests in the server in order to support authorization flows where a resource owner (the user that owns a resource being requested) can
+approve access to his resources by third parties and do a lot of other stuff. This represents one of the main features of UMA specification, where resource owners can control their own resources
+and the policies that govern them. Right now, our UMA implementation is very limited at this regard. We don't store permission tickets on the server and we are basically using UMA to provide API security and base our authorization offerings.
+This situation should be temporary and in the future we plan to fully support UMA and cover other use cases.
+
+In most cases, you won't need to deal with this endpoint directly. {{book.project.name}} provides a link:../enforcer/overview.html[Policy Enforcer] that enables UMA to your
+resource server in order to obtain a permission ticket from the authorization server, return this ticket to client application and enforce authorization decisions based on a final RPT.

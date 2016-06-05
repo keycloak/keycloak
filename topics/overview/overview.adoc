@@ -17,10 +17,11 @@ for your protected resources and scopes, associate these permissions with author
 decisions in your application and services.
 
 Considering that today we need to consider a very heterogeneous environment, where users are distributed across different regions, with different local policies,
-using different devices and with a high demand for information sharing, Keycloak Authorization Services can be used as great tool to:
+using different devices and with a high demand for information sharing, Keycloak Authorization Services provides:
 
-* Control your protected resources and the actions that can be performed on them with fine-grained authorization policies
+* Resource protection using fine-grained authorization policies and different access control mechanisms
 * Centralized Resource, Permission and Policy Management
+* Centralized Policy Decision Point
+* REST security based on a set of REST-based Authorization Services
 * Authorization Workflows and User-Managed Access
-* Avoid code replication across projects (and redeploys) and quickly adapt to changes in your requirements
-* Auditing
+* The necessary means to avoid code replication across projects(and redeploys) and quickly adapt to changes in your security requirements

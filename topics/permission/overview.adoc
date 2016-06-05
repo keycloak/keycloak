@@ -1,19 +1,9 @@
 == Managing Permissions
 
-As mentioned before, permissions define the object being protected, which can be a resource or scope, and the authorization policies
-that must be evaluated in order to grant or deny the permission. Before creating a permission you must have the resources or scopes you want to protected, as well the policies you want to apply to the permission.
+After creating the resources you want to protect and the policies you want to use to actually protect these resources,
+you can start managing the permissions. For that, clicking on the *Permissions* tab when editing a resource server.
 
-Permissions can be created to protect two main types of objects: *resource* and *scope*.
+Permissions can be created to protect two main types of objects:
 
 * *Resource*
-+
-In this case, the permission is associated with a set of one or more resources. Here you can define that only a specific
-resource with a specific _name_ or _identifier_ is protected or even use a _type_ to protect any resource with a given type.
-+
 * *Scope*
-+
-In this case, the permission is associated with a set of one or more scopes. Where you may want to protect scopes associated with a specific resource or any scope regardless the resources they are associated.
-
-*Resource-based* permissions are suitable for resource protection. There you you can define one or more resources to protect or even protect all resources with a given type.
-
-*Scope-based* permissions are suitable for scope protection. There you you can define one or more scopes associated with a given resource or even protect scopes without specify a resource.

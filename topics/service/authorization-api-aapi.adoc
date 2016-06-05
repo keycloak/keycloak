@@ -1,0 +1,57 @@
+== Requesting Authorization Data and Token
+
+Client applications using the UMA protocol can use a specific endpoint to obtain a special security token called *Requesting Party Token* or *RPT*.
+This token consists of all the permissions granted to an user as a result of the evaluation of the permissions and authorization policies associated with the resource(s) being requested.
+With an RPT in hands, client applications can gain access to protected resources at the resource server.
+
+```bash
+http://${host}:${port}/auth/realms/${realm_name}/authz/authorize
+```
+
+When asking for a RPT, you need to provide two main things:
+
+* A permission ticket with the resources you want to access
+* The AAT (as a bearer token) representing user's identity and his consent to access authorization data on his behalf.
+
+```bash
+curl -X POST
+    -H "Authorization: Bearer ${AAT}" -d '{
+    "ticket" : ${PERMISSION_TICKET}
+}' "http://localhost:8080/auth/realms/hello-world-authz/authz/authorize"
+```
+
+As a result, you will get the follow response from the server:
+
+```json
+{"rpt":"${RPT}"}
+```
+
+=== Requesting Party Token or RPT
+
+A RPT is basically a https://tools.ietf.org/html/rfc7519[JSON Web Token (JWT)] digitally signed using https://www.rfc-editor.org/rfc/rfc7515.txt[JSON Web Signature (JWS)].
+Its lifetime is the same as with the OAuth2 access token (AAT) that was used to obtain it.
+
+When you decode a RPT you will see something like that:
+
+```json
+{
+  "permissions": [
+    {
+      "resource_set_id": "152251e6-f4cf-4464-8d91-f1b7960fa5fc",
+      "resource_set_name": "Hello World Resource"
+      "scopes": []
+    }
+  ],
+  "accessToken": ${AAT},
+  "jti": "d6109a09-78fd-4998-bf89-95730dfd0892-1464906679405",
+  "exp": 1464906971,
+  "nbf": 0,
+  "iat": 1464906671,
+  "sub": "f1888f4d-5172-4359-be0c-af338505d86c",
+  "typ": "kc_ett",
+  "azp": "hello-world-authz-service"
+}
+```
+
+The *permissions* claim consists of all the permissions granted by the server. There is also a *accessToken* property holding the AAT that was used to issue the RPT.
+

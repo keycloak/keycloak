@@ -1,1 +1,38 @@
-== Servlet Policy Enforcer
+== Servlet Enforcement Filter
+
+The _Servlet Enforcement Filter_ implements a PEP that can be used to secure applications using the Servlet API. The are available
+just like any other Keycloak OpenID Connect Adapter.
+
+=== Keycloak Adapter Enforcement Filter
+
+The *org.keycloak.authorization.policy.enforcer.servlet.KeycloakAdapterEnforcementFilter* can be used to protect applications
+using the {{book.project.name}} OpenID Connect Adapters.
+
+To configure it, change your web application descriptor (WEB-INF/web.xml) as follows:
+
+ ```xml
+<filter>
+    <filter-name>Keycloak Authorization Enforcer</filter-name>
+    <filter-class>org.keycloak.authorization.policy.enforcer.servlet.KeycloakAdapterEnforcementFilter</filter-class>
+</filter>
+
+<filter-mapping>
+    <filter-name>Keycloak Authorization Enforcer</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+ ```
+
+In order to make it available to your application at runtime, you must create a *META-INF/jboss-deployment-structure.xml* at the application root directory. If you are using maven, this file can be placed under *src/main/webapp/META-INF/jboss-deployment-structure.xml*:
+
+```xml
+<jboss-deployment-structure>
+    <deployment>
+        <dependencies>
+            <module name="org.keycloak.keycloak-authz-servlet-enforcer" services="import"/>
+            <module name="org.jboss.resteasy.resteasy-jackson2-provider" services="import"/>
+        </dependencies>
+        <exclusions>
+            <module name="org.jboss.resteasy.resteasy-jackson-provider"/>
+        </exclusions>
+    </deployment>
+</jboss-deployment-structure>

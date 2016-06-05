@@ -1,0 +1,6 @@
+== Defining the uma_protection scope
+
+In order to integrate with the server, you need to grant the role link:../service/protection-api.html[uma_protection] to the client application that you enabled as a
+resource server.
+
+When using the UMA protocol, this scope is also important to allow the resource server to ask the server for permission tickets.

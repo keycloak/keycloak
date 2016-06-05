@@ -1,7 +1,0 @@
-== Import/Export Authorization Configuration
-
-Keycloak also allows you to import a JSON file with all the configuration for a resource server, as well export and download a JSON file with all the configuration
-of an existing resource server.
-
-When you import or export the configuration for a given resource server, you are doing it for all authorization configuration associated with it: resources, scopes, permissions,
-policies, etc.

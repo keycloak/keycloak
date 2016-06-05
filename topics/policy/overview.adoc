@@ -1,31 +1,8 @@
 == Managing Policies
 
-As mentioned before, policies define the conditions that must satisfied before granting access to a set of one or more resources.
+As mentioned before, policies define the conditions that must satisfied before granting access to an object.
 
-Keycloak provides some built-in implementations that you can use to create from the most simple to the more complex policy using different access control mechanisms.
+You can view all policies associated with a resource server by clicking on the *Policy* tab when editing a resource server. On this tab, you'll find the list of policies
+and options to create and edit a policy.
 
-* *User-Based Policy*
-+
-Defines that only a set of one or more users are allowed to access a protected resource.
-+
-* *Role-Based Policy*
-+
-Defines that only a set of one or more roles are allowed to access a protected resource.
-+
-* *Time-Based Policy*
-Defines that access to a protected resource is granted depending on time conditions.
-+
-* *Javascript-Based Policy*
-+
-A type of <literal>rule-based access control</literal> where you can use Javascript to write the policy conditions. With this policy
-you have great flexibility to define from the more simple to most complex conditions.
-+
-* *Drools-Based Policy*
-+
-A type of <literal>rule-based access control</literal> where you can use JBoss Drools to define your policies. Here you can package policies as Maven artifacts
-and get all the benefits of the rule engine provided by JBoss Drools.
-+
-* *Aggregated Policy*
-+
-Allows you to combine different policies into a single one. With this policy you can reuse existing policies and derive policies from them
-accordingly with your requirements.
+To create a new policy, select a policy type in the dropdown located in the right upper corner of the policy listing

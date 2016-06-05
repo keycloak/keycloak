@@ -40,3 +40,44 @@ public interface Evaluation {
 ```
 
 For full instructions on using the Evaluation API refer to JavaDocs.
+
+=== The Evaluation Context
+
+The evaluation context provides useful information to policies during their evaluation.
+
+```java
+public interface EvaluationContext {
+
+    /**
+     * Returns the {@link Identity} that represents an entity (person or non-person) to which the permissions must be granted, or not.
+     *
+     * @return the identity to which the permissions must be granted, or not
+     */
+    Identity getIdentity();
+
+    /**
+     * Returns all attributes within the current execution and runtime environment.
+     *
+     * @return the attributes within the current execution and runtime environment
+     */
+    Attributes getAttributes();
+}
+```
+
+From this interface, policies can obtain:
+
+* The authenticated *Identity*
+* Information about the execution context and runtime environment
+
+Before evaluating policyes, {{book.project.name}} builds an *EvaluationContext* based on:
+
+* All claims obtained from the OAuth2 Access Token that was sent along with the authorization request
++
+In this case, the *Identity* object provides the same claims as define by the access token. For instance, if you are using a _Protocol Mapper_ to include custom claim
+to a oAuth2 Access Token you can also access this claim from a policy and use it to build your conditions
++
+* Some built-in environment attributes such as:
++
+** kc.authz.context.time.date_time, holding the current time
+** kc.authz.context.client.network.ip_address, holding the IP address of the client requesting permissions
+** kc.authz.context.client.network.host, holding the host name of the client requesting permissions

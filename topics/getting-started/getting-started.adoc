@@ -12,3 +12,5 @@ Make sure you have a {{book.project.name}} instance up and running on http://loc
 _Administration Console_ and get a page like that:
 
 image:../../images/gs-keycloak-console-page.png[alt="Keycloak Administration Console"]
+
+Source code for all examples can be obtained from *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/*.
