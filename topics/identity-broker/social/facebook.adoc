@@ -2,7 +2,7 @@
 ==== Facebook
 
 There are a number of steps you have to complete to be able to login to Facebook.  First, go to the `Identity Providers` left menu item
-and selected `Facebook` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+and select `Facebook` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
 image:../../../{{book.images}}/facebook-add-identity-provider.png[]

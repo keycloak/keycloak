@@ -25,9 +25,9 @@ image:../../{{book.images}}/identity-provider-login-page.png[]
 
 
 Social::
-  Social providers allows you to enable social authentication to your realm.
+  Social providers allow you to enable social authentication in your realm.
   {{book.project.name}} makes it easy to let users log in to your application using an existing account with a social network.
-  Currently Facebook, Google, Twitter, GitHub, LinkedIn, Microsoft and StackOverflow are supported with more planned for the future.
+  Currently Facebook, Google, Twitter, GitHub, LinkedIn, Microsoft, and StackOverflow are supported with more planned for the future.
 
 Protocol-based::
   Protocol-based providers are those that rely on a specific protocol in order to authenticate and authorize users.
@@ -44,10 +44,10 @@ Regardless the identity provider you are creating, you'll see the following conf
 |Configuration|Description
 
 |Alias
-|The alias is an unique identifier for an identity provider. It is used to reference internally an identity provider.
- Some protocols require a redirect URI or callback url in order to communicate with an identity provider. For instance, OpenID Connect.
+|The alias is an unique identifier for an identity provider. It is used to reference an identity provider internally.
+ Some protocols such as OpenID Connect require a redirect URI or callback url in order to communicate with an identity provider.
  In this case, the alias is used to build the redirect URI.
- Every single identity provider must have an alias. For example, facebook, google, idp.acme.com, etc.
+ Every single identity provider must have an alias. Examples are facebook, google, idp.acme.com, etc.
 
 |Enabled
 |Turn the provider on/off
@@ -56,11 +56,11 @@ Regardless the identity provider you are creating, you'll see the following conf
 |Whether or not to store the token received from the identity provider.
 
 |Stored Tokens Readable
-|Whether or not users are allowed to retrieve the stored identity provider token.  This also applies the _broker_ client-level
+|Whether or not users are allowed to retrieve the stored identity provider token.  This also applies to the _broker_ client-level
  role _read token_
 
 |Trust email
-|If the identity provider supplies an email address this email address will be trusted.  If the realm required email validation
+|If the identity provider supplies an email address this email address will be trusted.  If the realm required email validation,
  users that log in from this IDP will not have to go through the email verification process.
 
 |Authenticate By Default
@@ -72,10 +72,10 @@ Regardless the identity provider you are creating, you'll see the following conf
 
 |First Login Flow
 |This is the authentication flow that will be triggered for users that log into {{book.project.name}} through this IDP
- for the first time ever
+ for the first time ever.
 
 |Post Login Flow
-|Authentication flow that is triggered after the user finishes logging in with the external identity provider
+|Authentication flow that is triggered after the user finishes logging in with the external identity provider.
 |===
 
 

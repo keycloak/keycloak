@@ -2,7 +2,7 @@
 ==== Twitter
 
 There are a number of steps you have to complete to be able to login to Twitter.  First, go to the `Identity Providers` left menu item
-and selected `Twitter` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+and select `Twitter` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
 image:../../../{{book.images}}/twitter-add-identity-provider.png[]

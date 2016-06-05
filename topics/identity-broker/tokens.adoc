@@ -18,7 +18,7 @@ Authorization: Bearer {keycloak_access_token}
 An application must have authenticated with {{book.project.name}} and have received an access token.  This access token
 will need to have the `broker` client-level role `read-token` set.  This means that the user must have a role mapping for this role
 and the client application must have that role within its scope.
-In this case, given that you are accessing an protected service in {{book.project.name}}, you need to send the access token issued by {{book.project.name}} during the user authentication.
+In this case, given that you are accessing a protected service in {{book.project.name}}, you need to send the access token issued by {{book.project.name}} during the user authentication.
 
 In the broker configuration page you can automatically assign this role to newly imported users by turning on the `Stored Tokens Readable` switch.
 
