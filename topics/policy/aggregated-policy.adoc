@@ -3,12 +3,35 @@
 As mentioned before, Keycloak allows you to build a policy of policies, a concept that we call *Aggregated Policies*. Policy aggregation allows you to reuse existing policies to build more complex ones and keep your permissions even more decoupled from the
 policies that are actually evaluated during the processing of authorization requests.
 
+=== Configuration
+
+* *Name*
++
+A human-readable and unique string describing the policy. We strongly suggest you to use names that are closely related with your business and security requirements, so you
+can identify them more easily and also know what they actually mean
++
+* *Description*
++
+A string with more details about this policy
++
+* *Apply Policy*
++
+Defines a set of one or more policies to associate with a policy
++
+* *Decision Strategy*
++
+The decision strategy for this permission
++
+* *Logic*
++
+The logic of this plicy
+
 Let's suppose you have a resource called _Confidential Resource_ that can be accessed only by users with a _confidential_ role and from
 a well known network. You may want to create a single policy, let's say using Javascript or Drools, with both conditions. However, you may want to reuse the _confidential_ role
 part of this policy to apply to other permissions despite the network.
 
 In this case, Keycloak allows you to create separate policies for both _confidential_ role and network conditions and create another one based on
-them. You can easily achieve that by using a *Aggregate Policy* that combines other policies and then apply this aggregate policy to any permission you want.
+them. You can easily achieve that by using a *Aggregated Policy* that combines other policies and then apply this aggregated policy to any permission you want.
 
 [NOTE]
 When creating aggregated policies, make sure you don't introduce a circular reference/dependency between policies. If you do so, Keycloak will not let you create or update the policy.

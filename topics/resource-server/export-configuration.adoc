@@ -1,0 +1,6 @@
+== Exporting Resource Server Configuration
+
+After creating a resource server, you can export all its configuration to a JSON file. For that, on the *Resource Server Details* page
+click on *Export* button under *Export Settings*.
+
+Once exported, you can use the configuration file to recreate your resource server or even share it with others in your team.

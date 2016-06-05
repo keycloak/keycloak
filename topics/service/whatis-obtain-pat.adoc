@@ -1,0 +1,37 @@
+== What is a PAT and How to Obtain it ?
+
+A PAT is a special OAuth2 Access Token with the scope *uma_protection*.
+
+Resource servers can obtain a PAT from {{book.project.name}} just like any other OAuth2 Access Token.
+
+```bash
+curl -X POST \
+    -H "Authorization: Basic aGVsbG8td29ybGQtYXV0aHotc2VydmljZTpwYXNzd29yZA==" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d 'grant_type=client_credentials' \
+    "http://localhost:8080/auth/realms/${realm_name}/protocol/openid-connect/token"
+```
+
+In the example above, we are using the *client_credentials* grant type to obtain a PAT from the server. As a result, the server would return a response as follows:
+
+[NOTE]
+{{book.project.name}} can authenticate your client application in different ways. We are using *client_credentials* grant type for the sake of
+ simplicity, which basically requires a _client_id_ and a _client_secret_. You can choose any other supported authentication method.
+
+```bash
+{
+  "access_token": ${PAT},
+  "expires_in": 300,
+  "refresh_expires_in": 1800,
+  "refresh_token": ${refresh_token},
+  "token_type": "bearer",
+  "id_token": ${id_token},
+  "not-before-policy": 0,
+  "session_state": "ccea4a55-9aec-4024-b11c-44f6f168439e"
+}
+```
+
+== About the uma_protection scope
+
+The *uma_protection* scope can be created just like any other _realm role_. Once you created it, just grant this role to
+the client application that you want to use as a resource server.

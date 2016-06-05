@@ -1,0 +1,36 @@
+== What is a AAT and How to Obtain it ?
+
+An *Authorization API Token* or *AAT* is a special OAuth2 Access Token with the scope *uma_authorization*.
+
+Client applications can obtain an AAT from {{book.project.name}} just like any other OAuth2 Access Token. Usually, client applications are going to obtain AATs after the user is successfuly
+authenticated in {{book.project.name}}. By default the _authorizaton_code_ grant type is used to authenticate users and issue OAuth2 Access Token to the client application acting on their behalf.
+
+For demonstrations purposes, the example below uses Resource Owner Password Credentials Grant Type to ask for a AAT.
+
+```bash
+curl -X POST \
+    -H "Authorization: Basic aGVsbG8td29ybGQtYXV0aHotc2VydmljZTpwYXNzd29yZA==" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d 'username=${username}&password=${user_password}&grant_type=password' \
+    "http://localhost:8080/auth/realms/${realm_name}/protocol/openid-connect/token"
+```
+
+As a result, you will get the following response from the server:
+
+```json
+{
+  "access_token": ${AAT},
+  "expires_in": 300,
+  "refresh_expires_in": 1800,
+  "refresh_token": ${refresh_token},
+  "token_type": "bearer",
+  "id_token": ${id_token},
+  "not-before-policy": 0,
+  "session_state": "3cad2afc-855b-47b7-8e4d-a21c66e312fb"
+}
+```
+
+== About the uma_authorization scope
+
+The *uma_authorization* scope indicates that an user consented access to his authorization data to a client application. You can create this
+scope a _client role_ and map it to your users.

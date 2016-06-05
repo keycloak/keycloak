@@ -19,7 +19,7 @@ The application we are about to create is a very simple. In a nutshell, it imple
 
 * An _Administration Area_ that only administrators can access
 * An _User Premium Area_ that only users with a premium plan can access
-* A dynamic menu that is generated accordingly with the permissions issued by a {{book.project.name}} Server to an authenticated user
+* A dynamic menu that is generated depending on the permissions granted an user
 
 image:../../images/servlet-authz-app-structure.png[alt="Servlet Authz Application Structure"]
 
@@ -318,14 +318,14 @@ The resource server configuration tells a lot about what we are really protectin
 
 Fist of all, we define four resources:
 
-* Admin Resource
-* Protected Resource
-* Premium Resource
-* Main Page
+* *Admin Resource*
+* *Protected Resource*
+* *Premium Resource*
+* *Main Page*
 
 As the name implies, each of these resources are related with the requirements we previously discussed, representing the different areas or group of resources we want to protect.
 
-As you may notice, each of these resources (except Main Page) defines an *uri* property. This property represents the path we want to protect and they map directly, or indirectly by using a pattern,
+As you may notice, each of these resources (except Main Page) defines an *uri* property. This property represents the path we want to protect and maps directly, or indirectly by using a pattern,
 to the resources served by the application.
 
 Let's take the _Protected Resource_ as an example:
@@ -385,7 +385,7 @@ Aggregated policies are very useful in order to group related policies together 
 
 === Configuring the Keycloak Enforcement Filter
 
-Now that we have all the configuration for our resource server in place, we can configure the authorization enforcement filter to actually protected the resources.
+Now that we have all the configuration for our resource server in place, we can configure the authorization enforcement filter to actually protect resources.
 
 Just like any other Servlet Filter, you just need to include the following configuration in your web application descriptor (WEB-INF/web.xml):
 
@@ -417,7 +417,7 @@ your application at runtime, you must create a *META-INF/jboss-deployment-struct
 </jboss-deployment-structure>
 ```
 
-For last, you need to create a *META-INF/keycloak-authz.json*. If you are using Maven, this file goes inside *src/main/resources*:
+For last, you need to create a *META-INF/keycloak-authz.json* and put it in your application's classpath. If you are using Maven, this file goes inside *src/main/resources*:
 
 ```json
 {
@@ -432,7 +432,7 @@ For last, you need to create a *META-INF/keycloak-authz.json*. If you are using 
 
 === Running and Using the Application
 
-All the source code for this application is at *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/servlet-authz/*.
+All the source code for this application is located at *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/servlet-authz/*.
 
 There you can execute the following command to _deploy_ the application to the running server:
 
@@ -442,8 +442,6 @@ mvn clean package wildfly:deploy
 That should be enough to get the application properly packaged and deployed to a _running_ {{book.project.name}} server.
 
 If the application was properly deployed, you can try to access it at http://localhost:8080/auth[http://localhost:8080/servlet-authz-app] and use the following credentials to login into the application:
-
-If everything is correct, you will be redirect to Keycloak login page. You can login to the application with the following credentials:
 
 * username: alice / password: alice (regular user)
 * username: jdoe / password: jdoe (premium user)

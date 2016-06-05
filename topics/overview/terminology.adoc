@@ -1,11 +1,10 @@
 == Terminology
 
-Before going further, it is important to understand some terms and concepts introduced with {{book.project.name}} {{book.project.module}}.
+Before going further, it is important to understand some terms and concepts introduced by {{book.project.name}} {{book.project.module}}.
 
 ==== Resource Server
 
-If you are familiar with OAuth2, a Resource Server is the server hosting the protected resources, capable of accepting
-and responding to protected resource requests.
+If you are familiar with OAuth2, a Resource Server is the server hosting the protected resources, and which is capable of accepting and responding to protected resource requests.
 
 Resource servers usually rely on some kind of information to decide whether access to a protected resource should be granted or not. For RESTful-based resource servers,
 that information is usually obtained from a security token, usually sent as a bearer token on every single request to the server. For web applications that rely on a session to
@@ -16,8 +15,7 @@ protected and ruled by a set of authorization policies.
 
 ==== Resource
 
-A resource is part of the assets of an application and the organization. It may be a single API
-endpoint, a set of API endpoints, a classic web resource such as an HTML page, and so on.
+A resource is part of the assets of an application and the organization. It can be a set of one or more endpoints, a classic web resource such as an HTML page, and so on.
 In authorization policy terminology, a resource is the _object_ being protected.
 
 Every single resource has a unique identifier, where a resource may also be used to represent a single
@@ -42,7 +40,21 @@ A single scope may be associated with zero or more resources.
 
 ==== Permission
 
+Consider this simple and very common permission:
+
+* *X* CAN DO *Y* ON RESOURCE *Z*
+** where ...
+*** *X* represents one or more Users, Roles, Groups or a combination of them. You can also use claims and context here ...
+*** *Y* represents an action to be performed. Eg.: write, view, etc
+*** *Z* represents a protected resource.
+
 A permission associates the object being protected and the policies that must be evaluated in order to decide whether access should be granted or not.
+
+{{book.project.name}} provides a rich platform for building from the most simple to the more complex permissions. It provides great flexibility and helps to:
+
+* Reduce code refactoring and permission management costs
+* Support a more flexible security model where you can easily change
+* Make changes at runtime given that applications only care about the resources and scopes being protect and not how they are actually protected
 
 ==== Policy
 

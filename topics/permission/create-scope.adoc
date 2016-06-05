@@ -1,3 +1,32 @@
-== Creating Scope-based Permissions
+== Creating Resource-based Permissions
 
-You can create permissions by selecting which type of permission you want to create: resource or scope.
+A Scope-based permissions defines a set of one or more scopes to protect using a set of one or more authorization policies. Unlike the resource-based permissions, this permission type
+allows you to create permissions not only for the resource, but also for the scopes associated with it, providing you more granularity when defining the permissions that rule your resources and the
+actions that can be performed on them.
+
+To create a new permission select the option *Scope-based* in the dropdown located in the right upper corner of the permission listing. In {{book.project.name}}, a scope-based permissions consist of the following information:
+
+* *Name*
++
+A human-readable and unique string describing the permission. We strongly suggest you to use names that are closely related with your business and security requirements, so you
+can identify them more easily and also know what they actually mean
++
+* *Description*
++
+A string with more details about this permission
++
+* *Resource*
++
+Restrict the scopes to those associated with the selected resource. If not selected all scopes would be available
++
+* *Scopes*
++
+Defines a set of one or more scopes to protect
+
+* *Apply Policy*
++
+Defines a set of one or more policies to associate with a permission
+
+* *Decision Strategy*
++
+The decision strategy for this permission

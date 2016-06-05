@@ -66,7 +66,7 @@ For this guide, we are going to create a *hello-world-authz* realm. Just import 
   "clients" : [
     {
       "clientId" : "hello-world-authz-service",
-      "secret" : "password",
+      "secret" : "secret",
       "serviceAccountsEnabled" : true,
       "enabled" : true,
       "redirectUris" : [ "http://localhost:8080/hello-world-authz-service" ],
@@ -178,7 +178,7 @@ The resource server was created based on the *hello-world-authz-service* client 
 ```
 
 What we did was basically tell {{book.project.name}} that we want that client application acting as a resource server, so we can start creating the resources we want to protect as well the permissions
- and authorization policies we want to use to actually protect the resources.
+ and authorization policies we want to use to actually protect its resources.
 
 The purpose of this guide is keep things simple to get you started, so our newly created resource server has a single protected resource, as defined by the following configuration:
 
@@ -202,7 +202,7 @@ permission is the link between a resource and the policies(or conditions) we wan
 In this example, we have a single policy *Only Special Users Policy*. This policy tells that only the specified users are allowed to access _something_ (we don't know what, yet. That is up to the permission).
 
 [NOTE]
-{{book.project.name}} provides a few link:../policy/overview.html[policy types] that you can start using out-of-the-box. There are policies for RBAC, time constraints or even rules written using JavaScript or JBoss Drools.
+{{book.project.name}} provides a few link:../policy/overview.html[policy types] that you can start using out-of-the-box. There are policies for ABAC, RBAC, time constraints or even rules written using JavaScript or JBoss Drools.
 
 The last step when protecting a resource is to define a permission. For that, we have defined a *Hello World Resource Permission* that links the resource we want to protect, _Hello World Resource_, with the
 policy we want to apply to that resource, _Only Special Users Policy_.
@@ -227,10 +227,7 @@ to an user as a result of the evaluation of the permissions and authorization po
 Now that the *hello-world-authz* realm is properly configured with the resources we want to protected and their corresponding permissions and authorization policies, we can ask the server for what an user
 is entitled to do. In other words, what are the permissions the user has.
 
-The Entitlement API consists of a single endpoint. This endpoint expects an OAuth2 Access Token with a scope *kc_entitlement* representing the user identity and the identifier of the resource server we want to access. The *kc_entitlement*
-scope is necessary to indicate that the user consented access to his authorization data from a given client application. The access token with a scope *kc_entitlement* is called *Entitlement API Token* or *EAT*.
-
-In this case, for the sake of simplicity, our resource server *hello-world-authz-service* is also acting as a client application. What means that the user allowed this application to access his
+In this case, for the sake of simplicity, our resource server *hello-world-authz-service* is also acting as a client application. Which means that the user allowed this application to access his
 authorization data and obtain RPTs on his behalf.
 
 The first step is obtain a EAT as follows:
@@ -261,7 +258,7 @@ would get a response from the server as follows:
 
 [NOTE]
 Resource Owner Password Credentials Grant Type is only used here for demonstration purposes. In the real world, you'll usually obtain an access token using a more secure grant type such as _authorization_code_.
-The idea here is demonstrate that you need to obtain an access token with the scope *kc_entitlement* prior to access the Entitlement API to ask for a RPT.
+The idea here is demonstrate that you need to obtain an access token with the scope *kc_entitlement* prior to access the Entitlement API and ask for a RPT.
 
 Finally, the last step is obtain a RPT from the Entitlement API as follows:
 
@@ -316,7 +313,7 @@ Just like we did with _alice_, the server will return an EAT that we can use to 
 ```
 
 The reason for that is that the _Hello World Resource_ is protected by a _Only Special Users Policy_ that says that only _alice_ is allowed to access the resource. You can play around now by changing that policy to
- include _jdoe_ as a valid user and see the results.
+ include _jdoe_ as a valid user and see the results, or you can create new policies and change the permission to use them.
 
 == Enforcing Authorization Decisions
 
@@ -344,7 +341,7 @@ When you decode a RPT you will see something like that:
 }
 ```
 
-The *permissions* claim lists all resource (and their respective scopes if any) permissions granted by the server. There is also a *accessToken* property holding the EAT that was used to issue the RPT.
+The *permissions* claim consists of all the permissions granted by the server. There is also a *accessToken* property holding the EAT that was used to issue the RPT.
 
 The RPT provides everything you need to enforce authorization decisions at the resource server side. That can be easily accomplished by:
 

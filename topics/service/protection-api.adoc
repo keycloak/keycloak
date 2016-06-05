@@ -1,40 +1,14 @@
 == Protection API
 
-The Protection API consists of set of endpoints responsible to:
+The Protection API provides a UMA-compliant set of endpoints providing:
 
 * *Resource Registration*
 +
-From this endpoint resource servers can manage their resources and perform operations such as create, update, remove and searches.
+From this endpoint resource servers can manage their resources remotely and enable link::/enforcer/overview.adoc[Policy Enforcers] to query the server for the resources that need to be protected
 
 * *Permission Registation*
 +
-From this endpoint, resource servers may ask the server for a permission ticket that in turn will be sent to a client in order to obtain a final token with all the permissions for a given user.
+When using UMA protocol, resource servers can access this endpoint to issue permission tickets.
 
-When accessing the Protection API the client application acting as a resource server must be able to obtain an access token from the Keycloak Server.
-With this token, the resource server is allowed to invoke the protection endpoints and perform any operation. Beside that, they need to be granted with a
-*uma_protection* role. If none of these conditions are met, access to the Protection API is denied.
-
-=== Permission Ticket
-
-As mentioned before, one of the main services provided by the Protection API is related with issuing _permission tickets_.
-
-A permission ticket is a special type of the token introduced with UMA that provides a "correlation handle that is conveyed from an authorization server to a resource server,
-from a resource server to a client, and ultimately from a client back to an authorization server, to enable the authorization server to assess the correct policies to apply to a request for authorization data".
-
-It completely hides from clients the permissions required to access a set of one or more resources at the resource server and allows the authorization server to introduce another security layer that manages
-permissions requests to a resource server and its resources. For instance, in the future we are planning to support authorization workflows where an user can control his resources and approve permission requests
-from others to access his resources (resource sharing).
-
-Permission tickets can be obtained by a resource server as follows:
-
-```bash
-curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
-"resource_set_id": "53fe1824-9d8b-4c8d-a03d-c9547318cdf2",
-"scopes": [
-"urn:photoz.com:scopes:album:view"
-]
-}' "http://localhost:8080/auth/realms/photoz/authz/protection/permission"
-```
-
-As mentioned before, the _access_token_ sent with the request above was issued to the resource server using client credentials. Where the access_token
-also include a *uma_protection* scope.
+An important requirement for this API is that _only_ resource servers are supposed to access its endpoints using a special OAuth2 access token called *Protection API Token* or *PAT*.
+In UMA, a PAT is just a token with a scope *uma_protection*.
