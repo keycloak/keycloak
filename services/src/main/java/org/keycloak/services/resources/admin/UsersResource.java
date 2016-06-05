@@ -184,6 +184,8 @@ public class UsersResource {
             return ErrorResponse.exists("User exists with same username or email");
         } catch (ModelReadOnlyException re) {
             return ErrorResponse.exists("User is read only!");
+        } catch (ModelException me) {
+            return ErrorResponse.exists("Could not update user!");
         }
     }
 
@@ -226,6 +228,11 @@ public class UsersResource {
                 session.getTransaction().setRollbackOnly();
             }
             return ErrorResponse.exists("User exists with same username or email");
+        } catch (ModelException me){
+            if (session.getTransaction().isActive()) {
+                session.getTransaction().setRollbackOnly();
+            }
+            return ErrorResponse.exists("Could not create user");
         }
     }
 
