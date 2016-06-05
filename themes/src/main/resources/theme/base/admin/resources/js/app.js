@@ -9,7 +9,7 @@ var auth = {};
 var resourceBundle;
 var locale = 'en';
 
-var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload', 'angularTreeview', 'pascalprecht.translate', 'ngCookies', 'ngSanitize']);
+var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload', 'angularTreeview', 'pascalprecht.translate', 'ngCookies', 'ngSanitize', 'ui.ace']);
 var resourceRequests = 0;
 var loadingTimer = -1;
 
