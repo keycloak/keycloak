@@ -1,4 +1,4 @@
-[[_jetty9_adapter_installation]]
+[[_jetty9_saml_adapter_installation]]
 
 ===== Jetty 9 Adapter Installation
 
