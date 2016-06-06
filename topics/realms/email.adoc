@@ -2,7 +2,7 @@
 
 === Email Settings
 
-{{book.project.name}} sends emails to users to verify their email address, when the forget their passwords, or when an admin needs to
+{{book.project.name}} sends emails to users to verify their email address, when they forget their passwords, or when an admin needs to
 receive notifications about a server event.
 To enable {{book.project.name}} to send emails you need to provide {{book.project.name}} with your SMTP server settings.
 This is configured per realm.  Go to the `Realm Settings` left menu
