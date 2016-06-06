@@ -3,7 +3,7 @@
 
 Any action an admin performs within the admin console can be recorded for auditing purposes.
 The Admin Console performs administrative functions by invoking on the {{book.project.name}} REST interface.  {{book.project.name}}
-audits the admin APIs be storing these REST invocations.  These REST invocations can then be viewed in the Admin Console.
+audits these REST invocations.  The resulting events can then be viewed in the Admin Console.
 
 To enable auditing of Admin actions, go to the `Events` left menu item and select the `Config` tab.
 
