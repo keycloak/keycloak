@@ -78,5 +78,5 @@ Go back to {{book.project.name}} and specify those items.
 
 One config option to note on the `Add identity provider` page for Google is the `Default Scopes` field.
 This field allows you to manually specify the scopes that users must authorize when authenticating with this provider.
-For a complete list of scopes, please take a look at https://developers.google.com/oauthplayground/. By default, {{book.project.name}}
+For a complete list of scopes, please take a look at https://developers.google.com/oauthplayground/ . By default, {{book.project.name}}
 uses the following scopes: `openid` `profile` `email`.
