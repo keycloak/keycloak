@@ -56,7 +56,7 @@ You really don't need to know about this stuff, but it is a pretty clever trick.
 ECP stands for "Enhanced Client or Proxy", a SAML v.2.0 profile which allows for the exchange of SAML attributes outside the context of a web browser.
 This is used most often for REST or SOAP-based clients.
 
-====  {{book.project.name}} Server OIDC URI Endpoints
+====  {{book.project.name}} Server SAML URI Endpoints
 
 {{book.project.name}} really only has one endpoint for all SAML requests.
 
