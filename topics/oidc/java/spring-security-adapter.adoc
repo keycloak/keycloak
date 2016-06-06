@@ -152,7 +152,7 @@ While Spring Security's XML namespace simplifies configuration, customizing the 
 
 The Keycloak Spring Security adapter also supports multi tenancy.
 Instead of injecting `AdapterDeploymentContextFactoryBean` with the path to `keycloak.json` you can inject an implementation of the `KeycloakConfigResolver` interface.
-More details on how to implement the `KeycloakConfigResolver` can be found in <<_multi_tenancy>>. 
+More details on how to implement the `KeycloakConfigResolver` can be found in <<fake/../multi-tenancy.adoc#_multi_tenancy,Multi Tenancy>>.
 
 ==== Naming Security Roles
 
