@@ -19,7 +19,7 @@ A theme can provide one or more types to customize different aspects of {{book.p
 === Configure Theme
 
 All theme types, except welcome, is configured through the `Admin Console`. To change the theme used for a realm open the `Admin Console`, select
-your realm from the drop-down box in the top left corner. Under `Settings` click on `Themes`.
+your realm from the drop-down box in the top left corner. Under `Realm Settings` click on `Themes`.
 
 NOTE: To set the theme for the `master` admin console you need to set the admin console theme for the `master` realm. To see the changes to the admin console
 refresh the page.
