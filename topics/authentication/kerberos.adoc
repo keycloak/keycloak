@@ -154,18 +154,33 @@ This is enabled in the `Mappers` tab of the application's
 client page.  See <<fake/../../clients/protocol-mappers.adoc#_protocol-mappers, Protocol Mappers>> chapter for more details.
 
 Applications will need to deserialize the claim it receives from {{book.project.name}} before it can use it to make GSS calls against other services.
-We have an example, that shows this in detail.
-It's in `examples/kerberos` in the {{book.project.name}} example distribution or demo distribution download.
-You can also check the example sources directly https://github.com/keycloak/keycloak/blob/master/examples/kerberos[here] . 
-
 Once you deserialize the credential from the access token to the GSSCredential object, the GSSContext will need to be created with this credential
 passed to the method `GSSManager.createContext` for example like this:
 
 [source]
 ----
+// Obtain accessToken in your application.
+KeycloakPrincipal keycloakPrincipal = (KeycloakPrincipal) servletReq.getUserPrincipal();
+AccessToken accessToken = keycloakPrincipal.getKeycloakSecurityContext().getToken();
+
+// Retrieve kerberos credential from accessToken and deserialize it
+String serializedGssCredential = (String) accessToken.getOtherClaims().
+    get(org.keycloak.common.constants.KerberosConstants.GSS_DELEGATION_CREDENTIAL);
+
+GSSCredential deserializedGssCredential = org.keycloak.common.util.KerberosSerializationUtils.
+    deserializeCredential(serializedGssCredential);
+
+// Create GSSContext to call other kerberos-secured services
 GSSContext context = gssManager.createContext(serviceName, krb5Oid,
-    deserializedGssCredFromKeycloakAccessToken, GSSContext.DEFAULT_LIFETIME);
-----        
+    deserializedGssCredential, GSSContext.DEFAULT_LIFETIME);
+----
+
+{% if book.community %}
+We have an example, that shows this in detail.
+It's in `examples/kerberos` in the {{book.project.name}} example distribution or demo distribution download.
+You can also check the example sources directly https://github.com/keycloak/keycloak/blob/master/examples/kerberos[here] .
+{% endif %}
+
 
 Note that you also need to configure `forwardable` kerberos tickets in `krb5.conf` file and add support for delegated credentials to your browser.
 
