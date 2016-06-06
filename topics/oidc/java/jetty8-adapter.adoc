@@ -44,4 +44,4 @@ OPTIONS=Server,jsp,jmx,resources,websocket,ext,plus,annotations,keycloak
 
 Enabling Keycloak for your WARs is the same as the Jetty 9.x adapter.
 Our 8.1.x adapter supports both keycloak.json and the jboss-web.xml advanced configuration.
-See <<_jetty9_per_war,Required Per WAR Configuration>>        
+See <<fake/../jetty9-adapter.adoc#_jetty9_per_war,Required Per WAR Configuration>>
