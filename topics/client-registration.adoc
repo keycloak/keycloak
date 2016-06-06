@@ -1,3 +1,4 @@
+[[_client_registration]]
 == Client Registration
 
 In order for an application or service to utilize {{book.project.name}} it has to register a client in {{book.project.name}}.
