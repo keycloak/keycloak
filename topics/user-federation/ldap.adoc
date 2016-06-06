@@ -57,7 +57,7 @@ When you configure a secured connection URL to your LDAP store(for example `ldap
 The important thing is to properly configure a truststore on the {{book.project.name}} server side, because SSL won't work
 if {{book.project.name}} can't trust the SSL connection with LDAP ({{book.project.name}}.
 
-The global truststore for the {{book.project.name}} can be configured with Truststore SPI.  Please check out the link:{{book.installguide.link}}[book.installguide.name}}] for more detail.
+The global truststore for the {{book.project.name}} can be configured with Truststore SPI.  Please check out the link:{{book.installguide.link}}[{{book.installguide.name}}] for more detail.
 If you don't configure truststore SPI, the truststore will fallback to the default mechanism provided by Java (either the file provided by system property `javax.net.ssl.trustStore`
 or the cacerts file from JDK if the system property is not set).
 
