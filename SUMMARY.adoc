@@ -35,7 +35,9 @@
    .. link:topics/oidc/javascript-adapter.adoc[JavaScript Adapter]
 
    .. link:topics/oidc/oidc-generic.adoc[Other OpenID Connect libraries]
+      {% if book.community %}
       ... link:topics/oidc/mod-auth-openidc.adoc[mod_auth_oidc Apache HTTPD Module]
+      {% endif %}
 
  . link:topics/saml/saml-overview.adoc[SAML]
  .. link:topics/saml/java/java-adapters.adoc[Java Adapters]
