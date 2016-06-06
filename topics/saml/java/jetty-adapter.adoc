@@ -1,4 +1,4 @@
-
+[[_jetty_saml_adapter]]
 ==== Jetty SAML Adapters
 
 To be able to secure WAR apps deployed on Jetty you must install the {{book.project.name}} Jetty 9.x or 8.x SAML adapter into your Jetty installation.
