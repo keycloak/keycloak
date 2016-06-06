@@ -60,6 +60,31 @@ The version specific section below will mention if any changes are required to a
 
 === Version specific migration
 
+==== Migrating to 1.9.5
+
+===== Default password hashing interval increased to 20K
+
+The default password hashing interval for new realms has been increased to 20K (from 1 previously). This change will have an impact
+on performance when users authenticate. For example with the old default (1) it takes less than 1 ms to hash a password, but with
+the new default (20K) the same operation can take 50-100 ms.
+
+==== Migrating to 1.9.3
+
+===== Add User script renamed
+
+The script to add admin users to Keycloak has been renamed to `add-user-keycloak`.
+
+==== Migrating to 1.9.2
+
+===== Adapter option auth-server-url-for-backend-requests removed
+
+We've removed the option auth-server-url-for-backend-requests as there were issues in some scenarios when it was used. In more details,
+it was possible to access the Keycloak server from 2 different contexts (internal and external), which was causing issues in token validations etc.
+
+If you still want to use the optimization of network, which this option provided (avoid the application to send backchannel requests
+through loadbalancer but send them to local Keycloak server directly) you may need to handle it at hosts configuration (DNS) level.
+
+
 ==== Migrating to 1.9.0
 
 ===== Themes and providers directory moved
