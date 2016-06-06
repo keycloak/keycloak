@@ -1,28 +1,31 @@
 [[_javascript_adapter]]
 == Javascript Adapter
 
-The Keycloak Server comes with a Javascript library you can use to secure HTML/Javascript applications.
-This library is referenceable directly from the keycloak server.
-You can also download the adapter from Keycloak's download site if you want a static copy.
-It works in the same way as other application adapters except that your browser is driving the OAuth redirect protocol rather than the server. 
+{{book.project.name}} comes with a client-side JavaScript library that can be used to secure HTML5/JavaScript applications. The JavaScript adapter has built-in
+support for Cordova applications.
 
-The disadvantage of using this approach is that you have a non-confidential, public client.
-This makes it more important that you register valid redirect URLs and make sure your domain name is secured. 
+The library can be retrieved directly from the {{book.project.name}} server at `/auth/js/keycloak.js` and is also distributed as a ZIP archive.
 
-To use this adapter, you must first configure an application (or client) through the `Keycloak Admin Console`.
-You should select `public` for the `Access Type` field.
-As public clients can't be verified with a client secret, you are required to configure one or more valid redirect uris.
-Once you've configured the application, click on the `Installation` tab and download the `keycloak.json`        file.
-This file should be hosted on your web-server at the same root as your HTML pages.
-Alternatively, you can manually configure the adapter and specify the URL for this file. 
+One important thing to note about using client-side applications is that the client has to be a public client as there is no secure way to store client
+credentials in a client-side application. This makes it very important to make sure the redirect URIs you have configured for the client are correct and as
+specific as possible.
 
-Next, you have to initialize the adapter in your application.
-An example is shown below. 
+To use the JavaScript adapter you must first create a client for your application in the {{book.project.name}} Administration Console. Make sure `public`
+is selected for `Access Type`.
+
+You also need to configure valid redirect URIs and valid web origins. Be as specific as possible as failing to do so may results in a security vulnerability.
+
+Once the client is created click on the `Installation` tab select `Keycloak OIDC JSON` for `Format Option` then click on `Download`. The downloaded
+`keycloak.json` file should be hosted on your web server at the same location as your HTML pages.
+
+Alternatively, you can skip the configuration file and manually configure the adapter.
+
+The following example shows how to initialize the JavaScript adapter:
 
 [source,html]
 ----
 <head>
-    <script src="http://<keycloak server>/auth/js/keycloak.js"></script>
+    <script src="keycloak.js"></script>
     <script>
         var keycloak = Keycloak();
         keycloak.init().success(function(authenticated) {
@@ -33,144 +36,135 @@ An example is shown below.
     </script>
 </head>
 ----        
-To specify the location of the keycloak.json file: 
 
-[source]
+If the `keycloak.json` file is in a different location you can specify it:
+
+[source,javascript]
 ----
 var keycloak = Keycloak('http://localhost:8080/myapp/keycloak.json'));
-----        
-Or finally to manually configure the adapter: 
-
-[source]
 ----
 
+You can also skip the file altogether and manually configure the adapter:
+
+[source,javascript]
+----
 var keycloak = Keycloak({
     url: 'http://keycloak-server/auth',
     realm: 'myrealm',
     clientId: 'myapp'
 });
-----       
-You can also pass `login-required` or `check-sso` to the init function.
-Login required will cause a redirect to the login form on the server, while check-sso will simply redirect to the auth server to check if the user is already logged in to the realm.
-For example: 
+----
+
+By default to authenticate you need to call the `login` function. However, there are two options available to make the adapter automatically authenticate. You
+can pass `login-required` or `check-sso` to the init function. `login-required` will authenticate the client if the user is logged-in to {{book.project.name}}
+or display the login page if not. `check-sso` will only authenticate the client if the user is already logged-in, if the user is not logged-in the browser will be
+redirected back to the application and remain unauthenticated.
+
+To enable `login-required` set `onLoad` to `login-required` and pass to the init method:
 
 [source]
 ----
 keycloak.init({ onLoad: 'login-required' })
 ----    
 
-After you login, your application will be able to make REST calls using bearer token authentication.
-Here's an example pulled from the `customer-portal-js` example that comes with the distribution. 
+After the user is authenticated the application can make requests to RESTful services secured by {{book.project.name}} by including the bearer token in the
+`Authorization` header. For example:
 
-[source]
+[source,javascript]
 ----
-<script>
-    var loadData = function () {
-        document.getElementById('username').innerText = keycloak.username;
+var loadData = function () {
+    document.getElementById('username').innerText = keycloak.username;
 
-        var url = 'http://localhost:8080/database/customers';
+    var url = 'http://localhost:8080/restful-service';
 
-        var req = new XMLHttpRequest();
-        req.open('GET', url, true);
-        req.setRequestHeader('Accept', 'application/json');
-        req.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
+    var req = new XMLHttpRequest();
+    req.open('GET', url, true);
+    req.setRequestHeader('Accept', 'application/json');
+    req.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
 
-        req.onreadystatechange = function () {
-            if (req.readyState == 4) {
-                if (req.status == 200) {
-                    var users = JSON.parse(req.responseText);
-                    var html = '';
-                    for (var i = 0; i < users.length; i++) {
-                        html += '<p>' + users[i] + '</p>';
-                    }
-                    document.getElementById('customers').innerHTML = html;
-                    console.log('finished loading data');
-                }
+    req.onreadystatechange = function () {
+        if (req.readyState == 4) {
+            if (req.status == 200) {
+                alert('Success');
+            } else if (req.status == 403) {
+                alert('Forbidden');
             }
         }
-
-        req.send();
-    };
-
-    var loadFailure = function () {
-        document.getElementById('customers').innerHTML = '<b>Failed to load data.  Check console log</b>';
-
-    };
-
-    var reloadData = function () {
-        keycloak.updateToken().success(loadData).error(loadFailure);
     }
-</script>
 
-<button onclick="reloadData()">Submit</button>
-----     
+    req.send();
+};
+----
 
-The `loadData()` method builds an HTTP request setting the `Authorization`        header to a bearer token.
-The `keycloak.token` points to the access token the browser obtained when it logged you in.
-The `loadFailure()` method is invoked on a failure.
-The `reloadData()`        function calls `keycloak.updateToken()` passing in the `loadData()` and `loadFailure()` callbacks.
-The `keycloak.updateToken()` method checks to see if the access token hasn't expired.
-If it hasn't, and your oauth login returned a refresh token, this method will refresh the access token.
-Finally, if successful, it will invoke the success callback, which in this case is the `loadData()` method. 
+One thing to keep in mind is that the access token by default has a short life expiration so you may need to refresh the access token prior to sending the
+request. You can do this by the `updateToken` method. The `updateToken` method returns a promise object which makes it easy to invoke the service only if the
+token was successfully refreshed and for example display an error to the user if it wasn't. For example:
 
-To refresh the token when it is expired, call the `updateToken` method.
-This method returns a promise object, which can be used to invoke a function on success or failure.
-This method can be used to wrap functions that should only be called with a valid token.
-For example, the following method will refresh the token if it expires within 30 seconds, and then invoke the specified function.
-If the token is valid for more than 30 seconds it will just call the specified function. 
-
-[source]
+[source,javascript]
 ----
 keycloak.updateToken(30).success(function() {
-    // send request with valid token
+    loadData();
 }).error(function() {
-    alert('failed to refresh token');
+    alert('Failed to refresh token');
 );
 ----    
 
 == Session status iframe
 
-By default, the JavaScript adapter creates a non-visible iframe that is used to detect if a single-sign out has occurred.
-This does not require any network traffic, instead the status is retrieved from a special status cookie.
-This feature can be disabled by setting `checkLoginIframe: false` in the options passed to the `init`            method. 
+By default, the JavaScript adapter creates a hidden iframe that is used to detect if a Single-Sign Out has occurred.
+This does not require any network traffic, instead the status is retrieved by looking at a special status cookie.
+This feature can be disabled by setting `checkLoginIframe: false` in the options passed to the `init` method.
+
+You should not rely on looking at this cookie directly. It's format can change and it's also associated with the URL of the {{book.project.name}} server, not
+your application.
 
 [[_javascript_implicit_flow]]
 == Implicit and Hybrid Flow
 
-By default, the JavaScript adapter uses http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[OpenID Connect standard (Authorization code) flow], which means that after authentication, the Keycloak server redirects the user back to your application, where the JavaScript adapter will exchange the `code` for an access token and a refresh token. 
+By default, the JavaScript adapter uses the http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code] flow.
+With this flow the {{book.project.name}} server returns a authorization code, not a authentication token, to the application. The JavaScript adapter exchanges
+the `code` for an access token and a refresh token after the browser is redirected back to the application.
 
-However, Keycloak also supports http://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[OpenID Connect Implicit flow] where an access token is sent immediately after successful authentication with Keycloak (there is no additional request for exchange code). This could have better performance than standard flow, as there is no additional request to exchange the code for tokens.
-However, sending the access token in the URL fragment could pose a security issue in some environments (access logs might expose tokens located in the URL). 
+{{book.project.name}} also supports the http://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit] flow where an access token
+is sent immediately after successful authentication with {{book.project.name}}. This may have better performance than standard flow, as there is no additional
+request to exchange the code for tokens, but it has implications when the access token expires.
 
-To enable implicit flow, you need to enable the `Implicit Flow Enabled` flag for the client in the Keycloak admin console.
-You also need to pass the parameter `flow` with value `implicit` to `init` method.
-An example is below: 
+However, sending the access token in the URL fragment can be a security vulnerability. For example the token could be leaked through web server logs and or
+browser history.
 
-[source]
+To enable implicit flow, you need to enable the `Implicit Flow Enabled` flag for the client in the {{book.project.name}} Administration Console.
+You also need to pass the parameter `flow` with value `implicit` to `init` method:
+
+[source,javascript]
+----
+keycloak.init({ flow: 'implicit' })
 ----
 
-keycloak.init({ flow: 'implicit' })
-----            
-Note that with implicit flow, you are not given a refresh token after authentication.
+One thing to note is that only an access token is provided and there is no refresh token. This means that once the access token has expired the application
+has to do the redirect to the {{book.project.name}} again to obtain a new access token.
 
-This makes it harder for your application to periodically update the access token in background (without browser redirection). It's recommended that you implement an `onTokenExpired` callback method on the keycloak object, so you are notified after the token is expired (For example you can call keycloak.login, which will redirect browser to Keycloak login screen and it will immediately redirect you back if the SSO session is still valid and the user is still logged.
-However, make sure to save the application state before performing a redirect.) 
-
-Keycloak also has support for http://openid.net/specs/openid-connect-core-1_0.html#HybridFlowAuth[OpenID Connect Hybrid flow].
+{{book.project.name}} also supports the http://openid.net/specs/openid-connect-core-1_0.html#HybridFlowAuth[Hybrid] flow.
 
 This requires the client to have both the `Standard Flow Enabled` and `Implicit Flow Enabled` flags enabled in the admin console.
-The Keycloak server will then send both the code and tokens to your application.
+The {{book.project.name}} server will then send both the code and tokens to your application.
 The access token can be used immediately while the code can be exchanged for access and refresh tokens.
 Similar to the implicit flow, the hybrid flow is good for performance because the access token is available immediately.
-But, the token is still sent in the URL, and security risks might still apply.
-However, one advantage over the implicit flow is that a refresh token is made available to the application (after the code-to-token request is finished). 
+But, the token is still sent in the URL, and the security vulnerability mentioned earlier may still apply.
 
-For hybrid flow, you need to pass the parameter `flow` with value `hybrid` to `init` method. 
+One advantage in the Hybrid flow is that the refresh token is made available to the application.
+
+For the Hybrid flow, you need to pass the parameter `flow` with value `hybrid` to the `init` method:
+
+[source,javascript]
+----
+keycloak.init({ flow: 'hybrid' })
+----
 
 == Older browsers
 
 The JavaScript adapter depends on Base64 (window.btoa and window.atob) and HTML5 History API.
-If you need to support browsers that don't provide those (for example IE9) you'll need to add polyfillers.
+If you need to support browsers that don't have these available (for example IE9) you need to add polyfillers.
+
 Example polyfill libraries:  
 
 * https://github.com/davidchambers/Base64.js
@@ -190,20 +184,48 @@ new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp'
 
 === Properties
 
-* authenticated - true if the user is authenticated
-* Authorization
-* tokenParsed - the parsed token
-* subject - the user id
-* idToken - the id token if claims is enabled for the application, null otherwise
-* idTokenParsed - the parsed id token
-* realmAccess - the realm roles associated with the token
-* resourceAccess - the resource roles assocaited with the token
-* refreshToken - the base64 encoded token that can be used to retrieve a new token
-* refreshTokenParsed - the parsed refresh token
-* timeSkew - estimated skew between local time and Keycloak server in seconds
-* fragment
-* Implicit flow
-* flow
+authenticated::
+    Is `true` if the user is authenticated, `false` otherwise.
+
+token::
+    The base64 encoded token that can be sent in the `Authorization` header in requests to services.
+
+tokenParsed::
+    The parsed token as a JavaScript object.
+
+subject::
+    The user id.
+
+idToken::
+    The base64 encoded ID token.
+
+idTokenParsed::
+    The parsed id token as a JavaScript object.
+
+realmAccess::
+    The realm roles associated with the token.
+
+resourceAccess::
+    The resource roles assocaited with the token.
+
+refreshToken::
+    The base64 encoded refresh token that can be used to retrieve a new token.
+
+refreshTokenParsed::
+    The parsed refresh token as a JavaScript object.
+
+timeSkew::
+    The estimated time difference between the browser time and the {{book.project.name}} server in seconds. This value is just an estimation, but is accurate
+    enough when determining if a token is expired or not.
+
+responseMode::
+    Response mode passed in init (default value is fragment).
+
+flow::
+    Flow passed in init.
+
+responseType::
+    Response type sent to {{book.project.name}} with login requests. This is determined based on the flow value used during initialization, but can be overridden by setting this value.
 
 === Methods
 
@@ -213,100 +235,92 @@ Called to initialize the adapter.
 
 Options is an Object, where: 
 
-* onLoad - specifies an action to do on load, can be either 'login-required' or 'check-sso'
-* token - set an initial value for the token
-* refreshToken - set an initial value for the refresh token
-* idToken - set an initial value for the id token (only together with token or refreshToken)
-* timeSkew - set an initial value for skew between local time and Keycloak server in seconds (only together with token or refreshToken)
-* checkLoginIframe - set to enable/disable monitoring login state (default is true)
-* checkLoginIframeInterval - set the interval to check login state (default is 5 seconds)
-* query
-+`fragment`
-+`fragment`
-+`query`
-* standard
-+`implicit`
-+`hybrid`<<_javascript_implicit_flow,+Implicit flow>>
-                
+* onLoad - Specifies an action to do on load. Supported values are 'login-required' or 'check-sso'.
+* token - Set an initial value for the token.
+* refreshToken - Set an initial value for the refresh token.
+* idToken - Set an initial value for the id token (only together with token or refreshToken).
+* timeSkew - Set an initial value for skew between local time and Keycloak server in seconds (only together with token or refreshToken).
+* checkLoginIframe - Set to enable/disable monitoring login state (default is true).
+* checkLoginIframeInterval - Set the interval to check login state (default is 5 seconds).
+* responseMode - Set the OpenID Connect response mode send to Keycloak server at login request. Valid values are query or fragment . Default value is fragment, which means that after successful authentication will Keycloak redirect to javascript application with OpenID Connect parameters added in URL fragment. This is generally safer and recommended over query.
+* flow - Set the OpenID Connect flow. Valid values are standard, implicit or hybrid.
 
 Returns promise to set functions to be invoked on success or error.
 
 ==== login(options)
 
-Redirects to login form on (options is an optional object with redirectUri and/or prompt fields)
+Redirects to login form on (options is an optional object with redirectUri and/or prompt fields).
 
 Options is an Object, where: 
 
-* redirectUri - specifies the uri to redirect to after login
-* prompt - can be set to 'none' to check if the user is logged in already (if not logged in, a login form is not displayed)
-* loginHint - used to pre-fill the username/email field on the login form
-* action - if value is 'register' then user is redirected to registration page, otherwise to login page
-* locale - specifies the desired locale for the UI                
+* redirectUri - Specifies the uri to redirect to after login.
+* prompt - Can be set to 'none' to check if the user is logged in already (if not logged in, a login form is not displayed).
+* loginHint - Used to pre-fill the username/email field on the login form.
+* action - If value is 'register' then user is redirected to registration page, otherwise to login page.
+* locale - Specifies the desired locale for the UI.
 
 ==== createLoginUrl(options)
 
-Returns the url to login form on (options is an optional object with redirectUri and/or prompt fields)
+Returns the URL to login form on (options is an optional object with redirectUri and/or prompt fields).
 
 Options is an Object, where: 
 
-* redirectUri - specifies the uri to redirect to after login
-* prompt - can be set to 'none' to check if the user is logged in already (if not logged in, a login form is not displayed)                
+* redirectUri - Specifies the uri to redirect to after login.
+* prompt - Can be set to 'none' to check if the user is logged in already (if not logged in, a login form is not displayed).
 
 ==== logout(options)
 
-Redirects to logout
+Redirects to logout.
 
 Options is an Object, where: 
 
-* redirectUri - specifies the uri to redirect to after logout                
+* redirectUri - Specifies the uri to redirect to after logout.
 
 ==== createLogoutUrl(options)
 
-Returns logout out
+Returns the URL to logout the user.
 
 Options is an Object, where: 
 
-* redirectUri - specifies the uri to redirect to after logout                
+* redirectUri - Specifies the uri to redirect to after logout.
 
 ==== register(options)
 
-Redirects to registration form.
-It's a shortcut for doing login with option action = 'register'
+Redirects to registration form. Shortcut for login with option action = 'register'
 
-Options are same as login method but 'action' is overwritten to 'register'
+Options are same as login method but 'action' is set to 'register'
 
 ==== createRegisterUrl(options)
 
-Returns the url to registration page.
-It's a shortcut for doing createRegisterUrl with option action = 'register'
+Returns the url to registration page. Shortcut for createLoginUrl with option action = 'register'
 
-Options are same as createLoginUrl method but 'action' is overwritten to 'register'
+Options are same as createLoginUrl method but 'action' is set to 'register'
 
 ==== accountManagement()
 
-Redirects to account management
+Redirects to the Account Management Console.
 
 ==== createAccountUrl()
 
-Returns the url to account management
+Returns the URL to the Account Management Console.
 
 ==== hasRealmRole(role)
 
-Returns true if the token has the given realm role
+Returns true if the token has the given realm role.
 
 ==== hasResourceRole(role, resource)
 
-Returns true if the token has the given role for the resource (resource is optional, if not specified clientId is used)
+Returns true if the token has the given role for the resource (resource is optional, if not specified clientId is used).
 
 ==== loadUserProfile()
 
-Loads the users profile
+Loads the users profile.
 
 Returns promise to set functions to be invoked on success or error.
 
 ==== isTokenExpired(minValidity)
 
-Returns true if the token has less than minValidity seconds left before it expires (minValidity is optional, if not specified 0 is used)
+Returns true if the token has less than minValidity seconds left before it expires (minValidity is optional, if not specified 0 is used).
 
 ==== updateToken(minValidity)
 
@@ -316,48 +330,42 @@ If the session status iframe is enabled, the session status is also checked.
 Returns promise to set functions that can be invoked if the token is still valid, or if the token is no longer valid.
 For example:
 
-[source]
+[source,javascript]
 ----
-
 keycloak.updateToken(5).success(function(refreshed) {
         if (refreshed) {
-            alert('token was successfully refreshed');
+            alert('Token was successfully refreshed');
         } else {
-            alert('token is still valid');
+            alert('Token is still valid');
         }
     }).error(function() {
-        alert('failed to refresh the token, or the session has expired');
+        alert('Failed to refresh the token, or the session has expired');
     });
 ----
 
 ==== clearToken()
 
 Clear authentication state, including tokens.
-This can be useful if application has detected the session has expired, for example if updating token fails.
+This can be useful if application has detected the session was expired, for example if updating token fails.
+
 Invoking this results in onAuthLogout callback listener being invoked. 
-
-[source]
-----
-
-keycloak.updateToken(5).error(function() {
-    keycloak.clearToken();
-});
-----
 
 === Callback Events
 
 The adapter supports setting callback listeners for certain events.
+
 For example: 
 [source]
 ----
-
 keycloak.onAuthSuccess = function() { alert('authenticated'); }
-----            
+----
 
-* onReady(authenticated) - called when the adapter is initialized
-* onAuthSuccess - called when a user is successfully authenticated
-* onAuthError - called if there was an error during authentication
-* onAuthRefreshSuccess - called when the token is refreshed
-* onAuthRefreshError - called if there was an error while trying to refresh the token
-* onAuthLogout - called if the user is logged out (will only be called if the session status iframe is enabled, or in Cordova mode)
-* onTokenExpired - called when access token expired. When this happens you can for example refresh token, or if refresh not available (ie. with implicit flow) you can redirect to login screen
+The available events are:
+
+* onReady(authenticated) - Called when the adapter is initialized.
+* onAuthSuccess - Called when a user is successfully authenticated.
+* onAuthError - Called if there was an error during authentication.
+* onAuthRefreshSuccess - Called when the token is refreshed.
+* onAuthRefreshError - Called if there was an error while trying to refresh the token.
+* onAuthLogout - Called if the user is logged out (will only be called if the session status iframe is enabled, or in Cordova mode).
+* onTokenExpired - Called when access token expired. When this happens you can for example refresh token, or if refresh not available (ie. with implicit flow) you can redirect to login screen.

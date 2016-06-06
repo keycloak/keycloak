@@ -1,0 +1,87 @@
+
+[[_fuse_adapter_admin]]
+==== Secure Fuse Admin Services
+
+===== SSH authentication to Fuse terminal
+
+{{book.project.name}} mainly addresses usecases for authentication of web applications, however if your other web services and applications are protected
+with {{book.project.name}}, it may be good to protect non-web admin services like SSH with {{book.project.name}} credentials too. It's possible to do it
+by using JAAS login module, which allows to remotely connect to {{book.project.name}} and verify credentials based on
+<<fake/../../../oidc-generic.adoc#_resource_owner_password_credentials_flow,Resource Owner Password Credentials>> .
+
+Example steps for enable SSH authentication:
+
+* In  {{book.project.name}} you need to create client (assume it's called `ssh-jmx-admin-client`), which will be used for SSH authentication.
+This client needs to have switch `Direct grant enabled` to true.
+
+* You need to update/specify this property in file `$FUSE_HOME/etc/org.apache.karaf.shell.cfg`:
+
+[source]
+----
+sshRealm=keycloak
+----
+
+* Add file `$FUSE_HOME/etc/keycloak-direct-access.json` with the content similar to this (change based on your environment and {{book.project.name}} client settings):
+[source,json]
+----
+{
+    "realm": "demo",
+    "resource": "ssh-jmx-admin-client",
+    "realm-public-key": "MIGfMA...",
+    "ssl-required" : "external",
+    "auth-server-url" : "http://localhost:8080/auth",
+    "credentials": {
+        "secret": "password"
+    }
+}
+----
+This file contains configuration of the client application, which is used by JAAS DirectAccessGrantsLoginModule from `keycloak` JAAS realm for SSH authentication.
+
+* Start Fuse and install `keycloak` JAAS realm into Fuse. This could be done easily by installing `keycloak-jaas` feature, which has JAAS realm predefined
+(you are able to override it by using your own `keycloak` JAAS realm with higher ranking). Use those commands in Fuse terminal:
+
+```
+features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.version}}/xml/features
+features:install keycloak-jaas
+```
+
+* Now let's type this from your terminal to login via SSH as `admin` user:
+
+```
+ssh -o PubkeyAuthentication=no -p 8101 admin@localhost
+```
+
+And login with password `password` . Note that your user needs to have realm role `admin` . The required roles are configured in `$FUSE_HOME/etc/org.apache.karaf.shell.cfg`
+
+
+===== JMX authentication
+
+This may be needed in case if you really want to use jconsole or other external tool to perform remote connection to JMX through RMI. Otherwise it may
+be better to use just hawt.io/jolokia as jolokia agent is installed in hawt.io by default.
+
+* In file `$FUSE_HOME/etc/org.apache.karaf.management.cfg` you can change this property:
+
+[source]
+----
+jmxRealm=keycloak
+----
+
+* You need `keycloak-jaas` feature and file `$FUSE_HOME/etc/keycloak-direct-access.json` as described in SSH section above.
+
+* In jconsole you can fill URL like:
+
+[source]
+----
+service:jmx:rmi://localhost:44444/jndi/rmi://localhost:1099/karaf-root
+----
+
+and credentials: admin/password (based on the user with admin privileges according to your environment)
+
+Note again that users without `admin` role are not able to login as they are not authorized. However users with access to Hawt.io admin console
+may be still able to access MBeans remotely via HTTP (Hawtio). So make sure to protect Hawt.io web console with same roles like JMX through RMI to
+really protect JMX mbeans.
+
+
+===== Secure Fuse admin console
+
+Fuse admin console is Hawt.io. See http://hawt.io/configuration/index.html[Hawt.io documentation] for more info about how to secure it with {{book.project.name}}.
