@@ -57,7 +57,9 @@ This is a Jetty specific config file and you must define a Keycloak specific aut
 ----
 
 Next you must create a `keycloak.json` adapter config file within the `WEB-INF` directory of your WAR.
-The format of this config file is describe in the <<_java_adapter_config,general adapter configuration>>            section. 
+
+The format of this config file is describe in the <<fake/../java-adapter-config.adoc#_java_adapter_config,Java adapter configuration>>            section.
+
 
 WARNING: The Jetty 9.1.x adapter will not be able to find the `keycloak.json` file.
 You will have to define all adapter settings within the `jetty-web.xml` file as described below. 
