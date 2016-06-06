@@ -23,7 +23,7 @@ The bar code you see in the screen shot can be scanned into the FreeOTP or Googl
 .OTP Authenticator
 image:../{{book.images}}/account-service-authenticator.png[]
 
-The `Federated Identity` menu item allows the user to link their account with an <<identity-broker.adoc#_identity-broker, identity broker>> (this is usually used to link social provier
+The `Federated Identity` menu item allows the user to link their account with an <<fake/../identity-broker.adoc#_identity-broker, identity broker>> (this is usually used to link social provier
 accounts together).  This will show the list of external identity providers you have configured for your realm.
 
 .Federated Identity
