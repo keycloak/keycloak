@@ -1,8 +1,7 @@
 
 === Required Actions
 
-Required Actions are tasks that a user must finish before they are allowed to log in.  A user must enter
-in their credentials before required actions are executed.  Once a required action is completed, the user will not have
+Required Actions are tasks that a user must finish before they are allowed to log in.  A user must provide their credentials before required actions are executed.  Once a required action is completed, the user will not have
 to perform the action again.
 Here are an explanation of some of the built in required action types:
 
