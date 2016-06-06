@@ -31,7 +31,7 @@ There's no way standard way to invalidate an HTTP session based on a session id.
 ----
 
 In the snippet above there are two url-patterns.
- `/protected/*` are the files we want protected, while the `/keycloak/*` url-pattern handles callbacks from the {{book.project.title}} server.
+ _/protected/*_ are the files we want protected, while the _/keycloak/*_ url-pattern handles callbacks from the {{book.project.title}} server.
 
 Note that you should configure your client in the {{book.project.title}} Admin Console with an Admin URL that points to a secured section covered by the filter's url-pattern.
 
