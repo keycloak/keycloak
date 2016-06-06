@@ -15,7 +15,7 @@ Verify Email::
 Update Profile::
    This required action asks the user to update their profile information, i.e. their name, address, email, and/or phone number.
 
-Admins can set add required actions for each individual user with the user's `Details` tab in the Admin Console.
+Admins can add required actions for each individual user within the user's `Details` tab in the Admin Console.
 
 .Setting Required Action
 image:../../{{book.images}}/user-required-action.png[]
