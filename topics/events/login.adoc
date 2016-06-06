@@ -79,7 +79,7 @@ This logging is very useful if you want to use a tool like Fail2Ban to detect if
 is trying to guess user passwords.  You can parse the log file for `LOGIN_ERROR` and pull out the IP Address. Then feed this information
 into Fail2Ban so that it can help prevent attacks.
 
-The Email Event Listener sends an email to the users account when an event occurs.
+The Email Event Listener sends an email to the user's account when an event occurs.
 The Email Event Listener only supports the following events at the moment:
 
 * Login Error

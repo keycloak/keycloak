@@ -15,8 +15,7 @@ In the `Admin Events Settings` section, turn on the `Save Events` switch.
 .Admin Event Configuration
 image:../../{{book.images}}/admin-events-settings.png[]
 
-The `Include Representation` switch will include any JSON document that is sent to the admin REST API when they are being
-invoked upon.  This allows you to view exactly what an admin has done, but can lead to a lot of information stored in the
+The `Include Representation` switch will include any JSON document that is sent through the admin REST API.  This allows you to view exactly what an admin has done, but can lead to a lot of information stored in the
 database.  The `Clear admin events` button allows you to wipe out the current information stored.
 
 To view the admin events go to the `Admin Events` tab.
