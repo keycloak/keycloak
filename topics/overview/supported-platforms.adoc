@@ -65,7 +65,7 @@
 {% if book.community %}
 * <<fake/../../saml/java/jboss-adapter.adoc#_jboss_adapter,WildFly>>
 * <<fake/../../saml/java/tomcat-adapter.adoc#_tomcat_adapter,Tomcat>>
-* <<fake/../../saml/java/jetty-adapter.adoc#_jetty_adapter,Jetty>>
+* <<fake/../../saml/java/jetty-adapter.adoc#_jetty_saml_adapter,Jetty>>
 {% endif %}
 
 ==== Apache HTTP Server
