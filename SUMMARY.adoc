@@ -44,5 +44,6 @@
  .. link:topics/service/client-api.adoc[Authorization Client Java API]
  . link:topics/enforcer/overview.adoc[Policy Enforcers]
  .. link:topics/enforcer/keycloak-enforcement-filter.adoc[Keycloak Servlet Policy Enforcer]
- .. link:topics/enforcer/bearer-enforcement-filter.adoc[Bearer Token Servlet Policy Enforcer]
+ .. link:topics/enforcer/entitlement-bearer-enforcement-filter.adoc[Entitlement Bearer Token Servlet Policy Enforcer]
+ .. link:topics/enforcer/uma-bearer-enforcement-filter.adoc[UMA Bearer Token Servlet Policy Enforcer]
  . link:topics/example/overview.adoc[Examples]

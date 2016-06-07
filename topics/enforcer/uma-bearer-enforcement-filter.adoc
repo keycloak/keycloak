@@ -1,6 +1,6 @@
-== Bearer Token Enforcement Filter
+== UMA Bearer Token Enforcement Filter
 
-The *org.keycloak.authorization.policy.enforcer.servlet.BearerTokenEnforcementFilter* can be used to protect servlet applications providing
+The *org.keycloak.authorization.policy.enforcer.servlet.UmaBearerTokenEnforcementFilter* can be used to protect servlet applications providing
 RESTful services. For instance, applications using JAX-RS.
 
 This filter does not require that your application is configured with any {{book.project.name}} OIDC Adapter.
@@ -10,7 +10,7 @@ To configure it, change your web application descriptor (WEB-INF/web.xml) as fol
 ```xml
 <filter>
     <filter-name>Keycloak Authorization Enforcer</filter-name>
-    <filter-class>org.keycloak.authorization.policy.enforcer.servlet.BearerTokenEnforcementFilter</filter-class>
+    <filter-class>org.keycloak.authorization.policy.enforcer.servlet.UmaBearerTokenEnforcementFilter</filter-class>
 </filter>
 
 <filter-mapping>
@@ -27,9 +27,21 @@ curl -X GET \
     "http://my-app/api/resource"
 ```
 
+If the client application (or requesting party) trying to access the protected resource does not provide a RPT within the request, the filter is going to respond to the client with a 401 HTTP status code and
+a *WWW-Authenticate* header as follows:
+
+```bash
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: UMA realm="${resource_server_id}",as_uri="http://${kc_server_host}:${kc_server_port}/auth/realms/${realm_name}/authz/authorize",ticket="${PERMISSION_TICKET}"
+```
+
+From that response, users can use the permission ticket returned by the resource server and use it to obtain a RPT using the UMA protocol, as described by link:../service/authorization/authorization-api.html[Authorization API].
+
+Where *UMA* indicates that this resource server requires a RPT and *as_uri* holds the URI that clients can use to obtain the RPT based on UMA protocol.
+
 === Configuration
 
-The BearerTokenEnforcementFilter can be configured by a simple JSON file. The file can be as simple as:
+The _EntitlementBearerTokenEnforcementFilter_ can be configured by a simple JSON file. The file can be as simple as:
 
 ```json
 {
@@ -38,7 +50,9 @@ The BearerTokenEnforcementFilter can be configured by a simple JSON file. The fi
     "clientId": "{client_id}",
     "clientSecret": "{client_secret}"
   },
-  "enforcer": {}
+  "enforcer": {
+    "user-managed-access": {}
+  }
 }
 ```
 Or a little more verbose if you want to manually define the resources being protected:
@@ -51,6 +65,7 @@ Or a little more verbose if you want to manually define the resources being prot
     "clientSecret": "{client_secret}"
   },
   "enforcer": {
+    "user-managed-access": {},
     "paths": [
       {
         "path" : "/someUri/*",
