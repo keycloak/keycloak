@@ -3,7 +3,8 @@
 === Brokering Overview
 
 When using {{book.project.name}} as an identity broker, users are not forced to provide their credentials in order to authenticate in a specific realm.
-Instead , they are presented with a list of identity providers from where they can pick one and authenticate.
+Instead, they are presented with a list of identity providers from which they can authenticate.
+
 You can also configure a default broker.
 In this case the user will not be given a choice, but instead be redirected directly to the parent broker.
 The following diagram demonstrates the steps involved when using {{book.project.name}} to broker an external identity provider:
@@ -13,7 +14,7 @@ image:../../images/identity_broker_flow.png[]
 
 . User is not authenticated and requests a protected resource in a client application.
 . The client applications redirects the user to {{book.project.name}} to authenticate.
-. At this point the user is presented to the login page where there is a list of identity providers supported by a realm.
+. At this point the user is presented with the login page where there is a list of identity providers supported by a realm.
 . User selects one of the identity providers by clicking on its respective button or link.
 . {{book.project.name}} issues an authentication request to the target identity provider asking for authentication and the user
   is redirected to the login page of the identity provider.
@@ -27,20 +28,20 @@ image:../../images/identity_broker_flow.png[]
   If it is a new user, {{book.project.name}} may ask the identity provider for information about the user if that info doesn't already exist in the token.
   This is what we call _identity federation_.
   If the user already exists {{book.project.name}} may ask him to link the identity returned from the identity provider with his existing account.
-  A process that we call _account linking_.
+  We call this process _account linking_.
   What exactly is done is configurable and can be specified by setup of <<fake/../../identity-broker/first-login-flow.adoc#_identity_broker_first_login,First Login Flow>> . At the end of this step, {{book.project.name}} authenticates the user and issues its own token in order to access the requested resource in the service provider.
 . Once the user is locally authenticated, {{book.project.name}} redirects the user to the service provider by sending the token previously issued during the local authentication.
 . The service provider receives the token from {{book.project.name}} and allows access to the protected resource.
 
 There are some variations of this flow that we will talk about later.
-For instance, instead of presenting a list of identity providers, the client application request a specific one.
-Or you can tell {{book.project.name}} to force the user to provide additional information before federate his identity.
+For instance, instead of presenting a list of identity providers, the client application can request a specific one.
+Or you can tell {{book.project.name}} to force the user to provide additional information before federating his identity.
 
 NOTE: Different protocols may require different authentication flows.
       At this moment, all the identity providers supported by {{book.project.name}} use a flow just like described above.
       However, despite the protocol in use, user experience should be pretty much the same.
 
-As you may notice, at the end of the authentication process {{book.project.name}} will always issue its own token to client applications,
-what this means is that client applications are completely decoupled from external identity providers.
+As you may notice, at the end of the authentication process {{book.project.name}} will always issue its own token to client applications.
+What this means is that client applications are completely decoupled from external identity providers.
 They don't need to know which protocol (eg.: SAML, OpenID Connect, OAuth, etc) was used or how the user's identity was validated.
 They only need to know about {{book.project.name}} !

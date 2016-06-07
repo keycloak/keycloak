@@ -2,7 +2,7 @@
 ==== Microsoft
 
 There are a number of steps you have to complete to be able to login to Microsoft.  First, go to the `Identity Providers` left menu item
-and selected `Microsoft` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+and select `Microsoft` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
 image:../../../{{book.images}}/microsoft-add-identity-provider.png[]

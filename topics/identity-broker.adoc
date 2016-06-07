@@ -6,13 +6,14 @@ An Identity Broker is an intermediary service that connects multiple service pro
 As an intermediary service, the identity broker is responsible for creating
 a trust relationship with an external identity provider in order to use its identities to access internal services exposed by service providers.
 
-From an user perspective, an identity broker provides an user-centric and centralized way to manage identities across different security
-domains or realms, where an existing account can be linked with one or more identities from different identity providers or even created
+From a user perspective, an identity broker provides a user-centric and centralized way to manage identities across different security
+domains or realms. An existing account can be linked with one or more identities from different identity providers or even created
 based on the identity information obtained from them.
 
 An identity provider is usually based on a specific protocol that is used to authenticate and communicate authentication and authorization information to their users.
-It can be a social provider such as Facebook, Google or Twitter, a business partner which you want to allow its users to access your services or a cloud-based identity
+It can be a social provider such as Facebook, Google or Twitter.  It can be a business partner whose users need to access your services. Or it an be a cloud-based identity
 service that you want to integrate with.
+
 Usually, identity providers are based on the following protocols: 
 
 * `SAML v2.0`            
