@@ -19,6 +19,14 @@ To configure it, change your web application descriptor (WEB-INF/web.xml) as fol
 </filter-mapping>
 ```
 
+When using this filter, client applications need to send a RPT as a *Bearer* token using the *Authorization* header in order to gain access to a protected resource.
+
+```bash
+curl -X GET \
+    -H "Authorization: Bearer %{RPT}" \
+    "http://my-app/api/resource"
+```
+
 === Configuration
 
 The BearerTokenEnforcementFilter can be configured by a simple JSON file. The file can be as simple as:

@@ -1,0 +1,80 @@
+== Introspecting a Requesting Party Token
+
+Sometimes you may want to introspect RPTs in order to check its validity or even obtain the permissions within the token
+to enforce authorization decisions at the resource server side.
+
+There are two main use cases where token introspection may help you:
+
+* When clients applications need to check the token validity in order to obtain a new one with the same or even additional permissions
+* When enforcing authorization decisions at the resource server side, specially when none of the built-in link:../enforcer/overview.html[Policy Enforcers] fits to your application
+
+=== Obtaining information about a RPT
+
+The token introspection is basically a https://tools.ietf.org/html/rfc7662[OAuth2 Token Introspection] compliant endpoint from where you can obtain information about a RPT.
+
+```bash
+http://${host}:${port}/auth/realms/${realm_name}/protocol/openid-connect/token/introspect
+```
+
+To introspect a RPT using this endpoint, you can send a request to the server as follows:
+
+```bash
+curl -X POST \
+    -H "Authorization: Basic aGVsbG8td29ybGQtYXV0aHotc2VydmljZTpzZWNyZXQ=" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d 'token_type_hint=requesting_party_token&token=${RPT}' \
+    "http://localhost:8080/auth/realms/hello-world-authz/protocol/openid-connect/token/introspect"
+```
+
+[NOTE]
+The request above is using HTTP BASIC and passing client's credentials (client id and secret) to authenticate the client trying to introspect the token, but you can use any other client
+authentication method supported by {{book.project.name}}.
+
+The introspection endpoint expects two parameters:
+
+* *token_type_hint*
++
+Use *requesting_party_token* as the value for this parameter. It indicates that you want to introspect a RPT
++
+* *token*
++
+Use the token string, just like it was returned by the server during the authorization process, as the value for this parameter
+
+As a result, the server should respond as follows:
+
+```json
+{
+  "permissions": [
+    {
+      "resource_set_id": "90ccc6fc-b296-4cd1-881e-089e1ee15957",
+      "resource_set_name": "Hello World Resource"
+    }
+  ],
+  "exp": 1465314139,
+  "nbf": 0,
+  "iat": 1465313839,
+  "aud": "hello-world-authz-service",
+  "active": true
+}
+```
+
+In case the RPT is not active, you should get this response instead:
+
+```json
+{
+  "active": false
+}
+```
+
+=== Do I Need to Invoke the Server Every Time I want to Introspect a RPT ?
+
+Not really. Both link:../../service/authorization/authorization-api.html[Authorization] and link:../../service/entitlement/entitlement-api.html[Entitlement] APIs use the
+ https://tools.ietf.org/html/rfc7519[JSON Web Token (JWT)] specification as the default format for RPTs.
+
+In case you want to validate these tokens without a remote call to the introspection endpoint you can decode the RPT and check for its validity locally. Once you decode the token,
+you can also use the permissions within the token to enforce authorization decisions.
+
+This is pretty much what the link:../enforcer/overview.html[Policy enforcers] do, just make sure to:
+
+* Validate RPT's signature (based on realm's public key)
+* Check for token validity based on its _exp_, _iat_ and _aud_ claims
