@@ -68,7 +68,7 @@ Other available options are:
   * SAME_FILE - All users will be exported to same file but different from the realm file. (The result will be a file like "foo-realm.json" with realm data and "foo-users.json" with users.)                        
 
 -Dkeycloak.migration.usersPerFile::
-  This property can be used to specify the number of users per file (and also per DB transaction). It's 50 by default.
+  This property is used to specify the number of users per file (and also per DB transaction). It's 50 by default.
   It's used only if usersExportStrategy is DIFFERENT_FILES 
 
 -Dkeycloak.migration.strategy::
