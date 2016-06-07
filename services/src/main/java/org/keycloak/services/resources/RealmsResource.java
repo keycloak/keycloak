@@ -100,7 +100,7 @@ public class RealmsResource {
 
         LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
         if(factory == null){
-            logger.debugv("protocol %s not found", protocol);
+            logger.debugf("protocol %s not found", protocol);
             throw new NotFoundException("Protocol not found");
         }
 
