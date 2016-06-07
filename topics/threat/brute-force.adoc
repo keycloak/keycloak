@@ -13,13 +13,13 @@ image:../../{{book.images}}/brute-force.png[]
 The way this works is that if there are `Max Login Failures` during a period of `Failure Reset Time`,
 the account is temporarily disabled for the `Wait Increment` multiplied by the number of failures over the max.  After
 `Failure Reset Time` is reached all failures are wiped clean.  The `Max Wait` is the maximum amount of time
-an account can be disabled for.  Another preventive measure is that if there is subsequent login failures for one
-account that are too quick for a human to initiate the account will be disabled then.  This is controlled by the
+an account can be disabled.  Another preventive measure is that if there are subsequent login failures for one
+account that are too quick for a human to initiate the account will be disabled.  This is controlled by the
 `Quick Login Check Milli Seconds` value.  So, if there are two login failures for the same account within that value,
 the account will be disabled for `Minimum Quick Login Wait`.
 
 The downside of {{book.project.name}} brute force detection is that the server becomes vulnerable to denial of service attacks.
-An attacker can simply try to guess passwords for as many accounts it knows and these account will be disabled.  Eventually
+An attacker can simply try to guess passwords for any accounts it knows and these account will be disabled.
 Eventually we will expand this functionality to take client IP address into account when deciding whether to block a user.
 
 A better option might be a tool like http://www.fail2ban.org[Fail2Ban].  You can point this service at the {{book.project.name}} server's log file.
@@ -28,7 +28,7 @@ firewalls after it detects an attack to block connections from specific IP addre
 
 ==== Password Policies
 
-Another things you should do to prevent password guess is to have a complex enough password policy to ensure that
+Another thing you should do to prevent password guess is to have a complex enough password policy to ensure that
 users pick hard to guess passwords.  See the <<fake/../../authentication/password-policies.adoc#_password-policies, Password Policies>> chapter for more details.
 
 The best way to prevent password guessing though is to set up the server to use a one-time-password (OTP).

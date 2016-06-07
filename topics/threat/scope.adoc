@@ -1,7 +1,7 @@
 
 === Limiting Scope
 
-By default, each new client applications has an unlimited scope.  This means that every access token that is created
+By default, each new client application has an unlimited scope.  This means that every access token that is created
 for that client will contain all the permissions the user has.  If the client gets compromised and the access token
 is leaked, then each system that the user has permission to access is now also compromised.  It is highly suggested
 that you limit the roles an access token is assigned by using the <<fake/../../roles/client-scope.adoc#_client_scope, Scope menu>> for each client.

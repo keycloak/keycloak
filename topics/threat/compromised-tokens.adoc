@@ -1,7 +1,7 @@
 
 === Compromised Access and Refresh tokens
 
-There's a few things you can do to mitigate access tokens and refresh tokens from being stolen.
+There are a few things you can do to mitigate access tokens and refresh tokens from being stolen.
 The most important thing is to enforce SSL/HTTPS communication between {{book.project.name}} and its clients and applications.
 This might seem like a no-brainer, but since {{book.project.name}} does not have SSL enabled by default, many naive admins
 might not realize they have to do this.

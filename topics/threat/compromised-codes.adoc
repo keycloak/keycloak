@@ -1,7 +1,7 @@
 
 === Compromised Access Codes
 
-For the <<fake/../../sso-protocols/oidc.adoc#_oidc-auth-flows, OIDC Auth Code Flow>>, t would be very hard for an attacker to compromise {{book.project.name}} access codes.
+For the <<fake/../../sso-protocols/oidc.adoc#_oidc-auth-flows, OIDC Auth Code Flow>>, it would be very hard for an attacker to compromise {{book.project.name}} access codes.
 {{book.project.name}} generates a cryptographically strong random value for its access codes so it would be very hard to guess an access token.
 An access code can only be used once to obtain an access token.
 In the admin console you can specify how long an access token is valid for on the <<fake/../../sessions/timeouts.adoc#_timeouts, timeouts page>>.
