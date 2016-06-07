@@ -1,3 +1,4 @@
+
 [[_jetty9_adapter]]
 === Jetty 9.x Adapters
 
@@ -5,7 +6,7 @@ Keycloak has a separate adapter for Jetty 9.1.x and Jetty 9.2.x that you will ha
 You then have to provide some extra configuration in each WAR you deploy to Jetty.
 Let's go over these steps. 
 
-[[_jetty-9_adapter_installation]]
+[[_jetty9_adapter_installation]]
 ==== Adapter Installation
 
 Adapters are no longer included with the appliance or war distribution.Each adapter is a separate download on the Keycloak download site.
@@ -57,9 +58,7 @@ This is a Jetty specific config file and you must define a Keycloak specific aut
 ----
 
 Next you must create a `keycloak.json` adapter config file within the `WEB-INF` directory of your WAR.
-
 The format of this config file is describe in the <<fake/../java-adapter-config.adoc#_java_adapter_config,Java adapter configuration>>            section.
-
 
 WARNING: The Jetty 9.1.x adapter will not be able to find the `keycloak.json` file.
 You will have to define all adapter settings within the `jetty-web.xml` file as described below. 

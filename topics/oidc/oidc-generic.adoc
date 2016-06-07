@@ -118,6 +118,7 @@ browser history. This is somewhat mitigated by using short expiration for Access
 
 For more details refer to the http://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit Flow] in the OpenID Connect specification.
 
+[[_resource_owner_password_credentials_flow]]
 ==== Resource Owner Password Credentials
 
 Resource Owner Password Credentials, referred to as Direct Grant in {{book.project.name}}, allows exchanging user credentials for tokens. It's not recommended

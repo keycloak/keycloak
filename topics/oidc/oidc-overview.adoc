@@ -2,5 +2,3 @@
 
 This section describes how you can secure applications and services with OpenID Connect using either {{book.project.name}} adapters or generic OpenID Connect
 Resource Provider libraries.
-
-// TODO: Update the cross-reference <<_direct_access_grants,Direct Access Grants>>  in the topic /oidc/java/fuse-adapter.adoc 

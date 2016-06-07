@@ -22,51 +22,7 @@ What is supported for Fuse is:
 Basically all mentioned web applications require to inject {{book.project.name}} Jetty authenticator into underlying Jetty server . The steps to achieve it are bit different
 according to application type. The details are described in individual sub-chapters.
 
-<<<<<<< HEAD
-===== Builtin CXF web applications
-
-Some services automatically come with deployed servlets on startup. One of such examples is CXF servlet running on
-http://localhost:8181/cxf context. Securing such endpoints is quite tricky. The approach, which Keycloak is currently using,
-is providing ServletReregistrationService, which undeploys builtin servlet at startup, so you are able to re-deploy it again on context secured by Keycloak.
-You can see the `OSGI-INF/blueprint/blueprint.xml` inside `cxf-jaxrs` example, which adds JAX-RS `customerservice` endpoint and more importantly, it secures whole `/cxf` context.
-
-As a side effect, all other CXF services running on default CXF HTTP destination will be secured too. Once you uninstall feature `keycloak-fuse-6.2-example`, the
-original unsecured servlet on `/cxf` context is deployed back and hence context will become unsecured again.
-
-It's recommended to use your own Jetty engine for your apps (similarly like `cxf-jaxws` application is doing).
-
-
-==== How to secure Fuse admin services
-
-===== SSH authentication to Fuse terminal with Keycloak credentials
-
-Keycloak mainly addresses usecases for authentication of web applications, however if your admin services (like fuse admin console) are protected
-with Keycloak, it may be good to protect non-web services like SSH with Keycloak credentials too. It's possible to do it by using JAAS login module, which
-allows to remotely connect to Keycloak and verify credentials based on 
-
-// <<_direct_access_grants,Direct Access Grants>> .
-
-Example steps for enable SSH authentication require changing the configuration of `sshRealm` in `$FUSE_HOME/etc/org.apache.karaf.shell.cfg`, then adding
-file `$FUSE_HOME/etc/keycloak-direct-access.json` (this is default location, which can be changed) and install the needed feature `keycloak-jaas`. It's described in details
-in the README file of Fuse example, which in example distribution is inside `fuse/fuse-admin/README.md` .
-
-
-===== JMX authentication with Keycloak credentials
-
-This may be needed in case if you really want to use jconsole or other external tool to perform remote connection to JMX through RMI. Otherwise it may
-be better to use just hawt.io/jolokia as jolokia agent is installed in http://hawt.io by default.
-
-You need to configure `jmxRealm` in `$FUSE_HOME/etc/org.apache.karaf.management.cfg`, then adding file `$FUSE_HOME/etc/keycloak-direct-access.json`
-(this is default location, which can be changed) and install the needed feature `keycloak-jaas`.
-It's described in details in the README file of Fuse example, which in example distribution is inside `fuse/fuse-admin/README.md` .
-
-
-===== Secure Fuse admin console
-
-Fuse admin console is Hawt.io. See http://hawt.io/configuration/index.html[Hawt.io documentation] for more info about how to secure it with Keycloak.
-=======
 {% if book.community %}
 The best place to start is look at Fuse demo bundled as part of {{book.project.name}} examples in directory `fuse` . Most of the steps should be understandable from testing and
 understanding the demo.
 {% endif %}
->>>>>>> 163974a212546af0df02970a57466a056b83ba5a
