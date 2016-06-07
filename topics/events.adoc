@@ -1,3 +1,4 @@
+
 == Auditing and Events
 
 {{book.project.name}} provides a rich set of auditing capabilities.  Every single login action can be recorded and stored in
