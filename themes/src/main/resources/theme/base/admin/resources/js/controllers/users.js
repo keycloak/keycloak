@@ -246,9 +246,9 @@ module.controller('UserListCtrl', function($scope, realm, User, UserImpersonatio
 
     $scope.query = {
         realm: realm.realm,
-        max : 5,
+        max : 20,
         first : 0
-    }
+    };
 
     $scope.impersonate = function(userId) {
         UserImpersonation.save({realm : realm.realm, user: userId}, function (data) {
