@@ -40,6 +40,7 @@ the value of this field by setting up a replacement string value i.e. $\{myapp}.
 for more information.
 
 *Description*
+
 This specifies the description of the client.  This can also be localized.
 
 *Enabled*
