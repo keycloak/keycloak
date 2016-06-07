@@ -33,6 +33,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+import javax.mail.internet.MimeUtility;
 import javax.net.ssl.SSLSocketFactory;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -111,7 +112,8 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             Message msg = new MimeMessage(session);
             msg.setFrom(new InternetAddress(from));
             msg.setHeader("To", address);
-            msg.setSubject(subject);
+            msg.setSubject(MimeUtility.encodeText(subject, "utf-8", "B"));
+
             msg.setContent(multipart);
             msg.saveChanges();
             msg.setSentDate(new Date());
