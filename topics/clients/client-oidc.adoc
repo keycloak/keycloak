@@ -72,9 +72,6 @@ _bearer-only_::
   Bearer-only access type means that the application only allows bearer token requests.
   If this is turned on, this application cannot participate in browser logins.
 
-_direct access only_::
-       This switch is for clients that only use the  <<fake/../../sso-protocols/oidc.adoc#_oidc-auth-flows,Direct Access Grant>> protocol to obtain access tokens.
-
 *Root URL*
 
 If {{book.project.name}} uses any configured relative URLs, this value is prepended to them.
