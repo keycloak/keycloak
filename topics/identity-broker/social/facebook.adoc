@@ -40,6 +40,7 @@ Click on the `+ Add Platform` button at the end of this page and select the `Web
 .Specify Website
 image:../../../images/facebook-app-settings-website.png[]
 
+After this it is necessary to make facebook app public. Click `App Review` left menu item and switch button to "Yes"
 
 You will need also to obtain the App ID and App Secret from this page so you can enter them into the {{book.project.name}} `Add identity provider` page.
 Go back to {{book.project.name}} and specify those items and finally save your Facebook Identity Provider.
