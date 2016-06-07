@@ -14,29 +14,29 @@ Let's walk through each of the items on this page.
 |Configuration|Description
 
 |Revoke Refresh Token
-|For OIDC clients that doing the refresh token flow, this flag, if on, will revoke that refresh token and issue another with the request that the client has to use.
+|For OIDC clients that are doing the refresh token flow, this flag, if on, will revoke that refresh token and issue another with the request that the client has to use.
  This basically means that refresh tokens have a one time use.
 
 |SSO Session Idle
-|Also pertains to OIDC clients.  If the user is not active for long than this timeout, the user session will be invalidated.  How is idle time checked?
+|Also pertains to OIDC clients.  If the user is not active for longer than this timeout, the user session will be invalidated.  How is idle time checked?
  A client requesting authentication will bump the idle timeout.  Referesh token requests will also bump the idle timeout.
 
 |SSO Session Max
 |Maximum time before a user session is expired and invalidated.  This is a hard number and time.  It controls the maximum time
- a user session can remain active, irregardless of activity.
+ a user session can remain active, regardless of activity.
 
 |Offline Session Idle
 |For <<fake/../../sessions/offline.adoc#_offline-access, offline access>>, this is the time the session is allowed
  to remain Idle before the offline token is revoked.
 
 |Access Token Lifespan
-|When an OIDC access token is created, this value effects the expiration.
+|When an OIDC access token is created, this value affects the expiration.
 
 |Client login timeout
 |This is the maximum time that a client has to finish the Authentication Code Flow in OIDC.
 
 |Login timeout
-|Total time a login must take.  Anything beyond this time and the user will have to start the authentication process over.
+|Total time a login must take.  If authentication takes longer than this time then the user will have to start the authentication process over.
 
 |Login action timeout
 |Maximum time a user can spend on any one page in the authentication process.

@@ -12,7 +12,7 @@ users in the realm by clicking the `Logout all` button on the right side of this
 ==== Logout All Limitations
 
 Any SSO cookies set will now be invalid and clients that request authentication in active browser sessions will now have to
-relogin.  Only certain clients are notified of this logout event, specifically clients that are using the {{book.projec.name}}
+re-login.  Only certain clients are notified of this logout event, specifically clients that are using the {{book.projec.name}}
 OIDC client adapter. Other client types (i.e. SAML) will not receive a backchannel logout request.
 
 It is important to note that any outstanding access tokens are not revoked by clicking `Logout all`.  They have to
@@ -29,7 +29,7 @@ image:../../{{book.images}}/application-sessions.png[]
 
 ==== User Drilldown
 
-If you go to the `Sessions` tab of an individual user, you can also view there session information.
+If you go to the `Sessions` tab of an individual user, you can also view the session information.
 
 .User Sessions
 image:../../{{book.images}}/user-sessions.png[]
