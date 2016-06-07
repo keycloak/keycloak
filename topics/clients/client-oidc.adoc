@@ -82,7 +82,7 @@ If {{book.project.name}} uses any configured relative URLs, this value is prepen
 
 This is a required field.  Enter in a URL pattern and click the + sign to add.  Click the - sign next to URLs you want to remove.
 Remember that you still have to click the `Save` button!
-Wildcards (\*) are only allowed at the end of of a URI, i.e. http://host.com/*
+Wildcards (\*) are only allowed at the end of a URI, i.e. http://host.com/*
 
 You should take extra precautions when registering valid redirect URI patterns. If you make
 them too general you are vulnerable to attacks.  See <<fake/../../threat/redirect.adoc#_unspecific-redirect-uris, Threat Model Mitigation>> chapter
@@ -90,7 +90,7 @@ for more information.
 
 *Base URL*
 
-If {{book.project.name}} needs to link to the client, this URL would be used.
+If {{book.project.name}} needs to link to the client, this URL is used.
 
 *Standard Flow Enabled*
 
