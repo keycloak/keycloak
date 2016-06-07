@@ -70,7 +70,7 @@
     },
     "installguide": {
       "name": "Server Installation and Configuration Guide",
-      "link": "https://keycloak.gitbooks.io/server-installation-guide/content/"
+      "link": "https://keycloak.gitbooks.io/server-installation-and-configuration/content/"
     },
     "adapterguide": {
       "name": "Securing Client Applications Guide",
