@@ -50,9 +50,7 @@ The _EntitlementBearerTokenEnforcementFilter_ can be configured by a simple JSON
     "clientId": "{client_id}",
     "clientSecret": "{client_secret}"
   },
-  "enforcer": {
-    "user-managed-access": {}
-  }
+  "enforcer": { }
 }
 ```
 Or a little more verbose if you want to manually define the resources being protected:
@@ -65,7 +63,6 @@ Or a little more verbose if you want to manually define the resources being prot
     "clientSecret": "{client_secret}"
   },
   "enforcer": {
-    "user-managed-access": {},
     "paths": [
       {
         "path" : "/someUri/*",
