@@ -84,6 +84,7 @@ _identity_, _access_, and _refresh_ tokens.
 
 This is also used by REST clients, but instead of obtaining a token that works on behalf
 of an external user, a token is created based on the metadata and permissions of a service account that is associated with the client.
+More info together with example is in <<fake/../../clients/oidc/service-accounts.adoc#_service_accounts,Service Accounts>> chapter.
 
 ====  {{book.project.name}} Server OIDC URI Endpoints
 
