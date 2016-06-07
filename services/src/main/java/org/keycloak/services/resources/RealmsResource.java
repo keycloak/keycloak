@@ -98,9 +98,14 @@ public class RealmsResource {
                                             final @PathParam("protocol") String protocol) {
         RealmModel realm = init(name);
 
+        LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
+        if(factory == null){
+            logger.debugv("protocol %s not found", protocol);
+            throw new NotFoundException("Protocol not found");
+        }
+
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
 
-        LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
         Object endpoint = factory.createProtocolEndpoint(realm, event);
 
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
