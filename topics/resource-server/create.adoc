@@ -1,7 +1,7 @@
 == Creating Resource Servers
 
-To create a resource server by by clicking on *Authorization* in the left menu bar. As a result, you'll be redirected
-to the link::/resource-server/view.adoc[Viewing Resource Servers].
+You can create a resource server by clicking on *Authorization* in the left menu bar. As a result, you'll be redirected
+to the link::/resource-server/view.adoc[Viewing Resource Servers] page.
 
 On that page, click on *Create* button in the right upper corner of the table.
 
