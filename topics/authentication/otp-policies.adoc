@@ -2,7 +2,7 @@
 === OTP Policies
 
 {{book.project.name}} has a number of policies you can set up for your FreeOTP or Google Authenticator One-Time Password
-generator.  Click on the `Authentication` left menu item and got to the `OTP Policy` tab.
+generator.  Click on the `Authentication` left menu item and go to the `OTP Policy` tab.
 
 .OTP Policy
 image:../../{{book.images}}/otp-policy.png[]
@@ -13,15 +13,15 @@ generated from information configured on the `OTP Policy` tab.
 
 ==== TOTP vs. HOTP
 
-There are two different algorithms to choose from for your OTP generators.  Time Based (TOTP) and Counter Based (HOTP) based.
-For TOTP, your token generator will hash the current time and a share secret.  The server validates the OTP by comparing
+There are two different algorithms to choose from for your OTP generators.  Time Based (TOTP) and Counter Based (HOTP).
+For TOTP, your token generator will hash the current time and a shared secret.  The server validates the OTP by comparing
 the all hashes within a certain window of time to the submitted value.  So, TOTPs are valid only for a short window of time (usually 30 seconds).
-For HOTP a shared counter is used instead of the current time.  The server increments the counter each successful OTP login.  So, valid OTPs only
+For HOTP a shared counter is used instead of the current time.  The server increments the counter with each successful OTP login.  So, valid OTPs only
 change after a successful login.
 
 TOTP is considered a little more secure because the matchable OTP is only valid for a short window of time while the OTP for HOTP can
 be valid for an indeterminate amount of time.  HOTP is much more user friendly as the user won't have to hurry to enter in their
-OTP before the time interval is up.  With the way {{book.project.name}} has implement TOTP this distinction becomes a little more
+OTP before the time interval is up.  With the way {{book.project.name}} has implemented TOTP this distinction becomes a little more
 blurry.  HOTP requires a database update every time the server wants to increment the counter.  This can be a performance drain
 on the authentication server when there is heavy load.  So, to provide a more efficient alternative, TOTP does not remember passwords
 used.  This bypasses the need to do any DB updates, but the downside is that TOTPs can be re-used in the valid time interval.  For future
@@ -50,7 +50,7 @@ Number of Digits::
 Look Ahead Window::
   How many counters ahead should the server try and match the hash?  The default value is 1.  This exists to cover the case
   where the user's counter gets ahead of the server's.  This can often happen as users often increment the counter
-  manually too many times by accident.  This value really should be increased to like a value of 10 or so.
+  manually too many times by accident.  This value really should be increased to a value of 10 or so.
 Initial Counter::
   What is the value of the initial counter?
 

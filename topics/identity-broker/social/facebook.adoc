@@ -2,7 +2,7 @@
 ==== Facebook
 
 There are a number of steps you have to complete to be able to login to Facebook.  First, go to the `Identity Providers` left menu item
-and selected `Facebook` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+and select `Facebook` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
 image:../../../{{book.images}}/facebook-add-identity-provider.png[]
@@ -34,12 +34,13 @@ for the application.  Click the `Settings` left menu item.
 .Create a New App ID
 image:../../../images/facebook-app-settings.png[]
 
-Click on the `+ Add Platform` button at the end of this page and select the `Website` icon.  Cut and past the `Redirect URI` from the
+Click on the `+ Add Platform` button at the end of this page and select the `Website` icon.  Copy and paste the `Redirect URI` from the
 {{book.project.name}} `Add identity provider` page into the `Site URL` of the Facebook `Website` settings block.
 
 .Specify Website
 image:../../../images/facebook-app-settings-website.png[]
 
+After this it is necessary to make facebook app public. Click `App Review` left menu item and switch button to "Yes".
 
 You will need also to obtain the App ID and App Secret from this page so you can enter them into the {{book.project.name}} `Add identity provider` page.
 Go back to {{book.project.name}} and specify those items and finally save your Facebook Identity Provider.

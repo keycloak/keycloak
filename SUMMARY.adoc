@@ -41,8 +41,9 @@
  .. link:topics/clients/client-saml.adoc[SAML Clients]
  ... link:topics/clients/saml/idp-initiated-login.adoc[IDP Initiated Login]
  ... link:topics/clients/saml/entity-descriptors.adoc[SAML Entity Descriptors]
+  {% if book.community %}
  .. link:topics/clients/client-link.adoc[Client Links]
- .. link:topics/clients/client-registration.adoc[Client Registration]
+  {% endif %}
  .. link:topics/clients/protocol-mappers.adoc[Token and Assertion Mappings]
  .. link:topics/clients/installation.adoc[Generating Client Adapter Config]
  .. link:topics/clients/client-templates.adoc[Client Templates]

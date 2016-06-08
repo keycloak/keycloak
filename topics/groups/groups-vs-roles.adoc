@@ -7,7 +7,7 @@ In {{book.project.name}}, Groups are just a collection of users that you can app
 Roles define a type of user and applications assign permission and access control to roles
 
 Aren't <<fake/../../roles/composite.adoc#_composite-roles,Composite Roles>> also similar to Groups?
-Logically they provide the same exact functionality, but the difference is conceptual
+Logically they provide the same exact functionality, but the difference is conceptual.
 Composite roles should be used to apply the permission model to your set of services and applications.
 Groups should focus on collections of users and their roles in your organization.
-Use groups to manage users, composite roles to manage applications and services.
+Use groups to manage users.  Use composite roles to manage applications and services.

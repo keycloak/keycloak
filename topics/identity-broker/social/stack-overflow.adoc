@@ -2,7 +2,7 @@
 ==== StackOverflow
 
 There are a number of steps you have to complete to be able to login to StackOverflow.  First, go to the `Identity Providers` left menu item
-and selected `StackOverflow` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+and select `StackOverflow` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
 image:../../../{{book.images}}/stack-overflow-add-identity-provider.png[]
@@ -16,7 +16,7 @@ NOTE: StackOverflow often changes the look and feel of application registration,
 .Register Application
 image:../../../images/stack-overflow-app-register.png[]
 
-Enter in the application name and the dns domain name of your application and click `Register your Application`.  Type in anything you want
+Enter in the application name and the OAuth Domain Name of your application and click `Register your Application`.  Type in anything you want
 for the other items.
 
 .Settings

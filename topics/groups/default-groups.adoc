@@ -3,9 +3,9 @@
 
 Default groups allow you to automatically assign group membership whenever any new user is created or imported through
 <<fake/../../user-federation.adoc#_user-storage-federation, User Storage Federation>> or <<fake/../../identity-broker.adoc#_identity_broker, Identity Brokering>>.
-To specify _default groups go to the `Groups` left menu item, and click the `Default Groups` tab.
+To specify default groups go to the `Groups` left menu item, and click the `Default Groups` tab.
 
-.Default Roles
+.Default Groups
 image:../../{{book.images}}/default-groups.png[]
 
 

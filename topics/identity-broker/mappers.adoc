@@ -5,7 +5,7 @@ You can import the SAML and OpenID Connect metadata provided by the external IDP
 of the realm.  This allows you to extract user profile metadata and other information so that you can make it available to your
 applications.
 
-Each new user that logs into your realm via an external identity provider will be have an entry for it created in the local
+Each new user that logs into your realm via an external identity provider will have an entry for it created in the local
 {{book.project.name}} database.  The act of importing metadata from the SAML or OIDC assertions and claims will create this data
 with the local realm database.
 
@@ -23,8 +23,8 @@ image:../../{{book.images}}/identity-provider-mapper.png[]
 Select a mapper from the `Mapper Type` list.  Hover over the tooltip to see a description of what the mapper does.  The
 tooltips also describe what configuration information you need to enter. Click `Save` and your new mapper will be added.
 
-For JSON based claims, you can use dot notation for nesting and square brackets to access fields in array by index.
+For JSON based claims, you can use dot notation for nesting and square brackets to access array fields by index.
 For example 'contact.address[0].country'.
 
-To investigate structure of user profile JSON data provided by social providers you can enable `DEBUG` level logger `org.keycloak.social.user_profile_dump`.
+To investigate the structure of user profile JSON data provided by social providers you can enable the `DEBUG` level logger `org.keycloak.social.user_profile_dump`.
 This is done in the server's app-server configuration file (domain.xml or standalone.xml).

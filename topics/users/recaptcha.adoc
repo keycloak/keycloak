@@ -1,37 +1,37 @@
 [[_recaptcha]]
 
-==== Recaptcha Support
+==== reCAPTCHA Support
 
-To safeguard registration against bots, {{book.project.name}} has integration with Google Recaptcha.
+To safeguard registration against bots, {{book.project.name}} has integration with Google reCAPTCHA.
 To enable this you need to first go to link:https://developers.google.com/recaptcha/[Google Recaptcha Website]
-and create an API key so that you can get your recaptcha site key and secret.
+and create an API key so that you can get your reCAPTCHA site key and secret.
 (FYI, localhost works by default so you don't have to specify a domain). 
 
-Next, there's a few steps you need to perform in the {{book.project.name}} Admin Console.
-Click the `Authentication` left menu itme and go to the `Flows` tab.  Select the `Registration` flow from the drop down
+Next, there are a few steps you need to perform in the {{book.project.name}} Admin Console.
+Click the `Authentication` left menu item and go to the `Flows` tab.  Select the `Registration` flow from the drop down
 list on this page.
 
 .Registration Flow
 image:../../{{book.images}}/registration-flow.png[]
 
 
-Set the 'Recaptcha' requirement to `Required` by clicking the appropriate radio button.  This will enable
-Recaptcha on the screen.  Next, you have to enter in the Recaptcha site key and secret that you generated at the Google Recaptcha Website.
-Click on the 'Configure' button that is to the right of the Recaptcha flow entry and enter in the Recaptcha site key and secret on this config page.
+Set the 'reCAPTCHA' requirement to `Required` by clicking the appropriate radio button.  This will enable
+reCAPTCHA on the screen.  Next, you have to enter in the reCAPTCHA site key and secret that you generated at the Google reCAPTCHA Website.
+Click on the 'Configure' button that is to the right of the reCAPTCHA flow entry and enter in the reCAPTCHA site key and secret on this config page.
 
 .Recaptcha Config Page
 image:../../{{book.images}}/recaptcha-config.png[]
 
 
 The final step you have to do is to change some default HTTP response headers that {{book.project.name}} sets.  {{book.project.name}}
-will prevent website from including any login page within an iframe.  This is to prevent clickjacking attacks.  You need to
+will prevent a website from including any login page within an iframe.  This is to prevent clickjacking attacks.  You need to
 authorize Google to use the registration page within an iframe.  Go to
-the `Realm Settings` left menu item and then go to the `Security Defenses` tab.  Y
-ou'll need to add `https://www.google.com` to the values of both the `X-Frame-Options` and `Content-Security-Policy` headers.
+the `Realm Settings` left menu item and then go to the `Security Defenses` tab.  You will need to add `https://www.google.com` to the
+values of both the `X-Frame-Options` and `Content-Security-Policy` headers.
 
 .Authorizing Iframes
 image:../../{{book.images}}/security-headers.png[]
 
-Once you do this, Recaptcha should show up on your registration page.  You may want to edit _register.ftl_ in your login
-theme to muck around with the placement and styling of the recaptcha button.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}]
+Once you do this, reCAPTCHA should show up on your registration page.  You may want to edit _register.ftl_ in your login
+theme to muck around with the placement and styling of the reCAPTCHA button.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}]
 for more information on extending and creating themes.

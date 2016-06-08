@@ -5,7 +5,7 @@
 as defined by the specification in order to authenticate the user and authorize access.
 
 To begin configuring an OIDC provider, go to the `Identity Providers` left menu item
-and selected `OpenID Connect v1.0` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+and select `OpenID Connect v1.0` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
 image:../../{{book.images}}/oidc-add-identity-provider.png[]

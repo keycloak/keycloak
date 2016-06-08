@@ -1,13 +1,19 @@
 
 === Searching For Users
 
-If you need to manage a specific user, click on `Users` in the left menu bar.  T
+If you need to manage a specific user, click on `Users` in the left menu bar.
 
 .Users
 image:../../{{book.images}}/users.png[]
 
 This menu option brings you to the user list page.  In the search box you can type in a full name, last name, or email address
 you want to search for in the user database.  The query will bring up all users that match your criteria.  The `View all users` button
-will list every user in the system.  This can be a dangerous operation if you have tens of thousands of users stored.  Some backends
-like LDAP don't have a way to page through users and must return the whole user set!  So be careful before you execute a view all search.
+will list every user in the system.  This will search just local {{book.project.name}} database and not the federated database (ie. LDAP)
+because some backends like LDAP don't have a way to page through users. So if you want the users from federated backend to be synced into {{book.project.name}}
+database you need to either:
+
+* Adjust search criteria. That will sync just the backend users matching the criteria into {{book.project.name}} database.
+* Go to `User Federation` tab and click `Sync all users` or `Sync changed users` in the page with your federation provider.
+
+See <<fake/../../user-federation.adoc#_user-storage-federation,User Federation>> for more details.
 

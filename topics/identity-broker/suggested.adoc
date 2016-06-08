@@ -1,8 +1,8 @@
 
 === Client Suggested Identity Provider
 
-Each identity provider has an option `Authenticate By Default`, which allows that Identity provider is automatically selected during authentication.
-User won't even see the {{book.project.name}} login page and will instead be automatically redirected to the default identity provider.
+Each identity provider has an option `Authenticate By Default`, which allows that Identity provider to be automatically selected during authentication.
+The user won't see the {{book.project.name}} login page and will instead be automatically redirected to the default identity provider.
 
 OIDC applications can also bypass the {{book.project.name}} login page by specifying a hint on which
 identity provider they want to use.

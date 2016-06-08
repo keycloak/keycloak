@@ -5,7 +5,7 @@
 Both POST and Redirect bindings are supported.
 You can choose to require client signature validation and can have the server sign and/or encrypt responses as well.
 
-To create a SAML client go to the `Clients` left menu item.  On this page you'll see a `create` button on the right.
+To create a SAML client go to the `Clients` left menu item.  On this page you'll see a `Create` button on the right.
 
 .Clients
 image:../../{{book.images}}/clients.png[]
@@ -23,7 +23,7 @@ we'll go over that later in this chapter.
 Finally enter in the `Client SAML Endpoint` URL.  Enter the
 URL you want the {{book.project.name}} server to send SAML requests and responses to.  Usually applications have only one URL for processing SAML requests.
 If your application has different URLs for its bindings, don't worry, you can fix this in the `Settings` tab of the client.
-application in the `Root URL` field and click `Save`.  This will create the client and bring you to the client `Settings`
+Click `Save`.  This will create the client and bring you to the client `Settings`
 tab.
 
 .Client Settings
@@ -82,7 +82,7 @@ Force POST Binding::
 
 Front Channel Logout::
   If true, this application requires a browser redirect to be able to perform a logout.
-  For example, the application may require a cookie to be reset which could only be done by a done via a redirect.
+  For example, the application may require a cookie to be reset which could only be done via a redirect.
   If this switch is false, then {{book.project.name}} will invoke a background SAML request to logout the application.
 
 Force Name ID Format::
@@ -99,14 +99,14 @@ Root URL::
 Valid Redirect URIs::
   This is an optional field.  Enter in a URL pattern and click the + sign to add.  Click the - sign next to URLs you want to remove.
   Remember that you still have to click the `Save` button!
-  Only wildcards, * ,are allowed at the end of of a URI, i.e. http://host.com/*.  This field is used when the exact SAML
+  Wildcards (\*) are only allowed at the end of of a URI, i.e. http://host.com/*.  This field is used when the exact SAML
   endpoints are not registered and {{book.project.name}} is pull the Assertion Consumer URL from the request.
 
 Base URL::
   If {{book.project.name}} needs to link to the client, this URL would be used.
 
 Master SAML Processing URL::
-  This URL will be used for all SAML requests and responsed directed to the SP.
+  This URL will be used for all SAML requests and the response will be directed to the SP.
   It will be used as the Assertion Consumer Service URL and the Single Logout Service URL.
   If a login request contains the Assertion Consumer Service URL, that will take precedence, but this URL must be valided by a registered Valid Redirect URI pattern 
 
