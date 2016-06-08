@@ -125,6 +125,10 @@ Specify the configuration options to define how policies are actually enforced a
 for all resources associated with the resource server being protected. In this case, you need to make sure the resources are properly configured with a *uri* property that matches the paths
  you want to protect.
 +
+** *online-introspection*
++
+If true, the enforcer is going to validate RPTs by calling the token introspection endpoint. Thus, performing an additional round-trip to the server. Otherwise, the RPT is validated locally.
++
 ** *paths*
 +
 Specify the paths to protect.
