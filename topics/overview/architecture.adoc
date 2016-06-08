@@ -28,7 +28,7 @@ Being based on {{book.project.name}} Authentication Server, you can obtain attri
 
 === The Authorization Process
 
-Two main processes define the necessary steps to understand how to use KC to enable fine-grained authorization to your applications:
+Three main processes define the necessary steps to understand how to use KC to enable fine-grained authorization to your applications:
 
 * *Resource Management*
 * *Permission and Policy Management*
@@ -55,7 +55,7 @@ you may want to define specific policies for _Alice Account_ (a resource instanc
 Resources can be managed using {{book.project.name}} Administration Console or the link:../service/protection-api.html[Protection API]. In the latter case, resource servers are able to
 manage their resources remotely.
 
-Scopes usually represent the actions that can be performed on a resource, but they are not limited to that. You can also use scopes to represent a single or multiple attributes belonging to a resource.
+Scopes usually represent the actions that can be performed on a resource, but they are not limited to that. You can also use scopes to represent a single or multiple attributes within a resource.
 
 ==== Permission and Policy Management
 
@@ -138,7 +138,7 @@ For more information, see link:../service/authorization-api.html[Authorization A
 
 === Entitlement API
 
-The *Entitlement API* provides a 1-legged protocol to issue RPTs. Unlink the_Authorization API, the Entitlement API only expects an ID Token.
+The *Entitlement API* provides a 1-legged protocol to issue RPTs. Unlike the_Authorization API_, the Entitlement API only expects an ID Token.
 
 From this API you can obtain all the entitlements or permissions for an user (based on the resources managed by a given resource server) or just the entitlements for a set of
 one or more resources.
