@@ -345,7 +345,7 @@ To manually create the module create the directory `modules/org/keycloak/example
 </module>
 ----
 
-You also need to register the module with {{book.project.name}}. This is done by editing `standalone/configuration/keycloak-server.json` and adding the module
+You also need to register the module with {{book.project.name}}. This is done by editing `keycloak-server.json` (in standalone/configuration or domain/servers/{server name}/configuration) and adding the module
 to `theme/module/modules`. For example:
 
 [source]
@@ -357,6 +357,8 @@ to `theme/module/modules`. For example:
         "modules": [ "org.example.mytheme" ]
     }
 }
-----        
+----     
+
+If the server is running you need to restart the server after changing `keycloak-server.json`.
 
 NOTE: If the same theme is deployed to both the `themes` directory and as a module the version in the `themes` directory is used.
