@@ -345,7 +345,7 @@ To manually create the module create the directory `modules/org/keycloak/example
 </module>
 ----
 
-You also need to register the module with {{book.project.name}}. This is done by editing `keycloak-server.json` (in standalone/configuration or domain/servers/{server name}/configuration) and adding the module
+You also need to register the module with {{book.project.name}}. This is done by editing `keycloak-server.json` (in `standalone/configuration` or `domain/servers/{server name}/configuration`) and adding the module
 to `theme/module/modules`. For example:
 
 [source]
