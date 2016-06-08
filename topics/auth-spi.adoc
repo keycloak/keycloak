@@ -373,7 +373,7 @@ getReferenceCategory() is just a category the Authenticator belongs to.
 
 ==== Adding Authenticator Form
 
-Keycloak comes with a Freemarker <<_themes,theme and template engine>>.
+Keycloak comes with a Freemarker <<fake/../themes.adoc#_themes,theme and template engine>>.
 The createForm() method you called within authenticate() of your Authenticator class, builds an HTML page from a file within your login theme: secret-question.ftl.
 This file should be placed in the login theme with all the other .ftl files you see for login. 
 
@@ -754,14 +754,19 @@ In other words, add your custom authenticator after the "Send Reset Email" authe
 === Modifying First Broker Login Flow
 
 First Broker Login flow is used during first login with some identity provider.
-Term `First Login` means that there is not yet existing Keycloak account linked with the particular authenticated identity provider account.
-More details about this flow are in the <<_identity_broker_first_login,Identity provider chapter>>. 
+Term `First Login` means that there is not yet existing {{book.project.name}} account linked with the particular authenticated identity provider account.
+More details about this flow are in the `Identity Brokering` chapter in link:{{book.adminguide.link}}[{{book.adminguide.name}}] .
 
 [[_client_authentication]]
 === Authentication of clients
 
-Keycloak actually supports pluggable authentication for http://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect]            client applications.
-Authentication of client (application) is used under the hood by the <<_adapter_config,Keycloak adapter>>            during sending any backchannel requests to the Keycloak server (like the request for exchange code to access token after successful authentication or request to refresh token). But the client authentication can be also used directly by you during <<_direct_access_grants,Direct Access grants>> or during <<_service_accounts,Service account>> authentication. 
+{{book.project.name}} actually supports pluggable authentication for http://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect] client applications.
+Authentication of client (application) is used under the hood by the {{book.project.name}} adapter during sending any backchannel requests
+to the {{book.project.name}} server (like the request for exchange code to access token after successful authentication or request to refresh token).
+But the client authentication can be also used directly by you during `Direct Access grants` (represented by OAuth2 `Resource Owner Password Credentials Flow`)
+or during `Service account` authentication (represented by OAuth2 `Client Credentials Flow`).
+
+See link:{{book.clientguide.link}}[{{book.clientguide.name}}] for more details about {{book.project.name}} adapter and OAuth2 flows.
 
 ==== Default implementations
 
