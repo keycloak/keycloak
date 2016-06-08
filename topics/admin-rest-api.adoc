@@ -1,11 +1,11 @@
 == Admin REST API
 
-Keycloak comes with a fully functional Admin REST API with all features provided by the Admin Console.
+{{book.project.name}} comes with a fully functional Admin REST API with all features provided by the Admin Console.
 
 To invoke the API you need to obtain an access token with the appropriate permissions. The required permissions are described in
 {{book.adminguide.link}}[{{book.adminguide.name}}].
 
-A token can be obtained by enabling authenticating to your application with Keycloak, see the
+A token can be obtained by enabling authenticating to your application with {{book.project.name}}, see the
 {{book.clientguide.link}}[{{book.clientguide.name}}]. You can also use direct access grant to obtain an access token.
 
 Full API documentation is available at {{book.web.docs.link}}[{{book.web.docs.name}}] and can be downloaded from
