@@ -285,7 +285,7 @@ Themes can be deployed to {{book.project.name}} by copying the theme directory t
 theme to the `themes` directory, but in production you may want to consider using an `archive`. An `archive` makes it simpler to have a versioned copy of
 the theme, especially when you have multiple instances of {{book.project.name}} for example with clustering.
 
-To deploy a theme as an archive you need to create a ZIP archive with the theme resources. You also need to add a file `META/keycloak-themes.json` to the
+To deploy a theme as an archive you need to create a ZIP archive with the theme resources. You also need to add a file `META-INF/keycloak-themes.json` to the
 archive that lists the available themes in the archive as well as what types each theme provides.
 
 For example for the `mytheme` theme create `mytheme.zip` with the contents:
