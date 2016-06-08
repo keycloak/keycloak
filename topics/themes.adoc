@@ -24,7 +24,7 @@ your realm from the drop-down box in the top left corner. Under `Realm Settings`
 NOTE: To set the theme for the `master` admin console you need to set the admin console theme for the `master` realm. To see the changes to the admin console
 refresh the page.
 
-To change the welcome theme you need to edit `standalone/configuration/keycloak-server.json` and add `welcomeTheme` to the theme element, for example: 
+To change the welcome theme you need to edit `keycloak-server.json` (in `standalone/configuration` or `domain/servers/{server name}/configuration`) and add `welcomeTheme` to the theme element, for example: 
 
 [source,json]
 ----
