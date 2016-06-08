@@ -351,3 +351,5 @@ The RPT provides everything you need to enforce authorization decisions at the r
 * Checking if a request sent to the resource server trying to access a protected resource matches any permissions within the RPT
 
 You can even use the information within a RPT to protect resources within a page like buttons or any other visual component.
+
+Another way to validate a RPT and obtain the granted permissions is using the link:../service/protection/token-introspection.html[Token Introspection Endpoint].

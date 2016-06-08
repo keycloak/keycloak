@@ -1,7 +1,7 @@
 == Drools-Based Policy
 
-This type of policy allows you to define conditions for your permissions using Drools Rules. It is one of the _Rule-Based_ policy types
-supported by {{book.project.name}}, giving to you a lot of flexibility to write any policy based on the link::/policy/evaluation-api.adoc[Evaluation API].
+This type of policy allows you to define conditions for your permissions using Drools. It is one of the _Rule-Based_ policy types
+supported by {{book.project.name}}, providing a lot of flexibility to write any policy based on the link::/policy/evaluation-api.adoc[Evaluation API].
 
 === Configuration
 
