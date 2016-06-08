@@ -53,7 +53,7 @@ A permission associates the object being protected and the policies that must be
 {{book.project.name}} provides a rich platform for building from the most simple to the more complex permissions. It provides great flexibility and helps to:
 
 * Reduce code refactoring and permission management costs
-* Support a more flexible security model where you can easily change
+* Support a more flexible security model, helping you to easily adapt to changes to your security requirements
 * Make changes at runtime given that applications only care about the resources and scopes being protect and not how they are actually protected
 
 ==== Policy
