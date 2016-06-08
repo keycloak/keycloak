@@ -35,6 +35,8 @@ To change the welcome theme you need to edit `keycloak-server.json` (in `standal
 }
 ----
 
+If the server is running you need to restart the server for the changes to the welcome theme to take effect.
+
 === Default Themes
 
 {{book.project.name}} comes bundled with default themes in the server's root `themes` directory. To simplify upgrading you should not edit the bundled themes
