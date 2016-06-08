@@ -32,6 +32,9 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
         events = new LinkedList();
     }
 
+    public void postInit(KeycloakSessionFactory factory) {
+    }
+
     public EventListenerProvider create(KeycloakSession session) {
         return new MyEventListenerProvider(events);
     }
@@ -68,6 +71,11 @@ public class MyEventListenerProvider implements EventListenerProvider {
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public void onEvent(AdminEvent event, boolean includeRepresentation) {
+        // Assume this implementation just ignores admin events
     }
 }
 ----
@@ -122,6 +130,8 @@ public class MyEventListenerProvider implements EventListenerProvider {
         EmailSenderProvider emailSender = session.getProvider(EmailSenderProvider.class);
         emailSender.send(realm, user, "Hello", "Hello plain text", "<h1>Hello html</h1>" );
     }
+
+    ...
 
 }
 ----
