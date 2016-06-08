@@ -1,7 +1,7 @@
 
 === Download, Build, Deploy Application Code
 
-The project and code for the application you are going to secure it at Github.com.  You will need the following
+The project and code for the application you are going to secure is at Github.com.  You will need the following
 installed on your machine and available in your PATH before you can continue:
 
 * Java JDK 8
@@ -35,7 +35,7 @@ will pop up a BASIC auth login dialog.
 image:../../{{book.images}}/client-auth-required.png[]
 
 
-The app is not secured by any identity provider, so anything you enter in the dialog will result in a `Forbidden` message being
-sent back by the server.  The next section describes how you can take this existing deployed app and secure it.
+The app is not secured by any identity provider, so anything you enter in the dialog box will result in a `Forbidden` message being
+sent back by the server.  The next section describes how you can take this deployed app and secure it.
 
 

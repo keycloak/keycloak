@@ -44,7 +44,7 @@ Change the `WAR MODULE NAME` text to be `vanilla` as follows:
 </subsystem>
 ----
 
-Reboot your application's server and now when visit http://localhost:8080/vanilla and hit the login button, you should
+Reboot your application's server and now when you visit http://localhost:8080/vanilla and hit the login button, you should
 get the {{book.project.name}} login page. You can log in using the user you created in the <<fake/../../first-realm/user.adoc#_create-new-user, Create New User>> chapter.
 
 

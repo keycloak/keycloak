@@ -2,7 +2,7 @@
 === Install the Client Adapter
 
 Download the JBoss EAP 7 or Wildfly 10 distribution you are going to use to run your example application and unzip
-it into a directory of your choosing on your machine.  Next download the {{book.clientadapter}} distribution.  Unzip
+it into a directory on your machine.  Next download the {{book.clientadapter}} distribution.  Unzip
 this file into the root directory of your JBoss EAP or Wildfly 10 distribution.  Next perform the following actions
 
 .Linux/Unix

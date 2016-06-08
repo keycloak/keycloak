@@ -17,7 +17,7 @@ image:../../{{book.images}}/add-user.png[]
 The only required field is `Username`.  Click save.  This will bring you to the management page for your new user.
 
 The next step is to define a temporary password for your new user.  Click on the `Credentials` tab to bring you to
-the page that will allo you to do this.
+the page that will allow you to do this.
 
 .Set Temporary Password
 image:../../{{book.images}}/credentials.png[]
