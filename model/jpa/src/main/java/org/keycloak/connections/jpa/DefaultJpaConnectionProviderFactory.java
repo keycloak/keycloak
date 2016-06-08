@@ -166,20 +166,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 	                        }
 	
 	                        if (databaseSchema.equals("update")) {
-	                            String currentVersion = null;
-	                            try {
-	                                ResultSet resultSet = connection.createStatement().executeQuery(updater.getCurrentVersionSql(schema));
-	                                if (resultSet.next()) {
-	                                    currentVersion = resultSet.getString(1);
-	                                }
-	                            } catch (SQLException e) {
-	                            }
-	
-	                            if (currentVersion == null || !JpaUpdaterProvider.LAST_VERSION.equals(currentVersion)) {
-	                                updater.update(connection, schema);
-	                            } else {
-	                                logger.debug("Database is up to date");
-	                            }
+                                updater.update(connection, schema);
 	                        } else if (databaseSchema.equals("validate")) {
 	                            updater.validate(connection, schema);
 	                        } else {
