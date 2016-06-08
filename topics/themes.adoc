@@ -360,4 +360,7 @@ to `theme/module/modules`. For example:
 
 If the server is running you need to restart the server after changing `keycloak-server.json`.
 
-NOTE: If the same theme is deployed to both the `themes` directory and as a module the version in the `themes` directory is used.
+[NOTE]
+====
+If the same theme is deployed to both the `themes` directory and as a module the version in the `themes` directory is used.
+====
