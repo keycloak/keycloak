@@ -133,9 +133,27 @@ There are a number of limitations of using this flow, including:
 * No support for identity brokering or social login
 * Flows are not supported (user self-registration, required actions, etc.)
 
+For a client to be permitted to use the Resource Owner Password Credentials grant the client has to have `Direct Access Grants Enabled` enabled.
+
 This flow is not included in OpenID Connect, but is a part of the OAuth 2.0 specification.
 
 For more details refer to the https://tools.ietf.org/html/rfc6749#section-4.3[Resource Owner Password Credentials Grant] chapter in the OAuth 2.0 specification.
+
+===== Example using CURL
+
+The following example shows how to obtain an access token for a user in the realm `master` with username `user` and password `password`. The example is using
+the confidential client `myclient`:
+
+[source,bash]
+----
+curl \
+  -d "client_id=myclient" \
+  -d "client_secret=40cc097b-2a57-4c17-b36a-8fdf3fc2d578" \
+  -d "username=user" \
+  -d "password=password" \
+  -d "grant_type=password" \
+  "http://localhost:8080/auth/realms/master/protocol/openid-connect/token"
+----
 
 ==== Client Credentials
 
