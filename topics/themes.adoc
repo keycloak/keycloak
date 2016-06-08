@@ -331,15 +331,15 @@ bin\jboss-cli.bat --command="module add --name=org.example.mytheme --resources=m
 
 This command creates `modules/org/example/mytheme/main` directory with the `mytheme.zip` archive and `module.xml`.
 
-To manually create the module create the directory `modules/org/keycloak/example/themes/main`, copy `mytheme.zip` to this directory and create the file
-`modules/org/keycloak/example/themes/main/module.xml` with the contents:
+To manually create the module create the directory `modules/org/keycloak/example/mytheme/main`, copy `mytheme.zip` to this directory and create the file
+`modules/org/keycloak/example/mytheme/main/module.xml` with the contents:
 
 [source,xml]
 ----
 <?xml version="1.0" ?>
 <module xmlns="urn:jboss:module:1.3" name="org.keycloak.example.themes">
     <resources>
-        <resource-root path="theme.zip"/>
+        <resource-root path="mytheme.zip"/>
     </resources>
 </module>
 ----
