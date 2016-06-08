@@ -266,8 +266,7 @@ Check out the http://freemarker.org/docs/index.html[FreeMarker Manual] for more 
 
 ==== Emails
 
-To edit the subject and contents for emails, for example password recovery email, add a message bundle to the `email` type of your theme. Each email used three
-messages. One for the subject, one for the plain text body and one for the html body.
+To edit the subject and contents for emails, for example password recovery email, add a message bundle to the `email` type of your theme. There's three messages for each email. One for the subject, one for the plain text body and one for the html body.
 
 To see all emails available take a look at `themes/base/email/messages/messages_en.properties`.
 
