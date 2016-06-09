@@ -9,7 +9,11 @@
     "splitter"
   ],
   "variables": {
-    "title": "Keycloak Installation and Configuration Guide",
+    "title": "Server Installation and Configuration Guide",
+    "project": {
+      "name": "Keycloak",
+      "version": "1.9.7.Final"
+    },
     "community": true,
     "product": false,
     "images": "keycloak-images",
@@ -17,60 +21,45 @@
       "name": "Wildfly",
       "version": "10",
       "admindoc": {
-        "name": "JBoss EAP Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/"
+        "name": "WildFly 10 Documentation",
+        "link": "https://docs.jboss.org/author/display/WFLY10/Documentation"
       },
       "datasource": {
-        "name": "JBoss EAP Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/chap-Datasource_Management.html"
+        "name": "WildFly 10 Documentation",
+        "link": "https://docs.jboss.org/author/display/WFLY10/DataSource+configuration"
       },
       "network": {
-        "name": "JBoss EAP Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/chap-Network_and_Port_Configuration.html#Configure_interfaces"
+        "name": "WildFly 10 Documentation",
+        "link": "https://docs.jboss.org/author/display/WFLY10/Interfaces+and+ports"
       },
       "socket": {
-        "name": "JBoss EAP Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/sect-Socket_Binding_Groups.html"
+        "name": "WildFly 10 Documentation",
+        "link": "https://docs.jboss.org/author/display/WFLY10/Interfaces+and+ports"
       },
       "loadbalancer": {
-        "name": "JBoss EAP Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/sect-Web_HTTP_Connectors_and_HTTP_Clustering.html"
+        "name": "WildFly 10 Documentation",
+        "link": "https://docs.jboss.org/author/display/WFLY10/High+Availability+Guide"
       },
       "jgroups": {
-        "name": "JBoss EAP Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/sect-JGroups.html"
+        "name": "WildFly 10 Documentation",
+        "link": "https://docs.jboss.org/author/display/WFLY10/JGroups+Subsystem"
+      },
+      "caching": {
+        "name": "WildFly 10 Documentation",
+        "link": "https://docs.jboss.org/author/display/WFLY10/Infinispan+Subsystem"
+      },
+      "jpa": {
+        "name": "WildFly 10 Documentation",
+        "link": "https://docs.jboss.org/author/display/WFLY10/JPA+Reference+Guide#JPAReferenceGuide-Hibernateproperties"
       }
-    },
-    "caching": {
-      "name": "JBoss Data Grid",
-      "version": "???",
-      "admindoc": {
-        "name": "JBoss Data Grid Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/Red_Hat_JBoss_Data_Grid/6.6/html/Administration_and_Configuration_Guide/index.html",
-        "eviction": "https://access.redhat.com/documentation/en-US/Red_Hat_JBoss_Data_Grid/7.0/html/Administration_and_Configuration_Guide/sect-Eviction_Strategies.html"
-      }
-    },
-    "jpa": {
-      "name": "Hibernate",
-      "version": "???",
-      "admindoc": {
-        "name": "JBoss Development Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Development_Guide/sect-Java_Persistence_API_JPA.html#sect-Configuration2"
-      }
-
     },
     "developerguide": {
-      "name": "Keycloak Server Developer Guide",
+      "name": "Server Developer Guide",
       "link": "https://keycloak.gitbooks.io/server-developer-guide/content/"
-
     },
     "adminguide": {
-      "name": "Keycloak Adminstration Guide",
+      "name": "Server Administration Guide",
       "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
-    },
-    "project": {
-      "name": "Keycloak",
-      "version": "1.9.3.Final-SNAPSHOT"
     }
   }
 }

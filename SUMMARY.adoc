@@ -36,7 +36,7 @@
  .. link:topics/clustering/multicast.adoc[Multicast Network Setup]
  .. link:topics/clustering/serialized.adoc[Serialized Cluster Startup]
  .. link:topics/clustering/booting.adoc[Booting the Cluster]
- .. link:topics/clustering/troubleshooting.adoc[Trouble Shooting]
+ .. link:topics/clustering/troubleshooting.adoc[Troubleshooting]
  . link:topics/cache.adoc[Server Cache Configuration]
  .. link:topics/cache/eviction.adoc[Eviction Policy and Max Entries]
  .. link:topics/cache/replication.adoc[Replication and Failover]

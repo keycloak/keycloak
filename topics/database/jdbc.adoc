@@ -6,7 +6,7 @@ and install it into the server.
 Modules define JARs that are loaded into the {{book.project.name}} classpath and the dependencies those JARs have on
 other modules.  They are pretty simple to set up.
 
-Within the _.../modules/system/layers/keycloak/_ directory of your
+Within the _.../modules/_ directory of your
 {{book.project.name}} distribution, you need to create a directory structure to hold your module definition.  The convention is use the Java package name
 of the JDBC driver for the name of the directory structure.  For PostgreSQL, create the directory _org/postgresql/main_.  Copy your database
 driver JAR into this directory and create an empty _module.xml_ file within it too.
