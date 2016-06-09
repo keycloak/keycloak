@@ -47,7 +47,7 @@ the redirect-uri `/myapp` instead of `https://acme.org/myapp`.
 
 ==== Admin URL configuration
 
-Admin URL for a particular application can be configured in the {{book.project.name}} Administration Console.
+Admin URL for a particular client can be configured in the {{book.project.name}} Administration Console.
 It's used by the {{book.project.name}} server to send backend requests to the application for various tasks, like logout users or push revocation policies.
 
 For example the way backchannel logout works is:
