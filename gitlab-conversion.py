@@ -67,8 +67,8 @@ input = re.sub(r"[ ]*\.+\s*link:(.*)\[(.*)\]", "include::\g<1>[]", input)
 input = applyTransformation(input)
 output.write(input)
 
-# parse book.json file and create document attributes
-with open('book.json') as data_file:
+# parse book-product.json file and create document attributes
+with open('book-product.json') as data_file:
     data = json.load(data_file)
 
 variables = data['variables']
