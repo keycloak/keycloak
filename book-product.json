@@ -18,16 +18,16 @@
     "product": true,
     "adminguide": {
       "name": "Server Administration Guide",
-      "link": "https://access.qa.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/server-administration-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/server-administration-guide/"
     },
     "clientguide": {
       "name": "Securing Applications and Services Guide",
-      "link": "https://access.qa.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/securing-applications-and-services-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/securing-applications-and-services-guide/"
 
     },
     "apidocs": {
       "name": "API Documentation",
-      "link": "https://access.qa.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/api-documentation/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/api-documentation/"
     }
   }
 }
