@@ -233,10 +233,10 @@ Here's an example:
 
 ==== Securing WARs via Keycloak Subsystem
 
-You do not have to modify your WAR to secure it with {{book.project.title}}. Instead you can externally secure it via the {{book.project.title}} Adapter Subsystem.
+You do not have to modify your WAR to secure it with {{book.project.name}}. Instead you can externally secure it via the {{book.project.name}} Adapter Subsystem.
 While you don't have to specify KEYCLOAK as an `auth-method`, you still have to define the `security-constraints` in `web.xml`.
 You do not, however, have to create a `WEB-INF/keycloak.json` file.
-This metadata is instead defined within server configuration (i.e. `standalone.xml`) in the {{book.project.title}} subsystem definition.
+This metadata is instead defined within server configuration (i.e. `standalone.xml`) in the {{book.project.name}} subsystem definition.
 
 [source,xml]
 ----
@@ -265,7 +265,7 @@ The rest of the configuration corresponds pretty much one to one with the `keycl
 
 The exception is the `credential` element. 
 
-To make it easier for you, you can go to the {{book.project.title}} Administration Console and go to the Application/Installation tab of the application this WAR is aligned with.
+To make it easier for you, you can go to the {{book.project.name}} Administration Console and go to the Application/Installation tab of the application this WAR is aligned with.
 It provides an example XML file you can cut and paste. 
 
 There is an additional convenience format for this XML if you have multiple WARs you are deployment that are secured by the same domain.
