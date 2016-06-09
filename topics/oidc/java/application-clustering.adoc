@@ -1,7 +1,12 @@
 [[_applicationclustering]]
 === Application Clustering
 
-This chapter is related to supporting clustered applications deployed to JBoss EAP{% if book.community %}, WildFly and JBoss AS{% endif %}.
+{% if book.community %}
+This chapter is related to supporting clustered applications deployed to JBoss EAP, WildFly and JBoss AS.
+{% endif %}
+{% if book.product %}
+This chapter is related to supporting clustered applications deployed to JBoss EAP.
+{% endif %}
 
 There are a few options available depending on whether your application is:
 
