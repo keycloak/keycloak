@@ -1,6 +1,6 @@
 
 [[_fuse_adapter_camel]]
-==== Apache Camel Application
+===== Apache Camel Application
 
 * You can secure your Apache camel endpoint using http://camel.apache.org/jetty.html[camel-jetty] component by adding securityHandler with `KeycloakJettyAuthenticator` and
 proper security constraints injected. You can add file `OSGI-INF/blueprint/blueprint.xml` into your camel application with the configuration similar to below.

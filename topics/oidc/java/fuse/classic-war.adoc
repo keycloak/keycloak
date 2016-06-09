@@ -1,6 +1,6 @@
 
 [[_fuse_adapter_classic_war]]
-==== Secure Classic WAR application
+===== Secure Classic WAR application
 
 The needed steps to secure your WAR are:
 

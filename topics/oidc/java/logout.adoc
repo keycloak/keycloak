@@ -1,4 +1,4 @@
-=== Logout
+==== Logout
 
 There are multiple ways you can logout from a web application.
 For Java EE servlet containers, you can call HttpServletRequest.logout(). For any other browser application, you can redirect the browser to

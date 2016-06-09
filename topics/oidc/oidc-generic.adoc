@@ -1,11 +1,11 @@
-== Other OpenID Connect libraries
+=== Other OpenID Connect libraries
 
 {{book.project.name}} can be secured by supplied adapters that usually are easier to use and provide better integration with {{book.project.name}}. However,
 if there is no adapter available for your programming language, framework or platform you may opt to use a generic OpenID Connect Resource Provider (RP) library
 instead. This chapter describes details specific to {{book.project.name}} and doesn't go into low-level details of the protocols. For more details refer to the
 http://openid.net/connect/[OpenID Connect specifications] and https://tools.ietf.org/html/rfc6749[OAuth2 specification].
 
-=== Endpoints
+==== Endpoints
 
 The most important endpoint to know is the `well-known` configuration endpoint. It lists endpoints and other configuration options relevant to the OpenID
 Connect implementation in {{book.project.name}}. The endpoint is:
@@ -20,7 +20,7 @@ http://localhost:8080/auth/realms/master/.well-known/openid-configuration
 
 Some RP libraries will retrieve all required endpoints from this endpoint, but for others you may need to list the endpoints individually.
 
-==== Authorization Endpoint
+===== Authorization Endpoint
 ....
 /realms/master/protocol/openid-connect/auth
 ....
@@ -29,7 +29,7 @@ Performs authentication of the end-user. This is done by redirecting user agent 
 
 For more details see http://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint[Authorization Endpoint] section in OpenID Connect specification.
 
-==== Token Endpoint
+===== Token Endpoint
 ....
 /realms/master/protocol/openid-connect/token
 ....
@@ -39,7 +39,7 @@ The token endpoint is also used to obtain new access tokens when they expire.
 
 For more details see http://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint[Token Endpoint] section in OpenID Connect specification.
 
-==== Userinfo Endpoint
+===== Userinfo Endpoint
 ....
 /realms/master/protocol/openid-connect/userinfo
 ....
@@ -48,7 +48,7 @@ Returns standard claims about the authenticated user. Protected by a bearer toke
 
 For more details see http://openid.net/specs/openid-connect-core-1_0.html#UserInfo[Userinfo Endpoint] section in OpenID Connect specification.
 
-==== Logout Endpoint
+===== Logout Endpoint
 ....
 /realms/master/protocol/openid-connect/logout
 ....
@@ -60,7 +60,7 @@ User agent can be redirected to the endpoint in which case the active user sessi
 The endpoint can also be invoked directly by the application. To invoke this endpoint directly the refresh token needs to be included as well as credentials
 required to authenticate the client.
 
-==== Certificate Endpoint
+===== Certificate Endpoint
 ....
 /realms/master/protocol/openid-connect/certs
 ....
@@ -70,7 +70,7 @@ the server.
 
 For more details see https://tools.ietf.org/html/rfc7517[JSON Web Key specification].
 
-==== Introspection Endpoint
+===== Introspection Endpoint
 ....
 /realms/master/protocol/openid-connect/token/introspect
 ....
@@ -79,7 +79,7 @@ Used to retrieve the active state of a token. Protected by a bearer token and ca
 
 For more details see https://tools.ietf.org/html/rfc7662[OAuth 2.0 Token Introspection specification].
 
-==== Dynamic Client Registration Endpoint
+===== Dynamic Client Registration Endpoint
 ....
 /realms/master/clients-registrations/openid-connect
 ....
@@ -90,9 +90,9 @@ For more details see <<fake/../../client-registration.adoc#_client_registration,
 https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration specification].
 
 
-=== Flows
+==== Flows
 
-==== Authorization Code
+===== Authorization Code
 
 The Authorization Code flow redirects the user agent to {{book.project.name}}. Once the user has successfully authenticated with {{book.project.name}} an
 Authorization Code is created and the user agent is redirected back to the application. The application then uses the authorization code to along with its
@@ -103,7 +103,7 @@ a user agent.
 
 For more details refer to the http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code Flow] in the OpenID Connect specification.
 
-==== Implicit
+===== Implicit
 
 The Implicit flow redirects works similarly to the Authorization Code flow, but instead of returning a Authorization Code the Access Token and ID Token is
 returned. This reduces the need for the extra invocation to exchange the Authorization Code for an Access Token. However, it does not include a Refresh
@@ -119,7 +119,7 @@ browser history. This is somewhat mitigated by using short expiration for Access
 For more details refer to the http://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit Flow] in the OpenID Connect specification.
 
 [[_resource_owner_password_credentials_flow]]
-==== Resource Owner Password Credentials
+===== Resource Owner Password Credentials
 
 Resource Owner Password Credentials, referred to as Direct Grant in {{book.project.name}}, allows exchanging user credentials for tokens. It's not recommended
 to use this flow unless you absolutely need to. Examples where this could be useful are legacy applications and command-line interfaces.
@@ -139,7 +139,7 @@ This flow is not included in OpenID Connect, but is a part of the OAuth 2.0 spec
 
 For more details refer to the https://tools.ietf.org/html/rfc6749#section-4.3[Resource Owner Password Credentials Grant] chapter in the OAuth 2.0 specification.
 
-===== Example using CURL
+====== Example using CURL
 
 The following example shows how to obtain an access token for a user in the realm `master` with username `user` and password `password`. The example is using
 the confidential client `myclient`:
@@ -155,7 +155,7 @@ curl \
   "http://localhost:8080/auth/realms/master/protocol/openid-connect/token"
 ----
 
-==== Client Credentials
+===== Client Credentials
 
 Client Credentials is used when clients (applications and services) wants to obtain access on behalf of themselves rather than on behalf of a user. This can
 for example be useful for background services that applies changes to the system in general rather than for a specific user.
@@ -166,7 +166,7 @@ This flow is not included in OpenID Connect, but is a part of the OAuth 2.0 spec
 
 For more details refer to the https://tools.ietf.org/html/rfc6749#section-4.4[Client Credentials Grant] chapter in the OAuth 2.0 specification.
 
-=== Redirect URIs
+==== Redirect URIs
 
 When using the redirect based flows it's important to use valid redirect uris for your clients. The redirect uris should be as specific as possible. This
 especially applies to client-side (public clients) applications. Failing to do so could result in:

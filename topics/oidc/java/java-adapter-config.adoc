@@ -1,6 +1,6 @@
 
 [[_java_adapter_config]]
-=== Java Adapter Config
+==== Java Adapter Config
 
 Each Java adapter supported by {{book.project.name}} can be configured by a simple JSON file.
 This is what one might look like:

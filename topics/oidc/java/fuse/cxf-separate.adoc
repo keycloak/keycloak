@@ -1,6 +1,6 @@
 
 [[_fuse_adapter_cxf_separate]]
-==== Secure Apache CXF Endpoint on separate Jetty
+===== Secure Apache CXF Endpoint on separate Jetty
 
 It's recommended to run your CXF endpoints secured by {{book.project.name}} on separate Jetty engine. This is the setup described in this section.
 

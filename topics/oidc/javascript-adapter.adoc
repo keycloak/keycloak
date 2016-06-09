@@ -1,5 +1,5 @@
 [[_javascript_adapter]]
-== Javascript Adapter
+=== Javascript Adapter
 
 {{book.project.name}} comes with a client-side JavaScript library that can be used to secure HTML5/JavaScript applications. The JavaScript adapter has built-in
 support for Cordova applications.
@@ -109,7 +109,7 @@ keycloak.updateToken(30).success(function() {
 );
 ----    
 
-== Session status iframe
+==== Session status iframe
 
 By default, the JavaScript adapter creates a hidden iframe that is used to detect if a Single-Sign Out has occurred.
 This does not require any network traffic, instead the status is retrieved by looking at a special status cookie.
@@ -119,7 +119,7 @@ You should not rely on looking at this cookie directly. It's format can change a
 your application.
 
 [[_javascript_implicit_flow]]
-== Implicit and Hybrid Flow
+==== Implicit and Hybrid Flow
 
 By default, the JavaScript adapter uses the http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code] flow.
 With this flow the {{book.project.name}} server returns a authorization code, not a authentication token, to the application. The JavaScript adapter exchanges
@@ -160,7 +160,7 @@ For the Hybrid flow, you need to pass the parameter `flow` with value `hybrid` t
 keycloak.init({ flow: 'hybrid' })
 ----
 
-== Older browsers
+==== Older browsers
 
 The JavaScript adapter depends on Base64 (window.btoa and window.atob) and HTML5 History API.
 If you need to support browsers that don't have these available (for example IE9) you need to add polyfillers.
@@ -170,9 +170,9 @@ Example polyfill libraries:
 * https://github.com/davidchambers/Base64.js
 * https://github.com/devote/HTML5-History-API        
 
-== JavaScript Adapter reference
+==== JavaScript Adapter reference
 
-=== Constructor
+===== Constructor
 
 [source]
 ----
@@ -182,7 +182,7 @@ new Keycloak('http://localhost/keycloak.json');
 new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp' });
 ----
 
-=== Properties
+===== Properties
 
 authenticated::
     Is `true` if the user is authenticated, `false` otherwise.
@@ -227,9 +227,9 @@ flow::
 responseType::
     Response type sent to {{book.project.name}} with login requests. This is determined based on the flow value used during initialization, but can be overridden by setting this value.
 
-=== Methods
+===== Methods
 
-==== init(options)
+====== init(options)
 
 Called to initialize the adapter.
 
@@ -247,7 +247,7 @@ Options is an Object, where:
 
 Returns promise to set functions to be invoked on success or error.
 
-==== login(options)
+====== login(options)
 
 Redirects to login form on (options is an optional object with redirectUri and/or prompt fields).
 
@@ -259,7 +259,7 @@ Options is an Object, where:
 * action - If value is 'register' then user is redirected to registration page, otherwise to login page.
 * locale - Specifies the desired locale for the UI.
 
-==== createLoginUrl(options)
+====== createLoginUrl(options)
 
 Returns the URL to login form on (options is an optional object with redirectUri and/or prompt fields).
 
@@ -268,7 +268,7 @@ Options is an Object, where:
 * redirectUri - Specifies the uri to redirect to after login.
 * prompt - Can be set to 'none' to check if the user is logged in already (if not logged in, a login form is not displayed).
 
-==== logout(options)
+====== logout(options)
 
 Redirects to logout.
 
@@ -276,7 +276,7 @@ Options is an Object, where:
 
 * redirectUri - Specifies the uri to redirect to after logout.
 
-==== createLogoutUrl(options)
+====== createLogoutUrl(options)
 
 Returns the URL to logout the user.
 
@@ -284,45 +284,45 @@ Options is an Object, where:
 
 * redirectUri - Specifies the uri to redirect to after logout.
 
-==== register(options)
+====== register(options)
 
 Redirects to registration form. Shortcut for login with option action = 'register'
 
 Options are same as login method but 'action' is set to 'register'
 
-==== createRegisterUrl(options)
+====== createRegisterUrl(options)
 
 Returns the url to registration page. Shortcut for createLoginUrl with option action = 'register'
 
 Options are same as createLoginUrl method but 'action' is set to 'register'
 
-==== accountManagement()
+====== accountManagement()
 
 Redirects to the Account Management Console.
 
-==== createAccountUrl()
+====== createAccountUrl()
 
 Returns the URL to the Account Management Console.
 
-==== hasRealmRole(role)
+====== hasRealmRole(role)
 
 Returns true if the token has the given realm role.
 
-==== hasResourceRole(role, resource)
+====== hasResourceRole(role, resource)
 
 Returns true if the token has the given role for the resource (resource is optional, if not specified clientId is used).
 
-==== loadUserProfile()
+====== loadUserProfile()
 
 Loads the users profile.
 
 Returns promise to set functions to be invoked on success or error.
 
-==== isTokenExpired(minValidity)
+====== isTokenExpired(minValidity)
 
 Returns true if the token has less than minValidity seconds left before it expires (minValidity is optional, if not specified 0 is used).
 
-==== updateToken(minValidity)
+====== updateToken(minValidity)
 
 If the token expires within minValidity seconds (minValidity is optional, if not specified 0 is used) the token is refreshed.
 If the session status iframe is enabled, the session status is also checked. 
@@ -343,14 +343,14 @@ keycloak.updateToken(5).success(function(refreshed) {
     });
 ----
 
-==== clearToken()
+====== clearToken()
 
 Clear authentication state, including tokens.
 This can be useful if application has detected the session was expired, for example if updating token fails.
 
 Invoking this results in onAuthLogout callback listener being invoked. 
 
-=== Callback Events
+===== Callback Events
 
 The adapter supports setting callback listeners for certain events.
 

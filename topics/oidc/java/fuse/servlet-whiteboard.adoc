@@ -1,6 +1,6 @@
 
 [[_fuse_adapter_servlet_whiteboard]]
-==== Secure Servlet deployed as OSGI service
+===== Secure Servlet deployed as OSGI service
 
 This is useful for the case, when you have sevlet class inside your OSGI bundle project, which is not deployed as classic WAR. Fuse uses
 https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+Whiteboard[Pax Web Whiteboard Extender] for deploy such servlet as web application.

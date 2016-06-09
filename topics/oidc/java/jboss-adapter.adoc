@@ -1,10 +1,10 @@
 
 [[_jboss_adapter]]
 {% if book.community %}
-=== JBoss EAP/Wildfly Adapter
+==== JBoss EAP/Wildfly Adapter
 {% endif %}
 {% if book.product %}
-=== JBoss EAP Adapter
+==== JBoss EAP Adapter
 {% endif %}
 
 To be able to secure WAR apps deployed on JBoss EAP {% if book.community %}, WildFly or JBoss AS{% endif %}, you must install and configure the
@@ -16,7 +16,7 @@ Alternatively, you don't have to modify your WAR at all and you can secure it vi
 Both methods are described in this section.
 
 [[_jboss_adapter_installation]]
-==== Adapter Installation
+===== Adapter Installation
 
 Adapters are available as a separate archive and are also available as Maven artifacts.
 
@@ -169,7 +169,7 @@ public class CustomerService {
 }
 ----
 
-==== Required Per WAR Configuration
+===== Required Per WAR Configuration
 
 This section describes how to secure a WAR directly by adding config and editing files within your WAR package. 
 
@@ -231,7 +231,7 @@ Here's an example:
 </web-app>
 ----        
 
-==== Securing WARs via Adapter Subsystem
+===== Securing WARs via Adapter Subsystem
 
 You do not have to modify your WAR to secure it with {{book.project.name}}. Instead you can externally secure it via the {{book.project.name}} Adapter Subsystem.
 While you don't have to specify KEYCLOAK as an `auth-method`, you still have to define the `security-constraints` in `web.xml`.

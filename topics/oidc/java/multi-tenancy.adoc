@@ -1,5 +1,5 @@
 
-=== Multi Tenancy
+==== Multi Tenancy
 
 Multi Tenancy, in our context, means that a single target application (WAR) can be secured with multiple {{book.project.name}} realms. The realms can be located
 one the same {{book.project.name}} instance or on different instances.
