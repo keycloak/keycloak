@@ -3,7 +3,7 @@
 
 This chapter is related to supporting clustered applications deployed to JBoss EAP{% if book.community %}, WildFly and JBoss AS{% endif %}.
 
-There are several options depending on if your application is:
+There are a few options available depending on whether your application is:
 
 * Stateless or stateful
 * Distributable (replicated http session) or non-distributable
