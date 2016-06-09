@@ -8,7 +8,7 @@ To invoke the API you need to obtain an access token with the appropriate permis
 A token can be obtained by enabling authenticating to your application with {{book.project.name}}, see the
 {{book.clientguide.link}}[{{book.clientguide.name}}]. You can also use direct access grant to obtain an access token.
 
-Full API documentation is available at {{book.web.docs.link}}[{{book.web.docs.name}}].
+Full API documentation is available at {{book.apidocs.link}}[{{book.apidocs.name}}].
 
 === Example using CURL
 
@@ -60,6 +60,5 @@ Keycloak keycloak = Keycloak.getInstance(
 RealmRepresentation realm = keycloak.realm("master").toRepresentation();
 ----
 
-Complete Javadoc for the admin client is available at {{book.web.docs.link}}[{{book.web.docs.name}}]. From {{book.web.downloads.link}}[{{book.web.downloads.name}}]
-you can get the examples distribution with the `admin-client` example that shows how to use the Java admin client.
+Complete Javadoc for the admin client is available at {{book.apidocs.link}}[{{book.apidocs.name}}].
 {% endif %}
