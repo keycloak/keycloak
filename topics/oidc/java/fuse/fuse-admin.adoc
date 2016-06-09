@@ -7,7 +7,7 @@
 {{book.project.name}} mainly addresses usecases for authentication of web applications, however if your other web services and applications are protected
 with {{book.project.name}}, it may be good to protect non-web admin services like SSH with {{book.project.name}} credentials too. It's possible to do it
 by using JAAS login module, which allows to remotely connect to {{book.project.name}} and verify credentials based on
-<<fake/../../../oidc-generic.adoc#_resource_owner_password_credentials_flow,Resource Owner Password Credentials>> .
+<<fake/../../../oidc-generic.adoc#_resource_owner_password_credentials_flow,Resource Owner Password Credentials>>.
 
 Example steps for enable SSH authentication:
 
