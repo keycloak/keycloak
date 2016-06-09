@@ -1,8 +1,7 @@
 
 == Securing a JBoss Servlet Application
 
-In this section you will learn how to secure a Java Servlet application on the JBoss EAP 7 or Wildfly 10 application
-servers.  You will learn how to install the {{book.project.name}} Client Adapter onto a JBoss EAP or Wildfly Application Server
-distribution.  You will create and register a client application in the {{book.project.name}} Admin Console.  Finally,
-you will configure the application to be secured by {{book.project.name}}.
+In this section you will learn how to secure a Java Servlet application on the {{book.appServer}} application server.  You will learn how to install the
+{{book.project.name}} Client Adapter onto a {{book.appServer}} application server distribution.  You will create and register a client application in the
+{{book.project.name}} Admin Console.  Finally, you will configure the application to be secured by {{book.project.name}}.
 
