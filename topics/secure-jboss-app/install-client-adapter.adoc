@@ -1,9 +1,20 @@
 
 === Install the Client Adapter
 
-Download the JBoss EAP 7 or Wildfly 10 distribution you are going to use to run your example application and unzip
-it into a directory of your choosing on your machine.  Next download the {{book.clientadapter}} distribution.  Unzip
-this file into the root directory of your JBoss EAP or Wildfly 10 distribution.  Next perform the following actions
+Download the {{book.appServer}} distribution and unzip
+it into a directory of your choosing on your machine.
+
+{% if book.community %}
+Next download the keycloak-wildfly-adapter-dist-{{book.project.version}}.zip distribution.
+{% endif %}
+
+{% if book.product %}
+Next download the RH-SSO-{{book.project.version}}-eap7-adapter.zip distribution.
+{% endif %}
+
+Unzip this file into the root directory of your {{book.appServer}} distribution.
+
+Next perform the following actions:
 
 .Linux/Unix
 [source]

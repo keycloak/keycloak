@@ -11,24 +11,24 @@
   "variables": {
     "title": "Getting Started Tutorials",
     "project": {
-      "name": "Keycloak",
-      "version": "1.9.7.Final"
+      "name": "Red Hat Single Sign-On",
+      "version": "7.0.0"
     },
-    "community": true,
-    "product": false,
-    "images": "keycloak-images",
+    "community": false,
+    "product": true,
+    "images": "rhsso-images",
 
     "installguide": {
       "name": "Server Installation and Configuration Guide",
-      "link": "https://keycloak.gitbooks.io/server-installation-and-configuration/content/"
+      "link": "https://access.qa.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/server-installation-and-configuration-guide/"
 
     },
     "adminguide": {
-      "name": "Server Adminstration Guide",
-      "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
+      "name": "Administration Guide",
+      "link": "https://access.qa.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/server-administration-guide/"
     },
     "clientadapter": "RH-SSO-{{book.project.version}}-eap7-adapter.zip",
-    "appServer": "WildFly 10",
+    "appServer": "JBoss EAP 10",
     "quickstartRepo": "https://github.com/redhat-developer/redhat-sso-quickstarts"
   }
 }
