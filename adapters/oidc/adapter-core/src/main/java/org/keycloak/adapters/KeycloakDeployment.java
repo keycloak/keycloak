@@ -77,6 +77,7 @@ public class KeycloakDeployment {
     protected boolean turnOffChangeSessionIdOnLogin;
 
     protected volatile int notBefore;
+    protected int tokenMinimumTimeToLive;
 
     public KeycloakDeployment() {
     }
@@ -356,5 +357,13 @@ public class KeycloakDeployment {
 
     public void setTurnOffChangeSessionIdOnLogin(boolean turnOffChangeSessionIdOnLogin) {
         this.turnOffChangeSessionIdOnLogin = turnOffChangeSessionIdOnLogin;
+    }
+
+    public int getTokenMinimumTimeToLive() {
+        return tokenMinimumTimeToLive;
+    }
+
+    public void setTokenMinimumTimeToLive(final int tokenMinimumTimeToLive) {
+        this.tokenMinimumTimeToLive = tokenMinimumTimeToLive;
     }
 }

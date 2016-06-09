@@ -27,9 +27,11 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Version;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
+import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.util.BasicAuthHelper;
 
@@ -70,6 +72,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     private ProductPortal productPortal;
     @Page
     private InputPortal inputPortal;
+    @Page
+    private TokenMinTTLPage tokenMinTTLPage;
 
     @Deployment(name = CustomerPortal.DEPLOYMENT_NAME)
     protected static WebArchive customerPortal() {
@@ -104,6 +108,11 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = InputPortal.DEPLOYMENT_NAME)
     protected static WebArchive inputPortal() {
         return servletDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class);
+    }
+
+    @Deployment(name = TokenMinTTLPage.DEPLOYMENT_NAME)
+    protected static WebArchive tokenMinTTLPage() {
+        return servletDeployment(TokenMinTTLPage.DEPLOYMENT_NAME, AdapterActionsFilter.class, AbstractShowTokensServlet.class, TokenMinTTLServlet.class, ErrorServlet.class);
     }
 
     @Test
@@ -407,5 +416,37 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         securePortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
+
+    // Tests "token-minimum-time-to-live" adapter configuration option
+    @Test
+    public void testTokenMinTTL() {
+        // Login
+        tokenMinTTLPage.navigateTo();
+        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(tokenMinTTLPage);
+
+        // Get time of token
+        AccessToken token = tokenMinTTLPage.getAccessToken();
+        int tokenIssued1 = token.getIssuedAt();
+
+        // Sets 5 minutes offset and assert access token will be still the same
+        setAdapterAndServerTimeOffset(300, tokenMinTTLPage.toString());
+        token = tokenMinTTLPage.getAccessToken();
+        int tokenIssued2 = token.getIssuedAt();
+        Assert.assertEquals(tokenIssued1, tokenIssued2);
+        Assert.assertFalse(token.isExpired());
+
+        // Sets 9 minutes offset and assert access token will be refreshed (accessTokenTimeout is 10 minutes, token-min-ttl is 2 minutes. Hence 8 minutes or more should be sufficient)
+        setAdapterAndServerTimeOffset(540, tokenMinTTLPage.toString());
+        token = tokenMinTTLPage.getAccessToken();
+        int tokenIssued3 = token.getIssuedAt();
+        Assert.assertTrue(tokenIssued3 > tokenIssued1);
+
+        // Revert times
+        setAdapterAndServerTimeOffset(0, tokenMinTTLPage.toString());
+    }
+
 
 }
