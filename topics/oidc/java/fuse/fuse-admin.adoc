@@ -51,7 +51,7 @@ features:install keycloak-jaas
 ssh -o PubkeyAuthentication=no -p 8101 admin@localhost
 ```
 
-And login with password `password` . Note that your user needs to have realm role `admin` . The required roles are configured in `$FUSE_HOME/etc/org.apache.karaf.shell.cfg`
+And login with password `password`. Note that your user needs to have realm role `admin` . The required roles are configured in `$FUSE_HOME/etc/org.apache.karaf.shell.cfg`
 
 
 ===== JMX authentication
