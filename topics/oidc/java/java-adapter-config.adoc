@@ -31,7 +31,8 @@ This is what one might look like:
    "truststore-password" : "geheim",
    "client-keystore" : "path/to/client-keystore.jks",
    "client-keystore-password" : "geheim",
-   "client-key-password" : "geheim"
+   "client-key-password" : "geheim",
+   "token-minimum-time-to-live" : 10
 }
 ----
 
@@ -190,3 +191,9 @@ principal-attribute::
 turn-off-change-session-id-on-login::
   The session id is changed by default on a successful login on some platforms to plug a security attack vector.  Change this to true if you want to turn this off This is _OPTIONAL_.
   The default value is _false_.
+
+token-minimum-time-to-live::
+  Amount of time, in seconds, to preemptively refresh an active access token with the {{book.project.name}} server before it expires.
+  This is especially useful when the access token is sent to another REST client where it could expire before being evaluated.
+  This value should never exceed the realm's access token lifespan.
+  This is _OPTIONAL_.  The default value is `0` seconds, so adapter will refresh access token just if it's expired.
