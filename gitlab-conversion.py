@@ -42,6 +42,9 @@ if os.path.isdir('keycloak-images'):
 if os.path.isdir('rhsso-images'):
     shutil.copytree('rhsso-images',os.path.join(targetdir, 'rhsso-images'))
 
+shutil.copyfile('metadata.ini', os.path.join(targetdir, 'metadata.ini'));
+shutil.copyfile('master-docinfo.xml', os.path.join(targetdir, 'master-docinfo.xml'));
+
 tmp = os.path.join(targetdir, 'topics')
 if not os.path.exists(tmp):
     os.makedirs(tmp)
