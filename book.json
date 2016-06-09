@@ -21,19 +21,9 @@
       "name": "Keycloak Administration Guide",
       "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
     },
-    "web": {
-      "docs": {
-        "name": "keycloak.org/docs",
-        "link": "http://keycloak.org/docs"
-      },
-      "downloads": {
-        "name": "keycloak.org/downloads",
-        "link": "http://keycloak.org/downloads"
-      }
-    },
     "project": {
       "name": "Keycloak",
-      "version": "1.9.5.Final"
+      "version": "1.9.7.Final"
     }
   }
 }
