@@ -17,3 +17,4 @@ Or, it is available in secure and insecure requests in the HttpSession:
 httpServletRequest.getSession()
     .getAttribute(KeycloakSecurityContext.class.getName());
 ----
+
