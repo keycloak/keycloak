@@ -78,7 +78,7 @@
     },
     "project": {
       "name": "Keycloak",
-      "version": "1.9.3.Final"
+      "version": "1.9.7.Final"
     }
   }
 }
