@@ -32,3 +32,4 @@ OIDCAuthenticationError error = (OIDCAuthenticationError) httpServletRequest
 Reason reason = error.getReason();
 System.out.println(reason.name());
 ----
+
