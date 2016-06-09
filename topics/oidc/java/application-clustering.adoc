@@ -58,10 +58,7 @@ For example the way backchannel logout works is:
 . The {{book.project.name}} server then sends a backchannel request to application with an admin url that are associated with the session
 . When an application receives the logout request it invalidates the corresponding HTTP session
 
-Some examples of possible values of admin URL are:
-
-http://${application.session.host}:8080/myapp::
-  {{book.project.name}} tracks hosts associated with the HTTP Session and will send session invalidation message to the associated node.
+If admin URL contains `${application.session.host}` it will be replaced with the URL to the node associated with the HTTP session.
 
 [[_registration_app_nodes]]
 ==== Registration of application nodes
