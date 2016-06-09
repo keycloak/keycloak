@@ -28,7 +28,7 @@
       "link": "https://access.qa.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/server-administration-guide/"
     },
     "clientadapter": "RH-SSO-{{book.project.version}}-eap7-adapter.zip",
-    "appServer": "JBoss EAP 10",
+    "appServer": "JBoss EAP 7",
     "quickstartRepo": "https://github.com/redhat-developer/redhat-sso-quickstarts"
   }
 }
