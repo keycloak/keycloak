@@ -11,7 +11,7 @@ You can obtain the code by cloning the repository at {{book.quickstartRepo}}. Fo
 and deploy it. Make sure your {{book.appServer}} application server is started before you run these steps.
 
 .Clone Project
-[source]
+[source, subs="attributes"]
 ----
 $ git clone {{book.quickstartRepo}}
 $ cd rh-sso-quickstarts/app-profile-jee-vanilla

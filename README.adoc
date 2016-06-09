@@ -1,5 +1,5 @@
 
-= {{book.title}}
+= Getting Started Guide
 
 image:images/keycloak_logo.png[alt="Keycloak"]
 
