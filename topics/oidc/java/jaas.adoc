@@ -10,7 +10,7 @@ The provided login modules are:
 org.keycloak.adapters.jaas.DirectAccessGrantsLoginModule::
   This login module allows to authenticate with username/password from {{book.project.title}}.
   It's using <<fake/../../oidc-generic.adoc#_resource_owner_password_credentials_flow,Resource Owner Password Credentials>> flow to validate if the provided
-  username/password is valid. It's useful for non-web based systems, which need to rely on JAAS and want to use Keycloak, but can't use the standard browser
+  username/password is valid. It's useful for non-web based systems, which need to rely on JAAS and want to use {{book.project.title}}, but can't use the standard browser
   based flows due to their non-web nature. Example of such application could be messaging or SSH.
 
 org.keycloak.adapters.jaas.BearerTokenLoginModule::
