@@ -16,7 +16,7 @@ You can set up an error-page within your `web.xml` file to handle the error howe
 ----    
 
 {{book.project.name}} also sets a `HttpServletRequest` attribute that you can retrieve.
-The attribute name is `org.keycloak.adapters.spi.AuthenticationError`, which should be casted to to `org.keycloak.adapters.OIDCAuthenticationError`.
+The attribute name is `org.keycloak.adapters.spi.AuthenticationError`, which should be casted to `org.keycloak.adapters.OIDCAuthenticationError`.
 
 For example:
 
