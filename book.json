@@ -9,30 +9,25 @@
     "splitter"
   ],
   "variables": {
-    "title": "Keycloak Server Developer Guide",
+    "title": "Server Developer Guide",
+    "project": {
+      "name": "Keycloak",
+      "version": "1.9.7.Final"
+    },
     "community": true,
     "product": false,
-    "images": "keycloak-images",
-    "appserver": {
-      "name": "Wildfly",
-      "version": "10"
-    },
     "adminguide": {
       "name": "Server Administration Guide",
       "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
     },
     "clientguide": {
-      "name": "Securing Client Applications Guide",
+      "name": "Securing Applications and Services Guide",
       "link": "https://keycloak.gitbooks.io/securing-client-applications-guide/content/"
 
     },
     "apidocs": {
       "name": "API Documentation",
       "link": "http://keycloak.org/docs"
-    },
-    "project": {
-      "name": "Keycloak",
-      "version": "1.9.7.Final"
     }
   }
 }

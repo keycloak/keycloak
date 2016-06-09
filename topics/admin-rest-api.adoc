@@ -8,7 +8,7 @@ To invoke the API you need to obtain an access token with the appropriate permis
 A token can be obtained by enabling authenticating to your application with {{book.project.name}}, see the
 {{book.clientguide.link}}[{{book.clientguide.name}}]. You can also use direct access grant to obtain an access token.
 
-Full API documentation is available at {{book.apidocs.link}}[{{book.apidocs.name}}].
+Refer to {{book.apidocs.link}}[{{book.apidocs.name}}] for complete documentation.
 
 === Example using CURL
 

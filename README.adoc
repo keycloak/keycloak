@@ -1,10 +1,9 @@
 
-Keycloak Server Developer Guide
-======================
+= Server Developer Guide
 
 image:images/keycloak_logo.png[alt="Keycloak"]
 
-*Keycloak* _Documentation_ for {{book.project.version}}
+{{book.project.name}} {{book.project.version}}
 
 http://www.keycloak.org
 
