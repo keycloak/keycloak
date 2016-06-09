@@ -21,7 +21,7 @@
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
          version="3.0">
 
-    <module-name>offline-client</module-name>
+    <module-name>token-min-ttl</module-name>
 
     <filter>
         <filter-name>AdapterActionsFilter</filter-name>
@@ -30,7 +30,7 @@
 
     <servlet>
         <servlet-name>Servlet</servlet-name>
-        <servlet-class>org.keycloak.testsuite.adapter.servlet.OfflineTokenServlet</servlet-class>
+        <servlet-class>org.keycloak.testsuite.adapter.servlet.TokenMinTTLServlet</servlet-class>
     </servlet>
 
     <servlet>

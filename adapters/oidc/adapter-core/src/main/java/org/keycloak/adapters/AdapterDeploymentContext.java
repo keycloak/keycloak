@@ -456,7 +456,6 @@ public class AdapterDeploymentContext {
         public void setTurnOffChangeSessionIdOnLogin(boolean turnOffChangeSessionIdOnLogin) {
             delegate.setTurnOffChangeSessionIdOnLogin(turnOffChangeSessionIdOnLogin);
         }
-    }
 
         @Override
         public int getTokenMinimumTimeToLive() {
@@ -467,6 +466,7 @@ public class AdapterDeploymentContext {
         public void setTokenMinimumTimeToLive(final int tokenMinimumTimeToLive) {
             delegate.setTokenMinimumTimeToLive(tokenMinimumTimeToLive);
         }
+    }
 
     protected KeycloakUriBuilder getBaseBuilder(HttpFacade facade, String base) {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(base);

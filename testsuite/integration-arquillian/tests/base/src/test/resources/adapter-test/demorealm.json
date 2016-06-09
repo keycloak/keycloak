@@ -2,7 +2,7 @@
     "id": "demo",
     "realm": "demo",
     "enabled": true,
-    "accessTokenLifespan": 3000,
+    "accessTokenLifespan": 600,
     "accessCodeLifespan": 10,
     "accessCodeLifespanUserAction": 6000,
     "sslRequired": "external",
@@ -205,6 +205,16 @@
             "baseUrl": "/input-portal",
             "redirectUris": [
                 "/input-portal/*"
+            ],
+            "secret": "password"
+        },
+        {
+            "clientId": "token-min-ttl",
+            "enabled": true,
+            "adminUrl": "/token-min-ttl",
+            "baseUrl": "/token-min-ttl",
+            "redirectUris": [
+                "/token-min-ttl/*"
             ],
             "secret": "password"
         },
