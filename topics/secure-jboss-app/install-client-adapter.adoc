@@ -2,7 +2,7 @@
 === Install the Client Adapter
 
 Download the {{book.appServer}} distribution and unzip
-it into a directory of your choosing on your machine.
+it into a directory on your machine.
 
 {% if book.community %}
 Next download the keycloak-wildfly-adapter-dist-{{book.project.version}}.zip distribution.
