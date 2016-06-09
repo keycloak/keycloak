@@ -55,7 +55,7 @@ For example the way backchannel logout works is:
 . User sends logout request from one application
 . The application sends logout request to {{book.project.name}}
 . The {{book.project.name}} server invalidates the user session
-. The {{book.project.name}} server then sends a backchannel request to application with a admin url that are associated with the session
+. The {{book.project.name}} server then sends a backchannel request to application with an admin url that are associated with the session
 . When an application receives the logout request it invalidates the corresponding HTTP session
 
 Some examples of possible values of admin URL are:
