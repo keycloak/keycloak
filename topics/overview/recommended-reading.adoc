@@ -1,11 +1,8 @@
 
 === Recommended Additional External Documentation
 
-{{book.project.name}} is built upon a derivative of the {{book.appserver.name}} Application Server and projects embedded
-within {{book.appserver.name}} like {{book.cache.name}} (for caching) and Hibernate (for persistence).  This guide only
-goes over the basics for infrastructure-level configuration.  It is highly recommended that you peruse the documentation
-for {{book.appserver.name}} and its sub projects.  Here are some links to that documentation:
+{{book.project.name}} is built on top of the {{book.appserver.name}} application server and it's sub-projects like Infinispan (for caching) and Hibernate (for persistence).
+This guide only covers basics for infrastructure-level configuration.  It is highly recommended that you peruse the documentation
+for {{book.appserver.name}} and its sub projects. Here is the link to the documentation:
 
 * link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}]
-* link:{{book.caching.admindoc.link}}[{{book.caching.admindoc.name}}]
-* link:{{book.jpa.admindoc.link}}[Hibernate JPA Configuration]

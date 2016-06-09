@@ -17,8 +17,10 @@ _domain/_::
 _modules/_::
   These are all the Java libraries used by the server.
 
+{% if book.community %}
 _providers/_::
   If you are writing extensions to keycloak, you can put your extensions here.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more information on this.
+{% endif %}
 
 _standalone/_::
   This contains configuration files and working directory when running {{book.project.name}} in <<fake/../../operating-mode/standalone.adoc#_standalone-mode,standalone mode>>.

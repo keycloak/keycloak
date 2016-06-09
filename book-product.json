@@ -1,0 +1,65 @@
+{
+  "gitbook": "2.x.x",
+  "structure": {
+    "readme": "README.adoc"
+  },
+  "plugins": [
+    "toggle-chapters",
+    "ungrey",
+    "splitter"
+  ],
+  "variables": {
+    "title": "Server Installation and Configuration Guide",
+    "project": {
+      "name": "Red Hat Single Sign-On",
+      "version": "7.0.0"
+    },
+    "community": false,
+    "product": true,
+    "images": "rhsso-images",
+    "appserver": {
+      "name": "JBoss EAP",
+      "version": "7",
+      "admindoc": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/configuration-guide"
+      },
+      "datasource": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/chapter-13-datasource-management"
+      },
+      "network": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/chapter-4-network-and-port-configuration"
+      },
+      "socket": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/chapter-4-network-and-port-configuration"
+      },
+      "loadbalancer": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/chapter-21-configuring-high-availability"
+      },
+      "jgroups": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/chapter-21-configuring-high-availability#cluster_communication_jgroups"
+      },
+      "caching": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/chapter-21-configuring-high-availability#infinispan"
+      },
+      "jpa": {
+        "name": "JBoss EAP Development Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/development-guide/chapter-13-hibernate"
+      }
+    },
+    "developerguide": {
+      "name": "Server Developer Guide",
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/server-developer-guide/"
+    },
+    "adminguide": {
+      "name": "Server Administration Guide",
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/server-administration-guide/"
+    }
+  }
+}

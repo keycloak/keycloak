@@ -48,6 +48,5 @@ globalStatsInterval::
 schema::
   Specify the database schema to use
 
-NOTE:  All these configuration switches and more are described in the link:{{book.jpa.admindoc.link}}[the Hibernate chapter]
-       of {{book.jpa.admindoc.name}}.
+NOTE:  All these configuration switches and more are described in the link:{{book.appserver.jpa.link}}[{{book.appserver.jpa.name}}].
 

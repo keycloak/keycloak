@@ -14,6 +14,6 @@ but is possibly replicated across the cluster.
 
 This chapter discusses some configuration options for these caches for both clustered a non-clustered deployments.
 
-Note:  More advanced configuration of these caches can be found in link:{{book.caching.admindoc.link}}[{{book.caching.admindoc.name}}]
+Note:  More advanced configuration of these caches can be found in link:{{book.appserver.caching.link}}[{{book.appserver.caching.name}}]
 
 
