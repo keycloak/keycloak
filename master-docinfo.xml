@@ -1,0 +1,12 @@
+<productname>Red Hat Single Sign-On</productname>
+<productnumber>7.0.0</productnumber>
+<subtitle>Getting Started Tutorials</subtitle>
+<title>Getting Started Tutorials</title>
+<release>7.0.0</release>
+<abstract>
+	    <para>This guide consist of basic information and instruction to get started with Red Hat Single Sign-On 7.0.0</para>
+    </abstract>
+<authorgroup>
+    <orgname>Red Hat Customer Content Services</orgname>
+</authorgroup>
+<xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
