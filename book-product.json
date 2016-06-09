@@ -9,7 +9,7 @@
     "splitter"
   ],
   "variables": {
-    "title": "Getting Started Tutorials",
+    "title": "Getting Started Guide",
     "project": {
       "name": "Red Hat Single Sign-On",
       "version": "7.0.0"
@@ -24,7 +24,7 @@
 
     },
     "adminguide": {
-      "name": "Administration Guide",
+      "name": "Server Administration Guide",
       "link": "https://access.qa.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/server-administration-guide/"
     },
     "clientadapter": "RH-SSO-{{book.project.version}}-eap7-adapter.zip",
