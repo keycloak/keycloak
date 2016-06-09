@@ -23,7 +23,7 @@ Adapters are available as a separate archive and are also available as Maven art
 {% if book.community %}
 Install on Wildfly 9 or 10:
 
-[source,bash]
+[source, subs="attributes"]
 ----
 $ cd $WILDFLY_HOME
 $ unzip keycloak-wildfly-adapter-dist-{{book.project.version}}.zip
@@ -31,7 +31,7 @@ $ unzip keycloak-wildfly-adapter-dist-{{book.project.version}}.zip
 
 Install on Wildfly 8:
 
-[source,bash]
+[source, subs="attributes"]
 ----
 $ cd $WILDFLY_HOME
 $ unzip keycloak-wf8-adapter-dist-{{book.project.version}}.zip
@@ -39,7 +39,7 @@ $ unzip keycloak-wf8-adapter-dist-{{book.project.version}}.zip
 
 Install on JBoss EAP 7:
 
-[source]
+[source, subs="attributes"]
 ----
 $ cd $EAP_HOME
 $ unzip keycloak-eap7-adapter-dist-{{book.project.version}}.zip
@@ -47,7 +47,7 @@ $ unzip keycloak-eap7-adapter-dist-{{book.project.version}}.zip
 
 Install on JBoss EAP 6:
 
-[source]
+[source, subs="attributes"]
 ----
 $ cd $EAP_HOME
 $ unzip keycloak-eap6-adapter-dist-{{book.project.version}}.zip
@@ -55,7 +55,7 @@ $ unzip keycloak-eap6-adapter-dist-{{book.project.version}}.zip
 
 Install on JBoss AS 7.1:
 
-[source]
+[source, subs="attributes"]
 ----
 $ cd $JBOSS_HOME
 $ unzip keycloak-as7-adapter-dist-{{book.project.version}}.zip
@@ -65,7 +65,7 @@ $ unzip keycloak-as7-adapter-dist-{{book.project.version}}.zip
 {% if book.product %}
 Install on JBoss EAP 7:
 
-[source]
+[source, subs="attributes"]
 ----
 $ cd $EAP_HOME
 $ unzip rh-sso-{{book.project.version}}-eap7-adapter.zip
@@ -73,7 +73,7 @@ $ unzip rh-sso-{{book.project.version}}-eap7-adapter.zip
 
 Install on JBoss EAP 6:
 
-[source]
+[source, subs="attributes"]
 ----
 $ cd $EAP_HOME
 $ unzip rh-sso-{{book.project.version}}-eap6-adapter.zip

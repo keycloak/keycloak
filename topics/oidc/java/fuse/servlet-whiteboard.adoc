@@ -65,7 +65,8 @@ The needed steps to secure your servlet with {{book.project.name}} are:
 Note you don't need `web.xml` as the security-constrains are declared in blueprint configuration file.
 
 * The `Import-Package` in `META-INF/MANIFEST.MF` needs to contain at least those imports:
-[source]
+
+[source, subs="attributes"]
 ----
 org.keycloak.adapters.jetty;version="{{book.project.version}}",
 org.keycloak.adapters;version="{{book.project.version}}",

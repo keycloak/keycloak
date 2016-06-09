@@ -78,7 +78,8 @@ The roles, security constraint mappings and {{book.project.name}} adapter config
 
 
 * The `Import-Package` in `META-INF/MANIFEST.MF` needs to contain those imports:
-[source]
+
+[source, subs="attributes"]
 ----
 javax.servlet;version="[3,4)",
 javax.servlet.http;version="[3,4)",

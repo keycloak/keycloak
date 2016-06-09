@@ -83,7 +83,8 @@ control over security for each application individually.
 
 
 * The `Import-Package` in `META-INF/MANIFEST.MF` needs to contain those imports:
-[source]
+
+[source, subs="attributes"]
 ----
 META-INF.cxf;version="[2.7,3.2)",
 META-INF.cxf.osgi;version="[2.7,3.2)";resolution:=optional,

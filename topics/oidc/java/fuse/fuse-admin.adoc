@@ -40,10 +40,11 @@ This file contains configuration of the client application, which is used by JAA
 * Start Fuse and install `keycloak` JAAS realm into Fuse. This could be done easily by installing `keycloak-jaas` feature, which has JAAS realm predefined
 (you are able to override it by using your own `keycloak` JAAS realm with higher ranking). Use those commands in Fuse terminal:
 
-```
+[source, subs="attributes"]
+----
 features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.version}}/xml/features
 features:install keycloak-jaas
-```
+----
 
 * Now let's type this from your terminal to login via SSH as `admin` user:
 

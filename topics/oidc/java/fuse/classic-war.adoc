@@ -70,7 +70,7 @@ recommended to use `maven-bundle-plugin` in your project to properly generate OS
 Note that "*" resolution for package doesn't import `org.keycloak.adapters.jetty` package
 as it's not used by application or Blueprint or Spring descriptor, but it's used just in `jetty-web.xml` file. So list of the packages to import may look like this:
 
-[source]
+[source, subs="attributes"]
 ----
 org.keycloak.adapters.jetty;version="{{book.project.version}}",
 org.keycloak.adapters;version="{{book.project.version}}",
