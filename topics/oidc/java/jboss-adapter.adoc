@@ -259,9 +259,7 @@ This metadata is instead defined within server configuration (i.e. `standalone.x
 ----
 
 The `secure-deployment` `name` attribute identifies the WAR you want to secure.
-Its value is the `module-name` defined in `web.xml` with `.war` appended.
-
-The rest of the configuration corresponds pretty much one to one with the `keycloak.json` configuration options defined in <<fake/../java-adapter-config.adoc#_java_adapter_config,Java adapter configuration>>.
+Its value is the `module-name` defined in `web.xml` with `.war` appended. The rest of the configuration corresponds pretty much one to one with the `keycloak.json` configuration options defined in <<fake/../java-adapter-config.adoc#_java_adapter_config,Java adapter configuration>>.
 
 The exception is the `credential` element. 
 
