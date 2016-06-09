@@ -12,7 +12,7 @@ Enter the username and password you created on the Welcome Page.  This will brin
 .Admin Console
 image:../../{{book.images}}/admin-console.png[]
 
-TIP:  If you are curious about a certain feature, button, or field within the Admin Console, simply hover your mouse
+NOTE:  If you are curious about a certain feature, button, or field within the Admin Console, simply hover your mouse
       over any question mark `?` icon.  This will pop up tooltip text to describe the area of the console you are interested in.
       The image above shows the tooltip in action.
 
