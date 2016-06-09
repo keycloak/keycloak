@@ -20,12 +20,12 @@
 
     "installguide": {
       "name": "Server Installation and Configuration Guide",
-      "link": "https://access.qa.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/server-installation-and-configuration-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/server-installation-and-configuration-guide/"
 
     },
     "adminguide": {
       "name": "Server Administration Guide",
-      "link": "https://access.qa.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/server-administration-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/server-administration-guide/"
     },
     "clientadapter": "RH-SSO-{{book.project.version}}-eap7-adapter.zip",
     "appServer": "JBoss EAP 7",
