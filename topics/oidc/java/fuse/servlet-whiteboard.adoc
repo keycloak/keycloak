@@ -7,7 +7,7 @@ https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+Whiteboard[Pax Web
 
 The needed steps to secure your servlet with {{book.project.name}} are:
 
-* Keycloak provides PaxWebIntegrationService, which allows to inject jetty-web.xml and configure security constraints for your application.
+* {{book.project.name}} provides PaxWebIntegrationService, which allows to inject jetty-web.xml and configure security constraints for your application.
   You need to declare such service in `OSGI-INF/blueprint/blueprint.xml` inside your application. Note that your servlet needs to depend on it.
   The example configuration can look like this:
 [source,xml]

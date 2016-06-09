@@ -32,7 +32,7 @@ Install on JBoss EAP 6.x:
 ----
 
 $ cd $JBOSS_HOME
-$ unzip RH-SSO-saml-eap6-adapter.zip
+$ unzip rh-sso-saml-eap6-adapter.zip
 ----
 
 Install on JBoss EAP 7.x:
@@ -40,12 +40,12 @@ Install on JBoss EAP 7.x:
 ----
 
 $ cd $JBOSS_HOME
-$ unzip RH-SSO-saml-eap7-adapter.zip
+$ unzip rh-sso-saml-eap7-adapter.zip
 ----
 {% endif %}
 
 
-These zip files create new JBoss Modules specific to the Wildfly/JBoss EPKeycloak SAML Adapter within your Wildfly or JBoss EAP distro.
+These zip files create new JBoss Modules specific to the Wildfly/JBoss EAP SAML Adapter within your Wildfly or JBoss EAP distro.
 
 After adding the modules, you must then enable the {{book.project.name}} SAML Subsystem within your app server's server configuration: `domain.xml` or `standalone.xml`.
 

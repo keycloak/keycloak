@@ -68,7 +68,7 @@ Install on JBoss EAP 7:
 [source]
 ----
 $ cd $EAP_HOME
-$ unzip RH-SSO-{{book.project.version}}-eap7-adapter.zip
+$ unzip rh-sso-{{book.project.version}}-eap7-adapter.zip
 ----
 
 Install on JBoss EAP 6:
@@ -76,7 +76,7 @@ Install on JBoss EAP 6:
 [source]
 ----
 $ cd $EAP_HOME
-$ unzip RH-SSO-{{book.project.version}}-eap6-adapter.zip
+$ unzip rh-sso-{{book.project.version}}-eap6-adapter.zip
 ----
 {% endif %}
 
@@ -231,7 +231,7 @@ Here's an example:
 </web-app>
 ----        
 
-==== Securing WARs via Keycloak Subsystem
+==== Securing WARs via Adapter Subsystem
 
 You do not have to modify your WAR to secure it with {{book.project.name}}. Instead you can externally secure it via the {{book.project.name}} Adapter Subsystem.
 While you don't have to specify KEYCLOAK as an `auth-method`, you still have to define the `security-constraints` in `web.xml`.
