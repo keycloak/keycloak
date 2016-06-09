@@ -265,7 +265,7 @@ The rest of the configuration corresponds pretty much one to one with the `keycl
 
 The exception is the `credential` element. 
 
-To make it easier for you, you can go to the {{book.project.name}} Administration Console and go to the Application/Installation tab of the application this WAR is aligned with.
+To make it easier for you, you can go to the {{book.project.name}} Administration Console and go to the Client/Installation tab of the application this WAR is aligned with.
 It provides an example XML file you can cut and paste. 
 
 If you have multiple deployments secured by the same realm you can share the realm configuration in a separate element. For example:
