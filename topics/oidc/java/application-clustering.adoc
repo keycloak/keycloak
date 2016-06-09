@@ -66,7 +66,7 @@ http://${application.session.host}:8080/myapp::
 [[_registration_app_nodes]]
 ==== Registration of application nodes
 
-The previous describes how {{book.project.name}} can send logout request to node associated with a specific HTTP session.
+The previous section describes how {{book.project.name}} can send logout request to node associated with a specific HTTP session.
 However, in some cases admin may want to propagate admin tasks to all registered cluster nodes, not just one of them.
 For example to push a new not before policy to the application or to logout all users from the application.
 
