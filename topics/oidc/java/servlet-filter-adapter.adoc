@@ -42,11 +42,11 @@ The {{book.project.name}} filter has the same configuration parameters as the ot
 
 To use this filter, include this maven artifact in your WAR poms:
 
-[source,xml]
+[source,xml, subs="attributes"]
 ----
 <dependency>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-servlet-filter-adapter</artifactId>
-    <version>&project.version;</version>
+    <version>{{book.project.version}}</version>
 </dependency>
 ----
