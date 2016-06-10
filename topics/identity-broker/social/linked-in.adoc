@@ -15,7 +15,6 @@ To enable login with LinkedIn you first have to create an application in https:/
 
 NOTE: LinkedIn may change the look and feel of application registration, so these directions may not always be up to date.
 
-
 .Developer Network
 image:../../../images/linked-in-developer-network.png[]
 
