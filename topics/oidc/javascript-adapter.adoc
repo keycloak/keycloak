@@ -44,7 +44,7 @@ If the `keycloak.json` file is in a different location you can specify it:
 var keycloak = Keycloak('http://localhost:8080/myapp/keycloak.json'));
 ----
 
-You can also skip the file altogether and manually configure the adapter:
+Alternatively, you can pass in a JavaScript object with the required configuration instead:
 
 [source,javascript]
 ----
