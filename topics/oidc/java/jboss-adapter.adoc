@@ -94,8 +94,14 @@ $ ./bin/jboss-cli.sh -c --file=adapter-install.cli
 
 The script will add the required configuration to the server configuration file.
 
-For JBoss EAP 7 {% if book.community %} and WildFly 9+{% endif %} there is also an offline CLI script that can be used to install the adapter while the server
+{% if book.community %}
+For JBoss EAP 7 and WildFly 9+ there is also an offline CLI script that can be used to install the adapter while the server
 is not running:
+{% endif %}
+{% if book.product %}
+For JBoss EAP 7 there is also an offline CLI script that can be used to install the adapter while the server
+is not running:
+{% endif %}
 
 [source]
 ----
