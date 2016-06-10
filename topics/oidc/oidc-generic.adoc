@@ -11,10 +11,10 @@ The most important endpoint to know is the `well-known` configuration endpoint. 
 Connect implementation in {{book.project.name}}. The endpoint is:
 
 ....
-/realms/REALM-NAME/.well-known/openid-configuration
+/realms/{realm-name}/.well-known/openid-configuration
 ....
 
-To get the full URL add the base URL for {{book.project.name}} and replace `REALM-NAME` with the name of your realm. For example:
+To get the full URL add the base URL for {{book.project.name}} and replace `{realm-name}` with the name of your realm. For example:
 
 $$http://localhost:8080/auth/realms/master/.well-known/openid-configuration$$
 
@@ -22,7 +22,7 @@ Some RP libraries will retrieve all required endpoints from this endpoint, but f
 
 ===== Authorization Endpoint
 ....
-/realms/master/protocol/openid-connect/auth
+/realms/{realm-name}/protocol/openid-connect/auth
 ....
 
 Performs authentication of the end-user. This is done by redirecting user agent to this endpoint.
@@ -31,7 +31,7 @@ For more details see http://openid.net/specs/openid-connect-core-1_0.html#Author
 
 ===== Token Endpoint
 ....
-/realms/master/protocol/openid-connect/token
+/realms/{realm-name}/protocol/openid-connect/token
 ....
 
 Used to obtain tokens. Tokens can either be obtained by exchanging an authorization code or by supplying credentials directly depending on what flow is used.
@@ -41,7 +41,7 @@ For more details see http://openid.net/specs/openid-connect-core-1_0.html#TokenE
 
 ===== Userinfo Endpoint
 ....
-/realms/master/protocol/openid-connect/userinfo
+/realms/{realm-name}/protocol/openid-connect/userinfo
 ....
 
 Returns standard claims about the authenticated user. Protected by a bearer token.
@@ -50,7 +50,7 @@ For more details see http://openid.net/specs/openid-connect-core-1_0.html#UserIn
 
 ===== Logout Endpoint
 ....
-/realms/master/protocol/openid-connect/logout
+/realms/{realm-name}/protocol/openid-connect/logout
 ....
 
 Logs out the authenticated user.
@@ -62,7 +62,7 @@ required to authenticate the client.
 
 ===== Certificate Endpoint
 ....
-/realms/master/protocol/openid-connect/certs
+/realms/{realm-name}/protocol/openid-connect/certs
 ....
 
 Public key used by realm encoded as a JSON Web Key (JWK). This key can be used to verify tokens issued by {{book.project.name}} without making invocations to
@@ -72,7 +72,7 @@ For more details see https://tools.ietf.org/html/rfc7517[JSON Web Key specificat
 
 ===== Introspection Endpoint
 ....
-/realms/master/protocol/openid-connect/token/introspect
+/realms/{realm-name}/protocol/openid-connect/token/introspect
 ....
 
 Used to retrieve the active state of a token. Protected by a bearer token and can only be invoked by confidential clients.
@@ -81,7 +81,7 @@ For more details see https://tools.ietf.org/html/rfc7662[OAuth 2.0 Token Introsp
 
 ===== Dynamic Client Registration Endpoint
 ....
-/realms/master/clients-registrations/openid-connect
+/realms/{realm-name}/clients-registrations/openid-connect
 ....
 
 Used to dynamically register clients.
