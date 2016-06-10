@@ -33,7 +33,7 @@ UNSYNCED::
 
 ==== Other config options
 
-Display Name::
+Console Display Name::
   Name used when this provider is referenced in the admin console 
 
 Priority::
