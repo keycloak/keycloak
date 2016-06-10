@@ -7,8 +7,14 @@
 ==== JBoss EAP Adapter
 {% endif %}
 
-To be able to secure WAR apps deployed on JBoss EAP {% if book.community %}, WildFly or JBoss AS{% endif %}, you must install and configure the
+{% if book.community %}
+To be able to secure WAR apps deployed on JBoss EAP, WildFly or JBoss AS, you must install and configure the
 {{book.project.name}} adapter subsystem. You then have two options to secure your WARs.
+{% endif %}
+{% if book.product %}
+To be able to secure WAR apps deployed on JBoss EAP, you must install and configure the
+{{book.project.name}} adapter subsystem. You then have two options to secure your WARs.
+{% endif %}
 
 You can provide an adapter config file in your WAR and change the auth-method to KEYCLOAK within web.xml.
 
