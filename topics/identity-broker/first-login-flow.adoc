@@ -21,8 +21,11 @@ By default it points to `first broker login` flow, but you can configure and use
 The flow itself is configured in admin console under `Authentication` tab.
 When you choose `First Broker Login` flow, you will see what authenticators are used by default.
 You can re-configure the existing flow. (For example you can disable some authenticators, mark some of them as `required`, configure some authenticators, etc).
-Or you can even create a new authentication flow and/or write your own Authenticator implementations and use it in your flow.
+
+{% if project.community %}
+You can also create a new authentication flow and/or write your own Authenticator implementations and use it in your flow.
 See link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more details.
+{% endif %}
 
 ==== Default First Login Flow
 
