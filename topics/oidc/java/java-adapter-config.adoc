@@ -144,7 +144,7 @@ truststore::
   This is what the trustore does.
   The keystore contains one or more trusted host certificates or certificate authorities.
   You can create this truststore by extracting the public certificate of the {{book.project.name}} server's SSL keystore. 
-  This is _REQUIRED_ unless `ssl-required` is set to `none` or `disable-trust-manager` is `true`.
+  This is _REQUIRED_ unless `ssl-required` is `none` or `disable-trust-manager` is `true`.
 
 truststore-password::
   Password for the truststore keystore.
