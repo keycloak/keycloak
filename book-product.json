@@ -19,7 +19,7 @@
     "images": "rhsso-images",
     "adminguide": {
       "name": "Server Administration Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0.0/server-administration-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0/server-administration-guide/"
     }
   }
 }
