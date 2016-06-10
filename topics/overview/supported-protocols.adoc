@@ -25,8 +25,7 @@ the request.
 
 link:http://saml.xml.org/saml-specifications[SAML 2.0] is a similar specification to OIDC but a lot older and more mature.  It has its roots in SOAP and the plethora
 of WS-* specifications so it tends to be a bit more verbose than OIDC.  SAML 2.0 is primarily an authentication protocol
-that works by exchanging XML documents between the authentication server and the application.  XML signatures and encryption
-is used to verify requests and responses.
+that works by exchanging XML documents between the authentication server and the application.  XML signatures and encryption are used to verify requests and responses.
 
 In {{book.project.name}} SAML serves two types of use cases: browser applications and REST invocations.
 
