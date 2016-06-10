@@ -96,7 +96,7 @@ https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dyn
 
 The Authorization Code flow redirects the user agent to {{book.project.name}}. Once the user has successfully authenticated with {{book.project.name}} an
 Authorization Code is created and the user agent is redirected back to the application. The application then uses the authorization code along with its
-credentials to obtain an Access Roken, Refresh Token and ID Token from {{book.project.name}}.
+credentials to obtain an Access Token, Refresh Token and ID Token from {{book.project.name}}.
 
 The flow is targeted towards web applications, but is also recommended for native applications, including mobile applications, where it is possible to embed
 a user agent.
