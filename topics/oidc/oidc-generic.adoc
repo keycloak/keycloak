@@ -133,7 +133,7 @@ There are a number of limitations of using this flow, including:
 * No support for identity brokering or social login
 * Flows are not supported (user self-registration, required actions, etc.)
 
-For a client to be permitted to use the Resource Owner Password Credentials grant the client has to have `Direct Access Grants Enabled` enabled.
+For a client to be permitted to use the Resource Owner Password Credentials grant the client has to have the `Direct Access Grants Enabled` option enabled.
 
 This flow is not included in OpenID Connect, but is a part of the OAuth 2.0 specification.
 
