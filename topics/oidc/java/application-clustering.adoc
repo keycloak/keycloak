@@ -47,8 +47,8 @@ convenient to use relative URI options in your client configuration.
 
 With relative URIs the URI is resolved as relative to the URL of the URL used to access {{book.project.name}}.
 
-For example if the URL to your application is `https://acme.org/myapp` and the URL to {{book.project.name}} is `https://acme.org/auth`, then you can use
-the redirect-uri `/myapp` instead of `https://acme.org/myapp`.
+For example if the URL to your application is `$$https://acme.org/myapp$$` and the URL to {{book.project.name}} is `$$https://acme.org/auth$$`, then you can use
+the redirect-uri `/myapp` instead of `$$https://acme.org/myapp$$`.
 
 ===== Admin URL configuration
 

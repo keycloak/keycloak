@@ -55,7 +55,7 @@ realm-public-key::
   This is _OPTIONAL_. If not set the adapter will download this from {{book.project.name}}.
 
 auth-server-url::
-  The base URL of the {{book.project.name}} server. All other {{book.project.name}} pages and REST service endpoints are derived from this. It is usually of the form `https://host:port/auth`.
+  The base URL of the {{book.project.name}} server. All other {{book.project.name}} pages and REST service endpoints are derived from this. It is usually of the form `$$https://host:port/auth$$`.
   This is _REQUIRED._
 
 ssl-required::
