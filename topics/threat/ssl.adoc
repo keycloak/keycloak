@@ -8,7 +8,7 @@ Once they have an access token they can do any operation that the token has been
 
 {{book.project.name}} has <<fake/../../realms/ssl.adoc#_ssl_modes,three modes for SSL/HTTPS>>.
 SSL can be hard to set up, so out of the box, {{book.project.name}} allows non-HTTPS communication over private IP addresses like
-localhost and 192.168.x.x.
+localhost, 192.168.x.x, and other private IP addresses.
 In production, you should make sure SSL is enabled and required across the board.
 
 On the adapter/client side, {{book.project.name}} allows you to turn off the SSL trust manager.
