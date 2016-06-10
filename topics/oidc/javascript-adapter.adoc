@@ -288,13 +288,13 @@ Options is an Object, where:
 
 Redirects to registration form. Shortcut for login with option action = 'register'
 
-Options are same as login method but 'action' is set to 'register'
+Options are same as for the login method but 'action' is set to 'register'
 
 ====== createRegisterUrl(options)
 
 Returns the url to registration page. Shortcut for createLoginUrl with option action = 'register'
 
-Options are same as createLoginUrl method but 'action' is set to 'register'
+Options are same as for the createLoginUrl method but 'action' is set to 'register'
 
 ====== accountManagement()
 
