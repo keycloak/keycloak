@@ -35,7 +35,7 @@ nameIDPolicyFormat::
 
 forceAuthentication::
   SAML clients can request that a user is re-authenticated even if they are already logged in at the IDP.
-  Set this to `true` to enable. This setting is _OPTIONAL_ and defaults to `false`.
+  Set this to `true` to enable. This setting is _OPTIONAL_.
   Default value is `false`.
 
 isPassive::
