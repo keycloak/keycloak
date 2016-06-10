@@ -13,7 +13,7 @@ specific as possible.
 To use the JavaScript adapter you must first create a client for your application in the {{book.project.name}} Administration Console. Make sure `public`
 is selected for `Access Type`.
 
-You also need to configure valid redirect URIs and valid web origins. Be as specific as possible as failing to do so may results in a security vulnerability.
+You also need to configure valid redirect URIs and valid web origins. Be as specific as possible as failing to do so may result in a security vulnerability.
 
 Once the client is created click on the `Installation` tab select `Keycloak OIDC JSON` for `Format Option` then click on `Download`. The downloaded
 `keycloak.json` file should be hosted on your web server at the same location as your HTML pages.
@@ -44,7 +44,7 @@ If the `keycloak.json` file is in a different location you can specify it:
 var keycloak = Keycloak('http://localhost:8080/myapp/keycloak.json'));
 ----
 
-You can also skip the file altogether and manually configure the adapter:
+Alternatively, you can pass in a JavaScript object with the required configuration instead:
 
 [source,javascript]
 ----
@@ -122,7 +122,8 @@ your application.
 ==== Implicit and Hybrid Flow
 
 By default, the JavaScript adapter uses the http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code] flow.
-With this flow the {{book.project.name}} server returns a authorization code, not a authentication token, to the application. The JavaScript adapter exchanges
+
+With this flow the {{book.project.name}} server returns an authorization code, not an authentication token, to the application. The JavaScript adapter exchanges
 the `code` for an access token and a refresh token after the browser is redirected back to the application.
 
 {{book.project.name}} also supports the http://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit] flow where an access token
@@ -254,7 +255,7 @@ Redirects to login form on (options is an optional object with redirectUri and/o
 Options is an Object, where: 
 
 * redirectUri - Specifies the uri to redirect to after login.
-* prompt - Can be set to 'none' to check if the user is logged in already (if not logged in, a login form is not displayed).
+* prompt - By default the login screen is displayed if the user is not logged-in to {{book.project.name}}. To only authenticate to the application if the user is already logged-in and not display the login page if the user is not logged-in, set this option to `none`.
 * loginHint - Used to pre-fill the username/email field on the login form.
 * action - If value is 'register' then user is redirected to registration page, otherwise to login page.
 * locale - Specifies the desired locale for the UI.
@@ -288,13 +289,13 @@ Options is an Object, where:
 
 Redirects to registration form. Shortcut for login with option action = 'register'
 
-Options are same as login method but 'action' is set to 'register'
+Options are same as for the login method but 'action' is set to 'register'
 
 ====== createRegisterUrl(options)
 
 Returns the url to registration page. Shortcut for createLoginUrl with option action = 'register'
 
-Options are same as createLoginUrl method but 'action' is set to 'register'
+Options are same as for the createLoginUrl method but 'action' is set to 'register'
 
 ====== accountManagement()
 
@@ -368,4 +369,4 @@ The available events are:
 * onAuthRefreshSuccess - Called when the token is refreshed.
 * onAuthRefreshError - Called if there was an error while trying to refresh the token.
 * onAuthLogout - Called if the user is logged out (will only be called if the session status iframe is enabled, or in Cordova mode).
-* onTokenExpired - Called when access token expired. When this happens you can for example refresh token, or if refresh not available (ie. with implicit flow) you can redirect to login screen.
+* onTokenExpired - Called when the access token is expired. When this happens you can for refresh the token, or if refresh is not available (ie. with implicit flow) you can redirect to login screen.

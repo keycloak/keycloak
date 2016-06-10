@@ -16,7 +16,7 @@ Everything in the IDP element describes the settings for the identity provider (
 Here are the attribute config options you can specify within the `IDP` element declaration.
 
 entityID::
-  This is the issuer ID of the IDP. This setting is _REQUIRED._.
+  This is the issuer ID of the IDP. This setting is _REQUIRED_.
 
 signaturesRequired::
   If set to `true`, the client adapter will sign every document it sends to the IDP.
@@ -29,6 +29,6 @@ signatureAlgorithm::
   This setting is _OPTIONAL_
   and defaults to `RSA_SHA256`.
 signatureCanonicalizationMethod::
-  This is the signature canonicalization method that the IDP expects signed documents to use.  This setting is  _OPTIONAL._.
+  This is the signature canonicalization method that the IDP expects signed documents to use.  This setting is  _OPTIONAL_.
   The default value is `http://www.w3.org/2001/10/xml-exc-c14n#` and should be good for most IDPs.         
 
