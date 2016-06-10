@@ -16,7 +16,7 @@ Here is the explanation of the SP element attributes
 ----
 entityID::
   This is the identifier for this client.
-  The IDP needs this value to determine who the client is that is communicating with it. This setting _REQUIRED._
+  The IDP needs this value to determine who the client is that is communicating with it. This setting is _REQUIRED_.
 
 sslPolicy::
   This is the SSL policy the adapter will enforce.
@@ -24,24 +24,24 @@ sslPolicy::
   For `ALL`, all requests must come in via HTTPS.
   For `EXTERNAL`, only non-private IP addresses must come over the wire via HTTPS.
   For `NONE`, no requests are required to come over via HTTPS.
-  This is _OPTIONAL._. Default value is `EXTERNAL`.
+  This settings is _OPTIONAL_. Default value is `EXTERNAL`.
 
 nameIDPolicyFormat::
   SAML clients can request a specific NameID Subject format.
   Fill in this value if you want a specific format.
   It must be a standard SAML format identifier, i.e. `urn:oasis:names:tc:SAML:2.0:nameid-format:transient`
-  This setting is _OPTIONAL._.
+  This setting is _OPTIONAL_.
   By default, no special format is requested. 
 
 forceAuthentication::
   SAML clients can request that a user is re-authenticated even if they are already logged in at the IDP.
-  Set this to `true` if you want this. This setting is _OPTIONAL._ and defaults to `false`.
+  Set this to `true` if you want this. This setting is _OPTIONAL_ and defaults to `false`.
   Default value is `false`.
 
 isPassive::
   SAML clients can request that a user is never asked to authenticate even if they are not logged in at the IDP.
   Set this to `true` if you want this.
-  Do not use together with `forceAuthentication` as they are opposite. This setting is _OPTIONAL._.
+  Do not use together with `forceAuthentication` as they are opposite. This setting is _OPTIONAL_.
   Default value is `false`.
 
 turnOffChangeSessionIdOnLogin::
