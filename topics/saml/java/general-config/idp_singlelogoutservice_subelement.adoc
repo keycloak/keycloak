@@ -31,11 +31,11 @@ validateResponseSignature::
   Should the client expect signed logout response documents from the IDP? This setting is _OPTIONAL_. Defaults to whatever the IDP `signaturesRequired` element value is.
 
 requestBinding::
-  This is the SAML binding type used for communicating SAML requests to the IDP.  This setting is _OPTIONAL_.
+  This is the SAML binding type used for communicating SAML requests to the IDP. This setting is _OPTIONAL_.
   The default value is `POST`, but you can set it to REDIRECT as well.
 
 responseBinding::
-  This is the SAML binding type used for communicating SAML responses to the IDP The values of this can be `POST` or `REDIRECT`.  This setting is _OPTIONAL_.
+  This is the SAML binding type used for communicating SAML responses to the IDP. The values of this can be `POST` or `REDIRECT`.  This setting is _OPTIONAL_.
   The default value is `POST`, but you can set it to `REDIRECT` as well.
 
 postBindingUrl::
