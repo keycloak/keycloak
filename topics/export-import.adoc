@@ -21,7 +21,12 @@ If you are importing files which were previously exported, the files already fol
 * {REALM_NAME}-users-{INDEX}.json, such as "acme-roadrunner-affairs-users-0.json" for the first users file of the realm named "acme-roadrunner-affairs"        
 
 If you export to a directory, you can also specify the number of users that will be stored in each JSON file.
-So if you have very large number of users in your database, you likely don't want to import them into single file as the file might be very big.
+
+NOTE: If you have bigger amount of users in your database (500 or more), it's highly recommended to export into directory rather
+      than to single file. Exporting into single file may lead to the very big file. Also the directory provider is using separate transaction for each "page" (file with users),
+      which leads to much better performance.
+      Default count of users per file (and transaction) is 50, which showed us best performance, but you have possibility to override (See below).
+      Exporting to single file is using one transaction per whole export and one per whole import, which results in bad performance with large amount of users.
 
 To export into unencrypted directory you can use: 
 
@@ -63,7 +68,7 @@ Other available options are:
   * SAME_FILE - All users will be exported to same file but different from the realm file. (The result will be a file like "foo-realm.json" with realm data and "foo-users.json" with users.)                        
 
 -Dkeycloak.migration.usersPerFile::
-  This property is used to specify the number of users per file (and also per DB transaction). It's 5000 by default.
+  This property is used to specify the number of users per file (and also per DB transaction). It's 50 by default.
   It's used only if usersExportStrategy is DIFFERENT_FILES 
 
 -Dkeycloak.migration.strategy::
