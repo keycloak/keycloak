@@ -99,7 +99,7 @@ is not running:
 
 [source]
 ----
-$ ./bin/jboss-cli.sh -c --file=adapter-install-offline.cli
+$ ./bin/jboss-cli.sh --file=adapter-install-offline.cli
 ----    
 
 If you are planning to add it manually you need to add the extension and subsystem definition to the server configuration:
