@@ -368,4 +368,4 @@ The available events are:
 * onAuthRefreshSuccess - Called when the token is refreshed.
 * onAuthRefreshError - Called if there was an error while trying to refresh the token.
 * onAuthLogout - Called if the user is logged out (will only be called if the session status iframe is enabled, or in Cordova mode).
-* onTokenExpired - Called when access token expired. When this happens you can for example refresh token, or if refresh not available (ie. with implicit flow) you can redirect to login screen.
+* onTokenExpired - Called when the access token is expired. When this happens you can for refresh the token, or if refresh is not available (ie. with implicit flow) you can redirect to login screen.
