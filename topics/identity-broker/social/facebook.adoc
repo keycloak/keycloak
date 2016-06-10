@@ -42,8 +42,7 @@ image:../../../images/facebook-app-settings-website.png[]
 
 After this it is necessary to make facebook app public. Click `App Review` left menu item and switch button to "Yes".
 
-You will need also to obtain the App ID and App Secret from this page so you can enter them into the {{book.project.name}} `Add identity provider` page.
-Go back to {{book.project.name}} and specify those items and finally save your Facebook Identity Provider.
+You will need also to obtain the App ID and App Secret from this page so you can enter them into the {{book.project.name}} `Add identity provider` page. To obtain this click on the `Dashboard` left menu item and click on `Show` under `App Secret`. Go back to {{book.project.name}} and specify those items and finally save your Facebook Identity Provider.
 
 One config option to note on the `Add identity provider` page for Facebook is the `Default Scopes` field.
 This field allows you to manually specify the scopes that users must authorize when authenticating with this provider.
