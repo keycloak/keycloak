@@ -1,7 +1,7 @@
 == Overview
 
 {{book.project.name}} is a single sign on solution for web apps and RESTful web services.  The goal of {{book.project.name}}
-is make security simple so that it is easy for application developers to secure the apps and services they have deployed
+is to make security simple so that it is easy for application developers to secure the apps and services they have deployed
 in their organization.  Security features that developers normally have to write for themselves are provided out of the box
 and are easily tailorable to the individual requirements of your organization.  {{book.project.name}} provides customizable
 user interfaces for login, registration, administration, and account management.  You can also use {{book.project.name}} as an
