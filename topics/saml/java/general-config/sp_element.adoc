@@ -29,7 +29,7 @@ sslPolicy::
 nameIDPolicyFormat::
   SAML clients can request a specific NameID Subject format.
   Fill in this value if you want a specific format.
-  It must be a standard SAML format identifier, i.e. `urn:oasis:names:tc:SAML:2.0:nameid-format:transient`
+  It must be a standard SAML format identifier, i.e. `urn:oasis:names:tc:SAML:2.0:nameid-format:transient`.
   This setting is _OPTIONAL_.
   By default, no special format is requested. 
 
