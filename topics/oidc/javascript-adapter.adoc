@@ -13,7 +13,7 @@ specific as possible.
 To use the JavaScript adapter you must first create a client for your application in the {{book.project.name}} Administration Console. Make sure `public`
 is selected for `Access Type`.
 
-You also need to configure valid redirect URIs and valid web origins. Be as specific as possible as failing to do so may results in a security vulnerability.
+You also need to configure valid redirect URIs and valid web origins. Be as specific as possible as failing to do so may result in a security vulnerability.
 
 Once the client is created click on the `Installation` tab select `Keycloak OIDC JSON` for `Format Option` then click on `Download`. The downloaded
 `keycloak.json` file should be hosted on your web server at the same location as your HTML pages.
