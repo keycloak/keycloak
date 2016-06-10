@@ -17,11 +17,11 @@ to the IDP formatted via the settings within this element when it wants to logou
 ----
 
 signRequest::
-  Should the client sign logout requests it makes to the IDP? This setting _OPTIONAL_.
+  Should the client sign logout requests it makes to the IDP? This setting is _OPTIONAL_.
   Defaults to whatever the IDP `signaturesRequired` element value is. 
 
 signResponse::
-  Should the client sign logout responses it sends to the IDP requests? This setting _OPTIONAL_.
+  Should the client sign logout responses it sends to the IDP requests? This setting is _OPTIONAL_.
   Defaults to whatever the IDP `signaturesRequired` element value is. 
 
 validateRequestSignature::
