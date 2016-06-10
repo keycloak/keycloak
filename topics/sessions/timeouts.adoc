@@ -33,7 +33,7 @@ Let's walk through each of the items on this page.
 |When an OIDC access token is created, this value affects the expiration.
 
 |Access Token Lifespan For Implicit Flow
-|When an OIDC access token is created with the Implicit Flow, this value affects the expiration.
+|With the Implicit Flow no refresh token is provided. For this reason there's a separate timeout for access tokens created with the Implicit Flow.
 
 |Client login timeout
 |This is the maximum time that a client has to finish the Authentication Code Flow in OIDC.
