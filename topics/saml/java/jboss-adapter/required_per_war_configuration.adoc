@@ -4,7 +4,7 @@
 This section describes how to secure a WAR directly by adding config and editing files within your WAR package. 
 
 The first thing you must do is create a `keycloak-saml.xml` adapter config file within the `WEB-INF` directory of your WAR.
-The format of this config file is describe in the <<fake/../../../../saml/java/general-config.adoc#_saml-general-config,General Adapter Config>> section.
+The format of this config file is described in the <<fake/../../../../saml/java/general-config.adoc#_saml-general-config,General Adapter Config>> section.
 
 Next you must set the `auth-method` to `KEYCLOAK-SAML` in `web.xml`.
 You also have to use standard servlet security to specify role-base constraints on your URLs.
