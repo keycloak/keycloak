@@ -84,7 +84,9 @@
  .. link:topics/sessions/offline.adoc[Offline Access]
  . link:topics/user-federation.adoc[User Storage Federation]
  .. link:topics/user-federation/ldap.adoc[LDAP/AD Integration]
+ {% if book.community %}
  .. link:topics/user-federation/custom.adoc[Custom Providers]
+ {% endif %}
  . link:topics/events.adoc[Auditing and Events]
  .. link:topics/events/login.adoc[Login Events]
  .. link:topics/events/admin.adoc[Admin Events]

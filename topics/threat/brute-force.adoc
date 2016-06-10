@@ -22,7 +22,7 @@ The downside of {{book.project.name}} brute force detection is that the server b
 An attacker can simply try to guess passwords for as many accounts it knows and these account will be disabled.  Eventually
 Eventually we will expand this functionality to take client IP address into account when deciding whether to block a user.
 
-A better option might be a tool like http://fail2ban.org[Fail2Ban].  You can point this service at the {{book.project.name}} server's log file.
+A better option might be a tool like http://www.fail2ban.org[Fail2Ban].  You can point this service at the {{book.project.name}} server's log file.
 {{book.project.name}} logs every login failure and client IP address that had the failure.  Fail2Ban can be used to modify
 firewalls after it detects an attack to block connections from specific IP addresses.
 

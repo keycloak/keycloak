@@ -9,76 +9,27 @@
     "splitter"
   ],
   "variables": {
-    "title": "Keycloak Administration Guide",
+    "title": "Server Administration Guide",
+    "project": {
+      "name": "Keycloak",
+      "version": "1.9.7.Final"
+    },
     "community": true,
     "product": false,
     "images": "keycloak-images",
-    "appserver": {
-      "name": "Wildfly",
-      "version": "10",
-      "admindoc": {
-        "name": "JBoss EAP Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/"
-      },
-      "datasource": {
-        "name": "JBoss EAP Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/chap-Datasource_Management.html"
-      },
-      "network": {
-        "name": "JBoss EAP Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/chap-Network_and_Port_Configuration.html#Configure_interfaces"
-      },
-      "socket": {
-        "name": "JBoss EAP Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/sect-Socket_Binding_Groups.html"
-      },
-      "loadbalancer": {
-        "name": "JBoss EAP Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/sect-Web_HTTP_Connectors_and_HTTP_Clustering.html"
-      },
-      "jgroups": {
-        "name": "JBoss EAP Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Administration_and_Configuration_Guide/sect-JGroups.html"
-      }
-    },
-    "caching": {
-      "name": "JBoss Data Grid",
-      "version": "???",
-      "admindoc": {
-        "name": "JBoss Data Grid Administration and Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en-US/Red_Hat_JBoss_Data_Grid/6.6/html/Administration_and_Configuration_Guide/index.html",
-        "eviction": "https://access.redhat.com/documentation/en-US/Red_Hat_JBoss_Data_Grid/7.0/html/Administration_and_Configuration_Guide/sect-Eviction_Strategies.html"
-      }
-    },
-    "jpa": {
-      "name": "Hibernate",
-      "version": "???",
-      "admindoc": {
-        "name": "JBoss Development Guide",
-        "link": "https://access.redhat.com/documentation/en-US/JBoss_Enterprise_Application_Platform/6.4/html/Development_Guide/sect-Java_Persistence_API_JPA.html#sect-Configuration2"
-      }
 
-    },
     "developerguide": {
       "name": "Server Developer Guide",
       "link": "https://keycloak.gitbooks.io/server-developer-guide/content/"
 
-    },
-    "adminguide": {
-      "name": "Server Administration Guide",
-      "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
     },
     "installguide": {
       "name": "Server Installation and Configuration Guide",
       "link": "https://keycloak.gitbooks.io/server-installation-and-configuration/content/"
     },
     "adapterguide": {
-      "name": "Securing Client Applications Guide",
+      "name": "Securing Applications and Services Guide",
       "link": "https://keycloak.gitbooks.io/securing-client-applications-guide/content/"
-    },
-    "project": {
-      "name": "Keycloak",
-      "version": "1.9.3.Final"
     }
   }
 }
