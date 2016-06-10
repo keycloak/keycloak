@@ -1,7 +1,7 @@
 [[_supported_protocols]]
-== Supported Protocols
+=== Supported Protocols
 
-=== OpenID Connect
+==== OpenID Connect
 
 link:http://openid.net/connect/[Open ID Connect] (OIDC) is an authentication protocol that is an extension of link:https://tools.ietf.org/html/rfc6749[OAuth 2.0].
 While OAuth 2.0 is only a framework for building authorization protocols and is mainly incomplete, OIDC is a full-fledged authentication and authorization
@@ -21,7 +21,7 @@ is digitally signed by the realm.  The client can make REST invocations on remot
 extracts the _access token_, verifies the signature of the token, then decides based on access information within the token whether or not to process
 the request.
 
-=== SAML 2.0
+==== SAML 2.0
 
 link:http://saml.xml.org/saml-specifications[SAML 2.0] is a similar specification to OIDC but a lot older and more mature.  It has its roots in SOAP and the plethora
 of WS-* specifications so it tends to be a bit more verbose than OIDC.  SAML 2.0 is primarily an authentication protocol
@@ -38,7 +38,7 @@ is allowed to access on the application.
 The second type of use cases is that of a client that wants to gain access to remote services.  In this case, the client asks {{book.project.name}}
 to obtain a SAML assertion it can use to invoke on other remote services on behalf of the user.
 
-=== OpenID Connect vs. SAML
+==== OpenID Connect vs. SAML
 
 Choosing between OpenID Connect and SAML is not just a matter of using a newer protocol (OIDC) instead of the older more mature protocol (SAML).
 
@@ -52,3 +52,5 @@ they are easier to consume by JavaScript. You will also find several nice featur
 make implementing security in your web applications easier. For example, check out the iframe trick that the specification uses to easily determine if a user is still logged in or not.
 
 SAML has its uses though. As you see the OIDC specifications evolve you see they implement more and more features that SAML has had for years. What we often see is that people pick SAML over OIDC because of the perception that it is more mature and also because they already have existing applications that are secured with it.
+
+

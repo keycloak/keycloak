@@ -1,8 +1,8 @@
-== Supported Platforms
+=== Supported Platforms
 
-=== OpenID Connect
+==== OpenID Connect
 
-==== Java
+===== Java
 * <<fake/../../oidc/java/jboss-adapter.adoc#_jboss_adapter,JBoss EAP>>
 {% if book.community %}
   * <<fake/../../oidc/java/jboss-adapter.adoc#_jboss_adapter,WildFly>>
@@ -18,48 +18,48 @@
   * <<fake/../../oidc/java/spring-boot-adapter.adoc#_spring_boot_adapter,Spring Boot>> (community)
 {% endif %}
 
-==== JavaScript (client-side)
+===== JavaScript (client-side)
 * <<fake/../../oidc/javascript-adapter.adoc#_javascript_adapter,JavaScript>>
 
-=== Apache Cordova
+===== Apache Cordova
 * <<fake/../../oidc/javascript-adapter.adoc#_javascript_adapter,JavaScript>>
 
 {% if book.community %}
-==== Node.js
+===== Node.js
 * https://github.com/keycloak/keycloak-nodejs-connect[{{book.project.name}} Connect] (community)
 * https://github.com/keycloak/keycloak-nodejs-connect[{{book.project.name}} Auth Utils] (community)
 {% endif %}
 
 {% if book.community %}
-=== C#
+==== C#
 * https://github.com/dylanplecki/KeycloakOwinAuthentication[OWIN] (community)
 {% endif %}
 
 {% if book.community %}
-=== Python
+==== Python
 * https://pypi.python.org/pypi/python-openid/[python-openid] (generic)
 {% endif %}
 
 {% if book.community %}
-=== Android
+==== Android
 * https://github.com/openid/AppAuth-Android[AppAuth] (generic)
 * https://github.com/aerogear/aerogear-android-authz[AeroGear] (generic)
 {% endif %}
 
 {% if book.community %}
-=== iOS
+==== iOS
 * https://github.com/openid/AppAuth-iOS[AppAuth] (generic)
 * https://github.com/aerogear/aerogear-ios-oauth2[AeroGear] (generic)
 {% endif %}
 
 {% if book.community %}
-==== Apache HTTP Server
+===== Apache HTTP Server
 * https://github.com/pingidentity/mod_auth_openidc[mod_auth_openidc]
 {% endif %}
 
-=== SAML
+==== SAML
 
-==== Java
+===== Java
 
 * <<fake/../../saml/java/jboss-adapter.adoc#_jboss_adapter,JBoss EAP>>
 {% if book.community %}
@@ -71,3 +71,5 @@
 ==== Apache HTTP Server
 
 * https://github.com/UNINETT/mod_auth_mellon[mod_auth_mellon]
+
+
