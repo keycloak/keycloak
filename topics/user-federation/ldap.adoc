@@ -62,7 +62,7 @@ If you don't configure the truststore SPI, the truststore will fallback to the d
 or the cacerts file from the JDK if the system property is not set).
 
 There is a configuration property `Use Truststore SPI` in the LDAP federation provider configuration, where you can choose whether the Truststore SPI is used.
-By default, the value is `ldaps only`, which is fine for most deployments.  The Truststore SPI will only be used
+By default, the value is `Only for ldaps`, which is fine for most deployments.  The Truststore SPI will only be used
 if the connection to LDAP starts with `ldaps`.
 
 ==== Sync of LDAP users to {{book.project.name}}
