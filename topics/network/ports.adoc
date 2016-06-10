@@ -34,7 +34,7 @@ ajp::
    This socket binding defines the port used for the AJP protocol.  This protocol is used by Apache HTTPD server
    in conjunction `mod-cluster` when you are using Apache HTTPD as a load balancer.
 management-http::
-   Defines the HTTP connection used by {{book.appserer.name}} CLI and web console.
+   Defines the HTTP connection used by {{book.appserver.name}} CLI and web console.
 
 When running in <<fake/../../operating-mode/domain.adoc#_domain-mode,domain mode>> setting the socket configurations
 is a bit trickier as the example _domain.xml_ file has multiple `socket-binding-groups` defined.  If you scroll down
