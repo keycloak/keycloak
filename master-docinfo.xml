@@ -1,10 +1,10 @@
 <productname>Red Hat Single Sign-On</productname>
-<productnumber>7.0.0</productnumber>
+<productnumber>7.0</productnumber>
 <subtitle>Getting Started Guide</subtitle>
 <title>Getting Started Guide</title>
-<release>7.0.0</release>
+<release>7.0</release>
 <abstract>
-	    <para>This guide consist of basic information and instruction to get started with Red Hat Single Sign-On 7.0.0</para>
+	    <para>This guide consist of basic information and instruction to get started with Red Hat Single Sign-On 7.0</para>
     </abstract>
 <authorgroup>
     <orgname>Red Hat Customer Content Services</orgname>
