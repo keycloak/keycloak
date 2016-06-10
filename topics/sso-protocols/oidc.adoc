@@ -90,7 +90,7 @@ More info together with example is in <<fake/../../clients/oidc/service-accounts
 
 Here's a list of OIDC endpoints that the {{book.project.name}} publishes.  These URLs are useful if you are using a non-{{book.project.name}} client adapter to
 talk OIDC with the auth server.  These are all relative URLs and the root of the URL being the HTTP(S) protocol, hostname, and usually path prefixed with
-_/auth_:  i.e. https://localhost:8080/auth
+_/auth_:  i.e. $$https://localhost:8080/auth$$
 
 /realms/\{realm-name}/protocol/openid-connect/token::
   This is the URL endpoint for obtaining a temporary code in the Authorization Code Flow or for obtaining tokens via the

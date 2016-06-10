@@ -1,5 +1,4 @@
 [[_identity_broker]]
-
 == Identity Brokering
 
 An Identity Broker is an intermediary service that connects multiple service providers with different identity providers.

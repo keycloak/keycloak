@@ -26,5 +26,5 @@ Clients also need to have that role in their scope.
 
 The client can request an offline token by adding the parameter `scope=offline_access` when sending authorization request to {{book.project.name}}.
 The {{book.project.name}} OIDC client adapter automatically adds this parameter when you use it to access secured URL of your application (i.e.
-http://localhost:8080/customer-portal/secured?scope=offline_access ). The Direct Access Grant and Service Accounts also
+$$http://localhost:8080/customer-portal/secured?scope=offline_access$$). The Direct Access Grant and Service Accounts also
 support offline tokens if you include `scope=offline_access` in the body of the authentication request.
