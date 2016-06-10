@@ -17,7 +17,7 @@ It is `Offline Session Idle timeout` ). Also if you enable the option `Revoke re
 So after refresh, you always need to store the new offline token from refresh response into your DB instead of the previous one.
 
 Users can view and revoke offline tokens that have been granted by them in the <<fake/../../account.adoc#_account-service, User Account Service>>.
-The admin user can revoke offline tokens for individual users in admin console in the `Consent` tab of a particular user.
+The admin user can revoke offline tokens for individual users in admin console in the `Consents` tab of a particular user.
 The admin can also view all the offline tokens issued in the `Offline Access` tab of each client.
 Offline tokens can also be revoked by setting a <<fake/../../sessions/revocation.adoc#_revocation-policy, revocation policy>>.
 
