@@ -44,4 +44,4 @@ NOTE: Different protocols may require different authentication flows.
 As you may notice, at the end of the authentication process {{book.project.name}} will always issue its own token to client applications.
 What this means is that client applications are completely decoupled from external identity providers.
 They don't need to know which protocol (eg.: SAML, OpenID Connect, OAuth, etc) was used or how the user's identity was validated.
-They only need to know about {{book.project.name}} !
+They only need to know about {{book.project.name}}.
