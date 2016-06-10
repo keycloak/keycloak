@@ -7,7 +7,7 @@ For client signed documents you must define both the private and public key or c
 For encryption, you only have to define the private key that will be used to decrypt. 
 
 There are two ways to describe your keys.
-They can be stored within a Java KeyStore or you can  or you can cut and paste the keys directly within `keycloak-saml.xml` in the PEM format.
+They can be stored within a Java KeyStore or you can copy/paste the keys directly within `keycloak-saml.xml` in the PEM format.
 
 [source,xml]
 ----
