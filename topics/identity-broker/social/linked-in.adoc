@@ -30,7 +30,7 @@ image:../../../images/linked-in-app-settings.png[]
 
 Select `r_basicprofile` and `r_emailaddress` in the `Default Application Permissions` section.
 You'll have to copy the `Redirect URI` from the {{book.project.name}} `Add Identity Provider` page and enter it into the
-`OAuth 2.0` `Authorized Redirect URLs` field on the LinkedIn app settings page.  Don't forget to click `Update` button after
+`OAuth 2.0` `Authorized Redirect URLs` field on the LinkedIn app settings page.  Don't forget to click the `Update` button after
 you do this!
 
 You will then need to obtain the client ID and secret from this page so you can enter them into the {{book.project.name}} `Add identity provider` page.
