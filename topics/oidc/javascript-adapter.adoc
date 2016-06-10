@@ -122,7 +122,8 @@ your application.
 ==== Implicit and Hybrid Flow
 
 By default, the JavaScript adapter uses the http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code] flow.
-With this flow the {{book.project.name}} server returns a authorization code, not a authentication token, to the application. The JavaScript adapter exchanges
+
+With this flow the {{book.project.name}} server returns an authorization code, not an authentication token, to the application. The JavaScript adapter exchanges
 the `code` for an access token and a refresh token after the browser is redirected back to the application.
 
 {{book.project.name}} also supports the http://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit] flow where an access token
