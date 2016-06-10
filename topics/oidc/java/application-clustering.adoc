@@ -1,9 +1,14 @@
 [[_applicationclustering]]
-=== Application Clustering
+==== Application Clustering
 
-This chapter is related to supporting clustered applications deployed to JBoss EAP{% if book.community %}, WildFly and JBoss AS{% endif %}.
+{% if book.community %}
+This chapter is related to supporting clustered applications deployed to JBoss EAP, WildFly and JBoss AS.
+{% endif %}
+{% if book.product %}
+This chapter is related to supporting clustered applications deployed to JBoss EAP.
+{% endif %}
 
-There are several options depending on if your application is:
+There are a few options available depending on whether your application is:
 
 * Stateless or stateful
 * Distributable (replicated http session) or non-distributable
@@ -13,7 +18,7 @@ There are several options depending on if your application is:
 Dealing with clustering is not quite as simple as for a regular application. Mainly due to the fact that both the browser and the server-side application
 sends requests to {{book.project.name}}, so it's not as simple as enabling sticky sessions on your load balancer.
 
-==== Stateless token store
+===== Stateless token store
 
 By default, the web application secured by {{book.project.name}} uses the HTTP session to store security context. This means that you either have to
 enable sticky sessions or replicate the HTTP session.
@@ -35,19 +40,19 @@ Another small limitation is limited support for Single-Sign Out. It works withou
 application itself as the adapter will delete the KEYCLOAK_ADAPTER_STATE cookie. However, back-channel logout initialized from a different application isn't
 propagated by {{book.project.name}} to applications using cookie store. Hence it's recommended to use a short value for the access token timeout (for example 1 minute).
 
-==== Relative URI optimization
+===== Relative URI optimization
 
 In deployment scenarios where {{book.project.name}} and the application is hosted on the same domain (through a reverse proxy or load balancer) it can be
 convenient to use relative URI options in your client configuration.
 
 With relative URIs the URI is resolved as relative to the URL of the URL used to access {{book.project.name}}.
 
-For example if the URL to your application is `https://acme.org/myapp` and the URL to {{book.project.name}} is `https://acme.org/auth`, then you can use
-the redirect-uri `/myapp` instead of `https://acme.org/myapp`.
+For example if the URL to your application is `$$https://acme.org/myapp$$` and the URL to {{book.project.name}} is `$$https://acme.org/auth$$`, then you can use
+the redirect-uri `/myapp` instead of `$$https://acme.org/myapp$$`.
 
-==== Admin URL configuration
+===== Admin URL configuration
 
-Admin URL for a particular application can be configured in the {{book.project.name}} Administration Console.
+Admin URL for a particular client can be configured in the {{book.project.name}} Administration Console.
 It's used by the {{book.project.name}} server to send backend requests to the application for various tasks, like logout users or push revocation policies.
 
 For example the way backchannel logout works is:
@@ -55,18 +60,15 @@ For example the way backchannel logout works is:
 . User sends logout request from one application
 . The application sends logout request to {{book.project.name}}
 . The {{book.project.name}} server invalidates the user session
-. The {{book.project.name}} server then sends a backchannel request to application with a admin url that are associated with the session
+. The {{book.project.name}} server then sends a backchannel request to application with an admin url that are associated with the session
 . When an application receives the logout request it invalidates the corresponding HTTP session
 
-Some examples of possible values of admin URL are:
-
-http://${application.session.host}:8080/myapp::
-  {{book.project.name}} tracks hosts associated with the HTTP Session and will send session invalidation message to the associated node.
+If admin URL contains `${application.session.host}` it will be replaced with the URL to the node associated with the HTTP session.
 
 [[_registration_app_nodes]]
-==== Registration of application nodes
+===== Registration of application nodes
 
-The previous describes how {{book.project.name}} can send logout request to node associated with a specific HTTP session.
+The previous section describes how {{book.project.name}} can send logout request to node associated with a specific HTTP session.
 However, in some cases admin may want to propagate admin tasks to all registered cluster nodes, not just one of them.
 For example to push a new not before policy to the application or to logout all users from the application.
 
@@ -96,7 +98,7 @@ the adapter configuration). You can also manually add and remove cluster nodes i
 on the automatic registration feature or if you want to remove stale application nodes in the event your not using the automatic unregistration feature.
 
 [[_refresh_token_each_req]]
-==== Refresh token in each request
+===== Refresh token in each request
 
 By default the application adapter will only refresh the access token when it's expired. However, you can also configure the adapter to refresh the token on every
 request. This may have a performance impact as your application will send more requests to the {{book.project.name}} server.

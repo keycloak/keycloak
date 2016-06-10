@@ -1,12 +1,14 @@
 
 [[_fuse_adapter]]
-=== JBoss Fuse Adapter
+==== JBoss Fuse Adapter
 
 NOTE: JBoss Fuse is a Technology Preview feature and is not fully supported
 
 Currently {{book.project.name}} supports securing your web applications running inside http://www.jboss.org/products/fuse/overview/[JBoss Fuse] .
+{% if book.community %}
 It leverages <<fake/../jetty8-adapter.adoc#_jetty8_adapter,Jetty 8 adapter>> as both JBoss Fuse 6.2 are bundled with http://eclipse.org/jetty/[Jetty 8.1 server]
 under the covers and Jetty is used for running various kinds of web applications.
+{% endif %}
 
 What is supported for Fuse is:
 
@@ -17,7 +19,7 @@ What is supported for Fuse is:
 * Security for http://cxf.apache.org/[Apache CXF] endpoints running on default engine provided by CXF servlet. 
 * Security for SSH and JMX admin access.
 
-==== How to secure your web applications inside Fuse
+===== How to secure your web applications inside Fuse
 
 Basically all mentioned web applications require to inject {{book.project.name}} Jetty authenticator into underlying Jetty server . The steps to achieve it are bit different
 according to application type. The details are described in individual sub-chapters.

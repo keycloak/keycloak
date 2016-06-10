@@ -1,6 +1,6 @@
 
 [[_java_adapter_config]]
-=== Java Adapter Config
+==== Java Adapter Config
 
 Each Java adapter supported by {{book.project.name}} can be configured by a simple JSON file.
 This is what one might look like:
@@ -52,10 +52,10 @@ resource::
 
 realm-public-key::
   PEM format of the realm public key. You can obtain this from the administration console.
-  This is OPTION._
+  This is _OPTIONAL_. If not set the adapter will download this from {{book.project.name}}.
 
 auth-server-url::
-  The base URL of the {{book.project.name}} server. All other {{book.project.name}} pages and REST service endpoints are derived from this. It is usually of the form `https://host:port/auth`.
+  The base URL of the {{book.project.name}} server. All other {{book.project.name}} pages and REST service endpoints are derived from this. It is usually of the form `$$https://host:port/auth$$`.
   This is _REQUIRED._
 
 ssl-required::
@@ -143,8 +143,8 @@ truststore::
   Client making HTTPS requests need a way to verify the host of the server they are talking to.
   This is what the trustore does.
   The keystore contains one or more trusted host certificates or certificate authorities.
-  You can create this truststore by extracting the public certificate of the {{book.project.name}} server's SSL keystore.
-  This is _OPTIONAL_ if `ssl-required` is `none` or `disable-trust-manager` is `true`.
+  You can create this truststore by extracting the public certificate of the {{book.project.name}} server's SSL keystore. 
+  This is _REQUIRED_ unless `ssl-required` is `none` or `disable-trust-manager` is `true`.
 
 truststore-password::
   Password for the truststore keystore.

@@ -1,9 +1,9 @@
 [[_servlet_filter_adapter]]
-=== Java Servlet Filter Adapter
+==== Java Servlet Filter Adapter
 
-If you are deploying your Java Servlet application on a platform where there is no {{book.project.title}} adapter you opt to use the the servlet filter adapter.
+If you are deploying your Java Servlet application on a platform where there is no {{book.project.name}} adapter you opt to use the servlet filter adapter.
 This adapter works a bit differently than the other adapters. You do not define security constraints in web.xml.
-Instead you define a filter mapping using the {{book.project.title}} servlet filter adapter to secure the url patterns you want to secure.
+Instead you define a filter mapping using the {{book.project.name}} servlet filter adapter to secure the url patterns you want to secure.
 
 WARNING: Backchannel logout works a bit differently than the standard adapters.
 Instead of invalidating the HTTP session it marks the session id as logged out.
@@ -31,22 +31,22 @@ There's no way standard way to invalidate an HTTP session based on a session id.
 ----
 
 In the snippet above there are two url-patterns.
- _/protected/*_ are the files we want protected, while the _/keycloak/*_ url-pattern handles callbacks from the {{book.project.title}} server.
+ _/protected/*_ are the files we want protected, while the _/keycloak/*_ url-pattern handles callbacks from the {{book.project.name}} server.
 
-Note that you should configure your client in the {{book.project.title}} Admin Console with an Admin URL that points to a secured section covered by the filter's url-pattern.
+Note that you should configure your client in the {{book.project.name}} Admin Console with an Admin URL that points to a secured section covered by the filter's url-pattern.
 
 The Admin URL will make callbacks to the Admin URL to do things like backchannel logout.
 So, the Admin URL in this example should be `http[s]://hostname/{context-root}/keycloak`.
 
-The {{book.project.title}} filter has the same configuration parameters as the other adapters except you must define them as filter init params instead of context params.
+The {{book.project.name}} filter has the same configuration parameters as the other adapters except you must define them as filter init params instead of context params.
 
 To use this filter, include this maven artifact in your WAR poms:
 
-[source,xml]
+[source,xml, subs="attributes"]
 ----
-<dependency>
-    <groupId>org.keycloak</groupId>
-    <artifactId>keycloak-servlet-filter-adapter</artifactId>
-    <version>&project.version;</version>
-</dependency>
+&lt;dependency&gt;
+    &lt;groupId&gt;org.keycloak&lt;/groupId&gt;
+    &lt;artifactId&gt;keycloak-servlet-filter-adapter&lt;/artifactId&gt;
+    &lt;version&gt;{{book.project.version}}&lt;/version&gt;
+&lt;/dependency&gt;
 ----

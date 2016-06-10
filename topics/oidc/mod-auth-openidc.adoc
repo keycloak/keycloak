@@ -1,5 +1,5 @@
 [[_mod_auth_openidc]]
-=== mod_auth_openidc Apache HTTPD Module
+==== mod_auth_openidc Apache HTTPD Module
 
 The https://github.com/pingidentity/mod_auth_openidc[mod_auth_openidc] is an Apache HTTP plugin for OpenID Connect. If your language/environment supports using Apache HTTPD
 as a proxy, then you can use _mod_auth_openidc_ to secure your web application with OpenID Connect.  Configuration of this module

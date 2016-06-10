@@ -11,15 +11,15 @@
   "variables": {
     "title": "Securing Applications and Services Guide",
     "project": {
-      "name": "Keycloak",
-      "version": "1.9.7.Final"
+      "name": "Red Hat Single Sign-On",
+      "version": "7.0.0"
     },
-    "community": true,
-    "product": false,
-    "images": "keycloak-images",
+    "community": false,
+    "product": true,
+    "images": "rhsso-images",
     "adminguide": {
       "name": "Server Administration Guide",
-      "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0/server-administration-guide/"
     }
   }
 }

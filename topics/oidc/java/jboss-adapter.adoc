@@ -1,14 +1,20 @@
 
 [[_jboss_adapter]]
 {% if book.community %}
-=== JBoss EAP/Wildfly Adapter
+==== JBoss EAP/Wildfly Adapter
 {% endif %}
 {% if book.product %}
-=== JBoss EAP Adapter
+==== JBoss EAP Adapter
 {% endif %}
 
-To be able to secure WAR apps deployed on JBoss EAP {% if book.community %}, WildFly or JBoss AS{% endif %}, you must install and configure the
+{% if book.community %}
+To be able to secure WAR apps deployed on JBoss EAP, WildFly or JBoss AS, you must install and configure the
 {{book.project.name}} adapter subsystem. You then have two options to secure your WARs.
+{% endif %}
+{% if book.product %}
+To be able to secure WAR apps deployed on JBoss EAP, you must install and configure the
+{{book.project.name}} adapter subsystem. You then have two options to secure your WARs.
+{% endif %}
 
 You can provide an adapter config file in your WAR and change the auth-method to KEYCLOAK within web.xml.
 
@@ -16,14 +22,14 @@ Alternatively, you don't have to modify your WAR at all and you can secure it vi
 Both methods are described in this section.
 
 [[_jboss_adapter_installation]]
-==== Adapter Installation
+===== Adapter Installation
 
 Adapters are available as a separate archive and are also available as Maven artifacts.
 
 {% if book.community %}
 Install on Wildfly 9 or 10:
 
-[source,bash]
+[source, subs="attributes"]
 ----
 $ cd $WILDFLY_HOME
 $ unzip keycloak-wildfly-adapter-dist-{{book.project.version}}.zip
@@ -31,7 +37,7 @@ $ unzip keycloak-wildfly-adapter-dist-{{book.project.version}}.zip
 
 Install on Wildfly 8:
 
-[source,bash]
+[source, subs="attributes"]
 ----
 $ cd $WILDFLY_HOME
 $ unzip keycloak-wf8-adapter-dist-{{book.project.version}}.zip
@@ -39,7 +45,7 @@ $ unzip keycloak-wf8-adapter-dist-{{book.project.version}}.zip
 
 Install on JBoss EAP 7:
 
-[source]
+[source, subs="attributes"]
 ----
 $ cd $EAP_HOME
 $ unzip keycloak-eap7-adapter-dist-{{book.project.version}}.zip
@@ -47,7 +53,7 @@ $ unzip keycloak-eap7-adapter-dist-{{book.project.version}}.zip
 
 Install on JBoss EAP 6:
 
-[source]
+[source, subs="attributes"]
 ----
 $ cd $EAP_HOME
 $ unzip keycloak-eap6-adapter-dist-{{book.project.version}}.zip
@@ -55,7 +61,7 @@ $ unzip keycloak-eap6-adapter-dist-{{book.project.version}}.zip
 
 Install on JBoss AS 7.1:
 
-[source]
+[source, subs="attributes"]
 ----
 $ cd $JBOSS_HOME
 $ unzip keycloak-as7-adapter-dist-{{book.project.version}}.zip
@@ -65,18 +71,18 @@ $ unzip keycloak-as7-adapter-dist-{{book.project.version}}.zip
 {% if book.product %}
 Install on JBoss EAP 7:
 
-[source]
+[source, subs="attributes"]
 ----
 $ cd $EAP_HOME
-$ unzip RH-SSO-{{book.project.version}}-eap7-adapter.zip
+$ unzip rh-sso-{{book.project.version}}-eap7-adapter.zip
 ----
 
 Install on JBoss EAP 6:
 
-[source]
+[source, subs="attributes"]
 ----
 $ cd $EAP_HOME
-$ unzip RH-SSO-{{book.project.version}}-eap6-adapter.zip
+$ unzip rh-sso-{{book.project.version}}-eap6-adapter.zip
 ----
 {% endif %}
 
@@ -94,12 +100,18 @@ $ ./bin/jboss-cli.sh -c --file=adapter-install.cli
 
 The script will add the required configuration to the server configuration file.
 
-For JBoss EAP 7 {% if book.community %} and WildFly 9+{% endif %} there is also an offline CLI script that can be used to install the adapter while the server
+{% if book.community %}
+For JBoss EAP 7 and WildFly 9+ there is also an offline CLI script that can be used to install the adapter while the server
 is not running:
+{% endif %}
+{% if book.product %}
+For JBoss EAP 7 there is also an offline CLI script that can be used to install the adapter while the server
+is not running:
+{% endif %}
 
 [source]
 ----
-$ ./bin/jboss-cli.sh -c --file=adapter-install-offline.cli
+$ ./bin/jboss-cli.sh --file=adapter-install-offline.cli
 ----    
 
 If you are planning to add it manually you need to add the extension and subsystem definition to the server configuration:
@@ -169,7 +181,7 @@ public class CustomerService {
 }
 ----
 
-==== Required Per WAR Configuration
+===== Required Per WAR Configuration
 
 This section describes how to secure a WAR directly by adding config and editing files within your WAR package. 
 
@@ -231,12 +243,12 @@ Here's an example:
 </web-app>
 ----        
 
-==== Securing WARs via Keycloak Subsystem
+===== Securing WARs via Adapter Subsystem
 
-You do not have to modify your WAR to secure it with {{book.project.title}}. Instead you can externally secure it via the {{book.project.title}} Adapter Subsystem.
+You do not have to modify your WAR to secure it with {{book.project.name}}. Instead you can externally secure it via the {{book.project.name}} Adapter Subsystem.
 While you don't have to specify KEYCLOAK as an `auth-method`, you still have to define the `security-constraints` in `web.xml`.
 You do not, however, have to create a `WEB-INF/keycloak.json` file.
-This metadata is instead defined within server configuration (i.e. `standalone.xml`) in the {{book.project.title}} subsystem definition.
+This metadata is instead defined within server configuration (i.e. `standalone.xml`) in the {{book.project.name}} subsystem definition.
 
 [source,xml]
 ----
@@ -259,17 +271,14 @@ This metadata is instead defined within server configuration (i.e. `standalone.x
 ----
 
 The `secure-deployment` `name` attribute identifies the WAR you want to secure.
-Its value is the `module-name` defined in `web.xml` with `.war` appended.
-
-The rest of the configuration corresponds pretty much one to one with the `keycloak.json` configuration options defined in <<fake/../java-adapter-config.adoc#_java_adapter_config,Java adapter configuration>>.
+Its value is the `module-name` defined in `web.xml` with `.war` appended. The rest of the configuration corresponds pretty much one to one with the `keycloak.json` configuration options defined in <<fake/../java-adapter-config.adoc#_java_adapter_config,Java adapter configuration>>.
 
 The exception is the `credential` element. 
 
-To make it easier for you, you can go to the {{book.project.title}} Administration Console and go to the Application/Installation tab of the application this WAR is aligned with.
+To make it easier for you, you can go to the {{book.project.name}} Administration Console and go to the Client/Installation tab of the application this WAR is aligned with.
 It provides an example XML file you can cut and paste. 
 
-There is an additional convenience format for this XML if you have multiple WARs you are deployment that are secured by the same domain.
-This format allows you to define common configuration items in one place under the `realm` element. 
+If you have multiple deployments secured by the same realm you can share the realm configuration in a separate element. For example:
 
 [source,xml]
 ----

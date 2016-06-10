@@ -1,11 +1,11 @@
 
 [[_adapter_error_handling]]
-=== Error Handling
+==== Error Handling
 
 {{book.project.name}} has some error handling facilities for servlet based client adapters.
-When an error is encountered in authentication, {{book.project.title}} will call `HttpServletResponse.sendError()`.
+When an error is encountered in authentication, {{book.project.name}} will call `HttpServletResponse.sendError()`.
 You can set up an error-page within your `web.xml` file to handle the error however you want.
-{{book.project.title}} may throw 400, 401, 403, and 500 errors.
+{{book.project.name}} may throw 400, 401, 403, and 500 errors.
 
 [source,xml]
 ----
@@ -16,7 +16,7 @@ You can set up an error-page within your `web.xml` file to handle the error howe
 ----    
 
 {{book.project.name}} also sets a `HttpServletRequest` attribute that you can retrieve.
-The attribute name is `org.keycloak.adapters.spi.AuthenticationError`, which should be casted to to `org.keycloak.adapters.OIDCAuthenticationError`.
+The attribute name is `org.keycloak.adapters.spi.AuthenticationError`, which should be casted to `org.keycloak.adapters.OIDCAuthenticationError`.
 
 For example:
 
@@ -32,3 +32,4 @@ OIDCAuthenticationError error = (OIDCAuthenticationError) httpServletRequest
 Reason reason = error.getReason();
 System.out.println(reason.name());
 ----
+

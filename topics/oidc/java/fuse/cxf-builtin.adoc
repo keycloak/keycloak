@@ -1,9 +1,9 @@
 
 [[_fuse_adapter_cxf_builtin]]
-==== Secure Apache CXF Endpoint on default Jetty Engine
+===== Secure Apache CXF Endpoint on default Jetty Engine
 
 Some services automatically come with deployed servlets on startup. One of such services is CXF servlet running on
-http://localhost:8181/cxf context. Securing such endpoints is quite tricky. The approach, which {{book.project.name}} is currently using,
+$$http://localhost:8181/cxf$$ context. Securing such endpoints is quite tricky. The approach, which {{book.project.name}} is currently using,
 is providing ServletReregistrationService, which undeploys builtin servlet at startup, so you are able to re-deploy it again on context secured by {{book.project.name}}.
 This is how configuration file `OSGI-INF/blueprint/blueprint.xml` inside your application may look like. Note it adds JAX-RS `customerservice` endpoint,
 which is endpoint specific to your application, but more importantly, it secures whole `/cxf` context.
@@ -83,7 +83,8 @@ control over security for each application individually.
 
 
 * The `Import-Package` in `META-INF/MANIFEST.MF` needs to contain those imports:
-[source]
+
+[source, subs="attributes"]
 ----
 META-INF.cxf;version="[2.7,3.2)",
 META-INF.cxf.osgi;version="[2.7,3.2)";resolution:=optional,

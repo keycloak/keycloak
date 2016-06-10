@@ -1,13 +1,13 @@
 
 [[_fuse_adapter_servlet_whiteboard]]
-==== Secure Servlet deployed as OSGI service
+===== Secure Servlet deployed as OSGI service
 
 This is useful for the case, when you have sevlet class inside your OSGI bundle project, which is not deployed as classic WAR. Fuse uses
 https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+Whiteboard[Pax Web Whiteboard Extender] for deploy such servlet as web application.
 
 The needed steps to secure your servlet with {{book.project.name}} are:
 
-* Keycloak provides PaxWebIntegrationService, which allows to inject jetty-web.xml and configure security constraints for your application.
+* {{book.project.name}} provides PaxWebIntegrationService, which allows to inject jetty-web.xml and configure security constraints for your application.
   You need to declare such service in `OSGI-INF/blueprint/blueprint.xml` inside your application. Note that your servlet needs to depend on it.
   The example configuration can look like this:
 [source,xml]
@@ -65,7 +65,8 @@ The needed steps to secure your servlet with {{book.project.name}} are:
 Note you don't need `web.xml` as the security-constrains are declared in blueprint configuration file.
 
 * The `Import-Package` in `META-INF/MANIFEST.MF` needs to contain at least those imports:
-[source]
+
+[source, subs="attributes"]
 ----
 org.keycloak.adapters.jetty;version="{{book.project.version}}",
 org.keycloak.adapters;version="{{book.project.version}}",
