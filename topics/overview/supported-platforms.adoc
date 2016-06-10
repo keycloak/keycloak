@@ -68,8 +68,8 @@
 * <<fake/../../saml/java/jetty-adapter.adoc#_jetty_saml_adapter,Jetty>>
 {% endif %}
 
-
-
 ==== Apache HTTP Server
 
 * https://github.com/UNINETT/mod_auth_mellon[mod_auth_mellon]
+
+
