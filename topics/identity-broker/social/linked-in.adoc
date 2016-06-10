@@ -13,8 +13,7 @@ copy this URI to your clipboard.
 
 To enable login with LinkedIn you first have to create an application in https://www.linkedin.com/secure/developer[LinkedIn Developer Network].
 
-NOTE: LinkedIn often changes the look and feel of application registration, so these directions might not always be up to date and the
-      configuration steps might be slightly different.
+NOTE: LinkedIn may change the look and feel of application registration, so these directions may not always be up to date.
 
 
 .Developer Network
