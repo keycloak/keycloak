@@ -1,10 +1,10 @@
 <productname>Red Hat Single Sign-On</productname>
-<productnumber>7.0.0</productnumber>
+<productnumber>7.0</productnumber>
 <subtitle>Server Developer Guide</subtitle>
 <title>Server Developer Guide</title>
-<release>7.0.0</release>
+<release>7.0</release>
 <abstract>
-	    <para>This guide consist of information for developers to customize Red Hat Single Sign-On 7.0.0</para>
+	    <para>This guide consist of information for developers to customize Red Hat Single Sign-On 7.0</para>
     </abstract>
 <authorgroup>
     <orgname>Red Hat Customer Content Services</orgname>
