@@ -12,8 +12,7 @@ Your application is responsible for persisting the offline token in some storage
 
 The difference between a classic Refresh token and an Offline token is, that an offline token will never expire and is not subject of `SSO Session Idle timeout` .
 The offline token is valid even after a user logout or server restart.
-However you do need to use the offline token for a refresh token action at least once per 30 days ( This value can be changed in admin console.
-It is `Offline Session Idle timeout` ). Also if you enable the option `Revoke refresh tokens`, then each offline token can be used just once.
+However by default you do need to use the offline token for a refresh token action at least once per 30 days (this value, `Offline Session Idle timeout`, can be changed in the administration console in the `Tokens` tab under `Realm Settings`). Also if you enable the option `Revoke refresh tokens`, then each offline token can be used just once.
 So after refresh, you always need to store the new offline token from refresh response into your DB instead of the previous one.
 
 Users can view and revoke offline tokens that have been granted by them in the <<fake/../../account.adoc#_account-service, User Account Service>>.
