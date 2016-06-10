@@ -23,6 +23,9 @@ You must define the SAML configuration options as well.  They basically describe
 |Single Logout Service URL
 |This is an optional field that specifies the SAML logout endpoint. If your SAML IDP publishes an IDP entity descriptor, the value of
  this field will be specified there.
+ 
+|Backchannel Logout
+|Enable if your SAML IDP supports backchannel logout
 
 |HTTP-POST Binding Response
 |When this realm responds to any SAML requests sent by the external IDP, which SAML binding should be used?  If set to `off`, then the Redirect Binding will be used.
