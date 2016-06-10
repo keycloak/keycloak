@@ -37,7 +37,7 @@ the realm and contains access information (like user role mappings) that the app
 is allowed to access on the application.
 
 The second type of use cases is that of a client that wants to gain access to remote services.  In this case, the client asks {{book.project.name}}
-to obtain an SAML assertion it can use to invoke on other remote services on behalf of the user.
+to obtain a SAML assertion it can use to invoke on other remote services on behalf of the user.
 
 === OpenID Connect vs. SAML
 
