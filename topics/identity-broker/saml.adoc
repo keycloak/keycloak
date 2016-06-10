@@ -27,6 +27,9 @@ You must define the SAML configuration options as well.  They basically describe
 |Backchannel Logout
 |Enable if your SAML IDP supports backchannel logout
 
+|NameID Policy Format
+|Specifies the URI reference corresponding to a name identifier format. Defaults to urn:oasis:names:tc:SAML:2.0:nameid-format:persistent.
+
 |HTTP-POST Binding Response
 |When this realm responds to any SAML requests sent by the external IDP, which SAML binding should be used?  If set to `off`, then the Redirect Binding will be used.
 
