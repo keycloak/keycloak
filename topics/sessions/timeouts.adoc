@@ -26,8 +26,7 @@ Let's walk through each of the items on this page.
  a user session can remain active, regardless of activity.
 
 |Offline Session Idle
-|For <<fake/../../sessions/offline.adoc#_offline-access, offline access>>, this is the time the session is allowed
- to remain Idle before the offline token is revoked.
+|For <<fake/../../sessions/offline.adoc#_offline-access, offline access>>, this is the time the session is allowed to remain idle before the offline token is revoked.
 
 |Access Token Lifespan
 |When an OIDC access token is created, this value affects the expiration.
