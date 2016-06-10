@@ -52,7 +52,7 @@ resource::
 
 realm-public-key::
   PEM format of the realm public key. You can obtain this from the administration console.
-  This is _OPTIONAL_. If not set the adapter will download this from {{book.project.name}} on startup.
+  This is _OPTIONAL_. If not set the adapter will download this from {{book.project.name}}.
 
 auth-server-url::
   The base URL of the {{book.project.name}} server. All other {{book.project.name}} pages and REST service endpoints are derived from this. It is usually of the form `https://host:port/auth`.
