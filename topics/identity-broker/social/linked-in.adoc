@@ -23,8 +23,7 @@ Click on the `Create Application` button.  This will bring you to the `Create a 
 .Create App
 image:../../../images/linked-in-create-app.png[]
 
-Use any value for `Company Name`, `Name`, `Description`, and `Application Use`.
-Click the `Submit` button.  This will bring you to the new application's settings page.
+Fill in the form with the approriate values, then click the `Submit` button.  This will bring you to the new application's settings page.
 
 .App Settings
 image:../../../images/linked-in-app-settings.png[]
