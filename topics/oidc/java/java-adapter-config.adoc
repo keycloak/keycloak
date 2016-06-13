@@ -37,7 +37,7 @@ This is what one might look like:
 
 You can use `${...}` enclosure for system property replacement. For example `${jboss.server.config.dir}` would be replaced by `/path/to/{{book.project.name}}`.
 
-The initial config file can be ontained from the the admin console. This can be done by opening the admin console, select `Clients` from the menu and clicking
+The initial config file can be obtained from the the admin console. This can be done by opening the admin console, select `Clients` from the menu and clicking
 on the corresponding client. Once the page for the client is opened click on the `Installation` tab and select `Keycloak OIDC JSON`.
 
 Here is a description of each configuration option:
