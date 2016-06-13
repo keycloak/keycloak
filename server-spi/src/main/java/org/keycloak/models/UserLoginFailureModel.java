@@ -21,9 +21,9 @@ package org.keycloak.models;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UsernameLoginFailureModel
+public interface UserLoginFailureModel
 {
-   String getUsername();
+   String getUserId();
    int getFailedLoginNotBefore();
    void setFailedLoginNotBefore(int notBefore);
    int getNumFailures();
