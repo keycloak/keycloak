@@ -13,7 +13,7 @@
     "project": {
       "name": "Red Hat Single Sign-On",
       "version": "7.0.0",
-      "versionMvn": "1.9.7.Final-redhat-1"
+      "versionMvn": "1.9.8.Final-redhat-1"
     },
     "community": false,
     "product": true,
