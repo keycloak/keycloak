@@ -8,7 +8,7 @@ generator.  Click on the `Authentication` left menu item and go to the `OTP Poli
 image:../../{{book.images}}/otp-policy.png[]
 
 Any policies you set here will be used to validate one-time passwords.  When configuring OTP, FreeOTP and Google Authenticator
-can scan in a bar code that is generated on the OTP set up page that {{book.project.name}} has.  The bar code is also
+can scan a QR code that is generated on the OTP set up page that {{book.project.name}} has.  The bar code is also
 generated from information configured on the `OTP Policy` tab.
 
 ==== TOTP vs. HOTP
