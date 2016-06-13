@@ -24,10 +24,10 @@
     "client-keystore": "classpath:/keystore.jks",
     "client-keystore-password": "storepass",
     "client-key-password": "keypass",
-    "auth-server-url-for-backend-requests": "https://backend:8443/auth",
     "always-refresh-token": true,
     "register-node-at-startup": true,
     "register-node-period": 1000,
     "token-store": "cookie",
-    "principal-attribute": "email"
+    "principal-attribute": "email",
+    "token-minimum-time-to-live": 10
 }

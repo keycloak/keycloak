@@ -53,7 +53,7 @@ public class UserAttributeMapper extends AbstractClaimMapper {
         property = new ProviderConfigProperty();
         property.setName(USER_ATTRIBUTE);
         property.setLabel("User Attribute Name");
-        property.setHelpText("User attribute name to store claim.");
+        property.setHelpText("User attribute name to store claim.  Use email, lastName, and firstName to map to those predefined user properties.");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
     }
@@ -90,7 +90,15 @@ public class UserAttributeMapper extends AbstractClaimMapper {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
         Object value = getClaimValue(mapperModel, context);
         if (value != null) {
-            context.setUserAttribute(attribute, value.toString());
+            if (attribute.equalsIgnoreCase("email")) {
+                context.setEmail(value.toString());
+            } else if (attribute.equalsIgnoreCase("firstName")) {
+                context.setFirstName(value.toString());
+            } else if (attribute.equalsIgnoreCase("lastName")) {
+                context.setLastName(value.toString());
+            } else {
+                context.setUserAttribute(attribute, value.toString());
+            }
         }
     }
 
@@ -98,17 +106,27 @@ public class UserAttributeMapper extends AbstractClaimMapper {
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(USER_ATTRIBUTE);
         Object value = getClaimValue(mapperModel, context);
-        String current = user.getFirstAttribute(attribute);
-        if (value != null && !value.equals(current)) {
-            user.setSingleAttribute(attribute, value.toString());
-        } else if (value == null) {
-            user.removeAttribute(attribute);
+        String stringValue = null;
+        if (value != null) stringValue = value.toString();
+        if (attribute.equalsIgnoreCase("email")) {
+            user.setEmail(stringValue);
+        } else if (attribute.equalsIgnoreCase("firstName")) {
+            user.setFirstName(stringValue);
+        } else if (attribute.equalsIgnoreCase("lastName")) {
+            user.setLastName(stringValue);
+        } else {
+            String current = user.getFirstAttribute(attribute);
+            if (stringValue != null && !stringValue.equals(current)) {
+                user.setSingleAttribute(attribute, stringValue);
+            } else if (value == null) {
+                user.removeAttribute(attribute);
+            }
         }
     }
 
     @Override
     public String getHelpText() {
-        return "Import declared claim if it exists in ID or access token into the specified user attribute.";
+        return "Import declared claim if it exists in ID or access token into the specified user property or attribute.";
     }
 
 }

@@ -26,8 +26,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
-import static org.keycloak.testsuite.console.clients.AbstractClientTest.createOidcClientRep;
-import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.CONFIDENTIAL;
+import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 import org.keycloak.testsuite.console.page.clients.credentials.ClientCredentials;
 import org.keycloak.testsuite.console.page.clients.credentials.ClientCredentialsGeneratePrivateKeys;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
@@ -47,7 +46,7 @@ public class ClientCredentialsTest extends AbstractClientTest {
     
     @Before
     public void before() {
-        newClient = createOidcClientRep(CONFIDENTIAL, TEST_CLIENT_ID, TEST_REDIRECT_URIS);
+        newClient = createClientRep(TEST_CLIENT_ID, OIDC);
         testRealmResource().clients().create(newClient).close();
         
         ClientRepresentation found = findClientByClientId(TEST_CLIENT_ID);

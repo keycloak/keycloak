@@ -30,6 +30,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -1716,8 +1717,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void removeAuthenticationFlow(AuthenticationFlowModel model) {
+        if (KeycloakModelUtils.isFlowUsed(this, model)) {
+            throw new ModelException("Cannot remove authentication flow, it is currently in use");
+        }
         AuthenticationFlowEntity entity = em.find(AuthenticationFlowEntity.class, model.getId());
-        if (entity == null) return;
+
         em.remove(entity);
         em.flush();
     }
@@ -2063,6 +2067,9 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (id == null) return false;
         ClientTemplateModel client = getClientTemplateById(id);
         if (client == null) return false;
+        if (KeycloakModelUtils.isClientTemplateUsed(this, client)) {
+            throw new ModelException("Cannot remove client template, it is currently in use");
+        }
 
         ClientTemplateEntity clientEntity = null;
         Iterator<ClientTemplateEntity> it = realm.getClientTemplates().iterator();

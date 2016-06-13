@@ -22,8 +22,10 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -597,5 +599,48 @@ public final class KeycloakModelUtils {
 
         }
     }
+
+    /**
+     * Check to see if a flow is currently in use
+     *
+     * @param realm
+     * @param model
+     * @return
+     */
+    public static boolean isFlowUsed(RealmModel realm, AuthenticationFlowModel model) {
+        AuthenticationFlowModel realmFlow = null;
+
+        if ((realmFlow = realm.getBrowserFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
+        if ((realmFlow = realm.getRegistrationFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
+        if ((realmFlow = realm.getClientAuthenticationFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
+        if ((realmFlow = realm.getDirectGrantFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
+        if ((realmFlow = realm.getResetCredentialsFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
+
+        for (IdentityProviderModel idp : realm.getIdentityProviders()) {
+            if (model.getId().equals(idp.getFirstBrokerLoginFlowId())) return true;
+            if (model.getId().equals(idp.getPostBrokerLoginFlowId())) return true;
+        }
+
+        return false;
+
+    }
+
+    public static boolean isClientTemplateUsed(RealmModel realm, ClientTemplateModel template) {
+        for (ClientModel client : realm.getClients()) {
+            if (client.getClientTemplate() != null && client.getClientTemplate().getId().equals(template.getId())) return true;
+        }
+        return false;
+    }
+
+    public static ClientTemplateModel getClientTemplateByName(RealmModel realm, String templateName) {
+        for (ClientTemplateModel clientTemplate : realm.getClientTemplates()) {
+            if (templateName.equals(clientTemplate.getName())) {
+                return clientTemplate;
+            }
+        }
+
+        return null;
+    }
+
 
 }

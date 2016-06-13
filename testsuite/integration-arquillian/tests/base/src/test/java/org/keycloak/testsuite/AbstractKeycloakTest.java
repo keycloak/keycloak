@@ -18,10 +18,17 @@ package org.keycloak.testsuite;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.Time;
 import org.keycloak.testsuite.arquillian.TestContext;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.NotFoundException;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -47,18 +54,24 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.auth.page.WelcomePage;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.WebDriver;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
 import org.keycloak.testsuite.auth.page.AuthRealm;
+
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.util.WaitUtils;
+
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+
+import org.keycloak.testsuite.util.TestEventsLogger;
 
 /**
  *
@@ -78,7 +91,10 @@ public abstract class AbstractKeycloakTest {
 
     protected Keycloak adminClient;
 
-    protected OAuthClient oauthClient;
+    protected KeycloakTestingClient testingClient;
+
+    @ArquillianResource
+    protected OAuthClient oauth;
 
     protected List<RealmRepresentation> testRealmReps;
 
@@ -107,18 +123,22 @@ public abstract class AbstractKeycloakTest {
 
     private PropertiesConfiguration constantsProperties;
 
+    private boolean resetTimeOffset;
+
     @Before
-    public void beforeAbstractKeycloakTest() {
+    public void beforeAbstractKeycloakTest() throws Exception {
         adminClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
                 MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
-        oauthClient = new OAuthClient(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
 
-        
+        getTestingClient();
+
         adminUser = createAdminUserRepresentation();
 
         setDefaultPageUriParameters();
 
         driverSettings();
+        
+        TestEventsLogger.setDriver(driver);
 
         if (!suiteContext.isAdminPasswordUpdated()) {
             log.debug("updating admin password");
@@ -127,12 +147,18 @@ public abstract class AbstractKeycloakTest {
         }
 
         importTestRealms();
+
+        oauth.init(adminClient, driver);
     }
 
     @After
     public void afterAbstractKeycloakTest() {
-//        removeTestRealms(); // keeping test realms after test to be able to inspect failures, instead deleting existing realms before import
-//        keycloak.close(); // keeping admin connection open
+        if (resetTimeOffset) {
+            resetTimeOffset();
+        }
+
+        removeTestRealms(); // Remove realms after tests. Tests should cleanup after themselves!
+        adminClient.close(); // don't keep admin connection open
     }
 
     private void updateMasterAdminPassword() {
@@ -156,6 +182,17 @@ public abstract class AbstractKeycloakTest {
     public void setDefaultPageUriParameters() {
         masterRealmPage.setAuthRealm(MASTER);
         loginPage.setAuthRealm(MASTER);
+    }
+
+    public KeycloakTestingClient getTestingClient() {
+        if (testingClient == null) {
+            testingClient = KeycloakTestingClient.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
+        }
+        return testingClient;
+    }
+
+    public Keycloak getAdminClient() {
+        return adminClient;
     }
 
     public abstract void addTestRealms(List<RealmRepresentation> testRealms);
@@ -206,7 +243,10 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void removeRealm(RealmRepresentation realm) {
-        adminClient.realms().realm(realm.getRealm()).remove();
+        try {
+            adminClient.realms().realm(realm.getRealm()).remove();
+        } catch (NotFoundException e) {
+        }
     }
     
     public RealmsResource realmsResouce() {
@@ -272,8 +312,31 @@ public abstract class AbstractKeycloakTest {
         userResource.update(userRepresentation);
     }
 
+    public void setTimeOffset(int offset) {
+        String response = invokeTimeOffset(offset);
+        resetTimeOffset = offset != 0;
+        log.debugv("Set time offset, response {0}", response);
+    }
+
+    public void resetTimeOffset() {
+        String response = invokeTimeOffset(0);
+        resetTimeOffset = false;
+        log.debugv("Reset time offset, response {0}", response);
+    }
+
+    public int getCurrentTime() {
+        return Time.currentTime();
+    }
+
+    private String invokeTimeOffset(int offset) {
+        // adminClient depends on Time.offset for auto-refreshing tokens
+        Time.setOffset(offset);
+        Map result = testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset)));
+        return String.valueOf(result);
+    }
+
     private void loadConstantsProperties() throws ConfigurationException {
-        constantsProperties = new PropertiesConfiguration("test-constants.properties");
+        constantsProperties = new PropertiesConfiguration(System.getProperty("testsuite.constants"));
         constantsProperties.setThrowExceptionOnMissing(true);
     }
 
@@ -282,6 +345,14 @@ public abstract class AbstractKeycloakTest {
             loadConstantsProperties();
         }
         return constantsProperties;
+    }
+
+    public URI getAuthServerRoot() {
+        try {
+            return KeycloakUriBuilder.fromUri(suiteContext.getAuthServerInfo().getContextRoot().toURI()).path("/auth/").build();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

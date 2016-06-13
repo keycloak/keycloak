@@ -59,10 +59,10 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
-    public void registerClientInMasterRealm() throws ClientRegistrationException {
+    public void registerClientInMasterRealm() throws Exception {
         ClientRegistration masterReg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "master").build();
 
-        String token = oauthClient.getToken("master", Constants.ADMIN_CLI_CLIENT_ID, null, "admin", "admin").getToken();
+        String token = oauth.doGrantAccessTokenRequest("master", "admin", "admin", null, Constants.ADMIN_CLI_CLIENT_ID, null).getAccessToken();
         masterReg.auth(Auth.token(token));
 
         ClientRepresentation client = new ClientRepresentation();
@@ -126,8 +126,14 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     @Test
     public void getClientNotFound() throws ClientRegistrationException {
         authManageClients();
+        assertNull(reg.get("invalid"));
+    }
+
+    @Test
+    public void getClientNotFoundNoAccess() throws ClientRegistrationException {
+        authNoAccess();
         try {
-            reg.get(CLIENT_ID);
+            reg.get("invalid");
             fail("Expected 403");
         } catch (ClientRegistrationException e) {
             assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
@@ -181,10 +187,14 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     public void updateClientNotFound() throws ClientRegistrationException {
         authManageClients();
         try {
-            updateClient();
-            fail("Expected 403");
+            ClientRepresentation client = new ClientRepresentation();
+            client.setClientId("invalid");
+
+            reg.update(client);
+
+            fail("Expected 404");
         } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+            assertEquals(404, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
     }
 

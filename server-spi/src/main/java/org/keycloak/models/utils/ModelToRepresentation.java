@@ -717,6 +717,7 @@ public class ModelToRepresentation {
 
     public static AuthenticatorConfigRepresentation toRepresentation(AuthenticatorConfigModel model) {
         AuthenticatorConfigRepresentation rep = new AuthenticatorConfigRepresentation();
+        rep.setId(model.getId());
         rep.setAlias(model.getAlias());
         rep.setConfig(model.getConfig());
         return rep;

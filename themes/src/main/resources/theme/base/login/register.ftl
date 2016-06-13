@@ -6,6 +6,9 @@
         ${msg("registerWithTitleHtml",(realm.displayNameHtml!''))}
     <#elseif section = "form">
         <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
+          <input type="text" readonly value="this is not a login form" style="display: none;">
+          <input type="password" readonly value="this is not a login form" style="display: none;">
+
           <#if !realm.registrationEmailAsUsername>
             <div class="${properties.kcFormGroupClass!} ${messagesPerField.printIfExists('username',properties.kcFormGroupErrorClass!)}">
                 <div class="${properties.kcLabelWrapperClass!}">

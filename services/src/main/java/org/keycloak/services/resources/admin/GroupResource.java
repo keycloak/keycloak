@@ -78,6 +78,11 @@ public class GroupResource {
     @Produces(MediaType.APPLICATION_JSON)
     public GroupRepresentation getGroup() {
         this.auth.requireView();
+
+        if (group == null) {
+            throw new NotFoundException("Could not find group by id");
+        }
+
         return ModelToRepresentation.toGroupHierarchy(group, true);
     }
 
@@ -90,6 +95,11 @@ public class GroupResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void updateGroup(GroupRepresentation rep) {
         this.auth.requireManage();
+
+        if (group == null) {
+            throw new NotFoundException("Could not find group by id");
+        }
+
         updateGroup(rep, group);
         adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
 
@@ -99,6 +109,11 @@ public class GroupResource {
     @DELETE
     public void deleteGroup() {
         this.auth.requireManage();
+
+        if (group == null) {
+            throw new NotFoundException("Could not find group by id");
+        }
+
         realm.removeGroup(group);
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
@@ -117,6 +132,11 @@ public class GroupResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addChild(GroupRepresentation rep) {
         this.auth.requireManage();
+
+        if (group == null) {
+            throw new NotFoundException("Could not find group by id");
+        }
+
         Response.ResponseBuilder builder = Response.status(204);
         GroupModel child = null;
         if (rep.getId() != null) {
@@ -124,18 +144,21 @@ public class GroupResource {
             if (child == null) {
                 throw new NotFoundException("Could not find child by id");
             }
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE);
         } else {
             child = realm.createGroup(rep.getName());
             updateGroup(rep, child);
             URI uri = uriInfo.getBaseUriBuilder()
-                                           .path(uriInfo.getMatchedURIs().get(1))
+                                           .path(uriInfo.getMatchedURIs().get(2))
                                            .path(child.getId()).build();
             builder.status(201).location(uri);
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
+            rep.setId(child.getId());
+            adminEvent.operation(OperationType.CREATE);
 
         }
         realm.moveGroup(child, group);
+        adminEvent.resourcePath(uriInfo).representation(rep).success();
+
         GroupRepresentation childRep = ModelToRepresentation.toGroupHierarchy(child, true);
         return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
     }
@@ -182,6 +205,11 @@ public class GroupResource {
     public List<UserRepresentation> getMembers(@QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults) {
         auth.requireView();
+
+        if (group == null) {
+            throw new NotFoundException("Could not find group by id");
+        }
+
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : -1;
 
@@ -193,8 +221,5 @@ public class GroupResource {
         }
         return results;
     }
-
-
-
 
 }

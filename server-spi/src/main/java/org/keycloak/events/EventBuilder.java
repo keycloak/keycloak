@@ -169,7 +169,7 @@ public class EventBuilder {
     }
 
     private void send() {
-        event.setTime(Time.toMillis(Time.currentTime()));
+        event.setTime(Time.currentTimeMillis());
 
         if (store != null) {
             if (realm.getEnabledEventTypes() != null && !realm.getEnabledEventTypes().isEmpty() ? realm.getEnabledEventTypes().contains(event.getType().name()) : event.getType().isSaveByDefault()) {

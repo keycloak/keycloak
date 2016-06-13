@@ -8,6 +8,9 @@
     <kc-tabs-client></kc-tabs-client>
 
     <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!access.manageRealm">
+        <input type="text" readonly value="this is not a login form" style="display: none;">
+        <input type="password" readonly value="this is not a login form" style="display: none;">
+
         <fieldset>
             <legend collapsed><span class="text">{{:: 'import-keys-and-cert' | translate}}</span> <kc-tooltip>{{:: 'import-keys-and-cert.tooltip' | translate}}</kc-tooltip></legend>
             <div class="form-group">

@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.arquillian.containers;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.arquillian.config.descriptor.api.ArquillianDescriptor;
@@ -57,13 +58,12 @@ public class RegistryCreator {
 
     @Inject
     private Instance<ServiceLoader> loader;
-    
-    private String authContainer;
-    private String migrationContainer;
-    
+
     public void createRegistry(@Observes ArquillianDescriptor event) {
         ContainerRegistry reg = new Registry(injector.get());
         ServiceLoader serviceLoader = loader.get();
+
+        log.info("arquillian.xml: " + System.getProperty("arquillian.xml"));
 
         @SuppressWarnings("rawtypes")
         Collection<DeployableContainer> containers = serviceLoader.all(DeployableContainer.class);
@@ -72,31 +72,26 @@ public class RegistryCreator {
             throw new IllegalStateException("There are not any container adapters on the classpath");
         }
 
-        for (ContainerDef container : event.getContainers()) {
+        createRegistry(event.getContainers(), containers, reg, serviceLoader);
+
+        for (GroupDef group : event.getGroups()) {
+            createRegistry(group.getGroupContainers(), containers, reg, serviceLoader);
+        }
+
+        registry.set(reg);
+    }
+
+    private void createRegistry(List<ContainerDef> containerDefs, Collection<DeployableContainer> containers, ContainerRegistry reg, ServiceLoader serviceLoader) {
+        for (ContainerDef container : containerDefs) {
             if (isCreatingContainer(container, containers)) {
                 if (isEnabled(container)) {
-                    checkMultipleEnabledContainers(container);
+                    log.info("Registering container: " + container.getContainerName());
                     reg.create(container, serviceLoader);
                 } else {
                     log.info("Container is disabled: " + container.getContainerName());
                 }
             }
         }
-
-        for (GroupDef group : event.getGroups()) {
-            for (ContainerDef container : group.getGroupContainers()) {
-                if (isCreatingContainer(container, containers)) {
-                    if (isEnabled(container)) {
-                        //TODO add checkMultipleEnabledContainers according to groups
-                        reg.create(container, serviceLoader);
-                    } else {
-                        log.info("Container is disabled: " + container.getContainerName());
-                    }
-                }
-            }
-        }
-
-        registry.set(reg);
     }
 
     private static final String ENABLED = "enabled";
@@ -105,28 +100,6 @@ public class RegistryCreator {
         Map<String, String> props = containerDef.getContainerProperties();
         return !props.containsKey(ENABLED)
                 || (props.containsKey(ENABLED) && props.get(ENABLED).equals("true"));
-    }
-    
-    private void checkMultipleEnabledContainers(ContainerDef containerDef) {
-        String containerName = containerDef.getContainerName();
-        
-        if (containerName.startsWith("keycloak")) {
-            if (migrationContainer == null) {
-                migrationContainer = containerName;
-            } else {
-                throw new RuntimeException("There is more than one migration container "
-                        + "enabled in arquillian.xml. It has to be enabled at most one. "
-                        + "Do not activate more than one migration profile.");
-            }
-        } else if (containerName.startsWith("auth-server")) {
-            if (authContainer == null) {
-                authContainer = containerName;
-            } else {
-                throw new RuntimeException("There is more than one auth containec enabled "
-                        + "in arquillian.xml. It has to be enabled exactly one. Do not "
-                        + "activate more than one auth profile.");
-            }
-        }
     }
 
     @SuppressWarnings("rawtypes")
@@ -161,7 +134,7 @@ public class RegistryCreator {
         Validate.notNullOrEmpty(adapterImplClass, "The value of " + ADAPTER_IMPL_CONFIG_STRING + " can not be a null object "
                 + "nor an empty string!");
 
-        Class<?> foundAdapter = null;
+        Class<?> foundAdapter;
 
         if (isClassPresent(adapterImplClass)) {
             foundAdapter = loadClass(adapterImplClass);

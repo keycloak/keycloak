@@ -28,7 +28,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.Urls;
 import org.keycloak.util.TokenUtil;
 
@@ -57,37 +56,37 @@ public class ClientRegistrationTokenUtils {
         return createToken(realm, uri, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getExpiration() > 0 ? model.getTimestamp() + model.getExpiration() : 0);
     }
 
-    public static JsonWebToken parseToken(RealmModel realm, UriInfo uri, String token) {
+    public static JsonWebToken verifyToken(RealmModel realm, UriInfo uri, String token) {
         JWSInput input;
         try {
             input = new JWSInput(token);
         } catch (JWSInputException e) {
-            throw new ForbiddenException(e);
+            return null;
         }
 
         if (!RSAProvider.verify(input, realm.getPublicKey())) {
-            throw new ForbiddenException("Invalid signature");
+            return null;
         }
 
         JsonWebToken jwt;
         try {
             jwt = input.readJsonContent(JsonWebToken.class);
         } catch (JWSInputException e) {
-            throw new ForbiddenException(e);
+            return null;
         }
 
         if (!getIssuer(realm, uri).equals(jwt.getIssuer())) {
-            throw new ForbiddenException("Issuer doesn't match");
+            return null;
         }
 
         if (!jwt.isActive()) {
-            throw new ForbiddenException("Expired token");
+            return null;
         }
 
         if (!(TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType()) ||
                 TYPE_INITIAL_ACCESS_TOKEN.equals(jwt.getType()) ||
                 TYPE_REGISTRATION_ACCESS_TOKEN.equals(jwt.getType()))) {
-            throw new ForbiddenException("Invalid token type");
+            return null;
         }
 
         return jwt;

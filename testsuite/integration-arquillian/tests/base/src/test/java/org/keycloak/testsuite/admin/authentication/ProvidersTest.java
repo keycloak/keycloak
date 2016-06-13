@@ -17,8 +17,11 @@
 
 package org.keycloak.testsuite.admin.authentication;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
+import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.testsuite.Assert;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +30,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import javax.ws.rs.NotFoundException;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -74,8 +79,45 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates client based on signed JWT issued by client and signed with the Client private key");
         addProviderInfo(expected, "client-secret", "Client Id and Secret", "Validates client based on 'client_id' and " +
                 "'client_secret' sent either in request parameters or in 'Authorization: Basic' header");
+        addProviderInfo(expected, "testsuite-client-passthrough", "Testsuite Dummy Client Validation", "Testsuite dummy authenticator, " +
+                "which automatically authenticates hardcoded client (like 'test-app' )");
 
         compareProviders(expected, result);
+    }
+
+    @Test
+    public void testPerClientConfigDescriptions() {
+        Map<String, List<ConfigPropertyRepresentation>> configs = authMgmtResource.getPerClientConfigDescription();
+        Assert.assertTrue(configs.containsKey("client-jwt"));
+        Assert.assertTrue(configs.containsKey("client-secret"));
+        Assert.assertTrue(configs.containsKey("testsuite-client-passthrough"));
+        Assert.assertTrue(configs.get("client-jwt").isEmpty());
+        Assert.assertTrue(configs.get("client-secret").isEmpty());
+        List<ConfigPropertyRepresentation> cfg = configs.get("testsuite-client-passthrough");
+        Assert.assertProviderConfigProperty(cfg.get(0), "passthroughauth.foo", "Foo Property", null,
+                "Foo Property of this authenticator, which does nothing", "String");
+        Assert.assertProviderConfigProperty(cfg.get(1), "passthroughauth.bar", "Bar Property", null,
+                "Bar Property of this authenticator, which does nothing", "boolean");
+    }
+
+    @Test
+    public void testAuthenticatorConfigDescription() {
+        // Try some not-existent provider
+        try {
+            authMgmtResource.getAuthenticatorConfigDescription("not-existent");
+            Assert.fail("Don't expected to find provider 'not-existent'");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        AuthenticatorConfigInfoRepresentation infoRep = authMgmtResource.getAuthenticatorConfigDescription(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID);
+        Assert.assertEquals("Create User If Unique", infoRep.getName());
+        Assert.assertEquals(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID, infoRep.getProviderId());
+        Assert.assertEquals("Detect if there is existing Keycloak account with same email like identity provider. If no, create new user", infoRep.getHelpText());
+        Assert.assertEquals(1, infoRep.getProperties().size());
+        Assert.assertProviderConfigProperty(infoRep.getProperties().get(0), "require.password.update.after.registration", "Require Password Update After Registration",
+                null, "If this option is true and new user is successfully imported from Identity Provider to Keycloak (there is no duplicated email or username detected in Keycloak DB), then this user is required to update his password",
+                "boolean");
     }
 
 
@@ -94,6 +136,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates a OTP on a separate OTP form. Only shown if required based on the configured conditions.");
         addProviderInfo(result, "auth-cookie", "Cookie", "Validates the SSO cookie set by the auth server.");
         addProviderInfo(result, "auth-otp-form", "OTP Form", "Validates a OTP on a separate OTP form.");
+        addProviderInfo(result, "auth-script-based", "Script-based Authentication", "Script based authentication.");
         addProviderInfo(result, "auth-spnego", "Kerberos", "Initiates the SPNEGO protocol.  Most often used with Kerberos.");
         addProviderInfo(result, "auth-username-password-form", "Username Password Form",
                 "Validates a username and password from login form.");
@@ -119,6 +162,10 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Will also set it if execution is OPTIONAL and the OTP is currently configured for it.");
         addProviderInfo(result, "reset-password", "Reset Password", "Sets the Update Password required action if execution is REQUIRED.  " +
                 "Will also set it if execution is OPTIONAL and the password is currently configured for it.");
+        addProviderInfo(result, "testsuite-dummy-passthrough", "Testsuite Dummy Pass Thru",
+                "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
+        addProviderInfo(result, "testsuite-dummy-registration", "Testsuite Dummy Pass Thru",
+                "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
         return result;
     }
 

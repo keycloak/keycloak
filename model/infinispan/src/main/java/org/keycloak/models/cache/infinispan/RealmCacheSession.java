@@ -117,11 +117,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     protected boolean transactionActive;
     protected boolean setRollbackOnly;
 
-    protected Map<String, RealmModel> managedRealms = new HashMap<>();
-    protected Map<String, ClientModel> managedApplications = new HashMap<>();
-    protected Map<String, ClientTemplateModel> managedClientTemplates = new HashMap<>();
-    protected Map<String, RoleModel> managedRoles = new HashMap<>();
-    protected Map<String, GroupModel> managedGroups = new HashMap<>();
+    protected Map<String, RealmAdapter> managedRealms = new HashMap<>();
+    protected Map<String, ClientAdapter> managedApplications = new HashMap<>();
+    protected Map<String, ClientTemplateAdapter> managedClientTemplates = new HashMap<>();
+    protected Map<String, RoleAdapter> managedRoles = new HashMap<>();
+    protected Map<String, GroupAdapter> managedGroups = new HashMap<>();
     protected Set<String> listInvalidations = new HashSet<>();
     protected Set<String> invalidations = new HashSet<>();
 
@@ -138,6 +138,10 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     public long getStartupRevision() {
         return startupRevision;
+    }
+
+    public boolean isInvalid(String id) {
+        return invalidations.contains(id);
     }
 
     @Override
@@ -160,31 +164,91 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public void registerRealmInvalidation(String id) {
-        invalidations.add(id);
+        invalidateRealm(id);
         cache.realmInvalidation(id, invalidations);
+    }
+
+    private void invalidateRealm(String id) {
+        invalidations.add(id);
+        RealmAdapter adapter = managedRealms.get(id);
+        if (adapter != null) adapter.invalidate();
     }
 
     @Override
     public void registerClientInvalidation(String id) {
-        invalidations.add(id);
+        invalidateClient(id);
         cache.clientInvalidation(id, invalidations);
     }
+
+    private void invalidateClient(String id) {
+        invalidations.add(id);
+        ClientAdapter adapter = managedApplications.get(id);
+        if (adapter != null) adapter.invalidate();
+    }
+
     @Override
     public void registerClientTemplateInvalidation(String id) {
-        invalidations.add(id);
+        invalidateClientTemplate(id);
         cache.clientTemplateInvalidation(id, invalidations);
+    }
+
+    private void invalidateClientTemplate(String id) {
+        invalidations.add(id);
+        ClientTemplateAdapter adapter = managedClientTemplates.get(id);
+        if (adapter != null) adapter.invalidate();
     }
 
     @Override
     public void registerRoleInvalidation(String id) {
+        invalidateRole(id);
+        roleInvalidations(id);
+    }
+
+    private void roleInvalidations(String roleId) {
+        Set<String> newInvalidations = new HashSet<>();
+        cache.roleInvalidation(roleId, newInvalidations);
+        invalidations.addAll(newInvalidations);
+        // need to make sure that scope and group mapping clients and groups are invalidated
+        for (String id : newInvalidations) {
+            ClientAdapter adapter = managedApplications.get(id);
+            if (adapter != null) {
+                adapter.invalidate();
+                continue;
+            }
+            GroupAdapter group = managedGroups.get(id);
+            if (group != null) {
+                group.invalidate();
+                continue;
+            }
+            ClientTemplateAdapter clientTemplate = managedClientTemplates.get(id);
+            if (clientTemplate != null) {
+                clientTemplate.invalidate();
+                continue;
+            }
+
+
+        }
+    }
+
+
+
+
+    private void invalidateRole(String id) {
         invalidations.add(id);
-        cache.roleInvalidation(id, invalidations);
+        RoleAdapter adapter = managedRoles.get(id);
+        if (adapter != null) adapter.invalidate();
     }
 
     @Override
     public void registerGroupInvalidation(String id) {
-        invalidations.add(id);
+        invalidateGroup(id);
         cache.groupInvalidation(id, invalidations);
+    }
+
+    private void invalidateGroup(String id) {
+        invalidations.add(id);
+        GroupAdapter adapter = managedGroups.get(id);
+        if (adapter != null) adapter.invalidate();
     }
 
     protected void runInvalidations() {
@@ -381,7 +445,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     protected void invalidateClient(RealmModel realm, ClientModel client) {
-        invalidations.add(client.getId());
+        invalidateClient(client.getId());
         invalidations.add(getRealmClientsQueryCacheKey(realm.getId()));
         invalidations.add(getClientByClientIdCacheKey(client.getClientId(), realm));
         listInvalidations.add(realm.getId());
@@ -474,10 +538,12 @@ public class RealmCacheSession implements CacheRealmProvider {
         invalidateClient(realm, client);
         cache.clientRemoval(realm.getId(), id, invalidations);
         for (RoleModel role : client.getRoles()) {
-            cache.roleInvalidation(role.getId(), invalidations);
+            String roleId = role.getId();
+            roleInvalidations(roleId);
         }
         return getDelegate().removeClient(id, realm);
     }
+
 
     @Override
     public void close() {
@@ -582,7 +648,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         // this is needed so that a new role that hasn't been committed isn't cached in a query
         listInvalidations.add(client.getId());
         RoleModel role = getDelegate().addClientRole(realm, client, id, name);
-        invalidations.add(role.getId());
+        invalidateRole(role.getId());
         return role;
     }
 
@@ -651,7 +717,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         invalidations.add(getRolesCacheKey(role.getContainer().getId()));
         invalidations.add(getRoleByNameCacheKey(role.getContainer().getId(), role.getName()));
         listInvalidations.add(role.getContainer().getId());
-        invalidations.add(role.getId());
+        registerRoleInvalidation(role.getId());
         return getDelegate().removeRole(realm, role);
     }
 
@@ -667,8 +733,8 @@ public class RealmCacheSession implements CacheRealmProvider {
             RoleModel model = getDelegate().getRoleById(id, realm);
             if (model == null) return null;
             if (invalidations.contains(id)) return model;
-            if (model.getContainer() instanceof ClientModel) {
-                cached = new CachedClientRole(loaded, ((ClientModel) model.getContainer()).getId(), model, realm);
+            if (model.isClientRole()) {
+                cached = new CachedClientRole(loaded, model.getContainerId(), model, realm);
             } else {
                 cached = new CachedRealmRole(loaded, model, realm);
             }
@@ -913,7 +979,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         } else if (managedClientTemplates.containsKey(id)) {
             return managedClientTemplates.get(id);
         }
-        ClientTemplateModel adapter = new ClientTemplateAdapter(realm, cached, this);
+        ClientTemplateAdapter adapter = new ClientTemplateAdapter(realm, cached, this);
         managedClientTemplates.put(id, adapter);
         return adapter;
     }

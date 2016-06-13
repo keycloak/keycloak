@@ -17,16 +17,23 @@
 
 package org.keycloak.testsuite.keycloaksaml;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -44,6 +51,7 @@ public class SamlAdapterTest {
             initializeSamlSecuredWar("/keycloak-saml/simple-post2", "/sales-post2",  "post.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/simple-post-passive", "/sales-post-passive", "post-passive.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post", "/sales-post-sig",  "post-sig.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/sales-post-assertion-and-response-sig", "/sales-post-assertion-and-response-sig",  "sales-post-assertion-and-response-sig.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-email", "/sales-post-sig-email",  "post-sig-email.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-transient", "/sales-post-sig-transient",  "post-sig-transient.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-persistent", "/sales-post-sig-persistent",  "post-sig-persistent.war", classLoader);
@@ -53,6 +61,8 @@ public class SamlAdapterTest {
             initializeSamlSecuredWar("/keycloak-saml/signed-front-get", "/employee-sig-front",  "employee-sig-front.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/bad-client-signed-post", "/bad-client-sales-post-sig",  "bad-client-post-sig.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/bad-realm-signed-post", "/bad-realm-sales-post-sig",  "bad-realm-post-sig.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/bad-assertion-signed-post", "/bad-assertion-sales-post-sig",  "bad-assertion-post-sig.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/missing-assertion-sig", "/missing-assertion-sig",  "missing-assertion-sig.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/encrypted-post", "/sales-post-enc",  "post-enc.war", classLoader);
             System.setProperty("app.server.base.url", "http://localhost:8081");
             initializeSamlSecuredWar("/keycloak-saml/simple-input", "/input-portal",  "input.war", classLoader, InputServlet.class, "/secured/*");
@@ -80,6 +90,16 @@ public class SamlAdapterTest {
     @Test
     public void testPostBadRealmSignature() {
         testStrategy.testPostBadRealmSignature();
+    }
+
+    @Test
+    public void testPostBadAssertionSignature() {
+        testStrategy.testPostBadAssertionSignature();
+    }
+
+    @Test
+    public void testMissingAssertionSignature() {
+        testStrategy.testMissingAssertionSignature();
     }
 
     @Test
@@ -183,12 +203,38 @@ public class SamlAdapterTest {
     }
 
     @Test
+    public void testPostSignedResponseAndAssertionLoginLogout() {
+        testStrategy.testPostSignedResponseAndAssertionLoginLogout();
+    }
+
+    @Test
     public void testIDPDescriptor() throws Exception {
         Client client = ClientBuilder.newClient();
         String text = client.target("http://localhost:8081/auth/realms/master/protocol/saml/descriptor").request().get(String.class);
         client.close();
 
     }
+
+    /**
+     * Test KEYCLOAK-2718
+     */
+    @Test
+    public void testNameIDFormatImport() throws Exception {
+        String resourcePath = "/keycloak-saml/sp-metadata-email-nameid.xml";
+        Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID, null);
+        RealmResource admin = keycloak.realm("demo");
+
+        admin.toRepresentation();
+
+        ClientRepresentation clientRep = admin.convertClientDescription(IOUtils.toString(SamlAdapterTestStrategy.class.getResourceAsStream(resourcePath)));
+        assertEquals("email", clientRep.getAttributes().get("saml_name_id_format"));
+
+
+        keycloak.close();
+
+
+    }
+
 
 
 }

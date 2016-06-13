@@ -35,6 +35,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -118,6 +119,10 @@ public interface UserResource {
     public List<UserSessionRepresentation> getUserSessions();
 
     @GET
+    @Path("offline-sessions/{clientId}")
+    List<UserSessionRepresentation> getOfflineSessions(@PathParam("clientId") String clientId);
+
+    @GET
     @Path("federated-identity")
     public List<FederatedIdentityRepresentation> getFederatedIdentity();
 
@@ -132,4 +137,17 @@ public interface UserResource {
     @Path("role-mappings")
     public RoleMappingResource roles();
 
+
+    @GET
+    @Path("consents")
+    public List<Map<String, Object>> getConsents();
+
+    @DELETE
+    @Path("consents/{client}")
+    public void revokeConsent(@PathParam("client") String clientId);
+
+    @POST
+    @Path("impersonation")
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, Object> impersonate();
 }

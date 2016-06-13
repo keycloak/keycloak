@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-
-
 <!--
   ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -18,13 +15,18 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <module xmlns="urn:jboss:module:1.3" name="org.keycloak.keycloak-saml-core">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
     <resources>
         <artifact name="${org.keycloak:keycloak-saml-core}"/>
     </resources>
+
     <dependencies>
         <module name="org.keycloak.keycloak-common"/>
+        <module name="org.keycloak.keycloak-saml-core-public"/>
         <module name="org.jboss.logging"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.apache.santuario.xmlsec">
@@ -34,5 +36,4 @@
         </module>
         <module name="javax.api"/>
     </dependencies>
-
 </module>

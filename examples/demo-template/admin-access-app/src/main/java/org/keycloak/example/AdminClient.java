@@ -30,7 +30,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.common.util.HostUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
@@ -91,7 +90,7 @@ public class AdminClient {
 
 
         try {
-            HttpPost post = new HttpPost(KeycloakUriBuilder.fromUri(getBaseUrl(request) + "/auth")
+            HttpPost post = new HttpPost(KeycloakUriBuilder.fromUri(getRequestOrigin(request) + "/auth")
                     .path(ServiceUrlConstants.TOKEN_PATH).build("demo"));
             List <NameValuePair> formparams = new ArrayList <NameValuePair>();
             formparams.add(new BasicNameValuePair("username", "admin"));
@@ -124,7 +123,7 @@ public class AdminClient {
 
 
         try {
-            HttpPost post = new HttpPost(KeycloakUriBuilder.fromUri(getBaseUrl(request) + "/auth")
+            HttpPost post = new HttpPost(KeycloakUriBuilder.fromUri(UriUtils.getOrigin(request.getRequestURL().toString()) + "/auth")
                     .path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
                     .build("demo"));
             List<NameValuePair> formparams = new ArrayList<NameValuePair>();
@@ -152,7 +151,7 @@ public class AdminClient {
 
         HttpClient client = new DefaultHttpClient();
         try {
-            HttpGet get = new HttpGet(getBaseUrl(request) + "/auth/admin/realms/demo/roles");
+            HttpGet get = new HttpGet(UriUtils.getOrigin(request.getRequestURL().toString()) + "/auth/admin/realms/demo/roles");
             get.addHeader("Authorization", "Bearer " + res.getToken());
             try {
                 HttpResponse response = client.execute(get);
@@ -174,13 +173,8 @@ public class AdminClient {
         }
     }
 
-    public static String getBaseUrl(HttpServletRequest request) {
-        String useHostname = request.getServletContext().getInitParameter("useHostname");
-        if (useHostname != null && "true".equalsIgnoreCase(useHostname)) {
-            return "http://" + HostUtils.getHostName() + ":8080";
-        } else {
-            return UriUtils.getOrigin(request.getRequestURL().toString());
-        }
+    public static String getRequestOrigin(HttpServletRequest request) {
+        return UriUtils.getOrigin(request.getRequestURL().toString());
     }
 
 }

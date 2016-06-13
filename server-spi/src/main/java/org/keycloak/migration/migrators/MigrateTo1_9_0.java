@@ -38,7 +38,7 @@ public class MigrateTo1_9_0 {
     public static final ModelVersion VERSION = new ModelVersion("1.9.0");
 
     public void migrate(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
+        RealmModel realm = session.realms().getRealm(Config.getAdminRealm());
         if (realm != null && realm.getDisplayNameHtml() != null && realm.getDisplayNameHtml().equals("<strong>Keycloak</strong>")) {
             realm.setDisplayNameHtml("<div class=\"kc-logo-text\"><span>Keycloak</span></div>");
         }

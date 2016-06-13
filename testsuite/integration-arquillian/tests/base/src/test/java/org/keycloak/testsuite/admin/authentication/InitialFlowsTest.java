@@ -55,15 +55,13 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         List<AuthenticationFlowRepresentation> flows = authMgmtResource.getFlows();
         for (AuthenticationFlowRepresentation flow : flows) {
             // get all executions for flow
-            Response executions = authMgmtResource.getExecutions(flow.getAlias());
-            List<AuthenticationExecutionInfoRepresentation> executionReps = executions.readEntity(new GenericType<List<AuthenticationExecutionInfoRepresentation>>() {
-            });
+            List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions(flow.getAlias());
 
             for (AuthenticationExecutionInfoRepresentation exec : executionReps) {
                 // separately load referenced configurations
                 String configId = exec.getAuthenticationConfig();
                 if (configId != null && !configs.containsKey(configId)) {
-                    configs.put(configId, authMgmtResource.getAuthenticatorConfig(exec.getId(), configId));
+                    configs.put(configId, authMgmtResource.getAuthenticatorConfig(configId));
                 }
             }
             result.add(new FlowExecutions(flow, executionReps));

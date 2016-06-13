@@ -219,15 +219,15 @@
                 <div class="col-sm-6">
                     <div class="input-group" ng-repeat="(i, redirectUri) in client.redirectUris track by $index">
                         <input class="form-control" ng-model="client.redirectUris[i]">
-                        <div class="input-group-addon">
-                            <i class="fa fa-minus" style="width: 10px;" data-ng-click="deleteRedirectUri($index)"></i>
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deleteRedirectUri($index)"><span class="fa fa-minus"></span></button>
                         </div>
                     </div>
 
                     <div class="input-group">
                         <input class="form-control" ng-model="newRedirectUri" id="newRedirectUri">
-                        <div class="input-group-addon">
-                            <i class="fa fa-plus" style="width: 10px;" data-ng-click="newRedirectUri.length > 0 && addRedirectUri()"></i>
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newRedirectUri.length > 0 && addRedirectUri()"><span class="fa fa-plus"></span></button>
                         </div>
                     </div>
                 </div>
@@ -278,15 +278,15 @@
                 <div class="col-sm-6">
                     <div class="input-group" ng-repeat="(i, webOrigin) in client.webOrigins track by $index">
                         <input class="form-control" ng-model="client.webOrigins[i]">
-                        <div class="input-group-addon">
-                            <i class="fa fa-minus" style="width: 10px;" data-ng-click="deleteWebOrigin($index)"></i>
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deleteWebOrigin($index)"><span class="fa fa-minus"></span></button>
                         </div>
                     </div>
 
                     <div class="input-group">
                         <input class="form-control" ng-model="newWebOrigin" id="newWebOrigin">
-                        <div class="input-group-addon">
-                            <i class="fa fa-plus" style="width: 10px;" data-ng-click="newWebOrigin.length > 0 && addWebOrigin()"></i>
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newWebOrigin.length > 0 && addWebOrigin()"><span class="fa fa-plus"></span></button>
                         </div>
                     </div>
                 </div>

@@ -27,6 +27,7 @@ import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 
+import static org.jboss.logging.Logger.Level.DEBUG;
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.FATAL;
 import static org.jboss.logging.Logger.Level.INFO;
@@ -94,11 +95,11 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=12, value="Failed to delete '%s'")
     void failedToDeleteFile(String fileName);
 
-    @LogMessage(level = ERROR)
-    @Message(id=13, value="failed authentication")
+    @LogMessage(level = DEBUG)
+    @Message(id=13, value="Failed authentication")
     void failedAuthentication(@Cause Throwable t);
 
-    @LogMessage(level = ERROR)
+    @LogMessage(level = DEBUG)
     @Message(id=14, value="Failed client authentication")
     void failedClientAuthentication(@Cause Throwable t);
 

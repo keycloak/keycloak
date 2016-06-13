@@ -28,9 +28,11 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
+import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
 import org.keycloak.federation.ldap.LDAPUtils;
+import org.keycloak.federation.ldap.idm.model.LDAPDn;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.federation.ldap.mappers.membership.MembershipType;
@@ -108,6 +110,9 @@ public class LDAPGroupMapperTest {
 
             LDAPObject rob = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "robkeycloak", "Rob", "Brown", "rob@email.org", null, "8910");
             FederationTestUtils.updateLDAPPassword(ldapFedProvider, rob, "Password1");
+
+            LDAPObject james = FederationTestUtils.addLDAPUser(ldapFedProvider, appRealm, "jameskeycloak", "James", "Brown", "james@email.org", null, "8910");
+            FederationTestUtils.updateLDAPPassword(ldapFedProvider, james, "Password1");
 
         }
     });
@@ -297,6 +302,53 @@ public class LDAPGroupMapperTest {
             rob.leaveGroup(group12);
             robGroups = rob.getGroups();
             Assert.assertEquals(0, robGroups.size());
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
+    }
+
+
+    // KEYCLOAK-2682
+    @Test
+    public void test04_groupReferencingNonExistentMember() {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            // Ignoring this test on ActiveDirectory as it's not allowed to have LDAP group referencing nonexistent member. KEYCLOAK-2682 was related to OpenLDAP TODO: Better solution than programmatic...
+            LDAPConfig config = FederationTestUtils.getLdapProvider(session, ldapModel).getLdapIdentityStore().getConfig();
+            if (config.isActiveDirectory()) {
+                return;
+            }
+
+            RealmModel appRealm = session.realms().getRealmByName("test");
+
+            UserFederationMapperModel mapperModel = appRealm.getUserFederationMapperByName(ldapModel.getId(), "groupsMapper");
+            FederationTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
+            appRealm.updateUserFederationMapper(mapperModel);
+
+            // 1 - Add some group to LDAP for testing
+            LDAPFederationProvider ldapProvider = FederationTestUtils.getLdapProvider(session, ldapModel);
+            GroupLDAPFederationMapper groupMapper = FederationTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
+            LDAPObject group2 = FederationTestUtils.createLDAPGroup(session, appRealm, ldapModel, "group2", descriptionAttrName, "group2 - description");
+
+            // 2 - Add one existing user rob to LDAP group
+            LDAPObject jamesLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "jameskeycloak");
+            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, group2, jamesLdap, false);
+
+            // 3 - Add non-existing user to LDAP group
+            LDAPDn nonExistentDn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getUsersDn());
+            nonExistentDn.addFirst(jamesLdap.getRdnAttributeName(), "nonexistent");
+            LDAPObject nonExistentLdapUser = new LDAPObject();
+            nonExistentLdapUser.setDn(nonExistentDn);
+            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, group2, nonExistentLdapUser, true);
+
+            // 4 - Check group members. Just existing user rob should be present
+            groupMapper.syncDataFromFederationProviderToKeycloak();
+            GroupModel kcGroup2 = KeycloakModelUtils.findGroupByPath(appRealm, "/group2");
+            List<UserModel> groupUsers = session.users().getGroupMembers(appRealm, kcGroup2, 0, 5);
+            Assert.assertEquals(1, groupUsers.size());
+            UserModel rob = groupUsers.get(0);
+            Assert.assertEquals("jameskeycloak", rob.getUsername());
+
         } finally {
             keycloakRule.stopSession(session, false);
         }

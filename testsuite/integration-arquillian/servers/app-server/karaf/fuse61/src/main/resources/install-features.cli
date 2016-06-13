@@ -1,0 +1,6 @@
+features:addurl mvn:org.ops4j.pax.web/pax-web-features/3.1.2/xml/features
+features:addurl mvn:org.keycloak/keycloak-osgi-features/${project.version}/xml/features
+features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/${project.version}/xml/features
+features:install keycloak-pax-web-upgrade
+features:install pax-http-whiteboard/3.1.2
+features:install pax-war/3.1.2

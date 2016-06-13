@@ -17,17 +17,24 @@
 
 package org.keycloak.testsuite.util;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.UserFederationProvider;
+import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
+
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.jboss.logging.Logger;
+import org.keycloak.common.constants.GenericConstants;
+import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.FindFile;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.UserFederationProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -36,8 +43,9 @@ public class LDAPTestConfiguration {
 
     private static final Logger log = Logger.getLogger(LDAPTestConfiguration.class);
 
-    private String connectionPropertiesLocation;
-    private boolean startEmbeddedLdapLerver = true;
+    private int sleepTime;
+    private boolean startEmbeddedLdapServer = true;
+    private boolean caseSensitiveLogin = true;
     private Map<String, String> config;
 
     protected static final Map<String, String> PROP_MAPPINGS = new HashMap<String, String>();
@@ -83,8 +91,7 @@ public class LDAPTestConfiguration {
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "false");
         DEFAULT_VALUES.put(KerberosConstants.KERBEROS_REALM, "KEYCLOAK.ORG");
         DEFAULT_VALUES.put(KerberosConstants.SERVER_PRINCIPAL, "HTTP/localhost@KEYCLOAK.ORG");
-        URL keytabUrl = LDAPTestConfiguration.class.getResource("/kerberos/http.keytab");
-        String keyTabPath = new File(keytabUrl.getFile()).getAbsolutePath();
+        String keyTabPath =  getResource("http.keytab");
         DEFAULT_VALUES.put(KerberosConstants.KEYTAB, keyTabPath);
         DEFAULT_VALUES.put(KerberosConstants.DEBUG, "true");
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION, "true");
@@ -94,16 +101,35 @@ public class LDAPTestConfiguration {
 
     public static LDAPTestConfiguration readConfiguration(String connectionPropertiesLocation) {
         LDAPTestConfiguration ldapTestConfiguration = new LDAPTestConfiguration();
-        ldapTestConfiguration.setConnectionPropertiesLocation(connectionPropertiesLocation);
-        ldapTestConfiguration.loadConnectionProperties();
+        ldapTestConfiguration.loadConnectionProperties(connectionPropertiesLocation);
         return ldapTestConfiguration;
     }
+    
+    public static String getResource(String resourceName) {
+        return new File(PROJECT_BUILD_DIRECTORY, "dependency/kerberos/" + resourceName).getAbsolutePath();
+    }
 
-    protected void loadConnectionProperties() {
-        Properties p = new Properties();
+    protected void loadConnectionProperties(String connectionPropertiesLocation) {
+        // TODO: Improve and possibly use FindFile
+        InputStream is;
         try {
-            log.info("Reading LDAP configuration from: " + connectionPropertiesLocation);
-            InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(connectionPropertiesLocation);
+            if (connectionPropertiesLocation.startsWith(GenericConstants.PROTOCOL_CLASSPATH)) {
+                String classPathLocation = connectionPropertiesLocation.replace(GenericConstants.PROTOCOL_CLASSPATH, "");
+                log.info("Reading LDAP configuration from classpath from: " + classPathLocation);
+                is = LDAPTestConfiguration.class.getClassLoader().getResourceAsStream(classPathLocation);
+            } else {
+                String file = getResource(connectionPropertiesLocation);
+                log.info("Reading LDAP configuration from: " + connectionPropertiesLocation);
+                is = new FileInputStream(file);
+            }
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+
+        PropertiesConfiguration p;
+        try {
+            p = new PropertiesConfiguration();
+            p.setDelimiterParsingDisabled(true);
             p.load(is);
         }
         catch (Exception e) {
@@ -115,7 +141,7 @@ public class LDAPTestConfiguration {
             String propertyName = property.getKey();
             String configName = property.getValue();
 
-            String value = (String) p.get(configName);
+            String value = p.getString(configName);
             if (value == null) {
                 value = DEFAULT_VALUES.get(propertyName);
             }
@@ -123,8 +149,10 @@ public class LDAPTestConfiguration {
             config.put(propertyName, value);
         }
 
-        startEmbeddedLdapLerver = Boolean.parseBoolean(p.getProperty("idm.test.ldap.start.embedded.ldap.server", "true"));
-        log.info("Start embedded server: " + startEmbeddedLdapLerver);
+        startEmbeddedLdapServer = p.getBoolean("idm.test.ldap.start.embedded.ldap.server", true);
+        sleepTime = p.getInteger("idm.test.ldap.sleepTime", 1000);
+        caseSensitiveLogin = p.getBoolean("idm.test.kerberos.caseSensitiveLogin", true);
+        log.info("Start embedded server: " + startEmbeddedLdapServer);
         log.info("Read config: " + config);
     }
 
@@ -132,12 +160,16 @@ public class LDAPTestConfiguration {
         return config;
     }
 
-    public void setConnectionPropertiesLocation(String connectionPropertiesLocation) {
-        this.connectionPropertiesLocation = connectionPropertiesLocation;
+    public boolean isStartEmbeddedLdapServer() {
+        return startEmbeddedLdapServer;
     }
 
-    public boolean isStartEmbeddedLdapLerver() {
-        return startEmbeddedLdapLerver;
+    public int getSleepTime() {
+        return sleepTime;
+    }
+
+    public boolean isCaseSensitiveLogin() {
+        return caseSensitiveLogin;
     }
 
 }

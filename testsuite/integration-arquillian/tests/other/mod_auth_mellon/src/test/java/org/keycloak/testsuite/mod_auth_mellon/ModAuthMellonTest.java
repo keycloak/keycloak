@@ -56,7 +56,7 @@ public class ModAuthMellonTest extends AbstractAuthTest {
         modAuthMellonProtectedResourcePage2.navigateTo();
         URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
 
-        pause(2000); //session length
+        pause(5000); //session length
 
         modAuthMellonProtectedResourcePage.navigateTo();
         URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
@@ -76,15 +76,11 @@ public class ModAuthMellonTest extends AbstractAuthTest {
 
     @Test
     public void sessionExpiration() {
-        RealmRepresentation realm = testRealmResource().toRepresentation();
-        realm.setSsoSessionIdleTimeout(2);
-        testRealmResource().update(realm);
-
         modAuthMellonProtectedResourcePage.navigateTo();
         testRealmSAMLRedirectLoginPage.form().login(bburkeUser);
         assertTrue(driver.getPageSource().contains("Protected resource"));
 
-        pause(2000); //session length
+        pause(5000); //session length
 
         modAuthMellonProtectedResourcePage.navigateTo();
         URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);

@@ -21,7 +21,7 @@
     <subsystems>
         <subsystem>logging.xml</subsystem>
         <subsystem>bean-validation.xml</subsystem>
-        <subsystem>keycloak-datasources.xml</subsystem>
+        <subsystem supplement="default">keycloak-datasources.xml</subsystem>
         <subsystem>ee.xml</subsystem>
         <subsystem supplement="ha">ejb3.xml</subsystem>
         <subsystem>io.xml</subsystem>

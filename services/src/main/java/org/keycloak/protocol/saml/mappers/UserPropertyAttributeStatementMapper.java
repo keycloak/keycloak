@@ -72,7 +72,7 @@ public class UserPropertyAttributeStatementMapper extends AbstractSAMLProtocolMa
 
     @Override
     public String getHelpText() {
-        return "Map a built in user property to a SAML attribute type.";
+        return "Map a built in user property (email, firstName, lastName) to a SAML attribute type.";
     }
 
     @Override
@@ -87,7 +87,7 @@ public class UserPropertyAttributeStatementMapper extends AbstractSAMLProtocolMa
 
     public static ProtocolMapperModel createAttributeMapper(String name, String userAttribute,
                                                             String samlAttributeName, String nameFormat, String friendlyName,
-                                          boolean consentRequired, String consentText) {
+                                                            boolean consentRequired, String consentText) {
         String mapperId = PROVIDER_ID;
         return AttributeStatementHelper.createAttributeMapper(name, userAttribute, samlAttributeName, nameFormat, friendlyName,
                 consentRequired, consentText, mapperId);

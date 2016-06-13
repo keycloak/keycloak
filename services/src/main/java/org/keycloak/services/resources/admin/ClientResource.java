@@ -120,6 +120,10 @@ public class ClientResource {
     public Response update(final ClientRepresentation rep) {
         auth.requireManage();
 
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         try {
             updateClientFromRep(rep, client, session);
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
@@ -147,6 +151,11 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public ClientRepresentation getClient() {
         auth.requireView();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         return ModelToRepresentation.toRepresentation(client);
     }
 
@@ -165,6 +174,12 @@ public class ClientResource {
     @NoCache
     @Path("installation/providers/{providerId}")
     public Response getInstallationProvider(@PathParam("providerId") String providerId) {
+        auth.requireView();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         ClientInstallationProvider provider = session.getProvider(ClientInstallationProvider.class, providerId);
         if (provider == null) throw new NotFoundException("Unknown Provider");
         return provider.generateInstallation(session, realm, client, keycloak.getBaseUri(uriInfo));
@@ -178,6 +193,11 @@ public class ClientResource {
     @NoCache
     public void deleteClient() {
         auth.requireManage();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         new ClientManager(new RealmManager(session)).removeClient(realm, client);
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
@@ -194,6 +214,10 @@ public class ClientResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public CredentialRepresentation regenerateSecret() {
         auth.requireManage();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         logger.debug("regenerateSecret");
         UserCredentialModel cred = KeycloakModelUtils.generateSecret(client);
@@ -213,6 +237,10 @@ public class ClientResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public ClientRepresentation regenerateRegistrationAccessToken() {
         auth.requireManage();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(realm, uriInfo, client);
 
@@ -234,6 +262,10 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public CredentialRepresentation getClientSecret() {
         auth.requireView();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
 
         logger.debug("getClientSecret");
         UserCredentialModel model = UserCredentialModel.secret(client.getSecret());
@@ -268,6 +300,10 @@ public class ClientResource {
     public UserRepresentation getServiceAccountUser() {
         auth.requireView();
 
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         UserModel user = session.users().getUserByServiceAccountClient(client);
         if (user == null) {
             if (client.isServiceAccountsEnabled()) {
@@ -288,8 +324,14 @@ public class ClientResource {
      */
     @Path("push-revocation")
     @POST
+    @Produces(MediaType.APPLICATION_JSON)
     public GlobalRequestResult pushRevocation() {
         auth.requireManage();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
         return new ResourceAdminManager(session).pushClientRevocationPolicy(uriInfo.getRequestUri(), realm, client);
 
@@ -312,6 +354,11 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Long> getApplicationSessionCount() {
         auth.requireView();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         Map<String, Long> map = new HashMap<>();
         map.put("count", session.sessions().getActiveUserSessions(client.getRealm(), client));
         return map;
@@ -332,6 +379,11 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserSessionRepresentation> getUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
         auth.requireView();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : -1;
         List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
@@ -359,6 +411,11 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Long> getOfflineSessionCount() {
         auth.requireView();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         Map<String, Long> map = new HashMap<>();
         map.put("count", session.sessions().getOfflineSessionsCount(client.getRealm(), client));
         return map;
@@ -379,6 +436,11 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserSessionRepresentation> getOfflineUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
         auth.requireView();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : -1;
         List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
@@ -412,13 +474,18 @@ public class ClientResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void registerNode(Map<String, String> formParams) {
         auth.requireManage();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         String node = formParams.get("node");
         if (node == null) {
             throw new BadRequestException("Node not found in params");
         }
         if (logger.isDebugEnabled()) logger.debug("Register node: " + node);
         client.registerNode(node, Time.currentTime());
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, node).success();
     }
 
     /**
@@ -431,6 +498,11 @@ public class ClientResource {
     @NoCache
     public void unregisterNode(final @PathParam("node") String node) {
         auth.requireManage();
+
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         if (logger.isDebugEnabled()) logger.debug("Unregister node: " + node);
 
         Integer time = client.getRegisteredNodes().get(node);
@@ -451,12 +523,18 @@ public class ClientResource {
     @Path("test-nodes-available")
     @GET
     @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
     public GlobalRequestResult testNodesAvailable() {
         auth.requireManage();
-        logger.debug("Test availability of cluster nodes");
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
-        return new ResourceAdminManager(session).testNodesAvailability(uriInfo.getRequestUri(), realm, client);
 
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
+        logger.debug("Test availability of cluster nodes");
+        GlobalRequestResult result = new ResourceAdminManager(session).testNodesAvailability(uriInfo.getRequestUri(), realm, client);
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(result).success();
+        return result;
     }
 
 }

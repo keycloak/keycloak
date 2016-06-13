@@ -38,13 +38,13 @@ import javax.security.auth.spi.LoginModule;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.common.VerificationException;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterUtils;
-import org.keycloak.common.util.FindFile;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.FindFile;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.common.util.reflections.Reflections;
 

@@ -17,11 +17,17 @@
 package org.keycloak.services.resources;
 
 import org.keycloak.Config;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.MimeTypeUtil;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.CookieHelper;
+import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
@@ -35,8 +41,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,13 +65,18 @@ public class WelcomeResource {
 
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
+    private static final String KEYCLOAK_STATE_CHECKER = "KEYCLOAK_STATE_CHECKER";
+
     private boolean bootstrap;
+
+    @Context
+    protected HttpHeaders headers;
 
     @Context
     private UriInfo uriInfo;
 
     @Context
-    protected KeycloakSession session;
+    private KeycloakSession session;
 
     public WelcomeResource(boolean bootstrap) {
         this.bootstrap = bootstrap;
@@ -98,6 +113,10 @@ public class WelcomeResource {
                 logger.rejectedNonLocalAttemptToCreateInitialUser(session.getContext().getConnection().getRemoteAddr());
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
+
+            String cookieStateChecker = getCsrfCookie();
+            String formStateChecker = formData.getFirst("stateChecker");
+            csrfCheck(cookieStateChecker, formStateChecker);
 
             String username = formData.getFirst("username");
             String password = formData.getFirst("password");
@@ -158,7 +177,13 @@ public class WelcomeResource {
             Map<String, Object> map = new HashMap<>();
             map.put("bootstrap", bootstrap);
             if (bootstrap) {
-                map.put("localUser", isLocal());
+                boolean isLocal = isLocal();
+                map.put("localUser", isLocal);
+
+                if (isLocal) {
+                    String stateChecker = updateCsrfChecks();
+                    map.put("stateChecker", stateChecker);
+                }
             }
             if (successMessage != null) {
                 map.put("successMessage", successMessage);
@@ -168,7 +193,12 @@ public class WelcomeResource {
             }
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", getTheme());
-            return Response.status(errorMessage == null ? Response.Status.OK : Response.Status.BAD_REQUEST).entity(result).cacheControl(CacheControlUtil.noCache()).build();
+
+            ResponseBuilder rb = Response.status(errorMessage == null ? Status.OK : Status.BAD_REQUEST)
+                    .entity(result)
+                    .cacheControl(CacheControlUtil.noCache());
+            BrowserSecurityHeaderSetup.headers(rb, BrowserSecurityHeaders.defaultHeaders);
+            return rb.build();
         } catch (Exception e) {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }
@@ -192,10 +222,45 @@ public class WelcomeResource {
 
     private boolean isLocal() {
         try {
-            InetAddress inetAddress = InetAddress.getByName(session.getContext().getConnection().getRemoteAddr());
-            return inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress();
+            ClientConnection clientConnection = session.getContext().getConnection();
+            InetAddress remoteInetAddress = InetAddress.getByName(clientConnection.getRemoteAddr());
+            InetAddress localInetAddress = InetAddress.getByName(clientConnection.getLocalAddr());
+            String xForwardedFor = headers.getHeaderString("X-Forwarded-For");
+            logger.debugf("Checking WelcomePage. Remote address: %s, Local address: %s, X-Forwarded-For header: %s", remoteInetAddress.toString(), localInetAddress.toString(), xForwardedFor);
+
+            // Access through AJP protocol (loadbalancer) may cause that remoteAddress is "127.0.0.1".
+            // So consider that welcome page accessed locally just if it was accessed really through "localhost" URL and without loadbalancer (x-forwarded-for header is empty).
+            return isLocalAddress(remoteInetAddress) && isLocalAddress(localInetAddress) && xForwardedFor == null;
         } catch (UnknownHostException e) {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private boolean isLocalAddress(InetAddress inetAddress) {
+        return inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress();
+    }
+
+    private String updateCsrfChecks() {
+        String stateChecker = getCsrfCookie();
+        if (stateChecker != null) {
+            return stateChecker;
+        } else {
+            stateChecker = KeycloakModelUtils.generateSecret();
+            String cookiePath = uriInfo.getPath();
+            boolean secureOnly = uriInfo.getRequestUri().getScheme().equalsIgnoreCase("https");
+            CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);
+            return stateChecker;
+        }
+    }
+
+    private String getCsrfCookie() {
+        Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
+        return cookie==null ? null : cookie.getValue();
+    }
+
+    private void csrfCheck(String cookieStateChecker, String formStateChecker) {
+        if (cookieStateChecker == null || !cookieStateChecker.equals(formStateChecker)) {
+            throw new ForbiddenException();
         }
     }
 

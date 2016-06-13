@@ -1112,6 +1112,9 @@ module.controller('CreateClientCtrl', function($scope, realm, client, templates,
             realm: realm.realm
         }, fileContent, function (data) {
             $scope.client = data;
+            if (data.protocol) {
+                $scope.protocol = data.protocol;
+            }
             $scope.importing = true;
         });
     };
@@ -1870,7 +1873,7 @@ module.controller('ClientTemplateProtocolMapperListCtrl', function($scope, realm
 });
 
 module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, serverInfo, template, mapper, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
-
+    $scope.realm = realm;
     if (template.protocol == null) {
         template.protocol = 'openid-connect';
     }
@@ -1926,7 +1929,7 @@ module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, se
     };
 
     $scope.remove = function() {
-        Dialog.confirmDelete($scope.mapper.name, 'mapper', function() {
+        Dialog.confirmDelete($scope.model.mapper.name, 'mapper', function() {
             ClientTemplateProtocolMapper.remove({ realm: realm.realm, template: template.id, id : $scope.model.mapper.id }, function() {
                 Notifications.success("The mapper has been deleted.");
                 $location.url("/realms/" + realm.realm + '/client-templates/' + template.id + "/mappers");
@@ -1937,6 +1940,7 @@ module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, se
 });
 
 module.controller('ClientTemplateProtocolMapperCreateCtrl', function($scope, realm, serverInfo, template, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
+    $scope.realm = realm;
     if (template.protocol == null) {
         template.protocol = 'openid-connect';
     }

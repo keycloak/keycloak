@@ -54,13 +54,14 @@ public class KeycloakDeploymentBuilderTest {
         assertEquals("234234-234234-234234", deployment.getResourceCredentials().get("secret"));
         assertEquals(ClientIdAndSecretCredentialsProvider.PROVIDER_ID, deployment.getClientAuthenticator().getId());
         assertEquals(20, ((ThreadSafeClientConnManager) deployment.getClient().getConnectionManager()).getMaxTotal());
-        assertEquals("https://backend:8443/auth/realms/demo/protocol/openid-connect/token", deployment.getTokenUrl());
+        assertEquals("https://localhost:8443/auth/realms/demo/protocol/openid-connect/token", deployment.getTokenUrl());
         assertEquals(RelativeUrlsUsed.NEVER, deployment.getRelativeUrls());
         assertTrue(deployment.isAlwaysRefreshToken());
         assertTrue(deployment.isRegisterNodeAtStartup());
         assertEquals(1000, deployment.getRegisterNodePeriod());
         assertEquals(TokenStore.COOKIE, deployment.getTokenStore());
         assertEquals("email", deployment.getPrincipalAttribute());
+        assertEquals(10, deployment.getTokenMinimumTimeToLive());
     }
 
     @Test

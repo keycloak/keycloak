@@ -35,5 +35,6 @@
         <module>event-store-mem</module>
         <module>federation-provider</module>
         <module>authenticator</module>
+        <module>rest</module>
     </modules>
 </project>

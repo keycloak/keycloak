@@ -188,7 +188,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
         switch (page) {
             case TOTP:
-                attributes.put("totp", new TotpBean(session, realm, user, baseUri));
+                attributes.put("totp", new TotpBean(session, realm, user));
                 break;
             case FEDERATED_IDENTITY:
                 attributes.put("federatedIdentity", new AccountFederatedIdentityBean(session, realm, user, uriInfo.getBaseUri(), stateChecker));

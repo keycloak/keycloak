@@ -32,6 +32,7 @@ import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicy;
 import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicyForm.Digits;
 import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicyForm.OTPHashAlg;
 import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicyForm.OTPType;
+import org.keycloak.testsuite.util.WaitUtils;
 
 /**
  *
@@ -45,12 +46,13 @@ public class OTPPolicyTest extends AbstractConsoleTest {
     @Before
     public void beforeOTPPolicyTest() {
         otpPolicyPage.navigateTo();
+        WaitUtils.pause(1000); // wait for the form to fully render
     }
     
     @Test
     public void otpPolicyTest() {
         otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA256, Digits.EIGHT, "10", "50");
-        assertEquals("Success! Your changes have been saved to the realm.", otpPolicyPage.getSuccessMessage());
+        assertAlertSuccess();
         
         RealmRepresentation realm = testRealmResource().toRepresentation();
         assertEquals("hotp", realm.getOtpPolicyType());
@@ -60,7 +62,7 @@ public class OTPPolicyTest extends AbstractConsoleTest {
         assertEquals(Integer.valueOf(50), realm.getOtpPolicyInitialCounter());
         
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA512, Digits.EIGHT, "10", "40");
-        assertEquals("Success! Your changes have been saved to the realm.", otpPolicyPage.getSuccessMessage());
+        assertAlertSuccess();
         
         realm = testRealmResource().toRepresentation();
         assertEquals(Integer.valueOf(40), realm.getOtpPolicyPeriod());
@@ -69,54 +71,45 @@ public class OTPPolicyTest extends AbstractConsoleTest {
     @Test
     public void invalidValuesTest() {
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.SIX, "", "30");
-        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
-        otpPolicyPage.closeNotification();
+        assertAlertDanger();
         otpPolicyPage.navigateTo();// workaround: input.clear() doesn't work when <input type="number" ...
         
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.SIX, " ", "30");
-        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
-        otpPolicyPage.closeNotification();
+        assertAlertDanger();
         otpPolicyPage.navigateTo();
         
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.SIX, "no number", "30");
-        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
-        otpPolicyPage.closeNotification();
+        assertAlertDanger();
         otpPolicyPage.navigateTo();
         
         RealmRepresentation realm = testRealmResource().toRepresentation();
         assertEquals(Integer.valueOf(1), realm.getOtpPolicyLookAheadWindow());
 
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.SIX, "1", "");
-        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
-        otpPolicyPage.closeNotification();
+        assertAlertDanger();
         otpPolicyPage.navigateTo();
         
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.SIX, "1", " ");
-        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
-        otpPolicyPage.closeNotification();
+        assertAlertDanger();
         otpPolicyPage.navigateTo();
         
         otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA1, Digits.SIX, "1", "no number");
-        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
-        otpPolicyPage.closeNotification();
+        assertAlertDanger();
         otpPolicyPage.navigateTo();
         
         realm = testRealmResource().toRepresentation();
         assertEquals(Integer.valueOf(30), realm.getOtpPolicyPeriod());
         
         otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA1, Digits.SIX, "1", "");
-        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
-        otpPolicyPage.closeNotification();
+        assertAlertDanger();
         otpPolicyPage.navigateTo();
         
         otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA1, Digits.SIX, "1", " ");
-        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
-        otpPolicyPage.closeNotification();
+        assertAlertDanger();
         otpPolicyPage.navigateTo();
         
         otpPolicyPage.form().setValues(OTPType.COUNTER_BASED, OTPHashAlg.SHA1, Digits.SIX, "1", "no number");
-        assertEquals("Error! Missing or invalid field(s). Please verify the fields in red.", otpPolicyPage.getErrorMessage());
-        otpPolicyPage.closeNotification();
+        assertAlertDanger();
         otpPolicyPage.navigateTo();
         
         realm = testRealmResource().toRepresentation();

@@ -34,7 +34,7 @@
             </li>
             <li>
                 <p>${msg("loginTotpStep2")}</p>
-                <img src="${totp.totpSecretQrCodeUrl}" alt="Figure: Barcode"><br/>
+                <img src="data:image/png;base64, ${totp.totpSecretQrCode}" alt="Figure: Barcode"><br/>
                 <span class="code">${totp.totpSecretEncoded}</span>
             </li>
             <li>

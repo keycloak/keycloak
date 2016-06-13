@@ -1,0 +1,3 @@
+features:addurl mvn:org.keycloak/keycloak-osgi-features/${project.version}/xml/features
+features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/${project.version}/xml/features
+features:install keycloak-fuse-6.3-example

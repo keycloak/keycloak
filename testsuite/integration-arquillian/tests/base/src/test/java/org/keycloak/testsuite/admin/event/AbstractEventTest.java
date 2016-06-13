@@ -38,7 +38,7 @@ public abstract class AbstractEventTest extends AbstractAuthTest {
         configRep.setAdminEventsDetailsEnabled(false);
         configRep.setAdminEventsEnabled(false);
         configRep.setEventsEnabled(false);
-        configRep.setEnabledEventTypes(Collections.EMPTY_LIST); // resets to all types
+        configRep.setEnabledEventTypes(Collections.<String>emptyList()); // resets to all types
         saveConfig();
     }
 

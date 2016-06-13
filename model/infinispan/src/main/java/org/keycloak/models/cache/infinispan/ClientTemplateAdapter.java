@@ -36,13 +36,13 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ClientTemplateAdapter implements ClientTemplateModel {
-    protected CacheRealmProvider cacheSession;
+    protected RealmCacheSession cacheSession;
     protected RealmModel cachedRealm;
 
     protected ClientTemplateModel updated;
     protected CachedClientTemplate cached;
 
-    public ClientTemplateAdapter(RealmModel cachedRealm, CachedClientTemplate cached, CacheRealmProvider cacheSession) {
+    public ClientTemplateAdapter(RealmModel cachedRealm, CachedClientTemplate cached, RealmCacheSession cacheSession) {
         this.cachedRealm = cachedRealm;
         this.cacheSession = cacheSession;
         this.cached = cached;
@@ -50,15 +50,29 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     private void getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerClientTemplateInvalidation(getId());
-            updated = cacheSession.getDelegate().getClientTemplateById(getId(), cachedRealm);
+            cacheSession.registerClientTemplateInvalidation(cached.getId());
+            updated = cacheSession.getDelegate().getClientTemplateById(cached.getId(), cachedRealm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
 
+    protected boolean invalidated;
+    public void invalidate() {
+        invalidated = true;
+    }
+
+    protected boolean isUpdated() {
+        if (updated != null) return true;
+        if (!invalidated) return false;
+        updated = cacheSession.getDelegate().getClientTemplateById(cached.getId(), cachedRealm);
+        if (updated == null) throw new IllegalStateException("Not found in database");
+        return true;
+    }
+
+
     @Override
     public String getId() {
-        if (updated != null) return updated.getId();
+        if (isUpdated()) return updated.getId();
         return cached.getId();
     }
 
@@ -68,7 +82,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     @Override
     public Set<ProtocolMapperModel> getProtocolMappers() {
-        if (updated != null) return updated.getProtocolMappers();
+        if (isUpdated()) return updated.getProtocolMappers();
         return cached.getProtocolMappers();
     }
 
@@ -110,7 +124,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     @Override
     public String getName() {
-        if (updated != null) return updated.getName();
+        if (isUpdated()) return updated.getName();
         return cached.getName();
     }
 
@@ -122,7 +136,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     @Override
     public String getDescription() {
-        if (updated != null) return updated.getDescription();
+        if (isUpdated()) return updated.getDescription();
         return cached.getDescription();
     }
 
@@ -134,7 +148,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     @Override
     public String getProtocol() {
-        if (updated != null) return updated.getProtocol();
+        if (isUpdated()) return updated.getProtocol();
         return cached.getProtocol();
     }
 
@@ -146,7 +160,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     @Override
     public boolean isFullScopeAllowed() {
-        if (updated != null) return updated.isFullScopeAllowed();
+        if (isUpdated()) return updated.isFullScopeAllowed();
         return cached.isFullScopeAllowed();
     }
 
@@ -158,7 +172,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
     }
 
     public Set<RoleModel> getScopeMappings() {
-        if (updated != null) return updated.getScopeMappings();
+        if (isUpdated()) return updated.getScopeMappings();
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (String id : cached.getScope()) {
             roles.add(cacheSession.getRoleById(id, getRealm()));
@@ -195,7 +209,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     @Override
     public boolean hasScope(RoleModel role) {
-        if (updated != null) return updated.hasScope(role);
+        if (isUpdated()) return updated.hasScope(role);
         if (cached.isFullScopeAllowed() || cached.getScope().contains(role.getId())) return true;
 
         Set<RoleModel> roles = getScopeMappings();
@@ -207,7 +221,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
     }
 
     public boolean isPublicClient() {
-        if (updated != null) return updated.isPublicClient();
+        if (isUpdated()) return updated.isPublicClient();
         return cached.isPublicClient();
     }
 
@@ -217,7 +231,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
     }
 
     public boolean isFrontchannelLogout() {
-        if (updated != null) return updated.isPublicClient();
+        if (isUpdated()) return updated.isPublicClient();
         return cached.isFrontchannelLogout();
     }
 
@@ -242,13 +256,13 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     @Override
     public String getAttribute(String name) {
-        if (updated != null) return updated.getAttribute(name);
+        if (isUpdated()) return updated.getAttribute(name);
         return cached.getAttributes().get(name);
     }
 
     @Override
     public Map<String, String> getAttributes() {
-        if (updated != null) return updated.getAttributes();
+        if (isUpdated()) return updated.getAttributes();
         Map<String, String> copy = new HashMap<String, String>();
         copy.putAll(cached.getAttributes());
         return copy;
@@ -256,7 +270,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     @Override
     public boolean isBearerOnly() {
-        if (updated != null) return updated.isBearerOnly();
+        if (isUpdated()) return updated.isBearerOnly();
         return cached.isBearerOnly();
     }
 
@@ -268,7 +282,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     @Override
     public boolean isConsentRequired() {
-        if (updated != null) return updated.isConsentRequired();
+        if (isUpdated()) return updated.isConsentRequired();
         return cached.isConsentRequired();
     }
 
@@ -280,7 +294,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     @Override
     public boolean isStandardFlowEnabled() {
-        if (updated != null) return updated.isStandardFlowEnabled();
+        if (isUpdated()) return updated.isStandardFlowEnabled();
         return cached.isStandardFlowEnabled();
     }
 
@@ -292,7 +306,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     @Override
     public boolean isImplicitFlowEnabled() {
-        if (updated != null) return updated.isImplicitFlowEnabled();
+        if (isUpdated()) return updated.isImplicitFlowEnabled();
         return cached.isImplicitFlowEnabled();
     }
 
@@ -304,7 +318,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     @Override
     public boolean isDirectAccessGrantsEnabled() {
-        if (updated != null) return updated.isDirectAccessGrantsEnabled();
+        if (isUpdated()) return updated.isDirectAccessGrantsEnabled();
         return cached.isDirectAccessGrantsEnabled();
     }
 
@@ -316,7 +330,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     @Override
     public boolean isServiceAccountsEnabled() {
-        if (updated != null) return updated.isServiceAccountsEnabled();
+        if (isUpdated()) return updated.isServiceAccountsEnabled();
         return cached.isServiceAccountsEnabled();
     }
 

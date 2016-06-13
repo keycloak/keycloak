@@ -30,7 +30,9 @@
             <includes>
                 <include>org/keycloak/keycloak-common/**</include>
                 <include>org/keycloak/keycloak-saml-core/**</include>
+                <include>org/keycloak/keycloak-saml-core-public/**</include>
                 <include>org/keycloak/keycloak-saml-adapter-core/**</include>
+                <include>org/keycloak/keycloak-saml-adapter-api-public/**</include>
                 <include>org/keycloak/keycloak-adapter-spi/**</include>
                 <include>org/keycloak/keycloak-jboss-adapter-core/**</include>
                 <include>org/keycloak/keycloak-saml-undertow-adapter/**</include>

@@ -32,6 +32,7 @@ import org.keycloak.connections.mongo.updater.impl.updates.Update1_3_0;
 import org.keycloak.connections.mongo.updater.impl.updates.Update1_4_0;
 import org.keycloak.connections.mongo.updater.impl.updates.Update1_7_0;
 import org.keycloak.connections.mongo.updater.impl.updates.Update1_8_0;
+import org.keycloak.connections.mongo.updater.impl.updates.Update1_9_2;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.Date;
@@ -55,7 +56,8 @@ public class DefaultMongoUpdaterProvider implements MongoUpdaterProvider {
             Update1_3_0.class,
             Update1_4_0.class,
             Update1_7_0.class,
-            Update1_8_0.class
+            Update1_8_0.class,
+            Update1_9_2.class
     };
 
     @Override
@@ -63,38 +65,19 @@ public class DefaultMongoUpdaterProvider implements MongoUpdaterProvider {
         log.debug("Starting database update");
         try {
             boolean changeLogExists = db.collectionExists(CHANGE_LOG_COLLECTION);
-            boolean realmExists = db.collectionExists("realms");
-
             DBCollection changeLog = db.getCollection(CHANGE_LOG_COLLECTION);
 
-            List<String> executed = new LinkedList<String>();
-            if (!changeLogExists && realmExists) {
-                Update1_0_0_Final u = new Update1_0_0_Final();
-                executed.add(u.getId());
-                createLog(changeLog, u, 1);
-            } else if (changeLogExists) {
-                DBCursor cursor = changeLog.find().sort(new BasicDBObject("orderExecuted", 1));
-                while (cursor.hasNext()) {
-                    executed.add((String) cursor.next().get("_id"));
-                }
-            }
-
-            List<Update> updatesToRun = new LinkedList<Update>();
-            for (Class<? extends Update> updateClass : updates) {
-                Update u = updateClass.newInstance();
-                if (!executed.contains(u.getId())) {
-                    updatesToRun.add(u);
-                }
-            }
+            List<String> executed = getExecuted(db, changeLogExists, changeLog);
+            List<Update> updatesToRun = getUpdatesToRun(executed);
 
             if (!updatesToRun.isEmpty()) {
                 if (executed.isEmpty()) {
                     log.info("Initializing database schema");
                 } else {
                     if (log.isDebugEnabled()) {
-                        log.infov("Updating database from {0} to {1}", executed.get(executed.size() - 1), updatesToRun.get(updatesToRun.size() - 1).getId());
+                        log.debugv("Updating database from {0} to {1}", executed.get(executed.size() - 1), updatesToRun.get(updatesToRun.size() - 1).getId());
                     } else {
-                        log.debugv("Updating database");
+                        log.info("Updating database");
                     }
                 }
 
@@ -119,9 +102,68 @@ public class DefaultMongoUpdaterProvider implements MongoUpdaterProvider {
         }
     }
 
+
+    @Override
+    public void validate(KeycloakSession session, DB db) {
+        log.debug("Validating database");
+
+        boolean changeLogExists = db.collectionExists(CHANGE_LOG_COLLECTION);
+        DBCollection changeLog = db.getCollection(CHANGE_LOG_COLLECTION);
+
+        List<String> executed = getExecuted(db, changeLogExists, changeLog);
+        List<Update> updatesToRun = getUpdatesToRun(executed);
+
+        if (!updatesToRun.isEmpty()) {
+            String errorMessage = (executed.isEmpty())
+                    ? "Failed to validate Mongo database schema. Database is empty. Please change databaseSchema to 'update'"
+                    : String.format("Failed to validate Mongo database schema. Schema needs updating database from %s to %s. Please change databaseSchema to 'update'",
+                    executed.get(executed.size() - 1), updatesToRun.get(updatesToRun.size() - 1).getId());
+
+            throw new RuntimeException(errorMessage);
+        } else {
+            log.debug("Validation passed. Database is up to date");
+        }
+    }
+
+
+    private List<String> getExecuted(DB db, boolean changeLogExists, DBCollection changeLog) {
+        boolean realmExists = db.collectionExists("realms");
+
+        List<String> executed = new LinkedList<>();
+        if (!changeLogExists && realmExists) {
+            Update1_0_0_Final u = new Update1_0_0_Final();
+            executed.add(u.getId());
+            createLog(changeLog, u, 1);
+        } else if (changeLogExists) {
+            DBCursor cursor = changeLog.find().sort(new BasicDBObject("orderExecuted", 1));
+            while (cursor.hasNext()) {
+                executed.add((String) cursor.next().get("_id"));
+            }
+        }
+        return executed;
+    }
+
+
+    private List<Update> getUpdatesToRun(List<String> executed) {
+        try {
+            List<Update> updatesToRun = new LinkedList<>();
+            for (Class<? extends Update> updateClass : updates) {
+                Update u = updateClass.newInstance();
+                if (!executed.contains(u.getId())) {
+                    updatesToRun.add(u);
+                }
+            }
+            return updatesToRun;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
     private void createLog(DBCollection changeLog, Update update, int orderExecuted) {
         changeLog.insert(new BasicDBObject("_id", update.getId()).append("dateExecuted", new Date()).append("orderExecuted", orderExecuted));
     }
+
 
     @Override
     public void close() {

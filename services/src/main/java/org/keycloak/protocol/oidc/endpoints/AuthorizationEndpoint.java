@@ -17,6 +17,11 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -33,7 +38,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
@@ -56,6 +60,43 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     public static final String CODE_AUTH_TYPE = "code";
 
+    /**
+     * Prefix used to store additional HTTP GET params from original client request into {@link ClientSessionModel} note to be available later in Authenticators, RequiredActions etc. Prefix is used to
+     * prevent collisions with internally used notes.
+     * 
+     * @see ClientSessionModel#getNote(String)
+     * @see #KNOWN_REQ_PARAMS
+     * @see #additionalReqParams
+     */
+    public static final String CLIENT_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX = "client_request_param_";
+    /**
+     * Max number of additional req params copied into client session note to prevent DoS attacks
+     * 
+     * @see #additionalReqParams
+     */
+    public static final int ADDITIONAL_REQ_PARAMS_MAX_MUMBER = 5;
+    /**
+     * Max size of additional req param value copied into client session note to prevent DoS attacks - params with longer value are ignored
+     * 
+     * @see #additionalReqParams
+     */
+    public static final int ADDITIONAL_REQ_PARAMS_MAX_SIZE = 200;
+
+    /** Set of known protocol GET params not to be stored into {@link #additionalReqParams} */
+    private static final Set<String> KNOWN_REQ_PARAMS = new HashSet<>();
+    static {
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CLIENT_ID_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REDIRECT_URI_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.STATE_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.SCOPE_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.PROMPT_PARAM);
+        KNOWN_REQ_PARAMS.add(AdapterConstants.KC_IDP_HINT);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.NONCE_PARAM);
+    }
+
     private enum Action {
         REGISTER, CODE, FORGOT_CREDENTIALS
     }
@@ -77,6 +118,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     private String prompt;
     private String nonce;
     private String idpHint;
+    protected Map<String, String> additionalReqParams = new HashMap<>();
 
     public AuthorizationEndpoint(RealmModel realm, EventBuilder event) {
         super(realm, event);
@@ -98,6 +140,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         idpHint = params.getFirst(AdapterConstants.KC_IDP_HINT);
         nonce = params.getFirst(OIDCLoginProtocol.NONCE_PARAM);
 
+        extractAdditionalReqParams(params);
+
         checkSsl();
         checkRealm();
         checkResponseType();
@@ -117,6 +161,27 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
 
         throw new RuntimeException("Unknown action " + action);
+    }
+
+    protected void extractAdditionalReqParams(MultivaluedMap<String, String> params) {
+        for (String paramName : params.keySet()) {
+            if (!KNOWN_REQ_PARAMS.contains(paramName)) {
+                String value = params.getFirst(paramName);
+                if (value != null && value.trim().isEmpty()) {
+                    value = null;
+                }
+                if (value != null && value.length() <= ADDITIONAL_REQ_PARAMS_MAX_SIZE) {
+                    if (additionalReqParams.size() >= ADDITIONAL_REQ_PARAMS_MAX_MUMBER) {
+                        logger.debug("Maximal number of additional OIDC params (" + ADDITIONAL_REQ_PARAMS_MAX_MUMBER + ") exceeded, ignoring rest of them!");
+                        break;
+                    }
+                    additionalReqParams.put(paramName, value);
+                } else {
+                    logger.debug("OIDC Additional param " + paramName + " ignored because value is empty or longer than " + ADDITIONAL_REQ_PARAMS_MAX_SIZE);
+                }
+            }
+
+        }
     }
 
     public AuthorizationEndpoint register() {
@@ -249,6 +314,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         if (prompt != null) clientSession.setNote(OIDCLoginProtocol.PROMPT_PARAM, prompt);
         if (idpHint != null) clientSession.setNote(AdapterConstants.KC_IDP_HINT, idpHint);
         if (responseMode != null) clientSession.setNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM, responseMode);
+
+        if (additionalReqParams != null) {
+            for (String paramName : additionalReqParams.keySet()) {
+                clientSession.setNote(CLIENT_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + paramName, additionalReqParams.get(paramName));
+            }
+        }
     }
 
     private Response buildAuthorizationCodeAuthorizationResponse() {
@@ -291,8 +362,5 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         return processor.authenticate();
     }
-
-
-
 
 }

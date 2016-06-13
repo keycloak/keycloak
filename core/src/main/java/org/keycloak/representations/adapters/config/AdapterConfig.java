@@ -34,8 +34,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "connection-pool-size",
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
-        "auth-server-url-for-backend-requests", "always-refresh-token",
-        "register-node-at-startup", "register-node-period", "token-store", "principal-attribute"
+        "always-refresh-token",
+        "register-node-at-startup", "register-node-period", "token-store", "principal-attribute",
+        "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live"
 })
 public class AdapterConfig extends BaseAdapterConfig {
 
@@ -55,8 +56,6 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected String clientKeyPassword;
     @JsonProperty("connection-pool-size")
     protected int connectionPoolSize = 20;
-    @JsonProperty("auth-server-url-for-backend-requests")
-    protected String authServerUrlForBackendRequests;
     @JsonProperty("always-refresh-token")
     protected boolean alwaysRefreshToken = false;
     @JsonProperty("register-node-at-startup")
@@ -69,6 +68,14 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected String principalAttribute;
     @JsonProperty("turn-off-change-session-id-on-login")
     protected Boolean turnOffChangeSessionIdOnLogin;
+    @JsonProperty("token-minimum-time-to-live")
+    protected int tokenMinimumTimeToLive = 0;
+
+    /**
+     * The Proxy url to use for requests to the auth-server, configurable via the adapter config property {@code proxy-url}.
+     */
+    @JsonProperty("proxy-url")
+    protected String proxyUrl;
 
     public boolean isAllowAnyHostname() {
         return allowAnyHostname;
@@ -134,14 +141,6 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.connectionPoolSize = connectionPoolSize;
     }
 
-    public String getAuthServerUrlForBackendRequests() {
-        return authServerUrlForBackendRequests;
-    }
-
-    public void setAuthServerUrlForBackendRequests(String authServerUrlForBackendRequests) {
-        this.authServerUrlForBackendRequests = authServerUrlForBackendRequests;
-    }
-
     public boolean isAlwaysRefreshToken() {
         return alwaysRefreshToken;
     }
@@ -189,4 +188,21 @@ public class AdapterConfig extends BaseAdapterConfig {
     public void setTurnOffChangeSessionIdOnLogin(Boolean turnOffChangeSessionIdOnLogin) {
         this.turnOffChangeSessionIdOnLogin = turnOffChangeSessionIdOnLogin;
     }
+
+    public String getProxyUrl() {
+        return proxyUrl;
+    }
+
+    public void setProxyUrl(String proxyUrl) {
+        this.proxyUrl = proxyUrl;
+    }
+
+    public int getTokenMinimumTimeToLive() {
+        return tokenMinimumTimeToLive;
+    }
+
+    public void setTokenMinimumTimeToLive(final int tokenMinimumTimeToLive) {
+        this.tokenMinimumTimeToLive = tokenMinimumTimeToLive;
+    }
+
 }

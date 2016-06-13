@@ -3,6 +3,9 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="robots" content="noindex, nofollow">
+
     <title>${msg("accountManagementTitle")}</title>
     <link rel="icon" href="${url.resourcesPath}/img/favicon.ico">
     <#if properties.styles?has_content>
@@ -49,7 +52,7 @@
     </header>
 
     <div class="container">
-        <div class="bs-sidebar col-sm-3  ng-scope">
+        <div class="bs-sidebar col-sm-3">
             <ul>
                 <li class="<#if active=='account'>active</#if>"><a href="${url.accountUrl}">${msg("account")}</a></li>
                 <#if features.passwordUpdateSupported><li class="<#if active=='password'>active</#if>"><a href="${url.passwordUrl}">${msg("password")}</a></li></#if>
@@ -61,7 +64,7 @@
             </ul>
         </div>
 
-        <div class="col-md-9 content-area">
+        <div class="col-sm-9 content-area">
             <#if message?has_content>
                 <div class="alert alert-${message.type}">
                     <#if message.type=='success' ><span class="pficon pficon-ok"></span></#if>

@@ -132,6 +132,11 @@
                 <xs:documentation>Validate the SSO response signature</xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="validateAssertionSignature" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>Validate the SSO assertion signature</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="requestBinding" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>HTTP method to use for requests</xs:documentation>

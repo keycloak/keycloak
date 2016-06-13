@@ -1,6 +1,8 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
     <div>
         <h1 data-ng-show="parentFlow.providerId == 'basic-flow'">{{:: 'create-authenticator-execution' | translate}}</h1>
+        <h1 data-ng-show="parentFlow.providerId == 'client-flow'">{{:: 'create-authenticator-execution' | translate}}</h1>
         <h1 data-ng-show="parentFlow.providerId == 'for-flow'">{{:: 'create-form-action-execution' | translate}}</h1>
     </div>
     <kc-tabs-authentication></kc-tabs-authentication>

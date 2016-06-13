@@ -20,7 +20,6 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
@@ -37,6 +36,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.broker.social.SocialIdentityProvider;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -108,6 +108,9 @@ public class IdentityProvidersResource {
     public Map<String, String> importFrom(@Context UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
         this.auth.requireManage();
         Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
+        if (!(formDataMap.containsKey("providerId") && formDataMap.containsKey("file"))) {
+            throw new BadRequestException();
+        }
         String providerId = formDataMap.get("providerId").get(0).getBodyAsString();
         InputPart file = formDataMap.get("file").get(0);
         InputStream inputStream = file.getBody(InputStream.class, null);
@@ -130,7 +133,9 @@ public class IdentityProvidersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> importFrom(@Context UriInfo uriInfo, Map<String, Object> data) throws IOException {
         this.auth.requireManage();
-
+        if (!(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
+            throw new BadRequestException();
+        }
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
         InputStream inputStream = session.getProvider(HttpClientProvider.class).get(from);
@@ -184,7 +189,8 @@ public class IdentityProvidersResource {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation);
             this.realm.addIdentityProvider(identityProvider);
 
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, identityProvider.getInternalId())
+            representation.setInternalId(identityProvider.getInternalId());
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, identityProvider.getAlias())
                     .representation(representation).success();
             
             return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
@@ -203,10 +209,6 @@ public class IdentityProvidersResource {
                     || storedIdentityProvider.getInternalId().equals(alias)) {
                 identityProviderModel = storedIdentityProvider;
             }
-        }
-
-        if (identityProviderModel == null) {
-            throw new NotFoundException("Could not find identity provider");
         }
 
         IdentityProviderResource identityProviderResource = new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);

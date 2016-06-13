@@ -36,6 +36,8 @@ public class LoginForm extends Form {
     private AccountFields accountFields;
     @Page
     private PasswordFields passwordFields;
+    @Page
+    private TotpSetupForm totpForm;
 
     @FindBy(name = "login")
     private WebElement loginButton;
@@ -119,5 +121,35 @@ public class LoginForm extends Form {
     public void waitForLoginButtonPresent() {
         waitUntilElement(loginButton).is().present();
     }
-
+    
+    public TotpSetupForm totpForm() {
+        return totpForm;
+    }
+    
+    public class TotpSetupForm extends Form {
+        @FindBy(id = "totp")
+        private WebElement totpInputField;
+        
+        @FindBy(id = "totpSecret")
+        private WebElement totpSecret;
+        
+        @FindBy(xpath = ".//input[@value='Submit']")
+        private WebElement submit;
+        
+        public void waitForTotpInputFieldPresent() {
+            waitUntilElement(totpInputField).is().present();
+        }
+        
+        public void setTotp(String value) {
+            setInputValue(totpInputField, value);
+        }
+        
+        public String getTotpSecret() {
+            return totpSecret.getAttribute(VALUE);
+        }
+        
+        public void submit() {
+            submit.click();
+        }
+    }
 }

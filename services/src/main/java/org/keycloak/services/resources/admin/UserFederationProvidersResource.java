@@ -37,11 +37,9 @@ import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
-import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.UsersSyncManager;
-import org.keycloak.timer.TimerProvider;
 import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.Consumes;
@@ -134,6 +132,7 @@ public class UserFederationProvidersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserFederationProviderFactoryRepresentation> getProviders() {
         auth.requireView();
+
         List<UserFederationProviderFactoryRepresentation> providers = new LinkedList<UserFederationProviderFactoryRepresentation>();
         for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(UserFederationProvider.class)) {
             UserFederationProviderFactoryRepresentation rep = new UserFederationProviderFactoryRepresentation();
@@ -155,6 +154,7 @@ public class UserFederationProvidersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public UserFederationProviderFactoryRepresentation getProvider(@PathParam("id") String id) {
         auth.requireView();
+
         for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(UserFederationProvider.class)) {
             if (!factory.getId().equals(id)) {
                 continue;
@@ -192,6 +192,7 @@ public class UserFederationProvidersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createProviderInstance(UserFederationProviderRepresentation rep) {
         auth.requireManage();
+
         String displayName = rep.getDisplayName();
         if (displayName != null && displayName.trim().equals("")) {
             displayName = null;
@@ -208,8 +209,8 @@ public class UserFederationProvidersResource {
             logger.addedKerberosToRealmCredentials();
         }
 
-
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(rep).success();
+        rep.setId(model.getId());
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
 
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
     }
@@ -224,7 +225,8 @@ public class UserFederationProvidersResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<UserFederationProviderRepresentation> getUserFederationInstances() {
-        auth.requireManage();
+        auth.requireView();
+
         List<UserFederationProviderRepresentation> reps = new LinkedList<UserFederationProviderRepresentation>();
         for (UserFederationProviderModel model : realm.getUserFederationProviders()) {
             UserFederationProviderRepresentation rep = ModelToRepresentation.toRepresentation(model);
@@ -238,10 +240,6 @@ public class UserFederationProvidersResource {
         this.auth.requireView();
 
         UserFederationProviderModel model = KeycloakModelUtils.findUserFederationProviderById(id, realm);
-        if (model == null) {
-            throw new NotFoundException("Could not find federation provider");
-        }
-
         UserFederationProviderResource instanceResource = new UserFederationProviderResource(session, realm, this.auth, model, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(instanceResource);
         return instanceResource;

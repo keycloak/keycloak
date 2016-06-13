@@ -20,6 +20,7 @@ package org.keycloak.services.scheduled;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.timer.ScheduledTask;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

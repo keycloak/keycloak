@@ -157,15 +157,19 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
 
     private void update(KeycloakSession session) {
         String databaseSchema = config.get("databaseSchema");
-        if (databaseSchema != null) {
+
+        if (databaseSchema == null) {
+            throw new RuntimeException("Property 'databaseSchema' needs to be specified in the configuration of mongo connections");
+        } else {
+            MongoUpdaterProvider mongoUpdater = session.getProvider(MongoUpdaterProvider.class);
+            if (mongoUpdater == null) {
+                throw new RuntimeException("Can't update database: Mongo updater provider not found");
+            }
+
             if (databaseSchema.equals("update")) {
-                MongoUpdaterProvider mongoUpdater = session.getProvider(MongoUpdaterProvider.class);
-
-                if (mongoUpdater == null) {
-                    throw new RuntimeException("Can't update database: Mongo updater provider not found");
-                }
-
                 mongoUpdater.update(session, db);
+            } else if (databaseSchema.equals("validate")) {
+                mongoUpdater.validate(session, db);
             } else {
                 throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
             }
@@ -176,7 +180,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
     private Class[] getManagedEntities() throws ClassNotFoundException {
        Class[] entityClasses = new Class[entities.length];
         for (int i = 0; i < entities.length; i++) {
-            entityClasses[i] = Thread.currentThread().getContextClassLoader().loadClass(entities[i]);
+            entityClasses[i] = getClass().getClassLoader().loadClass(entities[i]);
         }
         return entityClasses;
     }

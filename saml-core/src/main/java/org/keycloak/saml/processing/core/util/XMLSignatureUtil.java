@@ -19,7 +19,6 @@ package org.keycloak.saml.processing.core.util;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.constants.WSTrustConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -371,7 +370,8 @@ public class XMLSignatureUtil {
         NodeList nl = signedDoc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
 
         if (nl == null || nl.getLength() == 0) {
-            throw logger.nullValueError("Cannot find Signature element");
+            logger.debug("Cannot find Signature element");
+            return false;
         }
 
         if (publicKey == null)

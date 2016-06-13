@@ -17,6 +17,7 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -25,7 +26,9 @@ import java.util.Set;
 public class UserFederationProviderFactoryRepresentation {
 
     private String id;
-    private Set<String> options;
+    private Set<String> options; // TODO:Remove as configurable providers are more flexible?
+    private String helpText; // Used for configurable providers
+    private List<ConfigPropertyRepresentation> properties; // Used for configurable providers
 
     public String getId() {
         return id;
@@ -41,6 +44,22 @@ public class UserFederationProviderFactoryRepresentation {
 
     public void setOptions(Set<String> options) {
         this.options = options;
+    }
+
+    public String getHelpText() {
+        return helpText;
+    }
+
+    public void setHelpText(String helpText) {
+        this.helpText = helpText;
+    }
+
+    public List<ConfigPropertyRepresentation> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(List<ConfigPropertyRepresentation> properties) {
+        this.properties = properties;
     }
 
     @Override

@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<!--
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
+
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian-servers-app-server-jboss</artifactId>
+        <version>2.0.0.CR1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>integration-arquillian-servers-app-server-as7</artifactId>
+    <packaging>pom</packaging>
+    <name>App Server - JBoss - JBossAS 7</name>
+    
+    <properties>
+        
+        <!-- NOTE: AS7 doesn't work with JDK 8. Use: -Dapp.server.java.home=PATH_TO_JDK_7_HOME -->
+        
+        <!-- NOTE: SSL configuration doesn't work for AS 7.1.1. See: https://issues.jboss.org/browse/AS7-4698 -->
+        
+        <app.server.jboss>as7</app.server.jboss>
+        
+        <app.server.jboss.groupId>org.jboss.as</app.server.jboss.groupId>
+        <app.server.jboss.artifactId>jboss-as-dist</app.server.jboss.artifactId>
+        <app.server.jboss.version>${jboss.as.version}</app.server.jboss.version>
+        <app.server.jboss.unpacked.folder.name>jboss-as-${jboss.as.version}</app.server.jboss.unpacked.folder.name>
+        
+        <app.server.oidc.adapter.artifactId>keycloak-as7-adapter-dist</app.server.oidc.adapter.artifactId>
+        <app.server.saml.adapter.artifactId>keycloak-saml-as7-adapter-dist</app.server.saml.adapter.artifactId>
+        
+        <app.server.java.home>${java7.home}</app.server.java.home>
+    </properties>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireProperty>
+                                    <property>java7.home</property>
+                                </requireProperty>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

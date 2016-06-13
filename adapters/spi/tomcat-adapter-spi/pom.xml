@@ -41,7 +41,7 @@
             <artifactId>jboss-logging</artifactId>
             <version>${jboss.logging.version}</version>
         </dependency>
-        <dependency>
+		<dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-spi</artifactId>
         </dependency>

@@ -36,7 +36,7 @@ import org.openqa.selenium.WebDriver;
 public abstract class AbstractPage {
 
     protected final Logger log = Logger.getLogger(this.getClass());
-
+    
     private final Map<String, Object> uriParameters = new HashMap<>();
 
     @Drone

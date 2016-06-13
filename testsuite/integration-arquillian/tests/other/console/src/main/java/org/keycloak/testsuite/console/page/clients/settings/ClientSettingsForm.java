@@ -8,14 +8,13 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.keycloak.testsuite.console.page.clients.CreateClientForm;
 import org.openqa.selenium.support.ui.Select;
 
-import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
-import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.BEARER_ONLY;
-import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.CONFIDENTIAL;
-import static org.keycloak.testsuite.console.page.clients.CreateClientForm.OidcAccessType.PUBLIC;
+import org.keycloak.testsuite.page.Form;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author tkyjovsk
@@ -52,25 +51,38 @@ public class ClientSettingsForm extends CreateClientForm {
 
     @FindBy(id = "newRedirectUri")
     private WebElement newRedirectUriInput;
-    @FindBy(xpath = ".//i[contains(@data-ng-click, 'newRedirectUri')]")
+    @FindBy(xpath = ".//button[contains(@data-ng-click,'addRedirectUri')]")
     private WebElement newRedirectUriSubmit;
     @FindBy(xpath = ".//input[@ng-model='client.redirectUris[i]']")
     private List<WebElement> redirectUriInputs;
-    @FindBy(xpath = ".//i[contains(@data-ng-click, 'deleteRedirectUri')]")
+    @FindBy(xpath = ".//button[contains(@data-ng-click, 'deleteRedirectUri')]")
     private List<WebElement> deleteRedirectUriIcons;
 
     @FindBy(id = "newWebOrigin")
     private WebElement newWebOriginInput;
-    @FindBy(xpath = ".//i[contains(@data-ng-click, 'newWebOrigin')]")
+    @FindBy(xpath = ".//button[contains(@data-ng-click,'addWebOrigin')]")
     private WebElement newWebOriginSubmit;
     @FindBy(xpath = ".//input[ng-model='client.webOrigins[i]']")
     private List<WebElement> webOriginInputs;
-    @FindBy(xpath = ".//i[contains(@data-ng-click, 'deleteWebOrigin')]")
+    @FindBy(xpath = ".//button[contains(@data-ng-click, 'deleteWebOrigin')]")
     private List<WebElement> deleteWebOriginIcons;
 
-    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='consentRequired']]")
-    private OnOffSwitch consentRequired;
+    public enum OidcAccessType {
+        BEARER_ONLY("bearer-only"),
+        PUBLIC("public"),
+        CONFIDENTIAL("confidential");
+        
+        private final String name;
 
+        private OidcAccessType(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+        
     public void setBaseUrl(String baseUrl) {
         setInputValue(baseUrlInput, baseUrl);
     }
@@ -113,32 +125,6 @@ public class ClientSettingsForm extends CreateClientForm {
         }
     }
 
-    @Override
-    public void setValues(ClientRepresentation client) {
-        super.setValues(client);
-        setName(client.getName());
-        setEnabled(client.isEnabled());
-        setConsentRequired(client.isConsentRequired());
-        setBaseUrl(client.getBaseUrl());
-        if (OIDC.equals(client.getProtocol())) {
-            setAccessType(client);
-            if (!client.isBearerOnly()) {
-                setStandardFlowEnabled(client.isStandardFlowEnabled());
-                setDirectAccessGrantsEnabled(client.isDirectAccessGrantsEnabled());
-                if (client.isPublicClient()) {
-                    setImplicitFlowEnabled(client.isImplicitFlowEnabled());
-                } else {//confidential
-                    setServiceAccountsEnabled(client.isServiceAccountsEnabled());
-                }
-                if (client.isStandardFlowEnabled() || client.isImplicitFlowEnabled()) {
-                    setRedirectUris(client.getRedirectUris());
-                }
-            }
-            setAdminUrl(client.getAdminUrl());
-            setWebOrigins(client.getWebOrigins());
-        }
-    }
-
     public String getName() {
         return getInputValue(nameInput);
     }
@@ -163,14 +149,8 @@ public class ClientSettingsForm extends CreateClientForm {
         consentRequiredSwitch.setOn(consentRequired);
     }
 
-    public void setAccessType(ClientRepresentation client) {
-        if (client.isBearerOnly()) {
-            accessTypeSelect.selectByVisibleText(BEARER_ONLY.getName());
-        } else if (client.isPublicClient()) {
-            accessTypeSelect.selectByVisibleText(PUBLIC.getName());
-        } else {
-            accessTypeSelect.selectByVisibleText(CONFIDENTIAL.getName());
-        }
+    public void setAccessType(OidcAccessType accessType) {
+        accessTypeSelect.selectByVisibleText(accessType.getName());
     }
 
     public void addRedirectUri(String redirectUri) {
@@ -232,6 +212,87 @@ public class ClientSettingsForm extends CreateClientForm {
 
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         serviceAccountsEnabledSwitch.setOn(serviceAccountsEnabled);
+    }
+    
+    public class SAMLClientSettingsForm extends Form {
+
+        public static final String SAML_ASSERTION_SIGNATURE = "saml.assertion.signature";
+        public static final String SAML_AUTHNSTATEMENT = "saml.authnstatement";
+	public static final String SAML_CLIENT_SIGNATURE = "saml.client.signature";
+	public static final String SAML_ENCRYPT = "saml.encrypt";
+	public static final String SAML_FORCE_POST_BINDING = "saml.force.post.binding";
+	public static final String SAML_MULTIVALUED_ROLES = "saml.multivalued.roles";
+	public static final String SAML_SERVER_SIGNATURE = "saml.server.signature";
+	public static final String SAML_SIGNATURE_ALGORITHM = "saml.signature.algorithm";
+	public static final String SAML_ASSERTION_CONSUMER_URL_POST = "saml_assertion_consumer_url_post";
+	public static final String SAML_ASSERTION_CONSUMER_URL_REDIRECT = "saml_assertion_consumer_url_redirect";
+	public static final String SAML_FORCE_NAME_ID_FORMAT = "saml_force_name_id_format";
+	public static final String SAML_NAME_ID_FORMAT = "saml_name_id_format";
+	public static final String SAML_SIGNATURE_CANONICALIZATION_METHOD = "saml_signature_canonicalization_method";
+	public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_POST = "saml_single_logout_service_url_post";
+	public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT = "saml_single_logout_service_url_redirect";
+        
+        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='samlAuthnStatement']]")
+        private OnOffSwitch samlAuthnStatement;
+        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='samlServerSignature']]")
+        private OnOffSwitch samlServerSignature;
+        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='samlAssertionSignature']]")
+        private OnOffSwitch samlAssertionSignature;
+        @FindBy(id = "signatureAlgorithm")
+        private Select signatureAlgorithm;
+        @FindBy(id = "canonicalization")
+        private Select canonicalization;
+        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='samlEncrypt']]")
+        private OnOffSwitch samlEncrypt;
+        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='samlClientSignature']]")
+        private OnOffSwitch samlClientSignature;
+        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='samlForcePostBinding']]")
+        private OnOffSwitch samlForcePostBinding;
+        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='frontchannelLogout']]")
+        private OnOffSwitch frontchannelLogout;
+        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='samlForceNameIdFormat']]")
+        private OnOffSwitch samlForceNameIdFormat;
+        @FindBy(id = "samlNameIdFormat")
+        private Select samlNameIdFormat;
+        
+        @FindBy(xpath = "//fieldset[contains(@data-ng-show, 'saml')]//i")
+        private WebElement fineGrainCollapsor;
+        
+        @FindBy(id = "consumerServicePost")
+        private WebElement consumerServicePostInput;
+        @FindBy(id = "consumerServiceRedirect")
+        private WebElement consumerServiceRedirectInput;
+        @FindBy(id = "logoutPostBinding")
+        private WebElement logoutPostBindingInput;
+        @FindBy(id = "logoutRedirectBinding")
+        private WebElement logoutRedirectBindingInput;
+        
+        public void setValues(ClientRepresentation client) {
+            waitUntilElement(fineGrainCollapsor).is().visible();
+            
+            Map<String, String> attributes = client.getAttributes();
+            samlAuthnStatement.setOn("true".equals(attributes.get(SAML_AUTHNSTATEMENT)));
+            samlServerSignature.setOn("true".equals(attributes.get(SAML_SERVER_SIGNATURE)));
+            samlAssertionSignature.setOn("true".equals(attributes.get(SAML_ASSERTION_SIGNATURE)));
+            if (samlServerSignature.isOn() || samlAssertionSignature.isOn()) {
+                signatureAlgorithm.selectByVisibleText(attributes.get(SAML_SIGNATURE_ALGORITHM));
+                canonicalization.selectByValue("string:" + attributes.get(SAML_SIGNATURE_CANONICALIZATION_METHOD));
+            }
+            samlEncrypt.setOn("true".equals(attributes.get(SAML_ENCRYPT)));
+            samlClientSignature.setOn("true".equals(attributes.get(SAML_CLIENT_SIGNATURE)));
+            samlForcePostBinding.setOn("true".equals(attributes.get(SAML_FORCE_POST_BINDING)));
+            frontchannelLogout.setOn(client.isFrontchannelLogout());
+            samlForceNameIdFormat.setOn("true".equals(attributes.get(SAML_FORCE_NAME_ID_FORMAT)));
+            samlNameIdFormat.selectByVisibleText(attributes.get(SAML_NAME_ID_FORMAT));
+            
+            fineGrainCollapsor.click();
+            waitUntilElement(consumerServicePostInput).is().present();
+            
+            setInputValue(consumerServicePostInput, attributes.get(SAML_ASSERTION_CONSUMER_URL_POST));
+            setInputValue(consumerServiceRedirectInput, attributes.get(SAML_ASSERTION_CONSUMER_URL_REDIRECT));
+            setInputValue(logoutPostBindingInput, attributes.get(SAML_SINGLE_LOGOUT_SERVICE_URL_POST));
+            setInputValue(logoutRedirectBindingInput, attributes.get(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT));
+        }
     }
 
 }

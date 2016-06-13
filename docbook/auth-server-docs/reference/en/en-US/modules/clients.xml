@@ -1,0 +1,57 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<chapter id="clients">
+    <title>Clients</title>
+
+    <para>
+        Keycloak provides support for managing Clients.
+    </para>
+
+    <section id="client-config">
+        <title>Client Config</title>
+        <para>
+            Keycloak supports flexible configuration of Clients.
+        </para>
+
+        <section>
+            <title>Redirect Endpoint</title>
+            <para>
+                For scenarios where one wants to link from one client to another, Keycloak provides a special redirect endpoint:
+                <literal>/realms/realm_name/clients/client_id/redirect</literal>.
+            </para>
+
+            <para>
+                If a client accesses this endpoint via an <literal>HTTP GET</literal> request, Keycloak returns the configured base URL
+                for the provided Client and Realm in the form of an <literal>HTTP 307</literal> (Temporary Redirect) via the response's <literal>Location</literal> header.
+            </para>
+
+            <para>
+                Thus, a client only needs to know the Realm name and the Client ID in order to link to them.
+                This indirection helps avoid hard-coding client base URLs.
+            </para>
+
+            <para>
+                As an example, given the realm <literal>master</literal> and the client-id <literal>account</literal>:
+                <programlisting>http://keycloak-host:keycloak-port/auth/realms/master/clients/account/redirect</programlisting>
+
+                Would temporarily redirect to:
+                <programlisting>http://keycloak-host:keycloak-port/auth/realms/master/account</programlisting>
+            </para>
+        </section>
+    </section>
+</chapter>

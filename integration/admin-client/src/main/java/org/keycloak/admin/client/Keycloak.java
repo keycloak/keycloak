@@ -28,25 +28,25 @@ import org.keycloak.admin.client.token.TokenManager;
 
 import java.net.URI;
 
+import static org.keycloak.OAuth2Constants.PASSWORD;
+
 /**
  * Provides a Keycloak client. By default, this implementation uses a {@link ResteasyClient RESTEasy client} with the
  * default {@link ResteasyClientBuilder} settings. To customize the underling client, use a {@link KeycloakBuilder} to
  * create a Keycloak client.
  *
- * @see KeycloakBuilder
- *
  * @author rodrigo.sasaki@icarros.com.br
+ * @see KeycloakBuilder
  */
 public class Keycloak {
-
     private final Config config;
     private final TokenManager tokenManager;
     private final ResteasyWebTarget target;
     private final ResteasyClient client;
 
-    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, ResteasyClient resteasyClient){
-        config = new Config(serverUrl, realm, username, password, clientId, clientSecret);
-        client = resteasyClient != null ? resteasyClient : new ResteasyClientBuilder().build();
+    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, ResteasyClient resteasyClient) {
+        config = new Config(serverUrl, realm, username, password, clientId, clientSecret, grantType);
+        client = resteasyClient != null ? resteasyClient : new ResteasyClientBuilder().connectionPoolSize(10).build();
 
         tokenManager = new TokenManager(config, client);
 
@@ -55,27 +55,27 @@ public class Keycloak {
         target.register(new BearerAuthFilter(tokenManager));
     }
 
-    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret){
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, null);
+    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret) {
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, null);
     }
 
-    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId){
-        return new Keycloak(serverUrl, realm, username, password, clientId, null, null);
+    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId) {
+        return new Keycloak(serverUrl, realm, username, password, clientId, null, PASSWORD, null);
     }
 
-    public RealmsResource realms(){
+    public RealmsResource realms() {
         return target.proxy(RealmsResource.class);
     }
 
-    public RealmResource realm(String realmName){
+    public RealmResource realm(String realmName) {
         return realms().realm(realmName);
     }
 
-    public ServerInfoResource serverInfo(){
+    public ServerInfoResource serverInfo() {
         return target.proxy(ServerInfoResource.class);
     }
 
-    public TokenManager tokenManager(){
+    public TokenManager tokenManager() {
         return tokenManager;
     }
 
@@ -98,5 +98,4 @@ public class Keycloak {
     public void close() {
         client.close();
     }
-
 }

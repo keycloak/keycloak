@@ -23,7 +23,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.servlet.ServletOAuthClient;
@@ -100,7 +99,7 @@ public class ProductDatabaseClient {
         ServletOAuthClient oAuthClient = (ServletOAuthClient) request.getServletContext().getAttribute(ServletOAuthClient.class.getName());
         HttpClient client = new DefaultHttpClient();
 
-        HttpGet get = new HttpGet(AdapterUtils.getOriginForRestCalls(request.getRequestURL().toString(), session) + "/database/products");
+        HttpGet get = new HttpGet(UriUtils.getOrigin(request.getRequestURL().toString()) + "/database/products");
         get.addHeader("Authorization", "Bearer " + accessToken);
         try {
             HttpResponse response = client.execute(get);
@@ -116,21 +115,6 @@ public class ProductDatabaseClient {
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public static String getBaseUrl(ServletOAuthClient oAuthClient, HttpServletRequest request) {
-        switch (oAuthClient.getRelativeUrlsUsed()) {
-            case ALL_REQUESTS:
-                // Resolve baseURI from the request
-                return UriUtils.getOrigin(request.getRequestURL().toString());
-            case BROWSER_ONLY:
-                // Resolve baseURI from the codeURL (This is already non-relative and based on our hostname)
-                return UriUtils.getOrigin(oAuthClient.getTokenUrl());
-            case NEVER:
-                return "";
-            default:
-                return "";
         }
     }
 

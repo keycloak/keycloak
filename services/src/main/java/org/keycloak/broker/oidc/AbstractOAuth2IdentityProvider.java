@@ -54,6 +54,7 @@ import java.util.regex.Pattern;
 public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityProviderConfig> extends AbstractIdentityProvider<C> {
     protected static final Logger logger = Logger.getLogger(AbstractOAuth2IdentityProvider.class);
 
+    public static final String OAUTH2_GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
     public static final String OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
     public static final String FEDERATED_ACCESS_TOKEN = "FEDERATED_ACCESS_TOKEN";
     public static final String FEDERATED_REFRESH_TOKEN = "FEDERATED_REFRESH_TOKEN";
@@ -97,7 +98,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     @Override
-    public Response retrieveToken(FederatedIdentityModel identity) {
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
         return Response.ok(identity.getToken()).build();
     }
 

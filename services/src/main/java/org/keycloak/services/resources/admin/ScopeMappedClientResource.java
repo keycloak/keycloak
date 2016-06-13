@@ -38,6 +38,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -75,6 +76,10 @@ public class ScopeMappedClientResource {
     public List<RoleRepresentation> getClientScopeMappings() {
         auth.requireView();
 
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         Set<RoleModel> mappings = KeycloakModelUtils.getClientScopeMappings(scopedClient, scopeContainer); //scopedClient.getClientScopeMappings(client);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : mappings) {
@@ -97,6 +102,10 @@ public class ScopeMappedClientResource {
     public List<RoleRepresentation> getAvailableClientScopeMappings() {
         auth.requireView();
 
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         Set<RoleModel> roles = scopedClient.getRoles();
         return ScopeMappedResource.getAvailable(scopeContainer, roles);
     }
@@ -115,6 +124,10 @@ public class ScopeMappedClientResource {
     public List<RoleRepresentation> getCompositeClientScopeMappings() {
         auth.requireView();
 
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         Set<RoleModel> roles = scopedClient.getRoles();
         return ScopeMappedResource.getComposite(scopeContainer, roles);
     }
@@ -129,14 +142,19 @@ public class ScopeMappedClientResource {
     public void addClientScopeMapping(List<RoleRepresentation> roles) {
         auth.requireManage();
 
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         for (RoleRepresentation role : roles) {
             RoleModel roleModel = scopedClient.getRole(role.getName());
             if (roleModel == null) {
                 throw new NotFoundException("Role not found");
             }
             scopeContainer.addScopeMapping(roleModel);
-            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), roleModel.getId()).representation(roles).success();
         }
+
+        adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(roles).success();
     }
 
     /**
@@ -149,12 +167,19 @@ public class ScopeMappedClientResource {
     public void deleteClientScopeMapping(List<RoleRepresentation> roles) {
         auth.requireManage();
 
+        if (scopeContainer == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
         if (roles == null) {
             Set<RoleModel> roleModels = KeycloakModelUtils.getClientScopeMappings(scopedClient, scopeContainer);//scopedClient.getClientScopeMappings(client);
+            roles = new LinkedList<>();
+
             for (RoleModel roleModel : roleModels) {
                 scopeContainer.deleteScopeMapping(roleModel);
+                roles.add(ModelToRepresentation.toRepresentation(roleModel));
             }
-            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roles).success();
+
         } else {
             for (RoleRepresentation role : roles) {
                 RoleModel roleModel = scopedClient.getRole(role.getName());
@@ -162,8 +187,9 @@ public class ScopeMappedClientResource {
                     throw new NotFoundException("Role not found");
                 }
                 scopeContainer.deleteScopeMapping(roleModel);
-                adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri(), roleModel.getId()).representation(roles).success();
             }
         }
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roles).success();
     }
 }

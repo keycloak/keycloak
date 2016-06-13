@@ -92,19 +92,19 @@
             }
         },
         {
-          "alias" : "model-saml-signed-idp",
-          "providerId" : "saml",
-          "enabled": true,
-          "config": {
-            "singleSignOnServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-identity-provider/protocol/saml",
-            "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
-            "signingCertificate": "MIIDdzCCAl+gAwIBAgIEbySuqTANBgkqhkiG9w0BAQsFADBsMRAwDgYDVQQGEwdVbmtub3duMRAwDgYDVQQIEwdVbmtub3duMRAwDgYDVQQHEwdVbmtub3duMRAwDgYDVQQKEwdVbmtub3duMRAwDgYDVQQLEwdVbmtub3duMRAwDgYDVQQDEwdVbmtub3duMB4XDTE1MDEyODIyMTYyMFoXDTE3MTAyNDIyMTYyMFowbDEQMA4GA1UEBhMHVW5rbm93bjEQMA4GA1UECBMHVW5rbm93bjEQMA4GA1UEBxMHVW5rbm93bjEQMA4GA1UEChMHVW5rbm93bjEQMA4GA1UECxMHVW5rbm93bjEQMA4GA1UEAxMHVW5rbm93bjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAII/K9NNvXi9IySl7+l2zY/kKrGTtuR4WdCI0xLW/Jn4dLY7v1/HOnV4CC4ecFOzhdNFPtJkmEhP/q62CpmOYOKApXk3tfmm2rwEz9bWprVxgFGKnbrWlz61Z/cjLAlhD3IUj2ZRBquYgSXQPsYfXo1JmSWF5pZ9uh1FVqu9f4wvRqY20ZhUN+39F+1iaBsoqsrbXypCn1HgZkW1/9D9GZug1c3vB4wg1TwZZWRNGtxwoEhdK6dPrNcZ+6PdanVilWrbQFbBjY4wz8/7IMBzssoQ7Usmo8F1Piv0FGfaVeJqBrcAvbiBMpk8pT+27u6p8VyIX6LhGvnxIwM07NByeSUCAwEAAaMhMB8wHQYDVR0OBBYEFFlcNuTYwI9W0tQ224K1gFJlMam0MA0GCSqGSIb3DQEBCwUAA4IBAQB5snl1KWOJALtAjLqD0mLPg1iElmZP82Lq1htLBt3XagwzU9CaeVeCQ7lTp+DXWzPa9nCLhsC3QyrV3/+oqNli8C6NpeqI8FqN2yQW/QMWN1m5jWDbmrWwtQzRUn/rh5KEb5m3zPB+tOC6e/2bV3QeQebxeW7lVMD0tSCviUg1MQf1l2gzuXQo60411YwqrXwk6GMkDOhFDQKDlMchO3oRbQkGbcP8UeiKAXjMeHfzbiBr+cWz8NYZEtxUEDYDjTpKrYCSMJBXpmgVJCZ00BswbksxJwaGqGMPpUKmCV671pf3m8nq3xyiHMDGuGwtbU+GE8kVx85menmp8+964nin",
-            "wantAuthnRequestsSigned": true,
-            "forceAuthn": true,
-            "validateSignature": true,
-            "postBindingResponse": true,
-            "postBindingAuthnRequest": true
-          }
+            "alias" : "model-saml-signed-idp",
+            "providerId" : "saml",
+            "enabled": true,
+            "config": {
+                "singleSignOnServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-identity-provider/protocol/saml",
+                "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+                "signingCertificate": "MIIDdzCCAl+gAwIBAgIEbySuqTANBgkqhkiG9w0BAQsFADBsMRAwDgYDVQQGEwdVbmtub3duMRAwDgYDVQQIEwdVbmtub3duMRAwDgYDVQQHEwdVbmtub3duMRAwDgYDVQQKEwdVbmtub3duMRAwDgYDVQQLEwdVbmtub3duMRAwDgYDVQQDEwdVbmtub3duMB4XDTE1MDEyODIyMTYyMFoXDTE3MTAyNDIyMTYyMFowbDEQMA4GA1UEBhMHVW5rbm93bjEQMA4GA1UECBMHVW5rbm93bjEQMA4GA1UEBxMHVW5rbm93bjEQMA4GA1UEChMHVW5rbm93bjEQMA4GA1UECxMHVW5rbm93bjEQMA4GA1UEAxMHVW5rbm93bjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAII/K9NNvXi9IySl7+l2zY/kKrGTtuR4WdCI0xLW/Jn4dLY7v1/HOnV4CC4ecFOzhdNFPtJkmEhP/q62CpmOYOKApXk3tfmm2rwEz9bWprVxgFGKnbrWlz61Z/cjLAlhD3IUj2ZRBquYgSXQPsYfXo1JmSWF5pZ9uh1FVqu9f4wvRqY20ZhUN+39F+1iaBsoqsrbXypCn1HgZkW1/9D9GZug1c3vB4wg1TwZZWRNGtxwoEhdK6dPrNcZ+6PdanVilWrbQFbBjY4wz8/7IMBzssoQ7Usmo8F1Piv0FGfaVeJqBrcAvbiBMpk8pT+27u6p8VyIX6LhGvnxIwM07NByeSUCAwEAAaMhMB8wHQYDVR0OBBYEFFlcNuTYwI9W0tQ224K1gFJlMam0MA0GCSqGSIb3DQEBCwUAA4IBAQB5snl1KWOJALtAjLqD0mLPg1iElmZP82Lq1htLBt3XagwzU9CaeVeCQ7lTp+DXWzPa9nCLhsC3QyrV3/+oqNli8C6NpeqI8FqN2yQW/QMWN1m5jWDbmrWwtQzRUn/rh5KEb5m3zPB+tOC6e/2bV3QeQebxeW7lVMD0tSCviUg1MQf1l2gzuXQo60411YwqrXwk6GMkDOhFDQKDlMchO3oRbQkGbcP8UeiKAXjMeHfzbiBr+cWz8NYZEtxUEDYDjTpKrYCSMJBXpmgVJCZ00BswbksxJwaGqGMPpUKmCV671pf3m8nq3xyiHMDGuGwtbU+GE8kVx85menmp8+964nin",
+                "wantAuthnRequestsSigned": true,
+                "forceAuthn": true,
+                "validateSignature": true,
+                "postBindingResponse": true,
+                "postBindingAuthnRequest": true
+            }
         },
         {
             "alias" : "kc-saml-signed-idp",
@@ -133,6 +133,21 @@
             "config": {
                 "singleSignOnServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-idp-basic/protocol/saml",
                 "singleLogoutServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-idp-basic/protocol/saml",
+                "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+                "forceAuthn": true,
+                "postBindingResponse": true,
+                "postBindingAuthnRequest": true
+            }
+        },
+        {
+            "alias" : "kc-saml-idp-property-mappers",
+            "providerId" : "saml",
+            "enabled": true,
+            "trustEmail" : false,
+            "addReadTokenRoleOnCreate": true,
+            "config": {
+                "singleSignOnServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-idp-property-mappers/protocol/saml",
+                "singleLogoutServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-idp-property-mappers/protocol/saml",
                 "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
                 "forceAuthn": true,
                 "postBindingResponse": true,
@@ -171,9 +186,65 @@
                 "defaultScope": "email profile",
                 "backchannelSupported": "true"
             }
+        },
+        {
+            "alias" : "kc-oidc-idp-property-mappers",
+            "providerId" : "keycloak-oidc",
+            "enabled": true,
+            "storeToken" : true,
+            "addReadTokenRoleOnCreate": true,
+            "config": {
+                "clientId": "broker-app",
+                "clientSecret": "secret",
+                "prompt": "login",
+                "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/auth",
+                "tokenUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/token",
+                "userInfoUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/userinfo",
+                "logoutUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/logout",
+                "defaultScope": "email profile",
+                "backchannelSupported": "true"
+            }
         }
     ],
     "identityProviderMappers": [
+        {
+            "name": "manager-mapper",
+            "identityProviderAlias": "kc-oidc-idp-property-mappers",
+            "identityProviderMapper": "oidc-role-idp-mapper",
+            "config": {
+                "role": "manager",
+                "claim": "realm_access.roles",
+                "claim.value": "manager"
+            }
+
+        },
+        {
+            "name": "email-mapper",
+            "identityProviderAlias": "kc-oidc-idp-property-mappers",
+            "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "email",
+                "claim": "email"
+            }
+        },
+        {
+            "name": "first-mapper",
+            "identityProviderAlias": "kc-oidc-idp-property-mappers",
+            "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "firstName",
+                "claim": "given_name"
+            }
+        },
+        {
+            "name": "last-mapper",
+            "identityProviderAlias": "kc-oidc-idp-property-mappers",
+            "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "lastName",
+                "claim": "family_name"
+            }
+        },
         {
             "name": "manager-mapper",
             "identityProviderAlias": "kc-oidc-idp",
@@ -233,7 +304,46 @@
                 "user.attribute": "mobile",
                 "attribute.name": "mobile"
             }
+        },
+        {
+            "name": "email-mapper",
+            "identityProviderAlias": "kc-saml-idp-property-mappers",
+            "identityProviderMapper": "saml-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "email",
+                "attribute.name": "email"
+            }
+        },
+        {
+            "name": "firstName-mapper",
+            "identityProviderAlias": "kc-saml-idp-property-mappers",
+            "identityProviderMapper": "saml-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "firstName",
+                "attribute.name": "firstName"
+            }
+        },
+        {
+            "name": "lastName-mapper",
+            "identityProviderAlias": "kc-saml-idp-property-mappers",
+            "identityProviderMapper": "saml-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "lastName",
+                "attribute.name": "lastName"
+            }
+        },
+        {
+            "name": "manager-mapper",
+            "identityProviderAlias": "kc-saml-idp-property-mappers",
+            "identityProviderMapper": "saml-role-idp-mapper",
+            "config": {
+                "role": "manager",
+                "attribute.name": "Role",
+                "attribute.value": "manager"
+            }
+
         }
+
     ],
     "users": [
         {
@@ -263,15 +373,15 @@
             "webOrigins": []
         },
         {
-          "name": "test-app-with-allowed-providers",
-          "enabled": true,
-          "publicClient": true,
-          "adminUrl": "http://localhost:8081/auth",
-          "baseUrl": "http://localhost:8081/auth",
-          "redirectUris": [
-            "/test-app/*"
-          ],
-          "webOrigins": []
+            "name": "test-app-with-allowed-providers",
+            "enabled": true,
+            "publicClient": true,
+            "adminUrl": "http://localhost:8081/auth",
+            "baseUrl": "http://localhost:8081/auth",
+            "redirectUris": [
+                "/test-app/*"
+            ],
+            "webOrigins": []
         }
     ],
     "oauthClients" : [

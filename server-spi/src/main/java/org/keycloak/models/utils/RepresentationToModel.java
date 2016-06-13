@@ -42,6 +42,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
@@ -80,6 +81,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -249,16 +251,14 @@ public class RepresentationToModel {
 
         if (rep.getScopeMappings() != null) {
             for (ScopeMappingRepresentation scope : rep.getScopeMappings()) {
-                ClientModel client = newRealm.getClientByClientId(scope.getClient());
-                if (client == null) {
-                    throw new RuntimeException("Unknown client specification in realm scope mappings");
-                }
+                ScopeContainerModel scopeContainer = getScopeContainerHavingScope(newRealm, scope);
+
                 for (String roleString : scope.getRoles()) {
                     RoleModel role = newRealm.getRole(roleString.trim());
                     if (role == null) {
                         role = newRealm.addRole(roleString.trim());
                     }
-                    client.addScopeMapping(role);
+                    scopeContainer.addScopeMapping(role);
                 }
 
             }
@@ -620,9 +620,40 @@ public class RepresentationToModel {
 
     public static void renameRealm(RealmModel realm, String name) {
         if (name.equals(realm.getName())) return;
+
+        String oldName = realm.getName();
+
         ClientModel masterApp = realm.getMasterAdminClient();
         masterApp.setClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(name));
         realm.setName(name);
+
+        ClientModel adminClient = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+        if (adminClient != null) {
+            if (adminClient.getBaseUrl() != null) {
+                adminClient.setBaseUrl(adminClient.getBaseUrl().replace("/admin/" + oldName + "/", "/admin/" + name + "/"));
+            }
+            Set<String> adminRedirectUris = new HashSet<>();
+            for (String r : adminClient.getRedirectUris()) {
+                adminRedirectUris.add(replace(r, "/admin/" + oldName + "/", "/admin/" + name + "/"));
+            }
+            adminClient.setRedirectUris(adminRedirectUris);
+        }
+
+        ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        if (accountClient != null) {
+            if (accountClient.getBaseUrl() != null) {
+                accountClient.setBaseUrl(accountClient.getBaseUrl().replace("/realms/" + oldName + "/", "/realms/" + name + "/"));
+            }
+            Set<String> accountRedirectUris = new HashSet<>();
+            for (String r : accountClient.getRedirectUris()) {
+                accountRedirectUris.add(replace(r, "/realms/" + oldName + "/", "/realms/" + name + "/"));
+            }
+            accountClient.setRedirectUris(accountRedirectUris);
+        }
+    }
+
+    private static String replace(String url, String target, String replacement) {
+        return url != null ? url.replace(target, replacement) : null;
     }
 
     public static void updateRealm(RealmRepresentation rep, RealmModel realm) {
@@ -1173,17 +1204,33 @@ public class RepresentationToModel {
 
     public static void createClientScopeMappings(RealmModel realm, ClientModel clientModel, List<ScopeMappingRepresentation> mappings) {
         for (ScopeMappingRepresentation mapping : mappings) {
-            ClientModel client = realm.getClientByClientId(mapping.getClient());
-            if (client == null) {
-                throw new RuntimeException("Unknown client specified in client scope mappings");
-            }
+            ScopeContainerModel scopeContainer = getScopeContainerHavingScope(realm, mapping);
+
             for (String roleString : mapping.getRoles()) {
                 RoleModel role = clientModel.getRole(roleString.trim());
                 if (role == null) {
                     role = clientModel.addRole(roleString.trim());
                 }
-                client.addScopeMapping(role);
+                scopeContainer.addScopeMapping(role);
             }
+        }
+    }
+
+    private static ScopeContainerModel getScopeContainerHavingScope(RealmModel realm, ScopeMappingRepresentation scope) {
+        if (scope.getClient() != null) {
+            ClientModel client = realm.getClientByClientId(scope.getClient());
+            if (client == null) {
+                throw new RuntimeException("Unknown client specification in scope mappings: " + scope.getClient());
+            }
+            return client;
+        } else if (scope.getClientTemplate() != null) {
+            ClientTemplateModel clientTemplate = KeycloakModelUtils.getClientTemplateByName(realm, scope.getClientTemplate());
+            if (clientTemplate == null) {
+                throw new RuntimeException("Unknown clientTemplate specification in scope mappings: " + scope.getClientTemplate());
+            }
+            return clientTemplate;
+        } else {
+            throw new RuntimeException("Either client or clientTemplate needs to be specified in scope mappings");
         }
     }
 
@@ -1284,7 +1331,15 @@ public class RepresentationToModel {
             if (cred.getDigits() != null) hashedCred.setDigits(cred.getDigits());
 
             if (cred.getAlgorithm() != null) {
-                hashedCred.setAlgorithm(cred.getAlgorithm());
+
+                // Could happen when migrating from some early version
+                if ((UserCredentialModel.PASSWORD.equals(cred.getType()) || UserCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) &&
+                        (cred.getAlgorithm().equals(HmacOTP.HMAC_SHA1))) {
+                    hashedCred.setAlgorithm(Pbkdf2PasswordHashProvider.ID);
+                } else {
+                    hashedCred.setAlgorithm(cred.getAlgorithm());
+                }
+
             } else {
                 if (UserCredentialModel.PASSWORD.equals(cred.getType()) || UserCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) {
                     hashedCred.setAlgorithm(Pbkdf2PasswordHashProvider.ID);

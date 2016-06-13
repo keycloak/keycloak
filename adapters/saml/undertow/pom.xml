@@ -54,6 +54,11 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-adapter-api-public</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-adapter-core</artifactId>
             <scope>provided</scope>
         </dependency>

@@ -19,11 +19,13 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.AdminEventPaths;
 
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
@@ -56,14 +58,18 @@ public class FlowTest extends AbstractAuthenticationTest {
             response.close();
         }
 
-        // create new flow that should succeed
-        AuthenticationFlowRepresentation newFlow = newFlow("browser-2", "Browser flow", "basic-flow", true, false);
-        response = authMgmtResource.createFlow(newFlow);
+        // try create flow without alias
+        response = authMgmtResource.createFlow(newFlow(null, "Browser flow", "basic-flow", true, false));
         try {
-            Assert.assertEquals("createFlow success", 201, response.getStatus());
+            Assert.assertEquals("createFlow using the alias of existing flow should fail", 409, response.getStatus());
         } finally {
             response.close();
         }
+
+
+        // create new flow that should succeed
+        AuthenticationFlowRepresentation newFlow = newFlow("browser-2", "Browser flow", "basic-flow", true, false);
+        createFlow(newFlow);
 
         // check that new flow is returned in a children list
         flows = authMgmtResource.getFlows();
@@ -72,26 +78,48 @@ public class FlowTest extends AbstractAuthenticationTest {
         Assert.assertNotNull("created flow visible in parent", found);
         compareFlows(newFlow, found);
 
+        // check lookup flow with unexistent ID
+        try {
+            authMgmtResource.getFlow("id-123-notExistent");
+            Assert.fail("Not expected to find unexistent flow");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
         // check that new flow is returned individually
         AuthenticationFlowRepresentation found2 = authMgmtResource.getFlow(found.getId());
         Assert.assertNotNull("created flow visible directly", found2);
         compareFlows(newFlow, found2);
 
 
-        // add execution flow using a different method
+        // add execution flow to some parent flow
         Map<String, String> data = new HashMap<>();
         data.put("alias", "SomeFlow");
         data.put("type", "basic-flow");
         data.put("description", "Test flow");
         data.put("provider", "registration-page-form");
 
+        // inexistent parent flow - should fail
         try {
             authMgmtResource.addExecutionFlow("inexistent-parent-flow-alias", data);
             Assert.fail("addExecutionFlow for inexistent parent should have failed");
         } catch (Exception expected) {
+            // Expected
         }
 
+        // already existent flow - should fail
+        try {
+            data.put("alias", "browser");
+            authMgmtResource.addExecutionFlow("browser-2", data);
+            Assert.fail("addExecutionFlow should have failed as browser flow already exists");
+        } catch (Exception expected) {
+            // Expected
+        }
+
+        // Successfully add flow
+        data.put("alias", "SomeFlow");
         authMgmtResource.addExecutionFlow("browser-2", data);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("browser-2"), data);
 
         // check that new flow is returned in a children list
         flows = authMgmtResource.getFlows();
@@ -113,11 +141,20 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         // delete non-built-in flow
         authMgmtResource.deleteFlow(found.getId());
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authFlowPath(found.getId()));
 
         // check the deleted flow is no longer returned
         flows = authMgmtResource.getFlows();
         found = findFlowByAlias("browser-2", flows);
         Assert.assertNull("flow deleted", found);
+
+        // Check deleting flow second time will fail
+        try {
+            authMgmtResource.deleteFlow("id-123-notExistent");
+            Assert.fail("Not expected to delete flow, which doesn't exists");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
     }
 
 
@@ -147,6 +184,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         // copy that should succeed
         params.put("newName", "Copy of browser");
         response = authMgmtResource.copy("browser", params);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params);
         try {
             Assert.assertEquals("Copy flow", 201, response.getStatus());
         } finally {
@@ -181,6 +219,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         Response response = authMgmtResource.copy("browser", params);
         Assert.assertEquals(201, response.getStatus());
         response.close();
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params);
 
         params = new HashMap<>();
         params.put("alias", "child");
@@ -189,6 +228,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         params.put("type", "basic-flow");
 
         authMgmtResource.addExecutionFlow("parent", params);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("parent"), params);
     }
 
 }

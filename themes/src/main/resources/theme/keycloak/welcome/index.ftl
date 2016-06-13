@@ -24,6 +24,11 @@
 <html>
 <head>
     <title>Welcome to Keycloak</title>
+
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="robots" content="noindex, nofollow">
+
     <link rel="shortcut icon" href="welcome-content/favicon.ico" type="image/x-icon">
     <link rel="StyleSheet" href="welcome-content/keycloak.css" type="text/css">
     <style>
@@ -89,6 +94,8 @@
                     <label for="passwordConfirmation">Password confirmation</label>
                     <input id="passwordConfirmation" name="passwordConfirmation" type="password" />
                 </p>
+
+                <input id="stateChecker" name="stateChecker" type="hidden" value="${stateChecker}" />
 
                 <button id="create-button" type="submit">Create</button>
             </form>

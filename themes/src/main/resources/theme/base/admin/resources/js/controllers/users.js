@@ -59,6 +59,12 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
                     $scope.selectedClientMappings = [];
                 }
                 Notifications.success("Role mappings updated.");
+            }).error(function(response) {
+                if (response && response['error_description']) {
+                    Notifications.error(response['error_description']);
+                } else {
+                    Notifications.error("Failed to remove role mapping");
+                }
             });
     };
 
@@ -87,6 +93,12 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
                 $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 Notifications.success("Role mappings updated.");
+            }).error(function(response) {
+                if (response && response['error_description']) {
+                    Notifications.error(response['error_description']);
+                } else {
+                    Notifications.error("Failed to remove role mapping");
+                }
             });
     };
 
@@ -234,9 +246,9 @@ module.controller('UserListCtrl', function($scope, realm, User, UserImpersonatio
 
     $scope.query = {
         realm: realm.realm,
-        max : 5,
+        max : 20,
         first : 0
-    }
+    };
 
     $scope.impersonate = function(userId) {
         UserImpersonation.save({realm : realm.realm, user: userId}, function (data) {
@@ -1142,6 +1154,19 @@ module.controller('UserFederationMapperCreateCtrl', function($scope, realm, prov
 
 });
 
+function removeGroupMember(groups, member) {
+    for (var j = 0; j < groups.length; j++) {
+        //console.log('checking: ' + groups[j].path);
+        if (member.path == groups[j].path) {
+            groups.splice(j, 1);
+            break;
+        }
+        if (groups[j].subGroups && groups[j].subGroups.length > 0) {
+            //console.log('going into subgroups');
+            removeGroupMember(groups[j].subGroups, member);
+        }
+    }
+}
 module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, groups, user, UserGroupMembership, UserGroupMapping, Notifications, $location, Dialog) {
     $scope.realm = realm;
     $scope.user = user;
@@ -1151,8 +1176,14 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
 
     UserGroupMembership.query({realm: realm.realm, userId: user.id}, function(data) {
         $scope.groupMemberships = data;
+        for (var i = 0; i < data.length; i++) {
+            var member = data[i];
+            removeGroupMember(groups, member);
+        }
 
     });
+
+
 
     $scope.joinGroup = function() {
         if (!$scope.tree.currentNode) {
@@ -1167,9 +1198,19 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
     };
 
     $scope.leaveGroup = function() {
+        if (!$scope.selectedGroup) {
+            return;
+
+        }
         UserGroupMapping.remove({realm: realm.realm, userId: user.id, groupId: $scope.selectedGroup.id}, function() {
             Notifications.success('Removed group membership');
             $route.reload();
+        }, function(response) {
+            if (response.data && response.data['error_description']) {
+                Notifications.error(response.data['error_description']);
+            } else {
+                Notifications.error("Failed to leave group");
+            }
         });
 
     };

@@ -169,11 +169,7 @@ public class AdapterDeploymentContext {
         public void setAuthServerBaseUrl(String authServerBaseUrl) {
             this.authServerBaseUrl = authServerBaseUrl;
             KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
-            resolveBrowserUrls(serverBuilder);
-
-            if (delegate.getRelativeUrls() == RelativeUrlsUsed.ALL_REQUESTS) {
-                resolveNonBrowserUrls(serverBuilder);
-            }
+            resolveUrls(serverBuilder);
         }
 
         @Override
@@ -459,6 +455,16 @@ public class AdapterDeploymentContext {
         @Override
         public void setTurnOffChangeSessionIdOnLogin(boolean turnOffChangeSessionIdOnLogin) {
             delegate.setTurnOffChangeSessionIdOnLogin(turnOffChangeSessionIdOnLogin);
+        }
+
+        @Override
+        public int getTokenMinimumTimeToLive() {
+            return delegate.getTokenMinimumTimeToLive();
+        }
+
+        @Override
+        public void setTokenMinimumTimeToLive(final int tokenMinimumTimeToLive) {
+            delegate.setTokenMinimumTimeToLive(tokenMinimumTimeToLive);
         }
     }
 

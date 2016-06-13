@@ -113,6 +113,9 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         public Response authResponse(@QueryParam("state") String state,
                                      @QueryParam("denied") String denied,
                                      @QueryParam("oauth_verifier") String verifier) {
+            if (denied != null) {
+                return callback.cancelled(state);
+            }
 
             try {
                 Twitter twitter = new TwitterFactory().getInstance();
@@ -185,7 +188,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     @Override
-    public Response retrieveToken(FederatedIdentityModel identity) {
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
         return Response.ok(identity.getToken()).type(MediaType.APPLICATION_JSON).build();
     }
 }

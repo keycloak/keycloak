@@ -28,6 +28,7 @@
         <fileSet>
             <directory>${project.build.directory}/unpacked</directory>
             <includes>
+                <include>com/fasterxml/jackson/**</include>
                 <include>org/bouncycastle/**</include>
                 <include>org/keycloak/keycloak-common/**</include>
                 <include>org/keycloak/keycloak-core/**</include>

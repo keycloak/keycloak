@@ -18,13 +18,33 @@
 
 <features xmlns="http://karaf.apache.org/xmlns/features/v1.0.0" name="keycloak-${project.version}">
 
-    <feature name="keycloak-fuse-example" version="${project.version}">
+      <feature name="keycloak-fuse-6.3-example" version="${project.version}">
+          <details>The keycloak fuse example</details>
+          <feature>war</feature>
+          <feature>camel</feature>
+          <feature>camel-jetty9</feature>
+          <feature>cxf</feature>
+          <feature>keycloak</feature>
+          <feature>keycloak-jetty9-adapter</feature>
+          <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-base/${jackson.version}</bundle>
+          <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-json-provider/${jackson.version}</bundle>
+          <bundle>mvn:org.keycloak.example.demo/product-portal-fuse-example/${project.version}</bundle>
+          <bundle>mvn:org.keycloak.example.demo/customer-portal-fuse-example/${project.version}/war</bundle>
+          <bundle>mvn:org.keycloak.example.demo/external-config/${project.version}/war</bundle>
+          <bundle>mvn:org.keycloak.example.demo/camel-endpoint-example/${project.version}</bundle>
+          <bundle>mvn:org.keycloak.example.demo/cxf-jaxws-example/${project.version}</bundle>
+          <bundle>mvn:org.keycloak.example.demo/cxf-jaxrs-example/${project.version}</bundle>
+      </feature>
+
+      <!-- The difference are keycloak-jetty8-adapter and camel-jetty feature -->
+    <feature name="keycloak-fuse-6.2-example" version="${project.version}">
         <details>The keycloak fuse example</details>
         <feature>war</feature>
         <feature>camel</feature>
         <feature>camel-jetty</feature>
         <feature>cxf</feature>
         <feature>keycloak</feature>
+        <feature>keycloak-jetty8-adapter</feature>
         <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-base/${jackson.version}</bundle>
         <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-json-provider/${jackson.version}</bundle>
         <bundle>mvn:org.keycloak.example.demo/product-portal-fuse-example/${project.version}</bundle>

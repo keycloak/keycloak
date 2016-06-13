@@ -39,7 +39,8 @@ public class ProvidedEntitiesClassLoader extends ClassLoader {
 
     private Set<ClassLoader> classloaders;
 
-    public ProvidedEntitiesClassLoader(List<Class<?>> providedEntities) {
+    public ProvidedEntitiesClassLoader(List<Class<?>> providedEntities, ClassLoader parentClassLoader) {
+    	super(parentClassLoader);
         classloaders = new HashSet<>();
         for (Class<?> clazz : providedEntities) {
             classloaders.add(clazz.getClassLoader());

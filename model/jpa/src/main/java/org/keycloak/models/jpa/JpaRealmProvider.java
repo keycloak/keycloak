@@ -129,6 +129,10 @@ public class JpaRealmProvider implements RealmProvider {
         em.refresh(realm);
         RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
+
+        realm.getDefaultGroups().clear();
+        em.flush();
+
         int num = em.createNamedQuery("deleteGroupRoleMappingsByRealm")
                 .setParameter("realm", realm).executeUpdate();
         num = em.createNamedQuery("deleteGroupAttributesByRealm")
@@ -261,7 +265,7 @@ public class JpaRealmProvider implements RealmProvider {
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
         em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
         em.createNamedQuery("deleteTemplateScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
-        em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
+        int val = em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
 
         em.remove(roleEntity);
         em.flush();

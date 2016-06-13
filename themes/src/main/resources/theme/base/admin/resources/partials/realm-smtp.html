@@ -2,6 +2,9 @@
     <kc-tabs-realm></kc-tabs-realm>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <input type="text" readonly value="this is not a login form" style="display: none;">
+        <input type="password" readonly value="this is not a login form" style="display: none;">
+
         <div class="form-group clearfix">
             <label class="col-md-2 control-label" for="smtpHost"><span class="required">*</span> {{:: 'host' | translate}}</label>
             <div class="col-md-6">

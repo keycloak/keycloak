@@ -25,12 +25,13 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Version;
-import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
+import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.util.BasicAuthHelper;
 
@@ -49,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  *
@@ -59,6 +61,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Page
     private CustomerPortal customerPortal;
     @Page
+    private CustomerPortalSubsystem customerPortalSubsystem;
+    @Page
     private SecurePortal securePortal;
     @Page
     private CustomerDb customerDb;
@@ -68,10 +72,17 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     private ProductPortal productPortal;
     @Page
     private InputPortal inputPortal;
+    @Page
+    private TokenMinTTLPage tokenMinTTLPage;
 
     @Deployment(name = CustomerPortal.DEPLOYMENT_NAME)
     protected static WebArchive customerPortal() {
         return servletDeployment(CustomerPortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class);
+    }
+
+    @Deployment(name = CustomerPortalSubsystem.DEPLOYMENT_NAME)
+    protected static WebArchive customerPortalSubsystem() {
+        return servletDeployment(CustomerPortalSubsystem.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class);
     }
 
     @Deployment(name = SecurePortal.DEPLOYMENT_NAME)
@@ -97,6 +108,19 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = InputPortal.DEPLOYMENT_NAME)
     protected static WebArchive inputPortal() {
         return servletDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class);
+    }
+
+    @Deployment(name = TokenMinTTLPage.DEPLOYMENT_NAME)
+    protected static WebArchive tokenMinTTLPage() {
+        return servletDeployment(TokenMinTTLPage.DEPLOYMENT_NAME, AdapterActionsFilter.class, AbstractShowTokensServlet.class, TokenMinTTLServlet.class, ErrorServlet.class);
+    }
+
+    @Test
+    public void testCustomerPortalWithSubsystemSettings() {
+        customerPortalSubsystem.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertTrue(driver.getPageSource().contains("Bill Burke") && driver.getPageSource().contains("Stian Thorgersen"));
     }
 
     @Test
@@ -226,7 +250,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         demoRealmRep.setSsoSessionIdleTimeout(1);
         testRealmResource().update(demoRealmRep);
 
-//		Thread.sleep(2000);
+		pause(2000);
+
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
@@ -253,16 +278,16 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         demoRealmRep.setSsoSessionIdleTimeout(1);
         testRealmResource().update(demoRealmRep);
 
-        Time.setOffset(2);
+        pause(2000);
 
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
         // need to cleanup so other tests don't fail, so invalidate http sessions on remote clients.
         demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
+        testRealmResource().update(demoRealmRep);
         // note: sessions invalidated after each test, see: AbstractKeycloakTest.afterAbstractKeycloakTest()
 
-        Time.setOffset(0);
     }
 
     @Test
@@ -391,5 +416,37 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         securePortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
+
+    // Tests "token-minimum-time-to-live" adapter configuration option
+    @Test
+    public void testTokenMinTTL() {
+        // Login
+        tokenMinTTLPage.navigateTo();
+        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(tokenMinTTLPage);
+
+        // Get time of token
+        AccessToken token = tokenMinTTLPage.getAccessToken();
+        int tokenIssued1 = token.getIssuedAt();
+
+        // Sets 5 minutes offset and assert access token will be still the same
+        setAdapterAndServerTimeOffset(300, tokenMinTTLPage.toString());
+        token = tokenMinTTLPage.getAccessToken();
+        int tokenIssued2 = token.getIssuedAt();
+        Assert.assertEquals(tokenIssued1, tokenIssued2);
+        Assert.assertFalse(token.isExpired());
+
+        // Sets 9 minutes offset and assert access token will be refreshed (accessTokenTimeout is 10 minutes, token-min-ttl is 2 minutes. Hence 8 minutes or more should be sufficient)
+        setAdapterAndServerTimeOffset(540, tokenMinTTLPage.toString());
+        token = tokenMinTTLPage.getAccessToken();
+        int tokenIssued3 = token.getIssuedAt();
+        Assert.assertTrue(tokenIssued3 > tokenIssued1);
+
+        // Revert times
+        setAdapterAndServerTimeOffset(0, tokenMinTTLPage.toString());
+    }
+
 
 }

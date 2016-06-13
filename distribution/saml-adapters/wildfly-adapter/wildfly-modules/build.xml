@@ -48,6 +48,14 @@
             <maven-resource group="org.keycloak" artifact="keycloak-saml-core"/>
         </module-def>
 
+        <module-def name="org.keycloak.keycloak-saml-core-public">
+            <maven-resource group="org.keycloak" artifact="keycloak-saml-core-public"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-saml-adapter-api-public">
+            <maven-resource group="org.keycloak" artifact="keycloak-saml-adapter-api-public"/>
+        </module-def>
+
         <module-def name="org.keycloak.keycloak-saml-adapter-core">
             <maven-resource group="org.keycloak" artifact="keycloak-saml-adapter-core"/>
         </module-def>

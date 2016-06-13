@@ -21,7 +21,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * Used for partial import of users, clients, roles, and identity providers.
+ * Used for partial import of users, groups, clients, roles, and identity providers.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
@@ -30,14 +30,19 @@ public class PartialImportRepresentation {
     public enum Policy { SKIP, OVERWRITE, FAIL };
 
     protected Policy policy = Policy.FAIL;
-    protected String ifResourceExists = "";
+    protected String ifResourceExists;
     protected List<UserRepresentation> users;
+    protected List<GroupRepresentation> groups;
     protected List<ClientRepresentation> clients;
     protected List<IdentityProviderRepresentation> identityProviders;
     protected RolesRepresentation roles;
 
     public boolean hasUsers() {
         return (users != null) && !users.isEmpty();
+    }
+
+    public boolean hasGroups() {
+        return (groups != null) && !groups.isEmpty();
     }
 
     public boolean hasClients() {
@@ -62,7 +67,7 @@ public class PartialImportRepresentation {
 
     public void setIfResourceExists(String ifResourceExists) {
         this.ifResourceExists = ifResourceExists;
-        this.policy = Policy.valueOf(ifResourceExists);
+        this.policy = ifResourceExists != null ? Policy.valueOf(ifResourceExists) : null;
     }
 
     public Policy getPolicy() {
@@ -79,6 +84,14 @@ public class PartialImportRepresentation {
 
     public List<ClientRepresentation> getClients() {
         return clients;
+    }
+
+    public List<GroupRepresentation> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(List<GroupRepresentation> groups) {
+        this.groups = groups;
     }
 
     public void setClients(List<ClientRepresentation> clients) {

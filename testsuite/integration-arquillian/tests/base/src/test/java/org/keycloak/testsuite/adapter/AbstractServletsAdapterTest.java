@@ -22,10 +22,14 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.By;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+
+import javax.ws.rs.core.UriBuilder;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
@@ -45,8 +49,16 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
                 .addClasses(servletClasses)
                 .addAsWebInfResource(webXML, "web.xml")
-                .addAsWebInfResource(keycloakJSON, "keycloak.json")
                 .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
+
+        URL keystore = AbstractServletsAdapterTest.class.getResource(webInfPath + "keystore.jks");
+        if (keystore != null) {
+            deployment.addAsWebInfResource(keystore, "classes/keystore.jks");
+        }
+
+        if (keycloakJSON != null) {
+            deployment.addAsWebInfResource(keycloakJSON, "keycloak.json");
+        }
 
         addContextXml(deployment, name);
 
@@ -97,6 +109,16 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealmPage.setAuthRealm(DEMO);
+    }
+
+    protected void setAdapterAndServerTimeOffset(int timeOffset, String servletUri) {
+        setTimeOffset(timeOffset);
+        String timeOffsetUri = UriBuilder.fromUri(servletUri)
+                .queryParam("timeOffset", timeOffset)
+                .build().toString();
+
+        driver.navigate().to(timeOffsetUri);
+        WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
     }
 
 }

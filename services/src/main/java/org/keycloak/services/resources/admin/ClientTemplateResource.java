@@ -17,11 +17,13 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -103,6 +105,10 @@ public class ClientTemplateResource {
     public Response update(final ClientTemplateRepresentation rep) {
         auth.requireManage();
 
+        if (template == null) {
+            throw new NotFoundException("Could not find client template");
+        }
+
         try {
             RepresentationToModel.updateClientTemplate(rep, template);
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
@@ -123,6 +129,11 @@ public class ClientTemplateResource {
     @Produces(MediaType.APPLICATION_JSON)
     public ClientTemplateRepresentation getClient() {
         auth.requireView();
+
+        if (template == null) {
+            throw new NotFoundException("Could not find client template");
+        }
+
         return ModelToRepresentation.toRepresentation(template);
     }
 
@@ -132,10 +143,20 @@ public class ClientTemplateResource {
      */
     @DELETE
     @NoCache
-    public void deleteClientTemplate() {
+    public Response deleteClientTemplate() {
         auth.requireManage();
-        realm.removeClientTemplate(template.getId());
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+
+        if (template == null) {
+            throw new NotFoundException("Could not find client template");
+        }
+
+        try {
+            realm.removeClientTemplate(template.getId());
+            adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+            return Response.noContent().build();
+        } catch (ModelException me) {
+            return ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 
 

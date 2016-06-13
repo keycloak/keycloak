@@ -18,8 +18,10 @@
 package org.keycloak.admin.client.resource;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 
 import javax.ws.rs.Consumes;
@@ -99,14 +101,45 @@ public interface ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserSessionRepresentation> getUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults);
 
+    @Path("offline-session-count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, Long> getOfflineSessionCount();
+
+    @Path("offline-sessions")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserSessionRepresentation> getOfflineUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults);
+
     @POST
     @Path("push-revocation")
-    public void pushRevocation();
+    @Produces(MediaType.APPLICATION_JSON)
+    void pushRevocation();
 
     @Path("/scope-mappings")
     public RoleMappingResource getScopeMappings();
 
     @Path("/roles")
     public RolesResource roles();
+
+    @Path("/service-account-user")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    UserRepresentation getServiceAccountUser();
+
+    @Path("nodes")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    void registerNode(Map<String, String> formParams);
+
+    @Path("nodes/{node}")
+    @DELETE
+    void unregisterNode(final @PathParam("node") String node);
+
+    @Path("test-nodes-available")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    GlobalRequestResult testNodesAvailable();
 
 }

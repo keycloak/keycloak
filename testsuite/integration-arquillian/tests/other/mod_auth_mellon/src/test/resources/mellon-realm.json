@@ -595,7 +595,7 @@
       "saml_single_logout_service_url_redirect" : "http://localhost:8480/mellon/logout",
       "saml.signature.algorithm" : "RSA_SHA1",
       "saml_force_name_id_format" : "false",
-      "saml.client.signature" : "true",
+      "saml.client.signature" : "false",
       "saml.encryption.certificate" : "MIICrjCCAZYCCQCrriL//w2/KDANBgkqhkiG9w0BAQsFADAZMRcwFQYDVQQDDA5sb2NhbGhvc3Q6ODQ4MDAeFw0xNjAyMTcxMDQzMjhaFw0yNjAyMTYxMDQzMjhaMBkxFzAVBgNVBAMMDmxvY2FsaG9zdDo4NDgwMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw0VE8Q0jNc2bl0OSZWvKQQIIowBie3rGgRfBB0TzO5sjBbJSQYPhHBWb61gB4Cx1TvCQdefgVvhB1Heq9VFdRKRtZLl2I9RaOYPpLpBXLl10yHLGUKMzKVT1bpKNY4hCDN46nrxiYcbi+ZLsiezAITLEsPls2KWq5IFb0Nh/8aLRv3glk1aLaUtSSM1c/qGk7al9rfjG6HuUutaOYtpy4dTTsMkKUmHwBTeMkSYzLnmNVgyRFN8QWPf02B1TtL5cEfrm7frWsSKxUmVcmz5pz3akjd5HD3tNJC1RGCoWQG61g7hW25y1MRHcYXlJajSFp9KmGbkB30OpTJgky7NpGQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQApi0LyRNInVXfKqdAo1dMRzVso5CPSVuNUd/YwdRS5aYtGUx44SA2kGnuzo9XPc0OSJzuMMPRuwkL91Du8283rQT1wERvJrt1Zbs90RAwNNvpTZ4uzgZp/Kxlr8tQ8LuUsUcbBgNuI9LV51po0yZlxXGu/pfs7HNRVV2zfItkAO7OKj00f+Mn0+JLhJ9PJoYvfPFQnAU3oFkYlc7FIYUeFKbFFG9KCkwb39vkuIHjcCEVFBCkdERefTBBptmXdemOI+tY7m1pzpkVzNDGX0OtEoGDokZHKL9xJUPU5Ao15OhVY0bp84uf1wjVvDVrg/8HfSSKirVjrlumRGariq8aw",
       "saml.authnstatement" : "true",
       "saml_name_id_format" : "username",

@@ -20,6 +20,9 @@
   -->
 
 <module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-saml-undertow-adapter">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
     <resources>
         <!-- Insert resources here -->
     </resources>
@@ -32,7 +35,9 @@
         <module name="io.undertow.core"/>
         <module name="io.undertow.servlet"/>
         <module name="org.keycloak.keycloak-adapter-spi"/>
+        <module name="org.keycloak.keycloak-saml-core-public"/>
         <module name="org.keycloak.keycloak-saml-core"/>
+        <module name="org.keycloak.keycloak-saml-adapter-api-public"/>
         <module name="org.keycloak.keycloak-saml-adapter-core"/>
         <module name="org.keycloak.keycloak-common"/>
     </dependencies>

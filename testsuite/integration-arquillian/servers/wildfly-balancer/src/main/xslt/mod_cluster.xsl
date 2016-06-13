@@ -17,18 +17,14 @@
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xalan="http://xml.apache.org/xalan"
-                xmlns:s="urn:jboss:domain:4.0"
-                xmlns:u="urn:jboss:domain:undertow:3.0"
                 version="2.0"
-                exclude-result-prefixes="xalan j u">
-
-    <xsl:param name="config"/>
+                exclude-result-prefixes="xalan">
 
     <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" standalone="no"/>
     <xsl:strip-space elements="*"/>
 
     <!--enable mod_cluster extension-->
-    <xsl:template match="//s:extensions">
+    <xsl:template match="//*[local-name()='extensions']">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
             <extension module="org.jboss.as.modcluster"/>
@@ -36,7 +32,7 @@
     </xsl:template>
 
     <!--add filter-ref-->
-    <xsl:template match="//u:server[@name='default-server']/u:host[@name='default-host']">
+    <xsl:template match="//*[local-name()='server' and @name='default-server']/*[local-name()='host' and @name='default-host']">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
             <filter-ref name="modcluster"/>
@@ -44,23 +40,34 @@
     </xsl:template>
     
     <!--add filter-->
-    <xsl:template match="//u:filters">
+    <xsl:template match="//*[local-name()='filters']">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
             <mod-cluster 
                 name="modcluster" 
                 advertise-socket-binding="modcluster" 
+                advertise-frequency="${{modcluster.advertise-frequency:2000}}"
                 management-socket-binding="http"
                 enable-http2="true"
             />
         </xsl:copy>
     </xsl:template>
-
-    <!--add socket binding-->
-    <xsl:template match="//s:socket-binding-group[@name='standard-sockets']">
+    
+    <!--add private interface -->
+    <xsl:template match="/*[local-name()='server']/*[local-name()='interfaces']">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
-            <socket-binding name="modcluster" port="23364" multicast-address="224.0.1.105"/>
+            <interface name="private">
+                <inet-address value="${{jboss.bind.address.private:127.0.0.1}}"/>
+            </interface>
+        </xsl:copy>
+    </xsl:template>
+
+    <!--add socket binding-->
+    <xsl:template match="//*[local-name()='socket-binding-group' and @name='standard-sockets']">
+        <xsl:copy>
+            <xsl:apply-templates select="node()|@*"/>
+            <socket-binding name="modcluster" interface="private" port="23364" multicast-address="${{jboss.default.multicast.address:230.0.0.4}}"/>
         </xsl:copy>
     </xsl:template>
 

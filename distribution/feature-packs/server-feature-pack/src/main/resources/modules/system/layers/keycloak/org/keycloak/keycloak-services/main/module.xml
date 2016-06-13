@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-
-
 <!--
   ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -18,11 +15,15 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <module xmlns="urn:jboss:module:1.3" name="org.keycloak.keycloak-services">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
     <resources>
         <artifact name="${org.keycloak:keycloak-services}"/>
     </resources>
+
     <dependencies>
         <module name="org.keycloak.keycloak-common" services="import"/>
         <module name="org.keycloak.keycloak-core" services="import"/>
@@ -38,6 +39,7 @@
         <module name="org.keycloak.keycloak-model-jpa" services="import"/>
         <module name="org.keycloak.keycloak-model-mongo" services="import"/>
         <module name="org.keycloak.keycloak-model-infinispan" services="import"/>
+        <module name="org.keycloak.keycloak-saml-core-public" services="import"/>
         <module name="org.keycloak.keycloak-saml-core" services="import"/>
         <module name="org.keycloak.keycloak-services" export="true" services="import"/>
         <module name="org.keycloak.keycloak-wildfly-extensions" services="import"/>
@@ -45,6 +47,7 @@
         <module name="org.freemarker"/>
         <module name="javax.ws.rs.api"/>
         <module name="javax.mail.api"/>
+        <module name="javax.xml.soap.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         <module name="org.jboss.resteasy.resteasy-crypto"/>
         <module name="org.jboss.resteasy.resteasy-multipart-provider"/>
@@ -62,5 +65,4 @@
         <module name="org.apache.httpcomponents"/>
         <module name="org.twitter4j"/>
     </dependencies>
-
 </module>

@@ -54,17 +54,17 @@ public class DBLockTest extends AbstractModelTest {
         super.before();
 
         // Set timeouts for testing
-        DBLockManager lockManager = new DBLockManager();
-        DBLockProviderFactory lockFactory = lockManager.getDBLockFactory(session);
+        DBLockManager lockManager = new DBLockManager(session);
+        DBLockProviderFactory lockFactory = lockManager.getDBLockFactory();
         lockFactory.setTimeouts(LOCK_RECHECK_MILLIS, LOCK_TIMEOUT_MILLIS);
 
         // Drop lock table, just to simulate racing threads for create lock table and insert lock record into it.
-        lockManager.getDBLock(session).destroyLockInfo();
+        lockManager.getDBLock().destroyLockInfo();
 
         commit();
     }
 
-    // @Test // TODO: Running -Dtest=DBLockTest,UserModelTest might cause issues sometimes. Reenable this once DB lock is refactored.
+    @Test
     public void testLockConcurrently() throws Exception {
         long startupTime = System.currentTimeMillis();
 
@@ -112,7 +112,7 @@ public class DBLockTest extends AbstractModelTest {
     }
 
     private void lock(KeycloakSession session, Semaphore semaphore) {
-        DBLockProvider dbLock = new DBLockManager().getDBLock(session);
+        DBLockProvider dbLock = new DBLockManager(session).getDBLock();
         dbLock.waitForLock();
         try {
             semaphore.increase();

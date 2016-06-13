@@ -517,6 +517,11 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public void joinGroup(GroupModel group) {
         if (isMemberOf(group)) return;
+        joinGroupImpl(group);
+
+    }
+
+    protected void joinGroupImpl(GroupModel group) {
         UserGroupMembershipEntity entity = new UserGroupMembershipEntity();
         entity.setUser(getEntity());
         entity.setGroupId(group.getId());
@@ -570,6 +575,10 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public void grantRole(RoleModel role) {
         if (hasRole(role)) return;
+        grantRoleImpl(role);
+    }
+
+    public void grantRoleImpl(RoleModel role) {
         UserRoleMappingEntity entity = new UserRoleMappingEntity();
         entity.setUser(getEntity());
         entity.setRoleId(role.getId());

@@ -60,7 +60,7 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-jetty-adapter-spi</artifactId>
         </dependency>
-		<dependency>
+        <dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-adapter-core</artifactId>
 		</dependency>

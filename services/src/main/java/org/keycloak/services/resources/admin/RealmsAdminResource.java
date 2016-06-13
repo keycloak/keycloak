@@ -110,7 +110,11 @@ public class RealmsAdminResource {
     }
 
     protected void addRealmRep(List<RealmRepresentation> reps, RealmModel realm, ClientModel realmManagementClient) {
-        if (auth.hasAppRole(realmManagementClient, AdminRoles.MANAGE_REALM)) {
+        if (!auth.hasOneOfAppRole(realmManagementClient, AdminRoles.ALL_REALM_ROLES)) {
+            throw new ForbiddenException();
+        }
+
+        if (auth.hasAppRole(realmManagementClient, AdminRoles.VIEW_REALM)) {
             reps.add(ModelToRepresentation.toRepresentation(realm, false));
         } else if (auth.hasOneOfAppRole(realmManagementClient, AdminRoles.ALL_REALM_ROLES)) {
             RealmRepresentation rep = new RealmRepresentation();
@@ -151,7 +155,7 @@ public class RealmsAdminResource {
 
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Realm " + rep.getRealm() + " already exists");
+            return ErrorResponse.exists("Realm with same name exists");
         }
     }
 

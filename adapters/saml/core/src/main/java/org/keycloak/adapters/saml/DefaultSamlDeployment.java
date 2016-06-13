@@ -34,6 +34,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
     public static class DefaultSingleSignOnService implements IDP.SingleSignOnService {
         private boolean signRequest;
         private boolean validateResponseSignature;
+        private boolean validateAssertionSignature;
         private Binding requestBinding;
         private Binding responseBinding;
         private String requestBindingUrl;
@@ -46,6 +47,11 @@ public class DefaultSamlDeployment implements SamlDeployment {
         @Override
         public boolean validateResponseSignature() {
             return validateResponseSignature;
+        }
+
+        @Override
+        public boolean validateAssertionSignature() {
+            return validateAssertionSignature;
         }
 
         @Override
@@ -69,6 +75,10 @@ public class DefaultSamlDeployment implements SamlDeployment {
 
         public void setValidateResponseSignature(boolean validateResponseSignature) {
             this.validateResponseSignature = validateResponseSignature;
+        }
+
+        public void setValidateAssertionSignature(boolean validateAssertionSignature) {
+            this.validateAssertionSignature = validateAssertionSignature;
         }
 
         public void setRequestBinding(Binding requestBinding) {

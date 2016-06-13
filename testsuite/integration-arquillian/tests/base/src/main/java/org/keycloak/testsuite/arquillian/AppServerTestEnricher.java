@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.arquillian;
 
-import org.jboss.arquillian.container.spi.event.container.BeforeDeploy;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
@@ -18,10 +17,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerQualifier;
 import static org.keycloak.testsuite.util.IOUtil.execCommand;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
 
 /**
  *
@@ -44,7 +42,7 @@ public class AppServerTestEnricher {
 
         return annotatedClass == null ? null // no @AppServerContainer annotation --> no adapter test
                 : (appServerQ == null || appServerQ.isEmpty() // @AppServerContainer annotation present but qualifier not set --> relative adapter test
-                        ? getAuthServerQualifier() // app server == auth server
+                        ? AuthServerTestEnricher.AUTH_SERVER_CONTAINER // app server == auth server
                         : appServerQ);
     }
 
@@ -53,13 +51,15 @@ public class AppServerTestEnricher {
     }
 
     public static String getAppServerContextRoot(int clusterPortOffset) {
+        String host = System.getProperty("app.server.host", "localhost");
         int httpPort = Integer.parseInt(System.getProperty("app.server.http.port")); // property must be set
         int httpsPort = Integer.parseInt(System.getProperty("app.server.https.port")); // property must be set
-        boolean sslRequired = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
 
-        return sslRequired
-                ? "https://localhost:" + (httpsPort + clusterPortOffset)
-                : "http://localhost:" + (httpPort + clusterPortOffset);
+        boolean sslRequired = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
+        String scheme = sslRequired ? "https" : "http";
+        int port = sslRequired ? httpsPort : httpPort;
+
+        return String.format("%s://%s:%s", scheme, host, port + clusterPortOffset);
     }
 
     public void updateTestContextWithAppServerInfo(@Observes(precedence = 1) BeforeClass event) {
@@ -100,28 +100,28 @@ public class AppServerTestEnricher {
     private Instance<ContainerController> containerConrollerInstance;
 
     public void startAppServer(@Observes(precedence = -1) BeforeClass event) throws MalformedURLException, InterruptedException, IOException {
-        if (testContext.isAdapterTest()) {
+        if (testContext.isAdapterTest() && !testContext.isRelativeAdapterTest()) {
             ContainerController controller = containerConrollerInstance.get();
             if (!controller.isStarted(testContext.getAppServerInfo().getQualifier())) {
+                log.info("Starting app server: " + testContext.getAppServerInfo().getQualifier());
                 controller.start(testContext.getAppServerInfo().getQualifier());
             }
         }
     }
 
-    public void installAdapterLibs(@Observes BeforeDeploy event) {
-        log.debug("BEFORE DEPLOY - INSTALL ADAPTER LIBS");
-        if (testContext.isAdapterTest()) {
-            // install adapter libs on JBoss-based container via CLI
-            if (testContext.getAppServerInfo().isJBossBased()) {
-                try {
-                    installAdapterLibsUsingJBossCLIClient(testContext.getAppServerInfo());
-                } catch (InterruptedException | IOException ex) {
-                    throw new RuntimeException("Failed to install adapter libs.", ex);
-                }
-            }
-        }
-    }
-
+//    public void installAdapterLibs(@Observes BeforeDeploy event) {
+//        log.debug("BEFORE DEPLOY - INSTALL ADAPTER LIBS");
+//        if (testContext.isAdapterTest()) {
+//            // install adapter libs on JBoss-based container via CLI
+//            if (testContext.getAppServerInfo().isJBossBased()) {
+//                try {
+//                    installAdapterLibsUsingJBossCLIClient(testContext.getAppServerInfo());
+//                } catch (InterruptedException | IOException ex) {
+//                    throw new RuntimeException("Failed to install adapter libs.", ex);
+//                }
+//            }
+//        }
+//    }
     private void installAdapterLibsUsingJBossCLIClient(ContainerInfo appServerInfo) throws InterruptedException, IOException {
         if (!appServerInfo.isAdapterLibsInstalled()) {
 
@@ -160,7 +160,7 @@ public class AppServerTestEnricher {
                 execCommand(command + " --connect --command=reload" + controllerArg, bin);
                 log.info("Container restarted");
                 pause(5000);
-                if (System.getProperty("app.server.log.check","true").equals("true")) {
+                if (System.getProperty("app.server.log.check", "true").equals("true")) {
                     LogChecker.checkJBossServerLog(jbossHomePath);
                 }
             }
@@ -179,7 +179,7 @@ public class AppServerTestEnricher {
     public static Class getNearestSuperclassWithAnnotation(Class testClass, Class annotationClass) {
         return testClass.isAnnotationPresent(annotationClass) ? testClass
                 : (testClass.getSuperclass().equals(Object.class) ? null // stop recursion
-                        : getNearestSuperclassWithAnnotation(testClass.getSuperclass(), annotationClass)); // continue recursion
+                : getNearestSuperclassWithAnnotation(testClass.getSuperclass(), annotationClass)); // continue recursion
     }
 
     public static boolean hasAppServerContainerAnnotation(Class testClass) {
@@ -187,12 +187,12 @@ public class AppServerTestEnricher {
     }
 
     public static boolean isRelative(Class testClass) {
-        return getAppServerQualifier(testClass).equals(getAuthServerQualifier());
+        return getAppServerQualifier(testClass).equals(AuthServerTestEnricher.AUTH_SERVER_CONTAINER);
     }
 
     public static String getAdapterLibsLocationProperty(Class testClass) {
         Class<? extends AuthServerTestEnricher> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AdapterLibsLocationProperty.class);
-        return (annotatedClass == null ? null
+        return (annotatedClass == null ? "adapter.libs.home"
                 : annotatedClass.getAnnotation(AdapterLibsLocationProperty.class).value());
     }
 

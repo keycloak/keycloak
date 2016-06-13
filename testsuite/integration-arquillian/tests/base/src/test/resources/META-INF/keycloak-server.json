@@ -11,7 +11,8 @@
         "jboss-logging" : {
             "success-level": "debug",
             "error-level": "warn"
-        }
+        },
+        "event-queue": {}
     },
 
     "realm": {
@@ -83,7 +84,8 @@
             "password": "${keycloak.connectionsJpa.password:}",
             "databaseSchema": "${keycloak.connectionsJpa.databaseSchema:update}",
             "showSql": "${keycloak.connectionsJpa.showSql:false}",
-            "formatSql": "${keycloak.connectionsJpa.formatSql:true}"
+            "formatSql": "${keycloak.connectionsJpa.formatSql:true}",
+            "globalStatsInterval": "${keycloak.connectionsJpa.globalStatsInterval:-1}"
         }
     },
 

@@ -26,7 +26,6 @@ import org.keycloak.saml.SAML2NameIDPolicyBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.security.KeyPair;
@@ -54,45 +53,8 @@ public abstract class AbstractInitiateLogin implements AuthChallenge {
     @Override
     public boolean challenge(HttpFacade httpFacade) {
         try {
-            String issuerURL = deployment.getEntityID();
-            String nameIDPolicyFormat = deployment.getNameIDPolicyFormat();
-
-            if (nameIDPolicyFormat == null) {
-                nameIDPolicyFormat =  JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get();
-            }
-
-            SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
-                    .destination(deployment.getIDP().getSingleSignOnService().getRequestBindingUrl())
-                    .issuer(issuerURL)
-                    .forceAuthn(deployment.isForceAuthentication()).isPassive(deployment.isIsPassive())
-                    .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
-            if (deployment.getIDP().getSingleSignOnService().getResponseBinding() != null) {
-                String protocolBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
-                if (deployment.getIDP().getSingleSignOnService().getResponseBinding() == SamlDeployment.Binding.POST) {
-                    protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
-                }
-                authnRequestBuilder.protocolBinding(protocolBinding);
-
-            }
-            if (deployment.getAssertionConsumerServiceUrl() != null) {
-                authnRequestBuilder.assertionConsumerUrl(deployment.getAssertionConsumerServiceUrl());
-            }
-            BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
-
-            if (deployment.getIDP().getSingleSignOnService().signRequest()) {
-
-
-                KeyPair keypair = deployment.getSigningKeyPair();
-                if (keypair == null) {
-                    throw new RuntimeException("Signing keys not configured");
-                }
-                if (deployment.getSignatureCanonicalizationMethod() != null) {
-                    binding.canonicalizationMethod(deployment.getSignatureCanonicalizationMethod());
-                }
-
-                binding.signWith(keypair);
-                binding.signDocument();
-            }
+            SAML2AuthnRequestBuilder authnRequestBuilder = buildSaml2AuthnRequestBuilder(deployment);
+            BaseSAML2BindingBuilder binding = createSaml2Binding(deployment);
             sessionStore.saveRequest();
 
             sendAuthnRequest(httpFacade, authnRequestBuilder, binding);
@@ -101,6 +63,53 @@ public abstract class AbstractInitiateLogin implements AuthChallenge {
             throw new RuntimeException("Could not create authentication request.", e);
         }
         return true;
+    }
+
+    public static BaseSAML2BindingBuilder createSaml2Binding(SamlDeployment deployment) {
+        BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
+
+        if (deployment.getIDP().getSingleSignOnService().signRequest()) {
+
+            binding.signatureAlgorithm(deployment.getSignatureAlgorithm());
+            KeyPair keypair = deployment.getSigningKeyPair();
+            if (keypair == null) {
+                throw new RuntimeException("Signing keys not configured");
+            }
+            if (deployment.getSignatureCanonicalizationMethod() != null) {
+                binding.canonicalizationMethod(deployment.getSignatureCanonicalizationMethod());
+            }
+
+            binding.signWith(keypair);
+            binding.signDocument();
+        }
+        return binding;
+    }
+
+    public static SAML2AuthnRequestBuilder buildSaml2AuthnRequestBuilder(SamlDeployment deployment) {
+        String issuerURL = deployment.getEntityID();
+        String nameIDPolicyFormat = deployment.getNameIDPolicyFormat();
+
+        if (nameIDPolicyFormat == null) {
+            nameIDPolicyFormat =  JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get();
+        }
+
+        SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
+                .destination(deployment.getIDP().getSingleSignOnService().getRequestBindingUrl())
+                .issuer(issuerURL)
+                .forceAuthn(deployment.isForceAuthentication()).isPassive(deployment.isIsPassive())
+                .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
+        if (deployment.getIDP().getSingleSignOnService().getResponseBinding() != null) {
+            String protocolBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
+            if (deployment.getIDP().getSingleSignOnService().getResponseBinding() == SamlDeployment.Binding.POST) {
+                protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
+            }
+            authnRequestBuilder.protocolBinding(protocolBinding);
+
+        }
+        if (deployment.getAssertionConsumerServiceUrl() != null) {
+            authnRequestBuilder.assertionConsumerUrl(deployment.getAssertionConsumerServiceUrl());
+        }
+        return authnRequestBuilder;
     }
 
     protected abstract void sendAuthnRequest(HttpFacade httpFacade, SAML2AuthnRequestBuilder authnRequestBuilder, BaseSAML2BindingBuilder binding) throws ProcessingException, ConfigurationException, IOException;

@@ -37,10 +37,10 @@ public class RoleAdapter implements RoleModel {
 
     protected RoleModel updated;
     protected CachedRole cached;
-    protected CacheRealmProvider cacheSession;
+    protected RealmCacheSession cacheSession;
     protected RealmModel realm;
 
-    public RoleAdapter(CachedRole cached, CacheRealmProvider session, RealmModel realm) {
+    public RoleAdapter(CachedRole cached, RealmCacheSession session, RealmModel realm) {
         this.cached = cached;
         this.cacheSession = session;
         this.realm = realm;
@@ -48,22 +48,37 @@ public class RoleAdapter implements RoleModel {
 
     protected void getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerRoleInvalidation(getId());
-            updated = cacheSession.getDelegate().getRoleById(getId(), realm);
+            cacheSession.registerRoleInvalidation(cached.getId());
+            updated = cacheSession.getDelegate().getRoleById(cached.getId(), realm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
 
+    protected boolean invalidated;
+    public void invalidate() {
+        invalidated = true;
+    }
+
+    protected boolean isUpdated() {
+        if (updated != null) return true;
+        if (!invalidated) return false;
+        updated = cacheSession.getDelegate().getRoleById(cached.getId(), realm);
+        if (updated == null) throw new IllegalStateException("Not found in database");
+        return true;
+    }
+
+
+
 
     @Override
     public String getName() {
-        if (updated != null) return updated.getName();
+        if (isUpdated()) return updated.getName();
         return cached.getName();
     }
 
     @Override
     public String getDescription() {
-        if (updated != null) return updated.getDescription();
+        if (isUpdated()) return updated.getDescription();
         return cached.getDescription();
     }
 
@@ -75,7 +90,7 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public boolean isScopeParamRequired() {
-        if (updated != null) return updated.isScopeParamRequired();
+        if (isUpdated()) return updated.isScopeParamRequired();
         return cached.isScopeParamRequired();
     }
 
@@ -87,7 +102,7 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public String getId() {
-        if (updated != null) return updated.getId();
+        if (isUpdated()) return updated.getId();
         return cached.getId();
     }
 
@@ -99,7 +114,7 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public boolean isComposite() {
-        if (updated != null) return updated.isComposite();
+        if (isUpdated()) return updated.isComposite();
         return cached.isComposite();
     }
 
@@ -117,7 +132,7 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public Set<RoleModel> getComposites() {
-        if (updated != null) return updated.getComposites();
+        if (isUpdated()) return updated.getComposites();
         Set<RoleModel> set = new HashSet<RoleModel>();
         for (String id : cached.getComposites()) {
             RoleModel role = realm.getRoleById(id);
@@ -128,6 +143,22 @@ public class RoleAdapter implements RoleModel {
         }
         return set;
     }
+
+    @Override
+    public boolean isClientRole() {
+        return cached instanceof CachedClientRole;
+    }
+
+    @Override
+    public String getContainerId() {
+        if (isClientRole()) {
+            CachedClientRole appRole = (CachedClientRole)cached;
+            return appRole.getClientId();
+        } else {
+            return realm.getId();
+        }
+    }
+
 
     @Override
     public RoleContainerModel getContainer() {

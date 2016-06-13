@@ -22,11 +22,9 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 
@@ -60,28 +58,26 @@ public interface ClientAttributeCertificateResource {
     /**
      * Upload certificate and eventually private key
      *
-     * @param uriInfo
-     * @param input
+     * @param output
      * @return
      */
     @POST
     @Path("upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public CertificateRepresentation uploadJks(@Context final UriInfo uriInfo, MultipartFormDataInput input);
+    public CertificateRepresentation uploadJks(MultipartFormDataOutput output);
 
     /**
      * Upload only certificate, not private key
      *
-     * @param uriInfo
-     * @param input
+     * @param output
      * @return
      */
     @POST
     @Path("upload-certificate")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public CertificateRepresentation uploadJksCertificate(@Context final UriInfo uriInfo, MultipartFormDataInput input);
+    public CertificateRepresentation uploadJksCertificate(MultipartFormDataOutput output);
 
     /**
      * Get a keystore file for the client, containing private key and public certificate

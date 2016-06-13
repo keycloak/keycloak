@@ -3,7 +3,10 @@
 <html xmlns="http://www.w3.org/1999/xhtml" class="${properties.kcHtmlClass!}">
 
 <head>
+    <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="robots" content="noindex, nofollow">
+
     <#if properties.meta?has_content>
         <#list properties.meta?split(' ') as meta>
             <meta name="${meta?split('==')[0]}" content="${meta?split('==')[1]}"/>
@@ -59,10 +62,10 @@
                     <#if displayMessage && message?has_content>
                         <div class="${properties.kcFeedbackAreaClass!}">
                             <div class="alert alert-${message.type}">
-                                <#if message.type = 'success'><span class="${properties.kcFeedbackSuccessIcon}"></span></#if>
-                                <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon}"></span></#if>
-                                <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon}"></span></#if>
-                                <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon}"></span></#if>
+                                <#if message.type = 'success'><span class="${properties.kcFeedbackSuccessIcon!}"></span></#if>
+                                <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon!}"></span></#if>
+                                <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
+                                <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
                                 <span class="kc-feedback-text">${message.summary}</span>
                             </div>
                         </div>

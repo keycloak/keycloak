@@ -79,8 +79,9 @@ public class RoleByIdResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public RoleRepresentation getRole(final @PathParam("role-id") String id) {
+        auth.requireAny();
+
         RoleModel roleModel = getRoleModel(id);
-        auth.requireView();
         return getRole(roleModel);
     }
 
@@ -111,8 +112,9 @@ public class RoleByIdResource extends RoleResource {
     @DELETE
     @NoCache
     public void deleteRole(final @PathParam("role-id") String id) {
-        RoleModel role = getRoleModel(id);
         auth.requireManage();
+
+        RoleModel role = getRoleModel(id);
         deleteRole(role);
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
@@ -127,8 +129,9 @@ public class RoleByIdResource extends RoleResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void updateRole(final @PathParam("role-id") String id, final RoleRepresentation rep) {
-        RoleModel role = getRoleModel(id);
         auth.requireManage();
+
+        RoleModel role = getRoleModel(id);
         updateRole(rep, role);
         adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
     }
@@ -143,8 +146,9 @@ public class RoleByIdResource extends RoleResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public void addComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles) {
-        RoleModel role = getRoleModel(id);
         auth.requireManage();
+
+        RoleModel role = getRoleModel(id);
         addComposites(adminEvent, uriInfo, roles, role);
     }
 
@@ -161,6 +165,7 @@ public class RoleByIdResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Set<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id) {
+        auth.requireAny();
 
         if (logger.isDebugEnabled()) logger.debug("*** getRoleComposites: '" + id + "'");
         RoleModel role = getRoleModel(id);
@@ -179,8 +184,9 @@ public class RoleByIdResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Set<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-id") String id) {
+        auth.requireAny();
+
         RoleModel role = getRoleModel(id);
-        auth.requireView();
         return getRealmRoleComposites(role);
     }
 
@@ -197,36 +203,14 @@ public class RoleByIdResource extends RoleResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Set<RoleRepresentation> getClientRoleComposites(final @PathParam("role-id") String id,
                                                                 final @PathParam("client") String client) {
+        auth.requireAny();
+
         RoleModel role = getRoleModel(id);
-        auth.requireView();
         ClientModel clientModel = realm.getClientById(client);
         if (clientModel == null) {
             throw new NotFoundException("Could not find client");
         }
         return getClientRoleComposites(clientModel, role);
-    }
-
-    /**
-     * Get client-level roles for the client that are in the role's composite
-     *
-     * @param role
-     * @param client
-     * @return
-     */
-    @Path("{role-id}/composites/clients/{client}")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public Set<RoleRepresentation> getClientByIdRoleComposites(final @PathParam("role-id") String role,
-                                                                final @PathParam("client") String client) {
-        RoleModel roleModel = getRoleModel(role);
-        auth.requireView();
-        ClientModel clientModel = realm.getClientById(client);
-        if (clientModel == null) {
-            throw new NotFoundException("Could not find client");
-
-        }
-        return getClientRoleComposites(clientModel, roleModel);
     }
 
     /**
@@ -239,11 +223,10 @@ public class RoleByIdResource extends RoleResource {
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     public void deleteComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles) {
-        RoleModel role = getRoleModel(id);
         auth.requireManage();
-        deleteComposites(roles, role);
 
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(roles).success();
+        RoleModel role = getRoleModel(id);
+        deleteComposites(adminEvent, uriInfo, roles, role);
     }
 
 }

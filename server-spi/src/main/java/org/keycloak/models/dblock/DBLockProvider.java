@@ -34,7 +34,16 @@ public interface DBLockProvider extends Provider {
     void waitForLock();
 
 
+    /**
+     * Release previously acquired lock
+     */
     void releaseLock();
+
+
+    /**
+     * @return true if provider supports forced unlock at startup
+     */
+    boolean supportsForcedUnlock();
 
 
     /**

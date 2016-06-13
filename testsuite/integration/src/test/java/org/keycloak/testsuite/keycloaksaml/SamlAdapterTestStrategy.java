@@ -20,7 +20,6 @@ package org.keycloak.testsuite.keycloaksaml;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.saml.SamlAuthenticationError;
 import org.keycloak.adapters.saml.SamlPrincipal;
 import org.keycloak.admin.client.Keycloak;
@@ -30,7 +29,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.saml.mappers.HardcodedAttributeMapper;
@@ -46,7 +44,6 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.KeycloakServer;
-import org.keycloak.testsuite.adapter.*;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.ErrorServlet;
@@ -61,7 +58,6 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
@@ -283,6 +279,16 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-sig?GLO=true");
         checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-sig/", true);
+
+    }
+    public void testPostSignedResponseAndAssertionLoginLogout() {
+        driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-assertion-and-response-sig/");
+        assertAtLoginPagePostBinding();
+        loginPage.login("bburke", "password");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-assertion-and-response-sig/");
+        Assert.assertTrue(driver.getPageSource().contains("bburke"));
+        driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-assertion-and-response-sig?GLO=true");
+        checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-assertion-and-response-sig/", true);
 
     }
     public void testPostSignedLoginLogoutTransientNameID() {
@@ -520,6 +526,32 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
         assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/bad-realm-sales-post-sig/saml");
+        System.out.println(driver.getPageSource());
+        Assert.assertNotNull(ErrorServlet.authError);
+        SamlAuthenticationError error = (SamlAuthenticationError)ErrorServlet.authError;
+        Assert.assertEquals(SamlAuthenticationError.Reason.INVALID_SIGNATURE, error.getReason());
+        ErrorServlet.authError = null;
+    }
+
+    public void testPostBadAssertionSignature() {
+        ErrorServlet.authError = null;
+        driver.navigate().to(APP_SERVER_BASE_URL + "/bad-assertion-sales-post-sig/");
+        assertAtLoginPagePostBinding();
+        loginPage.login("bburke", "password");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/bad-assertion-sales-post-sig/saml");
+        System.out.println(driver.getPageSource());
+        Assert.assertNotNull(ErrorServlet.authError);
+        SamlAuthenticationError error = (SamlAuthenticationError)ErrorServlet.authError;
+        Assert.assertEquals(SamlAuthenticationError.Reason.INVALID_SIGNATURE, error.getReason());
+        ErrorServlet.authError = null;
+    }
+
+    public void testMissingAssertionSignature() {
+        ErrorServlet.authError = null;
+        driver.navigate().to(APP_SERVER_BASE_URL + "/missing-assertion-sig/");
+        assertAtLoginPagePostBinding();
+        loginPage.login("bburke", "password");
+        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/missing-assertion-sig/saml");
         System.out.println(driver.getPageSource());
         Assert.assertNotNull(ErrorServlet.authError);
         SamlAuthenticationError error = (SamlAuthenticationError)ErrorServlet.authError;

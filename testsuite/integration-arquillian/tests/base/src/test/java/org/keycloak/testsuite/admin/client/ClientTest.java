@@ -18,9 +18,14 @@
 package org.keycloak.testsuite.admin.client;
 
 import java.util.List;
+
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.AssertAdminEvents;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -33,7 +38,6 @@ import static org.junit.Assert.assertTrue;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class ClientTest extends AbstractClientTest {
-
 
     public static void assertEqualClients(ClientRepresentation expected, ClientRepresentation actual) {
         assertEquals(expected.getClientId(), actual.getClientId());
@@ -49,16 +53,20 @@ public class ClientTest extends AbstractClientTest {
     @Test
     public void testCreateClient() {
         createOidcClient("foo");
-        assertEquals("foo", findClientRepresentation("foo").getName());
+        ClientRepresentation found = findClientRepresentation("foo");
+        assertEquals("foo", found.getName());
     }
 
     @Test
     public void testDeleteClient() {
-        createOidcClient("deleteMe");
+        String clientDbId = createOidcClient("deleteMe");
+
         ClientResource clientRsc = findClientResource("deleteMe");
         assertNotNull(clientRsc);
         clientRsc.remove();
         assertNull(findClientResource("deleteMe"));
+
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientResourcePath(clientDbId));
     }
 
     @Test
@@ -74,6 +82,12 @@ public class ClientTest extends AbstractClientTest {
         assertNotNull(updatedClient);
         assertEquals("updateMe", updatedClient.getClientId());
         assertEquals("iWasUpdated", updatedClient.getName());
+
+        // Assert admin event
+        ClientRepresentation expectedClientRep = new ClientRepresentation();
+        expectedClientRep.setClientId("updateMe");
+        expectedClientRep.setName("iWasUpdated");
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(clientRep.getId()), expectedClientRep);
     }
 
     @Test
@@ -90,29 +104,5 @@ public class ClientTest extends AbstractClientTest {
         ClientRepresentation gotById = testRealmResource().clients().get(rep.getId()).toRepresentation();
         assertEqualClients(rep, gotById);
     }
-
-    /*  DEPRECATED?
-    @Test
-    public void testAllowedOrigins() {
-        createOidcClient("originsClient");
-        ClientResource client = findClientResource("originsClient");
-        java.util.Set<String> origins = client.getAllowedOrigins();
-        assertEquals(1, origins.size());
-        assertTrue(origins.contains("foo/*"));
-
-        origins.add("bar/*");
-        client.updateAllowedOrigins(origins); //<-- STACK OVERFLOW
-        origins = client.getAllowedOrigins();
-        assertEquals(2, origins.size());
-        assertTrue(origins.contains("foo/*"));
-        assertTrue(origins.contains("bar/*"));
-
-        java.util.Set<String> toRemove = new java.util.HashSet<>();
-        toRemove.add("bar/*");
-        client.removeAllowedOrigins(origins);
-        origins = client.getAllowedOrigins();
-        assertEquals(1, origins.size());
-        assertTrue(origins.contains("foo/*"));
-    } */
 
 }

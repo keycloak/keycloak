@@ -191,6 +191,11 @@ public class LdapUserProviderForm extends Form {
         vendorSelect.selectByVisibleText(vendor);
     }
 
+    public void selectVendor(int index) {
+        waitUntilElement(By.id("vendor")).is().present();
+        vendorSelect.selectByIndex(index);
+    }
+
     public List<String> getVendors() {
         waitUntilElement(By.id("vendor")).is().present();
 
@@ -229,20 +234,11 @@ public class LdapUserProviderForm extends Form {
     }
 
     public void setAccountAfterPasswordUpdateEnabled(boolean enabled) {
-        if ((!enableAccountAfterPasswordUpdate.isOn() && enabled)
-                || !enabled && enableAccountAfterPasswordUpdate.isOn()) {
-            driver.findElement(By
-                    .xpath("//div[contains(@class,'onoffswitch') and ./input[@id='userAccountControlsAfterPasswordUpdate']]"))
-                    .findElements(By.tagName("span")).get(0).click();
-        }
+        enableAccountAfterPasswordUpdate.setOn(enabled);
     }
 
     public void setAllowKerberosAuthEnabled(boolean enabled) {
-        if ((!allowKerberosAuth.isOn() && enabled) || !enabled && allowKerberosAuth.isOn()) {
-            driver.findElement(
-                    By.xpath("//div[contains(@class,'onoffswitch') and ./input[@id='allowKerberosAuthentication']]"))
-                    .findElements(By.tagName("span")).get(0).click();
-        }
+        allowKerberosAuth.setOn(enabled);
     }
 
     public void setDebugEnabled(boolean debugEnabled) {

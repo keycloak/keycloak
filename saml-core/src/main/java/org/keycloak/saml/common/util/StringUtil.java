@@ -18,12 +18,7 @@ package org.keycloak.saml.common.util;
 
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.PicketLinkCommonConstants;
 
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.PBEParameterSpec;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

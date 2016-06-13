@@ -39,12 +39,21 @@
             </itemizedlist>
         </para>
         <para>
-            If you import to Directory, you can specify also the number of users to be stored in each JSON file. So if you have
-            very large amount of users in your database, you likely don't want to import them into single file as the file might be very big.
-            Processing of each file is done in separate transaction as exporting/importing all users at once could also lead to memory issues.
+            If you import to Directory, you can specify also the number of users to be stored in each JSON file.
         </para>
+        <warning>
+            <para>
+                If you have bigger amount of users in your database (500 or more), it's higly recommended to export into directory rather than to single file.
+                Exporting into single file may lead to the very big file. Also the directory provider is using separate transaction for each "page" (file with users),
+                which leads to much better performance. Default count of users per file (and transaction) is 50, which showed us best performance, but you have possibility to override (See below).
+            </para>
+            <para>
+                Exporting to single file is using one transaction per whole export and one per whole import, which leads to
+                bad performance with large amount of users - time increases exponentially with number of users.
+            </para>
+        </warning>
         <para>
-            To export into unencrypted directory you can use:
+            To export into the directory you can use:
             <programlisting><![CDATA[
 bin/standalone.sh -Dkeycloak.migration.action=export
 -Dkeycloak.migration.provider=dir -Dkeycloak.migration.dir=<DIR TO EXPORT TO>
@@ -98,7 +107,7 @@ bin/standalone.sh -Dkeycloak.migration.action=import
                     <listitem>
                         <para>
                             can be used to specify number of users per file (and also per DB transaction).
-                            It's 5000 by default. It's used only if usersExportStrategy is DIFFERENT_FILES
+                            It's 50 by default. It's used only if usersExportStrategy is DIFFERENT_FILES
                         </para>
                     </listitem>
                 </varlistentry>

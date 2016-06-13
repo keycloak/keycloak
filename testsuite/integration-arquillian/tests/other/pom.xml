@@ -44,7 +44,6 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <executions>
                         <execution>
@@ -60,7 +59,7 @@
                                         <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
                                         <type>test-jar</type>
-                                        <includes>arquillian.xml,keycloak-add-user.json</includes>
+                                        <includes>arquillian.xml,keycloak-add-user.json,kerberos/*</includes>
                                     </artifactItem>
                                 </artifactItems>
                             </configuration>
@@ -68,7 +67,6 @@
                     </executions>
                 </plugin> 
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
                     <executions>
                         <execution>
@@ -78,7 +76,7 @@
                                 <goal>copy-resources</goal>
                             </goals>
                             <configuration>
-                                <outputDirectory>${jboss.server.config.dir}</outputDirectory>
+                                <outputDirectory>${auth.server.config.dir}</outputDirectory>
                                 <resources>
                                     <resource>
                                         <directory>${project.build.directory}/dependency</directory>
@@ -91,15 +89,6 @@
                             </configuration>
                         </execution>
                     </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <configuration>
-                        <systemPropertyVariables>
-                            <arquillian.xml>${project.build.directory}/dependency/arquillian.xml</arquillian.xml>
-                        </systemPropertyVariables>
-                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

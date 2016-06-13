@@ -18,7 +18,6 @@
 package org.keycloak.admin.client.token;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.keycloak.admin.client.Config;
 import org.keycloak.admin.client.resource.BasicAuthFilter;
@@ -27,95 +26,109 @@ import org.keycloak.representations.AccessTokenResponse;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Form;
-import java.util.Calendar;
-import java.util.Date;
+
+import static org.keycloak.OAuth2Constants.*;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
  */
 public class TokenManager {
-
     private static final long DEFAULT_MIN_VALIDITY = 30;
 
     private AccessTokenResponse currentToken;
     private long expirationTime;
     private long minTokenValidity = DEFAULT_MIN_VALIDITY;
     private final Config config;
-    private final ResteasyClient client;
+    private final TokenService tokenService;
+    private final String accessTokenGrantType;
 
-    public TokenManager(Config config, ResteasyClient client){
+    public TokenManager(Config config, ResteasyClient client) {
         this.config = config;
-        this.client = client;
+        ResteasyWebTarget target = client.target(config.getServerUrl());
+        if (!config.isPublicClient()) {
+            target.register(new BasicAuthFilter(config.getClientId(), config.getClientSecret()));
+        }
+        this.tokenService = target.proxy(TokenService.class);
+        this.accessTokenGrantType = config.getGrantType();
+
+        if (CLIENT_CREDENTIALS.equals(accessTokenGrantType) && config.isPublicClient()) {
+            throw new IllegalArgumentException("Can't use " + GRANT_TYPE + "=" + CLIENT_CREDENTIALS + " with public client");
+        }
     }
 
-    public String getAccessTokenString(){
+    public String getAccessTokenString() {
         return getAccessToken().getToken();
     }
 
-    public AccessTokenResponse getAccessToken(){
-        if(currentToken == null){
+    public synchronized AccessTokenResponse getAccessToken() {
+        if (currentToken == null) {
             grantToken();
-        }else if(tokenExpired()){
+        } else if (tokenExpired()) {
             refreshToken();
         }
         return currentToken;
     }
 
-    public AccessTokenResponse grantToken(){
-        ResteasyWebTarget target = client.target(config.getServerUrl());
-
-        Form form = new Form()
-                .param("grant_type", "password")
-                .param("username", config.getUsername())
+    public AccessTokenResponse grantToken() {
+        Form form = new Form().param(GRANT_TYPE, accessTokenGrantType);
+        if (PASSWORD.equals(accessTokenGrantType)) {
+            form.param("username", config.getUsername())
                 .param("password", config.getPassword());
-
-        if(config.isPublicClient()){
-            form.param("client_id", config.getClientId());
-        } else {
-            target.register(new BasicAuthFilter(config.getClientId(), config.getClientSecret()));
         }
 
-        TokenService tokenService = target.proxy(TokenService.class);
+        if (config.isPublicClient()) {
+            form.param(CLIENT_ID, config.getClientId());
+        }
 
         int requestTime = Time.currentTime();
-        currentToken = tokenService.grantToken(config.getRealm(), form.asMap());
-        expirationTime = requestTime + currentToken.getExpiresIn();
-
+        synchronized (this) {
+            currentToken = tokenService.grantToken(config.getRealm(), form.asMap());
+            expirationTime = requestTime + currentToken.getExpiresIn();
+        }
         return currentToken;
     }
 
-    public AccessTokenResponse refreshToken(){
-        ResteasyWebTarget target = client.target(config.getServerUrl());
+    public AccessTokenResponse refreshToken() {
+        Form form = new Form().param(GRANT_TYPE, REFRESH_TOKEN)
+                              .param(REFRESH_TOKEN, currentToken.getRefreshToken());
 
-        Form form = new Form()
-                .param("grant_type", "refresh_token")
-                .param("refresh_token", currentToken.getRefreshToken());
-
-        if(config.isPublicClient()){
-            form.param("client_id", config.getClientId());
-        } else {
-            target.register(new BasicAuthFilter(config.getClientId(), config.getClientSecret()));
+        if (config.isPublicClient()) {
+            form.param(CLIENT_ID, config.getClientId());
         }
-
-        TokenService tokenService = target.proxy(TokenService.class);
 
         try {
             int requestTime = Time.currentTime();
-            currentToken = tokenService.refreshToken(config.getRealm(), form.asMap());
-            expirationTime = requestTime + currentToken.getExpiresIn();
 
+            synchronized (this) {
+                currentToken = tokenService.refreshToken(config.getRealm(), form.asMap());
+                expirationTime = requestTime + currentToken.getExpiresIn();
+            }
             return currentToken;
         } catch (BadRequestException e) {
             return grantToken();
         }
     }
 
-    public void setMinTokenValidity(long minTokenValidity) {
+    public synchronized void setMinTokenValidity(long minTokenValidity) {
         this.minTokenValidity = minTokenValidity;
     }
 
-    private boolean tokenExpired() {
+    private synchronized boolean tokenExpired() {
         return (Time.currentTime() + minTokenValidity) >= expirationTime;
     }
 
+    /**
+     * Invalidates the current token, but only when it is equal to the token passed as an argument.
+     *
+     * @param token the token to invalidate (cannot be null).
+     */
+    public void invalidate(String token) {
+        if (currentToken == null) {
+            return; // There's nothing to invalidate.
+        }
+        if (token.equals(currentToken.getToken())) {
+            // When used next, this cause a refresh attempt, that in turn will cause a grant attempt if refreshing fails.
+            expirationTime = -1;
+        }
+    }
 }

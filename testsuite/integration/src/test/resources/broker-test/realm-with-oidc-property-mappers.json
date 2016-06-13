@@ -1,0 +1,145 @@
+{
+    "id": "realm-with-oidc-idp-property-mappers",
+    "realm": "realm-with-oidc-idp-property-mappers",
+    "enabled": true,
+    "requiredCredentials": [ "password" ],
+    "defaultRoles": [ "foo", "bar" ],
+    "privateKey": "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCCPyvTTb14vSMkpe/pds2P5Cqxk7bkeFnQiNMS1vyZ+HS2O79fxzp1eAguHnBTs4XTRT7SZJhIT/6utgqZjmDigKV5N7X5ptq8BM/W1qa1cYBRip261pc+tWf3IywJYQ9yFI9mUQarmIEl0D7GH16NSZklheaWfbodRVarvX+ML0amNtGYVDft/RftYmgbKKrK218qQp9R4GZFtf/Q/RmboNXN7weMINU8GWVkTRrccKBIXSunT6zXGfuj3Wp1YpVq20BWwY2OMM/P+yDAc7LKEO1LJqPBdT4r9BRn2lXiaga3AL24gTKZPKU/tu7uqfFciF+i4Rr58SMDNOzQcnklAgMBAAECggEAc0eibJYEO5d8QXW1kPgcHV2gBChv2mxDYnWYDLbIQSdNdfYP/qABt/MTmm5KkWr16fcCEYoD1w0mqFBrtVn1msSusUmEAYGTXJMNumOmjjX1kzaTQMmqeFBrwqwYz/xehWR5P+A7fSmwNV3KEeW19GvN5w5K96w0TLAQdFV3TQVPSytusDunwuR1yltMe1voaEDZ9z0Pi08YiEk2f6xhj5CMkoiw3mNImzfruphHullxU4FD05fH6tDeJ381527ILpAzDsgYZh4aFLKjUHem96bX4EL7FIzBJ6okgN78AZnUC/EaVfgFTw0qfhoWvZV4ruVXXiMhCg4CMMRDq/k9iQKBgQDBNWsJMT84OnnWmQoJmZogkFV+tsGrSK6Re+aJxLWpishh7dwAnT2OcagZvVdUb0FwNWu1D0B9/SKDDMRnnHBhOGDpH57m/eQdRU0oX1BD27xvffk0lLcfD4BTxnR5e9jss8K4twc9jf0P1rxC/loGJ2NtCH0BrPHgz54Ea+96ewKBgQCsk3JDaaPnFwzVYm2BXlhxOxLPsF4wvD2rIRAswZV4C5xebjand8nwiMmVpNd0PRLkEnkI+waURGv2EY/P3JsssoiY8Xqe8f/1G+SQKre7lbqOas8rFoALepC0BYDiZDFy0Z9ZnRAFzRI5sgIt7jpoMRD4xDNlmiV8X+yBxc3Y3wKBgQChDQsU1YUyNKQ8+sLAL9anEEkD4Ald4q8JPHN2IY+gLLxNzT0XEfsu0pTiJ8805axxgUYv3e/PVYNAJBNPnrqaf6lgiegl+jr9Hzhqz9CTUAYqFaL2boSakoxQyNtsLI0s+cb1vDN/3uy0GDZDzcty18BsMagqDmRtFgNNAj/UIwKBgQCahbeFBv0cOPZjxisY8Bou4N8aGehsqNBq/0LVYExuXa8YmoTTdJ3bgw9Er4G/ccQNdUDsuqAMeCtW/CiRzQ0ge4d1sprB4Rv3I4+HSsiS7SFKzfZLtWzXWlpg5qCdlWr1TR7qhYjIOPO9t1beO3YOvwhcRoliyyAPenBxTmTfbwKBgDtm2WJ5VlQgNpIdOs1CCiqd0DFmWOmvBPspPC1kySiy+Ndr9jNohRZkR7pEjgqA5E8rdzc88LirUN7bY5HFHRWN9KXrs5/o3O1K3GFCp64N6nvnPEYZ2zSJalcMC2fjSsJg26z8Dg1H+gfTIDUMoGiEAAnJXuqk+WayPU+fZMLn",
+    "publicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgj8r0029eL0jJKXv6XbNj+QqsZO25HhZ0IjTEtb8mfh0tju/X8c6dXgILh5wU7OF00U+0mSYSE/+rrYKmY5g4oCleTe1+abavATP1tamtXGAUYqdutaXPrVn9yMsCWEPchSPZlEGq5iBJdA+xh9ejUmZJYXmln26HUVWq71/jC9GpjbRmFQ37f0X7WJoGyiqyttfKkKfUeBmRbX/0P0Zm6DVze8HjCDVPBllZE0a3HCgSF0rp0+s1xn7o91qdWKVattAVsGNjjDPz/sgwHOyyhDtSyajwXU+K/QUZ9pV4moGtwC9uIEymTylP7bu7qnxXIhfouEa+fEjAzTs0HJ5JQIDAQAB",
+  "clients" : [
+    {
+      "clientId": "broker-app",
+      "consentRequired": "false",
+      "enabled": true,
+      "fullScopeAllowed": true,
+      "secret": "secret",
+      "redirectUris": [
+        "http://localhost:8081/auth/realms/realm-with-broker/broker/kc-oidc-idp-property-mappers/endpoint/*"
+      ],
+      "protocolMappers": [
+        {
+          "name": "mobile",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "mobile",
+            "claim.name": "mobile",
+            "Claim JSON Type": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+
+          }
+        },
+        {
+          "name": "username",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "username",
+            "claim.name": "preferred_username",
+            "Claim JSON Type": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+
+          }
+        },
+        {
+          "name": "email",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "email",
+            "claim.name": "email",
+            "Claim JSON Type": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+
+          }
+        },
+        {
+          "name": "given name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "firstName",
+            "claim.name": "given_name",
+            "Claim JSON Type": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+
+          }
+        },
+        {
+          "name": "family name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "lastName",
+            "claim.name": "family_name",
+            "Claim JSON Type": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+
+          }
+        }
+      ]
+    }
+  ],
+  "scopeMappings": [
+    {
+      "client": "broker-app",
+      "roles": ["manager"]
+    }
+  ],
+    "users": [
+      {
+        "username" : "test-user",
+        "enabled": true,
+        "email" : "test-user@localhost",
+        "firstName" : "Test",
+        "lastName" : "User",
+        "credentials" : [
+          { "type" : "password",
+            "value" : "password" }
+        ],
+        "realmRoles": ["manager"],
+          "attributes": {
+              "mobile": "617-666-7777"
+          }
+      },
+      {
+            "username" : "test-user-noemail",
+            "enabled": true,
+            "firstName" : "Test",
+            "lastName" : "User",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": ["manager"]
+      },
+      {
+        "username" : "pedroigor",
+        "enabled": true,
+        "email" : "psilva@redhat.com",
+        "credentials" : [
+          { "type" : "password",
+            "value" : "password" }
+        ],
+        "realmRoles": ["manager"]
+      }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "manager",
+                "description": "Have Manager privileges"
+            }
+        ]
+    }
+}

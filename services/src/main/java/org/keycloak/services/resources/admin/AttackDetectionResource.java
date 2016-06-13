@@ -80,7 +80,8 @@ public class AttackDetectionResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Object> bruteForceUserStatus(@PathParam("username") String username) {
-        auth.hasView();
+        auth.requireView();
+
         Map<String, Object> data = new HashMap<>();
         data.put("disabled", false);
         data.put("numFailures", 0);
@@ -110,10 +111,11 @@ public class AttackDetectionResource {
     @DELETE
     public void clearBruteForceForUser(@PathParam("username") String username) {
         auth.requireManage();
+
         UsernameLoginFailureModel model = session.sessions().getUserLoginFailure(realm, username.toLowerCase());
         if (model != null) {
             session.sessions().removeUserLoginFailure(realm, username);
-            adminEvent.operation(OperationType.DELETE).success();
+            adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
         }
     }
 
@@ -127,8 +129,9 @@ public class AttackDetectionResource {
     @DELETE
     public void clearAllBruteForce() {
         auth.requireManage();
+
         session.sessions().removeAllUserLoginFailures(realm);
-        adminEvent.operation(OperationType.DELETE).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
 

@@ -21,6 +21,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -31,6 +33,7 @@ import org.keycloak.services.managers.ClientManager;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -38,13 +41,11 @@ import java.util.List;
 public class ClientModelTest extends AbstractModelTest {
     private ClientModel client;
     private RealmModel realm;
-    private ClientManager appManager;
 
     @Before
     @Override
     public void before() throws Exception {
         super.before();
-        appManager = new ClientManager(realmManager);
 
         realm = realmManager.createRealm("original");
         client = realm.addClient("application");
@@ -70,6 +71,96 @@ public class ClientModelTest extends AbstractModelTest {
 
         client.updateClient();
     }
+
+    @Test
+    public void testClientRoleRemovalAndClientScope() throws Exception {
+        // Client "from" has a role.  Assign this role to a scope to client "scoped".  Delete the role and make sure
+        // cache gets cleared
+        ClientModel from = realm.addClient("from");
+        RoleModel role = from.addRole("clientRole");
+        String roleId = role.getId();
+        ClientModel scoped = realm.addClient("scoped");
+        String idOfClient = scoped.getId();
+        scoped.setFullScopeAllowed(false);
+        scoped.addScopeMapping(role);
+        commit();
+        realm = session.realms().getRealmByName("original");
+        scoped = realm.getClientByClientId("scoped");
+        from = realm.getClientByClientId("from");
+        role = session.realms().getRoleById(roleId, realm);
+        from.removeRole(role);
+        commit();
+        realm = session.realms().getRealmByName("original");
+        scoped = realm.getClientByClientId("scoped");
+        Set<RoleModel> scopeMappings = scoped.getScopeMappings();
+        Assert.assertEquals(0, scopeMappings.size());  // used to throw an NPE
+
+    }
+
+    @Test
+    public void testClientRoleRemovalAndClientScopeSameTx() throws Exception {
+        // Client "from" has a role.  Assign this role to a scope to client "scoped".  Delete the role and make sure
+        // cache gets cleared
+        ClientModel from = realm.addClient("from");
+        RoleModel role = from.addRole("clientRole");
+        String roleId = role.getId();
+        ClientModel scoped = realm.addClient("scoped");
+        String idOfClient = scoped.getId();
+        scoped.setFullScopeAllowed(false);
+        scoped.addScopeMapping(role);
+        commit();
+        realm = session.realms().getRealmByName("original");
+        scoped = realm.getClientByClientId("scoped");
+        from = realm.getClientByClientId("from");
+        role = session.realms().getRoleById(roleId, realm);
+        from.removeRole(role);
+        Set<RoleModel> scopeMappings = scoped.getScopeMappings();
+        Assert.assertEquals(0, scopeMappings.size());  // used to throw an NPE
+
+    }
+
+    @Test
+    public void testRealmRoleRemovalAndClientScope() throws Exception {
+        // Client "from" has a role.  Assign this role to a scope to client "scoped".  Delete the role and make sure
+        // cache gets cleared
+        RoleModel role = realm.addRole("clientRole");
+        String roleId = role.getId();
+        ClientModel scoped = realm.addClient("scoped");
+        String idOfClient = scoped.getId();
+        scoped.setFullScopeAllowed(false);
+        scoped.addScopeMapping(role);
+        commit();
+        realm = session.realms().getRealmByName("original");
+        scoped = realm.getClientByClientId("scoped");
+        role = session.realms().getRoleById(roleId, realm);
+        realm.removeRole(role);
+        commit();
+        realm = session.realms().getRealmByName("original");
+        scoped = realm.getClientByClientId("scoped");
+        Set<RoleModel> scopeMappings = scoped.getScopeMappings();
+        Assert.assertEquals(0, scopeMappings.size());  // used to throw an NPE
+
+    }
+
+    @Test
+    public void testCircularClientScopes() throws Exception {
+        ClientModel scoped1 = realm.addClient("scoped");
+        RoleModel role1 = scoped1.addRole("role1");
+        ClientModel scoped2 = realm.addClient("scoped2");
+        RoleModel role2 = scoped2.addRole("role2");
+        scoped1.addScopeMapping(role2);
+        scoped2.addScopeMapping(role1);
+        commit();
+        realm = session.realms().getRealmByName("original");
+
+        // this hit the circular cache and failed with a stack overflow
+        scoped1 = realm.getClientByClientId("scoped");
+
+
+    }
+
+
+
 
     @Test
     public void persist() {
@@ -99,6 +190,24 @@ public class ClientModelTest extends AbstractModelTest {
         commit();
         client = realmManager.getRealm(realm.getId()).getClientById("app-123");
         Assert.assertNotNull(client);
+    }
+
+    @Test
+    public void testCannotRemoveBoundClientTemplate() {
+        ClientModel client = realm.addClient("templatized");
+        ClientTemplateModel template = realm.addClientTemplate("template");
+        client.setClientTemplate(template);
+        commit();
+        realm = realmManager.getRealmByName("original");
+        try {
+            realm.removeClientTemplate(template.getId());
+            Assert.fail();
+        } catch (ModelException e) {
+
+        }
+        realm.removeClient(client.getId());
+        realm.removeClientTemplate(template.getId());
+        commit();
     }
 
 

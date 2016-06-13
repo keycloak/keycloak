@@ -26,6 +26,7 @@ import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -321,13 +322,32 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals(1, otherApp.getProtocolMappers().size());
         Assert.assertNull(otherApp.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, "username"));
         ProtocolMapperModel gssCredentialMapper = otherApp.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME);
-        Assert.assertEquals(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME, gssCredentialMapper.getName());
-        Assert.assertEquals( OIDCLoginProtocol.LOGIN_PROTOCOL, gssCredentialMapper.getProtocol());
-        Assert.assertEquals(UserSessionNoteMapper.PROVIDER_ID, gssCredentialMapper.getProtocolMapper());
-        String includeInAccessToken = gssCredentialMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN);
-        String includeInIdToken = gssCredentialMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN);
-        Assert.assertTrue(includeInAccessToken.equalsIgnoreCase("true"));
-        Assert.assertTrue(includeInIdToken == null || Boolean.parseBoolean(includeInIdToken) == false);
+        assertGssProtocolMapper(gssCredentialMapper);
+
+        // Test clientTemplates
+        List<ClientTemplateModel> clientTemplates = realm.getClientTemplates();
+        Assert.assertEquals(1, clientTemplates.size());
+        ClientTemplateModel clientTemplate = clientTemplates.get(0);
+        Assert.assertEquals("foo-template", clientTemplate.getName());
+        Assert.assertEquals("foo-template-desc", clientTemplate.getDescription());
+        Assert.assertEquals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientTemplate.getProtocol());
+        Assert.assertEquals(1, clientTemplate.getProtocolMappers().size());
+        ProtocolMapperModel templateGssCredentialMapper = clientTemplate.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME);
+        assertGssProtocolMapper(templateGssCredentialMapper);
+
+        // Test client template scopes
+        Set<RoleModel> allClientTemplateScopes = clientTemplate.getScopeMappings();
+        Assert.assertEquals(3, allClientTemplateScopes.size());
+        Assert.assertTrue(allClientTemplateScopes.contains(realm.getRole("admin")));
+        Assert.assertTrue(allClientTemplateScopes.contains(application.getRole("app-user")));
+        Assert.assertTrue(allClientTemplateScopes.contains(application.getRole("app-admin")));
+
+        Set<RoleModel> clientTemplateRealmScopes = clientTemplate.getRealmScopeMappings();
+        Assert.assertTrue(clientTemplateRealmScopes.contains(realm.getRole("admin")));
+
+        Set<RoleModel> clientTemplateAppScopes = KeycloakModelUtils.getClientScopeMappings(application, clientTemplate);//application.getClientScopeMappings(oauthClient);
+        Assert.assertTrue(clientTemplateAppScopes.contains(application.getRole("app-user")));
+        Assert.assertTrue(clientTemplateAppScopes.contains(application.getRole("app-admin")));
 
         // Test user consents
         admin =  session.users().getUserByUsername("admin", realm);
@@ -378,6 +398,16 @@ public class ImportTest extends AbstractModelTest {
     private void verifyRequiredCredentials(List<RequiredCredentialModel> requiredCreds, String expectedType) {
         Assert.assertEquals(1, requiredCreds.size());
         Assert.assertEquals(expectedType, requiredCreds.get(0).getType());
+    }
+
+    private static void assertGssProtocolMapper(ProtocolMapperModel gssCredentialMapper) {
+        Assert.assertEquals(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME, gssCredentialMapper.getName());
+        Assert.assertEquals( OIDCLoginProtocol.LOGIN_PROTOCOL, gssCredentialMapper.getProtocol());
+        Assert.assertEquals(UserSessionNoteMapper.PROVIDER_ID, gssCredentialMapper.getProtocolMapper());
+        String includeInAccessToken = gssCredentialMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN);
+        String includeInIdToken = gssCredentialMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN);
+        Assert.assertTrue(includeInAccessToken.equalsIgnoreCase("true"));
+        Assert.assertTrue(includeInIdToken == null || Boolean.parseBoolean(includeInIdToken) == false);
     }
 
 }

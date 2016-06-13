@@ -1,6 +1,8 @@
 package org.keycloak.testsuite.console.page.realm;
 
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -11,11 +13,14 @@ import static org.keycloak.testsuite.util.WaitUtils.*;
  * @author tkyjovsk
  */
 public class RealmSettings extends AdminConsoleRealm {
+    private static final String navTabsClassName = "nav-tabs";
 
-    @FindBy(className = "nav-tabs")
+
+    @FindBy(className = navTabsClassName)
     private RealmTabs realmTabs;
 
     public RealmTabs tabs() {
+        waitUntilElement(By.className(navTabsClassName)).is().present();
         return realmTabs;
     }
 

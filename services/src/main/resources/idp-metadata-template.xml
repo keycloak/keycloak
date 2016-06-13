@@ -32,6 +32,9 @@
 			<SingleSignOnService
 				Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
 				Location="${idp.sso.HTTP-Redirect}" />
+			<SingleSignOnService
+				Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
+				Location="${idp.sso.HTTP-POST}" />
 			<SingleLogoutService
 					Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
 					Location="${idp.sls.HTTP-POST}" />
