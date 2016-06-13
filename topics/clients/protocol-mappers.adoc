@@ -33,7 +33,7 @@ Consent::
   If your client requires consent, this mapper will be displayed on the consent screen shown to the user.
 Consent Text::
   If your client requires consent and the `Consent` switch is on, this is the text that will be displayed by the user.
-  The value for this text is localizable by specifying a substitution variable with `$\{var-name}}` strings.  The
+  The value for this text is localizable by specifying a substitution variable with `$\{var-name}` strings.  The
   localized value is then configured within property files in your theme.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}]
   for more information on localization.
 
