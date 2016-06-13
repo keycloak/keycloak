@@ -16,3 +16,4 @@ Having a client inherit from a template is as simple as choosing the template fr
 to turn on or off inheriting from the parent template.
 
 Future versions of client templating may get more inheritable configuration options, but for now, that's all there is to talk about.
+

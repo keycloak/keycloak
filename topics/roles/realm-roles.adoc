@@ -17,8 +17,3 @@ The localized value is then configured within property files in your theme.  See
 for more information on localization.  If a client requires user _consent_, this description string will be displayed on the
 consent page for the user.
 
-=== Client Roles
-
-Client roles are basically a namespace dedicated to a client.  Each client gets its own namespace.  Client roles are managed
-under the `Roles` tab under each individual client.  You interact with this UI the same way you do for realm level roles.
-
