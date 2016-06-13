@@ -3,7 +3,7 @@
 === Authentication Flows
 
 An _authentication flow_ is a container for all authentications, screens, and actions that must happen during login, registration, and other
-{{book.project.name}} work flows.
+{{book.project.name}} workflows.
 If you go to the admin console `Authentication` left menu item and go to the `Flows` tab, you can view all the defined flows
 in the system and what actions and checks each flow requires.  This section does a walk through of the browser login flow.  In the
 left drop down list select `browser` to come to the screen shown below:
