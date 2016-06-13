@@ -12,7 +12,7 @@
     "title": "Getting Started Guide",
     "project": {
       "name": "Keycloak",
-      "version": "1.9.7.Final"
+      "version": "1.9.8.Final"
     },
     "community": true,
     "product": false,
