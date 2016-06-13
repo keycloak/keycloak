@@ -2,7 +2,7 @@
 === CSRF Attacks
 
 Cross-site request forgery (CSRF) is a web-based attack whereby HTTP requests are transmitted from a user that the
-web site trusts or has authenticated with(e.g., via HTTP redirects or HTML forms).  Any site that uses cookie based authentication is vulnerable to these types of attacks.
+web site trusts or has authenticated with(e.g. via HTTP redirects or HTML forms).  Any site that uses cookie based authentication is vulnerable to these types of attacks.
 These attacks are mitigated by matching a state cookie against a posted form or query parameter.
 
 The OAuth 2.0 login specification requires that a state cookie be used and matched against a transmitted state parameter.
