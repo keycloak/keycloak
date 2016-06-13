@@ -22,7 +22,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.services.ServicesLogger;
 
 import java.util.ArrayList;
@@ -55,18 +55,18 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
     protected abstract class LoginEvent implements Comparable<LoginEvent> {
         protected final String realmId;
-        protected final String username;
+        protected final String userId;
         protected final String ip;
 
-        protected LoginEvent(String realmId, String username, String ip) {
+        protected LoginEvent(String realmId, String userId, String ip) {
             this.realmId = realmId;
-            this.username = username;
+            this.userId = userId;
             this.ip = ip;
         }
 
         @Override
         public int compareTo(LoginEvent o) {
-            return username.compareTo(o.username);
+            return userId.compareTo(o.userId);
         }
     }
 
@@ -79,8 +79,8 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     protected class FailedLogin extends LoginEvent {
         protected final CountDownLatch latch = new CountDownLatch(1);
 
-        public FailedLogin(String realmId, String username, String ip) {
-            super(realmId, username, ip);
+        public FailedLogin(String realmId, String userId, String ip) {
+            super(realmId, userId, ip);
         }
     }
 
@@ -92,11 +92,11 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         logger.debug("failure");
         RealmModel realm = getRealmModel(session, event);
         logFailure(event);
-        UserModel user = session.users().getUserByUsername(event.username.toString(), realm);
-        UsernameLoginFailureModel userLoginFailure = getUserModel(session, event);
+        UserModel user = session.users().getUserById(event.userId, realm);
+        UserLoginFailureModel userLoginFailure = getUserModel(session, event);
         if (user != null) {
             if (userLoginFailure == null) {
-                userLoginFailure = session.sessions().addUserLoginFailure(realm, event.username.toLowerCase());
+                userLoginFailure = session.sessions().addUserLoginFailure(realm, event.userId);
             }
             userLoginFailure.setLastIPFailure(event.ip);
             long currentTime = System.currentTimeMillis();
@@ -135,10 +135,10 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     }
 
 
-    protected UsernameLoginFailureModel getUserModel(KeycloakSession session, LoginEvent event) {
+    protected UserLoginFailureModel getUserModel(KeycloakSession session, LoginEvent event) {
         RealmModel realm = getRealmModel(session, event);
         if (realm == null) return null;
-        UsernameLoginFailureModel user = session.sessions().getUserLoginFailure(realm, event.username.toLowerCase());
+        UserLoginFailureModel user = session.sessions().getUserLoginFailure(realm, event.userId);
         if (user == null) return null;
         return user;
     }
@@ -212,7 +212,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     }
 
     protected void logFailure(LoginEvent event) {
-        logger.loginFailure(event.username, event.ip);
+        logger.loginFailure(event.userId, event.ip);
         failures++;
         long delta = 0;
         if (lastFailure > 0) {
@@ -227,9 +227,9 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     }
 
     @Override
-    public void failedLogin(RealmModel realm, String username, ClientConnection clientConnection) {
+    public void failedLogin(RealmModel realm, UserModel user, ClientConnection clientConnection) {
         try {
-            FailedLogin event = new FailedLogin(realm.getId(), username, clientConnection.getRemoteAddr());
+            FailedLogin event = new FailedLogin(realm.getId(), user.getId(), clientConnection.getRemoteAddr());
             queue.offer(event);
             // wait a minimum of seconds for type to process so that a hacker
             // cannot flood with failed logins and overwhelm the queue and not have notBefore updated to block next requests
@@ -241,17 +241,17 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     }
 
     @Override
-    public boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, String username) {
-        UsernameLoginFailureModel failure = session.sessions().getUserLoginFailure(realm, username.toLowerCase());
-        if (failure == null) {
-            return false;
+    public boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserModel user) {
+        UserLoginFailureModel failure = session.sessions().getUserLoginFailure(realm, user.getId());
+
+        if (failure != null) {
+            int currTime = (int) (System.currentTimeMillis() / 1000);
+            if (currTime < failure.getFailedLoginNotBefore()) {
+                logger.debugv("Current: {0} notBefore: {1}", currTime, failure.getFailedLoginNotBefore());
+                return true;
+            }
         }
 
-        int currTime = (int)(System.currentTimeMillis()/1000);
-        if (currTime < failure.getFailedLoginNotBefore()) {
-            logger.debugv("Current: {0} notBefore: {1}", currTime , failure.getFailedLoginNotBefore());
-            return true;
-        }
         return false;
     }
 
