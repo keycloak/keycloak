@@ -80,8 +80,8 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
         }
     }
 
-    protected void loadSPIs(ProviderManager pm, List<Spi> spis) {
-        for (Spi spi : spis) {
+    protected void loadSPIs(ProviderManager pm, List<Spi> spiList) {
+        for (Spi spi : spiList) {
             spis.add(spi);
 
             Map<String, ProviderFactory> factories = new HashMap<String, ProviderFactory>();
