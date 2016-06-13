@@ -105,15 +105,16 @@ public class RealmsAdminResource {
             ClientModel adminApp = auth.getRealm().getClientByClientId(realmManager.getRealmAdminClientId(auth.getRealm()));
             addRealmRep(reps, auth.getRealm(), adminApp);
         }
+
+        if (reps.isEmpty()) {
+            throw new ForbiddenException();
+        }
+
         logger.debug(("getRealms()"));
         return reps;
     }
 
     protected void addRealmRep(List<RealmRepresentation> reps, RealmModel realm, ClientModel realmManagementClient) {
-        if (!auth.hasOneOfAppRole(realmManagementClient, AdminRoles.ALL_REALM_ROLES)) {
-            throw new ForbiddenException();
-        }
-
         if (auth.hasAppRole(realmManagementClient, AdminRoles.VIEW_REALM)) {
             reps.add(ModelToRepresentation.toRepresentation(realm, false));
         } else if (auth.hasOneOfAppRole(realmManagementClient, AdminRoles.ALL_REALM_ROLES)) {
