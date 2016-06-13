@@ -10,12 +10,10 @@ Each realm has a built-in client called `realm-management`.  You can view this c
 
 * view-realm
 * view-users
-* view-applications
 * view-clients
 * view-events
 * manage-realm
 * manage-users
-* manage-applications
 * create-client
 * manage-clients
 * manage-events
