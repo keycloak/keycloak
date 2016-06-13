@@ -253,7 +253,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
-            @QueryParam("user") String user, @QueryParam("dateFrom") Date dateFrom, @QueryParam("dateTo") Date dateTo,
+            @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
             @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults) {
 
@@ -282,11 +282,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         if(dateFrom != null) {
-            query.fromDate(dateFrom);
+            Date from = formatDate(dateFrom, "Date(From)");
+            query.fromDate(from);
         }
 
         if(dateTo != null) {
-            query.toDate(dateTo);
+            Date to = formatDate(dateTo, "Date(To)");
+            query.toDate(to);
         }
 
         if (ipAddress != null) {
@@ -424,26 +426,12 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         if(dateFrom != null) {
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-            Date from;
-            try {
-                from = df.parse(dateFrom);
-            } catch (ParseException e) {
-                throw new BadRequestException("Invalid value for 'Date(From)', expected format is yyyy-MM-dd");
-            }
-
+            Date from = formatDate(dateFrom, "Date(From)");
             query.fromTime(from);
         }
 
         if(dateTo != null) {
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-            Date to;
-            try {
-                to = df.parse(dateTo);
-            } catch (ParseException e) {
-                throw new BadRequestException("Invalid value for 'Date(To)', expected format is yyyy-MM-dd");
-            }
-
+            Date to = formatDate(dateTo, "Date(To)");
             query.toTime(to);
         }
 
@@ -459,6 +447,15 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         return toAdminEventRep(query.getResultList());
+    }
+
+    private Date formatDate(String date, String paramName) {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            return df.parse(date);
+        } catch (ParseException e) {
+            throw new BadRequestException("Invalid value for '" + paramName + "', expected format is yyyy-MM-dd");
+        }
     }
 
     private List<AdminEventRepresentation> toAdminEventRep(List<AdminEvent> events) {
