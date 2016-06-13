@@ -99,7 +99,7 @@ Root URL::
 Valid Redirect URIs::
   This is an optional field.  Enter in a URL pattern and click the + sign to add.  Click the - sign next to URLs you want to remove.
   Remember that you still have to click the `Save` button!
-  Wildcards (\*) are only allowed at the end of of a URI, i.e. http://host.com/*.  This field is used when the exact SAML
+  Wildcards (\*) are only allowed at the end of of a URI, i.e. $$http://host.com/*$$.  This field is used when the exact SAML
   endpoints are not registered and {{book.project.name}} is pull the Assertion Consumer URL from the request.
 
 Base URL::
