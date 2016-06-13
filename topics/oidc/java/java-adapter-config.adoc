@@ -43,7 +43,7 @@ on the corresponding client. Once the page for the client is opened click on the
 Here is a description of each configuration option:
 
 realm::
-  Name of the realm representing the users of your distributed applications and services.
+  Name of the realm.
   This is _REQUIRED._
 
 resource::
