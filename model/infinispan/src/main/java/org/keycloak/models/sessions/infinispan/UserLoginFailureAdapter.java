@@ -18,21 +18,21 @@
 package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.Cache;
-import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UsernameLoginFailureAdapter implements UsernameLoginFailureModel {
+public class UserLoginFailureAdapter implements UserLoginFailureModel {
 
     private InfinispanUserSessionProvider provider;
     private Cache<LoginFailureKey, LoginFailureEntity> cache;
     private LoginFailureKey key;
     private LoginFailureEntity entity;
 
-    public UsernameLoginFailureAdapter(InfinispanUserSessionProvider provider, Cache<LoginFailureKey, LoginFailureEntity> cache, LoginFailureKey key, LoginFailureEntity entity) {
+    public UserLoginFailureAdapter(InfinispanUserSessionProvider provider, Cache<LoginFailureKey, LoginFailureEntity> cache, LoginFailureKey key, LoginFailureEntity entity) {
         this.provider = provider;
         this.cache = cache;
         this.key = key;
@@ -40,8 +40,8 @@ public class UsernameLoginFailureAdapter implements UsernameLoginFailureModel {
     }
 
     @Override
-    public String getUsername() {
-        return entity.getUsername();
+    public String getUserId() {
+        return entity.getUserId();
     }
 
     @Override

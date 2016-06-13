@@ -365,7 +365,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         console.log('realm brute force? ' + realm.bruteForceProtected)
         $scope.temporarilyDisabled = false;
         var isDisabled = function () {
-            BruteForceUser.get({realm: realm.realm, username: user.username}, function(data) {
+            BruteForceUser.get({realm: realm.realm, userId: user.id}, function(data) {
                 console.log('here in isDisabled ' + data.disabled);
                 $scope.temporarilyDisabled = data.disabled;
             });
@@ -375,7 +375,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         isDisabled();
 
         $scope.unlockUser = function() {
-            BruteForceUser.delete({realm: realm.realm, username: user.username}, function(data) {
+            BruteForceUser.delete({realm: realm.realm, userId: user.id}, function(data) {
                 isDisabled();
             });
         }

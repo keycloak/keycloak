@@ -26,24 +26,21 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.AssertEvents.ExpectedEvent;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
 import java.net.MalformedURLException;
 import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.UserBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -64,6 +61,8 @@ public class BruteForceTest extends TestRealmKeycloakTest {
         testRealm.setFailureFactor(2);
 
         findClientInRealmRep(testRealm, "test-app").setDirectAccessGrantsEnabled(true);
+
+        testRealm.getUsers().add(UserBuilder.create().username("user2").email("user2@localhost").password("password").build());
     }
 
     @Before
@@ -110,33 +109,11 @@ public class BruteForceTest extends TestRealmKeycloakTest {
     }
 
     protected void clearUserFailures() throws Exception {
-        String token = getAdminToken();
-        Client client = ClientBuilder.newClient();
-        Response response = client.target(AppPage.AUTH_SERVER_URL)
-                .path("admin/realms/test/attack-detection/brute-force/usernames/test-user@localhost")
-                .request()
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                .delete();
-        Assert.assertEquals(204, response.getStatus());
-        response.close();
-        client.close();
-
-
+        adminClient.realm("test").attackDetection().clearBruteForceForUser(findUser("test-user@localhost").getId());
     }
 
     protected void clearAllUserFailures() throws Exception {
-        String token = getAdminToken();
-        Client client = ClientBuilder.newClient();
-        Response response = client.target(AppPage.AUTH_SERVER_URL)
-                .path("admin/realms/test/attack-detection/brute-force/usernames")
-                .request()
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                .delete();
-        Assert.assertEquals(204, response.getStatus());
-        response.close();
-        client.close();
-
-
+        adminClient.realm("test").attackDetection().clearAllBruteForce();
     }
 
     @Test
@@ -293,6 +270,17 @@ public class BruteForceTest extends TestRealmKeycloakTest {
     }
 
     @Test
+    public void testEmail() throws Exception {
+        String userId = adminClient.realm("test").users().search("user2", null, null, null, 0, 1).get(0).getId();
+
+        loginSuccess("user2@localhost");
+        loginInvalidPassword("user2@localhost");
+        loginInvalidPassword("user2@localhost");
+        expectTemporarilyDisabled("user2@localhost", userId);
+        clearAllUserFailures();
+    }
+
+    @Test
     public void testBrowserMissingPassword() throws Exception {
         loginSuccess();
         loginMissingPassword();
@@ -334,20 +322,25 @@ public class BruteForceTest extends TestRealmKeycloakTest {
     }
 
     public void expectTemporarilyDisabled() throws Exception {
-        expectTemporarilyDisabled("test-user@localhost");
+        expectTemporarilyDisabled("test-user@localhost", null);
     }
 
-    public void expectTemporarilyDisabled(String username) throws Exception {
+    public void expectTemporarilyDisabled(String username, String userId) throws Exception {
         loginPage.open();
         loginPage.login(username, "password");
 
         loginPage.assertCurrent();
         String src = driver.getPageSource();
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
-        events.expectLogin().session((String) null).error(Errors.USER_TEMPORARILY_DISABLED)
-                .detail(Details.USERNAME, "test-user@localhost")
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        ExpectedEvent event = events.expectLogin()
+                .session((String) null)
+                .error(Errors.USER_TEMPORARILY_DISABLED)
+                .detail(Details.USERNAME, username)
+                .removeDetail(Details.CONSENT);
+        if(userId != null) {
+            event.user(userId);
+        }
+        event.assertEvent();
     }
 
     public void loginSuccess() throws Exception {

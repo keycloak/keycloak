@@ -37,6 +37,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -543,8 +544,10 @@ public class AuthenticationProcessor {
             if (username == null) {
 
             } else {
-                getBruteForceProtector().failedLogin(realm, username, connection);
-
+                UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
+                if (user != null) {
+                    getBruteForceProtector().failedLogin(realm, user, connection);
+                }
             }
         }
     }
@@ -851,7 +854,7 @@ public class AuthenticationProcessor {
         if (authenticatedUser == null) return;
         if (!authenticatedUser.isEnabled()) throw new AuthenticationFlowException(AuthenticationFlowError.USER_DISABLED);
         if (realm.isBruteForceProtected()) {
-            if (getBruteForceProtector().isTemporarilyDisabled(session, realm, authenticatedUser.getUsername())) {
+            if (getBruteForceProtector().isTemporarilyDisabled(session, realm, authenticatedUser)) {
                 throw new AuthenticationFlowException(AuthenticationFlowError.USER_TEMPORARILY_DISABLED);
             }
         }

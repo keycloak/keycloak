@@ -81,7 +81,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.WebApplicationException;
 
-import java.io.IOException;
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -94,15 +93,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.common.util.Time;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.theme.Theme;
-import org.keycloak.theme.Theme.Type;
-import org.keycloak.theme.ThemeProvider;
 
 /**
  * Base resource for managing users
@@ -166,8 +162,8 @@ public class UsersResource {
                 attrsToRemove = Collections.emptySet();
             }
 
-            if (rep.isEnabled() != null && rep.isEnabled() && rep.getUsername() != null) {
-                UsernameLoginFailureModel failureModel = session.sessions().getUserLoginFailure(realm, rep.getUsername().toLowerCase());
+            if (rep.isEnabled() != null && rep.isEnabled()) {
+                UserLoginFailureModel failureModel = session.sessions().getUserLoginFailure(realm, id);
                 if (failureModel != null) {
                     failureModel.clearFailures();
                 }
@@ -293,7 +289,7 @@ public class UsersResource {
             rep.setFederatedIdentities(reps);
         }
 
-        if (session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, rep.getUsername())) {
+        if (session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
             rep.setEnabled(false);
         }
 

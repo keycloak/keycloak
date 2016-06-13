@@ -48,9 +48,9 @@ public interface UserSessionProvider extends Provider {
     void removeUserSessions(RealmModel realm);
     void removeClientSession(RealmModel realm, ClientSessionModel clientSession);
 
-    UsernameLoginFailureModel getUserLoginFailure(RealmModel realm, String username);
-    UsernameLoginFailureModel addUserLoginFailure(RealmModel realm, String username);
-    void removeUserLoginFailure(RealmModel realm, String username);
+    UserLoginFailureModel getUserLoginFailure(RealmModel realm, String userId);
+    UserLoginFailureModel addUserLoginFailure(RealmModel realm, String userId);
+    void removeUserLoginFailure(RealmModel realm, String userId);
     void removeAllUserLoginFailures(RealmModel realm);
 
     void onRealmRemoved(RealmModel realm);
