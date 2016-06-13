@@ -12,7 +12,7 @@
     "title": "Server Administration Guide",
     "project": {
       "name": "Keycloak",
-      "version": "1.9.8.Final"
+      "version": "2.0.0.CR1"
     },
     "community": true,
     "product": false,
