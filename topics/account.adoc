@@ -17,7 +17,7 @@ The `Password` left menu item allows the user to change their password.
 image:../{{book.images}}/account-service-password.png[]
 
 The `Authenticator` menu item allows the user to set up OTP if they desire.  This will only show up if OTP is a valid authentication mechanism for your realm.
-Users are given directions to install https://fedorahosted.org/freeotp/[FreeOTP] or https://play.google.com/[Google Authenticator] on their mobile device to be their OTP generator.
+Users are given directions to install https://fedorahosted.org/freeotp/[FreeOTP] or https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2[Google Authenticator] on their mobile device to be their OTP generator.
 The QR code you see in the screen shot can be scanned into the FreeOTP or Google Authenticator mobile application for nice and easy setup.
 
 .OTP Authenticator
