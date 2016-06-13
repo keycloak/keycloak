@@ -8,7 +8,7 @@ To specify _default roles_ go to the `Roles` left menu item, and click the `Defa
 .Default Roles
 image:../../../{{book.images}}/default-roles.png[]
 
-As you can see from the screen shot, there are already a number of _default roles_ set up by default.
+As you can see from the screenshot, there are already a number of _default roles_ set up by default.
 
 
 
