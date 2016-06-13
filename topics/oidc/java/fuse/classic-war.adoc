@@ -72,11 +72,11 @@ as it's not used by application or Blueprint or Spring descriptor, but it's used
 
 [source, subs="attributes"]
 ----
-org.keycloak.adapters.jetty;version="{{book.project.version}}",
-org.keycloak.adapters;version="{{book.project.version}}",
-org.keycloak.constants;version="{{book.project.version}}",
-org.keycloak.util;version="{{book.project.version}}",
-org.keycloak.*;version="{{book.project.version}}",
+org.keycloak.adapters.jetty;version="{{book.project.versionMvn}}",
+org.keycloak.adapters;version="{{book.project.versionMvn}}",
+org.keycloak.constants;version="{{book.project.versionMvn}}",
+org.keycloak.util;version="{{book.project.versionMvn}}",
+org.keycloak.*;version="{{book.project.versionMvn}}",
 *;resolution:=optional
 ----
 

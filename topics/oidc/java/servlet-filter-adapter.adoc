@@ -47,6 +47,6 @@ To use this filter, include this maven artifact in your WAR poms:
 &lt;dependency&gt;
     &lt;groupId&gt;org.keycloak&lt;/groupId&gt;
     &lt;artifactId&gt;keycloak-servlet-filter-adapter&lt;/artifactId&gt;
-    &lt;version&gt;{{book.project.version}}&lt;/version&gt;
+    &lt;version&gt;{{book.project.versionMvn}}&lt;/version&gt;
 &lt;/dependency&gt;
 ----

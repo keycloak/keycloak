@@ -2,7 +2,9 @@
 [[_fuse_adapter]]
 ==== JBoss Fuse Adapter
 
+{% if book.product %}
 NOTE: JBoss Fuse is a Technology Preview feature and is not fully supported
+{% endif %}
 
 Currently {{book.project.name}} supports securing your web applications running inside http://www.jboss.org/products/fuse/overview/[JBoss Fuse] .
 {% if book.community %}

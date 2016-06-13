@@ -1,5 +1,9 @@
 === Other OpenID Connect libraries
 
+{% if book.product %}
+NOTE: Using {{book.project.name}} with generic OpenID Connect libraries is a Technology Preview feature and is not fully supported
+{% endif %}
+
 {{book.project.name}} can be secured by supplied adapters that usually are easier to use and provide better integration with {{book.project.name}}. However,
 if there is no adapter available for your programming language, framework or platform you may opt to use a generic OpenID Connect Resource Provider (RP) library
 instead. This chapter describes details specific to {{book.project.name}} and doesn't go into low-level details of the protocols. For more details refer to the

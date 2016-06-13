@@ -108,5 +108,5 @@ org.apache.cxf.*;version="[2.7,3.2)",
 org.springframework.beans.factory.config,
 org.eclipse.jetty.security;version="[8,10)",
 org.eclipse.jetty.util.security;version="[8,10)",
-org.keycloak.*;version="{{book.project.version}}"
+org.keycloak.*;version="{{book.project.versionMvn}}"
 ----
