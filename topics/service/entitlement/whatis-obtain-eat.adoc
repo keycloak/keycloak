@@ -32,5 +32,5 @@ As a result, you will get the following response from the server:
 
 == About the kc_entitlement scope
 
-The *kc_entitlement* scope indicates that an user consented access to his authorization data to a client application. You can create this
-scope a _client role_ and map it to your users.
+The *kc_entitlement* scope can be created just like any other _realm role_. Or even as a _client role_. Once you created it, just grant this role to
+the users of your realm.

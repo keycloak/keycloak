@@ -2,6 +2,13 @@
 
 This type of policy allows you to define time conditions for your permissions.
 
+To create a new policy select the option *Time* in the dropdown located in the right upper corner of the permission listing.
+
+.Add Time Policy
+image:../../images/policy/create-time.png[alt="Add Time Policy"]
+
+=== Configuration
+
 * *Name*
 +
 A human-readable and unique string describing the policy. We strongly suggest you to use names that are closely related with your business and security requirements, so you
@@ -22,4 +29,4 @@ Defines the time after which the policy MUST NOT be granted. Only granted if cur
 +
 * *Logic*
 +
-The logic of this plicy
+The link:logic.html[logic] of this policy

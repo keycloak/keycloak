@@ -3,7 +3,12 @@
 Create a resource is pretty straight forward and generic. The main thing you should care about is the granularity of the resources you create. In other words, resources can
 be created to represent a set of one or more resources and the way you define them is crucial to start managing permissions.
 
-To create a new resource click on *Create* button in the right upper corner of the resource listing. In {{book.project.name}}, a resource defines a small set of information that is common to different types of resources, such as:
+To create a new resource click on *Create* button in the right upper corner of the resource listing.
+
+.Add Resource
+image:../../images/resource/create.png[alt="Add Resource"]
+
+In {{book.project.name}}, a resource defines a small set of information that is common to different types of resources, such as:
 
 * *Name*
 +
@@ -13,7 +18,8 @@ A human-readable and unique string describing a set of one or more resources.
 +
 A string uniquely identifying the type of a set of one or more resources. Usually, the type is a URN that can be used to
 group different resource instances.
-+
+
+[[_uri]]
 * *URI*
 +
 A URI that provides the location/address for the resource. For HTTP resources, the URI
@@ -40,5 +46,5 @@ When using the Protection API, resource servers can be implemented to manage res
 specify the user identifier to configure a resource as belonging to a specific user.
 
 [NOTE]
-{{book.project.name}} provides to resource server completly control over its resources. In the future, we should be able to
-allow users to control their own resources, approve authorization requests and manage permissions. Specially when using the UMA protocol.
+{{book.project.name}} provides to resource servers completely control over its resources. In the future, we should be able to
+allow users to control their own resources as well, approve authorization requests and manage permissions. Specially when using the UMA protocol.

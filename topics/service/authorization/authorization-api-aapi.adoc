@@ -20,7 +20,7 @@ curl -X POST
 }' "http://localhost:8080/auth/realms/hello-world-authz/authz/authorize"
 ```
 
-As a result, you will get the follow response from the server:
+As a result, you will get the following response from the server:
 
 ```json
 {"rpt":"${RPT}"}
@@ -29,20 +29,20 @@ As a result, you will get the follow response from the server:
 === Requesting Party Token or RPT
 
 A RPT is basically a https://tools.ietf.org/html/rfc7519[JSON Web Token (JWT)] digitally signed using https://www.rfc-editor.org/rfc/rfc7515.txt[JSON Web Signature (JWS)].
-Its lifetime is the same as with the OAuth2 access token (AAT) that was used to obtain it.
+The token is built based on the AAT sent by the client during the authorization process.
 
 When you decode a RPT you will see something like that:
 
 ```json
 {
-  "permissions": [
-    {
-      "resource_set_id": "152251e6-f4cf-4464-8d91-f1b7960fa5fc",
-      "resource_set_name": "Hello World Resource"
-      "scopes": []
-    }
-  ],
-  "accessToken": ${AAT},
+  "authorization": {
+      "permissions": [
+        {
+          "resource_set_id": "d2fe9843-6462-4bfc-baba-b5787bb6e0e7",
+          "resource_set_name": "Hello World Resource"
+        }
+      ]
+  },
   "jti": "d6109a09-78fd-4998-bf89-95730dfd0892-1464906679405",
   "exp": 1464906971,
   "nbf": 0,
@@ -53,5 +53,5 @@ When you decode a RPT you will see something like that:
 }
 ```
 
-The *permissions* claim consists of all the permissions granted by the server. There is also a *accessToken* property holding the AAT that was used to issue the RPT.
+From this token you can obtain all permissions granted by the server from the *permissions* claim.
 

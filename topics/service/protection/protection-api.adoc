@@ -4,7 +4,7 @@ The Protection API provides a UMA-compliant set of endpoints providing:
 
 * *Resource Registration*
 +
-From this endpoint resource servers can manage their resources remotely and enable link::/enforcer/overview.adoc[Policy Enforcers] to query the server for the resources that need to be protected
+From this endpoint resource servers can manage their resources remotely and enable link::/enforcer/overview.adoc[Policy Enforcers] to query the server for the resources that need protection.
 
 * *Permission Registation*
 +

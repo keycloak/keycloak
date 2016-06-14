@@ -69,7 +69,7 @@ From this interface, policies can obtain:
 * The authenticated *Identity*
 * Information about the execution context and runtime environment
 
-Before evaluating policyes, {{book.project.name}} builds an *EvaluationContext* based on:
+Before evaluating policies, {{book.project.name}} builds an *EvaluationContext* based on:
 
 * All claims obtained from the OAuth2 Access Token that was sent along with the authorization request
 +

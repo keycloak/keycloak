@@ -1,8 +1,13 @@
 == Creating Resource-based Permissions
 
-A Resource-based permissionsdefines a set of one or more resources to protect using a set of one or more authorization policies.
+A Resource-based permission defines a set of one or more resources to protect using a set of one or more authorization policies.
 
-To create a new permission select the option *Resource-based* in the dropdown located in the right upper corner of the permission listing. In {{book.project.name}}, a resource-based permission consists of the following information:
+To create a new permission select the option *Resource-based* in the dropdown located in the right upper corner of the permission listing.
+
+.Add Resource-Based Permission
+image:../../images/permission/create-resource.png[alt="Add Resource-Based Permission"]
+
+=== Configuration
 
 * *Name*
 +
@@ -19,7 +24,7 @@ Specifies if this permission would be applied to all resources with a given type
 +
 ** Resource Type
 +
-Defines the resource type to protect. When defined, this permissions is going to be evaluated for all resources matching the type
+Defines the resource type to protect. When defined, this permission is going to be evaluated for all resources matching the type
 +
 * *Resources*
 +
@@ -31,4 +36,4 @@ Defines a set of one or more policies to associate with a permission
 
 * *Decision Strategy*
 +
-The decision strategy for this permission
+The link:decision-strategy.html[Decision Strategy] for this permission

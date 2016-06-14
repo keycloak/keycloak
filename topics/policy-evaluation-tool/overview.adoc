@@ -2,7 +2,7 @@
 
 When designing your policies, you can use an UI to simulate authorization requests and check how your policies are being evaluated.
 
-The *Policy Evaluation Tool* can be accessed by clicking the *Evaluate* tab when editing a resource server. There you may provide different inputs to simulate real authorization requests and check the effect of your policies.
+The *Policy Evaluation Tool* can be accessed by clicking the `Evaluate` tab when editing a resource server. There you may provide different inputs to simulate real authorization requests and check the effect of your policies.
 
 image:../../images/policy-evaluation-tool.png[alt="Policy Evaluation Tool"]
 

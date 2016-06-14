@@ -4,7 +4,7 @@ Before going further, it is important to understand some terms and concepts intr
 
 ==== Resource Server
 
-If you are familiar with OAuth2, a Resource Server is the server hosting the protected resources, and which is capable of accepting and responding to protected resource requests.
+If you are familiar with OAuth2, a Resource Server is the server hosting the protected resources and capable of accepting and responding to protected resource requests.
 
 Resource servers usually rely on some kind of information to decide whether access to a protected resource should be granted or not. For RESTful-based resource servers,
 that information is usually obtained from a security token, usually sent as a bearer token on every single request to the server. For web applications that rely on a session to

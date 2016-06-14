@@ -3,6 +3,11 @@
 This type of policy allows you to define conditions for your permissions using Drools. It is one of the _Rule-Based_ policy types
 supported by {{book.project.name}}, providing a lot of flexibility to write any policy based on the link::/policy/evaluation-api.adoc[Evaluation API].
 
+To create a new policy select the option *Drools* in the dropdown located in the right upper corner of the permission listing.
+
+.Add Drools Policy
+image:../../images/policy/create-drools.png[alt="Add Drools Policy"]
+
 === Configuration
 
 * *Name*
@@ -44,7 +49,7 @@ Specifies an interval for scanning for artifact updates
 +
 * *Logic*
 +
-The logic of this plicy
+The link:logic.html[logic] of this policy
 
 === Examples
 
