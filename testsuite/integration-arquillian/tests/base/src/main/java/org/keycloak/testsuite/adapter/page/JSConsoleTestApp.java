@@ -30,7 +30,7 @@ import java.net.URL;
  *
  * @author tkyjovsk
  */
-public class JSConsoleExample extends AbstractPageWithInjectedUrl {
+public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "js-console-example";
     public static final String CLIENT_ID = "integration-arquillian-test-apps-js-console";
@@ -69,11 +69,16 @@ public class JSConsoleExample extends AbstractPageWithInjectedUrl {
     private WebElement showExpiresButton;
     @FindBy(xpath = "//button[text() = 'Show Details']")
     private WebElement showDetailsButton;
+    @FindBy(xpath = "//button[text() = 'Create Bearer Request']")
+    private WebElement createBearerRequest;
 
     @FindBy(id = "flowSelect")
     private Select flowSelect;
     @FindBy(id = "responseModeSelect")
     private Select responseModeSelect;
+    @FindBy(id = "onLoad")
+    private Select onLoad;
+
 
     @FindBy(id = "output")
     private WebElement outputArea;
@@ -105,8 +110,16 @@ public class JSConsoleExample extends AbstractPageWithInjectedUrl {
         flowSelect.selectByValue(value);
     }
 
+    public void setOnLoad(String value) {
+        onLoad.selectByValue(value);
+    }
+
     public void init() {
         initButton.click();
+    }
+
+    public void createBearerRequest() {
+        createBearerRequest.click();
     }
 
     public void setResponseMode(String value) {
