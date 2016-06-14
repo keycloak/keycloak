@@ -17,5 +17,6 @@
     <modules>
         <module>js-console</module>
         <module>test-apps-dist</module>
+        <module>js-database</module>
     </modules>
 </project>

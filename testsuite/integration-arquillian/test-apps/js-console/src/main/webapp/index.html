@@ -39,6 +39,7 @@
     <button onclick="output(keycloak.createLoginUrl())">Show Login URL</button>
     <button onclick="output(keycloak.createLogoutUrl())">Show Logout URL</button>
     <button onclick="output(keycloak.createRegisterUrl())">Show Register URL</button>
+    <button onclick="createBearerRequest()">Create Bearer Request</button>
     <select id="flowSelect">
         <option value="standard">standard</option>
         <option value="implicit">implicit</option>
@@ -47,6 +48,10 @@
     <select id="responseModeSelect">
         <option value="fragment">fragment</option>
         <option value="query">query</option>
+    </select>
+    <select id="onLoad">
+        <option value="check-sso">check-sso</option>
+        <option value="login-required">login-required</option>
     </select>
 </div>
 
@@ -115,6 +120,34 @@
         document.getElementById('events').innerHTML = new Date().toLocaleString() + "\t" + event + "\n" + e;
     }
 
+    function createBearerRequest() {
+
+        var url = 'http://localhost:8280/js-database/customers';
+        if (window.location.href.indexOf("8643") > -1) {
+            url = url.replace("8280","8643");
+            url = url.replace("http","https");
+        }
+
+        var req = new XMLHttpRequest();
+        req.open('GET', url, true);
+        req.setRequestHeader('Accept', 'application/json');
+        req.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
+
+        req.onreadystatechange = function () {
+            if (req.readyState == 4) {
+                if (req.status == 200) {
+                    output(req.responseText);
+                } else if (req.status == 403) {
+                    output('Forbidden');
+                } else if (req.status == 401) {
+                    output('Unauthorized');
+                }
+            }
+        };
+
+        req.send();
+    }
+
     var keycloak;
 
     function keycloakInit() {
@@ -144,7 +177,7 @@
             event('Access token expired.');
         };
 
-        var initOptions = {flow: document.getElementById("flowSelect").value, responseMode:  document.getElementById("responseModeSelect").value}
+        var initOptions = {onLoad: document.getElementById("onLoad").value, flow: document.getElementById("flowSelect").value, responseMode:  document.getElementById("responseModeSelect").value};
         keycloak.init(initOptions).success(function (authenticated) {
             output('Init Success (' + (authenticated ? 'Authenticated' : 'Not Authenticated') + ')');
         }).error(function () {
