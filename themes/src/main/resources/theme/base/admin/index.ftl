@@ -50,6 +50,13 @@
     <script src="${resourceUrl}/js/controllers/groups.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/loaders.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/services.js" type="text/javascript"></script>
+
+    <#if properties.scripts?has_content>
+        <#list properties.scripts?split(' ') as script>
+            <script type="text/javascript" src="${url.resourcesPath}/${script}"></script>
+        </#list>
+    </#if>
+
 </head>
 <body data-ng-controller="GlobalCtrl" data-ng-cloak data-ng-show="auth.user">
 
