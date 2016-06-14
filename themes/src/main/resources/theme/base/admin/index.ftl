@@ -53,7 +53,7 @@
 
     <#if properties.scripts?has_content>
         <#list properties.scripts?split(' ') as script>
-            <script type="text/javascript" src="${url.resourcesPath}/${script}"></script>
+            <script type="text/javascript" src="${resourceUrl}/${script}"></script>
         </#list>
     </#if>
 
