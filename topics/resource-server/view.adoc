@@ -1,3 +1,0 @@
-== Viewing Resource Servers
-
-You can view all existing resource servers by clicking on *Authorization* in the left menu bar.

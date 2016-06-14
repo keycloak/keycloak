@@ -1,3 +1,6 @@
 == Authorization Services
 
 Keycloak Authorization Services are based on OAuth2 and User-Managed Access (UMA).
+
+In this section you'll learn about the different RESTful endpoints that you can interact with in order to enable fine-grained
+authorization to your application and services.

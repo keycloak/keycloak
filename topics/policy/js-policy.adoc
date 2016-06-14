@@ -3,6 +3,11 @@
 This type of policy allows you to define conditions for your permissions using JavaScript. It is one of the _Rule-Based_ policy types
 supported by {{book.project.name}}, providing lot of flexibility to write any policy based on the link::/policy/evaluation-api.adoc[Evaluation API].
 
+To create a new policy select the option *JavaScript* in the dropdown located in the right upper corner of the permission listing.
+
+.Add JavaScript Policy
+image:../../images/policy/create-js.png[alt="Add JavaScript Policy"]
+
 === Configuration
 
 * *Name*
@@ -20,7 +25,7 @@ The JavaScript code providing the conditions for this policy
 +
 * *Logic*
 +
-The logic of this plicy
+The link:logic.html[logic] of this policy
 
 === Examples
 
@@ -42,6 +47,19 @@ You can even use RBAC if you want to:
 var identity = $evaluation.getIdentity();
 
 if (identity.hasRole('keycloak_user')) {
+    $evaluation.grant();
+}
+```
+
+Or even a mix of different access control mechanisms:
+
+```javascript
+var context = $evaluation.getContext();
+var identity = context.getIdentity();
+var attributes = identity.getAttributes();
+var email = attributes.getValue('email').asString(0);
+
+if (identity.hasRole('admin') || email.endsWith('@keycloak.org')) {
     $evaluation.grant();
 }
 ```

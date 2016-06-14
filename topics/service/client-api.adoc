@@ -20,25 +20,29 @@ The client configuration is defined in a JSON file as follows:
 
 ```json
 {
-  "client": {
-    "configurationUrl": "http://localhost:8080/auth/realms/${realm_name}/.well-known/uma-configuration",
-    "clientId": ${clientId},
-    "clientSecret": ${clientSecret}
+  "realm": "hello-world-authz",
+  "auth-server-url" : "http://localhost:8080/auth",
+  "resource" : "hello-world-authz-service",
+  "credentials": {
+    "secret": "secret"
   }
 }
 ```
 
-* *configurationUrl*
+* *realm*
 +
-Use this property to specify and URL pointing to the Authorization Services Discovery URL.
+Name of the realm. This is REQUIRED.
+
+* *auth-server-url*
 +
-* *clientId*
+The base URL of the Keycloak server. All other Keycloak pages and REST service endpoints are derived from this. It is usually of the form https://host:port/auth. This is REQUIRED.
+
+* *resource*
 +
-The identifier of the client application configured as a resource server
-+
-* *clientSecret*
-+
-The credential of the client application configured as a resource server
+The client-id of the application. Each application has a client-id that is used to identify the application. This is REQUIRED.
+
+* *credentials*
+Specify the credentials of the application. This is an object notation where the key is the credential type and the value is the value of the credential type. Currently only secret/password is supported. This is REQUIRED.
 
 === Obtaining User Entitlements
 
@@ -48,23 +52,12 @@ Here is an example about how to obtain user entitlements:
 // create a new instance based on the configuration define at keycloak-authz.json
 AuthzClient authzClient = AuthzClient.create();
 
-// query the server for a resource with a given name
-Set<String> resourceId = authzClient.protection()
-        .resource()
-            .findByFilter("name=Hello World Resource");
-
 // obtian a Entitlement API Token in order to get access to the Entitlement API.
 // this token is just an access token issued to a client on behalf of an user with a scope kc_entitlement
 String eat = getEntitlementAPIToken(authzClient);
 
-// create an entitlement request
-EntitlementRequest request = new EntitlementRequest();
-
-request.addPermission(new PermissionRequest(resourceId.iterator().next()));
-
 // send the entitlement request to the server in order to obtain a RPT with all permissions granted to the user
-EntitlementResponse response = authzClient.entitlement(eat)
-    .get("hello-world-authz-service", request);
+EntitlementResponse response = authzClient.entitlement(eat).getAll("hello-world-authz-service");
 String rpt = response.getRpt();
 
 System.out.println("You got a RPT: " + rpt);
@@ -82,14 +75,19 @@ AuthzClient authzClient = AuthzClient.create();
 // this token is just an access token issued to a client on behalf of an user with a scope kc_entitlement
 String eat = getEntitlementAPIToken(authzClient);
 
+// create an entitlement request
+EntitlementRequest request = new EntitlementRequest();
+PermissionRequest permission = new PermissionRequest();
+
+permission.setResourceSetName("Hello World Resource");
+
+request.addPermission(permission);
+
 // send the entitlement request to the server in order to obtain a RPT with all permissions granted to the user
-EntitlementResponse response = authzClient.entitlement(eat)
-    .getAll("hello-world-authz-service", request);
+EntitlementResponse response = authzClient.entitlement(eat).get("hello-world-authz-service", request);
 String rpt = response.getRpt();
 
 System.out.println("You got a RPT: " + rpt);
-
-// now you can use the RPT to access protected resources on the resource server
 ```
 
 === Creating a Resource Using the Protection API
@@ -107,6 +105,11 @@ newResource.setType("urn:hello-world-authz:resources:example");
 newResource.addScope(new ScopeRepresentation("urn:hello-world-authz:scopes:view"));
 
 ProtectedResource resourceClient = authzClient.protection().resource();
+Set<String> existingResource = resourceClient.findByFilter("name=" + newResource.getName());
+
+if (!existingResource.isEmpty()) {
+    resourceClient.delete(existingResource.iterator().next());
+}
 
 // create the resource on the server
 RegistrationResponse response = resourceClient.create(newResource);
@@ -114,4 +117,4 @@ String resourceId = response.getId();
 
 // query the resource using its newly generated id
 ResourceRepresentation resource = resourceClient.findById(resourceId).getResourceDescription();
-```java
+```

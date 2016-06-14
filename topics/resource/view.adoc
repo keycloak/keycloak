@@ -2,6 +2,9 @@
 
 When you click on *Resource* tab, you'll be redirect to a page listing all the resources associated with a resource server.
 
+.Resources
+image:../../images/resource/view.png[alt="Resources"]
+
 The resource list provides some very useful information about the protected resources, such as:
 
 * Type
@@ -10,4 +13,4 @@ The resource list provides some very useful information about the protected reso
 * Associated scopes, if any
 * Associated permissions
 
-From there you can also create a permission right away by clicking on *Create Permission* button for the resources you want to create the permission.
+From there you can also create a permission right away by clicking on `Create Permission` button for the resources you want to create the permission.

@@ -3,6 +3,11 @@
 This type of policy allows you to define conditions for your permissions where only a set of one or more roles is allowed
 to access an object.
 
+To create a new policy select the option *Role-Based* in the dropdown located in the right upper corner of the permission listing.
+
+.Add Role-Based Policy
+image:../../images/policy/create-role.png[alt="Add Role-Based Policy"]
+
 === Configuration
 
 * *Name*
@@ -20,4 +25,4 @@ Specifies which role(s) are allowed by this policy
 +
 * *Logic*
 +
-The logic of this plicy
+The link:logic.html[logic] of this policy

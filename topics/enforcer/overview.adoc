@@ -5,8 +5,3 @@ to implement PEPs for different platforms, environments and using different prog
 fully RESTFUL-based, leveraging OAuth2 authorization capabilities to also support fine-grained authorization using a centralized authorization server.
 
 image:../../images/pep-pattern-diagram.png[alt="PEP Overview"]
-
-=== Download and Installation
-
-The avaliable policy enforcers are distributed just like any other {{book.project.name}} Adapter. Please check this https://keycloak.gitbooks.io/securing-client-applications-guide/content/[documentation]
-for more details about how to obtain and install these adapters accordingly with the platform you are using.

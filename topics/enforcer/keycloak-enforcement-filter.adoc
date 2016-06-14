@@ -1,50 +1,23 @@
-== Keycloak Adapter Enforcement Filter
+== Keycloak Adapter Policy Enforcer
 
-The *org.keycloak.authorization.policy.enforcer.servlet.KeycloakAdapterEnforcementFilter* can be used to protect applications
-using the {{book.project.name}} OpenID Connect Adapters.
-
-[NOTE]
-Before configuring this filter, make sure your application is properly configure to authenticate against a {{book.project.name}} Server. To use this filter,
-you need the Keycloak OIDC Adapter properly configured and authenticating your users.
-
-To configure it, change your web application descriptor (WEB-INF/web.xml) as follows:
-
-```xml
-<filter>
-    <filter-name>Keycloak Authorization Enforcer</filter-name>
-    <filter-class>org.keycloak.authorization.policy.enforcer.servlet.KeycloakAdapterEnforcementFilter</filter-class>
-</filter>
-
-<filter-mapping>
-    <filter-name>Keycloak Authorization Enforcer</filter-name>
-    <url-pattern>/*</url-pattern>
-</filter-mapping>
-```
+You can enforce authorization decisions to your applications if you are using {{book.project.name}} OIDC Adapters.
 
 === Configuration
 
-The _KeycloakAdapterEnforcementFilter_ can be configured by a simple JSON file. The file can be as simple as:
+To enable policy enforcement to your application, add the following property to your *keycloak.json* file:
 
+.keycloak.json
 ```json
 {
-  "client": {
-    "configurationUrl": "http://localhost:8080/auth/realms/{realm_name}/authz/uma_configuration",
-    "clientId": "{client_id}",
-    "clientSecret": "{client_secret}"
-  },
-  "enforcer": {}
+  "policy-enforcer": {}
 }
 ```
 Or a little more verbose if you want to manually define the resources being protected:
 
 ```json
 {
-  "client": {
-    "configurationUrl": "http://localhost:8080/auth/realms/{realm_name}/authz/uma_configuration",
-    "clientId": "{client_id}",
-    "clientSecret": "{client_secret}"
-  },
-  "enforcer": {
+  "policy-enforcer": {
+    "user-managed-access" : {},
     "paths": [
       {
         "path" : "/someUri/*",
@@ -81,31 +54,18 @@ Or a little more verbose if you want to manually define the resources being prot
 }
 ```
 
-The file with the enforcer configuration must be under your application's classpath as *keycloak-authz.json".
-
 Here is a description of each configuration option:
 
-* *client*
+* *policy-enforcer*
 +
-Specify the information about the resource server being protected
-+
-** *configurationUrl*
-+
-A URL pointing to a configuration endpoint. This is important for the automatic discovery of the services invoked during the authorization process.
-+
-** *clientId*
-+
-The id of the client acting as a resource server.
-+
-** *clientSecret*
-+
-The client secret.
-+
-* *enforcer*
-+
-Specify the configuration options to define how policies are actually enforced and optionally the paths you want to protect. If empty, the policy enforcer will query the server
-for all resources associated with the resource server being protected. In this case, you need to make sure the resources are properly configured with a *uri* property that matches the paths
+Specify the configuration options that define how policies are actually enforced and optionally the paths you want to protect. If empty, the policy enforcer will query the server
+for all resources associated with the resource server being protected. In this case, you need to make sure the resources are properly configured with a link:../resource/create.adoc#_uri[URI] property that matches the paths
  you want to protect.
++
+** *user-managed-access*
++
+Tells the adapter to use the UMA protocol. If set, the adapter will ask the server for permission tickets and return them to clients accordingly with UMA specification. If not set,
+the adapter will just rely on the RPT sent to the server to actually enforce permissions.
 +
 ** *paths*
 +
@@ -113,10 +73,10 @@ Specify the paths to protect.
 +
 *** *name*
 +
-The name of a resource in the server that must be associated with a given path. If provided, the policy enforcer will ignore the resource's *uri* property and use the path you provided.
+The name of a resource in the server that must be associated with a given path. When used in conjunction with a *path*, the policy enforcer will ignore the resource's *URI* property and will use the path you provided instead.
 *** *path*
 +
-A URI relative to the application's context path. If this option is provided, the policy enforcer will query the server for a resource with a *uri* with the same value.
+A URI relative to the application's context path. If this option is provided, the policy enforcer will query the server for a resource with a *URI* with the same value. This option is REQUIRED.
 Right now, we support some very basic logic for path matching. Examples of valid paths are:
 +
 **** Wildcards: `/*`
@@ -135,22 +95,3 @@ The name of the HTTP method.
 **** *scopes*
 +
 An array of strings with the scopes associated with the method.
-
-=== Container Specific Configuration
-
-==== WildFly 10.0.0.Final
-
-In order to make the filter available to your application at runtime, you must create a *META-INF/jboss-deployment-structure.xml* at the application root directory.
-
-```xml
-<jboss-deployment-structure>
-    <deployment>
-        <dependencies>
-            <module name="org.keycloak.keycloak-authz-servlet-enforcer" services="import"/>
-            <module name="org.jboss.resteasy.resteasy-jackson2-provider" services="import"/>
-        </dependencies>
-        <exclusions>
-            <module name="org.jboss.resteasy.resteasy-jackson-provider"/>
-        </exclusions>
-    </deployment>
-</jboss-deployment-structure>

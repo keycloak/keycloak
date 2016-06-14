@@ -34,4 +34,4 @@ In the example above, we are using the *client_credentials* grant type to obtain
 == About the uma_protection scope
 
 The *uma_protection* scope can be created just like any other _realm role_. Once you created it, just grant this role to
-the client application that you want to use as a resource server.
+the service account of the client application that you want to use as a resource server.
