@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<typeInfoHistroy>
+<typeInfo handle="=keycloak-model-jpa/\/home\/emulder\/.m2\/repository\/org\/liquibase\/liquibase-core\/3.4.1\/liquibase-core-3.4.1.jar&lt;liquibase.changelog(DatabaseChangeLog.class[DatabaseChangeLog" modifiers="33" timestamp="1446029745000"/>
+<typeInfo handle="=keycloak-model-jpa/\/home\/emulder\/.m2\/repository\/org\/liquibase\/liquibase-core\/3.4.1\/liquibase-core-3.4.1.jar&lt;liquibase(Liquibase.class[Liquibase" modifiers="33" timestamp="1446029745000"/>
+<typeInfo handle="=services/src\/main\/java&lt;org.keycloak.email.freemarker{FreeMarkerEmailTemplateProvider.java[FreeMarkerEmailTemplateProvider" modifiers="1" timestamp="1458554864000"/>
+</typeInfoHistroy>

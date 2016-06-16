@@ -1,0 +1,52 @@
+{
+  "version": "v1",
+  "title": "Eclipse Automated Error Reporting Service",
+  "timestamp": 1465810021330,
+  "ttl": 10080,
+  "helpUrl": "https://wiki.eclipse.org/EPP/Logging",
+  "feedbackUrl": "http://ctrlflow.com/automated-error-reporting",
+  "aboutUrl": "https://wiki.eclipse.org/EPP/Logging",
+  "submitUrl": "https://dev.eclipse.org/recommenders/community/confess/0.6/reports/",
+  "maxReportSize": 262144,
+  "problemsUrl": "https://www.eclipse.org/downloads/download.php?r\u003d1\u0026file\u003d/technology/epp/logging/problems.zip",
+  "problemsTtl": 20160,
+  "connectTimeout": 10,
+  "socketTimeout": 10,
+  "acceptedProducts": [
+    "org.eclipse.*"
+  ],
+  "acceptedPlugins": [
+    "org.apache.log4j.*",
+    "org.eclipse.*"
+  ],
+  "acceptedPackages": [
+    "ch.qos.*",
+    "com.google.*",
+    "com.sun.*",
+    "java.*",
+    "javafx.*",
+    "javax.*",
+    "org.apache.*",
+    "org.eclipse.*",
+    "org.osgi.*",
+    "org.slf4j.*",
+    "sun.*"
+  ],
+  "acceptOtherPackages": true,
+  "acceptUiFreezes": true,
+  "ignoredStatuses": [
+    ":java.net.SocketException:",
+    ":java.net.SocketTimeoutException:",
+    ":java.net.UnknownHostException:",
+    "org.eclipse.core.filesystem::Could not delete*",
+    "org.eclipse.core.filesystem::Could not move*",
+    "org.eclipse.core.runtime::Invalid input url*",
+    "org.eclipse.epp.mpc.ui:java.io.IOException:",
+    "org.eclipse.equinox.p2.*::",
+    "org.eclipse.jface:java.io.IOException:Unable to resolve plug-in*",
+    "org.eclipse.oomph.setup.core:$org.apache.http.ConnectionClosedException:",
+    "org.eclipse.pde.core::The current target platform contains errors*",
+    "org.eclipse.ui::Conflicting handlers for*"
+  ],
+  "problemsZipLastDownloadTimestamp": 1465810035392
+}

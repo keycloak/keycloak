@@ -1,0 +1,4 @@
+1465828970731	Rename type 'ProvidedEntitiesClassLoader'
+1465829241824	Rename type 'MultiProxyClassLoader'
+1465829841351	Extract local variable 'changeLogParameters'
+1465829892809	Rename local variable 'databaseChangeLog'

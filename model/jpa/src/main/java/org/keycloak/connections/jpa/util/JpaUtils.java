@@ -22,7 +22,7 @@ import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.hibernate.jpa.boot.spi.Bootstrap;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
-import org.keycloak.connections.jpa.entityprovider.ProvidedEntitiesClassLoader;
+import org.keycloak.connections.jpa.entityprovider.ProxyClassLoader;
 import org.keycloak.models.KeycloakSession;
 
 import javax.persistence.EntityManager;
@@ -75,10 +75,10 @@ public class JpaUtils {
                     // Add all extra entity classes to the persistence unit.
                     persistenceUnit.addClasses(entityClass.getName());
                 }
-                // Now build the entity manager factory, supplying a custom classloader, so Hibernate will be able
+                // Now build the entity manager factory, supplying a proxy classloader, so Hibernate will be able
                 // to find and load the extra provided entities. Set the provided classloader as parent classloader.
                 return Bootstrap.getEntityManagerFactoryBuilder(persistenceUnit, properties,
-                        new ProvidedEntitiesClassLoader(providedEntities, classLoader)).build();
+                        new ProxyClassLoader(providedEntities, classLoader)).build();
             }
         }
         throw new RuntimeException("Persistence unit '" + unitName + "' not found");
@@ -90,7 +90,7 @@ public class JpaUtils {
      * @param session the keycloak session
      * @return a list of all provided entities (can be an empty list)
      */
-    private static List<Class<?>> getProvidedEntities(KeycloakSession session) {
+    public static List<Class<?>> getProvidedEntities(KeycloakSession session) {
         List<Class<?>> providedEntityClasses = new ArrayList<>();
         // Get all configured entity providers.
         Set<JpaEntityProvider> entityProviders = session.getAllProviders(JpaEntityProvider.class);

@@ -35,5 +35,13 @@ public interface JpaEntityProvider extends Provider {
      * @return list of class objects
      */
 	List<Class<?>> getEntities();
+	
+	/**
+	 * Return the location of the Liquibase changelog that facilitates the extra JPA entities.
+	 * This should be a location that can be found on the same classpath as the entity classes.
+	 * 
+	 * @return a changelog location or null if not needed
+	 */
+	String getChangelogLocation();
 
 }
