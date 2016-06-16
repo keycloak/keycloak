@@ -52,7 +52,7 @@ public class AttackDetectionResourceTest extends AbstractAdminTest {
     public void test() {
         AttackDetectionResource detection = adminClient.realm("test").attackDetection();
 
-        assertBruteForce(detection.bruteForceUserStatus("test-user@localhost"), 0, false, false);
+        assertBruteForce(detection.bruteForceUserStatus(findUser("test-user@localhost").getId()), 0, false, false);
 
         oauthClient.doLogin("test-user@localhost", "invalid");
         oauthClient.doLogin("test-user@localhost", "invalid");
@@ -62,21 +62,21 @@ public class AttackDetectionResourceTest extends AbstractAdminTest {
         oauthClient.doLogin("test-user2", "invalid");
         oauthClient.doLogin("nosuchuser", "invalid");
 
-        assertBruteForce(detection.bruteForceUserStatus("test-user@localhost"), 3, true, true);
-        assertBruteForce(detection.bruteForceUserStatus("test-user2"), 2, true, true);
+        assertBruteForce(detection.bruteForceUserStatus(findUser("test-user@localhost").getId()), 3, true, true);
+        assertBruteForce(detection.bruteForceUserStatus(findUser("test-user2").getId()), 2, true, true);
         assertBruteForce(detection.bruteForceUserStatus("nosuchuser"), 0, false, false);
 
-        detection.clearBruteForceForUser("test-user@localhost");
-        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.attackDetectionClearBruteForceForUserPath("test-user@localhost"));
+        detection.clearBruteForceForUser(findUser("test-user@localhost").getId());
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.attackDetectionClearBruteForceForUserPath(findUser("test-user@localhost").getId()));
 
-        assertBruteForce(detection.bruteForceUserStatus("test-user@localhost"), 0, false, false);
-        assertBruteForce(detection.bruteForceUserStatus("test-user2"), 2, true, true);
+        assertBruteForce(detection.bruteForceUserStatus(findUser("test-user@localhost").getId()), 0, false, false);
+        assertBruteForce(detection.bruteForceUserStatus(findUser("test-user2").getId()), 2, true, true);
 
         detection.clearAllBruteForce();
         assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.attackDetectionClearAllBruteForcePath());
 
-        assertBruteForce(detection.bruteForceUserStatus("test-user@localhost"), 0, false, false);
-        assertBruteForce(detection.bruteForceUserStatus("test-user2"), 0, false, false);
+        assertBruteForce(detection.bruteForceUserStatus(findUser("test-user@localhost").getId()), 0, false, false);
+        assertBruteForce(detection.bruteForceUserStatus(findUser("test-user2").getId()), 0, false, false);
     }
 
     private void assertBruteForce(Map<String, Object> status, Integer expectedNumFailures, Boolean expectedFailure, Boolean expectedDisabled) {

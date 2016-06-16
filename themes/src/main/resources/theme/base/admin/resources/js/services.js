@@ -227,15 +227,15 @@ module.factory('RealmAdminEvents', function($resource) {
 });
 
 module.factory('BruteForce', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/attack-detection/brute-force/usernames', {
+    return $resource(authUrl + '/admin/realms/:realm/attack-detection/brute-force/users', {
         realm : '@realm'
     });
 });
 
 module.factory('BruteForceUser', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/attack-detection/brute-force/usernames/:username', {
+    return $resource(authUrl + '/admin/realms/:realm/attack-detection/brute-force/users/:userId', {
         realm : '@realm',
-        username : '@username'
+        userId : '@userId'
     });
 });
 
