@@ -7,6 +7,3 @@ Unlike the _Authorization API_, the Entitlement API is not UMA-compliant and don
 
 The purpose of this API is provide a more lightweight API for obtaining authorization data, where the client in possession of a valid
 OAuth2 Access Token is able to obtain the necessary authorization data on behalf of their users.
-
-Any client application can access the Entitlement API endpoint, which requires a special OAuth2 access token called *Entitlement API Token* or *EAT*.
-

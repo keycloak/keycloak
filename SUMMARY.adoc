@@ -34,7 +34,6 @@
  ... link:topics/service/authorization/whatis-obtain-aat.adoc[What is a AAT and How to Obtain It]
  ... link:topics/service/authorization/authorization-api-aapi.adoc[Requesting Authorization Data and Token]
  .. link:topics/service/entitlement/entitlement-api.adoc[Entitlement API]
- ... link:topics/service/entitlement/whatis-obtain-eat.adoc[What is a EAT and How to Obtain It]
  ... link:topics/service/entitlement/entitlement-api-aapi.adoc[Requesting Entitlements]
  .. link:topics/service/protection/token-introspection.adoc[Introspecting a Requesting Party Token]
  .. link:topics/service/client-api.adoc[Authorization Client Java API]
