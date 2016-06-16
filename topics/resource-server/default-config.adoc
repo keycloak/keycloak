@@ -1,0 +1,57 @@
+== Default Configuration
+
+When you create a resource server, {{book.project.name}} creates a default configuration to your newly created resource server.
+
+The default configuration consists of:
+
+* A default protected resource representing all resources in your application.
+* A policy that grants access only for users within the same _realm_ as the resource server.
+* A permission that governs access to all resources based on the default policy.
+
+The default protected resource is called *Default Resource* and you can see it if you click on the `Resources` tab.
+
+.Default Resource
+image:../../images/resource-server/default-resource.png[alt="Default Resource"]
+
+This resource defines a `Type` `urn:my-resource-server:resources:default` and an `URI` `/*`. Here, the `URI` field defines a
+wildcard pattern that tells {{book.project.name}} that this resource represents all the paths in your application. In other words,
+when enabling link:../enforcer/overview.html[Policy Enforcement] to your application, all the permissions associated with the resource
+will be checked before granting access.
+
+The default policy is called *Only From Realm Policy* and you can see it if you click on the `Policies` tab.
+
+.Default Policy
+image:../../images/resource-server/default-policy.png[alt="Default Policy"]
+
+This policy is a link:../policy/js-policy.html[JavaScript-Based Policy] defining a condition where only users from the same _realm_ as the
+resource server are granted with access. If you click on this policy you'll see that it defines a rule as follows:
+
+```js
+var context = $evaluation.getContext();
+
+// using attributes from the evaluation context to obtain the realm
+var contextAttributes = context.getAttributes();
+var realmName = contextAttributes.getValue('kc.authz.context.authc.realm').asString(0);
+
+// using attributes from the identity to obtain the issuer
+var identity = context.getIdentity();
+var identityAttributes = identity.getAttributes();
+var issuer = identityAttributes.getValue('iss').asString(0);
+
+// only users from the realm have access granted
+if (issuer.endsWith(realmName)) {
+    $evaluation.grant();
+}
+```
+
+For last, the default permission is called *Default Permission* and you can see it if you click on the `Permissions` tab.
+
+.Default Permission
+image:../../images/resource-server/default-permission.png[alt="Default Permission"]
+
+This permission is a link:../permission/overview.html[Resource-Based Permission], defining that a set of one or more policies should
+ be applied to all resources with a given type.
+
+== Post-Configuration Instructions
+
+You are not forced to keep the default configuration if you don't want to. You can remove the default resource, policy and permission any time you want.

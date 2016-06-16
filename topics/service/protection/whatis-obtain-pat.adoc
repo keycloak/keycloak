@@ -1,6 +1,10 @@
 == What is a PAT and How to Obtain it ?
 
-A PAT is a special OAuth2 Access Token with the scope *uma_protection*.
+A PAT is a special OAuth2 Access Token with the scope *uma_protection*. When you create a resource server, {{book.project.name}} automatically
+creates a role _uma_protection_ for the corresponding client application and associated it with the client's service account.
+
+.Service Account granted with uma_protection role
+image:../../../images/service/rs-uma-protection-role.png[alt="Service Account granted with uma_protection role"]
 
 Resource servers can obtain a PAT from {{book.project.name}} just like any other OAuth2 Access Token.
 
@@ -30,8 +34,3 @@ In the example above, we are using the *client_credentials* grant type to obtain
   "session_state": "ccea4a55-9aec-4024-b11c-44f6f168439e"
 }
 ```
-
-== About the uma_protection scope
-
-The *uma_protection* scope can be created just like any other _realm role_. Once you created it, just grant this role to
-the service account of the client application that you want to use as a resource server.

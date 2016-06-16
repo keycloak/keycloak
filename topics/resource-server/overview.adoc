@@ -2,61 +2,7 @@
 
 If you are familiar with OAuth2, a Resource Server is the server hosting the protected resources and capable of accepting and responding to protected resource requests.
 
-Resource servers usually rely on some kind of information to decide whether access to a protected resource should be granted or not. For RESTful-based resource servers,
-that information is usually obtained from a security token, usually sent as a bearer token on every single request to the server. For web applications that rely on a session to
-authenticate their users, that information is usually stored into user's session and retrieved from there on every single request.
+In {{book.project.name}}, resource servers are provided with a rich platform for enabling fine-grained authorization to their protected resources, where authorization decisions can be made
+based on different access control mechanisms.
 
-You can see the list of resource servers by clicking on the `Authorization` left menu item.
-
-.Resource Servers
-image:../../images/resource-server/view.png[alt="Resource Servers"]
-
-To create a new resource server just click on the `Create` button.
-
-.Add Resource Server
-image:../../images/resource-server/create.png[alt="Add Resource Server"]
-
-Resource servers can be created manually or automatically based on the configuration within a JSON file.
-
-When manually creating resource servers, the only required field is `Client`. This field allows you to choose an *existing* client applications that can be enabled as a resource server. In order to
-make a client application available to this field, you need to make sure the client application is configured as follows:
-
-* It must be a *confidential* client
-* It must have a *Service Account*
-
-[NOTE]
-For more information about how to configure confidential clients and service accounts, please take a look at https://keycloak.gitbooks.io/server-adminstration-guide/[Server Administration Guide].
-
-However, if you want to import an existing resource server configuration, you can click on the `Import JSON File` button and upload a JSON file holding the resource server configuration.
-
-In any case, once you fill in the required fields you can click the `Save` button to create the resource server. This will bring you to the `Resource Server Settings` page.
-
-.Resource Server Settings
-image:../../images/resource-server/manage.png[alt="Resource Management"]
-
-Let’s walk through each configuration item on this page.
-
-* *Policy Enforcement Mode*
-+
-Dictates how policies are enforced when processing authorization requests sent to the server.
-+
-** *Enforcing*
-+
-This is the default mode. Requests are denied by default even when there is no policy associated with a given resource.
-+
-** *Permissive*
-+
-Requests are allowed even when there is no policy associated with a given resource.
-** *Disabled*
-+
-Completely disables the evaluation of policies and allow access to any resource.
-+
-* *Allow Remote Resource Management*
-+
-Should resources be managed remotely by the resource server? If false, resources can only be managed from this admin console.
-
-+
-* *Export Settings*
-+
-In this section you can export all settings to a JSON file. It provides a single `Export` button that you can click to
-download a JSON file containing every single configuration defined for a resource server: protected resources, scopes, permissions and policies.
+Any client application can be configured to support fine-grained permissions. When you do that, you are conceptually turning the client application into a resource server.
