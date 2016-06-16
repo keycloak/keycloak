@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
-  <nextCatalog catalog="user_catalog.xml" id="user_catalog"/>
-  <nextCatalog catalog="system_catalog.xml" id="system_catalog"/>
-</catalog>

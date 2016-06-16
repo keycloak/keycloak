@@ -1,9 +1,0 @@
-<root>
-  <facet id="jpt.jpa">
-    <node name="libprov">
-      <node name="last-provider-used">
-        <attribute name="1.0" value="jpa-no-op-library-provider"/>
-      </node>
-    </node>
-  </facet>
-</root>
