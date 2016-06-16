@@ -14,12 +14,12 @@ The easiest way to obtain entitlements for a specific user is using an HTTP GET 
 
 ```bash
 curl -X GET \
-    -H "Authorization: Bearer ${EAT}" \
+    -H "Authorization: Bearer ${access_token}" \
     "http://localhost:8080/auth/realms/hello-world-authz/authz/entitlement/${resource_server_id}"
 ```
 
 [NOTE]
-When asking for entitlements using this endpoint, you need to provide the EAT (as a bearer token) representing user's identity and his consent to access authorization data on his behalf.
+When asking for entitlements using this endpoint, you need to provide the access_token (as a bearer token) representing user's identity and his consent to access authorization data on his behalf.
 
 Where *${resource_server_id}* is the *client_id* registered with the client application acting as a resource server.
 
@@ -39,7 +39,7 @@ authorization policies associated with all resources managed by the resource ser
 The entitlements endpoint also allows you to obtain user's entitlements for a set of one or more resources.
 
 ```bash
-curl -X POST -H "Authorization: Bearer ${EAT}" -d '{
+curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
     "permissions" : [
         {
             "resource_set_name" : "Hello World Resource"
@@ -62,7 +62,7 @@ Unlike the GET version, the server is going to respond with a RPT holding the pe
 When asking for entitlements you can also specify the scopes you want to have access:
 
 ```bash
-curl -X POST -H "Authorization: Bearer ${EAT}" -d '{
+curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
     "permissions" : [
         {
             "resource_set_name" : "Hello World Resource",
@@ -77,7 +77,7 @@ curl -X POST -H "Authorization: Bearer ${EAT}" -d '{
 === Requesting Party Token or RPT
 
 A RPT is basically a https://tools.ietf.org/html/rfc7519[JSON Web Token (JWT)] digitally signed using https://www.rfc-editor.org/rfc/rfc7515.txt[JSON Web Signature (JWS)].
-The token is built based on the EAT sent by the client during the authorization process.
+The token is built based on the access_token sent by the client during the authorization process.
 
 When you decode a RPT you will see something like that:
 

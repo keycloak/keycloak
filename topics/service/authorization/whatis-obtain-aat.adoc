@@ -1,6 +1,12 @@
 == What is a AAT and How to Obtain it ?
 
-An *Authorization API Token* or *AAT* is a special OAuth2 Access Token with the scope *uma_authorization*.
+An *Authorization API Token* or *AAT* is a special OAuth2 Access Token with the scope *uma_authorization*. When you create an user, {{book.project.name}} automatically
+assigns a role _uma_authorization_ to the user. The _uma_authorization_ role is a _default realm role_ as you can see from this page.
+
+.Default Role uma_authorization
+image:../../../images/service/rs-uma-authorization-role.png[alt="Default Role uma_authorization "]
+
+An AAT means that a client application is allowed to query the server for user permissions.
 
 Client applications can obtain an AAT from {{book.project.name}} just like any other OAuth2 Access Token. Usually, client applications obtain AATs after the user is successfully
 authenticated in {{book.project.name}}. By default the _authorizaton_code_ grant type is used to authenticate users and issue an OAuth2 Access Token to the client application acting on their behalf.
@@ -29,8 +35,3 @@ As a result, you will get the following response from the server:
   "session_state": "3cad2afc-855b-47b7-8e4d-a21c66e312fb"
 }
 ```
-
-== About the uma_authorization scope
-
-The *uma_authorization* scope can be created just like any other _realm role_. Or even as a _client role_. Once you created it, just grant this role to
-the users of your realm.
