@@ -16,8 +16,20 @@ Being based on a set of administrative UIs and a RESTful API, {{book.project.nam
 for your protected resources and scopes, associate these permissions with authorization policies and enforce authorization
 decisions in your application and services.
 
+Resource servers (the application or service serving protected resources)  usually rely on some kind of information to decide whether access to a protected resource should be granted or not. For RESTful-based resource servers,
+that information is usually obtained from a security token, usually sent as a bearer token on every single request to the server. For web applications that rely on a session to
+authenticate their users, that information is usually stored into user's session and retrieved from there on every single request.
+
+Usually, resource servers only perform authorization decisions based on _Role-based Access Control_ or _RBAC_, where the roles granted to the user trying to access protected resources are
+checked against the roles mapped to these same resources. While roles are very useful and used by applications, they also have a few limitations:
+
+* Resources and roles are tight coupled and changes to roles (add, remove or change it's access context) may impact several resources
+* Changes to your security requirements may imply deep changes to application code to reflect these changes
+* Depending on your application size, role management may become a problem and error-prone
+* It is not the most flexible access control mechanism. Roles do not represent who you are and lack context information. If you have it, you can do something.
+
 Considering that today we need to consider a very heterogeneous environment, where users are distributed across different regions, with different local policies,
-using different devices and with a high demand for information sharing, Keycloak Authorization Services provides:
+using different devices and with a high demand for information sharing, {{book.project.name}} Authorization Services can help you to improve the authorization capabilities of your application and services by providing:
 
 * Resource protection using fine-grained authorization policies and different access control mechanisms
 * Centralized Resource, Permission and Policy Management

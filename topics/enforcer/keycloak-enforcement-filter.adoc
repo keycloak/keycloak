@@ -2,6 +2,14 @@
 
 You can enforce authorization decisions to your applications if you are using {{book.project.name}} OIDC Adapters.
 
+When you enable policy enforcement to your {{book.project.name}} application, the corresponding adapter is going to intercept
+every single request to your application and enforce the authorization decisions obtained from the server.
+
+Policy enforcement is strongly based on your application's paths and the link:../resource/overview.html[Resources] you created to a resource server using the {{book.project.name}} Administration Console. By default,
+when you create a resource server, {{book.project.name}} creates a link:../resource-server/default-config.html[Default Configuration] to your resource server so you can enable policy enforcement very quickly.
+
+The default configuration allows access for every single resource in your application as long as the authenticated user belongs to the same realm as the resource server being protected.
+
 === Configuration
 
 To enable policy enforcement to your application, add the following property to your *keycloak.json* file:

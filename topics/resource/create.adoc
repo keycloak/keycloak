@@ -3,7 +3,7 @@
 Create a resource is pretty straight forward and generic. The main thing you should care about is the granularity of the resources you create. In other words, resources can
 be created to represent a set of one or more resources and the way you define them is crucial to start managing permissions.
 
-To create a new resource click on *Create* button in the right upper corner of the resource listing.
+To create a new resource click on the *Create* button in the right upper corner of the resource listing.
 
 .Add Resource
 image:../../images/resource/create.png[alt="Add Resource"]
