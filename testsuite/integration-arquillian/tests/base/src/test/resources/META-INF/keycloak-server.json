@@ -121,10 +121,10 @@
 
     "truststore": {
         "file": {
-            "file": "${keycloak.truststore.file:src/main/keystore/keycloak.truststore}",
+            "file": "${keycloak.truststore.file:src/test/resources/keystore/keycloak.truststore}",
             "password": "${keycloak.truststore.password:secret}",
             "hostname-verification-policy": "${keycloak.truststore.policy:WILDCARD}",
-            "disabled": "${keycloak.truststore.disabled:true}"
+            "disabled": "${keycloak.truststore.disabled:false}"
         }
     }
 }
