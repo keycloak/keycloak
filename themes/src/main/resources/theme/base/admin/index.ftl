@@ -58,6 +58,12 @@
     <script src="${resourceUrl}/js/authz/authz-app.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/authz/authz-controller.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/authz/authz-services.js" type="text/javascript"></script>
+
+    <#if properties.scripts?has_content>
+        <#list properties.scripts?split(' ') as script>
+            <script type="text/javascript" src="${resourceUrl}/${script}"></script>
+        </#list>
+    </#if>
 </head>
 <body data-ng-controller="GlobalCtrl" data-ng-cloak data-ng-show="auth.user">
 
