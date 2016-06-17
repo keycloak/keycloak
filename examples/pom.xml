@@ -66,5 +66,6 @@
         <module>themes</module>
         <module>saml</module>
         <module>ldap</module>
+        <module>authz</module>
     </modules>
 </project>

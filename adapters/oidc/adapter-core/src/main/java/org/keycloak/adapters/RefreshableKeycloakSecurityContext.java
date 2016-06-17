@@ -18,6 +18,7 @@
 package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
+import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.common.VerificationException;
@@ -156,5 +157,9 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         this.tokenString = tokenString;
         tokenStore.refreshCallback(this);
         return true;
+    }
+
+    public void setAuthorizationContext(AuthorizationContext authorizationContext) {
+        this.authorizationContext = authorizationContext;
     }
 }

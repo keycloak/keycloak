@@ -19,10 +19,12 @@ package org.keycloak.representations;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.representations.authorization.Permission;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -81,6 +83,20 @@ public class AccessToken extends IDToken {
         }
     }
 
+    public static class Authorization implements Serializable {
+
+        @JsonProperty("permissions")
+        private List<Permission> permissions;
+
+        public List<Permission> getPermissions() {
+            return permissions;
+        }
+
+        public void setPermissions(List<Permission> permissions) {
+            this.permissions = permissions;
+        }
+    }
+
     @JsonProperty("client_session")
     protected String clientSession;
 
@@ -95,6 +111,9 @@ public class AccessToken extends IDToken {
 
     @JsonProperty("resource_access")
     protected Map<String, Access> resourceAccess = new HashMap<String, Access>();
+
+    @JsonProperty("authorization")
+    protected Authorization authorization;
 
     public Map<String, Access> getResourceAccess() {
         return resourceAccess;
@@ -219,5 +238,11 @@ public class AccessToken extends IDToken {
         return (AccessToken)super.issuedFor(issuedFor);
     }
 
+    public Authorization getAuthorization() {
+        return authorization;
+    }
 
+    public void setAuthorization(Authorization authorization) {
+        this.authorization = authorization;
+    }
 }

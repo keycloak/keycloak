@@ -47,7 +47,6 @@ import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.timer.TimerProvider;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -120,6 +119,7 @@ public class RealmManager implements RealmImporter {
         setupAuthenticationFlows(realm);
         setupRequiredActions(realm);
         setupOfflineTokens(realm);
+        setupAuthorizationServices(realm);
 
         return realm;
     }
@@ -489,6 +489,9 @@ public class RealmManager implements RealmImporter {
         for (final UserFederationProviderModel fedProvider : federationProviders) {
             usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
         }
+
+        setupAuthorizationServices(realm);
+
         return realm;
     }
 
@@ -581,4 +584,14 @@ public class RealmManager implements RealmImporter {
         return session.users().searchForUser(searchString.trim(), realmModel);
     }
 
+    private void setupAuthorizationServices(RealmModel realm) {
+        for (String roleName : Constants.AUTHZ_DEFAULT_AUTHORIZATION_ROLES) {
+            if (realm.getRole(roleName) == null) {
+                RoleModel role = realm.addRole(roleName);
+                role.setDescription("${role_" + roleName + "}");
+                role.setScopeParamRequired(false);
+                realm.addDefaultRole(roleName);
+            }
+        }
+    }
 }

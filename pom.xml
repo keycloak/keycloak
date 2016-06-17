@@ -75,6 +75,9 @@
         <wildfly.build-tools.version>1.1.0.Final</wildfly.build-tools.version>
         <xmlsec.version>2.0.5</xmlsec.version>
 
+        <!-- Authorization Drools Policy Provider -->
+        <version.org.drools>6.4.0.Final</version.org.drools>
+
         <!-- Others -->
         <apacheds.version>2.0.0-M17</apacheds.version>
         <apacheds.codec.version>1.0.0-M23</apacheds.codec.version>
@@ -176,6 +179,7 @@
         <module>wildfly</module>
         <module>integration</module>
         <module>adapters</module>
+        <module>authz</module>
         <module>examples</module>
         <module>testsuite</module>
     </modules>
@@ -410,6 +414,15 @@
                 <groupId>com.google.zxing</groupId>
                 <artifactId>javase</artifactId>
                 <version>${google.zxing.version}</version>
+            </dependency>
+
+            <!-- Authorization Drools Policy Provider -->
+            <dependency>
+                <groupId>org.drools</groupId>
+                <artifactId>drools-bom</artifactId>
+                <type>pom</type>
+                <version>${version.org.drools}</version>
+                <scope>import</scope>
             </dependency>
 
             <!-- Email Test Servers -->
@@ -976,6 +989,49 @@
                 <artifactId>keycloak-services</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <!-- Authorization -->
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-authz-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-authz-policy-drools</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-authz-policy-resource</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-authz-policy-scope</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-authz-policy-identity</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-authz-policy-js</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-authz-policy-time</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-authz-policy-aggregate</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-as7-modules</artifactId>

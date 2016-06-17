@@ -16,26 +16,19 @@
  */
 package org.keycloak.protocol.oidc.endpoints;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.OAuthErrorException;
-import org.keycloak.RSATokenVerifier;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.VerificationException;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.protocol.oidc.TokenManager.TokenValidation;
+import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
+import org.keycloak.protocol.oidc.TokenIntrospectionProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.core.Context;
@@ -52,8 +45,6 @@ import javax.ws.rs.core.UriInfo;
  */
 public class TokenIntrospectionEndpoint {
 
-    private static final String TOKEN_TYPE_ACCESS_TOKEN = "access_token";
-    private static final String TOKEN_TYPE_REFRESH_TOKEN = "refresh_token";
     private static final String PARAM_TOKEN_TYPE_HINT = "token_type_hint";
     private static final String PARAM_TOKEN = "token";
 
@@ -72,12 +63,10 @@ public class TokenIntrospectionEndpoint {
     private ClientConnection clientConnection;
 
     private final RealmModel realm;
-    private final TokenManager tokenManager;
     private final EventBuilder event;
 
-    public TokenIntrospectionEndpoint(RealmModel realm, TokenManager tokenManager, EventBuilder event) {
+    public TokenIntrospectionEndpoint(RealmModel realm, EventBuilder event) {
         this.realm = realm;
-        this.tokenManager = tokenManager;
         this.event = event;
     }
 
@@ -94,7 +83,7 @@ public class TokenIntrospectionEndpoint {
         String tokenTypeHint = formParams.getFirst(PARAM_TOKEN_TYPE_HINT);
 
         if (tokenTypeHint == null) {
-            tokenTypeHint = TOKEN_TYPE_ACCESS_TOKEN;
+            tokenTypeHint = AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE;
         }
 
         String token = formParams.getFirst(PARAM_TOKEN);
@@ -103,36 +92,23 @@ public class TokenIntrospectionEndpoint {
             throw throwErrorResponseException(Errors.INVALID_REQUEST, "Token not provided.", Status.BAD_REQUEST);
         }
 
+        TokenIntrospectionProvider provider = this.session.getProvider(TokenIntrospectionProvider.class, tokenTypeHint);
+
+        if (provider == null) {
+            throw throwErrorResponseException(Errors.INVALID_REQUEST, "Unsupported token type [" + tokenTypeHint + "].", Status.BAD_REQUEST);
+        }
+
         try {
-            AccessToken toIntrospect = toAccessToken(tokenTypeHint, token);
-            ObjectNode tokenMetadata;
 
-            boolean active = tokenManager.isTokenValid(session, realm, toIntrospect);
-            if (active) {
-                tokenMetadata = JsonSerialization.createObjectNode(toIntrospect);
-                tokenMetadata.put("client_id", toIntrospect.getIssuedFor());
-                tokenMetadata.put("username", toIntrospect.getPreferredUsername());
-            } else {
-                tokenMetadata = JsonSerialization.createObjectNode();
-            }
-
-            tokenMetadata.put("active", active);
+            Response response = provider.introspect(token);
 
             this.event.success();
 
-            return Response.ok(JsonSerialization.writeValueAsBytes(tokenMetadata)).build();
+            return response;
+        } catch (ErrorResponseException ere) {
+            throw ere;
         } catch (Exception e) {
             throw throwErrorResponseException(Errors.INVALID_REQUEST, "Failed to introspect token.", Status.BAD_REQUEST);
-        }
-    }
-
-    private AccessToken toAccessToken(String tokenTypeHint, String token) throws JWSInputException, OAuthErrorException {
-        if (TOKEN_TYPE_ACCESS_TOKEN.equals(tokenTypeHint)) {
-            return toAccessToken(token);
-        } else if (TOKEN_TYPE_REFRESH_TOKEN.equals(tokenTypeHint)) {
-            return this.tokenManager.toRefreshToken(this.realm, token);
-        } else {
-            throw throwErrorResponseException(Errors.INVALID_REQUEST, "Unsupported token type [" + tokenTypeHint + "].", Status.BAD_REQUEST);
         }
     }
 
@@ -150,14 +126,6 @@ public class TokenIntrospectionEndpoint {
             throw ere;
         } catch (Exception e) {
             throw throwErrorResponseException(Errors.INVALID_REQUEST, "Authentication failed.", Status.UNAUTHORIZED);
-        }
-    }
-
-    private AccessToken toAccessToken(String tokenString) {
-        try {
-            return RSATokenVerifier.toAccessToken(tokenString, realm.getPublicKey());
-        } catch (VerificationException e) {
-            throw new ErrorResponseException("invalid_request", "Invalid token.", Status.UNAUTHORIZED);
         }
     }
 

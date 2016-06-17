@@ -20,6 +20,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -133,12 +134,18 @@ public class ClientResource {
         }
     }
 
-    public static void updateClientFromRep(ClientRepresentation rep, ClientModel client, KeycloakSession session) throws ModelDuplicateException {
+    public void updateClientFromRep(ClientRepresentation rep, ClientModel client, KeycloakSession session) throws ModelDuplicateException {
         if (TRUE.equals(rep.isServiceAccountsEnabled()) && !client.isServiceAccountsEnabled()) {
             new ClientManager(new RealmManager(session)).enableServiceAccount(client);
         }
 
         RepresentationToModel.updateClient(rep, client);
+
+        if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+            authorization().enable();
+        } else {
+            authorization().disable();
+        }
     }
 
     /**
@@ -156,7 +163,11 @@ public class ClientResource {
             throw new NotFoundException("Could not find client");
         }
 
-        return ModelToRepresentation.toRepresentation(client);
+        ClientRepresentation representation = ModelToRepresentation.toRepresentation(client);
+
+        representation.setAuthorizationServicesEnabled(authorization().isEnabled());
+
+        return representation;
     }
 
     /**
@@ -537,4 +548,12 @@ public class ClientResource {
         return result;
     }
 
+    @Path("/authz")
+    public AuthorizationService authorization() {
+        AuthorizationService resource = new AuthorizationService(this.session, this.client, this.auth);
+
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+
+        return resource;
+    }
 }

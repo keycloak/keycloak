@@ -47,6 +47,7 @@ public class ClientRepresentation {
     protected Boolean implicitFlowEnabled;
     protected Boolean directAccessGrantsEnabled;
     protected Boolean serviceAccountsEnabled;
+    protected Boolean authorizationServicesEnabled;
     @Deprecated
     protected Boolean directGrantsOnly;
     protected Boolean publicClient;
@@ -237,6 +238,14 @@ public class ClientRepresentation {
 
     public void setServiceAccountsEnabled(Boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
+    }
+
+    public Boolean getAuthorizationServicesEnabled() {
+        return authorizationServicesEnabled;
+    }
+
+    public void setAuthorizationServicesEnabled(Boolean authorizationServicesEnabled) {
+        this.authorizationServicesEnabled = authorizationServicesEnabled;
     }
 
     @Deprecated

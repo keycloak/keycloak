@@ -37,6 +37,10 @@ public interface Constants {
     String[] BROKER_SERVICE_ROLES = {READ_TOKEN_ROLE};
     String OFFLINE_ACCESS_ROLE = OAuth2Constants.OFFLINE_ACCESS;
 
+    String AUTHZ_UMA_PROTECTION = "uma_protection";
+    String AUTHZ_UMA_AUTHORIZATION = "uma_authorization";
+    String[] AUTHZ_DEFAULT_AUTHORIZATION_ROLES = {AUTHZ_UMA_AUTHORIZATION};
+
     String DEFAULT_HASH_ALGORITHM = "pbkdf2";
 
     // 15 minutes

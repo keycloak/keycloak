@@ -16,3 +16,4 @@
 #
 
 org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory
+org.keycloak.authorization.config.UmaWellKnownProviderFactory

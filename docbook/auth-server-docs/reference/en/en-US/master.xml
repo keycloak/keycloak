@@ -157,6 +157,7 @@ This one is short
     &Groups;
     &DirectAccess;
     &ServiceAccounts;
+    &FineGrainedAuthorization;
     &CORS;
     &Timeouts;
     &AdminApi;
