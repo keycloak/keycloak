@@ -38,6 +38,9 @@
                 <include>org/keycloak/keycloak-wildfly-subsystem/**</include>
                 <include>org/keycloak/keycloak-adapter-subsystem/**</include>
                 <include>org/keycloak/keycloak-servlet-oauth-client/**</include>
+
+                <!-- Authorization -->
+                <include>org/keycloak/keycloak-authz-client/**</include>
             </includes>
             <excludes>
                 <exclude>**/*.war</exclude>

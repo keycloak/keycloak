@@ -17,6 +17,9 @@
 
 package org.keycloak.models.utils;
 
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.Constants;
@@ -87,6 +90,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static java.lang.Boolean.TRUE;
 
 public class RepresentationToModel {
 
@@ -984,6 +989,21 @@ public class RepresentationToModel {
         if (resourceRep.isUseTemplateMappers() != null) client.setUseTemplateMappers(resourceRep.isUseTemplateMappers());
         else client.setUseTemplateMappers(resourceRep.getClientTemplate() != null);
 
+        boolean createResourceServer = TRUE.equals(resourceRep.getAuthorizationServicesEnabled());
+
+        if (createResourceServer) {
+            AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+            ResourceServerStore resourceServerStore = provider.getStoreFactory().getResourceServerStore();
+
+            client.setServiceAccountsEnabled(true);
+            client.setBearerOnly(false);
+            client.setPublicClient(false);
+
+            ResourceServer resourceServer = resourceServerStore.create(client.getId());
+
+            resourceServer.setAllowRemoteResourceManagement(true);
+            resourceServer.setPolicyEnforcementMode(ResourceServer.PolicyEnforcementMode.ENFORCING);
+        }
 
         return client;
     }

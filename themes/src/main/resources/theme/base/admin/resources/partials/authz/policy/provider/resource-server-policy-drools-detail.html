@@ -1,0 +1,128 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">Authorization</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">Policies</a></li>
+        <li data-ng-show="create">Add Drools Policy</li>
+        <li data-ng-hide="create">Drools</li>
+        <li data-ng-hide="create">{{policy.name}}</li>
+    </ol>
+
+    <h1 data-ng-show="create">Add Drools Policy</h1>
+    <h1 data-ng-hide="create">{{policy.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create"
+                                                         data-ng-click="remove()"></i></h1>
+
+    <form class="form-horizontal" name="clientForm" novalidate>
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="name">Name <span class="required" data-ng-show="create">*</span></label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="policy.name" autofocus required>
+                </div>
+                <kc-tooltip>The name of this policy.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="description">Description </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="description" name="description" data-ng-model="policy.description">
+                </div>
+                <kc-tooltip>A description for this policy.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="policy.config.mavenArtifactGroupId">Policy Maven Artifact <span class="required" data-ng-show="create">*</span></label>
+                <button data-ng-click="resolveModules()" class="btn btn-primary">Resolve</button>
+                <div class="col-sm-3">
+                    <input class="form-control" type="text" id="policy.config.mavenArtifactGroupId" name="policy.config.mavenArtifactGroupId" data-ng-model="policy.config.mavenArtifactGroupId" placeholder="Group Identifier" required>
+                </div>
+                <kc-tooltip>A Maven GAV pointing to an artifact from where the rules would be loaded from. Once you have provided the GAV, you can click *Resolve* to load both *Module* and *Session* fields.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="policy.config.mavenArtifactId"></label>
+                <div class="col-sm-3">
+                    <input class="form-control" type="text" id="policy.config.mavenArtifactId" name="policy.config.mavenArtifactId" data-ng-model="policy.config.mavenArtifactId" autofocus placeholder="Artifact Identifier" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="policy.config.mavenArtifactVersion"></label>
+                <div class="col-sm-3">
+                    <input class="form-control" type="text" id="policy.config.mavenArtifactVersion" name="policy.config.mavenArtifactVersion" data-ng-model="policy.config.mavenArtifactVersion" autofocus placeholder="Version" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="policy.config.moduleName">Module <span class="required" data-ng-show="create">*</span></label>
+                <div class="col-sm-3">
+                    <div>
+                        <select class="form-control" id="policy.config.moduleName"
+                                ng-model="policy.config.moduleName"
+                                ng-options="moduleName as moduleName for moduleName in drools.moduleNames"
+                                ng-change="resolveSessions()"
+                                ng-disabled="!drools.moduleNames.length"
+                                required>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>The module used by this policy. You must provide a module in order to select a specific session from where rules will be loaded from.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="policy.config.sessionName">Session <span class="required" data-ng-show="create">*</span></label>
+                <div class="col-sm-3">
+                    <div>
+                        <select class="form-control" id="policy.config.sessionName"
+                                ng-model="policy.config.sessionName"
+                                ng-options="sessionName as sessionName for sessionName in drools.moduleSessions"
+                                ng-disabled="!drools.moduleSessions.length"
+                                required>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>The session used by this policy. The session provides all the rules to evaluate when processing the policy.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="policy.config.scannerPeriod">Update Period</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="policy.config.scannerPeriod" id="policy.config.scannerPeriod"
+                           name="policy.config.scannerPeriod"
+                           ng-disabled="!policy.config.sessionName"/>
+                    <select class="form-control" name="policy.config.scannerPeriodUnit"
+                            data-ng-model="policy.config.scannerPeriodUnit"
+                            ng-disabled="!policy.config.sessionName">
+                        <option>Seconds</option>
+                        <option>Minutes</option>
+                        <option>Hours</option>
+                        <option>Days</option>
+                    </select>
+                </div>
+                <kc-tooltip>Specifies an interval for scanning for artifact updates.</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="policy.logic">Logic</label>
+
+                <div class="col-sm-1">
+                    <select class="form-control" id="policy.logic"
+                            data-ng-model="policy.logic">
+                        <option ng-repeat="logic in logics" value="{{logic}}">{{logic | toCamelCase}}</option>
+                    </select>
+                </div>
+
+                <kc-tooltip>The logic dictates how the policy decision should be made. If 'Positive', the resulting effect (permit or deny) obtained during the evaluation of this policy will
+                    be used to perform a decision. If 'Negative', the resulting effect will be negated, in other words, a permit becomes a deny and vice-versa.
+            </div>
+            <input type="hidden" data-ng-model="policy.type"/>
+        </fieldset>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="create">
+                <button kc-save data-ng-disabled="!changed">Save</button>
+                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+            </div>
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!create">
+                <button kc-save  data-ng-disabled="!changed">Save</button>
+                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>
