@@ -1,0 +1,29 @@
+== Creating a Realm
+
+The first step is to create a realm. The realm we are about to create is very simple and consists of:
+
+* A single user
+
+* A single client application, which we're going to turn into a link:../../overview/terminology.html[Resource Server] and enable
+the authorization services
+
+Create a realm with a name *hello-world-authz*. Once created, you should be able to see a page like that.
+
+.Realm hello-world-authz
+image:../../../images/getting-started/hello-world/create-realm.png[alt="Realm hello-world-authz"]
+
+After creating the realm, you should also create a single user. For that, click on the `Users` left menu item. This will bring you
+to the user list page. On the right side of the empty user list, you should see an `Add User` button. Click that to start creating the new user.
+
+Fill in the fields as shown below and click `Save`.
+
+.Add User
+image:../../../images/getting-started/hello-world/create-user.png[alt="Add User"]
+
+Let's set a password for the *alice* user. Click on the `Credentials` tab. This will bring you to the `Credentials` page.
+
+.Set User Password
+image:../../../images/getting-started/hello-world/reset-user-pwd.png[alt="Set User Password"]
+
+Fill in the `New Password` and `Password Confirmation` fields with a password and click on the `Temporary` switch to turn it `OFF`. For last,
+click on the `Reset Password` button to reset the user's password.
