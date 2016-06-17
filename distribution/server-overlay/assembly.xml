@@ -40,6 +40,14 @@
                 <include>sun/jdk/jgss/**</include>
             </includes>
         </fileSet>
+        <!-- Authorization -->
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/modules/system/layers/keycloak-authz</directory>
+            <outputDirectory>modules/system/add-ons/keycloak-authz</outputDirectory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+        </fileSet>
         <fileSet>
             <directory>${project.build.directory}/unpacked/keycloak-${project.version}/content</directory>
             <outputDirectory></outputDirectory>

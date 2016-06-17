@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import org.keycloak.provider.ProviderEvent;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +33,11 @@ public interface UserModel extends RoleMapperModel {
     String FIRST_NAME = "firstName";
     String EMAIL = "email";
     String LOCALE = "locale";
+
+    interface UserRemovedEvent extends ProviderEvent {
+        UserModel getUser();
+        KeycloakSession getKeycloakSession();
+    }
 
     String getId();
 

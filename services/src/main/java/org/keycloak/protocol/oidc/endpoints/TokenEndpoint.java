@@ -132,7 +132,7 @@ public class TokenEndpoint {
 
     @Path("introspect")
     public Object introspect() {
-        TokenIntrospectionEndpoint tokenIntrospectionEndpoint = new TokenIntrospectionEndpoint(this.realm, this.tokenManager, this.event);
+        TokenIntrospectionEndpoint tokenIntrospectionEndpoint = new TokenIntrospectionEndpoint(this.realm, this.event);
 
         ResteasyProviderFactory.getInstance().injectProperties(tokenIntrospectionEndpoint);
 

@@ -1,0 +1,25 @@
+{
+  "resources": [
+    {
+      "name": "Hello World Resource"
+    }
+  ],
+  "policies": [
+    {
+      "name": "Only Special Users Policy",
+      "type": "user",
+      "logic": "POSITIVE",
+      "config": {
+        "users": "[\"alice\"]"
+      }
+    },
+    {
+      "name": "Hello World Resource Permission",
+      "type": "resource",
+      "config": {
+        "resources": "[\"Hello World Resource\"]",
+        "applyPolicies": "[\"Only Special Users Policy\"]"
+      }
+    }
+  ]
+}

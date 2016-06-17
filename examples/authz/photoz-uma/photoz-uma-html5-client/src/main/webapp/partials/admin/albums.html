@@ -1,0 +1,19 @@
+<h1>All Albums</h1>
+<table class="table" data-ng-repeat="(key, value) in albums">
+    <thead>
+        <tr>
+            <th>{{key}}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <ul>
+                    <li data-ng-repeat="p in value">
+                        <a href="#/album/{{p.id}}">{{p.name}}</a> - [<a href="#" ng-click="deleteAlbum(p)">X</a>]
+                    </li>
+                </ul>
+            </td>
+        </tr>
+    </tbody>
+</table>

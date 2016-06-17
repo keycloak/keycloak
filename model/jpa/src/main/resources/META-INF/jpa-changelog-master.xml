@@ -32,4 +32,5 @@
     <include file="META-INF/jpa-changelog-1.9.0.xml"/>
     <include file="META-INF/jpa-changelog-1.9.1.xml"/>
     <include file="META-INF/jpa-changelog-1.9.2.xml"/>
+    <include file="META-INF/jpa-changelog-2.0.0.xml"/>
 </databaseChangeLog>

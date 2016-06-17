@@ -50,6 +50,14 @@
     <script src="${resourceUrl}/js/controllers/groups.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/loaders.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/services.js" type="text/javascript"></script>
+
+    <!-- Authorization -->
+    <script src="${resourceUrl}/js/authz/lib/ace/ace.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/js/authz/lib/ace/mode-javascript.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/js/authz/lib/ace/ui-ace.min.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/js/authz/authz-app.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/js/authz/authz-controller.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/js/authz/authz-services.js" type="text/javascript"></script>
 </head>
 <body data-ng-controller="GlobalCtrl" data-ng-cloak data-ng-show="auth.user">
 

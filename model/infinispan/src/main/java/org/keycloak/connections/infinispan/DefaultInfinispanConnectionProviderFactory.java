@@ -21,6 +21,7 @@ import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
+import org.infinispan.eviction.EvictionType;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.transaction.LockingMode;
@@ -164,6 +165,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         Configuration counterCacheConfiguration = counterConfigBuilder.build();
 
         cacheManager.defineConfiguration(InfinispanConnectionProvider.VERSION_CACHE_NAME, counterCacheConfiguration);
+
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME,
+                new ConfigurationBuilder().eviction().type(EvictionType.COUNT).size(100).simpleCache(true).build());
     }
 
 }
