@@ -44,4 +44,5 @@
  .. link:topics/service/client-api.adoc[Authorization Client Java API]
  . link:topics/enforcer/overview.adoc[Policy Enforcers]
  .. link:topics/enforcer/keycloak-enforcement-filter.adoc[Keycloak Adapter Policy Enforcer]
+ .. link:topics/enforcer/authorization-context.adoc[Obtaining the Authorization Context]
  . link:topics/example/overview.adoc[Examples]
