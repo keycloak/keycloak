@@ -37,6 +37,7 @@
                 <include>org/liquibase/**</include>
                 <include>org/mongodb/**</include>
                 <include>org/twitter4j/**</include>
+                <include>org/drools/**</include>
                 <include>sun/jdk/jgss/**</include>
             </includes>
         </fileSet>

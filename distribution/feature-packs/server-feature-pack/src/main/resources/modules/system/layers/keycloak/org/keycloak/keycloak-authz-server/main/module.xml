@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<module xmlns="urn:jboss:module:1.3" name="org.keycloak.keycloak-authz-server">
+    <dependencies>
+        <module name="org.keycloak.keycloak-authz-policy-common" export="true" services="export"/>
+        <module name="org.keycloak.keycloak-authz-policy-drools" export="true" services="export"/>
+    </dependencies>
+</module>

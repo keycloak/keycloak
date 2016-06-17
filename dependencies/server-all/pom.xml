@@ -89,37 +89,7 @@
         <!-- Built-in Authorization Policy Providers  -->
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-resource</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-scope</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-user</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-role</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-js</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-time</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-aggregate</artifactId>
+            <artifactId>keycloak-authz-policy-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 
