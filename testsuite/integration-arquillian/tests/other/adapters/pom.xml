@@ -214,22 +214,22 @@
                                         <artifactItems>
                                             <artifactItem>
                                                 <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>product-portal-example</artifactId>        
+                                                <artifactId>product-portal-example</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>customer-portal-example</artifactId>        
+                                                <artifactId>customer-portal-example</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
-                                            </artifactItem>                                        
+                                            </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>database-service</artifactId>        
+                                                <artifactId>database-service</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
-                                            </artifactItem>       
+                                            </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
                                                 <artifactId>integration-arquillian-test-apps-js-console</artifactId>
@@ -237,14 +237,20 @@
                                                 <type>war</type>
                                             </artifactItem>
                                             <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>examples-multitenant</artifactId>        
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-js-database</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
-                                            </artifactItem>                    
+                                            </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak</groupId>
-                                                <artifactId>examples-basicauth</artifactId>        
+                                                <artifactId>examples-multitenant</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak</groupId>
+                                                <artifactId>examples-basicauth</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
@@ -293,7 +299,7 @@
                                         <artifactItems>
                                             <artifactItem>
                                                 <groupId>org.keycloak</groupId>
-                                                <artifactId>keycloak-examples-dist</artifactId>        
+                                                <artifactId>keycloak-examples-dist</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
                                                 <includes>**/*realm.json,**/testsaml.json</includes>
