@@ -10,7 +10,7 @@ when you create a resource server, {{book.project.name}} creates a link:../resou
 
 The default configuration allows access for every single resource in your application as long as the authenticated user belongs to the same realm as the resource server being protected.
 
-=== Configuration
+=== Policy Enforcement Configuration
 
 To enable policy enforcement to your application, add the following property to your *keycloak.json* file:
 
@@ -91,6 +91,10 @@ Requests are allowed even when there is no policy associated with a given resour
 *** *DISABLED*
 +
 Completely disables the evaluation of policies and allow access to any resource.
++
+** *on-deny-redirect-to*
++
+Defines an URL to where a client request should be redirected to when an access denied message is obtained from the server. By default, the adapter responds with a 403 HTTP status code..
 +
 ** *paths*
 +

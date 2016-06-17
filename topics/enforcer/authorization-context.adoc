@@ -1,0 +1,59 @@
+== Obtaining the Authorization Context
+
+When policy enforcement is enabled, the permissions obtained from the server are available through `org.keycloak.AuthorizationContext`.
+This class provides a few methods from where you can obtain permissions and check whether a permission was granted for a particular resource or scope.
+
+Obtaining the Authorization Context in a Servlet Container
+```java
+    HttpServletRequest request = // obtain javax.servlet.http.HttpServletRequest
+    KeycloakSecurityContext keycloakSecurityContext = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
+    AuthorizationContext authzContext = keycloakSecurityContext.getAuthorizationContext();
+```
+
+[NOTE]
+Check the adapter configuration for more details about how you can obtain a `KeycloakSecurityContext`. The example above should be enough
+to obtain it when running your application using any of the servlet containers supported by {{book.project.name}}.
+
+The authorization context may be very useful to give you even more control over the decisions taken and returned by the server. For instance, you can use it
+to build a dynamic menu where the items are hidden/shown depending on the permissions associated with a resource or scope.
+
+```java
+if (authzContext.hasResourcePermission("Project Resource")) {
+    // user can access the Project Resource
+}
+
+if (authzContext.hasResourcePermission("Admin Resource")) {
+    // user can access administration resources
+}
+
+if (authzContext.hasScopePermission("urn:project.com:project:create")) {
+    // user can create new projects
+}
+```
+
+The `AuthorizationContext` represents one of the main capabilities of {{book.project.name}} {{book.project.module}}. From the examples above, you may notice that the protected resource is not
+directly associated with the policies that govern them.
+
+Let's take for example, a similar code using RBAC:
+
+```java
+if (User.hasRole('user')) {
+    // user can access the Project Resource
+}
+
+if (User.hasRole('admin')) {
+    // user can access administration resources
+}
+
+if (User.hasRole('project-manager')) {
+    // user can create new projects
+}
+```
+
+Although they address the same requirements, they do it in different ways. While in RBAC roles implicitly define the resources they give access, when using {{book.project.name}} you may have
+a much more clean and manageable code, where you code directly to your resources. No matter if you are using RBAC, ABAC, or any other BAC variant. Or you have the permission for a given resource or scope, or you don't.
+
+Now, suppose our security requirements have changed and beside project managers, PMOs can also create new projects.
+
+When using {{book.project.name}} you don't even need to change your application code to address that new requirement. Given that your application is already based on the resource and scope identifier,
+ you just need to change the permissions or policies associated with a particular resource. In this case, we would change the permissions and policies associated with the `Project Resource`.
