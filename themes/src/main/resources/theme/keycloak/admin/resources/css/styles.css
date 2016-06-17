@@ -375,3 +375,8 @@ h1 i {
     margin-left: 0;
     padding-left: 0;
 }
+
+.ace_editor {
+    height: 400px;
+    width: 100%;
+}

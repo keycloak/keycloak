@@ -28,8 +28,6 @@ import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionPr
 import org.keycloak.models.KeycloakSession;
 
 import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 
 /**
@@ -49,11 +47,6 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     }
 
     @Override
-    public String getCurrentVersionSql(String defaultSchema) {
-        return "SELECT ID from " + getTable("DATABASECHANGELOG", defaultSchema) + " ORDER BY DATEEXECUTED DESC LIMIT 1";
-    }
-
-    @Override
     public void update(Connection connection, String defaultSchema) {
         logger.debug("Starting database update");
 
@@ -66,15 +59,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null);
             if (!changeSets.isEmpty()) {
                 if (changeSets.get(0).getId().equals(FIRST_VERSION)) {
-                    Statement statement = connection.createStatement();
-                    try {
-                        statement.executeQuery("SELECT id FROM " + getTable("REALM", defaultSchema));
-
-                        logger.infov("Updating database from {0} to {1}", FIRST_VERSION, changeSets.get(changeSets.size() - 1).getId());
-                        liquibase.markNextChangeSetRan(null);
-                    } catch (SQLException e) {
-                        logger.info("Initializing database schema");
-                    }
+                    logger.info("Initializing database schema");
                 } else {
                     if (logger.isDebugEnabled()) {
                         List<RanChangeSet> ranChangeSets = liquibase.getDatabase().getRanChangeSetList();
@@ -85,14 +70,15 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
                 }
 
                 liquibase.update((Contexts) null);
+                logger.debug("Completed database update");
+            } else {
+                logger.debug("Database is up to date");
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to update database", e);
         } finally {
             ThreadLocalSessionContext.removeCurrentSession();
         }
-
-        logger.debug("Completed database update");
     }
 
     @Override

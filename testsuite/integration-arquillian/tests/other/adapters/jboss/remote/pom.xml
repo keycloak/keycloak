@@ -49,6 +49,11 @@
             <artifactId>commons-io</artifactId> 
             <version>2.4</version> 
         </dependency> 
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.2</version>
+        </dependency>
     </dependencies>
     
     <build>
@@ -157,7 +162,7 @@
                                 <warmup.load>1</warmup.load>
                                 <warmup.duration>10</warmup.duration>
                                 <max.iterations>0</max.iterations>
-                                <sleep.between.repeats>30</sleep.between.repeats>
+                                <sleep.between.loops>30</sleep.between.loops>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

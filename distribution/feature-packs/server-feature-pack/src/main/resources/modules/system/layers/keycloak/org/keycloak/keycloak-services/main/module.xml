@@ -47,6 +47,7 @@
         <module name="org.freemarker"/>
         <module name="javax.ws.rs.api"/>
         <module name="javax.mail.api"/>
+        <module name="javax.xml.soap.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         <module name="org.jboss.resteasy.resteasy-crypto"/>
         <module name="org.jboss.resteasy.resteasy-multipart-provider"/>

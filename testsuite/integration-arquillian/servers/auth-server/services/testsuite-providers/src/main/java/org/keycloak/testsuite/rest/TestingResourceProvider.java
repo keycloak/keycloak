@@ -61,9 +61,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
-import org.keycloak.services.resources.admin.RealmAuth;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -255,7 +253,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
-            @QueryParam("user") String user, @QueryParam("dateFrom") Date dateFrom, @QueryParam("dateTo") Date dateTo,
+            @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
             @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults) {
 
@@ -284,11 +282,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         if(dateFrom != null) {
-            query.fromDate(dateFrom);
+            Date from = formatDate(dateFrom, "Date(From)");
+            query.fromDate(from);
         }
 
         if(dateTo != null) {
-            query.toDate(dateTo);
+            Date to = formatDate(dateTo, "Date(To)");
+            query.toDate(to);
         }
 
         if (ipAddress != null) {
@@ -386,8 +386,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public List<AdminEventRepresentation> getAdminEvents(@QueryParam("realmId") String realmId, @QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
             @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
-            @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") Date dateFrom,
-            @QueryParam("dateTo") Date dateTo, @QueryParam("first") Integer firstResult,
+            @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
+            @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults) {
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
@@ -426,21 +426,36 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         if(dateFrom != null) {
-            query.fromTime(dateFrom);
+            Date from = formatDate(dateFrom, "Date(From)");
+            query.fromTime(from);
         }
 
         if(dateTo != null) {
-            query.toTime(dateTo);
+            Date to = formatDate(dateTo, "Date(To)");
+            query.toTime(to);
         }
 
-        if (firstResult != null) {
+        if (firstResult != null || maxResults != null) {
+            if (firstResult == null) {
+                firstResult = 0;
+            }
+            if (maxResults == null) {
+                maxResults = 100;
+            }
             query.firstResult(firstResult);
-        }
-        if (maxResults != null) {
             query.maxResults(maxResults);
         }
 
         return toAdminEventRep(query.getResultList());
+    }
+
+    private Date formatDate(String date, String paramName) {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            return df.parse(date);
+        } catch (ParseException e) {
+            throw new BadRequestException("Invalid value for '" + paramName + "', expected format is yyyy-MM-dd");
+        }
     }
 
     private List<AdminEventRepresentation> toAdminEventRep(List<AdminEvent> events) {

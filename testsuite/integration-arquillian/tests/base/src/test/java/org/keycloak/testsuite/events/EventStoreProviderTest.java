@@ -89,18 +89,12 @@ public class EventStoreProviderTest extends AbstractEventsTest {
 
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         Date date1 = null, date2 = null, date3 = null, date4 = null;
-        Date date5 = null, date6 = null, date7 = null, date8 = null;
 
         try {
             date1 = formatter.parse(d1);
             date2 = formatter.parse(d2);
             date3 = formatter.parse(d3);
             date4 = formatter.parse(d4);
-
-            date5 = formatter.parse(d5);
-            date6 = formatter.parse(d6);
-            date7 = formatter.parse(d7);
-            date8 = formatter.parse(d8);
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -131,22 +125,22 @@ public class EventStoreProviderTest extends AbstractEventsTest {
         Assert.assertEquals(1, testing().queryEvents(null, toList(EventType.UPDATE_PROFILE), null, null, null, null, null, null, null).size());
         Assert.assertEquals(1, testing().queryEvents(null, toList(EventType.UPDATE_EMAIL), null, null, null, null, null, null, null).size());
 
-        Assert.assertEquals(8, testing().queryEvents(null, null, null, null, date1, null, null, null, null).size());
-        Assert.assertEquals(8, testing().queryEvents(null, null, null, null, null, date4, null, null, null).size());
+        Assert.assertEquals(8, testing().queryEvents(null, null, null, null, d1, null, null, null, null).size());
+        Assert.assertEquals(8, testing().queryEvents(null, null, null, null, null, d4, null, null, null).size());
 
-        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, date3, null, null, null, null).size());
-        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, null, date2, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, d3, null, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, null, d2, null, null, null).size());
 
-        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, date7, null, null, null, null).size());
-        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, null, date6, null, null, null).size());
+        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, d7, null, null, null, null).size());
+        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, null, d6, null, null, null).size());
 
-        Assert.assertEquals(8, testing().queryEvents(null, null, null, null, date1, date4, null, null, null).size());
-        Assert.assertEquals(6, testing().queryEvents(null, null, null, null, date2, date4, null, null, null).size());
-        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, date1, date2, null, null, null).size());
-        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, date3, date4, null, null, null).size());
+        Assert.assertEquals(8, testing().queryEvents(null, null, null, null, d1, d4, null, null, null).size());
+        Assert.assertEquals(6, testing().queryEvents(null, null, null, null, d2, d4, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, d1, d2, null, null, null).size());
+        Assert.assertEquals(4, testing().queryEvents(null, null, null, null, d3, d4, null, null, null).size());
 
-        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, date5, date6, null, null, null).size());
-        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, date7, date8, null, null, null).size());
+        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, d5, d6, null, null, null).size());
+        Assert.assertEquals(0, testing().queryEvents(null, null, null, null, d7, d8, null, null, null).size());
     }
 
     @Test

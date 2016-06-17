@@ -26,6 +26,7 @@ import org.jboss.logging.Logger.Level;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.adapters.config.BaseAdapterConfig;
 import org.keycloak.testsuite.adapter.AdapterLibsMode;
 import org.keycloak.testsuite.util.IOUtil;
@@ -118,8 +119,8 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                 }
             } else { // OIDC adapter config
                 try {
-                    BaseAdapterConfig adapterConfig = loadJson(archive.get(adapterConfigPath)
-                            .getAsset().openStream(), BaseAdapterConfig.class);
+                    AdapterConfig adapterConfig = loadJson(archive.get(adapterConfigPath)
+                            .getAsset().openStream(), AdapterConfig.class);
 
                     log.info(" setting " + (relative ? "" : "non-") + "relative auth-server-url");
                     if (relative) {

@@ -61,7 +61,6 @@
     },
 
     "realmCache": {
-        "provider": "default",
         "default" : {
             "enabled": true
         }

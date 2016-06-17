@@ -51,6 +51,7 @@ public final class WaitUtils {
             Thread.sleep(millis);
         } catch (InterruptedException ex) {
             Logger.getLogger(WaitUtils.class.getName()).log(Level.SEVERE, null, ex);
+            Thread.currentThread().interrupt();
         }
     }
 
