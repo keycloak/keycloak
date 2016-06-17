@@ -60,11 +60,15 @@ public class AuthorizationService {
     }
 
     public void enable() {
-        resourceServer().create();
+        if (!isEnabled()) {
+            resourceServer().create();
+        }
     }
 
     public void disable() {
-        resourceServer().delete();
+        if (isEnabled()) {
+            resourceServer().delete();
+        }
     }
 
     public boolean isEnabled() {

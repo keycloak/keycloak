@@ -40,6 +40,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserFederationManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.admin.RealmAuth;
 import org.keycloak.util.JsonSerialization;
@@ -60,7 +61,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -70,89 +70,25 @@ public class ResourceServerService {
 
     private final AuthorizationProvider authorization;
     private final RealmAuth auth;
+    private final RealmModel realm;
+    private final KeycloakSession session;
     private ResourceServer resourceServer;
     private final ClientModel client;
 
     public ResourceServerService(AuthorizationProvider authorization, ResourceServer resourceServer, ClientModel client, RealmAuth auth) {
         this.authorization = authorization;
+        this.session = authorization.getKeycloakSession();
         this.client = client;
         this.resourceServer = resourceServer;
+        this.realm = client.getRealm();
         this.auth = auth;
     }
 
     public void create() {
-        if (resourceServer == null) {
-            RoleModel umaProtectionRole = client.getRole(Constants.AUTHZ_UMA_PROTECTION);
-
-            if (umaProtectionRole == null) {
-                umaProtectionRole = client.addRole(Constants.AUTHZ_UMA_PROTECTION);
-            }
-
-            KeycloakSession session = this.authorization.getKeycloakSession();
-            UserModel serviceAccount = session.users().getUserByServiceAccountClient(client);
-
-            if (!serviceAccount.hasRole(umaProtectionRole)) {
-                serviceAccount.grantRole(umaProtectionRole);
-            }
-
-            this.resourceServer = this.authorization.getStoreFactory().getResourceServerStore().create(this.client.getId());
-
-            ResourceRepresentation defaultResource = new ResourceRepresentation();
-
-            defaultResource.setName("Default Resource");
-            defaultResource.setUri("/*");
-            defaultResource.setType("urn:" + this.client.getClientId() + ":resources:default");
-
-            getResourceSetResource().create(defaultResource);
-
-            PolicyRepresentation defaultPolicy = new PolicyRepresentation();
-
-            defaultPolicy.setName("Only From Realm Policy");
-            defaultPolicy.setDescription("A policy that grants access only for users within this realm");
-            defaultPolicy.setType("js");
-            defaultPolicy.setDecisionStrategy(Policy.DecisionStrategy.AFFIRMATIVE);
-            defaultPolicy.setLogic(Policy.Logic.POSITIVE);
-
-            HashMap<String, String> defaultPolicyConfig = new HashMap<>();
-
-            defaultPolicyConfig.put("code", "var context = $evaluation.getContext();\n" +
-                    "\n" +
-                    "// using attributes from the evaluation context to obtain the realm\n" +
-                    "var contextAttributes = context.getAttributes();\n" +
-                    "var realmName = contextAttributes.getValue('kc.authz.context.authc.realm').asString(0);\n" +
-                    "\n" +
-                    "// using attributes from the identity to obtain the issuer\n" +
-                    "var identity = context.getIdentity();\n" +
-                    "var identityAttributes = identity.getAttributes();\n" +
-                    "var issuer = identityAttributes.getValue('iss').asString(0);\n" +
-                    "\n" +
-                    "// only users from the realm have access granted \n" +
-                    "if (issuer.endsWith(realmName)) {\n" +
-                    "    $evaluation.grant();\n" +
-                    "}");
-
-            defaultPolicy.setConfig(defaultPolicyConfig);
-
-            getPolicyResource().create(defaultPolicy);
-
-            PolicyRepresentation defaultPermission = new PolicyRepresentation();
-
-            defaultPermission.setName("Default Permission");
-            defaultPermission.setType("resource");
-            defaultPermission.setDescription("A permission that applies to the default resource type");
-            defaultPermission.setDecisionStrategy(Policy.DecisionStrategy.UNANIMOUS);
-            defaultPermission.setLogic(Policy.Logic.POSITIVE);
-
-            HashMap<String, String> defaultPermissionConfig = new HashMap<>();
-
-            defaultPermissionConfig.put("default", "true");
-            defaultPermissionConfig.put("defaultResourceType", defaultResource.getType());
-            defaultPermissionConfig.put("applyPolicies", "[\"Only From Realm Policy\"]");
-
-            defaultPermission.setConfig(defaultPermissionConfig);
-
-            getPolicyResource().create(defaultPermission);
-        }
+        this.auth.requireManage();
+        this.resourceServer = this.authorization.getStoreFactory().getResourceServerStore().create(this.client.getId());
+        createDefaultRoles();
+        createDefaultPermission(createDefaultResource(), createDefaultPolicy());
     }
 
     @PUT
@@ -160,7 +96,6 @@ public class ResourceServerService {
     @Produces("application/json")
     public Response update(ResourceServerRepresentation server) {
         this.auth.requireManage();
-
         this.resourceServer.setAllowRemoteResourceManagement(server.isAllowRemoteResourceManagement());
         this.resourceServer.setPolicyEnforcementMode(server.getPolicyEnforcementMode());
 
@@ -168,30 +103,29 @@ public class ResourceServerService {
     }
 
     public void delete() {
-        if (this.resourceServer != null) {
-            StoreFactory storeFactory = authorization.getStoreFactory();
-            ResourceStore resourceStore = storeFactory.getResourceStore();
-            String id = resourceServer.getId();
+        this.auth.requireManage();
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceStore resourceStore = storeFactory.getResourceStore();
+        String id = resourceServer.getId();
 
-            resourceStore.findByResourceServer(id).forEach(resource -> resourceStore.delete(resource.getId()));
+        resourceStore.findByResourceServer(id).forEach(resource -> resourceStore.delete(resource.getId()));
 
-            ScopeStore scopeStore = storeFactory.getScopeStore();
+        ScopeStore scopeStore = storeFactory.getScopeStore();
 
-            scopeStore.findByResourceServer(id).forEach(scope -> scopeStore.delete(scope.getId()));
+        scopeStore.findByResourceServer(id).forEach(scope -> scopeStore.delete(scope.getId()));
 
-            PolicyStore policyStore = storeFactory.getPolicyStore();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
 
-            policyStore.findByResourceServer(id).forEach(scope -> policyStore.delete(scope.getId()));
+        policyStore.findByResourceServer(id).forEach(scope -> policyStore.delete(scope.getId()));
 
-            storeFactory.getResourceServerStore().delete(id);
-        }
+        storeFactory.getResourceServerStore().delete(id);
     }
 
     @GET
     @Produces("application/json")
     public Response findById() {
         this.auth.requireView();
-        return Response.ok(Models.toRepresentation(this.resourceServer, getRealm())).build();
+        return Response.ok(Models.toRepresentation(this.resourceServer, this.realm)).build();
     }
 
     @Path("/settings")
@@ -200,7 +134,7 @@ public class ResourceServerService {
     public Response exportSettings() {
         this.auth.requireManage();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServerRepresentation settings = Models.toRepresentation(resourceServer, getRealm());
+        ResourceServerRepresentation settings = Models.toRepresentation(resourceServer, this.realm);
 
         settings.setId(null);
         settings.setName(null);
@@ -224,11 +158,12 @@ public class ResourceServerService {
         settings.setResources(resources);
 
         List<PolicyRepresentation> policies = new ArrayList<>();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
 
-        policies.addAll(storeFactory.getPolicyStore().findByResourceServer(resourceServer.getId())
+        policies.addAll(policyStore.findByResourceServer(resourceServer.getId())
                 .stream().filter(policy -> !policy.getType().equals("resource") && !policy.getType().equals("scope"))
                 .map(policy -> createPolicyRepresentation(storeFactory, policy)).collect(Collectors.toList()));
-        policies.addAll(storeFactory.getPolicyStore().findByResourceServer(resourceServer.getId())
+        policies.addAll(policyStore.findByResourceServer(resourceServer.getId())
                 .stream().filter(policy -> policy.getType().equals("resource") || policy.getType().equals("scope"))
                 .map(policy -> createPolicyRepresentation(storeFactory, policy)).collect(Collectors.toList()));
 
@@ -256,127 +191,10 @@ public class ResourceServerService {
         return Response.ok(settings).build();
     }
 
-    private PolicyRepresentation createPolicyRepresentation(StoreFactory storeFactory, Policy policy) {
-        PolicyRepresentation rep = Models.toRepresentation(policy, authorization);
-
-        rep.setId(null);
-        rep.setDependentPolicies(null);
-
-        Map<String, String> config = rep.getConfig();
-
-        String roles = config.get("roles");
-
-        if (roles != null && !roles.isEmpty()) {
-            roles = roles.replace("[", "");
-            roles = roles.replace("]", "");
-
-            if (!roles.isEmpty()) {
-                String roleNames = "";
-
-                for (String role : roles.split(",")) {
-                    if (!roleNames.isEmpty()) {
-                        roleNames = roleNames + ",";
-                    }
-
-                    role = role.replace("\"", "");
-
-                    roleNames = roleNames + "\"" + getRealm().getRoleById(role).getName() + "\"";
-                }
-
-                config.put("roles", "[" + roleNames + "]");
-            }
-        }
-
-        String users = config.get("users");
-
-        if (users != null) {
-            users = users.replace("[", "");
-            users = users.replace("]", "");
-
-            if (!users.isEmpty()) {
-                String userNames = "";
-
-                for (String user : users.split(",")) {
-                    if (!userNames.isEmpty()) {
-                        userNames =  userNames + ",";
-                    }
-
-                    user = user.replace("\"", "");
-
-                    userNames = userNames + "\"" + this.authorization.getKeycloakSession().users().getUserById(user, getRealm()).getUsername() + "\"";
-                }
-
-                config.put("users", "[" + userNames + "]");
-            }
-        }
-
-        String scopes = config.get("scopes");
-
-        if (scopes != null && !scopes.isEmpty()) {
-            scopes = scopes.replace("[", "");
-            scopes = scopes.replace("]", "");
-
-            if (!scopes.isEmpty()) {
-                String scopeNames = "";
-
-                for (String scope : scopes.split(",")) {
-                    if (!scopeNames.isEmpty()) {
-                        scopeNames =  scopeNames + ",";
-                    }
-
-                    scope = scope.replace("\"", "");
-
-                    scopeNames = scopeNames + "\"" + storeFactory.getScopeStore().findById(scope).getName() + "\"";
-                }
-
-                config.put("scopes", "[" + scopeNames + "]");
-            }
-        }
-
-        String policyResources = config.get("resources");
-
-        if (policyResources != null && !policyResources.isEmpty()) {
-            policyResources = policyResources.replace("[", "");
-            policyResources = policyResources.replace("]", "");
-
-            if (!policyResources.isEmpty()) {
-                String resourceNames = "";
-
-                for (String resource : policyResources.split(",")) {
-                    if (!resourceNames.isEmpty()) {
-                        resourceNames =  resourceNames + ",";
-                    }
-
-                    resource = resource.replace("\"", "");
-
-                    resourceNames = resourceNames + "\"" + storeFactory.getResourceStore().findById(resource).getName() + "\"";
-                }
-
-                config.put("resources", "[" + resourceNames + "]");
-            }
-        }
-
-        String policyNames = "";
-        Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
-
-        if (!associatedPolicies.isEmpty()) {
-            for (Policy associatedPolicy : associatedPolicies) {
-                if (!policyNames.isEmpty()) {
-                    policyNames = policyNames + ",";
-                }
-
-                policyNames = policyNames + "\"" + associatedPolicy.getName() + "\"";
-            }
-
-            config.put("applyPolicies", "[" + policyNames + "]");
-        }
-
-        return rep;
-    }
-
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response importSettings(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
+        this.auth.requireManage();
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
         List<InputPart> inputParts = uploadForm.get("file");
 
@@ -415,7 +233,7 @@ public class ResourceServerService {
                 owner.setId(resourceServer.getClientId());
 
                 if (owner.getName() != null) {
-                    UserModel user = this.authorization.getKeycloakSession().users().getUserByUsername(owner.getName(), getRealm());
+                    UserModel user = this.session.users().getUserByUsername(owner.getName(), this.realm);
 
                     if (user != null) {
                         owner.setId(user.getId());
@@ -432,7 +250,7 @@ public class ResourceServerService {
             });
 
             PolicyStore policyStore = storeFactory.getPolicyStore();
-            PolicyService policyResource = new PolicyService(resourceServer, this.authorization);
+            PolicyService policyResource = new PolicyService(resourceServer, this.authorization, this.auth);
 
             ResteasyProviderFactory.getInstance().injectProperties(policyResource);
 
@@ -455,7 +273,7 @@ public class ResourceServerService {
 
                             role = role.replace("\"", "");
 
-                            roleNames = roleNames + "\"" + getRealm().getRole(role).getId() + "\"";
+                            roleNames = roleNames + "\"" + this.realm.getRole(role).getId() + "\"";
                         }
 
                         config.put("roles", "[" + roleNames + "]");
@@ -478,7 +296,7 @@ public class ResourceServerService {
 
                             user = user.replace("\"", "");
 
-                            userNames = userNames + "\"" + this.authorization.getKeycloakSession().users().getUserByUsername(user, getRealm()).getId() + "\"";
+                            userNames = userNames + "\"" + this.session.users().getUserByUsername(user, this.realm).getId() + "\"";
                         }
 
                         config.put("users", "[" + userNames + "]");
@@ -603,15 +421,210 @@ public class ResourceServerService {
 
     @Path("/policy")
     public PolicyService getPolicyResource() {
-        StoreFactory storeFactory = authorization.getStoreFactory();
-        PolicyService resource = new PolicyService(this.resourceServer, this.authorization);
+        PolicyService resource = new PolicyService(this.resourceServer, this.authorization, this.auth);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 
         return resource;
     }
 
-    private RealmModel getRealm() {
-        return this.authorization.getKeycloakSession().getContext().getRealm();
+    private void createDefaultPermission(ResourceRepresentation resource, PolicyRepresentation policy) {
+        PolicyRepresentation defaultPermission = new PolicyRepresentation();
+
+        defaultPermission.setName("Default Permission");
+        defaultPermission.setType("resource");
+        defaultPermission.setDescription("A permission that applies to the default resource type");
+        defaultPermission.setDecisionStrategy(Policy.DecisionStrategy.UNANIMOUS);
+        defaultPermission.setLogic(Policy.Logic.POSITIVE);
+
+        HashMap<String, String> defaultPermissionConfig = new HashMap<>();
+
+        defaultPermissionConfig.put("default", "true");
+        defaultPermissionConfig.put("defaultResourceType", resource.getType());
+        defaultPermissionConfig.put("applyPolicies", "[\"" + policy.getName() + "\"]");
+
+        defaultPermission.setConfig(defaultPermissionConfig);
+
+        getPolicyResource().create(defaultPermission);
+    }
+
+    private PolicyRepresentation createDefaultPolicy() {
+        PolicyRepresentation defaultPolicy = new PolicyRepresentation();
+
+        defaultPolicy.setName("Only From Realm Policy");
+        defaultPolicy.setDescription("A policy that grants access only for users within this realm");
+        defaultPolicy.setType("js");
+        defaultPolicy.setDecisionStrategy(Policy.DecisionStrategy.AFFIRMATIVE);
+        defaultPolicy.setLogic(Policy.Logic.POSITIVE);
+
+        HashMap<String, String> defaultPolicyConfig = new HashMap<>();
+
+        defaultPolicyConfig.put("code", "var context = $evaluation.getContext();\n" +
+                "\n" +
+                "// using attributes from the evaluation context to obtain the realm\n" +
+                "var contextAttributes = context.getAttributes();\n" +
+                "var realmName = contextAttributes.getValue('kc.authz.context.authc.realm').asString(0);\n" +
+                "\n" +
+                "// using attributes from the identity to obtain the issuer\n" +
+                "var identity = context.getIdentity();\n" +
+                "var identityAttributes = identity.getAttributes();\n" +
+                "var issuer = identityAttributes.getValue('iss').asString(0);\n" +
+                "\n" +
+                "// only users from the realm have access granted \n" +
+                "if (issuer.endsWith(realmName)) {\n" +
+                "    $evaluation.grant();\n" +
+                "}");
+
+        defaultPolicy.setConfig(defaultPolicyConfig);
+
+        getPolicyResource().create(defaultPolicy);
+
+        return defaultPolicy;
+    }
+
+    private ResourceRepresentation createDefaultResource() {
+        ResourceRepresentation defaultResource = new ResourceRepresentation();
+
+        defaultResource.setName("Default Resource");
+        defaultResource.setUri("/*");
+        defaultResource.setType("urn:" + this.client.getClientId() + ":resources:default");
+
+        getResourceSetResource().create(defaultResource);
+        return defaultResource;
+    }
+
+    private void createDefaultRoles() {
+        RoleModel umaProtectionRole = client.getRole(Constants.AUTHZ_UMA_PROTECTION);
+
+        if (umaProtectionRole == null) {
+            umaProtectionRole = client.addRole(Constants.AUTHZ_UMA_PROTECTION);
+        }
+
+        UserModel serviceAccount = this.session.users().getUserByServiceAccountClient(client);
+
+        if (!serviceAccount.hasRole(umaProtectionRole)) {
+            serviceAccount.grantRole(umaProtectionRole);
+        }
+    }
+
+    private PolicyRepresentation createPolicyRepresentation(StoreFactory storeFactory, Policy policy) {
+        PolicyRepresentation rep = Models.toRepresentation(policy, authorization);
+
+        rep.setId(null);
+        rep.setDependentPolicies(null);
+
+        Map<String, String> config = rep.getConfig();
+
+        String roles = config.get("roles");
+
+        if (roles != null && !roles.isEmpty()) {
+            roles = roles.replace("[", "");
+            roles = roles.replace("]", "");
+
+            if (!roles.isEmpty()) {
+                String roleNames = "";
+
+                for (String role : roles.split(",")) {
+                    if (!roleNames.isEmpty()) {
+                        roleNames = roleNames + ",";
+                    }
+
+                    role = role.replace("\"", "");
+
+                    roleNames = roleNames + "\"" + this.realm.getRoleById(role).getName() + "\"";
+                }
+
+                config.put("roles", "[" + roleNames + "]");
+            }
+        }
+
+        String users = config.get("users");
+
+        if (users != null) {
+            users = users.replace("[", "");
+            users = users.replace("]", "");
+
+            if (!users.isEmpty()) {
+                UserFederationManager userManager = this.session.users();
+                String userNames = "";
+
+                for (String user : users.split(",")) {
+                    if (!userNames.isEmpty()) {
+                        userNames =  userNames + ",";
+                    }
+
+                    user = user.replace("\"", "");
+
+                    userNames = userNames + "\"" + userManager.getUserById(user, this.realm).getUsername() + "\"";
+                }
+
+                config.put("users", "[" + userNames + "]");
+            }
+        }
+
+        String scopes = config.get("scopes");
+
+        if (scopes != null && !scopes.isEmpty()) {
+            scopes = scopes.replace("[", "");
+            scopes = scopes.replace("]", "");
+
+            if (!scopes.isEmpty()) {
+                ScopeStore scopeStore = storeFactory.getScopeStore();
+                String scopeNames = "";
+
+                for (String scope : scopes.split(",")) {
+                    if (!scopeNames.isEmpty()) {
+                        scopeNames =  scopeNames + ",";
+                    }
+
+                    scope = scope.replace("\"", "");
+
+                    scopeNames = scopeNames + "\"" + scopeStore.findById(scope).getName() + "\"";
+                }
+
+                config.put("scopes", "[" + scopeNames + "]");
+            }
+        }
+
+        String policyResources = config.get("resources");
+
+        if (policyResources != null && !policyResources.isEmpty()) {
+            policyResources = policyResources.replace("[", "");
+            policyResources = policyResources.replace("]", "");
+
+            if (!policyResources.isEmpty()) {
+                ResourceStore resourceStore = storeFactory.getResourceStore();
+                String resourceNames = "";
+
+                for (String resource : policyResources.split(",")) {
+                    if (!resourceNames.isEmpty()) {
+                        resourceNames =  resourceNames + ",";
+                    }
+
+                    resource = resource.replace("\"", "");
+
+                    resourceNames = resourceNames + "\"" + resourceStore.findById(resource).getName() + "\"";
+                }
+
+                config.put("resources", "[" + resourceNames + "]");
+            }
+        }
+
+        String policyNames = "";
+        Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+
+        if (!associatedPolicies.isEmpty()) {
+            for (Policy associatedPolicy : associatedPolicies) {
+                if (!policyNames.isEmpty()) {
+                    policyNames = policyNames + ",";
+                }
+
+                policyNames = policyNames + "\"" + associatedPolicy.getName() + "\"";
+            }
+
+            config.put("applyPolicies", "[" + policyNames + "]");
+        }
+
+        return rep;
     }
 }

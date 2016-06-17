@@ -162,15 +162,15 @@ public class ResourceSetService {
                 .build();
     }
 
-    private void requireManage() {
-        if (this.auth != null) {
-            this.auth.requireManage();
-        }
-    }
-
     private void requireView() {
         if (this.auth != null) {
             this.auth.requireView();
+        }
+    }
+
+    private void requireManage() {
+        if (this.auth != null) {
+            this.auth.requireManage();
         }
     }
 }

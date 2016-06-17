@@ -31,6 +31,7 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.services.resources.admin.RealmAuth;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -55,16 +56,19 @@ public class PolicyService {
 
     private final ResourceServer resourceServer;
     private final AuthorizationProvider authorization;
+    private final RealmAuth auth;
 
-    public PolicyService(ResourceServer resourceServer, AuthorizationProvider authorization) {
+    public PolicyService(ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth) {
         this.resourceServer = resourceServer;
         this.authorization = authorization;
+        this.auth = auth;
     }
 
     @POST
     @Consumes("application/json")
     @Produces("application/json")
     public Response create(PolicyRepresentation representation) {
+        this.auth.requireManage();
         Policy policy = Models.toModel(representation, this.resourceServer, authorization);
 
         updateResources(policy, authorization);
@@ -91,6 +95,7 @@ public class PolicyService {
     @Consumes("application/json")
     @Produces("application/json")
     public Response update(@PathParam("id") String id, PolicyRepresentation representation) {
+        this.auth.requireManage();
         representation.setId(id);
         StoreFactory storeFactory = authorization.getStoreFactory();
         Policy policy = storeFactory.getPolicyStore().findById(representation.getId());
@@ -125,6 +130,7 @@ public class PolicyService {
     @Path("{id}")
     @DELETE
     public Response delete(@PathParam("id") String id) {
+        this.auth.requireManage();
         StoreFactory storeFactory = authorization.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
         Policy policy = policyStore.findById(id);
@@ -156,6 +162,7 @@ public class PolicyService {
     @GET
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
+        this.auth.requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         Policy model = storeFactory.getPolicyStore().findById(id);
 
@@ -169,6 +176,7 @@ public class PolicyService {
     @GET
     @Produces("application/json")
     public Response findAll() {
+        this.auth.requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         return Response.ok(
                 storeFactory.getPolicyStore().findByResourceServer(resourceServer.getId()).stream()
@@ -181,6 +189,7 @@ public class PolicyService {
     @GET
     @Produces("application/json")
     public Response findPolicyProviders() {
+        this.auth.requireView();
         return Response.ok(
                 authorization.getProviderFactories().stream()
                         .map(provider -> {
@@ -198,6 +207,7 @@ public class PolicyService {
 
     @Path("evaluate")
     public PolicyEvaluationService getPolicyEvaluateResource() {
+        this.auth.requireView();
         PolicyEvaluationService resource = new PolicyEvaluationService(this.resourceServer, this.authorization);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
@@ -207,6 +217,7 @@ public class PolicyService {
 
     @Path("{policyType}")
     public Object getPolicyTypeResource(@PathParam("policyType") String policyType) {
+        this.auth.requireView();
         return getPolicyProviderAdminResource(policyType, this.authorization);
     }
 
