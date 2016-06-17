@@ -26,6 +26,7 @@ Or a little more verbose if you want to manually define the resources being prot
 {
   "policy-enforcer": {
     "user-managed-access" : {},
+    "enforcement-mode" : "ENFORCING"
     "paths": [
       {
         "path" : "/someUri/*",
@@ -74,6 +75,22 @@ for all resources associated with the resource server being protected. In this c
 +
 Tells the adapter to use the UMA protocol. If set, the adapter will ask the server for permission tickets and return them to clients accordingly with UMA specification. If not set,
 the adapter will just rely on the RPT sent to the server to actually enforce permissions.
++
+** *enforcement-mode*
++
+Dictates how policies are enforced.
++
+*** *ENFORCING*
++
+This is the default mode. Requests are denied by default even when there is no policy associated with a given resource.
++
+*** *PERMISSIVE*
++
+Requests are allowed even when there is no policy associated with a given resource.
++
+*** *DISABLED*
++
+Completely disables the evaluation of policies and allow access to any resource.
 +
 ** *paths*
 +

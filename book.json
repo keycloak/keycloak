@@ -15,7 +15,7 @@
     "images": "keycloak-images",
     "project": {
       "name": "Keycloak",
-      "version": "1.9.3.Final-SNAPSHOT",
+      "version": "2.0.0.CR1-SNAPSHOT",
       "module": "Authorization Services"
     }
   }
