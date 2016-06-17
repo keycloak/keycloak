@@ -6,19 +6,13 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.mongo.entities.PolicyEntity;
-import org.keycloak.authorization.mongo.entities.ResourceEntity;
-import org.keycloak.authorization.mongo.entities.ScopeEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.adapters.AbstractMongoAdapter;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static javafx.scene.input.KeyCode.R;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
