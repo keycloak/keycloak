@@ -58,6 +58,12 @@
         <!-- JpaAuditProviders -->
         <class>org.keycloak.events.jpa.EventEntity</class>
         <class>org.keycloak.events.jpa.AdminEventEntity</class>
+
+        <!-- Authorization -->
+        <class>org.keycloak.authorization.jpa.entities.ResourceServerEntity</class>
+        <class>org.keycloak.authorization.jpa.entities.ResourceEntity</class>
+        <class>org.keycloak.authorization.jpa.entities.ScopeEntity</class>
+        <class>org.keycloak.authorization.jpa.entities.PolicyEntity</class>
         
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 

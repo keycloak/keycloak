@@ -39,11 +39,9 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -127,7 +125,7 @@ public class JpaRealmProvider implements RealmProvider {
             return false;
         }
         em.refresh(realm);
-        RealmAdapter adapter = new RealmAdapter(session, em, realm);
+        final RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
 
         realm.getDefaultGroups().clear();
@@ -159,6 +157,19 @@ public class JpaRealmProvider implements RealmProvider {
 
         em.flush();
         em.clear();
+
+        session.getKeycloakSessionFactory().publish(new RealmModel.RealmRemovedEvent() {
+            @Override
+            public RealmModel getRealm() {
+                return adapter;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
+
         return true;
     }
 
@@ -268,6 +279,19 @@ public class JpaRealmProvider implements RealmProvider {
         int val = em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
 
         em.remove(roleEntity);
+
+        session.getKeycloakSessionFactory().publish(new RoleContainerModel.RoleRemovedEvent() {
+            @Override
+            public RoleModel getRole() {
+                return role;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
+
         em.flush();
         return true;
 
@@ -451,7 +475,7 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public boolean removeClient(String id, RealmModel realm) {
-        ClientModel client = getClientById(id, realm);
+        final ClientModel client = getClientById(id, realm);
         if (client == null) return false;
 
         session.users().preRemove(realm, client);
@@ -460,17 +484,32 @@ public class JpaRealmProvider implements RealmProvider {
             client.removeRole(role);
         }
 
-
         ClientEntity clientEntity = ((ClientAdapter)client).getEntity();
+
         em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", clientEntity).executeUpdate();
         em.flush();
+
+        session.getKeycloakSessionFactory().publish(new RealmModel.ClientRemovedEvent() {
+            @Override
+            public ClientModel getClient() {
+                return client;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
+
         em.remove(clientEntity);  // i have no idea why, but this needs to come before deleteScopeMapping
+
         try {
             em.flush();
         } catch (RuntimeException e) {
             logger.errorv("Unable to delete client entity: {0} from realm {1}", client.getClientId(), realm.getName());
             throw e;
         }
+
         return true;
     }
 

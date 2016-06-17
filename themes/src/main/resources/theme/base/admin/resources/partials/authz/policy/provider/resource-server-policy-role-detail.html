@@ -1,0 +1,115 @@
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2016 Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">Authorization</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">Policies</a></li>
+        <li data-ng-show="create">Add Role Policy</li>
+        <li data-ng-hide="create">Role</li>
+        <li data-ng-hide="create">{{policy.name}}</li>
+    </ol>
+
+    <h1 data-ng-show="create">Add Role Policy</h1>
+    <h1 data-ng-hide="create">{{policy.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create"
+                                                         data-ng-click="remove()"></i></h1>
+
+    <form class="form-horizontal" name="clientForm" novalidate>
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="name">Name <span class="required">*</span></label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="policy.name" autofocus required>
+                </div>
+                <kc-tooltip>The name of this policy.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="description">Description </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="description" name="description" data-ng-model="policy.description">
+                </div>
+                <kc-tooltip>A description for this policy.</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="roles">Roles <span class="required">*</span></label>
+
+                <div class="col-md-6">
+                    <select ui-select2="{ minimumInputLength: 1}" id="roles" data-ng-model="selectedRole" data-ng-change="selectRole(selectedRole);" data-placeholder="Select a role..."
+                            ng-options="role as role.name for role in roles" data-ng-required="selectedUsers.length == 0 && selectedRoles.length == 0">
+                    </select>
+                </div>
+
+                <kc-tooltip>Specifies which role(s) are allowed by this policy.</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" style="margin-top: -15px;">
+                <label class="col-md-2 control-label"></label>
+                <div class="col-sm-3">
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr data-ng-hide="!selectedRoles.length">
+                                <th>Role name</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="role in selectedRoles | orderBy:'name'">
+                                <td>{{role.name}}</td>
+                                <td class="kc-action-cell">
+                                    <button class="btn btn-default btn-block btn-sm" ng-click="removeFromList(selectedRoles, $index);">Remove</button>
+                                </td>
+                            </tr>
+                            <tr data-ng-show="!selectedRoles.length">
+                                <td class="text-muted" colspan="3">No roles assigned.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="policy.logic">Logic</label>
+
+                <div class="col-sm-1">
+                    <select class="form-control" id="policy.logic"
+                            data-ng-model="policy.logic">
+                        <option ng-repeat="logic in logics" value="{{logic}}">{{logic | toCamelCase}}</option>
+                    </select>
+                </div>
+
+                <kc-tooltip>The logic dictates how the policy decision should be made. If 'Positive', the resulting effect (permit or deny) obtained during the evaluation of this policy will
+                    be used to perform a decision. If 'Negative', the resulting effect will be negated, in other words, a permit becomes a deny and vice-versa.
+            </div>
+            <input type="hidden" data-ng-model="policy.type"/>
+        </fieldset>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="create">
+                <button kc-save data-ng-disabled="!changed">Save</button>
+                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+            </div>
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageClients">
+                <button kc-save  data-ng-disabled="!changed">Save</button>
+                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

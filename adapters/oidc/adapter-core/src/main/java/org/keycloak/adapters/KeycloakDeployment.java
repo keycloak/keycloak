@@ -20,6 +20,7 @@ package org.keycloak.adapters;
 import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
+import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.enums.SslRequired;
@@ -78,6 +79,7 @@ public class KeycloakDeployment {
 
     protected volatile int notBefore;
     protected int tokenMinimumTimeToLive;
+    private PolicyEnforcer policyEnforcer;
 
     public KeycloakDeployment() {
     }
@@ -365,5 +367,13 @@ public class KeycloakDeployment {
 
     public void setTokenMinimumTimeToLive(final int tokenMinimumTimeToLive) {
         this.tokenMinimumTimeToLive = tokenMinimumTimeToLive;
+    }
+
+    public void setPolicyEnforcer(PolicyEnforcer policyEnforcer) {
+        this.policyEnforcer = policyEnforcer;
+    }
+
+    public PolicyEnforcer getPolicyEnforcer() {
+        return policyEnforcer;
     }
 }
