@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="erik.mulder@docdatapayments.com" id="example-1.0">
+
+        <createTable tableName="EXAMPLE_COMPANY">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey
+            constraintName="PK_COMPANY"
+            tableName="DOCDATA_COMPANY"
+            columnNames="ID"
+        />
+
+        <addForeignKeyConstraint
+            constraintName="FK_COMPANY_REALM"
+            baseTableName="EXAMPLE_COMPANY"
+            baseColumnNames="REALM_ID"
+            referencedTableName="REALM"
+            referencedColumnNames="ID"
+        />
+        
+        <createTable tableName="EXAMPLE_REGION">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="COMPANY_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey
+            constraintName="PK_REGION"
+            tableName="EXAMPLE_REGION"
+            columnNames="ID"
+        />
+
+        <addForeignKeyConstraint
+            constraintName="FK_REGION_COMPANY"
+            baseTableName="EXAMPLE_REGION"
+            baseColumnNames="COMPANY_ID"
+            referencedTableName="EXAMPLE_COMPANY"
+            referencedColumnNames="ID"
+        />
+
+        <createTable tableName="EXAMPLE_USER_ACCOUNT">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="COMPANY_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey
+            constraintName="PK_USER_ACCOUNT"
+            tableName="EXAMPLE_USER_ACCOUNT"
+            columnNames="ID"
+        />
+
+        <addUniqueConstraint
+            constraintName="UC_USER_ACCOUNT_USER_ID"
+            tableName="EXAMPLE_USER_ACCOUNT"
+            columnNames="USER_ID"
+        />
+
+        <addForeignKeyConstraint
+            constraintName="FK_USER_ACCOUNT_USER_ENTITY"
+            baseTableName="EXAMPLE_USER_ACCOUNT"
+            baseColumnNames="USER_ID"
+            referencedTableName="USER_ENTITY"
+            referencedColumnNames="ID"
+        />
+
+        <addForeignKeyConstraint
+            constraintName="FK_USER_ACCOUNT_COMPANY"
+            baseTableName="EXAMPLE_USER_ACCOUNT"
+            baseColumnNames="COMPANY_ID"
+            referencedTableName="EXAMPLE_COMPANY"
+            referencedColumnNames="ID"
+        />
+
+        <createTable tableName="EXAMPLE_USER_ACCOUNT_REGION_ROLE">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="USER_ACCOUNT_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="REGION_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+
+        <addPrimaryKey
+            constraintName="PK_USER_ACCOUNT_REGION_ROLE"
+            tableName="EXAMPLE_USER_ACCOUNT_REGION_ROLE"
+            columnNames="ID"
+        />
+
+        <addForeignKeyConstraint
+            constraintName="FK_USER_ACCOUNT_REGION_ROLE_USER_ACCOUNT"
+            baseTableName="EXAMPLE_USER_ACCOUNT_REGION_ROLE"
+            baseColumnNames="USER_ACCOUNT_ID"
+            referencedTableName="EXAMPLE_USER_ACCOUNT"
+            referencedColumnNames="ID"
+        />
+
+        <addForeignKeyConstraint
+            constraintName="FK_USER_ACCOUNT_REGION_ROLE_REGION"
+            baseTableName="EXAMPLE_USER_ACCOUNT_REGION_ROLE"
+            baseColumnNames="REGION_ID"
+            referencedTableName="EXAMPLE_REGION"
+            referencedColumnNames="ID"
+        />
+
+        <addForeignKeyConstraint
+            constraintName="FK_USER_ACCOUNT_REGION_ROLE_ROLE"
+            baseTableName="EXAMPLE_USER_ACCOUNT_REGION_ROLE"
+            baseColumnNames="ROLE_ID"
+            referencedTableName="KEYCLOAK_ROLE"
+            referencedColumnNames="ID"
+        />
+    </changeSet>
+    
+</databaseChangeLog>

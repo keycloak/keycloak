@@ -36,5 +36,6 @@
         <module>federation-provider</module>
         <module>authenticator</module>
         <module>rest</module>
+        <module>domain-extension</module>
     </modules>
 </project>
