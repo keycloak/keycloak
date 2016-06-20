@@ -44,4 +44,10 @@ public interface JpaEntityProvider extends Provider {
 	 */
 	String getChangelogLocation();
 
+	/**
+	 * Return the ID of provider factory, which created this provider. Might be used to "compute" the table name of liquibase changelog table.
+	 * @return ID of provider factory
+	 */
+	String getFactoryId();
+
 }

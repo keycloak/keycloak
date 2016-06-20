@@ -15,21 +15,22 @@
  * limitations under the License.
  */
 
-package org.keycloak.connections.jpa.updater.liquibase.conn;
+package org.keycloak.connections.jpa.util;
 
-import java.sql.Connection;
-
-import liquibase.Liquibase;
-import liquibase.exception.LiquibaseException;
-import org.keycloak.provider.Provider;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface LiquibaseConnectionProvider extends Provider {
+public class JpaUtilsTest {
 
-    Liquibase getLiquibase(Connection connection, String defaultSchema) throws LiquibaseException;
-
-    Liquibase getLiquibaseForCustomUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException;
-
+    @Test
+    public void testConvertTableName() {
+        Assert.assertEquals("DATABASECHANGELOG_FOO", JpaUtils.getCustomChangelogTableName("foo"));
+        Assert.assertEquals("DATABASECHANGELOG_FOOBAR", JpaUtils.getCustomChangelogTableName("foo123bar"));
+        Assert.assertEquals("DATABASECHANGELOG_FOO_BAR", JpaUtils.getCustomChangelogTableName("foo_bar568"));
+        Assert.assertEquals("DATABASECHANGELOG_FOO_BAR_C", JpaUtils.getCustomChangelogTableName("foo-bar-c568"));
+        Assert.assertEquals("DATABASECHANGELOG_EXAMPLE_EN", JpaUtils.getCustomChangelogTableName("example-entity-provider"));
+    }
 }

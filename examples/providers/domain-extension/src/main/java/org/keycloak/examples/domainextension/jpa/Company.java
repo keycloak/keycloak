@@ -15,59 +15,52 @@
  * limitations under the License.
  */
 
-package org.keycloak.examples.domainextension.entities;
+package org.keycloak.examples.domainextension.jpa;
 
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
-import org.keycloak.models.jpa.entities.UserEntity;
-
-/**
- * The Class UserAccount.
- */
 @Entity
-@Table(name = "EXAMPLE_USER_ACCOUNT")
-public class UserAccount {
+@Table(name = "EXAMPLE_COMPANY")
+@NamedQueries({ @NamedQuery(name = "findByRealm", query = "from Company where realmId = :realmId") })
+public class Company {
 
     @Id
     @Column(name = "ID")
     private String id;
 
-    @ManyToOne
-    @JoinColumn(name = "USER_ID", nullable = false)
-    private UserEntity user;
+    @Column(name = "NAME", nullable = false)
+    private String name;
 
-    @ManyToOne
-    @JoinColumn(name = "COMPANY_ID", nullable = true)
-    private Company company;
-
-    @SuppressWarnings("unused")
-    private UserAccount() {
-
-    }
-
-    public UserAccount(String id, UserEntity userEntity, Company company) {
-        this.id = UUID.randomUUID().toString();
-        user = userEntity;
-        this.company = company;
-    }
+    @Column(name = "REALM_ID", nullable = false)
+    private String realmId;
 
     public String getId() {
-        return id;
+		return id;
+	}
+    
+    public String getRealmId() {
+        return realmId;
     }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public Company getCompany() {
-		return company;
+    
+    public String getName() {
+		return name;
 	}
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
+    }
 }

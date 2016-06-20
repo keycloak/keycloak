@@ -15,30 +15,30 @@
  * limitations under the License.
  */
 
-package org.keycloak.examples.domainextension.services;
+package org.keycloak.examples.domainextension.spi.impl;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.EntityManager;
 
 import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.examples.domainextension.entities.Company;
-import org.keycloak.examples.domainextension.services.repository.CompanyRepository;
+import org.keycloak.examples.domainextension.jpa.Company;
+import org.keycloak.examples.domainextension.CompanyRepresentation;
+import org.keycloak.examples.domainextension.spi.ExampleService;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 public class ExampleServiceImpl implements ExampleService {
 
     private final KeycloakSession session;
-    private CompanyRepository companyRepository;
 
     public ExampleServiceImpl(KeycloakSession session) {
         this.session = session;
         if (getRealm() == null) {
             throw new IllegalStateException("The service cannot accept a session without a realm in it's context.");
         }
-
-        companyRepository = new CompanyRepository(getEntityManager());
     }
 
     private EntityManager getEntityManager() {
@@ -50,18 +50,35 @@ public class ExampleServiceImpl implements ExampleService {
     }
     
     @Override
-    public List<Company> listCompanies() {
-    	return companyRepository.getAll();
+    public List<CompanyRepresentation> listCompanies() {
+    	List<Company> companyEntities = getEntityManager().createNamedQuery("findByRealm", Company.class)
+                .setParameter("realmId", getRealm().getId())
+                .getResultList();
+
+        List<CompanyRepresentation> result = new LinkedList<>();
+        for (Company entity : companyEntities) {
+            result.add(new CompanyRepresentation(entity));
+        }
+        return result;
     }
     
     @Override
-    public Company findCompany(String id) {
-    	return companyRepository.findById(id);
+    public CompanyRepresentation findCompany(String id) {
+    	Company entity = getEntityManager().find(Company.class, id);
+        return entity==null ? null : new CompanyRepresentation(entity);
     }
     
     @Override
-    public void addCompany(Company company) {
-    	companyRepository.persist(company);
+    public CompanyRepresentation addCompany(CompanyRepresentation company) {
+        Company entity = new Company();
+        String id = company.getId()==null ?  KeycloakModelUtils.generateId() : company.getId();
+        entity.setId(id);
+        entity.setName(company.getName());
+        entity.setRealmId(getRealm().getId());
+        getEntityManager().persist(entity);
+
+        company.setId(id);
+        return company;
     }
 
     public void close() {

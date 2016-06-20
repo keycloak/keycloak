@@ -15,27 +15,19 @@
  * limitations under the License.
  */
 
-package org.keycloak.examples.domainextension.services.repository;
+package org.keycloak.examples.domainextension.spi;
 
 import java.util.List;
 
-import javax.persistence.EntityManager;
+import org.keycloak.examples.domainextension.CompanyRepresentation;
+import org.keycloak.provider.Provider;
 
-import org.keycloak.examples.domainextension.entities.Company;
+public interface ExampleService extends Provider {
 
-public class CompanyRepository extends AbstractRepository<Company> {
+    List<CompanyRepresentation> listCompanies();
 
-    public CompanyRepository(EntityManager entityManager) {
-        super(entityManager);
-    }
+    CompanyRepresentation findCompany(String id);
 
-    public List<Company> getAll() {
-        return getEntityManager().createNamedQuery("findAllCompanies", Company.class).getResultList();
-    }
-
-    public List<Company> getAll(String realmId) {
-        return getEntityManager().createNamedQuery("findByRealm", Company.class).setParameter("realmId", realmId)
-                .getResultList();
-    }
+    CompanyRepresentation addCompany(CompanyRepresentation company);
 
 }

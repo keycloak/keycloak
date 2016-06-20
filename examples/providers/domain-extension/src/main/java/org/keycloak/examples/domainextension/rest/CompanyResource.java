@@ -1,21 +1,24 @@
 package org.keycloak.examples.domainextension.rest;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
-import org.keycloak.examples.domainextension.entities.Company;
-import org.keycloak.examples.domainextension.rest.model.CompanyView;
-import org.keycloak.examples.domainextension.services.ExampleService;
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.examples.domainextension.CompanyRepresentation;
+import org.keycloak.examples.domainextension.spi.ExampleService;
 import org.keycloak.models.KeycloakSession;
 
 public class CompanyResource {
 
-	private KeycloakSession session;
+	private final KeycloakSession session;
 	
 	public CompanyResource(KeycloakSession session) {
 		this.session = session;
@@ -23,19 +26,27 @@ public class CompanyResource {
 
     @GET
     @Path("")
-    public Set<CompanyView> getMasterAccounts() {
-        List<Company> companies = session.getProvider(ExampleService.class).listCompanies();
-        Set<CompanyView> companyViews = new HashSet<>();
-        for (Company company : companies) {
-        	companyViews.add(new CompanyView(company));
-        }
-        return companyViews;
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<CompanyRepresentation> getCompanies() {
+        return session.getProvider(ExampleService.class).listCompanies();
+    }
+
+    @POST
+    @Path("")
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response createProviderInstance(CompanyRepresentation rep) {
+        session.getProvider(ExampleService.class).addCompany(rep);
+        return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(rep.getId()).build()).build();
     }
 
     @GET
+    @NoCache
     @Path("{id}")
-    public CompanyView getCompany(@PathParam("id") final String id) {
-        return new CompanyView(session.getProvider(ExampleService.class).findCompany(id));
+    @Produces(MediaType.APPLICATION_JSON)
+    public CompanyRepresentation getCompany(@PathParam("id") final String id) {
+        return session.getProvider(ExampleService.class).findCompany(id);
     }
 
 }

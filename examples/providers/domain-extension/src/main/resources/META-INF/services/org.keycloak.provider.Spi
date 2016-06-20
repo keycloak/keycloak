@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.examples.domainextension.services.spi.ExampleSpi
+org.keycloak.examples.domainextension.spi.ExampleSpi

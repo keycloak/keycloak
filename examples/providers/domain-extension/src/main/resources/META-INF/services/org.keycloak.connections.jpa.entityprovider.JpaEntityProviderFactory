@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.examples.domainextension.DomainExtensionProviderFactory
+org.keycloak.examples.domainextension.jpa.ExampleJpaEntityProviderFactory

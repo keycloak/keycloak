@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.examples.domainextension.providers.entity;
+package org.keycloak.examples.domainextension.jpa;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
@@ -30,7 +30,7 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public class ExampleJpaEntityProviderFactory implements JpaEntityProviderFactory {
 
-	private static final String ID = "example-entity-provider";
+	protected static final String ID = "example-entity-provider";
 	
     @Override
     public JpaEntityProvider create(KeycloakSession session) {

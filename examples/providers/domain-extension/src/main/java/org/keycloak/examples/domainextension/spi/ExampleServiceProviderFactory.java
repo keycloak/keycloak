@@ -15,34 +15,10 @@
  * limitations under the License.
  */
 
-package org.keycloak.examples.domainextension.services.spi;
+package org.keycloak.examples.domainextension.spi;
 
-import org.keycloak.examples.domainextension.services.ExampleService;
-import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
 
-public class ExampleSpi implements Spi {
-
-    @Override
-    public boolean isInternal() {
-        return false;
-    }
-
-    @Override
-    public String getName() {
-        return "example";
-    }
-
-    @Override
-    public Class<? extends Provider> getProviderClass() {
-        return ExampleService.class;
-    }
-
-    @Override
-    @SuppressWarnings("rawtypes")
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return ExampleServiceProviderFactory.class;
-    }
+public interface ExampleServiceProviderFactory extends ProviderFactory<ExampleService> {
 
 }

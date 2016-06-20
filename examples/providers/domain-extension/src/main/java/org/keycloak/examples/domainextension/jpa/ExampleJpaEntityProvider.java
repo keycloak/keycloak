@@ -15,16 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.examples.domainextension.providers.entity;
+package org.keycloak.examples.domainextension.jpa;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
-import org.keycloak.examples.domainextension.entities.Company;
-import org.keycloak.examples.domainextension.entities.Region;
-import org.keycloak.examples.domainextension.entities.UserAccount;
-import org.keycloak.examples.domainextension.entities.UserAccountRegionRole;
 
 /**
  * @author <a href="mailto:erik.mulder@docdatapayments.com">Erik Mulder</a>
@@ -35,16 +31,20 @@ public class ExampleJpaEntityProvider implements JpaEntityProvider {
 
     @Override
     public List<Class<?>> getEntities() {
-        return Arrays.asList(Company.class, Region.class, UserAccount.class, UserAccountRegionRole.class);
+        return Collections.<Class<?>>singletonList(Company.class);
     }
 
     @Override
     public String getChangelogLocation() {
-    	return "example-changelog.xml";
+    	return "META-INF/example-changelog.xml";
     }
     
     @Override
     public void close() {
     }
 
+    @Override
+    public String getFactoryId() {
+        return ExampleJpaEntityProviderFactory.ID;
+    }
 }

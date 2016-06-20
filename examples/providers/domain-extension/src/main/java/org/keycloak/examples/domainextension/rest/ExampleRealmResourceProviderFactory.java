@@ -15,39 +15,38 @@
  * limitations under the License.
  */
 
-package org.keycloak.examples.domainextension.services.spi;
+package org.keycloak.examples.domainextension.rest;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.examples.domainextension.services.ExampleService;
-import org.keycloak.examples.domainextension.services.ExampleServiceImpl;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.services.resource.RealmResourceProviderFactory;
 
-public class ExampleServiceProviderFactoryImpl implements ExampleServiceProviderFactory {
+public class ExampleRealmResourceProviderFactory implements RealmResourceProviderFactory {
+
+    public static final String ID = "example";
 
     @Override
-    public ExampleService create(KeycloakSession session) {
-        return new ExampleServiceImpl(session);
+    public String getId() {
+        return ID;
+    }
+
+    @Override
+    public RealmResourceProvider create(KeycloakSession session) {
+        return new ExampleRealmResourceProvider(session);
     }
 
     @Override
     public void init(Scope config) {
-
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
     }
 
     @Override
     public void close() {
-
-    }
-
-    @Override
-    public String getId() {
-        return "exampleService";
     }
 
 }

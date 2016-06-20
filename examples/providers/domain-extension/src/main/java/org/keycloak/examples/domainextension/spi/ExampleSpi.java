@@ -15,27 +15,33 @@
  * limitations under the License.
  */
 
-package org.keycloak.examples.domainextension.providers.rest;
+package org.keycloak.examples.domainextension.spi;
 
-import org.keycloak.examples.domainextension.rest.ExampleRestResource;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
-public class ExampleRealmResourceProvider implements RealmResourceProvider {
+public class ExampleSpi implements Spi {
 
-    private KeycloakSession session;
-
-    public ExampleRealmResourceProvider(KeycloakSession session) {
-        this.session = session;
+    @Override
+    public boolean isInternal() {
+        return false;
     }
 
     @Override
-    public Object getResource() {
-        return new ExampleRestResource(session);
+    public String getName() {
+        return "example";
     }
 
     @Override
-    public void close() {
+    public Class<? extends Provider> getProviderClass() {
+        return ExampleService.class;
+    }
+
+    @Override
+    @SuppressWarnings("rawtypes")
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return ExampleServiceProviderFactory.class;
     }
 
 }

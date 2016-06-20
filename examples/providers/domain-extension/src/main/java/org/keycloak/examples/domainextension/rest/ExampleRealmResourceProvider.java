@@ -15,19 +15,26 @@
  * limitations under the License.
  */
 
-package org.keycloak.examples.domainextension.services;
+package org.keycloak.examples.domainextension.rest;
 
-import java.util.List;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.resource.RealmResourceProvider;
 
-import org.keycloak.examples.domainextension.entities.Company;
-import org.keycloak.provider.Provider;
+public class ExampleRealmResourceProvider implements RealmResourceProvider {
 
-public interface ExampleService extends Provider {
+    private KeycloakSession session;
 
-    List<Company> listCompanies();
+    public ExampleRealmResourceProvider(KeycloakSession session) {
+        this.session = session;
+    }
 
-    Company findCompany(String id);
+    @Override
+    public Object getResource() {
+        return new ExampleRestResource(session);
+    }
 
-    void addCompany(Company company);
+    @Override
+    public void close() {
+    }
 
 }

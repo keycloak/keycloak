@@ -82,4 +82,16 @@ public class JpaUtils {
         return providedEntityClasses;
     }
 
+    /**
+     * Get the name of custom table for liquibase updates for give ID of JpaEntityProvider
+     * @param jpaEntityProviderFactoryId
+     * @return table name
+     */
+    public static String getCustomChangelogTableName(String jpaEntityProviderFactoryId) {
+        String upperCased = jpaEntityProviderFactoryId.toUpperCase();
+        upperCased = upperCased.replaceAll("-", "_");
+        upperCased = upperCased.replaceAll("[^A-Z_]", "");
+        return "DATABASECHANGELOG_" + upperCased.substring(0, Math.min(10, upperCased.length()));
+    }
+
 }
