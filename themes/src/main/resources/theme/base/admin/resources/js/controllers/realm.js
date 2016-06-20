@@ -1482,12 +1482,18 @@ module.controller('RealmAdminEventsCtrl', function($scope, RealmAdminEvents, rea
     	id : realm.realm,
         max : 5,
         first : 0
-    }
+    };
 
     $scope.adminEnabledEventOperationsOptions = {
         'multiple': true,
         'simple_tags': true,
         'tags': serverInfo.enums['operationType']
+    };
+
+    $scope.adminEnabledEventResourceTypesOptions = {
+        'multiple': true,
+        'simple_tags': true,
+        'tags': serverInfo.enums['resourceType']
     };
     
     $scope.update = function() {
@@ -1498,12 +1504,13 @@ module.controller('RealmAdminEventsCtrl', function($scope, RealmAdminEvents, rea
            }
         }
         $scope.events = RealmAdminEvents.query($scope.query);
-    }
+    };
     
     $scope.reset = function() {
     	$scope.query.first = 0;
     	$scope.query.max = 5;
     	$scope.query.operationTypes = '';
+    	$scope.query.resourceTypes = '';
     	$scope.query.resourcePath = '';
     	$scope.query.authRealm = '';
     	$scope.query.authClient = '';
@@ -1513,7 +1520,7 @@ module.controller('RealmAdminEventsCtrl', function($scope, RealmAdminEvents, rea
     	$scope.query.dateTo = '';
     	
     	$scope.update();
-    }
+    };
     
     $scope.queryUpdate = function() {
         for (var i in $scope.query) {

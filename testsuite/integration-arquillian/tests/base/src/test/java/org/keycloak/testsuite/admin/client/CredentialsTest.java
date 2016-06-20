@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.events.admin.OperationType;
@@ -70,7 +71,7 @@ public class CredentialsTest extends AbstractClientTest {
 
         CredentialRepresentation secretRep = new CredentialRepresentation();
         secretRep.setType(CredentialRepresentation.SECRET);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.ACTION, AdminEventPaths.clientGenerateSecretPath(accountClientDbId), secretRep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.ACTION, AdminEventPaths.clientGenerateSecretPath(accountClientDbId), secretRep, ResourceType.CLIENT);
 
         assertNotNull(oldCredential);
         assertNotNull(newCredential);
@@ -91,7 +92,7 @@ public class CredentialsTest extends AbstractClientTest {
         ClientRepresentation testedRep = new ClientRepresentation();
         testedRep.setClientId(rep.getClientId());
         testedRep.setRegistrationAccessToken(newToken);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.ACTION, AdminEventPaths.clientRegenerateRegistrationAccessTokenPath(accountClientDbId), testedRep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.ACTION, AdminEventPaths.clientRegenerateRegistrationAccessTokenPath(accountClientDbId), testedRep, ResourceType.CLIENT);
     }
 
     @Test
@@ -102,7 +103,7 @@ public class CredentialsTest extends AbstractClientTest {
         assertEquals(cert.getCertificate(), certFromGet.getCertificate());
         assertEquals(cert.getPrivateKey(), certFromGet.getPrivateKey());
 
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.ACTION, AdminEventPaths.clientCertificateGenerateSecretPath(accountClientDbId, "jwt.credential"), cert);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.ACTION, AdminEventPaths.clientCertificateGenerateSecretPath(accountClientDbId, "jwt.credential"), cert, ResourceType.CLIENT);
     }
 
     @Test

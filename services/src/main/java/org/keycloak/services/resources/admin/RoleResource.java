@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -67,6 +68,12 @@ public abstract class RoleResource {
             role.addCompositeRole(composite);
         }
 
+        if (role.isClientRole()) {
+            adminEvent.resource(ResourceType.CLIENT_ROLE);
+        } else {
+            adminEvent.resource(ResourceType.REALM_ROLE);
+        }
+
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
     }
 
@@ -109,6 +116,12 @@ public abstract class RoleResource {
                 throw new NotFoundException("Could not find composite role");
             }
             role.removeCompositeRole(composite);
+        }
+
+        if (role.isClientRole()) {
+            adminEvent.resource(ResourceType.CLIENT_ROLE);
+        } else {
+            adminEvent.resource(ResourceType.REALM_ROLE);
         }
 
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(roles).success();
