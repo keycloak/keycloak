@@ -58,7 +58,7 @@
         <artifact name="${org.sonatype.plexus:plexus-sec-dispatcher}"/>
         <artifact name="${org.codehaus.plexus:plexus-utils}"/>
         <artifact name="${org.apache.maven.wagon:wagon-http}"/>
-        <artifact name="${org.apache.maven.wagon:wagon-http-shared4}"/>
+        <artifact name="${org.apache.maven.wagon:wagon-http-shared}"/>
         <artifact name="${org.apache.maven.wagon:wagon-provider-api}"/>
         <artifact name="${com.thoughtworks.xstream:xstream}"/>
         <artifact name="${com.google.guava:guava}"/>
@@ -66,7 +66,8 @@
         <artifact name="${org.apache.httpcomponents:httpclient}"/>
         <artifact name="${org.apache.httpcomponents:httpcore}"/>
         <artifact name="${com.lowagie:itext}"/>
-        <artifact name="${org.sonatype.sisu:sisu-guice}"/>
+        <artifact name="${org.sonatype.sisu:sisu-guice::no_aop}"/>
+        <artifact name="${com.google.inject.extensions:guice-servlet}"/>
     </resources>
     <dependencies>
         <module name="javax.api"/>
