@@ -195,4 +195,11 @@
         <addForeignKeyConstraint baseColumnNames="COMPONENT_ID" baseTableName="COMPONENT_CONFIG" constraintName="FK_COMPONENT_CONFIG" referencedColumnNames="ID" referencedTableName="COMPONENT"/>
 
     </changeSet>
+
+    <changeSet author="thomas.darimont@gmail.com" id="2.1.0.1">
+        <addColumn tableName="ADMIN_EVENT_ENTITY">
+            <column name="RESOURCE_TYPE" type="VARCHAR(64)"></column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

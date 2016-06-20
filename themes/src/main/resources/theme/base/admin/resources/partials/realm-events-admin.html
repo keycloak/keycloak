@@ -33,11 +33,17 @@
                     </div>
                     <form class="form-horizontal" data-ng-show="filter">
                         <div class="form-group">
-      			            <label class="col-sm-2 control-label" for="adminEnabledEventOperations">{{:: 'operation-types' | translate}}</label>
-                    	    <div class="col-sm-5">
+                            <label class="col-sm-2 control-label" for="adminEnabledEventOperations">{{:: 'operation-types' | translate}}</label>
+                            <div class="col-sm-5">
                                 <input ui-select2="adminEnabledEventOperationsOptions" id="adminEnabledEventOperations" ng-model="query.operationTypes" data-placeholder="{{:: 'select-operations.placeholder' | translate}}"/>
-			                </div>
-			            </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="adminEnabledEventResourceTypes">{{:: 'resource-types' | translate}}</label>
+                            <div class="col-sm-5">
+                                <input ui-select2="adminEnabledEventResourceTypesOptions" id="adminEnabledEventResourceTypes" ng-model="query.resourceTypes" data-placeholder="{{:: 'select-resource-types.placeholder' | translate}}"/>
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label class="col-sm-2 control-label" for="resource">{{:: 'resource-path' | translate}}</label>
                             <div class="col-sm-4">
@@ -93,6 +99,7 @@
             <tr>
                 <th width="100px">{{:: 'time' | translate}}</th>
                 <th width="180px">{{:: 'operation-type' | translate}}</th>
+                <th width="180px">{{:: 'resource-type' | translate}}</th>
                 <th width="180px">{{:: 'resource-path' | translate}}</th>
                 <th>{{:: 'details' | translate}}</th>
             </tr>
@@ -110,6 +117,7 @@
                 <tr data-ng-repeat="event in events">
                     <td>{{event.time|date:'shortDate'}}<br>{{event.time|date:'mediumTime'}}</td>
                     <td data-ng-class="events-error">{{event.operationType}}</td>
+                    <td data-ng-class="events-error">{{event.resourceType}}</td>
                     <td>{{event.resourcePath}}</td>
                     <td>
                         <button type="button" class="btn btn-default btn-xs" data-ng-click="viewAuth(event)">

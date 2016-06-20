@@ -27,6 +27,7 @@ import java.util.Map;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -109,7 +110,7 @@ public abstract class AbstractProtocolMapperTest extends AbstractClientTest {
         // This is used by admin console to add builtin mappers
         resource.createMapper(mappersToAdd);
 
-        AdminEventRepresentation adminEvent = assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, adminEventPath + "/add-models");
+        AdminEventRepresentation adminEvent = assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, adminEventPath + "/add-models", ResourceType.PROTOCOL_MAPPER);
         try {
             List<ProtocolMapperRepresentation> eventMappers = JsonSerialization.readValue(new ByteArrayInputStream(adminEvent.getRepresentation().getBytes()), new TypeReference<List<ProtocolMapperRepresentation>>() {
             });

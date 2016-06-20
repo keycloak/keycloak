@@ -27,6 +27,7 @@ import org.keycloak.admin.client.resource.ServerInfoResource;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
@@ -213,7 +214,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setEditUsernameAllowed(true);
 
         realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
 
         rep = realm.toRepresentation();
 
@@ -230,7 +231,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setEditUsernameAllowed(false);
 
         realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
 
         rep = realm.toRepresentation();
         assertEquals(Boolean.FALSE, rep.isRegistrationAllowed());
@@ -246,7 +247,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setSupportedLocales(new HashSet<>(Arrays.asList("en", "de")));
 
         realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
 
         rep = realm.toRepresentation();
 
@@ -258,7 +259,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setEditUsernameAllowed(false);
 
         realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
 
         rep = realm.toRepresentation();
         assertEquals(Boolean.FALSE, rep.isEditUsernameAllowed());
@@ -282,7 +283,7 @@ public class RealmTest extends AbstractAdminTest {
     public void deleteDefaultRole() {
         RoleRepresentation role = new RoleRepresentation("test", "test", false);
         realm.roles().create(role);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("test"), role);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("test"), role, ResourceType.REALM_ROLE);
 
         assertNotNull(realm.roles().get("test").toRepresentation());
 
@@ -291,10 +292,10 @@ public class RealmTest extends AbstractAdminTest {
         rep.getDefaultRoles().add("test");
 
         realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
 
         realm.roles().deleteRole("test");
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourcePath("test"));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourcePath("test"), ResourceType.REALM_ROLE);
 
         try {
             realm.roles().get("testsadfsadf").toRepresentation();
@@ -425,7 +426,7 @@ public class RealmTest extends AbstractAdminTest {
 
         rep.setPublicKey(PUBLIC_KEY);
         realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
 
         assertEquals(PUBLIC_KEY, rep.getPublicKey());
 
@@ -460,7 +461,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setPublicKey(publicKey2048);
 
         realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
 
         Assert.assertEquals(publicKey2048, realm.toRepresentation().getPublicKey());
 
@@ -470,7 +471,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setPublicKey(publicKey4096);
 
         realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
 
         Assert.assertEquals(publicKey4096, realm.toRepresentation().getPublicKey());
     }
@@ -481,7 +482,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setCertificate(CERTIFICATE);
 
         realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
 
         assertEquals(CERTIFICATE, rep.getCertificate());
 
@@ -489,7 +490,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setCertificate(certificate);
 
         realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
 
         assertEquals(certificate, realm.toRepresentation().getCertificate());
 
@@ -520,7 +521,7 @@ public class RealmTest extends AbstractAdminTest {
         assertTrue(testingClient.testing().isCached("realms", realmRep.getId()));
 
         realm.clearRealmCache();
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "clear-realm-cache");
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "clear-realm-cache", ResourceType.REALM);
 
         assertFalse(testingClient.testing().isCached("realms", realmRep.getId()));
     }
@@ -532,14 +533,14 @@ public class RealmTest extends AbstractAdminTest {
         Response response = realm.users().create(user);
         String userId = ApiUtil.getCreatedId(response);
         response.close();
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(userId), user);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(userId), user, ResourceType.USER);
 
         realm.users().get(userId).toRepresentation();
 
         assertTrue(testingClient.testing().isCached("users", userId));
 
         realm.clearUserCache();
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "clear-user-cache");
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "clear-user-cache", ResourceType.REALM);
 
         assertFalse(testingClient.testing().isCached("users", userId));
     }
@@ -553,10 +554,10 @@ public class RealmTest extends AbstractAdminTest {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setNotBefore(time);
         realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
 
         GlobalRequestResult globalRequestResult = realm.pushRevocation();
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "push-revocation", globalRequestResult);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "push-revocation", globalRequestResult, ResourceType.REALM);
 
         assertEquals(1, globalRequestResult.getSuccessRequests().size());
         assertEquals("http://localhost:8180/auth/realms/master/app/admin", globalRequestResult.getSuccessRequests().get(0));
@@ -573,15 +574,15 @@ public class RealmTest extends AbstractAdminTest {
         Response response = realm.users().create(UserBuilder.create().username("user").build());
         String userId = ApiUtil.getCreatedId(response);
         response.close();
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(userId));
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(userId), ResourceType.USER);
 
         realm.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResetPasswordPath(userId));
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResetPasswordPath(userId), ResourceType.USER);
 
         oauth.doLogin("user", "password");
 
         GlobalRequestResult globalRequestResult = realm.logoutAll();
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "logout-all", globalRequestResult);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "logout-all", globalRequestResult, ResourceType.REALM);
 
         assertEquals(1, globalRequestResult.getSuccessRequests().size());
         assertEquals("http://localhost:8180/auth/realms/master/app/admin", globalRequestResult.getSuccessRequests().get(0));
@@ -602,7 +603,7 @@ public class RealmTest extends AbstractAdminTest {
         assertNotNull(event);
 
         realm.deleteSession(event.getSessionId());
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.deleteSessionPath(event.getSessionId()));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.deleteSessionPath(event.getSessionId()), ResourceType.USER_SESSION);
         try {
             realm.deleteSession(event.getSessionId());
             fail("Expected 404");
@@ -649,7 +650,7 @@ public class RealmTest extends AbstractAdminTest {
         Response resp = realm.clients().create(client);
         String clientDbId = ApiUtil.getCreatedId(resp);
         resp.close();
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientDbId), client);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientDbId), client, ResourceType.CLIENT);
 
         oauth.realm(REALM_NAME);
         oauth.redirectUri(redirectUri);
@@ -658,10 +659,10 @@ public class RealmTest extends AbstractAdminTest {
         Response response = realm.users().create(userRep);
         String userId = ApiUtil.getCreatedId(response);
         response.close();
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(userId), userRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(userId), userRep, ResourceType.USER);
 
         realm.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResetPasswordPath(userId));
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResetPasswordPath(userId), ResourceType.USER);
 
         testingClient.testApp().clearAdminActions();
     }

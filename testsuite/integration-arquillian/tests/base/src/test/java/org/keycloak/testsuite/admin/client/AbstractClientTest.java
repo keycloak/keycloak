@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -97,7 +98,7 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
         resp.close();
         String id = ApiUtil.getCreatedId(resp);
 
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), clientRep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), clientRep, ResourceType.CLIENT);
 
         return id;
     }
@@ -105,7 +106,7 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     protected void removeClient(String clientDbId) {
         testRealmResource().clients().get(clientDbId).remove();
 
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientResourcePath(clientDbId));
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientResourcePath(clientDbId), ResourceType.CLIENT);
     }
 
     protected ClientRepresentation findClientRepresentation(String name) {

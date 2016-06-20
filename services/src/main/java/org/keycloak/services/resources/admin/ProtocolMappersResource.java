@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperContainerModel;
@@ -70,7 +71,7 @@ public class ProtocolMappersResource {
     public ProtocolMappersResource(ProtocolMapperContainerModel client, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.client = client;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.PROTOCOL_MAPPER);
 
         auth.init(Resource.CLIENT);
     }
