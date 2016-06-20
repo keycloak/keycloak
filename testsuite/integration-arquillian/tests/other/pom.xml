@@ -141,6 +141,12 @@
                 <module>jpa-performance</module>
             </modules>
         </profile>
+        <profile>
+            <id>clean-start</id>
+            <modules>
+                <module>clean-start</module>
+            </modules>
+        </profile>
     </profiles>
 
 </project>
