@@ -9,6 +9,9 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ProviderFactory;
 import org.kie.api.KieServices;
 import org.kie.api.KieServices.Factory;
@@ -61,9 +64,19 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        ProviderFactory<AuthorizationProvider> providerFactory = factory.getProviderFactory(AuthorizationProvider.class);
-        AuthorizationProvider authorization = providerFactory.create(factory.create());
-        authorization.getStoreFactory().getPolicyStore().findByType(getId()).forEach(this::update);
+        factory.register(new ProviderEventListener() {
+
+            @Override
+            public void onEvent(ProviderEvent event) {
+                // Ensure the initialization is done after DB upgrade is finished
+                if (event instanceof PostMigrationEvent) {
+                    ProviderFactory<AuthorizationProvider> providerFactory = factory.getProviderFactory(AuthorizationProvider.class);
+                    AuthorizationProvider authorization = providerFactory.create(factory.create());
+                    authorization.getStoreFactory().getPolicyStore().findByType(getId()).forEach(DroolsPolicyProviderFactory.this::update);
+                }
+            }
+
+        });
     }
 
     @Override

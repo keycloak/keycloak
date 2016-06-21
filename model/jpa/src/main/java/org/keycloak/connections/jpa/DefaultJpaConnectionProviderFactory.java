@@ -37,7 +37,9 @@ import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.timer.TimerProvider;
 
 /**
@@ -156,6 +158,12 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 	                        if (updater == null) {
 	                            throw new RuntimeException("Can't update database: JPA updater provider not found");
 	                        }
+
+                            // Check if having DBLock before trying to initialize hibernate
+                            DBLockProvider dbLock = new DBLockManager(session).getDBLock();
+                            if (!dbLock.hasLock()) {
+                                throw new IllegalStateException("Trying to update database, but don't have a DB lock acquired");
+                            }
 	
 	                        if (databaseSchema.equals("update")) {
                                 updater.update(connection, schema);
