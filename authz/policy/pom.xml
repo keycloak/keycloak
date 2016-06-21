@@ -18,14 +18,8 @@
     <description>KeyCloak AuthZ: Provider Parent</description>
 
     <modules>
-        <module>user</module>
-        <module>role</module>
+        <module>common</module>
         <module>drools</module>
-        <module>resource</module>
-        <module>scope</module>
-        <module>javascript</module>
-        <module>time</module>
-        <module>aggregate</module>
     </modules>
 
 </project>

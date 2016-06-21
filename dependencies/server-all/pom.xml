@@ -31,6 +31,30 @@
     <name>Keycloak Dependencies Server All</name>
 	<description />
 
+    <properties>
+        <!-- Drools dependencies versions -->
+        <version.org.eclipse.sisu>0.3.0.M1</version.org.eclipse.sisu>
+        <version.org.eclipse.aether>1.0.0.v20140518</version.org.eclipse.aether>
+        <version.org.apache.ant>1.8.3</version.org.apache.ant>
+        <version.org.antlr>3.5</version.org.antlr>
+        <version.aopalliance>1.0</version.aopalliance>
+        <version.org.apache.maven>3.2.5</version.org.apache.maven>
+        <version.org.mvel>2.2.8.Final</version.org.mvel>
+        <version.org.sonatype.plexus.plexus-cipher>1.7</version.org.sonatype.plexus.plexus-cipher>
+        <version.org.codehaus.plexus.plexus-classworlds>2.5.2</version.org.codehaus.plexus.plexus-classworlds>
+        <version.org.codehaus.plexus.plexus-component-annotations>1.5.5</version.org.codehaus.plexus.plexus-component-annotations>
+        <version.org.codehaus.plexus.plexus-interpolation>1.21</version.org.codehaus.plexus.plexus-interpolation>
+        <version.org.codehaus.plexus.plexus-sec-dispatcher>1.3</version.org.codehaus.plexus.plexus-sec-dispatcher>
+        <version.org.codehaus.plexus.plexus-utils>3.0.20</version.org.codehaus.plexus.plexus-utils>
+        <version.org.apache.maven.wagon>2.6</version.org.apache.maven.wagon>
+        <version.com.thoughtworks.xstream>1.4.7</version.com.thoughtworks.xstream>
+        <version.com.google.guava>13.0.1</version.com.google.guava>
+        <version.org.eclipse.jdt.core.compiler>4.4.2</version.org.eclipse.jdt.core.compiler>
+        <version.com.lowagie>2.1.2</version.com.lowagie>
+        <version.org.sonatype.sisu>3.2.3</version.org.sonatype.sisu>
+        <version.com.google.inject.extensions.guice-servlet>3.0</version.com.google.inject.extensions.guice-servlet>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -89,37 +113,7 @@
         <!-- Built-in Authorization Policy Providers  -->
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-resource</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-scope</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-user</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-role</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-js</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-time</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authz-policy-aggregate</artifactId>
+            <artifactId>keycloak-authz-policy-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -137,6 +131,12 @@
         <dependency>
             <groupId>org.kie</groupId>
             <artifactId>kie-ci</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.sonatype.sisu</groupId>
+                    <artifactId>sisu-guice</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.kie</groupId>
@@ -153,202 +153,217 @@
         <dependency>
             <groupId>org.eclipse.aether</groupId>
             <artifactId>aether-api</artifactId>
-            <version>1.0.0.v20140518</version>
+            <version>${version.org.eclipse.aether}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.aether</groupId>
             <artifactId>aether-connector-basic</artifactId>
-            <version>1.0.0.v20140518</version>
+            <version>${version.org.eclipse.aether}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.aether</groupId>
             <artifactId>aether-spi</artifactId>
-            <version>1.0.0.v20140518</version>
+            <version>${version.org.eclipse.aether}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.aether</groupId>
             <artifactId>aether-impl</artifactId>
-            <version>1.0.0.v20140518</version>
+            <version>${version.org.eclipse.aether}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.aether</groupId>
             <artifactId>aether-transport-file</artifactId>
-            <version>1.0.0.v20140518</version>
+            <version>${version.org.eclipse.aether}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.aether</groupId>
             <artifactId>aether-transport-http</artifactId>
-            <version>1.0.0.v20140518</version>
+            <version>${version.org.eclipse.aether}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.aether</groupId>
             <artifactId>aether-transport-wagon</artifactId>
-            <version>1.0.0.v20140518</version>
+            <version>${version.org.eclipse.aether}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.aether</groupId>
             <artifactId>aether-util</artifactId>
-            <version>1.0.0.v20140518</version>
+            <version>${version.org.eclipse.aether}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant</artifactId>
-            <version>1.8.2</version>
+            <version>${version.org.apache.ant}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant-launcher</artifactId>
-            <version>1.8.2</version>
+            <version>${version.org.apache.ant}</version>
         </dependency>
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr-runtime</artifactId>
-            <version>3.5</version>
+            <version>${version.org.antlr}</version>
         </dependency>
         <dependency>
             <groupId>aopalliance</groupId>
             <artifactId>aopalliance</artifactId>
-            <version>1.0</version>
+            <version>${version.aopalliance}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-aether-provider</artifactId>
-            <version>3.2.2</version>
+            <version>${version.org.apache.maven}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-artifact</artifactId>
-            <version>3.2.2</version>
+            <version>${version.org.apache.maven}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-compat</artifactId>
-            <version>3.2.2</version>
+            <version>${version.org.apache.maven}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
-            <version>3.2.2</version>
+            <version>${version.org.apache.maven}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-model</artifactId>
-            <version>3.2.2</version>
+            <version>${version.org.apache.maven}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-model-builder</artifactId>
-            <version>3.2.2</version>
+            <version>${version.org.apache.maven}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>3.2.2</version>
+            <version>${version.org.apache.maven}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-repository-metadata</artifactId>
-            <version>3.2.2</version>
+            <version>${version.org.apache.maven}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-settings</artifactId>
-            <version>3.2.2</version>
+            <version>${version.org.apache.maven}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-settings-builder</artifactId>
-            <version>3.2.2</version>
+            <version>${version.org.apache.maven}</version>
         </dependency>
         <dependency>
             <groupId>org.mvel</groupId>
             <artifactId>mvel2</artifactId>
-            <version>2.2.4.Final</version>
+            <version>${version.org.mvel}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.sisu</groupId>
             <artifactId>org.eclipse.sisu.inject</artifactId>
-            <version>0.0.0.M5</version>
+            <version>${version.org.eclipse.sisu}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.inject</groupId>
+                    <artifactId>guice</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.google.inject.extensions</groupId>
+            <artifactId>guice-servlet</artifactId>
+            <version>${version.com.google.inject.extensions.guice-servlet}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.sisu</groupId>
             <artifactId>org.eclipse.sisu.plexus</artifactId>
-            <version>0.0.0.M5</version>
+            <version>${version.org.eclipse.sisu}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.sonatype.sisu</groupId>
+                    <artifactId>sisu-guice</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.sonatype.plexus</groupId>
             <artifactId>plexus-cipher</artifactId>
-            <version>1.4</version>
+            <version>${version.org.sonatype.plexus.plexus-cipher}</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-classworlds</artifactId>
-            <version>2.5.1</version>
+            <version>${version.org.codehaus.plexus.plexus-classworlds}</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-component-annotations</artifactId>
-            <version>1.5.5</version>
+            <version>${version.org.codehaus.plexus.plexus-component-annotations}</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-interpolation</artifactId>
-            <version>1.19</version>
+            <version>${version.org.codehaus.plexus.plexus-interpolation}</version>
         </dependency>
         <dependency>
             <groupId>org.sonatype.plexus</groupId>
             <artifactId>plexus-sec-dispatcher</artifactId>
-            <version>1.3</version>
+            <version>${version.org.codehaus.plexus.plexus-sec-dispatcher}</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-utils</artifactId>
-            <version>3.0.17</version>
+            <version>${version.org.codehaus.plexus.plexus-utils}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.wagon</groupId>
             <artifactId>wagon-http</artifactId>
-            <version>2.0</version>
+            <version>${version.org.apache.maven.wagon}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.wagon</groupId>
-            <artifactId>wagon-http-shared4</artifactId>
-            <version>2.0</version>
+            <artifactId>wagon-http-shared</artifactId>
+            <version>${version.org.apache.maven.wagon}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.wagon</groupId>
             <artifactId>wagon-provider-api</artifactId>
-            <version>1.0</version>
+            <version>${version.org.apache.maven.wagon}</version>
         </dependency>
         <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
             <artifactId>xstream</artifactId>
-            <version>1.4.7</version>
+            <version>${version.com.thoughtworks.xstream}</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>13.0.1</version>
+            <version>${version.com.google.guava}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jdt.core.compiler</groupId>
             <artifactId>ecj</artifactId>
-            <version>4.3.1</version>
+            <version>${version.org.eclipse.jdt.core.compiler}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.3.6</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <version>4.3.3</version>
         </dependency>
         <dependency>
             <groupId>com.lowagie</groupId>
             <artifactId>itext</artifactId>
-            <version>2.1.2</version>
+            <version>${version.com.lowagie}</version>
             <exclusions>
                 <exclusion>
                     <groupId>bouncycastle</groupId>
@@ -358,12 +373,17 @@
                     <groupId>bouncycastle</groupId>
                     <artifactId>bcprov-jdk14</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.sonatype.sisu</groupId>
+                    <artifactId>sisu-guice</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
             <groupId>org.sonatype.sisu</groupId>
             <artifactId>sisu-guice</artifactId>
-            <version>3.1.0</version>
+            <version>${version.org.sonatype.sisu}</version>
+            <classifier>no_aop</classifier>
         </dependency>
     </dependencies>
 
