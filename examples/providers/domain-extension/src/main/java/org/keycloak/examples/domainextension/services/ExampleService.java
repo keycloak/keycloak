@@ -15,28 +15,19 @@
  * limitations under the License.
  */
 
-package org.keycloak.provider;
+package org.keycloak.examples.domainextension.services;
 
 import java.util.List;
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public interface ProviderLoader {
+import org.keycloak.examples.domainextension.entities.Company;
+import org.keycloak.provider.Provider;
 
-    /**
-     * Load the SPI definitions themselves.
-     *
-     * @return a list of Spi definition objects
-     */
-    List<Spi> loadSpis();
+public interface ExampleService extends Provider {
 
-    /**
-     * Load all provider factories of a specific SPI.
-     *
-     * @param spi the Spi definition
-     * @return a list of provider factories
-     */
-    List<ProviderFactory> load(Spi spi);
+    List<Company> listCompanies();
+
+    Company findCompany(String id);
+
+    void addCompany(Company company);
 
 }

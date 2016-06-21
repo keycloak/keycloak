@@ -65,6 +65,20 @@ public class ProviderManager {
         }
     }
 
+    public synchronized List<Spi> loadSpis() {
+        // Use a map to prevent duplicates, since the loaders may have overlapping classpaths.
+        Map<String, Spi> spiMap = new HashMap<>();
+        for (ProviderLoader loader : loaders) {
+            List<Spi> spis = loader.loadSpis();
+            if (spis != null) {
+                for (Spi spi : spis) {
+                    spiMap.put(spi.getName(), spi);
+                }
+            }
+        }
+        return new LinkedList<>(spiMap.values());
+    }
+
     public synchronized List<ProviderFactory> load(Spi spi) {
         List<ProviderFactory> factories = cache.get(spi.getName());
         if (factories == null) {

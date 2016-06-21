@@ -15,28 +15,27 @@
  * limitations under the License.
  */
 
-package org.keycloak.provider;
+package org.keycloak.examples.domainextension.providers.rest;
 
-import java.util.List;
+import org.keycloak.examples.domainextension.rest.ExampleRestResource;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.resource.RealmResourceProvider;
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public interface ProviderLoader {
+public class ExampleRealmResourceProvider implements RealmResourceProvider {
 
-    /**
-     * Load the SPI definitions themselves.
-     *
-     * @return a list of Spi definition objects
-     */
-    List<Spi> loadSpis();
+    private KeycloakSession session;
 
-    /**
-     * Load all provider factories of a specific SPI.
-     *
-     * @param spi the Spi definition
-     * @return a list of provider factories
-     */
-    List<ProviderFactory> load(Spi spi);
+    public ExampleRealmResourceProvider(KeycloakSession session) {
+        this.session = session;
+    }
+
+    @Override
+    public Object getResource() {
+        return new ExampleRestResource(session);
+    }
+
+    @Override
+    public void close() {
+    }
 
 }

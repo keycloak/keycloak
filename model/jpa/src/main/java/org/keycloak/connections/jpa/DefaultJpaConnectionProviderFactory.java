@@ -20,25 +20,17 @@ package org.keycloak.connections.jpa;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.naming.InitialContext;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.spi.PersistenceUnitTransactionType;
 import javax.sql.DataSource;
 
-import org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl;
 import org.hibernate.ejb.AvailableSettings;
-import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
-import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
-import org.hibernate.jpa.boot.spi.Bootstrap;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
@@ -182,7 +174,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         }
 
 	                    logger.trace("Creating EntityManagerFactory");
-	                    emf = JpaUtils.createEntityManagerFactory(unitName, properties, getClass().getClassLoader());
+	                    emf = JpaUtils.createEntityManagerFactory(session, unitName, properties, getClass().getClassLoader());
 	                    logger.trace("EntityManagerFactory created");
 
                         if (globalStatsInterval != -1) {

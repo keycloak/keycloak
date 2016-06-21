@@ -18,8 +18,25 @@
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import org.jboss.logging.Logger;
+import org.keycloak.Config;
+import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
+import org.keycloak.connections.jpa.entityprovider.ProxyClassLoader;
+import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
+import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
+import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
+import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator;
+import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
+import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 import liquibase.Liquibase;
+import liquibase.changelog.ChangeLogParameters;
 import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
 import liquibase.database.Database;
@@ -27,23 +44,14 @@ import liquibase.database.DatabaseFactory;
 import liquibase.database.core.DB2Database;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
-import liquibase.lockservice.LockService;
-import liquibase.lockservice.LockServiceFactory;
 import liquibase.logging.LogFactory;
 import liquibase.logging.LogLevel;
+import liquibase.parser.ChangeLogParser;
+import liquibase.parser.ChangeLogParserFactory;
 import liquibase.resource.ClassLoaderResourceAccessor;
+import liquibase.resource.ResourceAccessor;
 import liquibase.servicelocator.ServiceLocator;
 import liquibase.sqlgenerator.SqlGeneratorFactory;
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
-import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
-import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
-import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator;
-import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService;
-import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -54,8 +62,11 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
     private volatile boolean initialized = false;
 
+    private KeycloakSession keycloakSession;
+    
     @Override
     public LiquibaseConnectionProvider create(KeycloakSession session) {
+    	this.keycloakSession = session;
         if (!initialized) {
             synchronized (this) {
                 if (!initialized) {
@@ -131,10 +142,75 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
             database.setDefaultSchemaName(defaultSchema);
         }
 
-        String changelog = (database instanceof DB2Database) ? LiquibaseJpaUpdaterProvider.DB2_CHANGELOG :  LiquibaseJpaUpdaterProvider.CHANGELOG;
+        String changelog = getChangelogLocation(database);
         logger.debugf("Using changelog file: %s", changelog);
 
-        return new Liquibase(changelog, new ClassLoaderResourceAccessor(getClass().getClassLoader()), database);
+        ResourceAccessor resourceAccessor = new ClassLoaderResourceAccessor(getClass().getClassLoader());
+        DatabaseChangeLog databaseChangeLog = generateDynamicChangeLog(changelog, resourceAccessor, database);
+        
+        return new Liquibase(databaseChangeLog, resourceAccessor, database);
+    }
+
+    /**
+     * We want to be able to provide extra changesets as an extension to the Keycloak data model.
+     * But we do not want users to be able to not execute certain parts of the Keycloak internal data model.
+     * Therefore, we generate a dynamic changelog here that always contains the keycloak changelog file
+     * and optionally include the user extension changelog files.
+     * 
+     * @param changelog the changelog file location
+     * @param resourceAccessor the resource accessor
+     * @param database the database
+     * @return
+     */
+    private DatabaseChangeLog generateDynamicChangeLog(String changelog, ResourceAccessor resourceAccessor, Database database) throws LiquibaseException {
+    	ChangeLogParameters changeLogParameters = new ChangeLogParameters(database);
+        ChangeLogParser parser = ChangeLogParserFactory.getInstance().getParser(changelog, resourceAccessor);
+        DatabaseChangeLog keycloakDatabaseChangeLog = parser.parse(changelog, changeLogParameters, resourceAccessor);
+
+        List<String> locations = new ArrayList<>();
+        Set<JpaEntityProvider> entityProviders = keycloakSession.getAllProviders(JpaEntityProvider.class);
+        for (JpaEntityProvider entityProvider : entityProviders) {
+            String location = entityProvider.getChangelogLocation();
+            if (location != null) {
+            	locations.add(location);
+            }
+        }
+        
+        final DatabaseChangeLog dynamicMasterChangeLog;
+        if (locations.isEmpty()) {
+        	// If there are no extra changelog locations, we'll just use the keycloak one.
+        	dynamicMasterChangeLog = keycloakDatabaseChangeLog;
+        } else {
+        	// A change log is essentially not much more than a (big) collection of changesets.
+        	// The original (file) destination is not important. So we can just make one big dynamic change log that include all changesets.
+            dynamicMasterChangeLog = new DatabaseChangeLog();
+            dynamicMasterChangeLog.setChangeLogParameters(changeLogParameters);
+            for (ChangeSet changeSet : keycloakDatabaseChangeLog.getChangeSets()) {
+            	dynamicMasterChangeLog.addChangeSet(changeSet);
+            }
+            ProxyClassLoader proxyClassLoader = new ProxyClassLoader(JpaUtils.getProvidedEntities(keycloakSession));
+            for (String location : locations) {
+            	ResourceAccessor proxyResourceAccessor = new ClassLoaderResourceAccessor(proxyClassLoader);
+                ChangeLogParser locationParser = ChangeLogParserFactory.getInstance().getParser(location, proxyResourceAccessor);
+                DatabaseChangeLog locationDatabaseChangeLog = locationParser.parse(location, changeLogParameters, proxyResourceAccessor);
+                for (ChangeSet changeSet : locationDatabaseChangeLog.getChangeSets()) {
+                	dynamicMasterChangeLog.addChangeSet(changeSet);
+                }
+            }
+        }
+        
+        return dynamicMasterChangeLog;
+    }
+    
+    /**
+     * Get the changelog file location that should be used as input for Liquibase.
+     * This logic is split into a separate protected method, to allow for easy extends + override when customizing the schema.
+     * 
+     * @param database the database
+     * @return the liquibase changelog location
+     */
+    protected String getChangelogLocation(Database database) {
+        return (database instanceof DB2Database) ? LiquibaseJpaUpdaterProvider.DB2_CHANGELOG : LiquibaseJpaUpdaterProvider.CHANGELOG;
     }
 
     private static class LogWrapper extends LogFactory {
