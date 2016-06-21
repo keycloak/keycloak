@@ -33,6 +33,15 @@ public class DefaultProviderLoader implements ProviderLoader {
     }
 
     @Override
+    public List<Spi> loadSpis() {
+        LinkedList<Spi> list = new LinkedList<>();
+        for (Spi spi : ServiceLoader.load(Spi.class, classLoader)) {
+            list.add(spi);
+        }
+        return list;
+    }
+
+    @Override
     public List<ProviderFactory> load(Spi spi) {
         LinkedList<ProviderFactory> list = new LinkedList<ProviderFactory>();
         for (ProviderFactory f : ServiceLoader.load(spi.getProviderFactoryClass(), classLoader)) {
