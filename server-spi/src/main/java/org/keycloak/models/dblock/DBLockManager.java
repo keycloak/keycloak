@@ -15,24 +15,19 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.managers;
+package org.keycloak.models.dblock;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmProviderFactory;
-import org.keycloak.models.dblock.DBLockProvider;
-import org.keycloak.models.dblock.DBLockProviderFactory;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.ServicesLogger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class DBLockManager {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(DBLockManager.class);
 
     private final KeycloakSession session;
 
@@ -45,7 +40,7 @@ public class DBLockManager {
         if (Boolean.getBoolean("keycloak.dblock.forceUnlock")) {
             DBLockProvider lock = getDBLock();
             if (lock.supportsForcedUnlock()) {
-                logger.forcedReleaseDBLock();
+                logger.warn("Forced release of DB lock at startup requested by System property. Make sure to not use this in production environment! And especially when more cluster nodes are started concurrently.");
                 lock.releaseLock();
             } else {
                 throw new IllegalStateException("Forced unlock requested, but provider " + lock + " doesn't support it");

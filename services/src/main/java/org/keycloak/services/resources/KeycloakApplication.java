@@ -26,7 +26,7 @@ import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.*;
 import org.keycloak.models.dblock.DBLockProvider;
-import org.keycloak.services.managers.DBLockManager;
+import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;

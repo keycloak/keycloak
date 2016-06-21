@@ -91,6 +91,7 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
         while (maxAttempts > 0) {
             try {
                 lockService.waitForLock();
+                factory.setHasLock(true);
                 this.maxAttempts = DEFAULT_MAX_ATTEMPTS;
                 return;
             } catch (LockRetryException le) {
@@ -111,6 +112,12 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
     public void releaseLock() {
         lockService.releaseLock();
         lockService.reset();
+        factory.setHasLock(false);
+    }
+
+    @Override
+    public boolean hasLock() {
+        return factory.hasLock();
     }
 
     @Override
