@@ -1,4 +1,4 @@
-Example User Federation Provider
+Example Custom Authenticator
 ===================================================
 
 This is an example of defining a custom Authenticator and Required action.  This example is explained in the user documentation
