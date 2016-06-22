@@ -1,6 +1,4 @@
 <%@page import="org.keycloak.AuthorizationContext" %>
-<%@ page import="org.keycloak.common.util.KeycloakUriBuilder" %>
-<%@ page import="org.keycloak.constants.ServiceUrlConstants" %>
 <%@ page import="org.keycloak.KeycloakSecurityContext" %>
 <%@ page import="org.keycloak.representations.authorization.Permission" %>
 
@@ -11,8 +9,7 @@
 
 <html>
 <body>
-    <h2>Click <a href="<%= KeycloakUriBuilder.fromUri("/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
-            .queryParam("redirect_uri", "/servlet-authz-app").build("servlet-authz").toString()%>">here</a> to logout.</h2>
+    <%@include file="logout-include.jsp"%>
     <h2>This is a public resource. Try to access one of these <i>protected</i> resources:</h2>
 
     <p><a href="protected/dynamicMenu.jsp">Dynamic Menu</a></p>
