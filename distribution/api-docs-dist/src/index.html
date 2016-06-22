@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <!--
   ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -15,13 +16,23 @@
   ~ limitations under the License.
   -->
 
-<chapter>
-    <title>Logout</title>
-    <para>
-        There are multiple ways you can logout from a web application.  For Java EE servlet containers, you can call
-        HttpServletRequest.logout().
-        For any other browser application, you can point the browser at any url of your web application that has
-        a security constraing and pass in a query parameter GLO, i.e. <literal>http://myapp?GLO=true</literal>.
-        This will log you out if you have an SSO session with your browser.
-    </para>
-</chapter>
+<html>
+<head>
+    <style>
+        td { padding: 5px; }
+    </style>
+</head>
+
+<body>
+<h1>Keyloak API Documentation</h1>
+<table>
+    <tr>
+        <td>Admin REST API</td>
+        <td colspan="3"><a href="rest-api/index.html">HTML</a></td>
+    </tr>
+    <tr>
+        <td>Javadocs</td>
+        <td colspan="3"><a href="javadocs/index.html">HTML</a></td>
+    </tr>
+</body>
+</html>

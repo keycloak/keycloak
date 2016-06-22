@@ -1081,7 +1081,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-docs-dist</artifactId>
+                <artifactId>keycloak-api-docs-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
@@ -1395,7 +1395,6 @@
         <profile>
             <id>jboss-release</id>
             <modules>
-                <module>docbook</module>
                 <module>distribution</module>
             </modules>
         </profile>

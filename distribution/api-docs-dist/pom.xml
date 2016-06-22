@@ -24,7 +24,7 @@
         <version>2.0.0.CR1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>keycloak-docs-dist</artifactId>
+    <artifactId>keycloak-api-docs-dist</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Docs Distribution</name>
     <description/>
@@ -38,7 +38,7 @@
     </dependencies>
 
     <build>
-        <finalName>keycloak-docs-${project.version}</finalName>
+        <finalName>keycloak-api-docs-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

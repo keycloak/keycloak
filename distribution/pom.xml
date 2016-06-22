@@ -35,7 +35,7 @@
         <module>adapters</module>
         <module>saml-adapters</module>
         <module>demo-dist</module>
-        <module>docs-dist</module>
+        <module>api-docs-dist</module>
         <module>examples-dist</module>
         <module>proxy-dist</module>
         <module>server-dist</module>
