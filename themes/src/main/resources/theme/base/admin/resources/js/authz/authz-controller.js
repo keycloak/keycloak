@@ -1044,7 +1044,7 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
             custom: true
         },
         {
-            key : "kc.authz.context.authc.method",
+            key : "kc.identity.authc.method",
             name : "Authentication Method",
             values: [
                 {
@@ -1062,23 +1062,23 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
             ]
         },
         {
-            key : "kc.authz.context.authc.realm",
+            key : "kc.realm.name",
             name : "Realm"
         },
         {
-            key : "kc.authz.context.time.date_time",
+            key : "kc.time.date_time",
             name : "Date/Time (MM/dd/yyyy hh:mm:ss)"
         },
         {
-            key : "kc.authz.context.client.network.ip_address",
+            key : "kc.client.network.ip_address",
             name : "Client IPv4 Address"
         },
         {
-            key : "kc.authz.context.client.network.host",
+            key : "kc.client.network.host",
             name : "Client Host"
         },
         {
-            key : "kc.authz.context.client.user_agent",
+            key : "kc.client.user_agent",
             name : "Client/User Agent"
         }
     ];

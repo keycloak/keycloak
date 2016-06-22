@@ -7,7 +7,7 @@ rule "Authorize Using Context Information"
     when
        $evaluation : Evaluation(
            $attributes: context.attributes,
-           $attributes.containsValue("kc.authz.context.authc.method", "otp"),
+           $attributes.containsValue("kc.identity.authc.method", "otp"),
            $attributes.containsValue("someAttribute", "you_can_access")
        )
     then

@@ -463,7 +463,7 @@ public class ResourceServerService {
                 "\n" +
                 "// using attributes from the evaluation context to obtain the realm\n" +
                 "var contextAttributes = context.getAttributes();\n" +
-                "var realmName = contextAttributes.getValue('kc.authz.context.authc.realm').asString(0);\n" +
+                "var realmName = contextAttributes.getValue('kc.realm.name').asString(0);\n" +
                 "\n" +
                 "// using attributes from the identity to obtain the issuer\n" +
                 "var identity = context.getIdentity();\n" +
