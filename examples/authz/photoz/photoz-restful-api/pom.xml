@@ -5,16 +5,16 @@
 
     <parent>
         <groupId>org.keycloak</groupId>
-        <artifactId>keycloak-authz-photoz-uma-parent</artifactId>
+        <artifactId>keycloak-authz-photoz-parent</artifactId>
         <version>2.0.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>photoz-uma-restful-api</artifactId>
+    <artifactId>photoz-restful-api</artifactId>
     <packaging>war</packaging>
 
-    <name>Keycloak Authz: Photoz UMA RESTful API</name>
-    <description>Photoz UMA RESTful API</description>
+    <name>Keycloak Authz: Photoz RESTful API</name>
+    <description>Photoz RESTful API</description>
 
     <dependencies>
         <dependency>

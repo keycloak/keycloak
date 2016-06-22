@@ -5,18 +5,20 @@
 
     <parent>
         <groupId>org.keycloak</groupId>
-        <artifactId>keycloak-authz-photoz-uma-parent</artifactId>
+        <artifactId>keycloak-authz-example-parent</artifactId>
         <version>2.0.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>photoz-uma-authz-policy</artifactId>
-    <packaging>jar</packaging>
+    <artifactId>keycloak-authz-photoz-parent</artifactId>
+    <packaging>pom</packaging>
 
-    <name>Keycloak Authz: Examples - Photoz UMA Authz Rule-based Policy</name>
+    <name>Keycloak Authz: PhotoZ  Example Application Parent</name>
+    <description>PhotoZ Example Application</description>
 
-    <description>
-        Photoz UMA Authz Rule-based Policies using JBoss Drools
-    </description>
-
+    <modules>
+        <module>photoz-restful-api</module>
+        <module>photoz-html5-client</module>
+        <module>photoz-authz-policy</module>
+    </modules>
 </project>

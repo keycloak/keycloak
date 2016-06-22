@@ -1,5 +1,5 @@
 {
-  "realm": "photoz-uma",
+  "realm": "photoz",
   "enabled": true,
   "sslRequired": "external",
   "privateKey": "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=",
@@ -62,12 +62,12 @@
       }
     },
     {
-      "username": "service-account-photoz-uma-restful-api",
+      "username": "service-account-photoz-restful-api",
       "enabled": true,
-      "email": "service-account-photoz-uma-restful-api@placeholder.org",
-      "serviceAccountClientId": "photoz-uma-restful-api",
+      "email": "service-account-photoz-restful-api@placeholder.org",
+      "serviceAccountClientId": "photoz-restful-api",
       "clientRoles": {
-        "photoz-uma-restful-api" : ["uma_protection"]
+        "photoz-restful-api" : ["uma_protection"]
       }
     }
   ],
@@ -85,25 +85,25 @@
   },
   "clients": [
     {
-      "clientId": "photoz-uma-html5-client",
+      "clientId": "photoz-html5-client",
       "enabled": true,
-      "adminUrl": "/photoz-uma-html5-client",
-      "baseUrl": "/photoz-uma-html5-client",
+      "adminUrl": "/photoz-html5-client",
+      "baseUrl": "/photoz-html5-client",
       "publicClient": true,
       "redirectUris": [
-        "/photoz-uma-html5-client/*"
+        "/photoz-html5-client/*"
       ],
       "webOrigins": [
         ""
       ]
     },
     {
-      "clientId": "photoz-uma-restful-api",
+      "clientId": "photoz-restful-api",
       "enabled": true,
-      "baseUrl": "/photoz-uma-restful-api",
+      "baseUrl": "/photoz-restful-api",
       "authorizationServicesEnabled" : true,
       "redirectUris": [
-        "/photoz-uma-restful-api/*"
+        "/photoz-restful-api/*"
       ],
       "secret": "secret"
     }

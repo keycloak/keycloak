@@ -46,7 +46,7 @@
       "type": "drools",
       "config": {
         "mavenArtifactVersion": "2.0.0.CR1-SNAPSHOT",
-        "mavenArtifactId": "photoz-uma-authz-policy",
+        "mavenArtifactId": "photoz-authz-policy",
         "sessionName": "MainOwnerSession",
         "mavenArtifactGroupId": "org.keycloak",
         "moduleName": "PhotozAuthzOwnerPolicy",
