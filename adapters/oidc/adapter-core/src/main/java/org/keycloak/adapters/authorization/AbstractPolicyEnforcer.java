@@ -129,7 +129,7 @@ public abstract class AbstractPolicyEnforcer {
             Set<String> allowedScopes = permission.getScopes();
 
             if (permission.getResourceSetId() != null) {
-                if (permission.getResourceSetId().equals(actualPathConfig.getId())) {
+                if (isResourcePermission(actualPathConfig, permission)) {
                     if (((allowedScopes == null || allowedScopes.isEmpty()) && requiredScopes.isEmpty()) || allowedScopes.containsAll(requiredScopes)) {
                         LOGGER.debugf("Authorization GRANTED for path [%s]. Permissions [%s].", actualPathConfig, permissions);
                         if (request.getMethod().equalsIgnoreCase("DELETE") && actualPathConfig.isInstance()) {
@@ -211,6 +211,7 @@ public abstract class AbstractPolicyEnforcer {
                 config.setScopes(originalConfig.getScopes());
                 config.setMethods(originalConfig.getMethods());
                 config.setInstance(true);
+                config.setParentConfig(originalConfig);
 
                 this.paths.add(config);
 
@@ -239,5 +240,17 @@ public abstract class AbstractPolicyEnforcer {
 
     private AuthorizationContext createAuthorizationContext(AccessToken accessToken) {
         return new AuthorizationContext(accessToken, this.paths);
+    }
+
+    private boolean isResourcePermission(PathConfig actualPathConfig, Permission permission) {
+        // first we try a match using resource id
+        boolean resourceMatch = permission.getResourceSetId().equals(actualPathConfig.getId());
+
+        // as a fallback, check if the current path is an instance and if so, check if parent's id matches the permission
+        if (!resourceMatch && actualPathConfig.isInstance()) {
+            resourceMatch = permission.getResourceSetId().equals(actualPathConfig.getParentConfig().getId());
+        }
+
+        return resourceMatch;
     }
 }
