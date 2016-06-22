@@ -1,0 +1,80 @@
+== JavaScript Integration
+
+The {{book.project.name}} Server comes with a Javascript library you can use to interact with a resource server protected by a policy enforcer. This library is based on the https://keycloak.gitbooks.io/securing-client-applications-guide/content/topics/oidc/javascript-adapter.html[Keycloak JavaScript Adapter], which means your client
+should be using it to authenticate against a {{book.project.name}} Server.
+
+You can obtain this library from a running {{book.project.name}} Server instance by including the following `script` tag in your web page:
+
+```html
+<script src="http://${KEYCLOAK_HOST}/auth/js/keycloak-authz.js"></script>
+```
+Once you do that, you can create a `KeycloakAuthorization` instance as follows:
+
+```javascript
+var keycloak = // obtain a Keycloak instance from keycloak.js library
+var authorization = new KeycloakAuthorization(keycloak);
+```
+The *keycloak-authz.js* library provides two main functionalities:
+
+* Handle responses from a resource server protected by a link:overview.html[{{book.project.name}} Policy Enforcer] and obtain a RPT with the necessary permissions to gain access to
+the protected resources on the resource server
+
+** In this case, the library can handle whatever authorization protocol the resource server is using: link:../service/authorization/authorization-api.html[UMA] or link:../service/entitlement/entitlement-api.html[Entitlements].
+
+* Obtain permissions from a {{book.project.name}} Server using the link:../service/entitlement/entitlement-api.html[Entitlement API]
+
+In both cases, the library allows you to easily interact with both resource server and {{book.project.name}} {{book.project.module}} in order to obtain tokens with the
+necessary permissions that your client can use as bearer tokens to access the protected resources on a resource server.
+
+=== Handling Authorization Responses from a Resource Server
+
+If a resource server is protected by a policy enforcer, it will respond to client requests based on the permissions carried along with a link:keycloak-enforcement-bearer.html[bearer token].
+Usually, when you try to access a resource server with a bearer token that is lacking permissions to access a protected resource, the resource server
+will respond with a *401* status code and a `WWW-Authenticate` header.
+
+The value of the `WWW-Authenticate` header depends on the authorization protocol in use by the resource server. Whatever protocol is in use, you can use a `KeycloakAuthorization` instance to
+handle responses as follows:
+
+```javascript
+var wwwAuthenticateHeader = // extract WWW-Authenticate Header from the response in case of a 401 status code
+authorization.authorize(wwwAuthenticateHeader).then(function (rpt) {
+    // onGrant callback function. If authorization was successful you'll receive a RPT with the necessary permissions to access the resource server
+}, function () {
+    // onDeny callback function. Called when the authorization request is denied by the server
+}, function () {
+    // onError callback function. Called when the server responds unexpectedly
+});
+```
+
+The `authorize` function is completely asynchronous and supports a few callback functions in order to receive notifications from the server:
+
+* `onGrant`, is the first argument of the function. If authorization was successful and the server returned a RPT with the requested permissions, the callback will receive the RPT
+* `onDeny`, is the second argument of the function. Only called if the server has denied the authorization request
+* `onError`, is the third argument of the function. Only called if the server responds unexpectedly
+
+Most applications would use the `onGrant` callback to retry a request after a 401 response. Where subsequent requests should include the RPT as a bearer token.
+
+=== Obtaining Entitlements
+
+The keycloak-authz.js provides a `entitlement` function that you can use to obtain a RPT from the server using the Entitlement API.
+
+```json
+authorization.entitlement('my-resource-server-id').then(function (rpt) {
+    // onGrant callback function. If authorization was successful you'll receive a RPT with the necessary permissions to access the resource server
+});
+```
+When using the `entitlement` function, you just need to provide the _client_id_ of the resource server you want to access.
+
+The `entitlement` function is completely asynchronous and supports a few callback functions in order to receive notifications from the server:
+
+* `onGrant`, is the first argument of the function. If authorization was successful and the server returned a RPT with the requested permissions, the callback will receive the RPT
+* `onDeny`, is the second argument of the function. Only called if the server has denied the authorization request
+* `onError`, is the third argument of the function. Only called if the server responds unexpectedly
+
+=== Obtaining the RPT
+
+If you have already obtained a RPT using any of the authorization functions provided by the library, you can always obtain the RPT as follows:
+
+```javascript
+var rpt = authorization.rpt;
+```
