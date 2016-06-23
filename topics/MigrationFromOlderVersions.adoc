@@ -6,7 +6,9 @@ You then have to migrate the database, keycloak-server.json, providers, themes a
 === Migrate database
 
 Keycloak provides automatic migration of the database.
-It's highly recommended that you backup your database prior to upgrading Keycloak. 
+It's highly recommended that you backup your database prior to upgrading Keycloak. Migrating from a release candidate to
+a final release is not supported. For reason for release candidates we recommend that you create a copy of your production
+database to test release candidates.
 
 To enable automatic upgrading of the database if you're using a relational database make sure `databaseSchema` is set to `update` for `connectionsJpa`: 
 
@@ -59,6 +61,13 @@ For any applications including those not deployed directly to the Keycloak serve
 The version specific section below will mention if any changes are required to applications. 
 
 === Version specific migration
+
+==== Migrating to 2.0.0
+
+====== Upgrading from 1.0.0.Final no longer supported
+
+Upgrading from 1.0.0.Final is no longer supported. To upgrade to this version upgrade to 1.9.8.Final prior to upgrading
+to 2.0.0.
 
 ==== Migrating to 1.9.5
 
