@@ -44,6 +44,7 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.KeycloakServer;
+import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.ErrorServlet;
@@ -503,7 +504,12 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-enc/");
         assertAtLoginPagePostBinding();
         loginPage.login("bburke", "password");
-        assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-enc/");
+        Retry.execute(new Runnable() {
+            @Override
+            public void run() {
+                assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-enc/");
+            }
+        }, 10, 100);
         Assert.assertTrue(driver.getPageSource().contains("bburke"));
         driver.navigate().to(APP_SERVER_BASE_URL + "/sales-post-enc?GLO=true");
         checkLoggedOut(APP_SERVER_BASE_URL + "/sales-post-enc/", true);
