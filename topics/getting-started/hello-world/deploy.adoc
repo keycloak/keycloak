@@ -6,7 +6,7 @@ the server and see the results.
 === Generating the Adapter Configuration
 
 First, let's obtain the adapter configuration from the {{book.project.name}} Administration Console. Click on the `Clients` left menu item. In the client listing,
-click on the *hello-world-authz-service* client application. This you bring you the `Client Details` page.
+click on the *hello-world-authz-service* client application. This will bring you the `Client Details` page.
 
 .Client Details
 image:../../../images/getting-started/hello-world/enable-authz.png[alt="Client Details"]
@@ -16,8 +16,19 @@ Click on the `Installation Tab`. In this tab select `Keycloak OIDC JSON` as the 
 .Adapter Configuration
 image:../../../images/getting-started/hello-world/adapter-config.png[alt="Adapter Configuration"]
 
-Now, go to the *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/hello-world-authz-service/src/main/webapp*. There you'll find a *keycloak.json* file. Replace its contents with the adapter configuration
+Now, go to the *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/hello-world-authz-service/src/main/webapp/WEB-INF*. There you'll find a *keycloak.json* file. Replace its contents with the adapter configuration
 you just obtained from the {{book.project.name}} Administration Console.
+
+By default, the policy enforcer responds with a `403` status code when the user lacks permissions to access protected resources on the resource server. However, you can also provide a
+URL to where you want redirect your users to. For that, change the *keycloak.json* file you just updated and replace the `policy-enforcer` configuration with the following:
+
+```json
+"policy-enforcer": {
+    "on-deny-redirect-to" : "/hello-world-authz-service/error.jsp"
+  }
+```
+
+That last configuration tells the policy enforcer to redirect users to a `/hello-world-authz-service/error.jsp` page in case they dom't have the necessary permissions to access a protected resource.
 
 === Build and Deploy the Application
 

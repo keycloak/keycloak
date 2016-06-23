@@ -13,8 +13,8 @@ Click on the `Save` button to create the client. This should bring you the `Clie
 .Client Details
 image:../../../images/getting-started/hello-world/enable-authz.png[alt="Client Details"]
 
-In this page, click on the `Authorization Services Enabled` button. When you do that, a new `Authorization` tab will show up.
-Click on this tab and you should see a page like that.
+In this page, click on the `Authorization Services Enabled` switch and turn it `ON`. After that click on the `Save` button.
+When you do that, a new `Authorization` tab will show up. Click on this tab and you should see a page like that.
 
 .Authorization Settings
 image:../../../images/getting-started/hello-world/authz-settings.png[alt="Authorization Settings"]
