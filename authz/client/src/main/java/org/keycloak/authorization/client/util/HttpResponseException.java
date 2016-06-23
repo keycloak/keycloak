@@ -26,7 +26,8 @@ public class HttpResponseException extends RuntimeException {
     private final String reasonPhrase;
     private final byte[] bytes;
 
-    public HttpResponseException(int statusCode, String reasonPhrase, byte[] bytes) {
+    public HttpResponseException(String message, int statusCode, String reasonPhrase, byte[] bytes) {
+        super(message);
         this.statusCode = statusCode;
         this.reasonPhrase = reasonPhrase;
         this.bytes = bytes;

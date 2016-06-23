@@ -47,7 +47,7 @@ It also provides some background on how you can actually protect your JAX-RS end
 
 ## Create the Example Realm and a Resource Server
 
-Considering that your AuthZ Server is up and running, log in to the Keycloak Administration Console.
+Considering that your Keycloak Server is up and running, log in to the Keycloak Administration Console.
 
 Now, create a new realm based on the following configuration file:
 
@@ -64,28 +64,28 @@ JBoss Drools, which require ``photoz-authz-policy`` artifact installed into your
     cd examples/authz/photoz
     mvn clean install 
 
-Now, let's import another configuration using the Administration Console in order to configure the ``photoz-restful-api`` as a resource server with all resources, scopes, permissions and policies.
+Now, let's import another configuration using the Administration Console in order to configure the client application ``photoz-restful-api`` as a resource server with all resources, scopes, permissions and policies.
 
-Click on ``Authorization`` on the left side menu. Click on the ``Create`` button on the top of the resource server table. This will
-open the page that allows you to create a new resource server.
+Click on ``Clients`` on the left side menu. Click on the ``photoz-restful-api`` on the client listing page. This will
+open the ``Client Details`` page. Once there, click on the `Authorization` tab. 
 
 Click on the ``Select file`` button, which means you want to import a resource server configuration. Now select the file that is located at:
 
     examples/authz/photoz/photoz-restful-api/photoz-restful-api-authz-config.json
     
-Now click ``Upload`` and a new resource server will be created based on the ``photoz-restful-api`` client application.
+Now click ``Upload`` and the resource server will be updated accordingly.
 
 ## Deploy and Run the Example Applications
 
 To deploy the example applications, follow these steps:
 
     cd examples/authz/photoz/photoz-html5-client
-    mvn wildfly:deploy
+    mvn clean package wildfly:deploy
     
 And then:
 
     cd examples/authz/photoz/photoz-restful-api
-    mvn wildfly:deploy
+    mvn clean package wildfly:deploy
    
 Now, try to access the client application using the following URL:
 
@@ -96,5 +96,3 @@ If everything is correct, you will be redirect to Keycloak login page. You can l
 * username: jdoe / password: jdoe
 * username: alice / password: alice
 * username: admin / password: admin
-
-
