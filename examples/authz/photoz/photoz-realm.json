@@ -92,9 +92,6 @@
       "publicClient": true,
       "redirectUris": [
         "/photoz-html5-client/*"
-      ],
-      "webOrigins": [
-        ""
       ]
     },
     {
