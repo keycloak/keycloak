@@ -6,6 +6,7 @@
  . link:topics/custom-attributes.adoc[Custom User Attributes]
 {% if book.community %}
  . link:topics/providers.adoc[Service Provider Interfaces (SPI)]
+ . link:topics/extensions.adoc[Extending Server]
  . link:topics/auth-spi.adoc[Authentication SPI]
  . link:topics/events.adoc[Event Listener SPI]
  . link:topics/user-federation.adoc[User Federation SPI]
