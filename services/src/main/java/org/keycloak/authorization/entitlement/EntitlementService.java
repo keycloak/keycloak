@@ -80,8 +80,9 @@ public class EntitlementService {
         this.authorization = authorization;
     }
 
+    @Path("{resource_server_id}")
     @OPTIONS
-    public Response authorizePreFlight() {
+    public Response authorizePreFlight(@PathParam("resource_server_id") String resourceServerId) {
         return Cors.add(this.request, Response.ok()).auth().preflight().build();
     }
 
@@ -118,7 +119,10 @@ public class EntitlementService {
                 List<Permission> entitlements = Permissions.allPermits(results);
 
                 if (entitlements.isEmpty()) {
-                    asyncResponse.resume(new ErrorResponseException("not_authorized", "Authorization denied.", Status.FORBIDDEN));
+                    asyncResponse.resume(Cors.add(request, Response.status(Status.FORBIDDEN)
+                            .entity(new ErrorResponseException("not_authorized", "Authorization denied.", Status.FORBIDDEN)))
+                            .allowedOrigins(identity.getAccessToken())
+                            .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
                 } else {
                     asyncResponse.resume(Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements)))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
                 }

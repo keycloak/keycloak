@@ -1,8 +1,0 @@
-{
-  "realm": "photoz-uma",
-  "auth-server-url": "http://localhost:8080/auth",
-  "resource": "photoz-uma-restful-api",
-  "credentials": {
-    "secret": "secret"
-  }
-}

@@ -22,7 +22,7 @@
     </properties>
 
     <modules>
-        <module>photoz-uma</module>
+        <module>photoz</module>
         <module>servlet-authz</module>
         <module>hello-world</module>
         <module>hello-world-authz-service</module>

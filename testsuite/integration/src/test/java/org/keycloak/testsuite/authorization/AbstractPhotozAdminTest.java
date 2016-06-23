@@ -261,7 +261,7 @@ public abstract class AbstractPhotozAdminTest extends AbstractAuthorizationTest 
 
             config.put("code",
                     "var contextAttributes = $evaluation.getContext().getAttributes();" +
-                    "var networkAddress = contextAttributes.getValue('kc.authz.context.client.network.ip_address');" +
+                    "var networkAddress = contextAttributes.getValue('kc.client.network.ip_address');" +
                     "if ('127.0.0.1'.equals(networkAddress.asInetAddress(0).getHostAddress())) {" +
                         "$evaluation.grant();" +
                     "}");

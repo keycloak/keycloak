@@ -49,7 +49,7 @@ public class AuthorizationClientExample {
         // query the server for a resource with a given name
         Set<String> resourceId = authzClient.protection()
                 .resource()
-                .findByFilter("name=Hello World Resource");
+                .findByFilter("name=Default Resource");
 
         // obtian a Entitlement API Token in order to get access to the Entitlement API.
         // this token is just an access token issued to a client on behalf of an user with a scope kc_entitlement
@@ -119,7 +119,7 @@ public class AuthorizationClientExample {
         EntitlementRequest request = new EntitlementRequest();
         PermissionRequest permission = new PermissionRequest();
 
-        permission.setResourceSetName("Hello World Resource");
+        permission.setResourceSetName("Default Resource");
 
         request.addPermission(permission);
 
@@ -157,6 +157,6 @@ public class AuthorizationClientExample {
      * @return a string representing a EAT
      */
     private static String getEntitlementAPIToken(AuthzClient authzClient) {
-        return authzClient.obtainAccessToken("alice", "password").getToken();
+        return authzClient.obtainAccessToken("alice", "alice").getToken();
     }
 }

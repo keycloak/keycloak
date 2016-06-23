@@ -17,6 +17,7 @@
  */
 package org.keycloak.representations.adapters.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
@@ -99,6 +100,9 @@ public class PolicyEnforcerConfig {
         private String id;
         private boolean instance;
 
+        @JsonIgnore
+        private PathConfig parentConfig;
+
         public String getPath() {
             return this.path;
         }
@@ -168,6 +172,14 @@ public class PolicyEnforcerConfig {
 
         public void setInstance(boolean instance) {
             this.instance = instance;
+        }
+
+        public void setParentConfig(PathConfig parentConfig) {
+            this.parentConfig = parentConfig;
+        }
+
+        public PathConfig getParentConfig() {
+            return parentConfig;
         }
     }
 

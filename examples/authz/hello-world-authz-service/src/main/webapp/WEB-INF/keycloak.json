@@ -1,11 +1,11 @@
 {
   "realm": "hello-world-authz",
-  "realm-public-key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwmm2Nso+rUOYUYc4hO67LSf4s0pAKcqUbWWycS3fcz6Q4jg/SsBbIBJJXOMVR9GqwyTCVTH5s8Rb0+0pA+UrbZfMG2XIDnJoaGfJj9DvJwQkD+vzTvaS5q0ilP0tPlbusI5pyMi9xx+cjJBOvKR2GxjhcKrgb21lpmGcA1F1CPO3y/DT8GzTKg+9/nPKt1dKEUD7P5Uy5N7d8zz1fuOSLb5G267T1fKJvi6am8kCgM+agFVQ23j7w/aJ7T1EHUCZdaJ+aSODSYl8dM4RFNTjda0KMHHXqMMvd2+g8lZ0lAfstHywqZtCcHc9ULClVvQmQyXovn2qTktHAcD6BHTAgQIDAQAB",
+  "realm-public-key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzMhNM9HXNQWhVf1m64zS67SIyQjj+tV5GR+MqlRTWDXdo8GAWHd+alY1urRhfRoqMy4F499+8wh2REKFykNt0ng6s6wWnEaKDboS3SAUV6lybcOAkwIOCtCZj1ItddKG3m64fzxDDQrcpkbiAvw3S8KJ4UJK+pyh9iX01duSDtM/HhPawsPdY8JSMfuo1IxQ2Vxw+8RKwbbdUeew6cyYGYAeFYwA66mlM3otB0RBHh4bjwg8297+2g53TdwM2rbCHRbrorMQD3031OTyFSp7lXCtoMLWRfAFnOP/2yZWZMXbiJheC0R3sLbU7Ef0/cUbYyk4Ckfq6pcYDR+VZBF7AwIDAQAB",
   "auth-server-url": "http://localhost:8080/auth",
   "ssl-required": "external",
   "resource": "hello-world-authz-service",
   "credentials": {
-    "secret": "a7672d93-ea27-44a3-baa6-ba3536609067"
+    "secret": "secret"
   },
   "policy-enforcer": {
     "on-deny-redirect-to" : "/hello-world-authz-service/error.jsp"

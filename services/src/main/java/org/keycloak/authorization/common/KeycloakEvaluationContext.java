@@ -57,23 +57,23 @@ public class KeycloakEvaluationContext implements EvaluationContext {
     public Attributes getAttributes() {
         HashMap<String, Collection<String>> attributes = new HashMap<>();
 
-        attributes.put("kc.authz.context.time.date_time", Arrays.asList(new SimpleDateFormat("MM/dd/yyyy hh:mm:ss").format(new Date())));
-        attributes.put("kc.authz.context.client.network.ip_address", Arrays.asList(this.keycloakSession.getContext().getConnection().getRemoteAddr()));
-        attributes.put("kc.authz.context.client.network.host", Arrays.asList(this.keycloakSession.getContext().getConnection().getRemoteHost()));
+        attributes.put("kc.time.date_time", Arrays.asList(new SimpleDateFormat("MM/dd/yyyy hh:mm:ss").format(new Date())));
+        attributes.put("kc.client.network.ip_address", Arrays.asList(this.keycloakSession.getContext().getConnection().getRemoteAddr()));
+        attributes.put("kc.client.network.host", Arrays.asList(this.keycloakSession.getContext().getConnection().getRemoteHost()));
 
         AccessToken accessToken = this.identity.getAccessToken();
 
         if (accessToken != null) {
-            attributes.put("kc.authz.context.client_id", Arrays.asList(accessToken.getIssuedFor()));
+            attributes.put("kc.client.id", Arrays.asList(accessToken.getIssuedFor()));
         }
 
         List<String> userAgents = this.keycloakSession.getContext().getRequestHeaders().getRequestHeader("User-Agent");
 
         if (userAgents != null) {
-            attributes.put("kc.authz.context.client.user_agent", userAgents);
+            attributes.put("kc.client.user_agent", userAgents);
         }
 
-        attributes.put("kc.authz.context.authc.realm", Arrays.asList(this.keycloakSession.getContext().getRealm().getName()));
+        attributes.put("kc.realm.name", Arrays.asList(this.keycloakSession.getContext().getRealm().getName()));
 
         return Attributes.from(attributes);
     }

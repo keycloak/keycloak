@@ -26,6 +26,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.Result;
+import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.representations.authorization.Permission;
 
@@ -58,9 +59,10 @@ public final class Permissions {
     public static List<ResourcePermission> all(ResourceServer resourceServer, Identity identity, AuthorizationProvider authorization) {
         List<ResourcePermission> permissions = new ArrayList<>();
         StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceStore resourceStore = storeFactory.getResourceStore();
 
-        storeFactory.getResourceStore().findByOwner(resourceServer.getClientId()).stream().forEach(resource -> permissions.addAll(createResourcePermissions(resource)));
-        storeFactory.getResourceStore().findByOwner(identity.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissions(resource)));
+        resourceStore.findByOwner(resourceServer.getClientId()).stream().forEach(resource -> permissions.addAll(createResourcePermissions(resource)));
+        resourceStore.findByOwner(identity.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissions(resource)));
 
         return permissions;
     }

@@ -8,5 +8,7 @@
   "credentials": {
     "secret": "secret"
   },
-  "policy-enforcer": {}
+  "policy-enforcer": {
+    "on-deny-redirect-to" : "/servlet-authz-app/accessDenied.jsp"
+  }
 }

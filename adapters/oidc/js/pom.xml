@@ -58,6 +58,25 @@
                             <goal>minify</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>min-authz-js</id>
+                        <phase>compile</phase>
+                        <configuration>
+                            <charset>utf-8</charset>
+                            <webappSourceDir>${basedir}/src/main/resources</webappSourceDir>
+                            <jsSourceDir>.</jsSourceDir>
+                            <jsSourceFiles>
+                                <jsSourceFile>keycloak-authz.js</jsSourceFile>
+                            </jsSourceFiles>
+
+                            <webappTargetDir>${project.build.directory}/classes</webappTargetDir>
+                            <jsTargetDir>.</jsTargetDir>
+                            <jsFinalFile>keycloak-authz.js</jsFinalFile>
+                        </configuration>
+                        <goals>
+                            <goal>minify</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
 		</plugins>

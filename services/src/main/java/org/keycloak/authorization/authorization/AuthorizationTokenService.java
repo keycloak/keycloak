@@ -106,7 +106,10 @@ public class AuthorizationTokenService {
                 List<Permission> entitlements = Permissions.allPermits(results);
 
                 if (entitlements.isEmpty()) {
-                    asyncResponse.resume(new ErrorResponseException("not_authorized", "Authorization denied.", Status.FORBIDDEN));
+                    asyncResponse.resume(Cors.add(httpRequest, Response.status(Status.FORBIDDEN)
+                            .entity(new ErrorResponseException("not_authorized", "Authorization denied.", Status.FORBIDDEN)))
+                            .allowedOrigins(identity.getAccessToken())
+                            .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
                 } else {
                     AuthorizationResponse response = new AuthorizationResponse(createRequestingPartyToken(entitlements, identity.getAccessToken()));
                     asyncResponse.resume(Cors.add(httpRequest, Response.status(Status.CREATED).entity(response)).allowedOrigins(identity.getAccessToken())
@@ -217,12 +220,14 @@ public class AuthorizationTokenService {
     }
 
     private PermissionTicket verifyPermissionTicket(AuthorizationRequest request) {
-        if (!Tokens.verifySignature(request.getTicket(), getRealm().getPublicKey())) {
+        String ticketString = request.getTicket();
+
+        if (ticketString == null || !Tokens.verifySignature(ticketString, getRealm().getPublicKey())) {
             throw new ErrorResponseException("invalid_ticket", "Ticket verification failed", Status.FORBIDDEN);
         }
 
         try {
-            PermissionTicket ticket = new JWSInput(request.getTicket()).readJsonContent(PermissionTicket.class);
+            PermissionTicket ticket = new JWSInput(ticketString).readJsonContent(PermissionTicket.class);
 
             if (!ticket.isActive()) {
                 throw new ErrorResponseException("invalid_ticket", "Invalid permission ticket.", Status.FORBIDDEN);
