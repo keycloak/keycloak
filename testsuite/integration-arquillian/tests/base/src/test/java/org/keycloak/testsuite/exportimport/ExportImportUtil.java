@@ -71,21 +71,19 @@ public class ExportImportUtil {
         Assert.assertEquals(1, creds.size());
         String cred = (String)creds.iterator().next();
         Assert.assertEquals("password", cred);
-        Assert.assertEquals(3, realm.getDefaultRoles().size());
+        Assert.assertEquals(4, realm.getDefaultRoles().size());
 
-        //Assert.assertNotNull(realm.getRole("foo"));
         Assert.assertNotNull(RealmRepUtil.findDefaultRole(realm, "foo"));
-        //Assert.assertNotNull(realm.getRole("bar"));
         Assert.assertNotNull(RealmRepUtil.findDefaultRole(realm, "bar"));
 
         RealmResource realmRsc = adminClient.realm(realm.getRealm());
 
         /* See KEYCLOAK-3104*/
-        UserRepresentation user = findByUsername(realmRsc, "loginclient");//RealmRepUtil.findUser(realm, "loginclient");
+        UserRepresentation user = findByUsername(realmRsc, "loginclient");
         Assert.assertNotNull(user);
 
-        // I haven't found a way to do this from the adminClient
-        //Assert.assertEquals(0, session.users().getFederatedIdentities(user, realm).size());
+        UserResource userRsc = realmRsc.users().get(user.getId());
+        Assert.assertEquals(0, userRsc.getFederatedIdentity().size());
 
         List<ClientRepresentation> resources = realmRsc.clients().findAll();
         Assert.assertEquals(8, resources.size());
