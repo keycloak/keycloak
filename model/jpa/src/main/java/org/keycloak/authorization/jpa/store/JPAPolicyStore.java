@@ -29,6 +29,8 @@ import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -129,6 +131,10 @@ public class JPAPolicyStore implements PolicyStore {
 
     @Override
     public List<Policy> findByScopeIds(List<String> scopeIds, String resourceServerId) {
+        if (scopeIds==null || scopeIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
         Query query = getEntityManager().createQuery("select p from PolicyEntity p inner join p.scopes s where p.resourceServer.id = :serverId and s.id in (:scopeIds) and p.resources is empty group by p.id order by p.name");
 
         query.setParameter("serverId", resourceServerId);
