@@ -56,7 +56,6 @@
         <module>tomcat7</module>
         <module>tomcat8</module>
         <module>jetty</module>
-        <module>performance</module>
         <module>stress</module>
         <module>integration-arquillian</module>
     </modules>
