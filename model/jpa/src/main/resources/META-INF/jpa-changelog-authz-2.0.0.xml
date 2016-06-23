@@ -35,7 +35,6 @@
         </createTable>
 
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_FARS" tableName="RESOURCE_SERVER"/>
-        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="RESOURCE_SERVER" constraintName="FK_AOJPHO213XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="CLIENT"/>
         <addUniqueConstraint columnNames="CLIENT_ID" constraintName="UK_AU8TT6T700S9V50BU18WS5HA6" tableName="RESOURCE_SERVER"/>
 
         <createTable tableName="RESOURCE_SERVER_RESOURCE">
