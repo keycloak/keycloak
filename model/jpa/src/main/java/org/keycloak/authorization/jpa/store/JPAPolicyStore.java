@@ -134,8 +134,9 @@ public class JPAPolicyStore implements PolicyStore {
         if (scopeIds==null || scopeIds.isEmpty()) {
             return Collections.emptyList();
         }
-        
-        Query query = getEntityManager().createQuery("select p from PolicyEntity p inner join p.scopes s where p.resourceServer.id = :serverId and s.id in (:scopeIds) and p.resources is empty group by p.id order by p.name");
+
+        // Use separate subquery to handle DB2 and MSSSQL
+        Query query = getEntityManager().createQuery("select pe from PolicyEntity pe where pe.id IN (select p.id from PolicyEntity p inner join p.scopes s where p.resourceServer.id = :serverId and s.id in (:scopeIds) and p.resources is empty group by p.id) order by pe.name");
 
         query.setParameter("serverId", resourceServerId);
         query.setParameter("scopeIds", scopeIds);
