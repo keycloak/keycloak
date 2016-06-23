@@ -34,6 +34,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
 /**
@@ -44,7 +45,7 @@ public class LoginTotpTest extends TestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        UserRepresentation user = findUserInRealmRep(testRealm, "test-user@localhost");
+        UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         UserBuilder.edit(user)
                    .totpSecret("totpSecret")
                    .otpEnabled();

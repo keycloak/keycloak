@@ -90,6 +90,12 @@ public class ImportTest extends AbstractModelTest {
     }
 
     // Moved to static method, so it's possible to test this from other places too (for example export-import tests)
+    /*
+    BIG HELPFUL HINT!!!!
+    WHEN YOU MIGRATE THIS CLASS YOU DO NOT NEED TO MIGRATE THIS METHOD.
+    IT HAS ALREADY BEEN IMPLEMENTED IN THE NEW ARQUILLIAN TESTSUTE.
+    SEE org.keycloak.testsuite.exportimport.ExportImportUtil
+    */
     public static void assertDataImportedInRealm(KeycloakSession session, RealmModel realm) {
         Assert.assertTrue(realm.isVerifyEmail());
         Assert.assertEquals(3600000, realm.getOfflineSessionIdleTimeout());
