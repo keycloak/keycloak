@@ -33,5 +33,4 @@ import java.lang.annotation.Target;
 public @interface AppServerContainer 
 {
    String value() default "";
-   String adapterLibsLocationProperty() default "";
 }

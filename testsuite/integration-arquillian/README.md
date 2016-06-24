@@ -120,13 +120,6 @@ It automatically modifies imported test realms and deployments' adapter configs 
 | **Relative** | auth server == app server | client `baseUrl`, `adminUrl` and `redirect-uris` can be relative | `auth-server-url` can be relative |
 | **Non-relative** | auth server != app server  | client `baseUrl`, `adminUrl` and `redirect-uris` need to include FQDN of the app server | `auth-server-url` needs to include FQDN of the auth server|
 
-
-
-#### Adapter Libs Mode
-
-1. **Provided** - By container, e.g. as a subsystem. **Default.**
-2. **Bundled** - In the deployed war in `/WEB-INF/libs`. Enable with `-Dadapter.libs.bundled`. *Wildfly only*.
-
 #### Adapter Config Mode
 
 1. ~~**Provided** - In `standalone.xml` using `secure-deployment`. *Wildfly only.*~~ WIP

@@ -35,7 +35,6 @@
     
     <properties>
         <common.resources>${project.parent.basedir}/common</common.resources>
-        <adapter.libs.home>${app.server.home}/modules/system/add-ons/keycloak</adapter.libs.home>
         <app.server.type>managed</app.server.type>
     </properties>
 
@@ -46,7 +45,7 @@
                 <artifactId>xml-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>Configure keycloak subsystem</id>
+                        <id>configure-keycloak-subsystem</id>
                         <phase>process-test-resources</phase>
                         <goals>
                             <goal>transform</goal>
@@ -91,7 +90,7 @@
                         <artifactId>xml-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>Configure keycloak subsystem</id>
+                                <id>configure-keycloak-subsystem</id>
                                 <phase>process-test-resources</phase>
                                 <goals>
                                     <goal>transform</goal>
