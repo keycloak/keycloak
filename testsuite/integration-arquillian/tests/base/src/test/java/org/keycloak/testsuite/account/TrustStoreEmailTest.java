@@ -59,7 +59,7 @@ public class TrustStoreEmailTest extends TestRealmKeycloakTest {
     public void configureTestRealm(RealmRepresentation testRealm) {
         log.info("enable verify email and configure smtp server to run with ssl in test realm");
 
-        user = findUserInRealmRep(testRealm, "test-user@localhost");
+        user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         testRealm.setSmtpServer(SslMailServer.getServerConfiguration());
         testRealm.setVerifyEmail(true);
     }

@@ -41,6 +41,7 @@ import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.RealmRepUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -50,7 +51,7 @@ public class BruteForceTest extends TestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        UserRepresentation user = findUserInRealmRep(testRealm, "test-user@localhost");
+        UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         CredentialRepresentation credRep = new CredentialRepresentation();
         credRep.setType(CredentialRepresentation.TOTP);
         credRep.setValue("totpSecret");
@@ -60,8 +61,7 @@ public class BruteForceTest extends TestRealmKeycloakTest {
         testRealm.setBruteForceProtected(true);
         testRealm.setFailureFactor(2);
 
-        findClientInRealmRep(testRealm, "test-app").setDirectAccessGrantsEnabled(true);
-
+        RealmRepUtil.findClientByClientId(testRealm, "test-app").setDirectAccessGrantsEnabled(true);
         testRealm.getUsers().add(UserBuilder.create().username("user2").email("user2@localhost").password("password").build());
     }
 
@@ -146,8 +146,8 @@ public class BruteForceTest extends TestRealmKeycloakTest {
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
-            Assert.assertEquals(response.getError(), "invalid_grant");
-            Assert.assertEquals(response.getErrorDescription(), "Account temporarily disabled");
+            Assert.assertEquals("invalid_grant", response.getError());
+            Assert.assertEquals("Account temporarily disabled", response.getErrorDescription());
             events.clear();
         }
         clearUserFailures();

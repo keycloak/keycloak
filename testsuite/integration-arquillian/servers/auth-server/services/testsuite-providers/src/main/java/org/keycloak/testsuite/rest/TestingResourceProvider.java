@@ -61,7 +61,19 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.exportimport.ExportImportManager;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderFactory;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -544,4 +556,93 @@ public class TestingResourceProvider implements RealmResourceProvider {
         result.setUsername(PassThroughAuthenticator.username);
         return result;
     }
+
+    @GET
+    @Path("/run-import")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response runImport() {
+        new ExportImportManager(session).runImport();
+        return Response.ok().build();
+    }
+
+    @GET
+    @Path("/run-export")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response runExport() {
+        new ExportImportManager(session).runExport();
+        return Response.ok().build();
+    }
+
+    @GET
+    @Path("/valid-credentials")
+    @Produces(MediaType.APPLICATION_JSON)
+    public boolean validCredentials(@QueryParam("realmName") String realmName, @QueryParam("userName") String userName, @QueryParam("password") String password) {
+        RealmModel realm = session.realms().getRealm(realmName);
+        if (realm == null) return false;
+        UserProvider userProvider = session.getProvider(UserProvider.class);
+        UserModel user = userProvider.getUserByUsername(userName, realm);
+        return userProvider.validCredentials(session, realm, user, UserCredentialModel.password(password));
+    }
+
+    @GET
+    @Path("/user-by-federated-identity")
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getUserByFederatedIdentity(@QueryParam("realmName") String realmName,
+                                                         @QueryParam("identityProvider") String identityProvider,
+                                                         @QueryParam("userId") String userId,
+                                                         @QueryParam("userName") String userName) {
+        RealmModel realm = getRealmByName(realmName);
+        UserModel foundFederatedUser = session.users().getUserByFederatedIdentity(new FederatedIdentityModel(identityProvider, userId, userName), realm);
+        if (foundFederatedUser == null) return null;
+        return ModelToRepresentation.toRepresentation(foundFederatedUser);
+    }
+
+    @GET
+    @Path("/user-by-username-from-fed-factory")
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getUserByUsernameFromFedProviderFactory(@QueryParam("realmName") String realmName,
+                                                                      @QueryParam("userName") String userName) {
+        RealmModel realm = getRealmByName(realmName);
+        UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, "dummy");
+        UserModel user = factory.getInstance(session, null).getUserByUsername(realm, userName);
+        if (user == null) return null;
+        return ModelToRepresentation.toRepresentation(user);
+    }
+
+    @GET
+    @Path("/get-client-auth-flow")
+    @Produces(MediaType.APPLICATION_JSON)
+    public AuthenticationFlowRepresentation getClientAuthFlow(@QueryParam("realmName") String realmName) {
+        RealmModel realm = getRealmByName(realmName);
+        AuthenticationFlowModel flow = realm.getClientAuthenticationFlow();
+        if (flow == null) return null;
+        return ModelToRepresentation.toRepresentation(realm, flow);
+    }
+
+    @GET
+    @Path("/get-reset-cred-flow")
+    @Produces(MediaType.APPLICATION_JSON)
+    public AuthenticationFlowRepresentation getResetCredFlow(@QueryParam("realmName") String realmName) {
+        RealmModel realm = getRealmByName(realmName);
+        AuthenticationFlowModel flow = realm.getResetCredentialsFlow();
+        if (flow == null) return null;
+        return ModelToRepresentation.toRepresentation(realm, flow);
+    }
+
+    @GET
+    @Path("/get-user-by-service-account-client")
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getUserByServiceAccountClient(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId) {
+        RealmModel realm = getRealmByName(realmName);
+        ClientModel client =  realm.getClientByClientId(clientId);
+        UserModel user = session.users().getUserByServiceAccountClient(client);
+        if (user == null) return null;
+        return ModelToRepresentation.toRepresentation(user);
+    }
+
+    private RealmModel getRealmByName(String realmName) {
+        RealmProvider realmProvider = session.getProvider(RealmProvider.class);
+        return realmProvider.getRealmByName(realmName);
+    }
+
 }

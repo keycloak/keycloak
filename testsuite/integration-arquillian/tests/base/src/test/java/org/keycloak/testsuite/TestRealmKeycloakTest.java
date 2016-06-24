@@ -28,27 +28,11 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
  * This class provides loading of the testRealm called "test".  It also
- * provides an OAuthClient for the testRealm.
+ * provides a few utility methods for the testRealm.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public abstract class TestRealmKeycloakTest extends AbstractKeycloakTest {
-
-    protected UserRepresentation findUserInRealmRep(RealmRepresentation testRealm, String userName) {
-        for (UserRepresentation user : testRealm.getUsers()) {
-            if (user.getUsername().equals(userName)) return user;
-        }
-
-        return null;
-    }
-
-    protected ClientRepresentation findClientInRealmRep(RealmRepresentation testRealm, String clientId) {
-        for (ClientRepresentation client : testRealm.getClients()) {
-            if (client.getClientId().equals(clientId)) return client;
-        }
-
-        return null;
-    }
 
     protected RealmResource testRealm() {
         return adminClient.realm("test");
