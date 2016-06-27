@@ -167,7 +167,6 @@ public class JettySamlTest {
     }
 
     @Test
-    @Ignore
     public void testPostEncryptedLoginLogout() {
         testStrategy.testPostEncryptedLoginLogout();
     }

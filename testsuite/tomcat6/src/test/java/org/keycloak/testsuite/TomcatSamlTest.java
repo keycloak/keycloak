@@ -151,7 +151,6 @@ public class TomcatSamlTest {
     }
 
     @Test
-    @Ignore
     public void testPostEncryptedLoginLogout() {
         testStrategy.testPostEncryptedLoginLogout();
     }
