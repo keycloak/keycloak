@@ -88,6 +88,7 @@ public abstract class AbstractSAMLExampleAdapterTest extends AbstractExampleAdap
         waitUntilElement(By.xpath("//body")).text().contains("Welcome to the Sales Tool, " + bburkeUser.getUsername());
 
         samlPostSigExamplePage.logout();
+        waitUntilElement(By.xpath("//body")).text().contains("Logged out.");
 
         samlPostSigExamplePage.navigateTo();
         URLAssert.assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
@@ -102,6 +103,7 @@ public abstract class AbstractSAMLExampleAdapterTest extends AbstractExampleAdap
         waitUntilElement(By.xpath("//body")).text().contains("Welcome to the Sales Tool, " + bburkeUser.getUsername());
 
         samlPostEncExamplePage.logout();
+        waitUntilElement(By.xpath("//body")).text().contains("Logged out.");
 
         samlPostEncExamplePage.navigateTo();
         URLAssert.assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
@@ -116,6 +118,7 @@ public abstract class AbstractSAMLExampleAdapterTest extends AbstractExampleAdap
         waitUntilElement(By.xpath("//body")).text().contains("Welcome to the Employee Tool,");
 
         samlRedirectSigExamplePage.logout();
+        waitUntilElement(By.xpath("//body")).text().contains("Logged out.");
 
         samlRedirectSigExamplePage.navigateTo();
         URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
