@@ -66,7 +66,7 @@
                     <span data-ng-show="!resource.policies.length">No permission assigned.</span>
                     <span data-ng-show="resource.policies.length > 0">
                         <span ng-repeat="policy in resource.policies">
-                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}//authz/resource-server/permission/{{policy.type}}/{{policy.id}}">{{policy.name}}</a>{{$last ? '' : ', '}}
+                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission/{{policy.type}}/{{policy.id}}">{{policy.name}}</a>{{$last ? '' : ', '}}
                         </span>
                     </span>
                 </td>
