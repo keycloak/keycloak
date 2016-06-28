@@ -45,7 +45,7 @@ public class KeycloakSamlAuthenticator extends AbstractSamlAuthenticator {
     }
 
     @Override
-    public Authentication createAuthentication(UserIdentity userIdentity) {
+    public Authentication createAuthentication(UserIdentity userIdentity, Request request) {
         return new KeycloakAuthentication(getAuthMethod(), userIdentity) {
             @Override
             public void logout() {

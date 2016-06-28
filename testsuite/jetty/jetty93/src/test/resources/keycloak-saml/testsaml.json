@@ -1,0 +1,452 @@
+{
+    "id": "demo",
+    "realm": "demo",
+    "enabled": true,
+    "sslRequired": "external",
+    "registrationAllowed": true,
+    "resetPasswordAllowed": true,
+    "privateKey": "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=",
+    "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+    "requiredCredentials": [ "password" ],
+    "defaultRoles": [ "user" ],
+    "smtpServer": {
+        "from": "auto@keycloak.org",
+        "host": "localhost",
+        "port":"3025"
+    },
+    "users" : [
+        {
+            "username" : "bburke",
+            "enabled": true,
+            "email" : "bburke@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                  "value" : "password" }
+            ],
+            "attributes" : {
+                "phone": "617"
+            },
+            "realmRoles": ["manager", "user"],
+            "applicationRoles": {
+                "http://localhost:8082/employee/": [ "employee" ],
+                "http://localhost:8082/employee2/": [ "employee" ]
+            }
+        } ,
+        {
+            "username" : "unauthorized",
+            "enabled": true,
+            "email" : "unauthorized@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ]
+        },
+        {
+            "username" : "topGroupUser",
+            "enabled": true,
+            "email" : "top@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/top"
+            ]
+        },
+        {
+            "username" : "level2GroupUser",
+            "enabled": true,
+            "email" : "level2@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "groups": [
+                "/top/level2"
+            ]
+        }
+    ],
+    "applications": [
+        {
+            "name": "http://localhost:8082/sales-post/",
+            "enabled": true,
+            "fullScopeAllowed": true,
+            "protocol": "saml",
+            "baseUrl": "http://localhost:8082/sales-post",
+            "redirectUris": [
+                "http://localhost:8082/sales-post/*"
+            ],
+            "attributes": {
+                "saml.authnstatement": "true",
+                "saml_assertion_consumer_url_post": "http://localhost:8082/sales-post/saml",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8082/sales-post/saml",
+                "saml_single_logout_service_url_post": "http://localhost:8082/sales-post/saml",
+                "saml_single_logout_service_url_redirect": "http://localhost:8082/sales-post/saml",
+                "saml_idp_initiated_sso_url_name": "sales-post"
+            }
+        },
+        {
+            "name": "http://localhost:8082/sales-post2/",
+            "enabled": true,
+            "fullScopeAllowed": true,
+            "protocol": "saml",
+            "baseUrl": "http://localhost:8082/sales-post2",
+            "redirectUris": [
+                "http://localhost:8082/sales-post2/*"
+            ],
+            "attributes": {
+                "saml.authnstatement": "true",
+                "saml_assertion_consumer_url_post": "http://localhost:8082/sales-post2/saml",
+                "saml_single_logout_service_url_post": "http://localhost:8082/sales-post2/saml",
+                "saml_idp_initiated_sso_url_name": "sales-post2",
+                "saml_idp_initiated_sso_relay_state": "redirectTo=/foo"
+            }
+        },
+        {
+            "name": "http://localhost:8082/input-portal/",
+            "enabled": true,
+            "fullScopeAllowed": true,
+            "protocol": "saml",
+            "baseUrl": "http://localhost:8082/input-portal/",
+            "redirectUris": [
+                "http://localhost:8082/input-portal/*"
+            ],
+            "attributes": {
+                "saml.authnstatement": "true",
+                "saml_assertion_consumer_url_post": "http://localhost:8082/input-portal/saml",
+                "saml_single_logout_service_url_post": "http://localhost:8082/input-portal/saml"
+            }
+        },
+        {
+            "name": "http://localhost:8082/sales-post-sig/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8082/sales-post-sig",
+            "redirectUris": [
+                "http://localhost:8082/sales-post-sig/*"
+            ],
+            "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8082/sales-post-sig/saml",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8082/sales-post-sig/saml",
+                "saml_single_logout_service_url_post": "http://localhost:8082/sales-post-sig/saml",
+                "saml_single_logout_service_url_redirect": "http://localhost:8082/sales-post-sig/saml",
+                "saml.server.signature": "true",
+                "saml.signature.algorithm": "RSA_SHA256",
+                "saml.client.signature": "true",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIIB1DCCAT0CBgFJGP5dZDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1zaWcvMB4XDTE0MTAxNjEyNDQyM1oXDTI0MTAxNjEyNDYwM1owMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3Qtc2lnLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA1RvGu8RjemSJA23nnMksoHA37MqY1DDTxOECY4rPAd9egr7GUNIXE0y1MokaR5R2crNpN8RIRwR8phQtQDjXL82c6W+NLQISxztarQJ7rdNJIYwHY0d5ri1XRpDP8zAuxubPYiMAVYcDkIcvlbBpwh/dRM5I2eElRK+eSiaMkCUCAwEAATANBgkqhkiG9w0BAQsFAAOBgQCLms6htnPaY69k1ntm9a5jgwSn/K61cdai8R8B0ccY7zvinn9AfRD7fiROQpFyY29wKn8WCLrJ86NBXfgFUGyR5nLNHVy3FghE36N2oHy53uichieMxffE6vhkKJ4P8ChfJMMOZlmCPsQPDvjoAghHt4mriFiQgRdPgIy/zDjSNw=="
+            }
+        },
+        {
+            "name": "http://localhost:8082/sales-post-sig-transient/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8082/sales-post-sig-transient",
+            "adminUrl": "http://localhost:8082/sales-post-sig-transient/saml",
+            "redirectUris": [
+                "http://localhost:8082/sales-post-sig-transient/*"
+            ],
+            "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8082/sales-post-sig-transient/saml",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8082/sales-post-sig-transient/saml",
+                "saml_single_logout_service_url_post": "http://localhost:8082/sales-post-sig-transient/saml",
+                "saml_single_logout_service_url_redirect": "http://localhost:8082/sales-post-sig-transient/saml",
+                "saml.server.signature": "true",
+                "saml.signature.algorithm": "RSA_SHA256",
+                "saml.client.signature": "true",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIIB1DCCAT0CBgFJGP5dZDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1zaWcvMB4XDTE0MTAxNjEyNDQyM1oXDTI0MTAxNjEyNDYwM1owMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3Qtc2lnLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA1RvGu8RjemSJA23nnMksoHA37MqY1DDTxOECY4rPAd9egr7GUNIXE0y1MokaR5R2crNpN8RIRwR8phQtQDjXL82c6W+NLQISxztarQJ7rdNJIYwHY0d5ri1XRpDP8zAuxubPYiMAVYcDkIcvlbBpwh/dRM5I2eElRK+eSiaMkCUCAwEAATANBgkqhkiG9w0BAQsFAAOBgQCLms6htnPaY69k1ntm9a5jgwSn/K61cdai8R8B0ccY7zvinn9AfRD7fiROQpFyY29wKn8WCLrJ86NBXfgFUGyR5nLNHVy3FghE36N2oHy53uichieMxffE6vhkKJ4P8ChfJMMOZlmCPsQPDvjoAghHt4mriFiQgRdPgIy/zDjSNw=="
+            }
+        },
+        {
+            "name": "http://localhost:8082/sales-post-sig-persistent/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8082/sales-post-sig-persistent",
+            "redirectUris": [
+                "http://localhost:8082/sales-post-sig-persistent/*"
+            ],
+            "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8082/sales-post-sig-persistent/saml",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8082/sales-post-sig-persistent/saml",
+                "saml_single_logout_service_url_post": "http://localhost:8082/sales-post-sig-persistent/saml",
+                "saml_single_logout_service_url_redirect": "http://localhost:8082/sales-post-sig-persistent/saml",
+                "saml.server.signature": "true",
+                "saml.signature.algorithm": "RSA_SHA256",
+                "saml.client.signature": "true",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIIB1DCCAT0CBgFJGP5dZDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1zaWcvMB4XDTE0MTAxNjEyNDQyM1oXDTI0MTAxNjEyNDYwM1owMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3Qtc2lnLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA1RvGu8RjemSJA23nnMksoHA37MqY1DDTxOECY4rPAd9egr7GUNIXE0y1MokaR5R2crNpN8RIRwR8phQtQDjXL82c6W+NLQISxztarQJ7rdNJIYwHY0d5ri1XRpDP8zAuxubPYiMAVYcDkIcvlbBpwh/dRM5I2eElRK+eSiaMkCUCAwEAATANBgkqhkiG9w0BAQsFAAOBgQCLms6htnPaY69k1ntm9a5jgwSn/K61cdai8R8B0ccY7zvinn9AfRD7fiROQpFyY29wKn8WCLrJ86NBXfgFUGyR5nLNHVy3FghE36N2oHy53uichieMxffE6vhkKJ4P8ChfJMMOZlmCPsQPDvjoAghHt4mriFiQgRdPgIy/zDjSNw=="
+            }
+        },
+        {
+            "name": "http://localhost:8082/sales-post-sig-email/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8082/sales-post-sig-email",
+            "adminUrl": "http://localhost:8082/sales-post-sig-email/saml",
+            "redirectUris": [
+                "http://localhost:8082/sales-post-sig-email/*"
+            ],
+            "attributes": {
+                "saml_force_name_id_format": "true",
+                "saml_name_id_format": "email",
+                "saml_assertion_consumer_url_post": "http://localhost:8082/sales-post-sig-email/saml",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8082/sales-post-sig-email/saml",
+                "saml_single_logout_service_url_post": "http://localhost:8082/sales-post-sig-email/saml",
+                "saml_single_logout_service_url_redirect": "http://localhost:8082/sales-post-sig-email/saml",
+                "saml.server.signature": "true",
+                "saml.signature.algorithm": "RSA_SHA256",
+                "saml.client.signature": "true",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIIB1DCCAT0CBgFJGP5dZDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1zaWcvMB4XDTE0MTAxNjEyNDQyM1oXDTI0MTAxNjEyNDYwM1owMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3Qtc2lnLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA1RvGu8RjemSJA23nnMksoHA37MqY1DDTxOECY4rPAd9egr7GUNIXE0y1MokaR5R2crNpN8RIRwR8phQtQDjXL82c6W+NLQISxztarQJ7rdNJIYwHY0d5ri1XRpDP8zAuxubPYiMAVYcDkIcvlbBpwh/dRM5I2eElRK+eSiaMkCUCAwEAATANBgkqhkiG9w0BAQsFAAOBgQCLms6htnPaY69k1ntm9a5jgwSn/K61cdai8R8B0ccY7zvinn9AfRD7fiROQpFyY29wKn8WCLrJ86NBXfgFUGyR5nLNHVy3FghE36N2oHy53uichieMxffE6vhkKJ4P8ChfJMMOZlmCPsQPDvjoAghHt4mriFiQgRdPgIy/zDjSNw=="
+            }
+        },
+        {
+            "name": "http://localhost:8082/bad-realm-sales-post-sig/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8082/bad-realm-sales-post-sig/",
+            "adminUrl": "http://localhost:8082/bad-realm-sales-post-sig/saml",
+            "redirectUris": [
+                "http://localhost:8082/bad-realm-sales-post-sig/*"
+            ],
+            "attributes": {
+                "saml.server.signature": "true",
+                "saml.client.signature": "true",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIIB1DCCAT0CBgFJGP5dZDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1zaWcvMB4XDTE0MTAxNjEyNDQyM1oXDTI0MTAxNjEyNDYwM1owMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3Qtc2lnLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA1RvGu8RjemSJA23nnMksoHA37MqY1DDTxOECY4rPAd9egr7GUNIXE0y1MokaR5R2crNpN8RIRwR8phQtQDjXL82c6W+NLQISxztarQJ7rdNJIYwHY0d5ri1XRpDP8zAuxubPYiMAVYcDkIcvlbBpwh/dRM5I2eElRK+eSiaMkCUCAwEAATANBgkqhkiG9w0BAQsFAAOBgQCLms6htnPaY69k1ntm9a5jgwSn/K61cdai8R8B0ccY7zvinn9AfRD7fiROQpFyY29wKn8WCLrJ86NBXfgFUGyR5nLNHVy3FghE36N2oHy53uichieMxffE6vhkKJ4P8ChfJMMOZlmCPsQPDvjoAghHt4mriFiQgRdPgIy/zDjSNw=="
+            }
+        },
+        {
+            "name": "http://localhost:8082/bad-client-sales-post-sig/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8082/bad-client-sales-post-sig/",
+            "adminUrl": "http://localhost:8082/bad-client-sales-post-sig/saml",
+            "redirectUris": [
+                "http://localhost:8082/bad-client-sales-post-sig/*"
+            ],
+            "attributes": {
+                "saml.server.signature": "true",
+                "saml.client.signature": "true",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIIB1DCCAT0CBgFJGVacCDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1lbmMvMB4XDTE0MTAxNjE0MjA0NloXDTI0MTAxNjE0MjIyNlowMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3QtZW5jLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA2+5MCT5BnVN+IYnKZcH6ev1pjXGi4feE0nOycq/VJ3aeaZMi4G9AxOxCBPupErOC7Kgm/Bw5AdJyw+Q12wSRXfJ9FhqCrLXpb7YOhbVSTJ8De5O8mW35DxAlh/cxe9FXjqPb286wKTUZ3LfGYR+X235UQeCTAPS/Ufi21EXaEikCAwEAATANBgkqhkiG9w0BAQsFAAOBgQBMrfGD9QFfx5v7ld/OAto5rjkTe3R1Qei8XRXfcs83vLaqEzjEtTuLGrJEi55kXuJgBpVmQpnwCCkkjSy0JxbqLDdVi9arfWUxEGmOr01ZHycELhDNaQcFqVMPr5kRHIHgktT8hK2IgCvd3Fy9/JCgUgCPxKfhwecyEOKxUc857g=="
+            }
+        },
+        {
+            "name": "http://localhost:8082/sales-post-enc/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8082/sales-post-enc",
+            "redirectUris": [
+                "http://localhost:8082/sales-post-enc/*"
+            ],
+            "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8082/sales-post-enc/saml",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8082/sales-post-enc/saml",
+                "saml_single_logout_service_url_post": "http://localhost:8082/sales-post-enc/saml",
+                "saml_single_logout_service_url_redirect": "http://localhost:8082/sales-post-enc/saml",
+                "saml.server.signature": "true",
+                "saml.signature.algorithm": "RSA_SHA512",
+                "saml.client.signature": "true",
+                "saml.encrypt": "true",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIIB1DCCAT0CBgFJGVacCDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1lbmMvMB4XDTE0MTAxNjE0MjA0NloXDTI0MTAxNjE0MjIyNlowMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3QtZW5jLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA2+5MCT5BnVN+IYnKZcH6ev1pjXGi4feE0nOycq/VJ3aeaZMi4G9AxOxCBPupErOC7Kgm/Bw5AdJyw+Q12wSRXfJ9FhqCrLXpb7YOhbVSTJ8De5O8mW35DxAlh/cxe9FXjqPb286wKTUZ3LfGYR+X235UQeCTAPS/Ufi21EXaEikCAwEAATANBgkqhkiG9w0BAQsFAAOBgQBMrfGD9QFfx5v7ld/OAto5rjkTe3R1Qei8XRXfcs83vLaqEzjEtTuLGrJEi55kXuJgBpVmQpnwCCkkjSy0JxbqLDdVi9arfWUxEGmOr01ZHycELhDNaQcFqVMPr5kRHIHgktT8hK2IgCvd3Fy9/JCgUgCPxKfhwecyEOKxUc857g==",
+                "saml.encryption.certificate": "MIIB1DCCAT0CBgFJGVacCDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1lbmMvMB4XDTE0MTAxNjE0MjA0NloXDTI0MTAxNjE0MjIyNlowMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3QtZW5jLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA2+5MCT5BnVN+IYnKZcH6ev1pjXGi4feE0nOycq/VJ3aeaZMi4G9AxOxCBPupErOC7Kgm/Bw5AdJyw+Q12wSRXfJ9FhqCrLXpb7YOhbVSTJ8De5O8mW35DxAlh/cxe9FXjqPb286wKTUZ3LfGYR+X235UQeCTAPS/Ufi21EXaEikCAwEAATANBgkqhkiG9w0BAQsFAAOBgQBMrfGD9QFfx5v7ld/OAto5rjkTe3R1Qei8XRXfcs83vLaqEzjEtTuLGrJEi55kXuJgBpVmQpnwCCkkjSy0JxbqLDdVi9arfWUxEGmOr01ZHycELhDNaQcFqVMPr5kRHIHgktT8hK2IgCvd3Fy9/JCgUgCPxKfhwecyEOKxUc857g=="
+            }
+        },
+        {
+            "name": "http://localhost:8082/employee-sig/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8082/employee-sig",
+            "redirectUris": [
+                "http://localhost:8082/employee-sig/*"
+            ],
+            "adminUrl": "http://localhost:8082/employee-sig/saml",
+            "attributes": {
+                "saml.server.signature": "true",
+                "saml.client.signature": "true",
+                "saml.signature.algorithm": "RSA_SHA256",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIIB0DCCATkCBgFJH5u0EDANBgkqhkiG9w0BAQsFADAuMSwwKgYDVQQDEyNodHRwOi8vbG9jYWxob3N0OjgwODAvZW1wbG95ZWUtc2lnLzAeFw0xNDEwMTcxOTMzNThaFw0yNDEwMTcxOTM1MzhaMC4xLDAqBgNVBAMTI2h0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9lbXBsb3llZS1zaWcvMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+9kVgPFpshjS2aT2g52lqTv2lqb1jgvXZVk7iFF4LAO6SdCXKXRZI4SuzIRkVNpE1a42V1kQRlaozoFklgvX5sje8tkpa9ylq+bxGXM9RRycqRu2B+oWUV7Aqq7Bs0Xud0WeHQYRcEoCjqsFKGy65qkLRDdT70FTJgpSHts+gDwIDAQABMA0GCSqGSIb3DQEBCwUAA4GBACKyPLGqMX8GsIrCfJU8eVnpaqzTXMglLVo/nTcfAnWe9UAdVe8N3a2PXpDBvuqNA/DEAhVcQgxdlOTWnB6s8/yLTRuH0bZgb3qGdySif+lU+E7zZ/SiDzavAvn+ABqemnzHcHyhYO+hNRGHvUbW5OAii9Vdjhm8BI32YF1NwhKp"
+            }
+        },
+        {
+            "name": "http://localhost:8082/employee/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8082/employee/",
+            "redirectUris": [
+                "http://localhost:8082/employee/*"
+            ],
+            "adminUrl": "http://localhost:8082/employee/saml",
+            "attributes": {
+                "saml.authnstatement": "true"
+            },
+            "protocolMappers": [
+                {
+                    "name": "email",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-property-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "email",
+                        "friendly.name": "email",
+                        "attribute.name": "urn:oid:1.2.840.113549.1.9.1",
+                        "attribute.nameformat": "URI Reference"
+                    }
+                },
+                {
+                    "name": "phone",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "phone",
+                        "attribute.name": "phone",
+                        "attribute.nameformat": "Basic"
+                    }
+                },
+                {
+                    "name": "role-list",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-role-list-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "attribute.name": "Role",
+                        "attribute.nameformat": "Basic",
+                        "single": "false"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "http://localhost:8082/employee2/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8082/employee2/",
+            "redirectUris": [
+                "http://localhost:8082/employee2/*"
+            ],
+            "adminUrl": "http://localhost:8082/employee2/saml",
+            "attributes": {
+                "saml.authnstatement": "true"
+            },
+            "protocolMappers": [
+                {
+                    "name": "email",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-property-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "email",
+                        "friendly.name": "email",
+                        "attribute.name": "urn:oid:1.2.840.113549.1.9.1",
+                        "attribute.nameformat": "URI Reference"
+                    }
+                },
+                {
+                    "name": "phone",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "phone",
+                        "attribute.name": "phone",
+                        "attribute.nameformat": "Basic"
+                    }
+                },
+                {
+                    "name": "role-list",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-role-list-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "attribute.name": "Role",
+                        "attribute.nameformat": "Basic",
+                        "single": "false"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "http://localhost:8082/employee-sig-front/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "frontchannelLogout": true,
+            "baseUrl": "http://localhost:8082/employee-sig-front/",
+            "redirectUris": [
+                "http://localhost:8082/employee-sig-front/*"
+            ],
+            "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8082/employee-sig-front/saml",
+                "saml_assertion_consumer_url_redirect": "http://localhost:8082/employee-sig-front/saml",
+                "saml_single_logout_service_url_post": "http://localhost:8082/employee-sig-front/saml",
+                "saml_single_logout_service_url_redirect": "http://localhost:8082/employee-sig-front/saml",
+                "saml.server.signature": "true",
+                "saml.client.signature": "true",
+                "saml.signature.algorithm": "RSA_SHA1",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIIB0DCCATkCBgFJH5u0EDANBgkqhkiG9w0BAQsFADAuMSwwKgYDVQQDEyNodHRwOi8vbG9jYWxob3N0OjgwODAvZW1wbG95ZWUtc2lnLzAeFw0xNDEwMTcxOTMzNThaFw0yNDEwMTcxOTM1MzhaMC4xLDAqBgNVBAMTI2h0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9lbXBsb3llZS1zaWcvMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+9kVgPFpshjS2aT2g52lqTv2lqb1jgvXZVk7iFF4LAO6SdCXKXRZI4SuzIRkVNpE1a42V1kQRlaozoFklgvX5sje8tkpa9ylq+bxGXM9RRycqRu2B+oWUV7Aqq7Bs0Xud0WeHQYRcEoCjqsFKGy65qkLRDdT70FTJgpSHts+gDwIDAQABMA0GCSqGSIb3DQEBCwUAA4GBACKyPLGqMX8GsIrCfJU8eVnpaqzTXMglLVo/nTcfAnWe9UAdVe8N3a2PXpDBvuqNA/DEAhVcQgxdlOTWnB6s8/yLTRuH0bZgb3qGdySif+lU+E7zZ/SiDzavAvn+ABqemnzHcHyhYO+hNRGHvUbW5OAii9Vdjhm8BI32YF1NwhKp"
+            }
+        }
+    ],
+    "groups" : [
+        {
+            "name": "top",
+            "attributes": {
+                "topAttribute": ["true"]
+
+            },
+            "realmRoles": ["manager"],
+            "subGroups": [
+                {
+                    "name": "level2",
+                    "realmRoles": ["user"],
+                    "attributes": {
+                        "level2Attribute": ["true"]
+
+                    }
+                }
+            ]
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "manager",
+                "description": "Have Manager privileges"
+            },
+            {
+                "name": "user",
+                "description": "Have User privileges"
+            }
+        ],
+        "application" : {
+            "http://localhost:8082/employee/" : [
+                {
+                    "name": "employee",
+                    "description": "Have Employee privileges"
+                }
+            ],
+            "http://localhost:8082/employee2/" : [
+                {
+                    "name": "employee",
+                    "description": "Have Employee privileges"
+                }
+            ]
+        }
+    }
+}

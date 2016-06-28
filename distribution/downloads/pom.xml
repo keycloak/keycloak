@@ -188,6 +188,17 @@
 
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-jetty93-adapter-dist</artifactId>
+                                    <type>zip</type>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-jetty93-adapter-dist</artifactId>
+                                    <type>tar.gz</type>
+                                </artifactItem>
+
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-js-adapter-dist</artifactId>
                                     <type>zip</type>
                                 </artifactItem>
@@ -304,6 +315,17 @@
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-saml-jetty92-adapter-dist</artifactId>
+                                    <type>tar.gz</type>
+                                </artifactItem>
+
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-jetty93-adapter-dist</artifactId>
+                                    <type>zip</type>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-saml-jetty93-adapter-dist</artifactId>
                                     <type>tar.gz</type>
                                 </artifactItem>
 
