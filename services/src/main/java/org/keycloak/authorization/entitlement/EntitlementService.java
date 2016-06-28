@@ -39,7 +39,7 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.authorization.Permission;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.Cors;
 
@@ -182,9 +182,8 @@ public class EntitlementService {
         AccessToken.Authorization authorization = new AccessToken.Authorization();
 
         authorization.setPermissions(permissions);
-
         accessToken.setAuthorization(authorization);
-        ;
+
         return new TokenManager().encodeToken(realm, accessToken);
     }
 

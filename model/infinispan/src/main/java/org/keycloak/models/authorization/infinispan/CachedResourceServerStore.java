@@ -26,6 +26,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.authorization.infinispan.InfinispanStoreFactoryProvider.CacheTransaction;
 import org.keycloak.models.authorization.infinispan.entities.CachedResourceServer;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 import java.util.ArrayList;
 import java.util.List;
