@@ -149,7 +149,10 @@ String token = "eyJhbGciOiJSUz...";
 ClientRepresentation client = new ClientRepresentation();
 client.setClientId(CLIENT_ID);
 
-ClientRegistration reg = ClientRegistration.create().url("http://localhost:8080/auth/realms/myrealm/clients").build();
+ClientRegistration reg = ClientRegistration.create()
+    .url("http://localhost:8080/auth", "myrealm")
+    .build();
+
 reg.auth(Auth.token(token));
 
 client = reg.create(client);
