@@ -21,8 +21,8 @@ package org.keycloak.authorization.policy.evaluation;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.Policy.Logic;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.representations.idm.authorization.Logic;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

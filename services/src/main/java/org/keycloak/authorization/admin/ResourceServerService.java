@@ -21,11 +21,6 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.admin.representation.PolicyRepresentation;
-import org.keycloak.authorization.admin.representation.ResourceOwnerRepresentation;
-import org.keycloak.authorization.admin.representation.ResourceRepresentation;
-import org.keycloak.authorization.admin.representation.ResourceServerRepresentation;
-import org.keycloak.authorization.admin.representation.ScopeRepresentation;
 import org.keycloak.authorization.admin.util.Models;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -42,6 +37,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationManager;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.resources.admin.RealmAuth;
 import org.keycloak.util.JsonSerialization;
 
@@ -191,212 +193,207 @@ public class ResourceServerService {
         return Response.ok(settings).build();
     }
 
+    @Path("/import")
     @POST
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response importSettings(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response importSettings(@Context final UriInfo uriInfo, ResourceServerRepresentation rep) throws IOException {
         this.auth.requireManage();
-        Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
-        List<InputPart> inputParts = uploadForm.get("file");
 
-        for (InputPart inputPart : inputParts) {
-            ResourceServerRepresentation rep = JsonSerialization.readValue(inputPart.getBodyAsString(), ResourceServerRepresentation.class);
+        resourceServer.setPolicyEnforcementMode(rep.getPolicyEnforcementMode());
+        resourceServer.setAllowRemoteResourceManagement(rep.isAllowRemoteResourceManagement());
 
-            resourceServer.setPolicyEnforcementMode(rep.getPolicyEnforcementMode());
-            resourceServer.setAllowRemoteResourceManagement(rep.isAllowRemoteResourceManagement());
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceStore resourceStore = storeFactory.getResourceStore();
+        ScopeStore scopeStore = storeFactory.getScopeStore();
+        ScopeService scopeResource = new ScopeService(resourceServer, this.authorization, this.auth);
 
-            StoreFactory storeFactory = authorization.getStoreFactory();
-            ResourceStore resourceStore = storeFactory.getResourceStore();
-            ScopeStore scopeStore = storeFactory.getScopeStore();
-            ScopeService scopeResource = new ScopeService(resourceServer, this.authorization, this.auth);
+        ResteasyProviderFactory.getInstance().injectProperties(scopeResource);
 
-            ResteasyProviderFactory.getInstance().injectProperties(scopeResource);
+        rep.getScopes().forEach(scope -> {
+            Scope existing = scopeStore.findByName(scope.getName(), resourceServer.getId());
 
-            rep.getScopes().forEach(scope -> {
-                Scope existing = scopeStore.findByName(scope.getName(), resourceServer.getId());
+            if (existing != null) {
+                scopeResource.update(existing.getId(), scope);
+            } else {
+                scopeResource.create(scope);
+            }
+        });
 
-                if (existing != null) {
-                    scopeResource.update(existing.getId(), scope);
-                } else {
-                    scopeResource.create(scope);
+        ResourceSetService resourceSetResource = new ResourceSetService(resourceServer, this.authorization, this.auth);
+
+        rep.getResources().forEach(resourceRepresentation -> {
+            ResourceOwnerRepresentation owner = resourceRepresentation.getOwner();
+
+            if (owner == null) {
+                owner = new ResourceOwnerRepresentation();
+            }
+
+            owner.setId(resourceServer.getClientId());
+
+            if (owner.getName() != null) {
+                UserModel user = this.session.users().getUserByUsername(owner.getName(), this.realm);
+
+                if (user != null) {
+                    owner.setId(user.getId());
                 }
-            });
+            }
 
-            ResourceSetService resourceSetResource = new ResourceSetService(resourceServer, this.authorization, this.auth);
+            Resource existing = resourceStore.findByName(resourceRepresentation.getName(), this.resourceServer.getId());
 
-            rep.getResources().forEach(resourceRepresentation -> {
-                ResourceOwnerRepresentation owner = resourceRepresentation.getOwner();
+            if (existing != null) {
+                resourceSetResource.update(existing.getId(), resourceRepresentation);
+            } else {
+                resourceSetResource.create(resourceRepresentation);
+            }
+        });
 
-                if (owner == null) {
-                    owner = new ResourceOwnerRepresentation();
-                }
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        PolicyService policyResource = new PolicyService(resourceServer, this.authorization, this.auth);
 
-                owner.setId(resourceServer.getClientId());
+        ResteasyProviderFactory.getInstance().injectProperties(policyResource);
 
-                if (owner.getName() != null) {
-                    UserModel user = this.session.users().getUserByUsername(owner.getName(), this.realm);
+        rep.getPolicies().forEach(policyRepresentation -> {
+            Map<String, String> config = policyRepresentation.getConfig();
 
-                    if (user != null) {
-                        owner.setId(user.getId());
-                    }
-                }
+            String roles = config.get("roles");
 
-                Resource existing = resourceStore.findByName(resourceRepresentation.getName(), this.resourceServer.getId());
+            if (roles != null && !roles.isEmpty()) {
+                roles = roles.replace("[", "");
+                roles = roles.replace("]", "");
 
-                if (existing != null) {
-                    resourceSetResource.update(existing.getId(), resourceRepresentation);
-                } else {
-                    resourceSetResource.create(resourceRepresentation);
-                }
-            });
+                if (!roles.isEmpty()) {
+                    String roleNames = "";
 
-            PolicyStore policyStore = storeFactory.getPolicyStore();
-            PolicyService policyResource = new PolicyService(resourceServer, this.authorization, this.auth);
-
-            ResteasyProviderFactory.getInstance().injectProperties(policyResource);
-
-            rep.getPolicies().forEach(policyRepresentation -> {
-                Map<String, String> config = policyRepresentation.getConfig();
-
-                String roles = config.get("roles");
-
-                if (roles != null && !roles.isEmpty()) {
-                    roles = roles.replace("[", "");
-                    roles = roles.replace("]", "");
-
-                    if (!roles.isEmpty()) {
-                        String roleNames = "";
-
-                        for (String role : roles.split(",")) {
-                            if (!roleNames.isEmpty()) {
-                                roleNames = roleNames + ",";
-                            }
-
-                            role = role.replace("\"", "");
-
-                            roleNames = roleNames + "\"" + this.realm.getRole(role).getId() + "\"";
+                    for (String role : roles.split(",")) {
+                        if (!roleNames.isEmpty()) {
+                            roleNames = roleNames + ",";
                         }
 
-                        config.put("roles", "[" + roleNames + "]");
+                        role = role.replace("\"", "");
+
+                        roleNames = roleNames + "\"" + this.realm.getRole(role).getId() + "\"";
                     }
+
+                    config.put("roles", "[" + roleNames + "]");
                 }
+            }
 
-                String users = config.get("users");
+            String users = config.get("users");
 
-                if (users != null) {
-                    users = users.replace("[", "");
-                    users = users.replace("]", "");
+            if (users != null) {
+                users = users.replace("[", "");
+                users = users.replace("]", "");
 
-                    if (!users.isEmpty()) {
-                        String userNames = "";
+                if (!users.isEmpty()) {
+                    String userNames = "";
 
-                        for (String user : users.split(",")) {
-                            if (!userNames.isEmpty()) {
-                                userNames =  userNames + ",";
-                            }
-
-                            user = user.replace("\"", "");
-
-                            userNames = userNames + "\"" + this.session.users().getUserByUsername(user, this.realm).getId() + "\"";
+                    for (String user : users.split(",")) {
+                        if (!userNames.isEmpty()) {
+                            userNames =  userNames + ",";
                         }
 
-                        config.put("users", "[" + userNames + "]");
+                        user = user.replace("\"", "");
+
+                        userNames = userNames + "\"" + this.session.users().getUserByUsername(user, this.realm).getId() + "\"";
                     }
+
+                    config.put("users", "[" + userNames + "]");
                 }
+            }
 
-                String scopes = config.get("scopes");
+            String scopes = config.get("scopes");
 
-                if (scopes != null && !scopes.isEmpty()) {
-                    scopes = scopes.replace("[", "");
-                    scopes = scopes.replace("]", "");
+            if (scopes != null && !scopes.isEmpty()) {
+                scopes = scopes.replace("[", "");
+                scopes = scopes.replace("]", "");
 
-                    if (!scopes.isEmpty()) {
-                        String scopeNames = "";
+                if (!scopes.isEmpty()) {
+                    String scopeNames = "";
 
-                        for (String scope : scopes.split(",")) {
-                            if (!scopeNames.isEmpty()) {
-                                scopeNames =  scopeNames + ",";
-                            }
-
-                            scope = scope.replace("\"", "");
-
-                            Scope newScope = scopeStore.findByName(scope, resourceServer.getId());
-
-                            if (newScope == null) {
-                                throw new RuntimeException("Scope with name [" + scope + "] not defined.");
-                            }
-
-                            scopeNames = scopeNames + "\"" + newScope.getId() + "\"";
+                    for (String scope : scopes.split(",")) {
+                        if (!scopeNames.isEmpty()) {
+                            scopeNames =  scopeNames + ",";
                         }
 
-                        config.put("scopes", "[" + scopeNames + "]");
-                    }
-                }
+                        scope = scope.replace("\"", "");
 
-                String policyResources = config.get("resources");
+                        Scope newScope = scopeStore.findByName(scope, resourceServer.getId());
 
-                if (policyResources != null && !policyResources.isEmpty()) {
-                    policyResources = policyResources.replace("[", "");
-                    policyResources = policyResources.replace("]", "");
-
-                    if (!policyResources.isEmpty()) {
-                        String resourceNames = "";
-
-                        for (String resource : policyResources.split(",")) {
-                            if (!resourceNames.isEmpty()) {
-                                resourceNames =  resourceNames + ",";
-                            }
-
-                            resource = resource.replace("\"", "");
-
-                            if ("".equals(resource)) {
-                                continue;
-                            }
-
-                            resourceNames = resourceNames + "\"" + storeFactory.getResourceStore().findByName(resource, resourceServer.getId()).getId() + "\"";
+                        if (newScope == null) {
+                            throw new RuntimeException("Scope with name [" + scope + "] not defined.");
                         }
 
-                        config.put("resources", "[" + resourceNames + "]");
+                        scopeNames = scopeNames + "\"" + newScope.getId() + "\"";
                     }
+
+                    config.put("scopes", "[" + scopeNames + "]");
                 }
+            }
 
-                String applyPolicies = config.get("applyPolicies");
+            String policyResources = config.get("resources");
 
-                if (applyPolicies != null && !applyPolicies.isEmpty()) {
-                    applyPolicies = applyPolicies.replace("[", "");
-                    applyPolicies = applyPolicies.replace("]", "");
+            if (policyResources != null && !policyResources.isEmpty()) {
+                policyResources = policyResources.replace("[", "");
+                policyResources = policyResources.replace("]", "");
 
-                    if (!applyPolicies.isEmpty()) {
-                        String policyNames = "";
+                if (!policyResources.isEmpty()) {
+                    String resourceNames = "";
 
-                        for (String pId : applyPolicies.split(",")) {
-                            if (!policyNames.isEmpty()) {
-                                policyNames = policyNames + ",";
-                            }
-
-                            pId = pId.replace("\"", "").trim();
-
-                            Policy policy = policyStore.findByName(pId, resourceServer.getId());
-
-                            if (policy == null) {
-                                throw new RuntimeException("Policy with name [" + pId + "] not defined.");
-                            }
-
-                            policyNames = policyNames + "\"" + policy.getId() + "\"";
+                    for (String resource : policyResources.split(",")) {
+                        if (!resourceNames.isEmpty()) {
+                            resourceNames =  resourceNames + ",";
                         }
 
-                        config.put("applyPolicies", "[" + policyNames + "]");
+                        resource = resource.replace("\"", "");
+
+                        if ("".equals(resource)) {
+                            continue;
+                        }
+
+                        resourceNames = resourceNames + "\"" + storeFactory.getResourceStore().findByName(resource, resourceServer.getId()).getId() + "\"";
                     }
-                }
 
-                Policy existing = policyStore.findByName(policyRepresentation.getName(), this.resourceServer.getId());
-
-                if (existing != null) {
-                    policyResource.update(existing.getId(), policyRepresentation);
-                } else {
-                    policyResource.create(policyRepresentation);
+                    config.put("resources", "[" + resourceNames + "]");
                 }
-            });
-        }
+            }
+
+            String applyPolicies = config.get("applyPolicies");
+
+            if (applyPolicies != null && !applyPolicies.isEmpty()) {
+                applyPolicies = applyPolicies.replace("[", "");
+                applyPolicies = applyPolicies.replace("]", "");
+
+                if (!applyPolicies.isEmpty()) {
+                    String policyNames = "";
+
+                    for (String pId : applyPolicies.split(",")) {
+                        if (!policyNames.isEmpty()) {
+                            policyNames = policyNames + ",";
+                        }
+
+                        pId = pId.replace("\"", "").trim();
+
+                        Policy policy = policyStore.findByName(pId, resourceServer.getId());
+
+                        if (policy == null) {
+                            throw new RuntimeException("Policy with name [" + pId + "] not defined.");
+                        }
+
+                        policyNames = policyNames + "\"" + policy.getId() + "\"";
+                    }
+
+                    config.put("applyPolicies", "[" + policyNames + "]");
+                }
+            }
+
+            Policy existing = policyStore.findByName(policyRepresentation.getName(), this.resourceServer.getId());
+
+            if (existing != null) {
+                policyResource.update(existing.getId(), policyRepresentation);
+            } else {
+                policyResource.create(policyRepresentation);
+            }
+        });
 
         return Response.noContent().build();
     }
@@ -434,8 +431,8 @@ public class ResourceServerService {
         defaultPermission.setName("Default Permission");
         defaultPermission.setType("resource");
         defaultPermission.setDescription("A permission that applies to the default resource type");
-        defaultPermission.setDecisionStrategy(Policy.DecisionStrategy.UNANIMOUS);
-        defaultPermission.setLogic(Policy.Logic.POSITIVE);
+        defaultPermission.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        defaultPermission.setLogic(Logic.POSITIVE);
 
         HashMap<String, String> defaultPermissionConfig = new HashMap<>();
 
@@ -454,8 +451,8 @@ public class ResourceServerService {
         defaultPolicy.setName("Only From Realm Policy");
         defaultPolicy.setDescription("A policy that grants access only for users within this realm");
         defaultPolicy.setType("js");
-        defaultPolicy.setDecisionStrategy(Policy.DecisionStrategy.AFFIRMATIVE);
-        defaultPolicy.setLogic(Policy.Logic.POSITIVE);
+        defaultPolicy.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+        defaultPolicy.setLogic(Logic.POSITIVE);
 
         HashMap<String, String> defaultPolicyConfig = new HashMap<>();
 
