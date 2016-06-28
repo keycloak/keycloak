@@ -152,7 +152,7 @@
       }
     },
     {
-      "name": "Delete Album Policy",
+      "name": "Delete Album Permission",
       "description": "A policy that only allows the owner to delete his albums.",
       "type": "scope",
       "logic": "POSITIVE",

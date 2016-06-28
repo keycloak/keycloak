@@ -49,7 +49,7 @@
          */
         this.authorize = function (wwwAuthenticateHeader) {
             this.then = function (onGrant, onDeny, onError) {
-                if (wwwAuthenticateHeader.startsWith('UMA')) {
+                if (wwwAuthenticateHeader.indexOf('UMA') != -1) {
                     var params = wwwAuthenticateHeader.split(',');
 
                     for (i = 0; i < params.length; i++) {
@@ -96,7 +96,7 @@
                             ));
                         }
                     }
-                } else if (wwwAuthenticateHeader.startsWith('KC_ETT')) {
+                } else if (wwwAuthenticateHeader.indexOf('KC_ETT') != -1) {
                     var params = wwwAuthenticateHeader.substring('KC_ETT'.length).trim().split(',');
                     var clientId = null;
 

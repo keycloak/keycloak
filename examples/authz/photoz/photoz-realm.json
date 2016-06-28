@@ -92,17 +92,19 @@
       "publicClient": true,
       "redirectUris": [
         "/photoz-html5-client/*"
-      ]
+      ],
+      "webOrigins": ["*"]
     },
     {
       "clientId": "photoz-restful-api",
+      "secret": "secret",
       "enabled": true,
       "baseUrl": "/photoz-restful-api",
       "authorizationServicesEnabled" : true,
       "redirectUris": [
         "/photoz-restful-api/*"
       ],
-      "secret": "secret"
+      "webOrigins" : ["*"]
     }
   ]
 }
