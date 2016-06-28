@@ -10,7 +10,7 @@
             <td>
                 <ul>
                     <li data-ng-repeat="p in value">
-                        <a href="#/album/{{p.id}}">{{p.name}}</a> - [<a href="#" ng-click="deleteAlbum(p)">X</a>]
+                        <a href="#/album/{{p.id}}">{{p.name}}</a> - [<a href="#" id="delete-{{p.name}}" ng-click="deleteAlbum(p)">X</a>]
                     </li>
                 </ul>
             </td>

@@ -1,11 +1,14 @@
 package org.keycloak.example.photoz.album;
 
 import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.representation.ScopeRepresentation;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.example.photoz.ErrorResponse;
 import org.keycloak.example.photoz.entity.Album;
+import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
@@ -38,9 +41,18 @@ public class AlbumService {
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Context
+    private HttpServletRequest request;
+
+    private AuthzClient authzClient;
+
+    public AlbumService() {
+
+    }
+
     @POST
     @Consumes("application/json")
-    public Response create(@Context HttpServletRequest request, Album newAlbum) {
+    public Response create(Album newAlbum) {
         Principal userPrincipal = request.getUserPrincipal();
 
         newAlbum.setUserId(userPrincipal.getName());
@@ -78,7 +90,7 @@ public class AlbumService {
 
     @GET
     @Produces("application/json")
-    public Response findAll(@Context HttpServletRequest request) {
+    public Response findAll() {
         return Response.ok(this.entityManager.createQuery("from Album where userId = '" + request.getUserPrincipal().getName() + "'").getResultList()).build();
     }
 
@@ -107,7 +119,7 @@ public class AlbumService {
 
             albumResource.setOwner(album.getUserId());
 
-            AuthzClient.create().protection().resource().create(albumResource);
+            getAuthzClient().protection().resource().create(albumResource);
         } catch (Exception e) {
             throw new RuntimeException("Could not register protected resource.", e);
         }
@@ -117,7 +129,7 @@ public class AlbumService {
         String uri = "/album/" + album.getId();
 
         try {
-            ProtectionResource protection = AuthzClient.create().protection();
+            ProtectionResource protection = getAuthzClient().protection();
             Set<String> search = protection.resource().findByFilter("uri=" + uri);
 
             if (search.isEmpty()) {
@@ -128,5 +140,20 @@ public class AlbumService {
         } catch (Exception e) {
             throw new RuntimeException("Could not search protected resource.", e);
         }
+    }
+
+    private AuthzClient getAuthzClient() {
+        if (this.authzClient == null) {
+            try {
+                AdapterConfig adapterConfig = JsonSerialization.readValue(this.request.getServletContext().getResourceAsStream("/WEB-INF/keycloak.json"), AdapterConfig.class);
+                Configuration configuration = new Configuration(adapterConfig.getAuthServerUrl(), adapterConfig.getRealm(), adapterConfig.getResource(), adapterConfig.getCredentials(), null);
+
+                this.authzClient = AuthzClient.create(configuration);
+            } catch (Exception e) {
+                throw new RuntimeException("Could not create authorization client.", e);
+            }
+        }
+
+        return this.authzClient;
     }
 }
