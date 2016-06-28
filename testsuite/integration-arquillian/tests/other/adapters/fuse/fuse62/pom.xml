@@ -18,23 +18,21 @@
 
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <parent>
-        <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-servers-app-server-karaf</artifactId>
-        <version>2.0.0.CR1-SNAPSHOT</version>
-    </parent>
+
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-app-server-karaf3</artifactId>
-    <packaging>pom</packaging>
-    <name>App Server - Karaf - Karaf 3</name>
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian-tests-adapters-fuse</artifactId>
+        <version>2.0.0.CR1-SNAPSHOT</version>
+    </parent>
 
+    <artifactId>integration-arquillian-tests-adapters-fuse62</artifactId>
+
+    <name>Adapter Tests - Fuse - 6.2</name>
+        
     <properties>
-        <app.server.karaf>karaf3</app.server.karaf>
-        <app.server.karaf.groupId>org.apache.karaf</app.server.karaf.groupId>
-        <app.server.karaf.artifactId>apache-karaf-minimal</app.server.karaf.artifactId>
-        <app.server.karaf.version>${karaf3.version}</app.server.karaf.version>
-        <app.server.karaf.unpacked.folder.name>apache-karaf-minimal-${karaf3.version}</app.server.karaf.unpacked.folder.name>
+        <app.server>fuse62</app.server>
     </properties>
-
+    
 </project>

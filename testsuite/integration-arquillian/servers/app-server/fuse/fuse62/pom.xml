@@ -20,22 +20,19 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-servers-app-server-karaf</artifactId>
+        <artifactId>integration-arquillian-servers-app-server-fuse</artifactId>
         <version>2.0.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>integration-arquillian-servers-app-server-fuse62</artifactId>
     <packaging>pom</packaging>
-    <name>App Server - Karaf - JBoss Fuse 6.2</name>
+    <name>App Server - Fuse - 6.2</name>
 
     <properties>
-        <app.server.karaf>fuse62</app.server.karaf>
-        <app.server.karaf.groupId>org.jboss.fuse</app.server.karaf.groupId>
-        <app.server.karaf.artifactId>jboss-fuse-full</app.server.karaf.artifactId>
-        <app.server.karaf.version>${fuse62.version}</app.server.karaf.version>
-        <app.server.karaf.unpacked.folder.name>jboss-fuse-${fuse62.version}</app.server.karaf.unpacked.folder.name>
-        <app.server.karaf.client.auth>-u admin -p admin</app.server.karaf.client.auth>
+        <app.server.fuse>fuse62</app.server.fuse>
+        <app.server.fuse.version>${fuse62.version}</app.server.fuse.version>
+        <app.server.fuse.unpacked.folder.name>jboss-fuse-${fuse62.version}</app.server.fuse.unpacked.folder.name>
     </properties>
     
     <build>

@@ -2,7 +2,7 @@
 echo "JAVA_HOME=$JAVA_HOME"
 
 ./start
-echo "Karaf container starting"
+echo "Fuse container starting"
 sleep 5
 
 TIMEOUT=10
@@ -13,27 +13,27 @@ RESULT=0
 
 until [ $T -gt $TIMEOUT ]
 do
-    if ./client $CLIENT_AUTH info; then
+    if ./client -u admin -p admin info; then
         echo "Server is reachable."
 
         if "$UNINSTALL_PAX" == "true"; then
             echo "Uninstalling PAX"
-            ./client $CLIENT_AUTH -f uninstall-pax.cli
+            ./client -u admin -p admin -f uninstall-pax.cli
             if [ $? -ne 0 ]; then RESULT=1; fi
         fi
 
         if "$UPDATE_CONFIG" == "true"; then
             echo "Updating Config - org.ops4j.pax.url.mvn"
-            ./client $CLIENT_AUTH -f update-config.cli
+            ./client -u admin -p admin -f update-config.cli
             if [ $? -ne 0 ]; then 
                 RESULT=1; 
             else
-                ./client $CLIENT_AUTH config:list | grep org.ops4j.pax.url.mvn.
+                ./client -u admin -p admin config:list | grep org.ops4j.pax.url.mvn.
             fi
         fi
 
         echo "Installing features."
-        ./client $CLIENT_AUTH -f install-features.cli
+        ./client -u admin -p admin -f install-features.cli
         if [ $? -ne 0 ]; then RESULT=1; fi
 
         ./stop

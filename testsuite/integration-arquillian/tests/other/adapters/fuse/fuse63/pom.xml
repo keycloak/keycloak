@@ -23,19 +23,16 @@
 
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-tests-adapters-karaf</artifactId>
+        <artifactId>integration-arquillian-tests-adapters-fuse</artifactId>
         <version>2.0.0.CR1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>integration-arquillian-tests-adapters-fuse61</artifactId>
+    <artifactId>integration-arquillian-tests-adapters-fuse63</artifactId>
 
-    <name>Adapter Tests - Karaf - JBoss Fuse 6.1</name>
+    <name>Adapter Tests - Fuse - 6.3</name>
         
     <properties>
-        <app.server>fuse61</app.server>
-
-        <app.server.management.user>admin</app.server.management.user>
-        <app.server.management.password>admin</app.server.management.password>
+        <app.server>fuse63</app.server>
     </properties>
     
 </project>

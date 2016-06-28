@@ -164,7 +164,7 @@ integration-arquillian
 │  ├──app-server
 │  │  ├──jboss (wildfly/eap/as)
 │  │  ├──tomcat
-│  │  └──karaf
+│  │  └──fuse
 │  │
 │  └──wildfly-balancer
 │
@@ -177,7 +177,7 @@ integration-arquillian
       ├──adapters         (common settings for all adapter test modules)
       │  ├──jboss
       │  ├──tomcat
-      │  └──karaf
+      │  └──fuse
       │
       ├──console          
       ├──console_no_users 

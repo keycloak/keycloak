@@ -17,7 +17,7 @@
 
 <assembly>
     
-    <id>${app.server.karaf}</id>
+    <id>${app.server.fuse}</id>
     
     <formats>
         <format>zip</format>
@@ -27,15 +27,15 @@
 
     <fileSets>
         <fileSet>
-            <directory>${app.server.karaf.home}</directory>
-            <outputDirectory>app-server-${app.server.karaf}</outputDirectory>
+            <directory>${app.server.fuse.home}</directory>
+            <outputDirectory>app-server-${app.server.fuse}</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${app.server.karaf.home}</directory>
-            <outputDirectory>app-server-${app.server.karaf}</outputDirectory>
+            <directory>${app.server.fuse.home}</directory>
+            <outputDirectory>app-server-${app.server.fuse}</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
             </includes>
