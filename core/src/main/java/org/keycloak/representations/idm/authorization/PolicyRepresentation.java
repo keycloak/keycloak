@@ -16,6 +16,7 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ public class PolicyRepresentation {
     private DecisionStrategy decisionStrategy = DecisionStrategy.UNANIMOUS;
     private Map<String, String> config = new HashMap();
     private List<PolicyRepresentation> dependentPolicies;
+    private List<PolicyRepresentation> associatedPolicies = new ArrayList<>();
 
     public String getId() {
         return this.id;
@@ -89,6 +91,14 @@ public class PolicyRepresentation {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public List<PolicyRepresentation> getAssociatedPolicies() {
+        return associatedPolicies;
+    }
+
+    public void setAssociatedPolicies(List<PolicyRepresentation> associatedPolicies) {
+        this.associatedPolicies = associatedPolicies;
     }
 
     @Override
