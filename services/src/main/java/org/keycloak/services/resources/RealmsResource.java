@@ -18,6 +18,8 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.AuthorizationService;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.EventBuilder;
@@ -40,8 +42,12 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 
 /**
@@ -95,12 +101,17 @@ public class RealmsResource {
 
     @Path("{realm}/protocol/{protocol}")
     public Object getProtocol(final @PathParam("realm") String name,
-                                            final @PathParam("protocol") String protocol) {
+                              final @PathParam("protocol") String protocol) {
         RealmModel realm = init(name);
+
+        LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
+        if(factory == null){
+            logger.debugf("protocol %s not found", protocol);
+            throw new NotFoundException("Protocol not found");
+        }
 
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
 
-        LoginProtocolFactory factory = (LoginProtocolFactory)session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, protocol);
         Object endpoint = factory.createProtocolEndpoint(realm, event);
 
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
@@ -228,13 +239,24 @@ public class RealmsResource {
     @Path("{realm}/.well-known/{provider}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getWellKnown(final @PathParam("realm") String name,
-                              final @PathParam("provider") String providerName) {
+                                 final @PathParam("provider") String providerName) {
         init(name);
 
         WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, providerName);
 
         ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.getDefaultCacheControl());
         return Cors.add(request, responseBuilder).allowedOrigins("*").build();
+    }
+
+    @Path("{realm}/authz")
+    public Object getAuthorizationService(@PathParam("realm") String name) {
+        init(name);
+        AuthorizationProvider authorization = this.session.getProvider(AuthorizationProvider.class);
+        AuthorizationService service = new AuthorizationService(authorization);
+
+        ResteasyProviderFactory.getInstance().injectProperties(service);
+
+        return service;
     }
 
     /**

@@ -23,14 +23,17 @@ import liquibase.changelog.ChangeSet;
 import liquibase.changelog.RanChangeSet;
 import liquibase.exception.LiquibaseException;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.reflections.Reflections;
+import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
 
+import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -49,11 +52,6 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     }
 
     @Override
-    public String getCurrentVersionSql(String defaultSchema) {
-        return "SELECT ID from " + getTable("DATABASECHANGELOG", defaultSchema) + " ORDER BY DATEEXECUTED DESC LIMIT 1";
-    }
-
-    @Override
     public void update(Connection connection, String defaultSchema) {
         logger.debug("Starting database update");
 
@@ -61,38 +59,51 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         ThreadLocalSessionContext.setCurrentSession(session);
 
         try {
-            Liquibase liquibase = getLiquibase(connection, defaultSchema);
+            // Run update with keycloak master changelog first
+            Liquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
+            updateChangeSet(liquibase, liquibase.getChangeLogFile());
 
-            List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null);
-            if (!changeSets.isEmpty()) {
-                if (changeSets.get(0).getId().equals(FIRST_VERSION)) {
-                    Statement statement = connection.createStatement();
-                    try {
-                        statement.executeQuery("SELECT id FROM " + getTable("REALM", defaultSchema));
-
-                        logger.infov("Updating database from {0} to {1}", FIRST_VERSION, changeSets.get(changeSets.size() - 1).getId());
-                        liquibase.markNextChangeSetRan(null);
-                    } catch (SQLException e) {
-                        logger.info("Initializing database schema");
-                    }
-                } else {
-                    if (logger.isDebugEnabled()) {
-                        List<RanChangeSet> ranChangeSets = liquibase.getDatabase().getRanChangeSetList();
-                        logger.debugv("Updating database from {0} to {1}", ranChangeSets.get(ranChangeSets.size() - 1).getId(), changeSets.get(changeSets.size() - 1).getId());
-                    } else {
-                        logger.infov("Updating database");
-                    }
+            // Run update for each custom JpaEntityProvider
+            Set<JpaEntityProvider> jpaProviders = session.getAllProviders(JpaEntityProvider.class);
+            for (JpaEntityProvider jpaProvider : jpaProviders) {
+                String customChangelog = jpaProvider.getChangelogLocation();
+                if (customChangelog != null) {
+                    String factoryId = jpaProvider.getFactoryId();
+                    String changelogTableName = JpaUtils.getCustomChangelogTableName(factoryId);
+                    liquibase = getLiquibaseForCustomProviderUpdate(connection, defaultSchema, customChangelog, jpaProvider.getClass().getClassLoader(), changelogTableName);
+                    updateChangeSet(liquibase, liquibase.getChangeLogFile());
                 }
-
-                liquibase.update((Contexts) null);
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to update database", e);
         } finally {
             ThreadLocalSessionContext.removeCurrentSession();
         }
+    }
 
-        logger.debug("Completed database update");
+    protected void updateChangeSet(Liquibase liquibase, String changelog) throws LiquibaseException {
+        List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null);
+        if (!changeSets.isEmpty()) {
+            List<RanChangeSet> ranChangeSets = liquibase.getDatabase().getRanChangeSetList();
+            if (ranChangeSets.isEmpty()) {
+                logger.infov("Initializing database schema. Using changelog {0}", changelog);
+            } else {
+                if (logger.isDebugEnabled()) {
+                    logger.debugv("Updating database from {0} to {1}. Using changelog {2}", ranChangeSets.get(ranChangeSets.size() - 1).getId(), changeSets.get(changeSets.size() - 1).getId(), changelog);
+                } else {
+                    logger.infov("Updating database. Using changelog {0}", changelog);
+                }
+            }
+
+            liquibase.update((Contexts) null);
+            logger.debugv("Completed database update for changelog {0}", changelog);
+        } else {
+            logger.debugv("Database is up to date for changelog {0}", changelog);
+
+            // Needs to restart liquibase services to clear changeLogHistory.
+            Method resetServices = Reflections.findDeclaredMethod(Liquibase.class, "resetServices");
+            Reflections.invokeMethod(true, resetServices, liquibase);
+        }
     }
 
     @Override
@@ -100,16 +111,20 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         logger.debug("Validating if database is updated");
 
         try {
-            Liquibase liquibase = getLiquibase(connection, defaultSchema);
+            // Validate with keycloak master changelog first
+            Liquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
+            validateChangeSet(liquibase, liquibase.getChangeLogFile());
 
-            List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null);
-            if (!changeSets.isEmpty()) {
-                List<RanChangeSet> ranChangeSets = liquibase.getDatabase().getRanChangeSetList();
-                String errorMessage = String.format("Failed to validate database schema. Schema needs updating database from %s to %s. Please change databaseSchema to 'update' or use other database",
-                        ranChangeSets.get(ranChangeSets.size() - 1).getId(), changeSets.get(changeSets.size() - 1).getId());
-                throw new RuntimeException(errorMessage);
-            } else {
-                logger.debug("Validation passed. Database is up-to-date");
+            // Validate each custom JpaEntityProvider
+            Set<JpaEntityProvider> jpaProviders = session.getAllProviders(JpaEntityProvider.class);
+            for (JpaEntityProvider jpaProvider : jpaProviders) {
+                String customChangelog = jpaProvider.getChangelogLocation();
+                if (customChangelog != null) {
+                    String factoryId = jpaProvider.getFactoryId();
+                    String changelogTableName = JpaUtils.getCustomChangelogTableName(factoryId);
+                    liquibase = getLiquibaseForCustomProviderUpdate(connection, defaultSchema, customChangelog, jpaProvider.getClass().getClassLoader(), changelogTableName);
+                    validateChangeSet(liquibase, liquibase.getChangeLogFile());
+                }
             }
 
         } catch (LiquibaseException e) {
@@ -117,9 +132,26 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         }
     }
 
-    private Liquibase getLiquibase(Connection connection, String defaultSchema) throws LiquibaseException {
+    protected void validateChangeSet(Liquibase liquibase, String changelog) throws LiquibaseException {
+        List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null);
+        if (!changeSets.isEmpty()) {
+            List<RanChangeSet> ranChangeSets = liquibase.getDatabase().getRanChangeSetList();
+            String errorMessage = String.format("Failed to validate database schema. Schema needs updating database from %s to %s. Please change databaseSchema to 'update' or use other database. Used changelog was %s",
+                    ranChangeSets.get(ranChangeSets.size() - 1).getId(), changeSets.get(changeSets.size() - 1).getId(), changelog);
+            throw new RuntimeException(errorMessage);
+        } else {
+            logger.debugf("Validation passed. Database is up-to-date for changelog %s", changelog);
+        }
+    }
+
+    private Liquibase getLiquibaseForKeycloakUpdate(Connection connection, String defaultSchema) throws LiquibaseException {
         LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
         return liquibaseProvider.getLiquibase(connection, defaultSchema);
+    }
+
+    private Liquibase getLiquibaseForCustomProviderUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException {
+        LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
+        return liquibaseProvider.getLiquibaseForCustomUpdate(connection, defaultSchema, changelogLocation, classloader, changelogTableName);
     }
 
     @Override

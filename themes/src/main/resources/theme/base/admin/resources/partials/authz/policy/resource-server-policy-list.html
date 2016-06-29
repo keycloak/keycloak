@@ -1,0 +1,53 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <kc-tabs-resource-server></kc-tabs-resource-server>
+
+    <table class="table table-striped table-bordered">
+        <caption class="hidden">Table of identity providers</caption>
+        <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="5">
+                    <div class="form-inline">
+                        <div class="form-group">
+                            Filter by:&nbsp;&nbsp;
+                            <div class="input-group">
+                                <input type="text" placeholder="Name" data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                            </div>
+                            <div class="input-group">
+                                <select class="form-control search" data-ng-model="search.type"
+                                        ng-options="p.type as p.name group by p.group for p in policyProviders track by p.type">
+                                    <option value="" selected ng-click="search.type = ''">All types</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="pull-right">
+                            <select class="form-control" ng-model="policyType"
+                                    ng-options="p.name group by p.group for p in policyProviders track by p.type"
+                                    data-ng-change="addPolicy(policyType);">
+                                <option value="" disabled selected>Create policy...</option>
+                            </select>
+                        </div>
+                    </div>
+                </th>
+            </tr>
+            <tr data-ng-hide="policies.length == 0">
+                <th>Policy Name</th>
+                <th>Description</th>
+                <th>Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr ng-repeat="policy in policies | filter: {name: search.name, type: search.type} | orderBy:'name'">
+                <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy/{{policy.type}}/{{policy.id}}">{{policy.name}}</a></td>
+                <td>{{policy.description}}</td>
+                <td>{{policy.type}}</td>
+            </tr>
+            <tr data-ng-show="(policies | filter:search).length == 0">
+                <td class="text-muted" colspan="3" data-ng-show="search.name">No results</td>
+                <td class="text-muted" colspan="3" data-ng-hide="search.name">No policies available</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<kc-menu></kc-menu>

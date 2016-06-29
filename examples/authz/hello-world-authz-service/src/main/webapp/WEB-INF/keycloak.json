@@ -1,0 +1,13 @@
+{
+  "realm": "hello-world-authz",
+  "realm-public-key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzMhNM9HXNQWhVf1m64zS67SIyQjj+tV5GR+MqlRTWDXdo8GAWHd+alY1urRhfRoqMy4F499+8wh2REKFykNt0ng6s6wWnEaKDboS3SAUV6lybcOAkwIOCtCZj1ItddKG3m64fzxDDQrcpkbiAvw3S8KJ4UJK+pyh9iX01duSDtM/HhPawsPdY8JSMfuo1IxQ2Vxw+8RKwbbdUeew6cyYGYAeFYwA66mlM3otB0RBHh4bjwg8297+2g53TdwM2rbCHRbrorMQD3031OTyFSp7lXCtoMLWRfAFnOP/2yZWZMXbiJheC0R3sLbU7Ef0/cUbYyk4Ckfq6pcYDR+VZBF7AwIDAQAB",
+  "auth-server-url": "http://localhost:8080/auth",
+  "ssl-required": "external",
+  "resource": "hello-world-authz-service",
+  "credentials": {
+    "secret": "secret"
+  },
+  "policy-enforcer": {
+    "on-deny-redirect-to" : "/hello-world-authz-service/error.jsp"
+  }
+}

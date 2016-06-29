@@ -54,4 +54,9 @@ org.keycloak.authentication.RequiredActionSpi
 org.keycloak.authentication.FormAuthenticatorSpi
 org.keycloak.authentication.FormActionSpi
 org.keycloak.cluster.ClusterSpi
+org.keycloak.authorization.policy.provider.PolicySpi
+org.keycloak.authorization.store.StoreFactorySpi
+org.keycloak.authorization.AuthorizationSpi
+org.keycloak.models.cache.authorization.CachedStoreFactorySpi
+org.keycloak.protocol.oidc.TokenIntrospectionSpi
 

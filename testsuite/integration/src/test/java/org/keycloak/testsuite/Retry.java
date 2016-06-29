@@ -22,7 +22,7 @@ package org.keycloak.testsuite;
  */
 public class Retry {
 
-    public static void execute(Runnable runnable, int retry, long interval) throws InterruptedException {
+    public static void execute(Runnable runnable, int retry, long interval) {
         while (true) {
             try {
                 runnable.run();
@@ -30,7 +30,11 @@ public class Retry {
             } catch (RuntimeException e) {
                 retry--;
                 if (retry > 0) {
-                   Thread.sleep(interval);
+                    try {
+                        Thread.sleep(interval);
+                    } catch (InterruptedException ie) {
+                        throw new RuntimeException(ie);
+                    }
                 } else {
                     throw e;
                 }

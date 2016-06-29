@@ -88,7 +88,7 @@ public class UserTotpTest extends TestRealmKeycloakTest {
 
         List<UserRepresentation> users = adminClient.realms().realm("test").users().search("test-user@localhost", null, null, null, 0, 1);
         String userId = users.get(0).getId();
-
+        testingClient.testing().clearAdminEventQueue();
         adminClient.realms().realm("test").users().get(userId).removeTotp();
 
         totpPage.open();

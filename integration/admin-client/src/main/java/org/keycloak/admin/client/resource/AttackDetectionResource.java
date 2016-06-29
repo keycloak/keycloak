@@ -33,16 +33,16 @@ import java.util.Map;
 public interface AttackDetectionResource {
 
     @GET
-    @Path("brute-force/usernames/{username}")
+    @Path("brute-force/users/{userId}")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    Map<String, Object> bruteForceUserStatus(@PathParam("username") String username);
+    Map<String, Object> bruteForceUserStatus(@PathParam("userId") String userId);
 
-    @Path("brute-force/usernames/{username}")
+    @Path("brute-force/users/{userId}")
     @DELETE
-    void clearBruteForceForUser(@PathParam("username") String username);
+    void clearBruteForceForUser(@PathParam("userId") String userId);
 
-    @Path("brute-force/usernames")
+    @Path("brute-force/users")
     @DELETE
     void clearAllBruteForce();
 

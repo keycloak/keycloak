@@ -51,6 +51,13 @@
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-feature-pack</artifactId>
             <type>zip</type>
+            <!-- Need to exlcude that in order to use the right guava version for drools -->
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

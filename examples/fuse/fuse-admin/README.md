@@ -70,15 +70,15 @@ may be still able to access MBeans remotely via HTTP (Hawtio). So make sure to p
 really protect JMX mbeans.
 
 
-SSH and JMX on JBoss Fuse 6.2 and Apache Karaf 3.0.3
-----------------------------------------------------
+SSH and JMX on JBoss Fuse 6.2 
+-----------------------------
 For SSH steps are very similar to above for 6.1. In JBoss Fuse 6.2 you may need to install `ssh` feature as it doesn't seem to be installed here by default.
 
 ```
 features:install ssh
 ```
 
-For JMX, the steps are similar like for Fuse 6.1, however there is more fine grained authorization for JMX access in Fuse 6.2 and Karaf 3.
+For JMX, the steps are similar like for Fuse 6.1, however there is more fine grained authorization for JMX access in Fuse 6.2.
 
 Actually if you login as user `admin`, you have very limited privileges without possibility to do much JMX operations as this user has just `admin` role, which is not allowed to do much in JMX.
 

@@ -20,7 +20,9 @@ package org.keycloak.testsuite.client.resources;
 import java.util.Date;
 import java.util.List;
 import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 
 import javax.ws.rs.Consumes;
@@ -35,6 +37,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Map;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.exportimport.ExportImportManager;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -111,7 +114,7 @@ public interface TestingResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
-            @QueryParam("user") String user, @QueryParam("dateFrom") Date dateFrom, @QueryParam("dateTo") Date dateTo,
+            @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
             @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults);
 
@@ -202,4 +205,48 @@ public interface TestingResource {
     @Path("/update-pass-through-auth-state")
     @Produces(MediaType.APPLICATION_JSON)
     AuthenticatorState updateAuthenticator(AuthenticatorState state);
+
+    @GET
+    @Path("/run-import")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response runImport();
+
+    @GET
+    @Path("/run-export")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response runExport();
+    
+    @GET
+    @Path("/valid-credentials")
+    @Produces(MediaType.APPLICATION_JSON)
+    public boolean validCredentials(@QueryParam("realmName") String realmName, @QueryParam("userName") String userName, @QueryParam("password") String password);
+
+    @GET
+    @Path("/user-by-federated-identity")
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getUserByFederatedIdentity(@QueryParam("realmName") String realmName,
+                                                         @QueryParam("identityProvider") String identityProvider,
+                                                         @QueryParam("userId") String userId,
+                                                         @QueryParam("userName") String userName);
+
+    @GET
+    @Path("/user-by-username-from-fed-factory")
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getUserByUsernameFromFedProviderFactory(@QueryParam("realmName") String realmName,
+                                                                      @QueryParam("userName") String userName);
+
+    @GET
+    @Path("/get-client-auth-flow")
+    @Produces(MediaType.APPLICATION_JSON)
+    public AuthenticationFlowRepresentation getClientAuthFlow(@QueryParam("realmName") String realmName);
+
+    @GET
+    @Path("/get-reset-cred-flow")
+    @Produces(MediaType.APPLICATION_JSON)
+    public AuthenticationFlowRepresentation getResetCredFlow(@QueryParam("realmName") String realmName);
+
+    @GET
+    @Path("/get-user-by-service-account-client")
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getUserByServiceAccountClient(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId);
 }

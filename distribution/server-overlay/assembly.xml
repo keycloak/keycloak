@@ -37,7 +37,16 @@
                 <include>org/liquibase/**</include>
                 <include>org/mongodb/**</include>
                 <include>org/twitter4j/**</include>
+                <include>org/drools/**</include>
                 <include>sun/jdk/jgss/**</include>
+            </includes>
+        </fileSet>
+        <!-- Authorization -->
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/modules/system/layers/keycloak-authz</directory>
+            <outputDirectory>modules/system/add-ons/keycloak-authz</outputDirectory>
+            <includes>
+                <include>**/**</include>
             </includes>
         </fileSet>
         <fileSet>

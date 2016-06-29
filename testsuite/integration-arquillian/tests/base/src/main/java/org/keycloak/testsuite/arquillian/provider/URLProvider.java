@@ -24,6 +24,7 @@ import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
+import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.TestContext;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContext;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContext;
@@ -33,7 +34,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
-import org.keycloak.testsuite.arquillian.SuiteContext;
 
 public class URLProvider extends URLResourceProvider {
 
@@ -83,7 +83,8 @@ public class URLProvider extends URLResourceProvider {
                     for (Annotation a : qualifiers) {
                         if (OperateOnDeployment.class.isAssignableFrom(a.annotationType())) {
                             String port = appServerSslRequired ?  System.getProperty("app.server.https.port", "8643"):System.getProperty("app.server.http.port", "8280");
-                            url = new URL(fixedUrl.toExternalForm().replace("8080", port) + "/" + ((OperateOnDeployment) a).value());
+                            String protocol = appServerSslRequired ? "https" : "http";
+                            url = new URL(fixedUrl.toExternalForm().replace("8080", port).replace("http", protocol) + ((OperateOnDeployment) a).value());
                         }
                     }
 

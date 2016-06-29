@@ -1,0 +1,82 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <kc-tabs-resource-server></kc-tabs-resource-server>
+
+    <form class="form-horizontal" name="clientForm" novalidate>
+        <fieldset>
+            <div class="form-group">
+                <label for="import-file" class="col-sm-2 control-label">Import</label>
+                <div class="col-md-6">
+                    <div class="controls kc-button-input-file" data-ng-show="!files || files.length == 0">
+                        <label for="import-file" class="btn btn-default">Select file <i class="pficon pficon-import"></i></label>
+                        <input id="import-file" type="file" class="hidden" ng-file-select="onFileSelect($files)">
+                    </div>
+                    <span class="kc-uploaded-file" data-ng-show="files.length > 0">{{files[0].name}}</span>
+                </div>
+                <kc-tooltip>Import a JSON file containing all settings for this resource server.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <div class="col-md-10 col-md-offset-2">
+                    <button type="submit" data-ng-disabled="files.length == 0" data-ng-click="uploadFile()" class="btn btn-primary">Upload</button>
+                    <button type="submit" data-ng-disabled="files.length == 0" data-ng-click="clearFileSelect()" class="btn btn-default" data-ng-show="files.length > 0">Cancel</button>
+                </div>
+            </div>
+        </fieldset>
+        <fieldset class="border-top" data-ng-hide="files.length > 0">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="server.policyEnforcementMode">Policy Enforcement Mode</label>
+                <div class="col-md-2">
+                    <select class="form-control" id="server.policyEnforcementMode" data-ng-model="server.policyEnforcementMode">
+                        <option value="ENFORCING">Enforcing</option>
+                        <option value="PERMISSIVE">Permissive</option>
+                        <option value="DISABLED">Disabled</option>
+                    </select>
+                </div>
+                <kc-tooltip>The policy enforcement mode dictates how policies are enforced when evaluating authorization requests. 'Enforcing' means requests are denied by default even when there is no policy associated with a given resource. 'Permissive' means requests
+                are allowed even when there is no policy associated with a given resource. 'Disabled' completely disables the evaluation of policies and allow access to any resource.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="server.allowRemoteResourceManagement">Remote Resource Management</label>
+                <div class="col-md-6">
+                    <input ng-model="server.allowRemoteResourceManagement" id="server.allowRemoteResourceManagement" onoffswitch />
+                </div>
+                <kc-tooltip>Should resources be managed remotely by the resource server? If false, resources can only be managed from this admin console.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <div class="col-md-10 col-md-offset-2" data-ng-show="create">
+                    <button kc-save data-ng-disabled="!changed">Save</button>
+                    <button kc-cancel data-ng-click="cancel()">Cancel</button>
+                </div>
+                <div class="col-md-10 col-md-offset-2" data-ng-show="!create">
+                    <button kc-save  data-ng-disabled="!changed">Save</button>
+                    <button kc-reset data-ng-disabled="!changed">Cancel</button>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="border-top" data-ng-show="!files || files.length == 0">
+            <legend><span class="text">Export Settings</span>
+                <kc-tooltip>Here you can export all settings for this resource server.</kc-tooltip>
+            </legend>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="server.allowRemoteResourceManagement">Export Settings</label>
+                <div class="col-md-6">
+                    <button data-ng-click="export()" class="btn btn-primary" data-ng-hide="settings">Export</button>
+                    <button data-ng-click="downloadSettings()" class="btn btn-primary" data-ng-show="settings">Download</button>
+                    <button data-ng-click="cancelExport()" class="btn btn-primary" data-ng-show="settings">Cancel</button>
+                </div>
+                <kc-tooltip>Export and download all settings for this resource server.</kc-tooltip>
+            </div>
+            <fieldset class="margin-top">
+                <div class="form-group" ng-show="settings">
+                    <div class="col-sm-12">
+                        <a class="btn btn-primary btn-lg" data-ng-click="download()" type="submit" ng-show="installation">Download</a>
+                        <textarea class="form-control" rows="20" kc-select-action="click">{{settings}}</textarea>
+                    </div>
+                </div>
+            </fieldset>
+        </fieldset>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

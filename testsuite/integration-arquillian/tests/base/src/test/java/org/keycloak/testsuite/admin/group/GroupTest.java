@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -430,7 +431,7 @@ public class GroupTest extends AbstractGroupTest {
 
         // List realm roles
         assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite");
-        assertNames(roles.realmLevel().listAvailable(), "admin", "offline_access", "user");
+        assertNames(roles.realmLevel().listAvailable(), "admin", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "user");
         assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child");
 
         // List client roles

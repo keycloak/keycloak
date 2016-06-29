@@ -27,6 +27,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
@@ -123,6 +124,17 @@ public class JpaUserProvider implements UserProvider {
         UserEntity userEntity = em.find(UserEntity.class, user.getId());
         if (userEntity == null) return false;
         removeUser(userEntity);
+        session.getKeycloakSessionFactory().publish(new UserModel.UserRemovedEvent() {
+            @Override
+            public UserModel getUser() {
+                return user;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
         return true;
     }
 
@@ -142,6 +154,7 @@ public class JpaUserProvider implements UserProvider {
         if (user != null) {
             em.remove(user);
         }
+
         em.flush();
     }
 

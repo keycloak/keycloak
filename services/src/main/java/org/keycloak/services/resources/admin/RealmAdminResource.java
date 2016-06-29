@@ -496,9 +496,9 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
-            @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
-            @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
-            @QueryParam("max") Integer maxResults) {
+                                               @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
+                                               @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+                                               @QueryParam("max") Integer maxResults) {
         auth.init(RealmAuth.Resource.EVENTS).requireView();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
@@ -585,10 +585,10 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<AdminEventRepresentation> getEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
-            @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
-            @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
-            @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
-            @QueryParam("max") Integer maxResults) {
+                                                    @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
+                                                    @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
+                                                    @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
+                                                    @QueryParam("max") Integer maxResults) {
         auth.init(RealmAuth.Resource.EVENTS).requireView();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);

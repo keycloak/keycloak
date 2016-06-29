@@ -35,6 +35,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.adapters.config.BaseRealmConfig;
 import org.keycloak.common.util.Time;
+import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ServicesLogger;
 
@@ -207,6 +208,8 @@ public class ClientManager {
         protected Boolean publicClient;
         @JsonProperty("credentials")
         protected Map<String, Object> credentials;
+        @JsonProperty("policy-enforcer")
+        protected PolicyEnforcerConfig enforcerConfig;
 
         public Boolean isUseResourceRoleMappings() {
             return useResourceRoleMappings;
@@ -246,6 +249,14 @@ public class ClientManager {
 
         public void setBearerOnly(Boolean bearerOnly) {
             this.bearerOnly = bearerOnly;
+        }
+
+        public PolicyEnforcerConfig getEnforcerConfig() {
+            return this.enforcerConfig;
+        }
+
+        public void setEnforcerConfig(PolicyEnforcerConfig enforcerConfig) {
+            this.enforcerConfig = enforcerConfig;
         }
     }
 

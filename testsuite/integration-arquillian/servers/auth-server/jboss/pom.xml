@@ -161,6 +161,20 @@
                                     </target>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>inject-truststore-into-keycloak-server-json</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <ant antfile="../build-truststore.xml" inheritRefs="true">
+                                            <target name="inject-truststore"/>
+                                        </ant>
+                                    </target>
+                                </configuration>
+                            </execution>
                         </executions>
                         <dependencies>
                             <dependency>
@@ -255,6 +269,25 @@
                                         </resource>
                                     </resources>
                                     <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-keystore</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/standalone/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}/keystore</directory>
+                                            <includes>
+                                                <include>keycloak.jks</include>
+                                                <include>keycloak.truststore</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
                                 </configuration>
                             </execution>
                         </executions>
@@ -615,12 +648,12 @@
                 <session.cache.owners>1</session.cache.owners>
                 <offline.session.cache.owners>1</offline.session.cache.owners>
                 <login.failure.cache.owners>1</login.failure.cache.owners>
-                
+
                 <load.metric>simple</load.metric>
                 <!-- The default value 'simple' configures mod-cluster with simple-load-provider.
                 Any other value configures it with dynamic-load-provider using the particular `load.metric`.
                 Supported metrics: https://docs.jboss.org/mod_cluster/1.2.0/html/java.AS7config.html#LoadMetric -->
-                
+
             </properties>
             <build>
                 <pluginManagement>
@@ -723,7 +756,7 @@
                 </pluginManagement>
             </build>
         </profile>
-        
+
         <profile>
             <id>admin</id>
             <build>

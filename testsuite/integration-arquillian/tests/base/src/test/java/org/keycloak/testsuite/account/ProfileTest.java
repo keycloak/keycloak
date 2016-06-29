@@ -53,6 +53,7 @@ import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import twitter4j.JSONArray;
 import twitter4j.JSONObject;
@@ -68,7 +69,7 @@ public class ProfileTest extends TestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        UserRepresentation user = findUserInRealmRep(testRealm, "test-user@localhost");
+        UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         user.setFirstName("First");
         user.setLastName("Last");
         Map<String, Object> attributes = user.getAttributes();
@@ -87,7 +88,7 @@ public class ProfileTest extends TestRealmKeycloakTest {
         RealmBuilder.edit(testRealm)
                     .user(user2);
 
-        ClientBuilder.edit(findClientInRealmRep(testRealm, "test-app"))
+        ClientBuilder.edit(RealmRepUtil.findClientByClientId(testRealm, "test-app"))
                      .addWebOrigin("http://localtest.me:8180");
     }
 

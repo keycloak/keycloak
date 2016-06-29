@@ -30,7 +30,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.ClientInitialAccessEntity;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
@@ -377,24 +377,24 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UsernameLoginFailureModel getUserLoginFailure(RealmModel realm, String username) {
-        LoginFailureKey key = new LoginFailureKey(realm.getId(), username);
+    public UserLoginFailureModel getUserLoginFailure(RealmModel realm, String userId) {
+        LoginFailureKey key = new LoginFailureKey(realm.getId(), userId);
         return wrap(key, loginFailureCache.get(key));
     }
 
     @Override
-    public UsernameLoginFailureModel addUserLoginFailure(RealmModel realm, String username) {
-        LoginFailureKey key = new LoginFailureKey(realm.getId(), username);
+    public UserLoginFailureModel addUserLoginFailure(RealmModel realm, String userId) {
+        LoginFailureKey key = new LoginFailureKey(realm.getId(), userId);
         LoginFailureEntity entity = new LoginFailureEntity();
         entity.setRealm(realm.getId());
-        entity.setUsername(username);
+        entity.setUserId(userId);
         tx.put(loginFailureCache, key, entity);
         return wrap(key, entity);
     }
 
     @Override
-    public void removeUserLoginFailure(RealmModel realm, String username) {
-        tx.remove(loginFailureCache, new LoginFailureKey(realm.getId(), username));
+    public void removeUserLoginFailure(RealmModel realm, String userId) {
+        tx.remove(loginFailureCache, new LoginFailureKey(realm.getId(), userId));
     }
 
     @Override
@@ -538,8 +538,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
 
-    UsernameLoginFailureModel wrap(LoginFailureKey key, LoginFailureEntity entity) {
-        return entity != null ? new UsernameLoginFailureAdapter(this, loginFailureCache, key, entity) : null;
+    UserLoginFailureModel wrap(LoginFailureKey key, LoginFailureEntity entity) {
+        return entity != null ? new UserLoginFailureAdapter(this, loginFailureCache, key, entity) : null;
     }
 
     List<ClientSessionModel> wrapClientSessions(RealmModel realm, Collection<ClientSessionEntity> entities, boolean offline) {

@@ -102,9 +102,9 @@
 
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-docs-dist</artifactId>
+                                    <artifactId>keycloak-api-docs-dist</artifactId>
                                     <type>zip</type>
-                                    <destFileName>keycloak-docs-${project.version}.zip</destFileName>
+                                    <destFileName>keycloak-api-docs-${project.version}.zip</destFileName>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>

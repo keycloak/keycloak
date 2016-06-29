@@ -91,6 +91,7 @@ public class MongoDBLockProvider implements DBLockProvider {
             WriteResult wr = db.getCollection(DB_LOCK_COLLECTION).update(query, update, true, false);
             if (wr.getN() == 1) {
                 logger.debugf("Successfully acquired DB lock");
+                factory.setHasLock(true);
                 return true;
             } else {
                 return false;
@@ -115,6 +116,7 @@ public class MongoDBLockProvider implements DBLockProvider {
         try {
             WriteResult wr = db.getCollection(DB_LOCK_COLLECTION).update(query, update, true, false);
             if (wr.getN() > 0) {
+                factory.setHasLock(false);
                 logger.debugf("Successfully released DB lock");
             } else {
                 logger.warnf("Attempt to release DB lock, but nothing was released");
@@ -122,6 +124,11 @@ public class MongoDBLockProvider implements DBLockProvider {
         } catch (DuplicateKeyException dke) {
             logger.debugf("Failed release lock. Reason: %s", dke.getMessage());
         }
+    }
+
+    @Override
+    public boolean hasLock() {
+        return factory.hasLock();
     }
 
     @Override

@@ -122,7 +122,7 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String sessionId = loginEvent.getSessionId();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
-        String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
+        String tokenResponse = oauth.introspectRefreshTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(tokenResponse);
 
