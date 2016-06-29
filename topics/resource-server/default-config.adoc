@@ -31,7 +31,7 @@ var context = $evaluation.getContext();
 
 // using attributes from the evaluation context to obtain the realm
 var contextAttributes = context.getAttributes();
-var realmName = contextAttributes.getValue('kc.authz.context.authc.realm').asString(0);
+var realmName = contextAttributes.getValue('kc.realm.name').asString(0);
 
 // using attributes from the identity to obtain the issuer
 var identity = context.getIdentity();

@@ -1,7 +1,7 @@
 == JavaScript-Based Policy
 
 This type of policy allows you to define conditions for your permissions using JavaScript. It is one of the _Rule-Based_ policy types
-supported by {{book.project.name}}, providing lot of flexibility to write any policy based on the link::/policy/evaluation-api.adoc[Evaluation API].
+supported by {{book.project.name}}, providing lot of flexibility to write any policy based on the link:evaluation-api.adoc[Evaluation API].
 
 To create a new policy select the option *JavaScript* in the dropdown located in the right upper corner of the permission listing.
 
@@ -36,7 +36,7 @@ obtained from the execution context:
 var context = $evaluation.getContext();
 var contextAttributes = context.getAttributes();
 
-if (contextAttributes.containsValue('kc.authz.context.client.network.ip_address', '127.0.0.1')) {
+if (contextAttributes.containsValue('kc.client.network.ip_address', '127.0.0.1')) {
     $evaluation.grant();
 }
 ```

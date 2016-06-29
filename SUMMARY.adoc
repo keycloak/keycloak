@@ -8,6 +8,7 @@
  ... link:topics/getting-started/hello-world/create-realm.adoc[Creating a Realm]
  ... link:topics/getting-started/hello-world/create-resource-server.adoc[Enabling Authorization Services]
  ... link:topics/getting-started/hello-world/deploy.adoc[Build, Deploy and Test]
+ .. link:topics/example/overview.adoc[Examples]
  . link:topics/resource-server/overview.adoc[Managing Resource Servers]
  .. link:topics/resource-server/create-client.adoc[Creating a Client Application]
  .. link:topics/resource-server/enable-authorization.adoc[Enabling Authorization Services]
@@ -47,4 +48,3 @@
  ... link:topics/enforcer/keycloak-enforcement-bearer.adoc[Protecting a Stateless Service Using a Bearer Token]
  ... link:topics/enforcer/authorization-context.adoc[Obtaining the Authorization Context]
  ... link:topics/enforcer/js-adapter.adoc[JavaScript Integration]
- . link:topics/example/overview.adoc[Examples]
