@@ -1,5 +1,34 @@
 == Examples
 
-We provide a few examples about how to use the {{book.project.name}} {{book.project.module}}. These examples are very useful to understand the concepts here introduced.
+The {{book.project.name}} Authorization can also help you to quickly get started with the authorization services and understand how to apply the same concepts to your
+own applications.
 
-The examples are located at *examples/authz*. They contain a README.md file with more details about how to build and deploy them.
+If you are using the {{book.project.name}} Demo Distribution and you have it properly extracted in your filesystem:
+
+* **keycloak-demo-{{book.project.version}}.[zip|tar.gz]**
+
+You can check out the available examples from the following directory:
+
+```bash
+cd ${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz
+```
+
+Or you can get them from https://github.com/keycloak/keycloak/tree/{{book.project.version}}/examples/authz[GitHub].
+
+For each example is provided a `README` file with instructions about how to build, deploy and test the example.
+
+Here is a brief description of each of them:
+
+.Authorization Examples
+|===
+|Name |Description
+
+| https://github.com/keycloak/keycloak/tree/{{book.project.version}}/examples/authz/servlet-authz[hello-world-authz-service]
+| A single page application which is protected by a policy enforcer that decides whether an user can access that page or not based on the permissions obtained from a Keycloak Server.
+
+| https://github.com/keycloak/keycloak/tree/{{book.project.version}}/examples/authz/servlet-authz[photoz]
+| A simple application based on HTML5+AngularJS+JAX-RS that demonstrates how to enable fine-grained permissions to RESTFul based services and HTML5 clients.
+
+| https://github.com/keycloak/keycloak/tree/{{book.project.version}}/examples/authz/servlet-authz[servlet-authz]
+| A simple Servlet-based application that demonstrates how to enable fine-grained authorization to a JBoss Servlet Application.
+|===

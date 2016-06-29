@@ -1,12 +1,13 @@
 == Evaluation API
 
-When writing rule-based policies such as when you are using Javascript or JBoss Drools, Keycloak provides an *Evaluation API* from where you
-can obtain useful information.
+When writing rule-based policies such as when you are using Javascript or JBoss Drools, {{book.project.name}} provides an *Evaluation API* from where you
+can obtain useful information in order to decide whether a permission should be granted or not.
 
 This API consists of a few interfaces that provides you access to information such as:
 
-* Information about the identity asking for a permission. Here you can obtain the identity identifier (eg.: username) or any other claim/attribute about it.
-* Information about the runtime environment and any other attribute associated with the execution context.
+* The permission being requested
+* The identity asking for a permission, from where you can obtain claims/attributes
+* Runtime environment and any other attribute associated with the execution context
 
 The main interface is *org.keycloak.authorization.policy.evaluation.Evaluation*, which defines the following contract:
 
@@ -38,8 +39,14 @@ public interface Evaluation {
     void deny();
 }
 ```
+[NOTE]
+For more details about the Evaluation API refer to http://www.keycloak.org/docs/javadocs/index.html[JavaDocs].
 
-For full instructions on using the Evaluation API refer to JavaDocs.
+When processing an authorization request, {{book.project.name}} creates an `Evaluation` instance before evaluating any policy. This instance is then passed to each policy in order to obtain
+a decision, which would be a *GRANT* or a *DENY*.
+
+Policies take their decisions by invoking the `grant()` or `deny()` methods on an `Evaluation` instance. By default, the state of the `Evaluation` instance is denied, which means that your policies
+need to explicitly invoke the `grant()` method if they want to tell the policy evaluation engine that the permission should be granted.
 
 === The Evaluation Context
 
@@ -66,18 +73,41 @@ public interface EvaluationContext {
 
 From this interface, policies can obtain:
 
-* The authenticated *Identity*
+* The authenticated `Identity`
 * Information about the execution context and runtime environment
 
-Before evaluating policies, {{book.project.name}} builds an *EvaluationContext* based on:
+The `Identity` is built based on the OAuth2 Access Token that was sent along with the authorization request, from where you have access to all claims
+extracted from the original token. For instance, if you are using a _Protocol Mapper_ to include a custom claim to a oAuth2 Access Token you can also access this claim
+from a policy and use it to build your conditions
 
-* All claims obtained from the OAuth2 Access Token that was sent along with the authorization request
-+
-In this case, the *Identity* object provides the same claims as define by the access token. For instance, if you are using a _Protocol Mapper_ to include custom claim
-to a oAuth2 Access Token you can also access this claim from a policy and use it to build your conditions
-+
-* Some built-in environment attributes such as:
-+
-** kc.authz.context.time.date_time, holding the current time
-** kc.authz.context.client.network.ip_address, holding the IP address of the client requesting permissions
-** kc.authz.context.client.network.host, holding the host name of the client requesting permissions
+The `EvaluationContext` also gives you access to attributes related with both execution and runtime environment. For now, there only a few built-in attributes.
+
+.Execution and Runtime Attributes
+|===
+|Name |Description | Type
+
+| kc.time.date_time
+| Current date and time
+| String. Format `MM/dd/yyyy hh:mm:ss`
+
+| kc.client.network.ip_address
+| IPv4 address of the client
+| String
+
+| kc.client.network.host
+| Client's host name
+| String
+
+| kc.client.id
+| The client id
+| String
+
+| kc.client.user_agent
+| The value of the 'User-Agent' HTTP header
+| String[]
+
+| kc.realm.name
+| The name of the realm
+| String
+
+|===
