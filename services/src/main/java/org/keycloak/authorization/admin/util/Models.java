@@ -162,12 +162,21 @@ public final class Models {
             return representation1;
         }).collect(Collectors.toList()));
 
-        List<String> obj = model.getAssociatedPolicies().stream().map(new Function<Policy, String>() {
-            @Override
-            public String apply(Policy policy) {
-                return policy.getId();
-            }
+        List<PolicyRepresentation> associatedPolicies = new ArrayList<>();
+
+        List<String> obj = model.getAssociatedPolicies().stream().map(policy -> {
+            PolicyRepresentation representation1 = new PolicyRepresentation();
+
+            representation1.setId(policy.getId());
+            representation1.setName(policy.getName());
+            representation1.setType(policy.getType());
+
+            associatedPolicies.add(representation1);
+
+            return policy.getId();
         }).collect(Collectors.toList());
+
+        representation.setAssociatedPolicies(associatedPolicies);
 
         try {
             representation.getConfig().put("applyPolicies", JsonSerialization.writeValueAsString(obj));
