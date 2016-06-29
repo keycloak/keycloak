@@ -50,11 +50,6 @@
             <artifactId>keycloak-examples-dist</artifactId>
             <type>zip</type>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-docs-dist</artifactId>
-            <type>zip</type>
-        </dependency>
     </dependencies>
 
     <build>
@@ -135,23 +130,6 @@
                                     <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked/keycloak-saml-wildfly-adapter-${project.version}</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>unpack-docs</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-docs-dist</artifactId>
-                                    <type>zip</type>
-                                    <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

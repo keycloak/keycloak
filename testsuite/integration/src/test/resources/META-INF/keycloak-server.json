@@ -26,6 +26,10 @@
         "provider": "${keycloak.userSessionPersister.provider:jpa}"
     },
 
+    "authorizationPersister": {
+        "provider": "${keycloak.authorization.provider:jpa}"
+    },
+
     "userCache": {
         "default" : {
             "enabled": true

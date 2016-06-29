@@ -1,0 +1,71 @@
+<style>
+    .ace_editor { height: 200px; }
+</style>
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">Authorization</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">Policies</a></li>
+        <li data-ng-show="create">Add JS Policy</li>
+        <li data-ng-hide="create">JavaScript</li>
+        <li data-ng-hide="create">{{policy.name}}</li>
+    </ol>
+
+    <h1 data-ng-show="create">Add JS Policy</h1>
+    <h1 data-ng-hide="create">{{policy.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-click="remove()"></i></h1>
+
+    <form class="form-horizontal" name="clientForm" novalidate>
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="name">Name <span class="required">*</span></label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="policy.name" autofocus required>
+                </div>
+                <kc-tooltip>The name of this policy.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="description">Description </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="description" name="description" data-ng-model="policy.description">
+                </div>
+                <kc-tooltip>A description for this policy.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="description">Code </label>
+                <div class="col-sm-6">
+                    <div ui-ace="{ onLoad : initEditor }" data-ng-model="policy.config.code"></div>
+                </div>
+                <kc-tooltip>The JavaScript code providing the conditions for this policy.</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="policy.logic">Logic</label>
+
+                <div class="col-sm-1">
+                    <select class="form-control" id="policy.logic"
+                            data-ng-model="policy.logic">
+                        <option ng-repeat="logic in logics" value="{{logic}}">{{logic | toCamelCase}}</option>
+                    </select>
+                </div>
+
+                <kc-tooltip>The logic dictates how the policy decision should be made. If 'Positive', the resulting effect (permit or deny) obtained during the evaluation of this policy will
+                    be used to perform a decision. If 'Negative', the resulting effect will be negated, in other words, a permit becomes a deny and vice-versa.
+            </div>
+            <input type="hidden" data-ng-model="policy.type"/>
+        </fieldset>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="create">
+                <button kc-save data-ng-disabled="!changed">Save</button>
+                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+            </div>
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!create">
+                <button kc-save  data-ng-disabled="!changed">Save</button>
+                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

@@ -44,6 +44,10 @@
         <module name="org.keycloak.keycloak-services" export="true" services="import"/>
         <module name="org.keycloak.keycloak-wildfly-extensions" services="import"/>
 
+        <!-- Authorization -->
+        <module name="org.keycloak.keycloak-authz-policy-common" services="import"/>
+        <module name="org.keycloak.keycloak-authz-policy-drools" services="import"/>
+
         <module name="org.freemarker"/>
         <module name="javax.ws.rs.api"/>
         <module name="javax.mail.api"/>

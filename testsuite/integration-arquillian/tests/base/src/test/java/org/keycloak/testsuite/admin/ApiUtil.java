@@ -60,6 +60,15 @@ public class ApiUtil {
         return path.substring(path.lastIndexOf('/') + 1);
     }
 
+    public static ClientResource findClientResourceById(RealmResource realm, String id) {
+        for (ClientRepresentation c : realm.clients().findAll()) {
+            if (c.getId().equals(id)) {
+                return realm.clients().get(c.getId());
+            }
+        }
+        return null;
+    }
+
     public static ClientResource findClientResourceByClientId(RealmResource realm, String clientId) {
         for (ClientRepresentation c : realm.clients().findAll()) {
             if (c.getClientId().equals(clientId)) {

@@ -29,6 +29,11 @@
     <name>Keycloak Integration TestSuite</name>
     <description />
 
+    <properties>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -132,6 +137,10 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-adapter-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-authz-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -400,6 +409,7 @@
                                 <keycloak.user.provider>jpa</keycloak.user.provider>
                                 <keycloak.userSessionPersister.provider>jpa</keycloak.userSessionPersister.provider>
                                 <keycloak.eventsStore.provider>jpa</keycloak.eventsStore.provider>
+                                <keycloak.authorization.provider>jpa</keycloak.authorization.provider>
 
                                 <keycloak.liquibase.logging.level>debug</keycloak.liquibase.logging.level>
                             </systemPropertyVariables>
@@ -439,6 +449,7 @@
                                         <keycloak.user.provider>mongo</keycloak.user.provider>
                                         <keycloak.userSessionPersister.provider>mongo</keycloak.userSessionPersister.provider>
                                         <keycloak.eventsStore.provider>mongo</keycloak.eventsStore.provider>
+                                        <keycloak.authorization.provider>mongo</keycloak.authorization.provider>
                                         <keycloak.connectionsMongo.host>${keycloak.connectionsMongo.host}</keycloak.connectionsMongo.host>
                                         <keycloak.connectionsMongo.port>${keycloak.connectionsMongo.port}</keycloak.connectionsMongo.port>
                                         <keycloak.connectionsMongo.db>${keycloak.connectionsMongo.db}</keycloak.connectionsMongo.db>

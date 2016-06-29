@@ -107,7 +107,7 @@ public class AddUserTest {
 
             List<RoleRepresentation> realmRoles = userResource.roles().realmLevel().listAll();
 
-            assertRoles(realmRoles, "admin", "offline_access");
+            assertRoles(realmRoles, "admin", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
 
             List<ClientRepresentation> clients = realm.clients().findAll();
             String accountId = null;

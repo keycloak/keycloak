@@ -17,3 +17,4 @@
 
 org.keycloak.testsuite.rest.TestingResourceProviderFactory
 org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory
+org.keycloak.testsuite.domainextension.rest.ExampleRealmResourceProviderFactory

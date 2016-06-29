@@ -36,6 +36,9 @@
                 <local-cache name="realmVersions">
                     <transaction mode="BATCH" locking="PESSIMISTIC"/>
                 </local-cache>
+                <local-cache name="authorization">
+                    <eviction max-entries="100" strategy="LRU"/>
+                </local-cache>
             </cache-container>
             <cache-container name="server" default-cache="default" module="org.wildfly.clustering.server">
                 <local-cache name="default">

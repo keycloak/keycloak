@@ -22,6 +22,7 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLSocketFactory;
 
@@ -33,6 +34,8 @@ import org.keycloak.connections.mongo.impl.context.TransactionMongoStoreInvocati
 import org.keycloak.connections.mongo.updater.MongoUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.dblock.DBLockManager;
+import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
 import com.mongodb.DB;
@@ -74,6 +77,10 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             "org.keycloak.models.entities.RequiredActionProviderEntity",
             "org.keycloak.models.entities.PersistentUserSessionEntity",
             "org.keycloak.models.entities.PersistentClientSessionEntity",
+            "org.keycloak.authorization.mongo.entities.PolicyEntity",
+            "org.keycloak.authorization.mongo.entities.ResourceEntity",
+            "org.keycloak.authorization.mongo.entities.ResourceServerEntity",
+            "org.keycloak.authorization.mongo.entities.ScopeEntity"
     };
 
     private static final Logger logger = Logger.getLogger(DefaultMongoConnectionFactoryProvider.class);
@@ -164,6 +171,11 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             MongoUpdaterProvider mongoUpdater = session.getProvider(MongoUpdaterProvider.class);
             if (mongoUpdater == null) {
                 throw new RuntimeException("Can't update database: Mongo updater provider not found");
+            }
+
+            DBLockProvider dbLock = new DBLockManager(session).getDBLock();
+            if (!dbLock.hasLock()) {
+                throw new IllegalStateException("Trying to update database, but don't have a DB lock acquired");
             }
 
             if (databaseSchema.equals("update")) {

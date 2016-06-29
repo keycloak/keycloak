@@ -75,6 +75,9 @@
         <wildfly.build-tools.version>1.1.0.Final</wildfly.build-tools.version>
         <xmlsec.version>2.0.5</xmlsec.version>
 
+        <!-- Authorization Drools Policy Provider -->
+        <version.org.drools>6.4.0.Final</version.org.drools>
+
         <!-- Others -->
         <apacheds.version>2.0.0-M17</apacheds.version>
         <apacheds.codec.version>1.0.0-M23</apacheds.codec.version>
@@ -99,6 +102,7 @@
         <picketlink.version>2.7.0.Final</picketlink.version>
         <selenium.version>2.35.0</selenium.version>
         <xml-apis.version>1.4.01</xml-apis.version>
+        <subethasmtp.version>3.1.7</subethasmtp.version>
 
         <!-- Maven Plugins -->
         <embedmongo.plugin.version>0.1.12</embedmongo.plugin.version>
@@ -176,6 +180,7 @@
         <module>wildfly</module>
         <module>integration</module>
         <module>adapters</module>
+        <module>authz</module>
         <module>examples</module>
         <module>testsuite</module>
     </modules>
@@ -412,11 +417,26 @@
                 <version>${google.zxing.version}</version>
             </dependency>
 
+            <!-- Authorization Drools Policy Provider -->
+            <dependency>
+                <groupId>org.drools</groupId>
+                <artifactId>drools-bom</artifactId>
+                <type>pom</type>
+                <version>${version.org.drools}</version>
+                <scope>import</scope>
+            </dependency>
+
             <!-- Email Test Servers -->
             <dependency>
                 <groupId>com.icegreen</groupId>
                 <artifactId>greenmail</artifactId>
                 <version>${greenmail.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.subethamail</groupId>
+                <artifactId>subethasmtp</artifactId>
+                <version>${subethasmtp.version}</version>
                 <scope>test</scope>
             </dependency>
 
@@ -976,6 +996,24 @@
                 <artifactId>keycloak-services</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <!-- Authorization -->
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-authz-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-authz-policy-drools</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-authz-policy-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-as7-modules</artifactId>
@@ -1043,7 +1081,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-docs-dist</artifactId>
+                <artifactId>keycloak-api-docs-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
@@ -1357,7 +1395,6 @@
         <profile>
             <id>jboss-release</id>
             <modules>
-                <module>docbook</module>
                 <module>distribution</module>
             </modules>
         </profile>

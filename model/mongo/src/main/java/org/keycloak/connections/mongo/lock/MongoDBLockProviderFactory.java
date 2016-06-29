@@ -17,6 +17,8 @@
 
 package org.keycloak.connections.mongo.lock;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import com.mongodb.DB;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -36,6 +38,9 @@ public class MongoDBLockProviderFactory implements DBLockProviderFactory {
 
     private long lockRecheckTimeMillis;
     private long lockWaitTimeoutMillis;
+
+    // True if this node has a lock acquired
+    private AtomicBoolean hasLock = new AtomicBoolean(false);
 
     protected long getLockRecheckTimeMillis() {
         return lockRecheckTimeMillis;
@@ -81,4 +86,13 @@ public class MongoDBLockProviderFactory implements DBLockProviderFactory {
     public String getId() {
         return "mongo";
     }
+
+    public boolean hasLock() {
+        return hasLock.get();
+    }
+
+    public void setHasLock(boolean hasLock) {
+        this.hasLock.set(hasLock);
+    }
+
 }

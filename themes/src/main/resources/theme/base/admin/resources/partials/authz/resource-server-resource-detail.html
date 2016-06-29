@@ -1,0 +1,79 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">Authorization</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource">Resource</a></li>
+        <li data-ng-show="create">Add Resource</li>
+        <li data-ng-hide="create">{{resource.name}}</li>
+    </ol>
+
+    <h1 data-ng-show="create">Add Resource</h1>
+    <h1 data-ng-hide="create">{{resource.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create"
+                                                         data-ng-click="remove()"></i></h1>
+
+    <form class="form-horizontal" name="clientForm" novalidate>
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="name">Name <span class="required" data-ng-show="create">*</span></label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="resource.name" autofocus required>
+                </div>
+                <kc-tooltip>An unique name for this resource. The name can be used to uniquely identify a resource, useful when querying for a specific resource.</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-hide="create">
+                <label class="col-md-2 control-label" for="resource.owner.name">Owner </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="resource.owner.name" name="name" data-ng-model="resource.owner.name" autofocus disabled>
+                </div>
+                <kc-tooltip>The owner of this resource.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="type">Type </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="type" name="name" data-ng-model="resource.type" autofocus>
+                </div>
+                <kc-tooltip>The type of this resource. It can be used to group different resource instances with the same type.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="uri">URI </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="uri" name="name" data-ng-model="resource.uri" autofocus>
+                </div>
+                <kc-tooltip>An URI that can also be used to uniquely identify this resource.</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="reqActions">Scopes</label>
+
+                <div class="col-md-6">
+                    <select ui-select2 id="reqActions" ng-model="resource.scopes" data-placeholder="Select an scope..." multiple>
+                        <option ng-repeat="scope in scopes" value="{{scope.name}}" ng-selected="true">{{scope.name}}</option>
+                    </select>
+                </div>
+
+                <kc-tooltip>The scopes associated with this resource.</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="iconUri">Icon URI </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="iconUri" name="name" data-ng-model="resource.icon_uri" autofocus>
+                </div>
+                <kc-tooltip>An URI pointing to an icon for this resource.</kc-tooltip>
+            </div>
+        </fieldset>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="create">
+                <button kc-save data-ng-disabled="!changed">Save</button>
+                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+            </div>
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!create">
+                <button kc-save  data-ng-disabled="!changed">Save</button>
+                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

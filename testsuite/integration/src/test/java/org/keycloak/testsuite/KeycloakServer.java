@@ -22,7 +22,9 @@ import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
+import io.undertow.servlet.api.ServletInfo;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.models.KeycloakSession;
@@ -37,6 +39,7 @@ import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.DispatcherType;
+import javax.ws.rs.core.Application;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -309,7 +312,17 @@ public class KeycloakServer {
 
             di.setDefaultServletConfig(new DefaultServletConfig(true));
 
+            ServletInfo restEasyDispatcher = Servlets.servlet("Keycloak REST Interface", HttpServlet30Dispatcher.class);
+
+            restEasyDispatcher.addInitParam("resteasy.servlet.mapping.prefix", "/");
+            restEasyDispatcher.setAsyncSupported(true);
+
+            di.addServlet(restEasyDispatcher);
+
             FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
+
+            filter.setAsyncSupported(true);
+
             di.addFilter(filter);
             di.addFilterUrlMapping("SessionFilter", "/*", DispatcherType.REQUEST);
 

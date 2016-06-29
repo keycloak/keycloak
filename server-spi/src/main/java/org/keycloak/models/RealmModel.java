@@ -37,8 +37,18 @@ public interface RealmModel extends RoleContainerModel {
         RealmModel getCreatedRealm();
     }
 
+    interface RealmRemovedEvent extends ProviderEvent {
+        RealmModel getRealm();
+        KeycloakSession getKeycloakSession();
+    }
+
     interface ClientCreationEvent extends ProviderEvent {
         ClientModel getCreatedClient();
+    }
+
+    interface ClientRemovedEvent extends ProviderEvent {
+        ClientModel getClient();
+        KeycloakSession getKeycloakSession();
     }
 
     interface UserFederationProviderCreationEvent extends ProviderEvent {

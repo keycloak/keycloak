@@ -41,6 +41,7 @@ public class KeycloakSecurityContext implements Serializable {
     // Don't store parsed tokens into HTTP session
     protected transient AccessToken token;
     protected transient IDToken idToken;
+    protected transient AuthorizationContext authorizationContext;
 
     public KeycloakSecurityContext() {
     }
@@ -58,6 +59,10 @@ public class KeycloakSecurityContext implements Serializable {
 
     public String getTokenString() {
         return tokenString;
+    }
+
+    public AuthorizationContext getAuthorizationContext() {
+        return authorizationContext;
     }
 
     public IDToken getIdToken() {

@@ -44,6 +44,10 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
             return getAccess('view-identity-providers') || getAccess('manage-identity-providers') || this.manageIdentityProviders;
         },
 
+        get viewAuthorization() {
+            return getAccess('view-authorization') || this.manageAuthorization;
+        },
+
         get manageRealm() {
             return getAccess('manage-realm');
         },
@@ -62,6 +66,10 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
 
         get manageIdentityProviders() {
             return getAccess('manage-identity-providers');
+        },
+
+        get manageAuthorization() {
+            return getAccess('manage-authorization');
         },
 
         get impersonation() {
