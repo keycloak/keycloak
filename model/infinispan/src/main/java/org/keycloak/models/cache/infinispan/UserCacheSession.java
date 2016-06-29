@@ -28,6 +28,7 @@ import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
@@ -35,7 +36,10 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.models.cache.infinispan.entities.CachedFederatedIdentityLinks;
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
+import org.keycloak.models.cache.infinispan.entities.CachedUserConsent;
+import org.keycloak.models.cache.infinispan.entities.CachedUserConsents;
 import org.keycloak.models.cache.infinispan.entities.UserListQuery;
+import org.keycloak.storage.StorageProviderModel;
 
 import java.util.*;
 
@@ -73,7 +77,7 @@ public class UserCacheSession implements CacheUserProvider {
     public UserProvider getDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (delegate != null) return delegate;
-        delegate = session.getProvider(UserProvider.class);
+        delegate = session.userStorageManager();
 
         return delegate;
     }
@@ -342,7 +346,7 @@ public class UserCacheSession implements CacheUserProvider {
     }
 
     @Override
-    public UserModel getUserByServiceAccountClient(ClientModel client) {
+    public UserModel getServiceAccount(ClientModel client) {
         // Just an attempt to find the user from cache by default serviceAccount username
         String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId();
         UserModel user = getUserByUsername(username, client.getRealm());
@@ -350,7 +354,7 @@ public class UserCacheSession implements CacheUserProvider {
             return user;
         }
 
-        return getDelegate().getUserByServiceAccountClient(client);
+        return getDelegate().getServiceAccount(client);
     }
 
     @Override
@@ -366,6 +370,16 @@ public class UserCacheSession implements CacheUserProvider {
     @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
         return getDelegate().getUsers(realm, firstResult, maxResults, includeServiceAccounts);
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm) {
+        return getUsers(realm, false);
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+        return getUsers(realm, firstResult, maxResults, false);
     }
 
     @Override
@@ -432,6 +446,101 @@ public class UserCacheSession implements CacheUserProvider {
         }
         return null;
     }
+
+    @Override
+    public void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+        invalidations.add(getConsentCacheKey(user.getId()));
+        getDelegate().updateConsent(realm, user, consent);
+    }
+
+    @Override
+    public boolean revokeConsentForClient(RealmModel realm, UserModel user, String clientInternalId) {
+        invalidations.add(getConsentCacheKey(user.getId()));
+        return getDelegate().revokeConsentForClient(realm, user, clientInternalId);
+    }
+
+    public String getConsentCacheKey(String userId) {
+        return userId + ".consents";
+    }
+
+
+    @Override
+    public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+        invalidations.add(getConsentCacheKey(user.getId()));
+        getDelegate().addConsent(realm, user, consent);
+    }
+
+    @Override
+    public UserConsentModel getConsentByClient(RealmModel realm, UserModel user, String clientId) {
+        logger.tracev("getConsentByClient: {0}", user.getUsername());
+
+        String cacheKey = getConsentCacheKey(user.getId());
+        if (realmInvalidations.contains(realm.getId()) || invalidations.contains(user.getId()) || invalidations.contains(cacheKey)) {
+            return getDelegate().getConsentByClient(realm, user, clientId);
+        }
+
+        CachedUserConsents cached = cache.get(cacheKey, CachedUserConsents.class);
+
+        if (cached == null) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            List<UserConsentModel> consents = getDelegate().getConsents(realm, user);
+            cached = new CachedUserConsents(loaded, cacheKey, realm, consents);
+            cache.addRevisioned(cached, startupRevision);
+        }
+        CachedUserConsent cachedConsent = cached.getConsents().get(clientId);
+        if (cachedConsent == null) return null;
+        return toConsentModel(realm, cachedConsent);
+    }
+
+    @Override
+    public List<UserConsentModel> getConsents(RealmModel realm, UserModel user) {
+        logger.tracev("getConsents: {0}", user.getUsername());
+
+        String cacheKey = getConsentCacheKey(user.getId());
+        if (realmInvalidations.contains(realm.getId()) || invalidations.contains(user.getId()) || invalidations.contains(cacheKey)) {
+            return getDelegate().getConsents(realm, user);
+        }
+
+        CachedUserConsents cached = cache.get(cacheKey, CachedUserConsents.class);
+
+        if (cached == null) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            List<UserConsentModel> consents = getDelegate().getConsents(realm, user);
+            cached = new CachedUserConsents(loaded, cacheKey, realm, consents);
+            cache.addRevisioned(cached, startupRevision);
+            return consents;
+        } else {
+            List<UserConsentModel> result = new LinkedList<>();
+            for (CachedUserConsent cachedConsent : cached.getConsents().values()) {
+                UserConsentModel consent = toConsentModel(realm, cachedConsent);
+                if (consent != null) {
+                    result.add(consent);
+                }
+            }
+            return result;
+        }
+    }
+
+    private UserConsentModel toConsentModel(RealmModel realm, CachedUserConsent cachedConsent) {
+        ClientModel client = session.realms().getClientById(cachedConsent.getClientDbId(), realm);
+        if (client == null) {
+            return null;
+        }
+
+        UserConsentModel consentModel = new UserConsentModel(client);
+
+        for (String roleId : cachedConsent.getRoleIds()) {
+            RoleModel role = session.realms().getRoleById(roleId, realm);
+            if (role != null) {
+                consentModel.addGrantedRole(role);
+            }
+        }
+        for (ProtocolMapperModel protocolMapper : cachedConsent.getProtocolMappers()) {
+            consentModel.addGrantedProtocolMapper(protocolMapper);
+        }
+        return consentModel;
+    }
+
 
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
@@ -553,5 +662,10 @@ public class UserCacheSession implements CacheUserProvider {
     @Override
     public void preRemove(ProtocolMapperModel protocolMapper) {
         getDelegate().preRemove(protocolMapper);
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, StorageProviderModel provider) {
+        getDelegate().preRemove(realm, provider);
     }
 }

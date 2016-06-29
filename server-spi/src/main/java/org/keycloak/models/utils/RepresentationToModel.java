@@ -1279,7 +1279,7 @@ public class RepresentationToModel {
         if (userRep.getClientConsents() != null) {
             for (UserConsentRepresentation consentRep : userRep.getClientConsents()) {
                 UserConsentModel consentModel = toModel(newRealm, consentRep);
-                user.addConsent(consentModel);
+                session.userStorage().addConsent(newRealm, user, consentModel);
             }
         }
         if (userRep.getServiceAccountClientId() != null) {

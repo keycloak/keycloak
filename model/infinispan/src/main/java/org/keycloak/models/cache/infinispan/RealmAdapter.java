@@ -23,6 +23,7 @@ import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.StorageProviderModel;
 
 import java.security.Key;
 import java.security.PrivateKey;
@@ -737,6 +738,48 @@ public class RealmAdapter implements RealmModel {
         getDelegateForUpdate();
         updated.updateUserFederationProvider(provider);
 
+    }
+
+    @Override
+    public StorageProviderModel addStorageProvider(StorageProviderModel provider) {
+        getDelegateForUpdate();
+        return updated.addStorageProvider(provider);
+    }
+
+    @Override
+    public void updateStorageProvider(StorageProviderModel provider) {
+        getDelegateForUpdate();
+        updated.updateStorageProvider(provider);
+
+    }
+
+    @Override
+    public void removeStorageProvider(StorageProviderModel provider) {
+        getDelegateForUpdate();
+        updated.removeStorageProvider(provider);
+
+    }
+
+    @Override
+    public void setStorageProviders(List<StorageProviderModel> providers) {
+        getDelegateForUpdate();
+        updated.setStorageProviders(providers);
+
+    }
+
+    @Override
+    public List<StorageProviderModel> getStorageProviders() {
+        if (isUpdated()) return updated.getStorageProviders();
+        return cached.getStorageProviders();
+    }
+
+    @Override
+    public StorageProviderModel getStorageProvider(String id) {
+        if (isUpdated()) return updated.getStorageProvider(id);
+        for (StorageProviderModel model : cached.getStorageProviders()) {
+            if (model.getId().equals(id)) return model;
+        }
+        return null;
     }
 
     @Override

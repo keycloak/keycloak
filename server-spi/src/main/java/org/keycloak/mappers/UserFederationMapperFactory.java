@@ -32,7 +32,7 @@ import org.keycloak.representations.idm.UserFederationMapperSyncConfigRepresenta
 public interface UserFederationMapperFactory extends ProviderFactory<UserFederationMapper>, ConfiguredProvider {
 
     /**
-     * Refers to providerName (type) of the federation provider, which this mapper can be used for. For example "ldap" or "kerberos"
+     * Refers to providerName (type) of the federated provider, which this mapper can be used for. For example "ldap" or "kerberos"
      *
      * @return providerName
      */
@@ -42,7 +42,7 @@ public interface UserFederationMapperFactory extends ProviderFactory<UserFederat
     String getDisplayType();
 
     /**
-     * Specifies if mapper supports sync data from federation storage to keycloak and viceversa.
+     * Specifies if mapper supports sync data from federated storage to keycloak and viceversa.
      * Also specifies messages to be displayed in admin console UI (For example "Sync roles from LDAP" etc)
      *
      * @return syncConfig representation

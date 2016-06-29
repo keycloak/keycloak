@@ -28,22 +28,28 @@ import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.entities.FederatedIdentityEntity;
+import org.keycloak.models.entities.UserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.utils.CredentialValidation;
+import org.keycloak.storage.StorageProviderModel;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -140,7 +146,7 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
-    public UserModel getUserByServiceAccountClient(ClientModel client) {
+    public UserModel getServiceAccount(ClientModel client) {
         DBObject query = new QueryBuilder()
                 .and("serviceAccountClientLink").is(client.getId())
                 .and("realmId").is(client.getRealm().getId())
@@ -156,6 +162,17 @@ public class MongoUserProvider implements UserProvider {
         }
         return userModels;
     }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm) {
+        return getUsers(realm, false);
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+        return getUsers(realm, firstResult, maxResults, false);
+    }
+
 
 
     @Override
@@ -508,5 +525,113 @@ public class MongoUserProvider implements UserProvider {
     public CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input) {
         // Not supported yet
         return null;
+    }
+
+    @Override
+    public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+        String clientId = consent.getClient().getId();
+        if (getConsentEntityByClientId(user, clientId) != null) {
+            throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + user.getId() + "]");
+        }
+
+        MongoUserConsentEntity consentEntity = new MongoUserConsentEntity();
+        consentEntity.setUserId(user.getId());
+        consentEntity.setClientId(clientId);
+        fillEntityFromModel(consent, consentEntity);
+        getMongoStore().insertEntity(consentEntity, invocationContext);
+    }
+
+    @Override
+    public UserConsentModel getConsentByClient(RealmModel realm, UserModel user, String clientId) {
+        UserConsentEntity consentEntity = getConsentEntityByClientId(user, clientId);
+        return consentEntity!=null ? toConsentModel(realm, consentEntity) : null;
+    }
+
+    @Override
+    public List<UserConsentModel> getConsents(RealmModel realm, UserModel user) {
+        List<UserConsentModel> result = new ArrayList<UserConsentModel>();
+
+        DBObject query = new QueryBuilder()
+                .and("userId").is(user.getId())
+                .get();
+        List<MongoUserConsentEntity> grantedConsents = getMongoStore().loadEntities(MongoUserConsentEntity.class, query, invocationContext);
+
+        for (UserConsentEntity consentEntity : grantedConsents) {
+            UserConsentModel model = toConsentModel(realm, consentEntity);
+            result.add(model);
+        }
+
+        return result;
+    }
+
+    private MongoUserConsentEntity getConsentEntityByClientId(UserModel user, String clientId) {
+        DBObject query = new QueryBuilder()
+                .and("userId").is(user.getId())
+                .and("clientId").is(clientId)
+                .get();
+        return getMongoStore().loadSingleEntity(MongoUserConsentEntity.class, query, invocationContext);
+    }
+
+    private UserConsentModel toConsentModel(RealmModel realm, UserConsentEntity entity) {
+        ClientModel client = realm.getClientById(entity.getClientId());
+        if (client == null) {
+            throw new ModelException("Client with id " + entity.getClientId() + " is not available");
+        }
+        UserConsentModel model = new UserConsentModel(client);
+
+        for (String roleId : entity.getGrantedRoles()) {
+            RoleModel roleModel = realm.getRoleById(roleId);
+            if (roleModel != null) {
+                model.addGrantedRole(roleModel);
+            }
+        }
+
+        for (String protMapperId : entity.getGrantedProtocolMappers()) {
+            ProtocolMapperModel protocolMapper = client.getProtocolMapperById(protMapperId);
+            model.addGrantedProtocolMapper(protocolMapper);
+        }
+        return model;
+    }
+
+    // Fill roles and protocolMappers to entity
+    private void fillEntityFromModel(UserConsentModel consent, MongoUserConsentEntity consentEntity) {
+        List<String> roleIds = new LinkedList<String>();
+        for (RoleModel role : consent.getGrantedRoles()) {
+            roleIds.add(role.getId());
+        }
+        consentEntity.setGrantedRoles(roleIds);
+
+        List<String> protMapperIds = new LinkedList<String>();
+        for (ProtocolMapperModel protMapperModel : consent.getGrantedProtocolMappers()) {
+            protMapperIds.add(protMapperModel.getId());
+        }
+        consentEntity.setGrantedProtocolMappers(protMapperIds);
+    }
+
+    @Override
+    public void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+        String clientId = consent.getClient().getId();
+        MongoUserConsentEntity consentEntity = getConsentEntityByClientId(user, clientId);
+        if (consentEntity == null) {
+            throw new ModelException("Consent not found for client [" + clientId + "] and user [" + user.getId() + "]");
+        } else {
+            fillEntityFromModel(consent, consentEntity);
+            getMongoStore().updateEntity(consentEntity, invocationContext);
+        }
+    }
+
+    @Override
+    public boolean revokeConsentForClient(RealmModel realm, UserModel user, String clientId) {
+        MongoUserConsentEntity entity = getConsentEntityByClientId(user, clientId);
+        if (entity == null) {
+            return false;
+        }
+
+        return getMongoStore().removeEntity(entity, invocationContext);
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, StorageProviderModel link) {
+
     }
 }

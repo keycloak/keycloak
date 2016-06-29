@@ -351,15 +351,15 @@ public class ImportTest extends AbstractModelTest {
 
         // Test user consents
         admin =  session.users().getUserByUsername("admin", realm);
-        Assert.assertEquals(2, admin.getConsents().size());
+        Assert.assertEquals(2, session.users().getConsents(realm, admin).size());
 
-        UserConsentModel appAdminConsent = admin.getConsentByClient(application.getId());
+        UserConsentModel appAdminConsent = session.users().getConsentByClient(realm, admin, application.getId());
         Assert.assertEquals(2, appAdminConsent.getGrantedRoles().size());
         Assert.assertTrue(appAdminConsent.getGrantedProtocolMappers() == null || appAdminConsent.getGrantedProtocolMappers().isEmpty());
         Assert.assertTrue(appAdminConsent.isRoleGranted(realm.getRole("admin")));
         Assert.assertTrue(appAdminConsent.isRoleGranted(application.getRole("app-admin")));
 
-        UserConsentModel otherAppAdminConsent = admin.getConsentByClient(otherApp.getId());
+        UserConsentModel otherAppAdminConsent = session.users().getConsentByClient(realm, admin, otherApp.getId());
         Assert.assertEquals(1, otherAppAdminConsent.getGrantedRoles().size());
         Assert.assertEquals(1, otherAppAdminConsent.getGrantedProtocolMappers().size());
         Assert.assertTrue(otherAppAdminConsent.isRoleGranted(realm.getRole("admin")));
@@ -376,8 +376,8 @@ public class ImportTest extends AbstractModelTest {
         // Test service accounts
         Assert.assertFalse(application.isServiceAccountsEnabled());
         Assert.assertTrue(otherApp.isServiceAccountsEnabled());
-        Assert.assertNull(session.users().getUserByServiceAccountClient(application));
-        UserModel linked = session.users().getUserByServiceAccountClient(otherApp);
+        Assert.assertNull(session.users().getServiceAccount(application));
+        UserModel linked = session.users().getServiceAccount(otherApp);
         Assert.assertNotNull(linked);
         Assert.assertEquals("my-service-user", linked.getUsername());
     }

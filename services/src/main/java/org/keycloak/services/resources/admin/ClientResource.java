@@ -304,11 +304,11 @@ public class ClientResource {
             throw new NotFoundException("Could not find client");
         }
 
-        UserModel user = session.users().getUserByServiceAccountClient(client);
+        UserModel user = session.users().getServiceAccount(client);
         if (user == null) {
             if (client.isServiceAccountsEnabled()) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(client);
-                user = session.users().getUserByServiceAccountClient(client);
+                user = session.users().getServiceAccount(client);
             } else {
                 throw new BadRequestException("Service account not enabled for the client '" + client.getClientId() + "'");
             }

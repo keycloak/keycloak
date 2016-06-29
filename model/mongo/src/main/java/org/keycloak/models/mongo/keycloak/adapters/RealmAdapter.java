@@ -50,6 +50,7 @@ import org.keycloak.models.entities.IdentityProviderEntity;
 import org.keycloak.models.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.entities.RequiredActionProviderEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
+import org.keycloak.models.entities.StorageProviderEntity;
 import org.keycloak.models.entities.UserFederationMapperEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
@@ -58,6 +59,7 @@ import org.keycloak.models.mongo.keycloak.entities.MongoGroupEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.StorageProviderModel;
 
 import java.security.Key;
 import java.security.PrivateKey;
@@ -984,6 +986,14 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateRealm();
     }
 
+
+    private void removeFederationMappersForProvider(String federationProviderId) {
+        Set<UserFederationMapperEntity> mappers = getUserFederationMapperEntitiesByFederationProvider(federationProviderId);
+        for (UserFederationMapperEntity mapper : mappers) {
+            getMongoEntity().getUserFederationMappers().remove(mapper);
+        }
+    }
+
     @Override
     public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
         KeycloakModelUtils.ensureUniqueDisplayName(displayName, null, getUserFederationProviders());
@@ -1025,14 +1035,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
         updateRealm();
     }
-
-    private void removeFederationMappersForProvider(String federationProviderId) {
-        Set<UserFederationMapperEntity> mappers = getUserFederationMapperEntitiesByFederationProvider(federationProviderId);
-        for (UserFederationMapperEntity mapper : mappers) {
-            getMongoEntity().getUserFederationMappers().remove(mapper);
-        }
-    }
-
     @Override
     public void updateUserFederationProvider(UserFederationProviderModel model) {
         KeycloakModelUtils.ensureUniqueDisplayName(model.getDisplayName(), model, getUserFederationProviders());
@@ -1159,6 +1161,173 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
 
         updateRealm();
+    }
+
+    @Override
+    public StorageProviderModel addStorageProvider(StorageProviderModel model) {
+        KeycloakModelUtils.ensureUniqueDisplayName(model.getDisplayName(), null, getStorageProviders());
+
+        StorageProviderEntity entity = new StorageProviderEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setPriority(model.getPriority());
+        entity.setProviderName(model.getProviderName());
+        entity.setConfig(model.getConfig());
+        String displayName = model.getDisplayName();
+        if (displayName == null) {
+            displayName = entity.getId();
+        }
+        entity.setDisplayName(displayName);
+        realm.getStorageProviders().add(entity);
+        updateRealm();
+
+        StorageProviderModel providerModel = new StorageProviderModel(entity.getId(), model.getProviderName(),
+                model.getConfig(), model.getPriority(), displayName);
+
+
+        return providerModel;
+    }
+
+    @Override
+    public void updateStorageProvider(StorageProviderModel provider) {
+        KeycloakModelUtils.ensureUniqueDisplayName(provider.getDisplayName(), provider, getStorageProviders());
+
+        Iterator<StorageProviderEntity> it = realm.getStorageProviders().iterator();
+        while (it.hasNext()) {
+            StorageProviderEntity entity = it.next();
+            if (entity.getId().equals(provider.getId())) {
+                entity.setProviderName(provider.getProviderName());
+                entity.setConfig(provider.getConfig());
+                entity.setPriority(provider.getPriority());
+                String displayName = provider.getDisplayName();
+                if (displayName != null) {
+                    entity.setDisplayName(provider.getDisplayName());
+                }
+            }
+        }
+        updateRealm();
+
+    }
+
+    @Override
+    public void removeStorageProvider(StorageProviderModel provider) {
+        Iterator<StorageProviderEntity> it = realm.getStorageProviders().iterator();
+        while (it.hasNext()) {
+            StorageProviderEntity entity = it.next();
+            if (entity.getId().equals(provider.getId())) {
+                session.users().preRemove(this, new StorageProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName()
+                        ));
+
+                it.remove();
+            }
+        }
+        updateRealm();
+
+    }
+
+    @Override
+    public void setStorageProviders(List<StorageProviderModel> providers) {
+        for (StorageProviderModel currentProvider : providers) {
+            KeycloakModelUtils.ensureUniqueDisplayName(currentProvider.getDisplayName(), currentProvider, providers);
+        }
+
+        List<StorageProviderEntity> existingProviders = realm.getStorageProviders();
+        List<StorageProviderEntity> toRemove = new LinkedList<>();
+        for (StorageProviderEntity entity : existingProviders) {
+            boolean found = false;
+            for (StorageProviderModel model : providers) {
+                if (entity.getId().equals(model.getId())) {
+                    entity.setConfig(model.getConfig());
+                    entity.setPriority(model.getPriority());
+                    entity.setProviderName(model.getProviderName());
+                    String displayName = model.getDisplayName();
+                    if (displayName != null) {
+                        entity.setDisplayName(displayName);
+                    }
+                    found = true;
+                    break;
+                }
+
+            }
+            if (found) continue;
+            session.users().preRemove(this, new StorageProviderModel(entity.getId(), entity.getProviderName(),
+                    entity.getConfig(), entity.getPriority(), entity.getDisplayName()));
+            toRemove.add(entity);
+        }
+
+        for (StorageProviderEntity entity : toRemove) {
+            realm.getStorageProviders().remove(entity);
+        }
+
+        List<StorageProviderModel> add = new LinkedList<>();
+        for (StorageProviderModel model : providers) {
+            boolean found = false;
+            for (StorageProviderEntity entity : realm.getStorageProviders()) {
+                if (entity.getId().equals(model.getId())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) add.add(model);
+        }
+
+        for (StorageProviderModel model : add) {
+            StorageProviderEntity entity = new StorageProviderEntity();
+            if (model.getId() != null) {
+                entity.setId(model.getId());
+            } else {
+                String id = KeycloakModelUtils.generateId();
+                entity.setId(id);
+                model.setId(id);
+            }
+            entity.setProviderName(model.getProviderName());
+            entity.setConfig(model.getConfig());
+            entity.setPriority(model.getPriority());
+            String displayName = model.getDisplayName();
+            if (displayName == null) {
+                displayName = entity.getId();
+            }
+            entity.setDisplayName(displayName);
+            realm.getStorageProviders().add(entity);
+
+        }
+
+        updateRealm();
+
+    }
+
+    @Override
+    public List<StorageProviderModel> getStorageProviders() {
+        List<StorageProviderEntity> entities = realm.getStorageProviders();
+        if (entities.isEmpty()) return Collections.EMPTY_LIST;
+        List<StorageProviderEntity> copy = new LinkedList<>();
+        for (StorageProviderEntity entity : entities) {
+            copy.add(entity);
+
+        }
+        Collections.sort(copy, new Comparator<StorageProviderEntity>() {
+
+            @Override
+            public int compare(StorageProviderEntity o1, StorageProviderEntity o2) {
+                return o1.getPriority() - o2.getPriority();
+            }
+
+        });
+        List<StorageProviderModel> result = new LinkedList<>();
+        for (StorageProviderEntity entity : copy) {
+            result.add(new StorageProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName()
+                    ));
+        }
+
+        return Collections.unmodifiableList(result);
+    }
+
+    @Override
+    public StorageProviderModel getStorageProvider(String id) {
+        for (StorageProviderEntity entity : realm.getStorageProviders()) {
+            if (entity.getId().equals(id)) return new StorageProviderModel(entity.getId(), entity.getProviderName(),
+                    entity.getConfig(), entity.getPriority(), entity.getDisplayName());
+        }
+        return null;
     }
 
     @Override

@@ -22,23 +22,31 @@ import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
+import org.keycloak.models.jpa.entities.UserConsentEntity;
+import org.keycloak.models.jpa.entities.UserConsentProtocolMapperEntity;
+import org.keycloak.models.jpa.entities.UserConsentRoleEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.StorageProviderModel;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -172,6 +180,164 @@ public class JpaUserProvider implements UserProvider {
             return false;
         }
     }
+
+    @Override
+    public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+        String clientId = consent.getClient().getId();
+
+        UserConsentEntity consentEntity = getGrantedConsentEntity(user, clientId);
+        if (consentEntity != null) {
+            throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + user.getId() + "]");
+        }
+
+        consentEntity = new UserConsentEntity();
+        consentEntity.setId(KeycloakModelUtils.generateId());
+        consentEntity.setUser(em.getReference(UserEntity.class, user.getId()));
+        consentEntity.setClientId(clientId);
+        em.persist(consentEntity);
+        em.flush();
+
+        updateGrantedConsentEntity(consentEntity, consent);
+    }
+
+    @Override
+    public UserConsentModel getConsentByClient(RealmModel realm, UserModel user, String clientId) {
+        UserConsentEntity entity = getGrantedConsentEntity(user, clientId);
+        return toConsentModel(realm, entity);
+    }
+
+    @Override
+    public List<UserConsentModel> getConsents(RealmModel realm, UserModel user) {
+        TypedQuery<UserConsentEntity> query = em.createNamedQuery("userConsentsByUser", UserConsentEntity.class);
+        query.setParameter("userId", user.getId());
+        List<UserConsentEntity> results = query.getResultList();
+
+        List<UserConsentModel> consents = new ArrayList<UserConsentModel>();
+        for (UserConsentEntity entity : results) {
+            UserConsentModel model = toConsentModel(realm, entity);
+            consents.add(model);
+        }
+        return consents;
+    }
+
+    @Override
+    public void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+        String clientId = consent.getClient().getId();
+
+        UserConsentEntity consentEntity = getGrantedConsentEntity(user, clientId);
+        if (consentEntity == null) {
+            throw new ModelException("Consent not found for client [" + clientId + "] and user [" + user.getId() + "]");
+        }
+
+        updateGrantedConsentEntity(consentEntity, consent);
+    }
+
+    public boolean revokeConsentForClient(RealmModel realm, UserModel user, String clientId) {
+        UserConsentEntity consentEntity = getGrantedConsentEntity(user, clientId);
+        if (consentEntity == null) return false;
+
+        em.remove(consentEntity);
+        em.flush();
+        return true;
+    }
+
+
+    private UserConsentEntity getGrantedConsentEntity(UserModel user, String clientId) {
+        TypedQuery<UserConsentEntity> query = em.createNamedQuery("userConsentByUserAndClient", UserConsentEntity.class);
+        query.setParameter("userId", user.getId());
+        query.setParameter("clientId", clientId);
+        List<UserConsentEntity> results = query.getResultList();
+        if (results.size() > 1) {
+            throw new ModelException("More results found for user [" + user.getUsername() + "] and client [" + clientId + "]");
+        } else if (results.size() == 1) {
+            return results.get(0);
+        } else {
+            return null;
+        }
+    }
+
+    private UserConsentModel toConsentModel(RealmModel realm, UserConsentEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+
+        ClientModel client = realm.getClientById(entity.getClientId());
+        if (client == null) {
+            throw new ModelException("Client with id " + entity.getClientId() + " is not available");
+        }
+        UserConsentModel model = new UserConsentModel(client);
+
+        Collection<UserConsentRoleEntity> grantedRoleEntities = entity.getGrantedRoles();
+        if (grantedRoleEntities != null) {
+            for (UserConsentRoleEntity grantedRole : grantedRoleEntities) {
+                RoleModel grantedRoleModel = realm.getRoleById(grantedRole.getRoleId());
+                if (grantedRoleModel != null) {
+                    model.addGrantedRole(grantedRoleModel);
+                }
+            }
+        }
+
+        Collection<UserConsentProtocolMapperEntity> grantedProtocolMapperEntities = entity.getGrantedProtocolMappers();
+        if (grantedProtocolMapperEntities != null) {
+            for (UserConsentProtocolMapperEntity grantedProtMapper : grantedProtocolMapperEntities) {
+                ProtocolMapperModel protocolMapper = client.getProtocolMapperById(grantedProtMapper.getProtocolMapperId());
+                model.addGrantedProtocolMapper(protocolMapper );
+            }
+        }
+
+        return model;
+    }
+
+    // Update roles and protocolMappers to given consentEntity from the consentModel
+    private void updateGrantedConsentEntity(UserConsentEntity consentEntity, UserConsentModel consentModel) {
+        Collection<UserConsentProtocolMapperEntity> grantedProtocolMapperEntities = consentEntity.getGrantedProtocolMappers();
+        Collection<UserConsentProtocolMapperEntity> mappersToRemove = new HashSet<UserConsentProtocolMapperEntity>(grantedProtocolMapperEntities);
+
+        for (ProtocolMapperModel protocolMapper : consentModel.getGrantedProtocolMappers()) {
+            UserConsentProtocolMapperEntity grantedProtocolMapperEntity = new UserConsentProtocolMapperEntity();
+            grantedProtocolMapperEntity.setUserConsent(consentEntity);
+            grantedProtocolMapperEntity.setProtocolMapperId(protocolMapper.getId());
+
+            // Check if it's already there
+            if (!grantedProtocolMapperEntities.contains(grantedProtocolMapperEntity)) {
+                em.persist(grantedProtocolMapperEntity);
+                em.flush();
+                grantedProtocolMapperEntities.add(grantedProtocolMapperEntity);
+            } else {
+                mappersToRemove.remove(grantedProtocolMapperEntity);
+            }
+        }
+        // Those mappers were no longer on consentModel and will be removed
+        for (UserConsentProtocolMapperEntity toRemove : mappersToRemove) {
+            grantedProtocolMapperEntities.remove(toRemove);
+            em.remove(toRemove);
+        }
+
+        Collection<UserConsentRoleEntity> grantedRoleEntities = consentEntity.getGrantedRoles();
+        Set<UserConsentRoleEntity> rolesToRemove = new HashSet<UserConsentRoleEntity>(grantedRoleEntities);
+        for (RoleModel role : consentModel.getGrantedRoles()) {
+            UserConsentRoleEntity consentRoleEntity = new UserConsentRoleEntity();
+            consentRoleEntity.setUserConsent(consentEntity);
+            consentRoleEntity.setRoleId(role.getId());
+
+            // Check if it's already there
+            if (!grantedRoleEntities.contains(consentRoleEntity)) {
+                em.persist(consentRoleEntity);
+                em.flush();
+                grantedRoleEntities.add(consentRoleEntity);
+            } else {
+                rolesToRemove.remove(consentRoleEntity);
+            }
+        }
+        // Those roles were no longer on consentModel and will be removed
+        for (UserConsentRoleEntity toRemove : rolesToRemove) {
+            grantedRoleEntities.remove(toRemove);
+            em.remove(toRemove);
+        }
+
+        em.flush();
+    }
+
 
     @Override
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
@@ -324,7 +490,7 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
-    public UserModel getUserByServiceAccountClient(ClientModel client) {
+    public UserModel getServiceAccount(ClientModel client) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByServiceAccount", UserEntity.class);
         query.setParameter("realmId", client.getRealm().getId());
         query.setParameter("clientInternalId", client.getId());
@@ -351,6 +517,16 @@ public class JpaUserProvider implements UserProvider {
                 .setParameter("realmId", realm.getId())
                 .getSingleResult();
         return ((Number)count).intValue();
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm) {
+        return getUsers(realm, false);
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+        return getUsers(realm, firstResult, maxResults, false);
     }
 
     @Override
@@ -528,5 +704,10 @@ public class JpaUserProvider implements UserProvider {
     public CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input) {
         // Not supported yet
         return null;
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, StorageProviderModel link) {
+
     }
 }

@@ -136,13 +136,16 @@ public class RealmEntity {
     protected String emailTheme;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RealmAttributeEntity> attributes = new ArrayList<RealmAttributeEntity>();
+    Collection<RealmAttributeEntity> attributes = new ArrayList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
+    Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
+    List<UserFederationProviderEntity> userFederationProviders = new ArrayList<>();
+
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    List<StorageProviderEntity> storageProviders = new ArrayList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<UserFederationMapperEntity> userFederationMappers = new ArrayList<UserFederationMapperEntity>();
@@ -549,6 +552,14 @@ public class RealmEntity {
 
     public void setUserFederationProviders(List<UserFederationProviderEntity> userFederationProviders) {
         this.userFederationProviders = userFederationProviders;
+    }
+
+    public List<StorageProviderEntity> getStorageProviders() {
+        return storageProviders;
+    }
+
+    public void setStorageProviders(List<StorageProviderEntity> storageProviders) {
+        this.storageProviders = storageProviders;
     }
 
     public Collection<UserFederationMapperEntity> getUserFederationMappers() {

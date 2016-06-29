@@ -25,7 +25,7 @@ import java.io.Serializable;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class UserCredentialValueModel implements Serializable {
-
+    private String id;
     private String type;
     private String value;
     private String device;
@@ -39,6 +39,14 @@ public class UserCredentialValueModel implements Serializable {
     private int digits;
     private int period;
 
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getType() {
         return type;

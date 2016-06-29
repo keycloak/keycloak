@@ -235,31 +235,6 @@ public class UserModelDelegate implements UserModel {
         delegate.setServiceAccountClientLink(clientInternalId);
     }
 
-    @Override
-    public void addConsent(UserConsentModel consent) {
-        delegate.addConsent(consent);
-    }
-
-    @Override
-    public UserConsentModel getConsentByClient(String clientId) {
-        return delegate.getConsentByClient(clientId);
-    }
-
-    @Override
-    public List<UserConsentModel> getConsents() {
-        return delegate.getConsents();
-    }
-
-    @Override
-    public void updateConsent(UserConsentModel consent) {
-        delegate.updateConsent(consent);
-    }
-
-    @Override
-    public boolean revokeConsentForClient(String clientId) {
-        return delegate.revokeConsentForClient(clientId);
-    }
-
     public UserModel getDelegate() {
         return delegate;
     }

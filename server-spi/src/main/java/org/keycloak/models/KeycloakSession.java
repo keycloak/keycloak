@@ -19,6 +19,8 @@ package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
 import org.keycloak.scripting.ScriptingProvider;
+import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import org.keycloak.storage.federated.UserFederatedStorageProviderFactory;
 
 import java.util.Set;
 
@@ -73,10 +75,15 @@ public interface KeycloakSession {
      */
     UserFederationManager users();
 
+    UserProvider userStorageManager();
+
     /**
      *  Keycloak user storage.  Non-federated, but possibly cache (if it is on) view of users.
      */
     UserProvider userStorage();
+
+    UserFederatedStorageProvider userFederatedStorage();
+    UserProvider userLocalStorage();
 
     /**
      * Keycloak scripting support.

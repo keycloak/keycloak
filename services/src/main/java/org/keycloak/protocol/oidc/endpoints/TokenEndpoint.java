@@ -420,13 +420,13 @@ public class TokenEndpoint {
             throw new ErrorResponseException("unauthorized_client", "Client not enabled to retrieve service account", Response.Status.UNAUTHORIZED);
         }
 
-        UserModel clientUser = session.users().getUserByServiceAccountClient(client);
+        UserModel clientUser = session.users().getServiceAccount(client);
 
         if (clientUser == null || client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER) == null) {
             // May need to handle bootstrap here as well
             logger.debugf("Service account user for client '%s' not found or default protocol mapper for service account not found. Creating now", client.getClientId());
             new ClientManager(new RealmManager(session)).enableServiceAccount(client);
-            clientUser = session.users().getUserByServiceAccountClient(client);
+            clientUser = session.users().getServiceAccount(client);
         }
 
         String clientUsername = clientUser.getUsername();

@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.provider.ProviderEvent;
+import org.keycloak.storage.StorageProviderModel;
 
 import java.security.Key;
 import java.security.PrivateKey;
@@ -263,9 +264,16 @@ public interface RealmModel extends RoleContainerModel {
     public IdentityProviderMapperModel getIdentityProviderMapperById(String id);
     public IdentityProviderMapperModel getIdentityProviderMapperByName(String brokerAlias, String name);
 
+
+    StorageProviderModel addStorageProvider(StorageProviderModel model);
+    void updateStorageProvider(StorageProviderModel provider);
+    void removeStorageProvider(StorageProviderModel provider);
+    void setStorageProviders(List<StorageProviderModel> providers);
+    List<StorageProviderModel> getStorageProviders();
+    StorageProviderModel getStorageProvider(String id);
+
     // Should return list sorted by UserFederationProviderModel.priority
     List<UserFederationProviderModel> getUserFederationProviders();
-
     UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync);
     void updateUserFederationProvider(UserFederationProviderModel provider);
     void removeUserFederationProvider(UserFederationProviderModel provider);

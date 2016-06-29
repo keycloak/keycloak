@@ -37,6 +37,7 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.infinispan.RealmCache;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.storage.StorageProviderModel;
 
 import java.io.Serializable;
 import java.security.PrivateKey;
@@ -109,6 +110,7 @@ public class CachedRealm extends AbstractRevisioned {
 
     protected List<RequiredCredentialModel> requiredCredentials;
     protected List<UserFederationProviderModel> userFederationProviders;
+    protected List<StorageProviderModel> storageProviders;
     protected MultivaluedHashMap<String, UserFederationMapperModel> userFederationMappers = new MultivaluedHashMap<String, UserFederationMapperModel>();
     protected Set<UserFederationMapperModel> userFederationMapperSet;
     protected List<IdentityProviderModel> identityProviders;
@@ -204,6 +206,7 @@ public class CachedRealm extends AbstractRevisioned {
 
         requiredCredentials = model.getRequiredCredentials();
         userFederationProviders = model.getUserFederationProviders();
+        storageProviders = model.getStorageProviders();
         userFederationMapperSet = model.getUserFederationMappers();
         for (UserFederationMapperModel mapper : userFederationMapperSet) {
             this.userFederationMappers.add(mapper.getFederationProviderId(), mapper);
@@ -591,5 +594,9 @@ public class CachedRealm extends AbstractRevisioned {
 
     public List<RequiredActionProviderModel> getRequiredActionProviderList() {
         return requiredActionProviderList;
+    }
+
+    public List<StorageProviderModel> getStorageProviders() {
+        return storageProviders;
     }
 }

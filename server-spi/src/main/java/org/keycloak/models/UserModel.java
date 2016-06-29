@@ -122,12 +122,6 @@ public interface UserModel extends RoleMapperModel {
     String getServiceAccountClientLink();
     void setServiceAccountClientLink(String clientInternalId);
 
-    void addConsent(UserConsentModel consent);
-    UserConsentModel getConsentByClient(String clientInternalId);
-    List<UserConsentModel> getConsents();
-    void updateConsent(UserConsentModel consent);
-    boolean revokeConsentForClient(String clientInternalId);
-
     public static enum RequiredAction {
         VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD
     }
