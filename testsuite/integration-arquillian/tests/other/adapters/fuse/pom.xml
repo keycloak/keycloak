@@ -27,11 +27,11 @@
         <version>2.0.0.CR1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>integration-arquillian-tests-adapters-karaf</artifactId>
+    <artifactId>integration-arquillian-tests-adapters-fuse</artifactId>
 
     <packaging>pom</packaging>
 
-    <name>Adapter Tests - Karaf</name>
+    <name>Adapter Tests - Fuse</name>
         
     <properties>
         <common.resources>${project.parent.basedir}/common</common.resources>
@@ -40,14 +40,14 @@
         <auth.server.port.offset>0</auth.server.port.offset>
         <auth.server.http.port>8080</auth.server.http.port>
         <auth.server.management.port>9990</auth.server.management.port>
-        <!--fuse examples expect default karaf http port 8181-->
+        <!--fuse examples expect default http port 8181-->
         <app.server.http.port>8181</app.server.http.port>
                 
     </properties>
     
     <profiles>
         <profile>
-            <id>adapter-test-karaf-submodules</id>
+            <id>adapter-test-fuse-submodules</id>
             <activation>
                 <file>
                     <exists>src</exists>
@@ -102,7 +102,7 @@
                                         <requireProperty>
                                             <property>auth.server</property>
                                             <regex>(wildfly)|(eap)</regex>
-                                            <regexMessage>Karaf/Fuse adapter tests require activation of profile "auth-server-wildfly" or "auth-server-eap".</regexMessage>
+                                            <regexMessage>Fuse adapter tests require activation of profile "auth-server-wildfly" or "auth-server-eap".</regexMessage>
                                         </requireProperty>
                                     </rules>
                                 </configuration>
@@ -114,12 +114,6 @@
         </profile>
         
         
-        <profile>
-            <id>app-server-karaf3</id>
-            <modules>
-                <module>karaf3</module>
-            </modules>
-        </profile>        
         <profile>
             <id>app-server-fuse61</id>
             <modules>

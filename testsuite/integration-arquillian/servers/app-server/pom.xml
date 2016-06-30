@@ -37,7 +37,7 @@
 
     <modules>
         <module>jboss</module>
-        <module>karaf</module>
+        <module>fuse</module>
         <module>tomcat</module>
     </modules>
 

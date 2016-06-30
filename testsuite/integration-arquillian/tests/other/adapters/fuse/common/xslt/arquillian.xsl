@@ -41,8 +41,8 @@
                         ${adapter.test.props}
                     </property>
                     <property name="jmxServiceURL">service:jmx:rmi://127.0.0.1:44444/jndi/rmi://127.0.0.1:1099/karaf-root</property>
-                    <property name="jmxUsername">${app.server.management.user}</property>
-                    <property name="jmxPassword">${app.server.management.password}</property>          
+                    <property name="jmxUsername">admin</property>
+                    <property name="jmxPassword">admin</property>          
                 </configuration>
             </container>
     

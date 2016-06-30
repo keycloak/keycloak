@@ -25,23 +25,22 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-app-server-karaf</artifactId>
+    <artifactId>integration-arquillian-servers-app-server-fuse</artifactId>
     <packaging>pom</packaging>
-    <name>App Server - Karaf</name>
+    <name>App Server - Fuse</name>
     
     <properties>
         <common.resources>${project.parent.basedir}/common</common.resources>
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
-        <app.server.karaf.home>${containers.home}/${app.server.karaf.unpacked.folder.name}</app.server.karaf.home>
-        <app.server.karaf.client.auth>-u karaf</app.server.karaf.client.auth>
-        <app.server.karaf.uninstall.pax>false</app.server.karaf.uninstall.pax>
-        <app.server.karaf.update.config>false</app.server.karaf.update.config>
+        <app.server.fuse.home>${containers.home}/${app.server.fuse.unpacked.folder.name}</app.server.fuse.home>
+        <app.server.fuse.uninstall.pax>false</app.server.fuse.uninstall.pax>
+        <app.server.fuse.update.config>false</app.server.fuse.update.config>
     </properties>
 
     <profiles>
         
         <profile>
-            <id>app-server-karaf-submodules</id>
+            <id>app-server-fuse-submodules</id>
             <activation>
                 <file>
                     <exists>src</exists>
@@ -60,15 +59,13 @@
                                 <configuration>
                                     <rules>
                                         <requireProperty>
-                                            <property>app.server.karaf</property>
-                                            <property>app.server.karaf.groupId</property>
-                                            <property>app.server.karaf.artifactId</property>
-                                            <property>app.server.karaf.version</property>
-                                            <property>app.server.karaf.unpacked.folder.name</property>
+                                            <property>app.server.fuse</property>
+                                            <property>app.server.fuse.version</property>
+                                            <property>app.server.fuse.unpacked.folder.name</property>
                                         </requireProperty>
                                         <requireOS>
                                             <family>!windows</family>
-                                            <message>Automated Kara/Fuse adapter configuration currently doesn't work on Windows.</message>
+                                            <message>Automated Fuse adapter configuration currently doesn't work on Windows.</message>
                                         </requireOS>
                                     </rules>
                                 </configuration>
@@ -80,7 +77,7 @@
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>unpack-karaf</id>
+                                <id>unpack-fuse</id>
                                 <phase>generate-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
@@ -88,9 +85,9 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>${app.server.karaf.groupId}</groupId>
-                                            <artifactId>${app.server.karaf.artifactId}</artifactId>
-                                            <version>${app.server.karaf.version}</version>
+                                            <groupId>org.jboss.fuse</groupId>
+                                            <artifactId>jboss-fuse-full</artifactId>
+                                            <version>${app.server.fuse.version}</version>
                                             <type>zip</type>
                                             <outputDirectory>${containers.home}</outputDirectory>
                                         </artifactItem>
@@ -110,7 +107,7 @@
                                     <goal>copy-resources</goal>
                                 </goals>
                                 <configuration>
-                                    <outputDirectory>${app.server.karaf.home}/bin</outputDirectory>
+                                    <outputDirectory>${app.server.fuse.home}/bin</outputDirectory>
                                     <resources>
                                         <resource>
                                             <directory>src/main/resources</directory>
@@ -130,7 +127,7 @@
                                     <goal>copy-resources</goal>
                                 </goals>
                                 <configuration>
-                                    <outputDirectory>${app.server.karaf.home}/etc</outputDirectory>
+                                    <outputDirectory>${app.server.fuse.home}/etc</outputDirectory>
                                     <overwrite>true</overwrite>
                                     <resources>
                                         <resource>
@@ -158,12 +155,11 @@
                         </executions>
                         <configuration>
                             <executable>${common.resources}/install-features.${script.suffix}</executable>
-                            <workingDirectory>${app.server.karaf.home}/bin</workingDirectory>
+                            <workingDirectory>${app.server.fuse.home}/bin</workingDirectory>
                             <environmentVariables>
                                 <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
-                                <CLIENT_AUTH>${app.server.karaf.client.auth}</CLIENT_AUTH>
-                                <UNINSTALL_PAX>${app.server.karaf.uninstall.pax}</UNINSTALL_PAX>
-                                <UPDATE_CONFIG>${app.server.karaf.update.config}</UPDATE_CONFIG>
+                                <UNINSTALL_PAX>${app.server.fuse.uninstall.pax}</UNINSTALL_PAX>
+                                <UPDATE_CONFIG>${app.server.fuse.update.config}</UPDATE_CONFIG>
                             </environmentVariables>
                         </configuration>
                     </plugin>
@@ -189,12 +185,6 @@
             </build>
         </profile>
         
-        <profile>
-            <id>app-server-karaf3</id>
-            <modules>
-                <module>karaf3</module>
-            </modules>
-        </profile>        
         <profile>
             <id>app-server-fuse61</id>
             <modules>

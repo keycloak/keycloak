@@ -20,22 +20,20 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-servers-app-server-karaf</artifactId>
-        <version>1.9.3.Final-SNAPSHOT</version>
+        <artifactId>integration-arquillian-servers-app-server-fuse</artifactId>
+        <version>2.0.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-app-server-fuse63</artifactId>
+    <artifactId>integration-arquillian-servers-app-server-fuse61</artifactId>
     <packaging>pom</packaging>
-    <name>App Server - Karaf - JBoss Fuse 6.3</name>
+    <name>App Server - Fuse - 6.1</name>
 
     <properties>
-        <app.server.karaf>fuse63</app.server.karaf>
-        <app.server.karaf.groupId>org.jboss.fuse</app.server.karaf.groupId>
-        <app.server.karaf.artifactId>jboss-fuse-full</app.server.karaf.artifactId>
-        <app.server.karaf.version>${fuse63.version}</app.server.karaf.version>
-        <app.server.karaf.unpacked.folder.name>jboss-fuse-${fuse63.version}</app.server.karaf.unpacked.folder.name>
-        <app.server.karaf.client.auth>-u admin -p admin</app.server.karaf.client.auth>
+        <app.server.fuse>fuse61</app.server.fuse>
+        <app.server.fuse.version>${fuse61.version}</app.server.fuse.version>
+        <app.server.fuse.unpacked.folder.name>jboss-fuse-${fuse61.version}</app.server.fuse.unpacked.folder.name>
+        <app.server.fuse.uninstall.pax>true</app.server.fuse.uninstall.pax>
     </properties>
     
     <build>
@@ -50,7 +48,7 @@
                         <configuration>
                             <rules>
                                 <requireProperty>
-                                    <property>fuse63.version</property>
+                                    <property>fuse61.version</property>
                                 </requireProperty>
                             </rules>
                         </configuration>
