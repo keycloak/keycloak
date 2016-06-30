@@ -139,10 +139,10 @@ public class KeycloakIdentity implements Identity {
 
         if (this.accessToken.getClientSession() != null) {
             ClientSessionModel clientSession = this.keycloakSession.sessions().getClientSession(this.accessToken.getClientSession());
-            clientUser = this.keycloakSession.users().getUserByServiceAccountClient(clientSession.getClient());
+            clientUser = this.keycloakSession.users().getServiceAccount(clientSession.getClient());
         } else if (this.accessToken.getIssuedFor() != null) {
             ClientModel clientModel = this.keycloakSession.realms().getClientById(this.accessToken.getIssuedFor(), this.realm);
-            clientUser = this.keycloakSession.users().getUserByServiceAccountClient(clientModel);
+            clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
         }
 
 

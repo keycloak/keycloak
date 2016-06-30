@@ -500,7 +500,7 @@ public class ResourceServerService {
             umaProtectionRole = client.addRole(Constants.AUTHZ_UMA_PROTECTION);
         }
 
-        UserModel serviceAccount = this.session.users().getUserByServiceAccountClient(client);
+        UserModel serviceAccount = this.session.users().getServiceAccount(client);
 
         if (!serviceAccount.hasRole(umaProtectionRole)) {
             serviceAccount.grantRole(umaProtectionRole);
