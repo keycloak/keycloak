@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server-karaf</artifactId>
-        <version>2.0.0.Final-SNAPSHOT</version>
+        <version>2.0.0.Final</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
