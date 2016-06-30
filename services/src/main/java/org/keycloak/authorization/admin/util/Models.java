@@ -20,11 +20,6 @@ package org.keycloak.authorization.admin.util;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.ErrorCode;
-import org.keycloak.authorization.admin.representation.PolicyRepresentation;
-import org.keycloak.authorization.admin.representation.ResourceOwnerRepresentation;
-import org.keycloak.authorization.admin.representation.ResourceRepresentation;
-import org.keycloak.authorization.admin.representation.ResourceServerRepresentation;
-import org.keycloak.authorization.admin.representation.ScopeRepresentation;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -36,6 +31,11 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.util.JsonSerialization;
 
@@ -162,12 +162,21 @@ public final class Models {
             return representation1;
         }).collect(Collectors.toList()));
 
-        List<String> obj = model.getAssociatedPolicies().stream().map(new Function<Policy, String>() {
-            @Override
-            public String apply(Policy policy) {
-                return policy.getId();
-            }
+        List<PolicyRepresentation> associatedPolicies = new ArrayList<>();
+
+        List<String> obj = model.getAssociatedPolicies().stream().map(policy -> {
+            PolicyRepresentation representation1 = new PolicyRepresentation();
+
+            representation1.setId(policy.getId());
+            representation1.setName(policy.getName());
+            representation1.setType(policy.getType());
+
+            associatedPolicies.add(representation1);
+
+            return policy.getId();
         }).collect(Collectors.toList());
+
+        representation.setAssociatedPolicies(associatedPolicies);
 
         try {
             representation.getConfig().put("applyPolicies", JsonSerialization.writeValueAsString(obj));

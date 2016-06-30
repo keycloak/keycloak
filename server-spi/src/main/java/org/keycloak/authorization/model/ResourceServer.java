@@ -18,6 +18,8 @@
 
 package org.keycloak.authorization.model;
 
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
+
 /**
  * Represents a resource server, whose resources are managed and protected. A resource server is basically an existing
  * client application in Keycloak that will also act as a resource server.
@@ -68,24 +70,4 @@ public interface ResourceServer {
      * @param enforcementMode one of the available options in {@code PolicyEnforcementMode}
      */
     void setPolicyEnforcementMode(PolicyEnforcementMode enforcementMode);
-
-    /**
-     * The policy enforcement mode dictates how authorization requests are handled by the server.
-     */
-    enum PolicyEnforcementMode {
-        /**
-         * Requests are denied by default even when there is no policy associated with a given resource.
-         */
-        ENFORCING,
-
-        /**
-         * Requests are allowed even when there is no policy associated with a given resource.
-         */
-        PERMISSIVE,
-
-        /**
-         * Completely disables the evaluation of policies and allow access to any resource.
-         */
-        DISABLED
-    }
 }

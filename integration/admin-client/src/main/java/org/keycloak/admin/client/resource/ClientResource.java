@@ -142,4 +142,6 @@ public interface ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     GlobalRequestResult testNodesAvailable();
 
+    @Path("/authz/resource-server")
+    AuthorizationResource authorization();
 }

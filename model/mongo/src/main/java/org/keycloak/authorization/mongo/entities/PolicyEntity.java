@@ -18,12 +18,12 @@
 
 package org.keycloak.authorization.mongo.entities;
 
-import org.keycloak.authorization.model.Policy.DecisionStrategy;
-import org.keycloak.authorization.model.Policy.Logic;
 import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.entities.AbstractIdentifiableEntity;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.Logic;
 
 import java.util.HashMap;
 import java.util.HashSet;

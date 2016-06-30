@@ -18,10 +18,9 @@
 package org.keycloak.authorization.admin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.admin.representation.PolicyProviderRepresentation;
-import org.keycloak.authorization.admin.representation.PolicyRepresentation;
 import org.keycloak.authorization.admin.util.Models;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -31,6 +30,8 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.services.resources.admin.RealmAuth;
 
 import javax.ws.rs.Consumes;
@@ -67,6 +68,7 @@ public class PolicyService {
     @POST
     @Consumes("application/json")
     @Produces("application/json")
+    @NoCache
     public Response create(PolicyRepresentation representation) {
         this.auth.requireManage();
         Policy policy = Models.toModel(representation, this.resourceServer, authorization);
@@ -94,6 +96,7 @@ public class PolicyService {
     @PUT
     @Consumes("application/json")
     @Produces("application/json")
+    @NoCache
     public Response update(@PathParam("id") String id, PolicyRepresentation representation) {
         this.auth.requireManage();
         representation.setId(id);
@@ -161,6 +164,7 @@ public class PolicyService {
     @Path("{id}")
     @GET
     @Produces("application/json")
+    @NoCache
     public Response findById(@PathParam("id") String id) {
         this.auth.requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
@@ -175,6 +179,7 @@ public class PolicyService {
 
     @GET
     @Produces("application/json")
+    @NoCache
     public Response findAll() {
         this.auth.requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
@@ -188,6 +193,7 @@ public class PolicyService {
     @Path("providers")
     @GET
     @Produces("application/json")
+    @NoCache
     public Response findPolicyProviders() {
         this.auth.requireView();
         return Response.ok(
@@ -292,7 +298,7 @@ public class PolicyService {
                 boolean hasPolicy = false;
 
                 for (Policy policyModel : new HashSet<Policy>(policy.getAssociatedPolicies())) {
-                    if (policyModel.getId().equals(policyId)) {
+                    if (policyModel.getId().equals(policyId) || policyModel.getName().equals(policyId)) {
                         hasPolicy = true;
                     }
                 }
