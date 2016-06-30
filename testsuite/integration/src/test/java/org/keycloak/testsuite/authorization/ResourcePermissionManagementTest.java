@@ -21,12 +21,13 @@ package org.keycloak.testsuite.authorization;
 import org.apache.commons.collections.map.HashedMap;
 import org.junit.Test;
 import org.keycloak.authorization.Decision.Effect;
-import org.keycloak.authorization.admin.representation.PolicyRepresentation;
-import org.keycloak.authorization.admin.representation.ResourceRepresentation;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DefaultEvaluation;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.client.Entity;
@@ -329,7 +330,7 @@ public class ResourcePermissionManagementTest extends AbstractPhotozAdminTest {
 
         newPermission.setName("Album Resource Policy");
         newPermission.setType("resource");
-        newPermission.setDecisionStrategy(Policy.DecisionStrategy.AFFIRMATIVE);
+        newPermission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
 
         HashedMap config = new HashedMap();
 

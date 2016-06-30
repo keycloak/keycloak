@@ -679,5 +679,14 @@ public final class KeycloakModelUtils {
         return null;
     }
 
-
+    public static void setupAuthorizationServices(RealmModel realm) {
+        for (String roleName : Constants.AUTHZ_DEFAULT_AUTHORIZATION_ROLES) {
+            if (realm.getRole(roleName) == null) {
+                RoleModel role = realm.addRole(roleName);
+                role.setDescription("${role_" + roleName + "}");
+                role.setScopeParamRequired(false);
+                realm.addDefaultRole(roleName);
+            }
+        }
+    }
 }

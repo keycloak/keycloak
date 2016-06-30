@@ -17,9 +17,8 @@
  */
 package org.keycloak.authorization.admin;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.admin.representation.ResourceRepresentation;
-import org.keycloak.authorization.admin.representation.ScopeRepresentation;
 import org.keycloak.authorization.admin.util.Models;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -27,6 +26,8 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.RealmAuth;
 
@@ -136,6 +137,7 @@ public class ResourceSetService {
 
     @Path("{id}")
     @GET
+    @NoCache
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
         requireView();
@@ -150,6 +152,7 @@ public class ResourceSetService {
     }
 
     @GET
+    @NoCache
     @Produces("application/json")
     public Response findAll() {
         requireView();

@@ -33,7 +33,7 @@
     <packaging>pom</packaging>
 
     <name>Keycloak Arquillian Integration TestSuite</name>
-    
+
     <properties>
 
         <containers.home>${project.build.directory}/containers</containers.home>
@@ -48,6 +48,9 @@
         <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
         <version.shrinkwrap.resolvers>2.2.2</version.shrinkwrap.resolvers>
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
+
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
     </properties>
 
     <dependencyManagement>

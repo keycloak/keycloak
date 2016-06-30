@@ -21,6 +21,7 @@ package org.keycloak.authorization.policy.evaluation;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 
 import java.util.HashMap;
 import java.util.List;
@@ -81,17 +82,17 @@ public abstract class DecisionResultCollector implements Decision<DefaultEvaluat
         }
 
         Policy policy = policyResult.getPolicy();
-        Policy.DecisionStrategy decisionStrategy = policy.getDecisionStrategy();
+        DecisionStrategy decisionStrategy = policy.getDecisionStrategy();
 
         if (decisionStrategy == null) {
-            decisionStrategy = Policy.DecisionStrategy.UNANIMOUS;
+            decisionStrategy = DecisionStrategy.UNANIMOUS;
         }
 
-        if (Policy.DecisionStrategy.AFFIRMATIVE.equals(decisionStrategy) && grantCount > 0) {
+        if (DecisionStrategy.AFFIRMATIVE.equals(decisionStrategy) && grantCount > 0) {
             return true;
-        } else if (Policy.DecisionStrategy.UNANIMOUS.equals(decisionStrategy) && denyCount == 0) {
+        } else if (DecisionStrategy.UNANIMOUS.equals(decisionStrategy) && denyCount == 0) {
             return true;
-        } else if (Policy.DecisionStrategy.CONSENSUS.equals(decisionStrategy)) {
+        } else if (DecisionStrategy.CONSENSUS.equals(decisionStrategy)) {
             if (grantCount > denyCount) {
                 return true;
             }

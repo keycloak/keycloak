@@ -19,15 +19,15 @@ package org.keycloak.authorization.protection.resource;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.ResourceSetService;
-import org.keycloak.authorization.admin.representation.ResourceOwnerRepresentation;
-import org.keycloak.authorization.admin.representation.ResourceRepresentation;
-import org.keycloak.authorization.admin.representation.ScopeRepresentation;
 import org.keycloak.authorization.admin.util.Models;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.protection.resource.representation.UmaResourceRepresentation;
 import org.keycloak.authorization.protection.resource.representation.UmaScopeRepresentation;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
 
 import javax.ws.rs.Consumes;
