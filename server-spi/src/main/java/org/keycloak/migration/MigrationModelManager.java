@@ -26,6 +26,7 @@ import org.keycloak.migration.migrators.MigrateTo1_7_0;
 import org.keycloak.migration.migrators.MigrateTo1_8_0;
 import org.keycloak.migration.migrators.MigrateTo1_9_0;
 import org.keycloak.migration.migrators.MigrateTo1_9_2;
+import org.keycloak.migration.migrators.MigrateTo2_0_0;
 import org.keycloak.migration.migrators.MigrationTo1_2_0_CR1;
 import org.keycloak.models.KeycloakSession;
 
@@ -98,6 +99,12 @@ public class MigrationModelManager {
                 logger.debug("Migrating older model to 1.9.2 updates");
             }
             new MigrateTo1_9_2().migrate(session);
+        }
+        if (stored == null || stored.lessThan(MigrateTo2_0_0.VERSION)) {
+            if (stored != null) {
+                logger.debug("Migrating older model to 2.0.0 updates");
+            }
+            new MigrateTo2_0_0().migrate(session);
         }
 
         model.setStoredVersion(MigrationModel.LATEST_VERSION);
