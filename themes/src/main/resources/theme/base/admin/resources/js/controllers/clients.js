@@ -1699,6 +1699,8 @@ module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serv
         changed: false,
         mapperTypes: serverInfo.protocolMapperTypes[protocol]
     }
+    
+    $scope.model.mapperType = $scope.model.mapperTypes[0];
 
     $scope.$watch(function() {
         return $location.path();
@@ -1963,6 +1965,8 @@ module.controller('ClientTemplateProtocolMapperCreateCtrl', function($scope, rea
         changed: false,
         mapperTypes: serverInfo.protocolMapperTypes[protocol]
     }
+    
+    $scope.model.mapperType = $scope.model.mapperTypes[0];
 
     $scope.$watch(function() {
         return $location.path();
