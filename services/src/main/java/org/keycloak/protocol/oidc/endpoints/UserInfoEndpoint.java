@@ -132,7 +132,7 @@ public class UserInfoEndpoint {
         ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
         UserModel userModel = userSession.getUser();
         AccessToken userInfo = new AccessToken();
-        tokenManager.transformAccessToken(session, userInfo, realm, clientModel, userModel, userSession, clientSession);
+        tokenManager.transformUserInfoAccessToken(session, userInfo, realm, clientModel, userModel, userSession, clientSession);
 
         event
             .detail(Details.USERNAME, userModel.getUsername())

@@ -44,6 +44,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.representations.AccessToken;
@@ -492,6 +493,27 @@ public class TokenManager {
         }
         return token;
     }
+
+    public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken token, RealmModel realm, ClientModel client, UserModel user,
+                                            UserSessionModel userSession, ClientSessionModel clientSession) {
+        Set<ProtocolMapperModel> mappings = new ClientSessionCode(realm, clientSession).getRequestedProtocolMappers();
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        for (ProtocolMapperModel mapping : mappings) {
+
+            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
+            if (mapper == null || !(mapper instanceof OIDCAccessTokenMapper)) continue;
+
+            if(mapper instanceof UserInfoTokenMapper){
+                token = ((UserInfoTokenMapper)mapper).transformUserInfoToken(token, mapping, session, userSession, clientSession);
+                continue;
+            }
+
+            token = ((OIDCAccessTokenMapper)mapper).transformAccessToken(token, mapping, session, userSession, clientSession);
+
+        }
+        return token;
+    }
+
     public void transformIDToken(KeycloakSession session, IDToken token, RealmModel realm, ClientModel client, UserModel user,
                                       UserSessionModel userSession, ClientSessionModel clientSession) {
         Set<ProtocolMapperModel> mappings = new ClientSessionCode(realm, clientSession).getRequestedProtocolMappers();
