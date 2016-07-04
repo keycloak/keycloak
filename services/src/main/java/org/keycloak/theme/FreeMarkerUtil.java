@@ -68,7 +68,7 @@ public class FreeMarkerUtil {
     private Template getTemplate(String templateName, Theme theme) throws IOException {
         Configuration cfg = new Configuration();
         cfg.setTemplateLoader(new ThemeTemplateLoader(theme));
-        return cfg.getTemplate(templateName);
+        return cfg.getTemplate(templateName, "UTF-8");
     }
 
     class ThemeTemplateLoader extends URLTemplateLoader {
