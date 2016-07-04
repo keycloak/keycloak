@@ -25,7 +25,7 @@
         var kc = this;
         var adapter;
         var refreshQueue = [];
-        var storage;
+        var callbackStorage;
 
         var loginIframe = {
             enable: true,
@@ -36,7 +36,7 @@
         kc.init = function (initOptions) {
             kc.authenticated = false;
 
-            storage = new PersistentStorage();
+            callbackStorage = createCallbackStorage();
 
             if (initOptions && initOptions.adapter === 'cordova') {
                 adapter = loadAdapter('cordova');
@@ -201,7 +201,7 @@
                 redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'prompt=' + options.prompt;
             }
 
-            storage.setItem('oauthState', JSON.stringify({ state: state, nonce: nonce, redirectUri: encodeURIComponent(redirectUri) }));
+            callbackStorage.add({ state: state, nonce: nonce, redirectUri: encodeURIComponent(redirectUri) });
 
             var action = 'auth';
             if (options && options.action == 'register') {
@@ -697,15 +697,11 @@
 
         function parseCallback(url) {
             var oauth = new CallbackParser(url, kc.responseMode).parseUri();
+            var oauthState = callbackStorage.get(oauth.state);
 
-            var oauthState = storage.getItem('oauthState');
-            var sessionState = oauthState && JSON.parse(oauthState);
-
-            if (sessionState && (oauth.code || oauth.error || oauth.access_token || oauth.id_token) && oauth.state && oauth.state == sessionState.state) {
-                storage.removeItem('oauthState');
-
-                oauth.redirectUri = sessionState.redirectUri;
-                oauth.storedNonce = sessionState.nonce;
+            if (oauthState && (oauth.code || oauth.error || oauth.access_token || oauth.id_token)) {
+                oauth.redirectUri = oauthState.redirectUri;
+                oauth.storedNonce = oauthState.nonce;
 
                 if (oauth.fragment) {
                     oauth.newUrl += '#' + oauth.fragment;
@@ -996,60 +992,93 @@
             throw 'invalid adapter type: ' + type;
         }
 
-
-        var PersistentStorage = function() {
-            if (!(this instanceof PersistentStorage)) {
-                return new PersistentStorage();
+        var LocalStorage = function() {
+            if (!(this instanceof LocalStorage)) {
+                return new LocalStorage();
             }
-            var ps = this;
-            var useCookieStorage = function () {
-                if (typeof localStorage === "undefined") {
-                    return true;
+
+            localStorage.setItem('kc-test', 'test');
+            localStorage.removeItem('kc-test');
+
+            var cs = this;
+
+            function clearExpired() {
+                var time = new Date().getTime();
+                for (var i = 1; i <= localStorage.length; i++)  {
+                    var key = localStorage.key(i);
+                    if (key && key.indexOf('kc-callback-') == 0) {
+                        var value = localStorage.getItem(key);
+                        if (value) {
+                            try {
+                                var expires = JSON.parse(value).expires;
+                                if (!expires || expires < time) {
+                                    localStorage.removeItem(key);
+                                }
+                            } catch (err) {
+                                localStorage.removeItem(key);
+                            }
+                        }
+                    }
                 }
-                try {
-                    var key = '@@keycloak-session-storage/test';
-                    localStorage.setItem(key, 'test');
+            }
+
+            cs.get = function(state) {
+                if (!state) {
+                    return;
+                }
+
+                var key = 'kc-callback-' + state;
+                var value = localStorage.getItem(key);
+                if (value) {
                     localStorage.removeItem(key);
-                    return false;
-                } catch (err) {
-                    // Probably in Safari "private mode" where localStorage
-                    // quota is 0, or quota exceeded. Switching to cookie
-                    // storage.
-                    return true;
+                    value = JSON.parse(value);
                 }
-            }
 
-            ps.setItem = function(key, value) {
-                if (useCookieStorage()) {
-                    setCookie(key, value, cookieExpiration(5));
-                } else {
-                    localStorage.setItem(key, value);
-                }
-            }
+                clearExpired();
+                return value;
+            };
 
-            ps.getItem = function(key) {
-                if (useCookieStorage()) {
-                    return getCookie(key);
-                }
-                return localStorage.getItem(key);
-            }
+            cs.add = function(state) {
+                clearExpired();
 
-            ps.removeItem = function(key) {
-                if (typeof localStorage !== "undefined") {
-                    try {
-                        // Always try to delete from localStorage.
-                        localStorage.removeItem(key);
-                    } catch (err) { }
+                var key = 'kc-callback-' + state.state;
+                state.expires = new Date().getTime() + (60 * 60 * 1000);
+                localStorage.setItem(key, JSON.stringify(state));
+            };
+        };
+
+        var CookieStorage = function() {
+            if (!(this instanceof CookieStorage)) {
+                return new CookieStorage();
+            }
+            
+            var cs = this;
+
+            cs.get = function(state) {
+                if (!state) {
+                    return;
                 }
-                // Always remove the cookie.
+
+                var value = getCookie('kc-callback-' + state);
+                setCookie('kc-callback-' + state, '', cookieExpiration(-100));
+                if (value) {
+                    return JSON.parse(value);
+                }
+            };
+
+            cs.add = function(state) {
+                setCookie('kc-callback-' + state.state, JSON.stringify(state), cookieExpiration(60));
+            };
+
+            cs.removeItem = function(key) {
                 setCookie(key, '', cookieExpiration(-100));
-            }
+            };
 
             var cookieExpiration = function (minutes) {
                 var exp = new Date();
                 exp.setTime(exp.getTime() + (minutes*60*1000));
                 return exp;
-            }
+            };
 
             var getCookie = function (key) {
                 var name = key + '=';
@@ -1064,13 +1093,22 @@
                     }
                 }
                 return '';
-            }
+            };
 
             var setCookie = function (key, value, expirationDate) {
                 var cookie = key + '=' + value + '; '
                     + 'expires=' + expirationDate.toUTCString() + '; ';
                 document.cookie = cookie;
             }
+        };
+
+        function createCallbackStorage() {
+            try {
+                return new LocalStorage();
+            } catch (err) {
+            }
+
+            return new CookieStorage();
         }
 
         var CallbackParser = function(uriToParse, responseMode) {
