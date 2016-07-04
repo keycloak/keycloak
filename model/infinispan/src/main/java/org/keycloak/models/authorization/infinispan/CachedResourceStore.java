@@ -64,7 +64,7 @@ public class CachedResourceStore implements ResourceStore {
 
     @Override
     public void delete(String id) {
-        this.cache.evict(getCacheKeyForResource(id));
+        this.cache.remove(getCacheKeyForResource(id));
         getDelegate().delete(id);
     }
 
