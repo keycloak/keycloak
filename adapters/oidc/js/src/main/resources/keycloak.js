@@ -39,7 +39,7 @@
             storage = new PersistentStorage();
 
             if (initOptions && initOptions.adapter === 'cordova') {
-               adapter = loadAdapter('cordova');
+                adapter = loadAdapter('cordova');
             } else if (initOptions && initOptions.adapter === 'default') {
                 adapter = loadAdapter();
             } else {
@@ -792,8 +792,22 @@
                 if (event.origin !== loginIframe.iframeOrigin) {
                     return;
                 }
-                var data = JSON.parse(event.data);
+
+                try {
+                    var data = JSON.parse(event.data);
+                } catch (err) {
+                    return;
+                }
+
+                if (!data.callbackId) {
+                    return;
+                }
+
                 var promise = loginIframe.callbackMap[data.callbackId];
+                if (!promise) {
+                    return;
+                }
+
                 delete loginIframe.callbackMap[data.callbackId];
 
                 if ((!kc.sessionId || kc.sessionId == data.session) && data.loggedIn) {
