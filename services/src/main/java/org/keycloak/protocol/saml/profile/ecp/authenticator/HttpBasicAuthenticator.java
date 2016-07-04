@@ -43,7 +43,7 @@ public class HttpBasicAuthenticator implements AuthenticatorFactory {
 
     @Override
     public String getDisplayType() {
-        return null;
+        return "HTTP Basic Authentication";
     }
 
     @Override
@@ -68,7 +68,7 @@ public class HttpBasicAuthenticator implements AuthenticatorFactory {
 
     @Override
     public String getHelpText() {
-        return null;
+        return "Validates username and password from Authorization HTTP header";
     }
 
     @Override
