@@ -614,6 +614,8 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void updateUserWithoutUsername() {
+
+
         switchEditUsernameAllowedOn();
 
         String id = createUser();
@@ -674,6 +676,7 @@ public class UserTest extends AbstractAdminTest {
     @Test
     public void updateUserWithExistingUsername() {
         switchEditUsernameAllowedOn();
+        enableBruteForce();
         createUser();
 
         UserRepresentation userRep = new UserRepresentation();
@@ -843,6 +846,13 @@ public class UserTest extends AbstractAdminTest {
     private void switchEditUsernameAllowedOn() {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setEditUsernameAllowed(true);
+        realm.update(rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+    }
+
+    private void enableBruteForce() {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setBruteForceProtected(true);
         realm.update(rep);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
     }
