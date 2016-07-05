@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
 
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.PublicKey;

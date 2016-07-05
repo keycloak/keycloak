@@ -22,6 +22,8 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -34,9 +36,13 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
@@ -279,6 +285,17 @@ public class OAuthClient {
         }
     }
 
+    public JSONWebKeySet doCertsRequest(String realm) throws Exception {
+        CloseableHttpClient client = new DefaultHttpClient();
+        try {
+            HttpGet get = new HttpGet(getCertsUrl(realm));
+            CloseableHttpResponse response = client.execute(get);
+            return JsonSerialization.readValue(response.getEntity().getContent(), JSONWebKeySet.class);
+        } finally {
+            closeClient(client);
+        }
+    }
+
     public AccessTokenResponse doClientCredentialsGrantAccessTokenRequest(String clientSecret) throws Exception {
         CloseableHttpClient client = new DefaultHttpClient();
         try {
@@ -503,6 +520,11 @@ public class OAuthClient {
         return b.build(realm).toString();
     }
 
+    public String getCertsUrl(String realm) {
+        UriBuilder b = OIDCLoginProtocolService.certsUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
+    }
+
     public String getServiceAccountUrl() {
         return getResourceOwnerPasswordCredentialGrantUrl();
     }
@@ -591,6 +613,7 @@ public class OAuthClient {
     public static class AccessTokenResponse {
         private int statusCode;
 
+        private String idToken;
         private String accessToken;
         private String tokenType;
         private int expiresIn;
@@ -610,6 +633,7 @@ public class OAuthClient {
             Map responseJson = JsonSerialization.readValue(s, Map.class);
 
             if (statusCode == 200) {
+                idToken = (String)responseJson.get("id_token");
                 accessToken = (String)responseJson.get("access_token");
                 tokenType = (String)responseJson.get("token_type");
                 expiresIn = (Integer)responseJson.get("expires_in");
@@ -622,6 +646,10 @@ public class OAuthClient {
                 error = (String)responseJson.get(OAuth2Constants.ERROR);
                 errorDescription = responseJson.containsKey(OAuth2Constants.ERROR_DESCRIPTION) ? (String)responseJson.get(OAuth2Constants.ERROR_DESCRIPTION) : null;
             }
+        }
+
+        public String getIdToken() {
+            return idToken;
         }
 
         public String getAccessToken() {

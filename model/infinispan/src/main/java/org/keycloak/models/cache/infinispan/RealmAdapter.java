@@ -403,6 +403,12 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public String getKeyId() {
+        if (isUpdated()) return updated.getKeyId();
+        return cached.getKeyId();
+    }
+
+    @Override
     public String getPublicKeyPem() {
         if (isUpdated()) return updated.getPublicKeyPem();
         return cached.getPublicKeyPem();
