@@ -33,11 +33,17 @@ import java.security.PrivateKey;
  */
 public class JWSBuilder {
     String type;
+    String kid;
     String contentType;
     byte[] contentBytes;
 
     public JWSBuilder type(String type) {
         this.type = type;
+        return this;
+    }
+
+    public JWSBuilder kid(String kid) {
+        this.kid = kid;
         return this;
     }
 
@@ -66,6 +72,7 @@ public class JWSBuilder {
         builder.append("\"alg\":\"").append(alg.toString()).append("\"");
 
         if (type != null) builder.append(",\"typ\" : \"").append(type).append("\"");
+        if (kid != null) builder.append(",\"kid\" : \"").append(kid).append("\"");
         if (contentType != null) builder.append(",\"cty\":\"").append(contentType).append("\"");
         builder.append("}");
         try {
