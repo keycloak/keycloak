@@ -33,7 +33,6 @@
     
     <properties>
         <app.server>as7</app.server>
-        <adapter.libs.home>${app.server.home}/modules/org/keycloak</adapter.libs.home>
         
         <app.server.management.protocol>remote</app.server.management.protocol>
         <app.server.management.port>${app.server.management.port.jmx}</app.server.management.port>

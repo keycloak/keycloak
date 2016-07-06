@@ -186,6 +186,24 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>install-adapters</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <executable>${common.resources}/install-adapters.${script.suffix}</executable>
+                            <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                            <environmentVariables>
+                                <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
+                                <SAML_SUPPORTED>${app.server.saml.adapter.supported}</SAML_SUPPORTED>
+                            </environmentVariables>
+                        </configuration>
                     </plugin>
 
                     <plugin>
@@ -267,45 +285,6 @@
             </build>
         </profile>
         
-        <profile>
-            <id>adapter-libs-provided</id>
-            <activation>    
-                <property>
-                    <name>!adapter.libs.bundled</name>
-                </property>
-            </activation>
-
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.codehaus.mojo</groupId>
-                            <artifactId>exec-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>install-adapters</id>
-                                    <phase>process-test-resources</phase>
-                                    <goals>
-                                        <goal>exec</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                            <configuration>
-                                <executable>${common.resources}/install-adapters.${script.suffix}</executable>
-                                <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
-                                <environmentVariables>
-                                    <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
-                                    <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
-                                    <SAML_SUPPORTED>${app.server.saml.adapter.supported}</SAML_SUPPORTED>
-                                </environmentVariables>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        
-                        
         <profile>
             <id>ssl</id>
             <activation>

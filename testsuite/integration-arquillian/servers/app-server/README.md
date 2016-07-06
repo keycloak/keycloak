@@ -23,14 +23,9 @@ Submodules are enabled with profiles: `-Papp-server-MODULE`
  * __`wildfly` Relative Wildfly 10__ Based on [`auth-server/jboss/wildfly`](../auth-server/README.md). Activate with `-Pauth-server-wildfly`.
  * __`eap` Relative EAP 7__ Based on [`auth-server/jboss/eap`](../auth-server/README.md). Activate with `-Pauth-server-eap`.
 
-### Adapter Libs Location
-
-* __Provided__ (in container) - Default.
-* __Bundled__ (in war) `-Dadapter.libs.bundled=true`
-
 ### Adapter Configs Location
 
-* __Provided__ (in standalone.xml as secure-deployment) _Not implemented_
+* __Provided__ (in standalone.xml as secure-deployment) WIP
 * __Bundled__ (in war) - Default.
 
 ### SSL
