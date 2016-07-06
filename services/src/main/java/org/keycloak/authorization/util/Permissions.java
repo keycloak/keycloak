@@ -95,11 +95,7 @@ public final class Permissions {
                         resourceName = resource.getName();
                     }
 
-                    Set<String> scopes = null;
-
-                    if (!permission.getScopes().isEmpty()) {
-                        scopes = permission.getScopes().stream().map(Scope::getName).collect(Collectors.toSet());
-                    }
+                    Set<String> scopes = permission.getScopes().stream().map(Scope::getName).collect(Collectors.toSet());
 
                     return new Permission(resourceId, resourceName, scopes);
                 }).collect(Collectors.toList());
@@ -111,9 +107,6 @@ public final class Permissions {
 
             if (evalPermission == null) {
                 evalPermission = permission;
-                if (evalPermission.getScopes() != null && evalPermission.getScopes().isEmpty()) {
-                    evalPermission.setScopes(null);
-                }
                 perms.put(permission.getResourceSetId(), evalPermission);
             }
 
