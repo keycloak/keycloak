@@ -48,7 +48,7 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
             synchronized (this) {
                 if (realmCache == null) {
                     Cache<String, Revisioned> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
-                    Cache<String, Long> revisions = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.VERSION_CACHE_NAME);
+                    Cache<String, Long> revisions = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME);
                     realmCache = new RealmCacheManager(cache, revisions);
                 }
             }

@@ -45,6 +45,7 @@ public class UserCacheManager extends CacheManager {
     @Override
     public void clear() {
         cache.clear();
+        revisions.clear();
     }
 
     @Override
