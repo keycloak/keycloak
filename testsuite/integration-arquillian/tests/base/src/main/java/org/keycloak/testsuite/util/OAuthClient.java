@@ -41,14 +41,17 @@ import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 
+import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -94,6 +97,8 @@ public class OAuthClient {
 
     private String clientSessionHost;
 
+    private String maxAge;
+
     private Map<String, PublicKey> publicKeys = new HashMap<>();
 
     public void init(Keycloak adminClient, WebDriver driver) {
@@ -109,6 +114,7 @@ public class OAuthClient {
         uiLocales = null;
         clientSessionState = null;
         clientSessionHost = null;
+        maxAge = null;
     }
 
     public AuthorizationCodeResponse doLogin(String username, String password) {
@@ -415,6 +421,16 @@ public class OAuthClient {
         }
     }
 
+    public IDToken verifyIDToken(String token) {
+        try {
+            IDToken idToken = RSATokenVerifier.verifyToken(token, getRealmPublicKey(realm), baseUrl + "/realms/" + realm, true, false);
+            Assert.assertEquals(TokenUtil.TOKEN_TYPE_ID, idToken.getType());
+            return idToken;
+        } catch (VerificationException e) {
+            throw new RuntimeException("Failed to verify token", e);
+        }
+    }
+
     public RefreshToken verifyRefreshToken(String refreshToken) {
         try {
             JWSInput jws = new JWSInput(refreshToken);
@@ -485,6 +501,9 @@ public class OAuthClient {
         }
         if (scope != null) {
             b.queryParam(OAuth2Constants.SCOPE, scope);
+        }
+        if (maxAge != null) {
+            b.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
         }
         return b.build(realm).toString();
     }
@@ -571,6 +590,11 @@ public class OAuthClient {
 
     public OAuthClient clientSessionHost(String client_session_host) {
         this.clientSessionHost = client_session_host;
+        return this;
+    }
+
+    public OAuthClient maxAge(String maxAge) {
+        this.maxAge = maxAge;
         return this;
     }
 
