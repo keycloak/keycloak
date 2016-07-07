@@ -61,6 +61,12 @@ import java.util.Set;
  */
 public class AuthenticationManager {
     public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
+
+    // userSession note with authTime (time when authentication flow including requiredActions was finished)
+    public static final String AUTH_TIME = "AUTH_TIME";
+    // clientSession note with flag that authTime update should be skipped
+    public static final String SKIP_AUTH_TIME_UPDATE = "SKIP_AUTH_TIME_UPDATE";
+
     protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     public static final String FORM_USERNAME = "username";
     // used for auth login
@@ -403,6 +409,14 @@ public class AuthenticationManager {
         createLoginCookie(session, realm, userSession.getUser(), userSession, uriInfo, clientConnection);
         if (userSession.getState() != UserSessionModel.State.LOGGED_IN) userSession.setState(UserSessionModel.State.LOGGED_IN);
         if (userSession.isRememberMe()) createRememberMeCookie(realm, userSession.getUser().getUsername(), uriInfo, clientConnection);
+
+        // Update userSession note with authTime. But just if flag SKIP_AUTH_TIME_UPDATE is not set
+        String skipAuthTimeUpdate = clientSession.getNote(SKIP_AUTH_TIME_UPDATE);
+        if (skipAuthTimeUpdate == null || !Boolean.parseBoolean(skipAuthTimeUpdate)) {
+            int authTime = Time.currentTime();
+            userSession.setNote(AUTH_TIME, String.valueOf(authTime));
+        }
+
         return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));
 
     }

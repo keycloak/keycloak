@@ -518,6 +518,12 @@ public class TokenManager {
         token.issuedFor(client.getClientId());
         token.issuer(clientSession.getNote(OIDCLoginProtocol.ISSUER));
         token.setNonce(clientSession.getNote(OIDCLoginProtocol.NONCE_PARAM));
+
+        String authTime = session.getNote(AuthenticationManager.AUTH_TIME);
+        if (authTime != null) {
+            token.setAuthTime(Integer.parseInt(authTime));
+        }
+
         if (session != null) {
             token.setSessionState(session.getId());
         }
@@ -659,6 +665,7 @@ public class TokenManager {
             idToken.issuedFor(accessToken.getIssuedFor());
             idToken.issuer(accessToken.getIssuer());
             idToken.setNonce(accessToken.getNonce());
+            idToken.setAuthTime(accessToken.getAuthTime());
             idToken.setSessionState(accessToken.getSessionState());
             idToken.expiration(accessToken.getExpiration());
             transformIDToken(session, idToken, realm, client, userSession.getUser(), userSession, clientSession);

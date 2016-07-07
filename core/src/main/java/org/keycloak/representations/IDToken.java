@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class IDToken extends JsonWebToken {
     public static final String NONCE = "nonce";
+    public static final String AUTH_TIME = "auth_time";
     public static final String SESSION_STATE = "session_state";
     public static final String NAME = "name";
     public static final String GIVEN_NAME = "given_name";
@@ -50,6 +51,9 @@ public class IDToken extends JsonWebToken {
     // anymore.  So don't have any @JsonUnwrapped!
     @JsonProperty(NONCE)
     protected String nonce;
+
+    @JsonProperty(AUTH_TIME)
+    protected int authTime;
 
     @JsonProperty(SESSION_STATE)
     protected String sessionState;
@@ -120,6 +124,14 @@ public class IDToken extends JsonWebToken {
 
     public void setNonce(String nonce) {
         this.nonce = nonce;
+    }
+
+    public int getAuthTime() {
+        return authTime;
+    }
+
+    public void setAuthTime(int authTime) {
+        this.authTime = authTime;
     }
 
     public String getSessionState() {
