@@ -103,9 +103,9 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     @Test
     public void testNoParam() throws IOException {
         oauth.redirectUri(null);
-        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response.getCode());
-        assertEquals(oauth.getCurrentRequest(), APP_ROOT + "/auth");
+        oauth.openLoginForm();
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
     }
 
     @Test
