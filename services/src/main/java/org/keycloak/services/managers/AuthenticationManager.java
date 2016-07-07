@@ -457,7 +457,7 @@ public class AuthenticationManager {
 
         if (client.isConsentRequired()) {
 
-            UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
+            UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user, client.getId());
 
             ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
             for (RoleModel r : accessCode.getRequestedRoles()) {
@@ -511,7 +511,7 @@ public class AuthenticationManager {
 
         if (client.isConsentRequired()) {
 
-            UserConsentModel grantedConsent = user.getConsentByClient(client.getId());
+            UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user, client.getId());
 
             List<RoleModel> realmRoles = new LinkedList<>();
             MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<>();

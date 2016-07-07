@@ -16,6 +16,40 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
+ *
+ * Some notes on how this works:
+
+ * This implementation manages optimistic locking and version checks itself.  The reason is Infinispan just does behave
+ * the way we need it to.  Not saying Infinispan is bad, just that we have specific caching requirements!
+ *
+ * This is an invalidation cache implementation and requires to caches:
+ * Cache 1 is an Invalidation Cache
+ * Cache 2 is a local-only revision number cache.
+ *
+ *
+ * Each node in the cluster maintains its own revision number cache for each entry in the main invalidation cache.  This revision
+ * cache holds the version counter for each cached entity.
+ *
+ * Cache listeners do not receive a @CacheEntryInvalidated event if that node does not have an entry for that item.  So, consider the following.
+
+ 1. Node 1 gets current counter for user.  There currently isn't one as this user isn't cached.
+ 2. Node 1 reads user from DB
+ 3. Node 2 updates user
+ 4. Node 2 calls cache.remove(user).  This does not result in an invalidation listener event to node 1!
+ 5. node 1 checks version counter, checks pass. Stale entry is cached.
+
+ The issue is that Node 1 doesn't have an entry for the user, so it never receives an invalidation listener event from Node 2 thus it can't bump the version.  So, when node 1 goes to cache the user it is stale as the version number was never bumped.
+
+ So how is this issue fixed?  here is pseudo code:
+
+ 1. Node 1 calls cacheManager.getCurrentRevision() to get the current local version counter of that User
+ 2. Node 1 getCurrentRevision() pulls current counter for that user
+ 3. Node 1 getCurrentRevision() adds a "invalidation.key.userid" to invalidation cache.  Its just a marker. nothing else
+ 4. Node 2 update user
+ 5. Node 2 does a cache.remove(user) cache.remove(invalidation.key.userid)
+ 6. Node 1 receives invalidation event for invalidation.key.userid. Bumps the version counter for that user
+ 7. node 1 version check fails, it doesn't cache the user
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

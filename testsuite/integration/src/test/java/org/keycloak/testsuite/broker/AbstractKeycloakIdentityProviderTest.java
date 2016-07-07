@@ -72,7 +72,9 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
     @Test
     public void testDisabledUser() {
+        KeycloakSession session = brokerServerRule.startSession();
         setUpdateProfileFirstLogin(session.realms().getRealmByName("realm-with-broker"), IdentityProviderRepresentation.UPFLM_OFF);
+        brokerServerRule.stopSession(session, true);
 
         driver.navigate().to("http://localhost:8081/test-app");
         loginPage.clickSocial(getProviderId());
@@ -81,7 +83,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         driver.navigate().to("http://localhost:8081/test-app/logout");
 
         try {
-            KeycloakSession session = brokerServerRule.startSession();
+            session = brokerServerRule.startSession();
             session.users().getUserByUsername("test-user", session.realms().getRealmByName("realm-with-broker")).setEnabled(false);
             brokerServerRule.stopSession(session, true);
 
@@ -93,7 +95,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
             assertTrue(errorPage.isCurrent());
             assertEquals("Account is disabled, contact admin.", errorPage.getError());
         } finally {
-            KeycloakSession session = brokerServerRule.startSession();
+            session = brokerServerRule.startSession();
             session.users().getUserByUsername("test-user", session.realms().getRealmByName("realm-with-broker")).setEnabled(true);
             brokerServerRule.stopSession(session, true);
         }
@@ -101,7 +103,9 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
     @Test
     public void testTemporarilyDisabledUser() {
+        KeycloakSession session = brokerServerRule.startSession();
         setUpdateProfileFirstLogin(session.realms().getRealmByName("realm-with-broker"), IdentityProviderRepresentation.UPFLM_OFF);
+        brokerServerRule.stopSession(session, true);
 
         driver.navigate().to("http://localhost:8081/test-app");
         loginPage.clickSocial(getProviderId());
@@ -109,7 +113,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         driver.navigate().to("http://localhost:8081/test-app/logout");
 
         try {
-            KeycloakSession session = brokerServerRule.startSession();
+            session = brokerServerRule.startSession();
             RealmModel brokerRealm = session.realms().getRealmByName("realm-with-broker");
             brokerRealm.setBruteForceProtected(true);
             brokerRealm.setFailureFactor(2);
@@ -129,7 +133,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
             assertTrue(errorPage.isCurrent());
             assertEquals("Account is disabled, contact admin.", errorPage.getError());
         } finally {
-            KeycloakSession session = brokerServerRule.startSession();
+            session = brokerServerRule.startSession();
             RealmModel brokerRealm = session.realms().getRealmByName("realm-with-broker");
             brokerRealm.setBruteForceProtected(false);
             brokerRealm.setFailureFactor(0);

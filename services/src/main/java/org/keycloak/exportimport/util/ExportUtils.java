@@ -319,7 +319,7 @@ public class ExportUtils {
         userRep.setFederationLink(user.getFederationLink());
 
         // Grants
-        List<UserConsentModel> consents = user.getConsents();
+        List<UserConsentModel> consents = session.users().getConsents(realm, user);
         LinkedList<UserConsentRepresentation> consentReps = new LinkedList<UserConsentRepresentation>();
         for (UserConsentModel consent : consents) {
             UserConsentRepresentation consentRep = ModelToRepresentation.toRepresentation(consent);

@@ -523,7 +523,7 @@ public class UsersResource {
         Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
 
         for (ClientModel client : realm.getClients()) {
-            UserConsentModel consent = user.getConsentByClient(client.getId());
+            UserConsentModel consent = session.users().getConsentByClient(realm, user, client.getId());
             boolean hasOfflineToken = offlineClients.contains(client);
 
             if (consent == null && !hasOfflineToken) {
@@ -572,7 +572,7 @@ public class UsersResource {
         }
 
         ClientModel client = realm.getClientByClientId(clientId);
-        boolean revokedConsent = user.revokeConsentForClient(client.getId());
+        boolean revokedConsent = session.users().revokeConsentForClient(realm, user, client.getId());
         boolean revokedOfflineToken = new UserSessionManager(session).revokeOfflineToken(user, client);
 
         if (revokedConsent) {

@@ -500,7 +500,7 @@ public class AccountService extends AbstractSecuredLocalService {
 
         // Revoke grant in UserModel
         UserModel user = auth.getUser();
-        user.revokeConsentForClient(client.getId());
+        session.users().revokeConsentForClient(realm, user, client.getId());
         new UserSessionManager(session).revokeOfflineToken(user, client);
 
         // Logout clientSessions for this user and client

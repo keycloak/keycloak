@@ -44,6 +44,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.storage.StorageProviderModel;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
@@ -349,6 +350,43 @@ public final class KeycloakModelUtils {
      * @param federationProviders
      * @throws ModelDuplicateException if there is other provider with same displayName
      */
+    public static void ensureUniqueDisplayName(String displayName, StorageProviderModel myProvider, List<StorageProviderModel> federationProviders) throws ModelDuplicateException {
+        if (displayName != null) {
+
+            for (StorageProviderModel federationProvider : federationProviders) {
+                if (myProvider != null && (myProvider.equals(federationProvider) || (myProvider.getId() != null && myProvider.getId().equals(federationProvider.getId())))) {
+                    continue;
+                }
+
+                if (displayName.equals(federationProvider.getDisplayName())) {
+                    throw new ModelDuplicateException("There is already existing federation provider with display name: " + displayName);
+                }
+            }
+        }
+    }
+
+
+    public static StorageProviderModel findStorageProviderByDisplayName(String displayName, RealmModel realm) {
+        if (displayName == null) {
+            return null;
+        }
+
+        for (StorageProviderModel provider : realm.getStorageProviders()) {
+            if (displayName.equals(provider.getDisplayName())) {
+                return provider;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Ensure that displayName of myProvider (if not null) is unique and there is no other provider with same displayName in the list.
+     *
+     * @param displayName         to check for duplications
+     * @param myProvider          provider, which is excluded from the list (if present)
+     * @param federationProviders
+     * @throws ModelDuplicateException if there is other provider with same displayName
+     */
     public static void ensureUniqueDisplayName(String displayName, UserFederationProviderModel myProvider, List<UserFederationProviderModel> federationProviders) throws ModelDuplicateException {
         if (displayName != null) {
 
@@ -377,7 +415,6 @@ public final class KeycloakModelUtils {
         }
         return null;
     }
-
 
     public static UserFederationProviderModel findUserFederationProviderById(String fedProviderId, RealmModel realm) {
         for (UserFederationProviderModel fedProvider : realm.getUserFederationProviders()) {

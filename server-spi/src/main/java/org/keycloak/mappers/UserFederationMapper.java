@@ -34,8 +34,8 @@ import org.keycloak.provider.Provider;
 public interface UserFederationMapper extends Provider {
 
     /**
-     * Sync data from federation storage to Keycloak. It's useful just if mapper needs some data preloaded from federation storage (For example
-     * load roles from federation provider and sync them to Keycloak database)
+     * Sync data from federated storage to Keycloak. It's useful just if mapper needs some data preloaded from federated storage (For example
+     * load roles from federated provider and sync them to Keycloak database)
      *
      * Applicable just if sync is supported (see UserFederationMapperFactory.getSyncConfig() )
      *
@@ -48,7 +48,7 @@ public interface UserFederationMapper extends Provider {
     UserFederationSyncResult syncDataFromFederationProviderToKeycloak(UserFederationMapperModel mapperModel, UserFederationProvider federationProvider, KeycloakSession session, RealmModel realm);
 
     /**
-     * Sync data from Keycloak back to federation storage
+     * Sync data from Keycloak back to federated storage
      *
      * @see UserFederationMapperFactory#getSyncConfig()
      * @param mapperModel
