@@ -8,7 +8,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  * @author tkyjovsk
  */
 @AppServerContainer("app-server-as7")
-//@AdapterLibsLocationProperty("adapter.libs.as7")
 public class AS7OIDCAdapterTest extends AbstractDemoServletsAdapterTest {
 
 }

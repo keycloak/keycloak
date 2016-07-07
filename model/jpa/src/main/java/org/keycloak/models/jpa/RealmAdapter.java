@@ -20,6 +20,7 @@ package org.keycloak.models.jpa;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -459,6 +460,12 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     public void setAccessCodeLifespanLogin(int accessCodeLifespanLogin) {
         realm.setAccessCodeLifespanLogin(accessCodeLifespanLogin);
         em.flush();
+    }
+
+    @Override
+    public String getKeyId() {
+        PublicKey publicKey = getPublicKey();
+        return publicKey != null ? JWKBuilder.create().rs256(publicKey).getKeyId() : null;
     }
 
     @Override

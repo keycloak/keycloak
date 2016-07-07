@@ -32,8 +32,11 @@ import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ProtocolMapperModel;
@@ -154,6 +157,26 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         Assert.assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
 
         assertEquals("bearer", response.getTokenType());
+
+        String expectedKid = oauth.doCertsRequest("test").getKeys()[0].getKeyId();
+
+        JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
+        assertEquals("RS256", header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertEquals(expectedKid, header.getKeyId());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(response.getIdToken()).getHeader();
+        assertEquals("RS256", header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertEquals(expectedKid, header.getKeyId());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(response.getRefreshToken()).getHeader();
+        assertEquals("RS256", header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertEquals(expectedKid, header.getKeyId());
+        assertNull(header.getContentType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 

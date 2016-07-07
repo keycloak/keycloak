@@ -66,8 +66,7 @@
         </adapter.test.props>
         
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
-        <adapter.libs.mode>bundled</adapter.libs.mode>
-        <adapter.config.mode>bundled</adapter.config.mode>
+        <adapter.config.bundled>true</adapter.config.bundled>
         
     </properties>
         
@@ -169,26 +168,12 @@
 
                                 <adapter.test.props>${adapter.test.props}</adapter.test.props>
 
-                                <adapter.libs.home>${adapter.libs.home}</adapter.libs.home>
-                                <adapter.libs.mode>${adapter.libs.mode}</adapter.libs.mode>
-                                <adapter.config.mode>${adapter.config.mode}</adapter.config.mode>
+                                <adapter.config.bundled>${adapter.config.bundled}</adapter.config.bundled>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-        
-        <profile>
-            <id>adapter-libs-provided</id>
-            <activation>    
-                <property>
-                    <name>!adapter.libs.bundled</name>
-                </property>
-            </activation>
-            <properties>
-                <adapter.libs.mode>provided</adapter.libs.mode>
-            </properties>
         </profile>
         
         <profile>

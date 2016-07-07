@@ -69,13 +69,8 @@ public class RedirectUtils {
 
     private static String verifyRedirectUri(UriInfo uriInfo, String rootUrl, String redirectUri, RealmModel realm, Set<String> validRedirects) {
         if (redirectUri == null) {
-            if (validRedirects.size() != 1) return null;
-            String validRedirect = validRedirects.iterator().next();
-            int idx = validRedirect.indexOf("/*");
-            if (idx > -1) {
-                validRedirect = validRedirect.substring(0, idx);
-            }
-            redirectUri = validRedirect;
+            logger.debug("No Redirect URI parameter specified");
+            return null;
         } else if (validRedirects.isEmpty()) {
             logger.debug("No Redirect URIs supplied");
             redirectUri = null;

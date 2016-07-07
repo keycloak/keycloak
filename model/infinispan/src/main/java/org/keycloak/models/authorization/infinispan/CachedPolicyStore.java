@@ -70,7 +70,7 @@ public class CachedPolicyStore implements PolicyStore {
     @Override
     public void delete(String id) {
         getDelegate().delete(id);
-        this.transaction.whenComplete(() -> cache.remove(id));
+        this.transaction.whenComplete(() -> cache.remove(getCacheKeyForPolicy(id)));
     }
 
     @Override

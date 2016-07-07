@@ -113,7 +113,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
     @Override
     public String getDisplayText() {
-        return "Configure Totp";
+        return "Configure OTP";
     }
 
 

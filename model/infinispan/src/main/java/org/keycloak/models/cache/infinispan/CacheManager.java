@@ -173,6 +173,7 @@ public abstract class CacheManager {
 
     public void clear() {
         cache.clear();
+        revisions.clear();
     }
 
     public void addInvalidations(Predicate<Map.Entry<String, Revisioned>> predicate, Set<String> invalidations) {

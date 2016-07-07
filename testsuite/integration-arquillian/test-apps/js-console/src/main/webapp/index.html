@@ -128,6 +128,10 @@
             url = url.replace("http","https");
         }
 
+        if (window.location.href.indexOf("8180") > -1) {
+            url = url.replace("8280","8180");
+        }
+
         var req = new XMLHttpRequest();
         req.open('GET', url, true);
         req.setRequestHeader('Accept', 'application/json');

@@ -75,57 +75,120 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testSuccessfulUserInfoRequest() throws Exception {
+    public void testSuccess_getMethod_bearer() throws Exception {
         Client client = ClientBuilder.newClient();
-        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
-        URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
-        WebTarget grantTarget = client.target(grantUri);
-        AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(grantTarget);
-        Response response = executeUserInfoRequest(accessTokenResponse.getToken());
 
-        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+            Response response = executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
-        UserInfo userInfo = response.readEntity(UserInfo.class);
+            testSuccessfulUserInfoResponse(response);
 
-        response.close();
+        } finally {
+            client.close();
+        }
+    }
 
-        assertNotNull(userInfo);
-        assertNotNull(userInfo.getSubject());
-        assertEquals("test-user@localhost", userInfo.getEmail());
-        assertEquals("test-user@localhost", userInfo.getPreferredUsername());
+    @Test
+    public void testSuccess_postMethod_bearer() throws Exception {
+        Client client = ClientBuilder.newClient();
 
-        client.close();
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+
+            WebTarget userInfoTarget = getUserInfoWebTarget(client);
+            Response response = userInfoTarget.request()
+                    .header(HttpHeaders.AUTHORIZATION, "bearer " + accessTokenResponse.getToken())
+                    .post(Entity.form(new Form()));
+
+            testSuccessfulUserInfoResponse(response);
+
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    public void testSuccess_postMethod_body() throws Exception {
+        Client client = ClientBuilder.newClient();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+
+            Form form = new Form();
+            form.param("access_token", accessTokenResponse.getToken());
+
+            WebTarget userInfoTarget = getUserInfoWebTarget(client);
+            Response response = userInfoTarget.request()
+                    .post(Entity.form(form));
+
+            testSuccessfulUserInfoResponse(response);
+
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    public void testSuccess_postMethod_bearer_textEntity() throws Exception {
+        Client client = ClientBuilder.newClient();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+
+            WebTarget userInfoTarget = getUserInfoWebTarget(client);
+            Response response = userInfoTarget.request()
+                    .header(HttpHeaders.AUTHORIZATION, "bearer " + accessTokenResponse.getToken())
+                    .post(Entity.text(""));
+
+            testSuccessfulUserInfoResponse(response);
+
+        } finally {
+            client.close();
+        }
     }
 
     @Test
     public void testSessionExpired() throws Exception {
         Client client = ClientBuilder.newClient();
-        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
-        URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
-        WebTarget grantTarget = client.target(grantUri);
-        AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(grantTarget);
 
-        testingClient.testing().removeUserSessions("test");
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-        Response response = executeUserInfoRequest(accessTokenResponse.getToken());
+            testingClient.testing().removeUserSessions("test");
 
-        assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            Response response = executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
-        response.close();
+            assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
 
-        client.close();
+            response.close();
+
+        } finally {
+            client.close();
+        }
     }
 
     @Test
     public void testUnsuccessfulUserInfoRequest() throws Exception {
-        Response response = executeUserInfoRequest("bad");
+        Client client = ClientBuilder.newClient();
 
-        response.close();
+        try {
+            Response response = executeUserInfoRequest_getMethod(client, "bad");
 
-        assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            response.close();
+
+            assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+
+        } finally {
+            client.close();
+        }
     }
 
-    private AccessTokenResponse executeGrantAccessTokenRequest(WebTarget grantTarget) {
+    private AccessTokenResponse executeGrantAccessTokenRequest(Client client) {
+        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
+        URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
+        WebTarget grantTarget = client.target(grantUri);
+
         String header = BasicAuthHelper.createHeader("test-app", "password");
         Form form = new Form();
         form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
@@ -145,15 +208,31 @@ public class UserInfoTest extends AbstractKeycloakTest {
         return accessTokenResponse;
     }
 
-    private Response executeUserInfoRequest(String accessToken) {
-        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
-        UriBuilder uriBuilder = OIDCLoginProtocolService.tokenServiceBaseUrl(builder);
-        URI userInfoUri = uriBuilder.path(OIDCLoginProtocolService.class, "issueUserInfo").build("test");
-        Client client = ClientBuilder.newClient();
-        WebTarget userInfoTarget = client.target(userInfoUri);
+    private Response executeUserInfoRequest_getMethod(Client client, String accessToken) {
+        WebTarget userInfoTarget = getUserInfoWebTarget(client);
 
         return userInfoTarget.request()
                 .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
                 .get();
+    }
+
+    private WebTarget getUserInfoWebTarget(Client client) {
+        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
+        UriBuilder uriBuilder = OIDCLoginProtocolService.tokenServiceBaseUrl(builder);
+        URI userInfoUri = uriBuilder.path(OIDCLoginProtocolService.class, "issueUserInfo").build("test");
+        return client.target(userInfoUri);
+    }
+
+    private void testSuccessfulUserInfoResponse(Response response) {
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+
+        UserInfo userInfo = response.readEntity(UserInfo.class);
+
+        response.close();
+
+        assertNotNull(userInfo);
+        assertNotNull(userInfo.getSubject());
+        assertEquals("test-user@localhost", userInfo.getEmail());
+        assertEquals("test-user@localhost", userInfo.getPreferredUsername());
     }
 }

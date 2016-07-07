@@ -94,6 +94,7 @@ public class CachedRealm extends AbstractRevisioned {
     protected PasswordPolicy passwordPolicy;
     protected OTPPolicy otpPolicy;
 
+    protected transient String keyId;
     protected transient PublicKey publicKey;
     protected String publicKeyPem;
     protected transient PrivateKey privateKey;
@@ -191,6 +192,7 @@ public class CachedRealm extends AbstractRevisioned {
         passwordPolicy = model.getPasswordPolicy();
         otpPolicy = model.getOTPPolicy();
 
+        keyId = model.getKeyId();
         publicKeyPem = model.getPublicKeyPem();
         publicKey = model.getPublicKey();
         privateKeyPem = model.getPrivateKeyPem();
@@ -398,6 +400,10 @@ public class CachedRealm extends AbstractRevisioned {
     }
     public int getAccessCodeLifespanLogin() {
         return accessCodeLifespanLogin;
+    }
+
+    public String getKeyId() {
+        return keyId;
     }
 
     public String getPublicKeyPem() {
