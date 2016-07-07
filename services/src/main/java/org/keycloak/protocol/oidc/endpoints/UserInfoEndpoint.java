@@ -40,8 +40,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.Urls;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
@@ -105,9 +103,17 @@ public class UserInfoEndpoint {
     @Path("/")
     @POST
     @NoCache
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response issueUserInfoPost(@FormParam("access_token") String accessToken) {
+    public Response issueUserInfoPost() {
+        // Try header first
+        HttpHeaders headers = request.getHttpHeaders();
+        String accessToken = this.appAuthManager.extractAuthorizationHeaderToken(headers);
+
+        // Fallback to form parameter
+        if (accessToken == null) {
+            accessToken = request.getDecodedFormParameters().getFirst("access_token");
+        }
+
         return issueUserInfo(accessToken);
     }
 
