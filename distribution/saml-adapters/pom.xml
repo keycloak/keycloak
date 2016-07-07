@@ -39,6 +39,7 @@
         <!-- jetty 9.1 doesn't work right now
         <module>jetty91-adapter-zip</module> -->
         <module>jetty92-adapter-zip</module>
+        <module>jetty93-adapter-zip</module>
         <module>as7-eap6-adapter</module>
     </modules>
 </project>

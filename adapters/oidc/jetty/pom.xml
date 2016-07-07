@@ -33,7 +33,8 @@
     <modules>
         <module>jetty-core</module>
         <module>jetty8.1</module>
-        <module>jetty9.2</module>
         <module>jetty9.1</module>
+        <module>jetty9.2</module>
+        <module>jetty9.3</module>
     </modules>
 </project>
