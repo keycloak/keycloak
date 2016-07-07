@@ -39,12 +39,12 @@ import java.util.Collection;
         @UniqueConstraint(columnNames = {"USER_ID", "CLIENT_ID"})
 })
 @NamedQueries({
-        @NamedQuery(name="userFederatedConsentByUserAndClient", query="select consent from UserConsentEntity consent where consent.userId = :userId and consent.clientId = :clientId"),
-        @NamedQuery(name="userFederatedConsentsByUser", query="select consent from UserConsentEntity consent where consent.userId = :userId"),
-        @NamedQuery(name="deleteFederatedUserConsentsByRealm", query="delete from UserConsentEntity consent where consent.realmId=:realmId"),
+        @NamedQuery(name="userFederatedConsentByUserAndClient", query="select consent from FederatedUserConsentEntity consent where consent.userId = :userId and consent.clientId = :clientId"),
+        @NamedQuery(name="userFederatedConsentsByUser", query="select consent from FederatedUserConsentEntity consent where consent.userId = :userId"),
+        @NamedQuery(name="deleteFederatedUserConsentsByRealm", query="delete from FederatedUserConsentEntity consent where consent.realmId=:realmId"),
         @NamedQuery(name="deleteFederatedUserConsentsByStorageProvider", query="delete from FederatedUserConsentEntity e where e.storageProviderId=:storageProviderId"),
-        @NamedQuery(name="deleteFederatedUserConsentsByUser", query="delete from UserConsentEntity consent where consent.userId = :userId and consent.realmId = :realmId"),
-        @NamedQuery(name="deleteFederatedUserConsentsByClient", query="delete from UserConsentEntity consent where consent.clientId = :clientId"),
+        @NamedQuery(name="deleteFederatedUserConsentsByUser", query="delete from FederatedUserConsentEntity consent where consent.userId = :userId and consent.realmId = :realmId"),
+        @NamedQuery(name="deleteFederatedUserConsentsByClient", query="delete from FederatedUserConsentEntity consent where consent.clientId = :clientId"),
 })
 public class FederatedUserConsentEntity {
 

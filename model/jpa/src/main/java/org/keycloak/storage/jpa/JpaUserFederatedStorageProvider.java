@@ -149,8 +149,8 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public String getUserByFederatedIdentity(FederatedIdentityModel link, RealmModel realm) {
-        TypedQuery<String> query = em.createNamedQuery("findBrokerLinkByUserAndProvider", String.class)
-                .setParameter("realmid", realm.getId())
+        TypedQuery<String> query = em.createNamedQuery("findUserByBrokerLinkAndRealm", String.class)
+                .setParameter("realmId", realm.getId())
                 .setParameter("identityProvider", link.getIdentityProvider())
                 .setParameter("brokerUserId", link.getUserId());
         List<String> results = query.getResultList();
@@ -180,15 +180,16 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
-        BrokerLinkEntity entity = getBrokerLinkEntity(user, socialProvider);
+        BrokerLinkEntity entity = getBrokerLinkEntity(realm, user, socialProvider);
         if (entity == null) return false;
         em.remove(entity);
         return true;
     }
 
-    private BrokerLinkEntity getBrokerLinkEntity(UserModel user, String socialProvider) {
+    private BrokerLinkEntity getBrokerLinkEntity(RealmModel realm, UserModel user, String socialProvider) {
         TypedQuery<BrokerLinkEntity> query = em.createNamedQuery("findBrokerLinkByUserAndProvider", BrokerLinkEntity.class)
                 .setParameter("userId", user.getId())
+                .setParameter("realmId", realm.getId())
                 .setParameter("identityProvider", socialProvider);
         List<BrokerLinkEntity> results = query.getResultList();
         return results.size() > 0 ? results.get(0) : null;
@@ -196,7 +197,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void updateFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel model) {
-        BrokerLinkEntity entity = getBrokerLinkEntity(user, model.getIdentityProvider());
+        BrokerLinkEntity entity = getBrokerLinkEntity(realm, user, model.getIdentityProvider());
         if (entity == null) return;
         entity.setBrokerUserName(model.getUserName());
         entity.setBrokerUserId(model.getUserId());
@@ -221,7 +222,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
-        BrokerLinkEntity entity = getBrokerLinkEntity(user, socialProvider);
+        BrokerLinkEntity entity = getBrokerLinkEntity(realm, user, socialProvider);
         if (entity == null) return null;
         return new FederatedIdentityModel(entity.getIdentityProvider(), entity.getBrokerUserId(), entity.getBrokerUserName(), entity.getToken());
     }
@@ -239,6 +240,7 @@ public class JpaUserFederatedStorageProvider implements
         consentEntity.setId(KeycloakModelUtils.generateId());
         consentEntity.setUserId(user.getId());
         consentEntity.setClientId(clientId);
+        consentEntity.setRealmId(realm.getId());
         consentEntity.setStorageProviderId(StorageId.resolveProviderId(user));
         em.persist(consentEntity);
         em.flush();
@@ -588,7 +590,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void preRemove(RealmModel realm) {
-        int num = em.createNamedQuery("deleteUserConsentRolesByRealm")
+        int num = em.createNamedQuery("deleteFederatedUserConsentRolesByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteFederatedUserConsentProtMappersByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();

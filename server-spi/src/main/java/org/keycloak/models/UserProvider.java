@@ -47,10 +47,6 @@ public interface UserProvider extends Provider, UserLookupProvider, UserQueryPro
     UserModel getServiceAccount(ClientModel client);
     List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts);
     List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts);
-    List<UserModel> searchForUser(String search, RealmModel realm);
-
-    // Searching by UserModel.attribute (not property)
-    List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm);
 
     void preRemove(RealmModel realm);
 

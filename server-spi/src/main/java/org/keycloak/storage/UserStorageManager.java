@@ -43,6 +43,7 @@ import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -152,43 +153,77 @@ public class UserStorageManager implements UserProvider {
 
     @Override
     public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink) {
-        getFederatedStorage().addFederatedIdentity(realm, user, socialLink);
+        if (StorageId.isLocalStorage(user)) {
+            localStorage().addFederatedIdentity(realm, user, socialLink);
+        } else {
+            getFederatedStorage().addFederatedIdentity(realm, user, socialLink);
+        }
     }
 
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
-        getFederatedStorage().updateFederatedIdentity(realm, federatedUser, federatedIdentityModel);
+        if (StorageId.isLocalStorage(federatedUser)) {
+            localStorage().updateFederatedIdentity(realm, federatedUser, federatedIdentityModel);
+
+        } else {
+            getFederatedStorage().updateFederatedIdentity(realm, federatedUser, federatedIdentityModel);
+        }
     }
 
     @Override
     public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
-        return getFederatedStorage().removeFederatedIdentity(realm, user, socialProvider);
+        if (StorageId.isLocalStorage(user)) {
+            return localStorage().removeFederatedIdentity(realm, user, socialProvider);
+        } else {
+            return getFederatedStorage().removeFederatedIdentity(realm, user, socialProvider);
+        }
     }
 
     @Override
     public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
-        getFederatedStorage().addConsent(realm, user, consent);
+        if (StorageId.isLocalStorage(user)) {
+            localStorage().addConsent(realm, user, consent);
+        } else {
+            getFederatedStorage().addConsent(realm, user, consent);
+        }
 
     }
 
     @Override
     public UserConsentModel getConsentByClient(RealmModel realm, UserModel user, String clientInternalId) {
-        return getFederatedStorage().getConsentByClient(realm, user, clientInternalId);
+        if (StorageId.isLocalStorage(user)) {
+            return localStorage().getConsentByClient(realm, user, clientInternalId);
+        } else {
+            return getFederatedStorage().getConsentByClient(realm, user, clientInternalId);
+        }
     }
 
     @Override
     public List<UserConsentModel> getConsents(RealmModel realm, UserModel user) {
-        return getFederatedStorage().getConsents(realm, user);
+        if (StorageId.isLocalStorage(user)) {
+            return localStorage().getConsents(realm, user);
+
+        } else {
+            return getFederatedStorage().getConsents(realm, user);
+        }
     }
 
     @Override
     public void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
-        getFederatedStorage().updateConsent(realm, user, consent);
+        if (StorageId.isLocalStorage(user)) {
+            localStorage().updateConsent(realm, user, consent);
+        } else {
+            getFederatedStorage().updateConsent(realm, user, consent);
+        }
 
     }
 
     @Override
     public boolean revokeConsentForClient(RealmModel realm, UserModel user, String clientInternalId) {
-        return getFederatedStorage().revokeConsentForClient(realm, user, clientInternalId);
+        if (StorageId.isLocalStorage(user)) {
+            return localStorage().revokeConsentForClient(realm, user, clientInternalId);
+        } else {
+            return getFederatedStorage().revokeConsentForClient(realm, user, clientInternalId);
+        }
     }
 
     @Override
@@ -334,24 +369,10 @@ public class UserStorageManager implements UserProvider {
 
     @Override
     public List<UserModel> searchForUser(final String search, final RealmModel realm, int firstResult, int maxResults) {
-        final Map<String, String> attributes = new HashMap<String, String>();
-        int spaceIndex = search.lastIndexOf(' ');
-        if (spaceIndex > -1) {
-            String firstName = search.substring(0, spaceIndex).trim();
-            String lastName = search.substring(spaceIndex).trim();
-            attributes.put(UserModel.FIRST_NAME, firstName);
-            attributes.put(UserModel.LAST_NAME, lastName);
-        } else if (search.indexOf('@') > -1) {
-            attributes.put(UserModel.USERNAME, search.trim().toLowerCase());
-            attributes.put(UserModel.EMAIL, search.trim().toLowerCase());
-        } else {
-            attributes.put(UserModel.LAST_NAME, search.trim());
-            attributes.put(UserModel.USERNAME, search.trim().toLowerCase());
-        }
-        return query(new PaginatedQuery() {
+         return query(new PaginatedQuery() {
             @Override
             public List<UserModel> query(UserQueryProvider provider, int first, int max) {
-                return provider.searchForUserByAttributes(attributes, realm, first, max);
+                return provider.searchForUser(search, realm, first, max);
             }
         }, realm, firstResult, maxResults);
     }
@@ -372,26 +393,32 @@ public class UserStorageManager implements UserProvider {
     }
 
     @Override
-    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
-        Map<String, String> attributes = new HashMap<>();
-        attributes.put(attrName, attrValue);
-        return searchForUserByAttributes(attributes, realm);
+    public List<UserModel> searchForUserByUserAttribute(final String attrName, final String attrValue, RealmModel realm) {
+        return query(new PaginatedQuery() {
+            @Override
+            public List<UserModel> query(UserQueryProvider provider, int first, int max) {
+                return provider.searchForUserByUserAttribute(attrName, attrValue, realm);
+            }
+        }, realm,0, Integer.MAX_VALUE - 1);
     }
 
     @Override
     public Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm) {
         if (user == null) throw new IllegalStateException("Federated user no longer valid");
+        Set<FederatedIdentityModel> set = new HashSet<>();
         if (StorageId.isLocalStorage(user)) {
-            return localStorage().getFederatedIdentities(user, realm);
+            set.addAll(localStorage().getFederatedIdentities(user, realm));
         }
-        return getFederatedStorage().getFederatedIdentities(user, realm);
+        set.addAll(getFederatedStorage().getFederatedIdentities(user, realm));
+        return set;
     }
 
     @Override
     public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
         if (user == null) throw new IllegalStateException("Federated user no longer valid");
         if (StorageId.isLocalStorage(user)) {
-            return localStorage().getFederatedIdentity(user, socialProvider, realm);
+            FederatedIdentityModel model = localStorage().getFederatedIdentity(user, socialProvider, realm);
+            if (model != null) return model;
         }
         return getFederatedStorage().getFederatedIdentity(user, socialProvider, realm);
     }
@@ -430,6 +457,7 @@ public class UserStorageManager implements UserProvider {
 
     @Override
     public void preRemove(RealmModel realm, UserFederationProviderModel model) {
+        getFederatedStorage().preRemove(realm, model);
         localStorage().preRemove(realm, model);
     }
 
@@ -454,11 +482,14 @@ public class UserStorageManager implements UserProvider {
     @Override
     public void preRemove(RealmModel realm, ClientModel client) {
         localStorage().preRemove(realm, client);
+        getFederatedStorage().preRemove(realm, client);
+
     }
 
     @Override
     public void preRemove(ProtocolMapperModel protocolMapper) {
         localStorage().preRemove(protocolMapper);
+        getFederatedStorage().preRemove(protocolMapper);
     }
 
     @Override

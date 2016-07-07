@@ -209,7 +209,8 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel>
+    searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
         search = search.trim();
         Pattern caseInsensitivePattern = Pattern.compile("(?i:" + search + ")");
 

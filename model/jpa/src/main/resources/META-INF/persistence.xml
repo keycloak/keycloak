@@ -25,6 +25,7 @@
         <class>org.keycloak.models.jpa.entities.RealmEntity</class>
         <class>org.keycloak.models.jpa.entities.RealmAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.RequiredCredentialEntity</class>
+        <class>org.keycloak.models.jpa.entities.StorageProviderEntity</class>
         <class>org.keycloak.models.jpa.entities.UserFederationProviderEntity</class>
         <class>org.keycloak.models.jpa.entities.UserFederationMapperEntity</class>
         <class>org.keycloak.models.jpa.entities.RoleEntity</class>
@@ -64,6 +65,17 @@
         <class>org.keycloak.authorization.jpa.entities.ResourceEntity</class>
         <class>org.keycloak.authorization.jpa.entities.ScopeEntity</class>
         <class>org.keycloak.authorization.jpa.entities.PolicyEntity</class>
+
+        <!-- User Federation Storage -->
+        <class>org.keycloak.storage.jpa.entity.BrokerLinkEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserAttributeEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserConsentEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserConsentRoleEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserConsentProtocolMapperEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserCredentialEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity</class>
         
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 

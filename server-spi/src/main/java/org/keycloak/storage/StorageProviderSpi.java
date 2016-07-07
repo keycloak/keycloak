@@ -33,7 +33,7 @@ public class StorageProviderSpi implements Spi {
 
     @Override
     public String getName() {
-        return "userFederation";
+        return "storage";
     }
 
     @Override

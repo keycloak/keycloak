@@ -42,6 +42,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private ScriptingProvider scriptingProvider;
     private UserSessionProvider sessionProvider;
     private UserFederationManager federationManager;
+    private UserFederatedStorageProvider userFederatedStorageProvider;
     private KeycloakContext context;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
@@ -91,7 +92,10 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public UserFederatedStorageProvider userFederatedStorage() {
-        return null;
+        if (userFederatedStorageProvider == null) {
+            userFederatedStorageProvider = getProvider(UserFederatedStorageProvider.class);
+        }
+        return userFederatedStorageProvider;
     }
 
     @Override

@@ -29,6 +29,8 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 @Ignore
 public class ClusteredCacheBehaviorTest {
     public EmbeddedCacheManager createManager() {
+        System.setProperty("java.net.preferIPv4Stack", "true");
+        System.setProperty("jgroups.tcp.port", "53715");
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
 
         boolean clustered = true;
@@ -36,7 +38,8 @@ public class ClusteredCacheBehaviorTest {
         boolean allowDuplicateJMXDomains = true;
 
         if (clustered) {
-            gcb.transport().defaultTransport();
+            gcb = gcb.clusteredDefault();
+            gcb.transport().clusterName("test-clustering");
         }
         gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
 

@@ -41,4 +41,9 @@ public interface UserQueryProvider {
 
     List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults);
     List<UserModel> getGroupMembers(RealmModel realm, GroupModel group);
+
+    List<UserModel> searchForUser(String search, RealmModel realm);
+
+    // Searching by UserModel.attribute (not property)
+    List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm);
 }

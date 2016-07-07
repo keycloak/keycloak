@@ -48,6 +48,7 @@ import java.io.Serializable;
 public class FederatedUserRoleMappingEntity {
 
     @Id
+    @Column(name = "USER_ID")
     protected String userId;
 
     @Id
