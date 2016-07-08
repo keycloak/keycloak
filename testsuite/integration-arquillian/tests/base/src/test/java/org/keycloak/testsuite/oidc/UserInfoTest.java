@@ -16,10 +16,14 @@
  */
 package org.keycloak.testsuite.oidc;
 
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.UserInfo;
@@ -44,7 +48,6 @@ import java.net.URI;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
@@ -160,9 +163,17 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
-            assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
 
             response.close();
+
+            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+                    .error(Errors.USER_SESSION_NOT_FOUND)
+                    .client((String) null)
+                    .user(Matchers.nullValue(String.class))
+                    .session(Matchers.nullValue(String.class))
+                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .assertEvent();
 
         } finally {
             client.close();
@@ -178,7 +189,15 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             response.close();
 
-            assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+
+            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+                    .error(Errors.INVALID_TOKEN)
+                    .client((String) null)
+                    .user(Matchers.nullValue(String.class))
+                    .session(Matchers.nullValue(String.class))
+                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .assertEvent();
 
         } finally {
             client.close();
@@ -206,10 +225,17 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         response.close();
 
+        events.clear();
+
         return accessTokenResponse;
     }
 
     private void testSuccessfulUserInfoResponse(Response response) {
+        events.expect(EventType.USER_INFO_REQUEST)
+                .session(Matchers.notNullValue(String.class))
+                .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                .detail(Details.USERNAME, "test-user@localhost")
+                .assertEvent();
         UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");
     }
 }

@@ -24,6 +24,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
@@ -49,7 +50,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.Map;
@@ -122,30 +122,61 @@ public class UserInfoEndpoint {
                 .event(EventType.USER_INFO_REQUEST)
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
 
+        if (tokenString == null) {
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Token not provided", Response.Status.BAD_REQUEST);
+        }
+
         AccessToken token = null;
         try {
             token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()), true, true);
         } catch (VerificationException e) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Token invalid: " + e.getMessage(), Status.FORBIDDEN);
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Token invalid: " + e.getMessage(), Response.Status.UNAUTHORIZED);
         }
 
         UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
         ClientSessionModel clientSession = session.sessions().getClientSession(token.getClientSession());
-        if (userSession == null || clientSession == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Token invalid", Status.FORBIDDEN);
+
+        if (userSession == null) {
+            event.error(Errors.USER_SESSION_NOT_FOUND);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User session not found", Response.Status.BAD_REQUEST);
+        }
+
+        event.session(userSession);
+
+        UserModel userModel = userSession.getUser();
+        if (userModel == null) {
+            event.error(Errors.USER_NOT_FOUND);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User not found", Response.Status.BAD_REQUEST);
+        }
+
+        event.user(userModel)
+                .detail(Details.USERNAME, userModel.getUsername());
+
+
+        if (clientSession == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
+            event.error(Errors.SESSION_EXPIRED);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired", Response.Status.UNAUTHORIZED);
         }
 
         ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
-        UserModel userModel = userSession.getUser();
+        if (clientModel == null) {
+            event.error(Errors.CLIENT_NOT_FOUND);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.BAD_REQUEST);
+        }
+
+        event.client(clientModel);
+
+        if (!clientModel.isEnabled()) {
+            event.error(Errors.CLIENT_DISABLED);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client disabled", Response.Status.BAD_REQUEST);
+        }
+
         AccessToken userInfo = new AccessToken();
         tokenManager.transformAccessToken(session, userInfo, realm, clientModel, userModel, userSession, clientSession);
 
-        event
-            .detail(Details.USERNAME, userModel.getUsername())
-            .client(clientModel)
-            .session(userSession)
-            .user(userModel)
-            .success();
+        event.success();
 
         Map<String, Object> claims = new HashMap<String, Object>();
         claims.putAll(userInfo.getOtherClaims());

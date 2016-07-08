@@ -402,8 +402,4 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=90, value="Failed to close ProviderSession")
     void failedToCloseProviderSession(@Cause Throwable t);
-
-    @LogMessage(level = WARN)
-    @Message(id=91, value="Attempt to re-use code '%s'")
-    void codeUsedAlready(String code);
 }

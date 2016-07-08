@@ -65,6 +65,7 @@ public interface Errors {
     String SSL_REQUIRED = "ssl_required";
 
     String USER_SESSION_NOT_FOUND = "user_session_not_found";
+    String SESSION_EXPIRED = "session_expired";
 
     String EMAIL_SEND_FAILED = "email_send_failed";
     String INVALID_EMAIL = "invalid_email";

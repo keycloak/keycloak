@@ -365,7 +365,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
             // Check that userInfo can't be invoked with invalidated accessToken
             userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(jaxrsClient, accessToken);
-            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), userInfoResponse.getStatus());
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), userInfoResponse.getStatus());
             userInfoResponse.close();
 
             // Check that tokenIntrospection can't be invoked with invalidated accessToken
