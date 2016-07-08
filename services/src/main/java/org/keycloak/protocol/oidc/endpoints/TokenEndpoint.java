@@ -68,6 +68,9 @@ import java.util.Map;
  */
 public class TokenEndpoint {
 
+    // Flag if code was already exchanged for token
+    private static final String CODE_EXCHANGED = "CODE_EXCHANGED";
+
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     private MultivaluedMap<String, String> formParams;
     private ClientModel client;
@@ -215,12 +218,23 @@ public class TokenEndpoint {
 
         ClientSessionModel clientSession = accessCode.getClientSession();
         event.detail(Details.CODE_ID, clientSession.getId());
+
+        String codeExchanged = clientSession.getNote(CODE_EXCHANGED);
+        if (codeExchanged != null && Boolean.parseBoolean(codeExchanged)) {
+            logger.codeUsedAlready(code);
+            session.sessions().removeClientSession(realm, clientSession);
+
+            event.error(Errors.INVALID_CODE);
+            throw new ErrorResponseException("invalid_grant", "Code used already", Response.Status.BAD_REQUEST);
+        }
+
         if (!accessCode.isValid(ClientSessionModel.Action.CODE_TO_TOKEN.name(), ClientSessionCode.ActionType.CLIENT)) {
             event.error(Errors.INVALID_CODE);
             throw new ErrorResponseException("invalid_grant", "Code is expired", Response.Status.BAD_REQUEST);
         }
 
         accessCode.setAction(null);
+        clientSession.setNote(CODE_EXCHANGED, "true");
         UserSessionModel userSession = clientSession.getUserSession();
 
         if (userSession == null) {

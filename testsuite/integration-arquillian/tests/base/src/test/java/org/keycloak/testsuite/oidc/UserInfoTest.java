@@ -28,6 +28,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.client.Client;
@@ -75,12 +76,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testSuccess_getMethod_bearer() throws Exception {
+    public void testSuccess_getMethod_header() throws Exception {
         Client client = ClientBuilder.newClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
-            Response response = executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
             testSuccessfulUserInfoResponse(response);
 
@@ -90,13 +91,13 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testSuccess_postMethod_bearer() throws Exception {
+    public void testSuccess_postMethod_header() throws Exception {
         Client client = ClientBuilder.newClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-            WebTarget userInfoTarget = getUserInfoWebTarget(client);
+            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
             Response response = userInfoTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, "bearer " + accessTokenResponse.getToken())
                     .post(Entity.form(new Form()));
@@ -118,7 +119,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             Form form = new Form();
             form.param("access_token", accessTokenResponse.getToken());
 
-            WebTarget userInfoTarget = getUserInfoWebTarget(client);
+            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
             Response response = userInfoTarget.request()
                     .post(Entity.form(form));
 
@@ -130,13 +131,13 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testSuccess_postMethod_bearer_textEntity() throws Exception {
+    public void testSuccess_postMethod_header_textEntity() throws Exception {
         Client client = ClientBuilder.newClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-            WebTarget userInfoTarget = getUserInfoWebTarget(client);
+            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
             Response response = userInfoTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, "bearer " + accessTokenResponse.getToken())
                     .post(Entity.text(""));
@@ -157,7 +158,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             testingClient.testing().removeUserSessions("test");
 
-            Response response = executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
             assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
 
@@ -173,7 +174,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         Client client = ClientBuilder.newClient();
 
         try {
-            Response response = executeUserInfoRequest_getMethod(client, "bad");
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, "bad");
 
             response.close();
 
@@ -208,31 +209,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         return accessTokenResponse;
     }
 
-    private Response executeUserInfoRequest_getMethod(Client client, String accessToken) {
-        WebTarget userInfoTarget = getUserInfoWebTarget(client);
-
-        return userInfoTarget.request()
-                .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
-                .get();
-    }
-
-    private WebTarget getUserInfoWebTarget(Client client) {
-        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
-        UriBuilder uriBuilder = OIDCLoginProtocolService.tokenServiceBaseUrl(builder);
-        URI userInfoUri = uriBuilder.path(OIDCLoginProtocolService.class, "issueUserInfo").build("test");
-        return client.target(userInfoUri);
-    }
-
     private void testSuccessfulUserInfoResponse(Response response) {
-        assertEquals(Status.OK.getStatusCode(), response.getStatus());
-
-        UserInfo userInfo = response.readEntity(UserInfo.class);
-
-        response.close();
-
-        assertNotNull(userInfo);
-        assertNotNull(userInfo.getSubject());
-        assertEquals("test-user@localhost", userInfo.getEmail());
-        assertEquals("test-user@localhost", userInfo.getPreferredUsername());
+        UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");
     }
 }
