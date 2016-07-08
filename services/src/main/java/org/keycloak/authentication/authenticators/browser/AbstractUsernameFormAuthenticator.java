@@ -119,6 +119,10 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return false;
         }
+
+        // remove leading and trailing whitespace
+        username = username.trim();
+
         context.getEvent().detail(Details.USERNAME, username);
         context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
