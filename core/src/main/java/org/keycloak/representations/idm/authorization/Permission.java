@@ -16,8 +16,10 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -31,6 +33,7 @@ public class Permission {
     @JsonProperty("resource_set_name")
     private final String resourceSetName;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Set<String> scopes;
 
     public Permission() {
@@ -52,6 +55,10 @@ public class Permission {
     }
 
     public Set<String> getScopes() {
+        if (this.scopes == null) {
+            this.scopes = new HashSet<>();
+        }
+
         return this.scopes;
     }
 
