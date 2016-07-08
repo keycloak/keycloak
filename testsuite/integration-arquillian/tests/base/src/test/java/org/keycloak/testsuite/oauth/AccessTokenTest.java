@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -32,10 +34,8 @@ import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -62,6 +62,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.util.BasicAuthHelper;
 
@@ -72,6 +73,8 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+
+import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -320,7 +323,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void accessTokenCodeUsed() {
+    public void accessTokenCodeUsed() throws IOException {
         oauth.doLogin("test-user@localhost", "password");
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
@@ -331,23 +334,53 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
         Assert.assertEquals(200, response.getStatusCode());
+        String accessToken = response.getAccessToken();
 
-        events.clear();
+        Client jaxrsClient = javax.ws.rs.client.ClientBuilder.newClient();
+        try {
+            // Check that userInfo can be invoked
+            Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(jaxrsClient, accessToken);
+            UserInfoClientUtil.testSuccessfulUserInfoResponse(userInfoResponse, "test-user@localhost", "test-user@localhost");
 
-        response = oauth.doAccessTokenRequest(code, "password");
-        Assert.assertEquals(400, response.getStatusCode());
+            // Check that tokenIntrospection can be invoked
+            String introspectionResponse = oauth.introspectAccessTokenWithClientCredential("test-app", "password", accessToken);
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(introspectionResponse);
+            Assert.assertEquals(true, jsonNode.get("active").asBoolean());
+            Assert.assertEquals("test-user@localhost", jsonNode.get("email").asText());
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, null);
-        expectedEvent.error("invalid_code")
-                .removeDetail(Details.TOKEN_ID)
-                .removeDetail(Details.REFRESH_TOKEN_ID)
-                .removeDetail(Details.REFRESH_TOKEN_TYPE)
-                .user((String) null);
-        expectedEvent.assertEvent();
+            events.clear();
 
-        events.clear();
+            // Repeating attempt to exchange code should be refused and invalidate previous clientSession
+            response = oauth.doAccessTokenRequest(code, "password");
+            Assert.assertEquals(400, response.getStatusCode());
 
-        RealmManager.realm(adminClient.realm("test")).accessCodeLifeSpan(60);
+            AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, null);
+            expectedEvent.error("invalid_code")
+                    .removeDetail(Details.TOKEN_ID)
+                    .removeDetail(Details.REFRESH_TOKEN_ID)
+                    .removeDetail(Details.REFRESH_TOKEN_TYPE)
+                    .user((String) null);
+            expectedEvent.assertEvent();
+
+            // Check that userInfo can't be invoked with invalidated accessToken
+            userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(jaxrsClient, accessToken);
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), userInfoResponse.getStatus());
+            userInfoResponse.close();
+
+            // Check that tokenIntrospection can't be invoked with invalidated accessToken
+            introspectionResponse = oauth.introspectAccessTokenWithClientCredential("test-app", "password", accessToken);
+            objectMapper = new ObjectMapper();
+            jsonNode = objectMapper.readTree(introspectionResponse);
+            Assert.assertEquals(false, jsonNode.get("active").asBoolean());
+            Assert.assertNull(jsonNode.get("email"));
+
+            events.clear();
+
+            RealmManager.realm(adminClient.realm("test")).accessCodeLifeSpan(60);
+        } finally {
+            jaxrsClient.close();
+        }
     }
 
     @Test

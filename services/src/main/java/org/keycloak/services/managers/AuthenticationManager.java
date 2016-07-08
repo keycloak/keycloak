@@ -84,7 +84,7 @@ public class AuthenticationManager {
         }
         int currentTime = Time.currentTime();
         int max = userSession.getStarted() + realm.getSsoSessionMaxLifespan();
-        return userSession != null && userSession.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout() > currentTime && max > currentTime;
+        return userSession.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout() > currentTime && max > currentTime;
     }
 
     public static void expireUserSessionCookie(KeycloakSession session, UserSessionModel userSession, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, ClientConnection connection) {

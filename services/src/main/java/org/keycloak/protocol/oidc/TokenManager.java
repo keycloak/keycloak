@@ -199,6 +199,11 @@ public class TokenManager {
             return false;
         }
 
+        ClientSessionModel clientSession = session.sessions().getClientSession(realm, token.getClientSession());
+        if (clientSession == null) {
+            return false;
+        }
+
         return true;
     }
 
