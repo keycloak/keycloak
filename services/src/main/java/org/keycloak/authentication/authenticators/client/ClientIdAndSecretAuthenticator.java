@@ -86,7 +86,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
 
         if (formData != null && client_id == null) {
             client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
-            clientSecret = formData.getFirst("client_secret");
+            clientSecret = formData.getFirst(OAuth2Constants.CLIENT_SECRET);
         }
 
         if (client_id == null) {

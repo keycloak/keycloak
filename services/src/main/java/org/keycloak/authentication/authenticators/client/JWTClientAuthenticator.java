@@ -32,6 +32,7 @@ import javax.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -142,6 +143,11 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             }
 
             if (!token.isActive()) {
+                throw new RuntimeException("Token is not active");
+            }
+
+            // KEYCLOAK-2986
+            if (token.getExpiration() == 0 && token.getIssuedAt() + 10 < Time.currentTime()) {
                 throw new RuntimeException("Token is not active");
             }
 

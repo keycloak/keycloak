@@ -99,6 +99,10 @@ public class RealmsResource {
         return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getBrokerService");
     }
 
+    public static UriBuilder wellKnownProviderUrl(UriBuilder builder) {
+        return builder.path(RealmsResource.class).path(RealmsResource.class, "getWellKnown");
+    }
+
     @Path("{realm}/protocol/{protocol}")
     public Object getProtocol(final @PathParam("realm") String name,
                               final @PathParam("protocol") String protocol) {
