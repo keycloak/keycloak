@@ -28,6 +28,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.ServicesLogger;
 
 /**
  * used to set an execution a state based on type.
@@ -37,25 +38,32 @@ import org.keycloak.models.RealmModel;
  */
 public class CredentialHelper {
 
+    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+
     public static void setRequiredCredential(KeycloakSession session, String type, RealmModel realm) {
         AuthenticationExecutionModel.Requirement requirement = AuthenticationExecutionModel.Requirement.REQUIRED;
-        authenticationRequirement(session, realm, type, requirement);
+        setOrReplaceAuthenticationRequirement(session, realm, type, requirement, null);
     }
 
     public static void setAlternativeCredential(KeycloakSession session, String type, RealmModel realm) {
         AuthenticationExecutionModel.Requirement requirement = AuthenticationExecutionModel.Requirement.ALTERNATIVE;
-        authenticationRequirement(session, realm, type, requirement);
+        setOrReplaceAuthenticationRequirement(session, realm, type, requirement, null);
     }
 
-    public static void authenticationRequirement(KeycloakSession session, RealmModel realm, String type, AuthenticationExecutionModel.Requirement requirement) {
+    public static void setOrReplaceAuthenticationRequirement(KeycloakSession session, RealmModel realm, String type, AuthenticationExecutionModel.Requirement requirement, AuthenticationExecutionModel.Requirement currentRequirement) {
         for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
             for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(flow.getId())) {
                 String providerId = execution.getAuthenticator();
                 ConfigurableAuthenticatorFactory factory = getConfigurableAuthenticatorFactory(session, providerId);
                 if (factory == null) continue;
                 if (type.equals(factory.getReferenceCategory())) {
-                    execution.setRequirement(requirement);
-                    realm.updateAuthenticatorExecution(execution);
+                    if (currentRequirement == null || currentRequirement.equals(execution.getRequirement())) {
+                        execution.setRequirement(requirement);
+                        realm.updateAuthenticatorExecution(execution);
+                        logger.debugf("Authenticator execution '%s' switched to '%s'", execution.getAuthenticator(), requirement.toString());
+                    } else {
+                        logger.debugf("Skip switch authenticator execution '%s' to '%s' as it's in state %s", execution.getAuthenticator(), requirement.toString(), execution.getRequirement());
+                    }
                 }
             }
         }
