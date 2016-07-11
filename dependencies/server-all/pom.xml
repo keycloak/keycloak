@@ -83,7 +83,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-kerberos-federation</artifactId>
         </dependency>
-
         <!-- saml -->
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -108,6 +107,12 @@
                     <artifactId>snakeyaml</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <!-- Dependencies for RHEL IdM -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-sssd-federation</artifactId>
         </dependency>
 
         <!-- Built-in Authorization Policy Providers  -->
