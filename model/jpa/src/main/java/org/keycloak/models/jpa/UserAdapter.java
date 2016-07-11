@@ -47,6 +47,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import java.util.ArrayList;
@@ -172,14 +173,11 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void removeAttribute(String name) {
-        Iterator<UserAttributeEntity> it = user.getAttributes().iterator();
-        while (it.hasNext()) {
-            UserAttributeEntity attr = it.next();
-            if (attr.getName().equals(name)) {
-                it.remove();
-                em.remove(attr);
-            }
-        }
+        // KEYCLOAK-3296 : Remove attribute through HQL to avoid StaleUpdateException
+        Query query = em.createNamedQuery("deleteUserAttributesByNameAndUser");
+        query.setParameter("name", name);
+        query.setParameter("userId", user.getId());
+        int numUpdated = query.executeUpdate();
     }
 
     @Override
