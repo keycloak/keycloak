@@ -137,6 +137,16 @@ public class RealmBuilder {
         return this;
     }
 
+    public RealmBuilder bruteForceProtected(boolean bruteForceProtected) {
+        rep.setBruteForceProtected(bruteForceProtected);
+        return this;
+    }
+
+    public RealmBuilder failureFactor(int failureFactor) {
+        rep.setFailureFactor(failureFactor);
+        return this;
+    }
+
     public RealmBuilder otpDigits(int i) {
         rep.setOtpPolicyDigits(i);
         return this;
