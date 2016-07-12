@@ -30,7 +30,7 @@ import org.keycloak.authorization.client.resource.ProtectedResource;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
-import org.keycloak.representations.authorization.Permission;
+import org.keycloak.representations.idm.authorization.Permission;
 
 import java.util.ArrayList;
 import java.util.HashSet;

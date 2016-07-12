@@ -585,13 +585,6 @@ public class RealmManager implements RealmImporter {
     }
 
     private void setupAuthorizationServices(RealmModel realm) {
-        for (String roleName : Constants.AUTHZ_DEFAULT_AUTHORIZATION_ROLES) {
-            if (realm.getRole(roleName) == null) {
-                RoleModel role = realm.addRole(roleName);
-                role.setDescription("${role_" + roleName + "}");
-                role.setScopeParamRequired(false);
-                realm.addDefaultRole(roleName);
-            }
-        }
+        KeycloakModelUtils.setupAuthorizationServices(realm);
     }
 }

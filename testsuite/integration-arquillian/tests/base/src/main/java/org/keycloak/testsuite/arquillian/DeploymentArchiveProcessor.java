@@ -25,10 +25,7 @@ import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.representations.adapters.config.BaseAdapterConfig;
-import org.keycloak.testsuite.adapter.AdapterLibsMode;
 import org.keycloak.testsuite.util.IOUtil;
 import org.keycloak.util.JsonSerialization;
 import org.w3c.dom.Document;
@@ -38,7 +35,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAdapterLibsLocationProperty;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.hasAppServerContainerAnnotation;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isRelative;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isTomcatAppServer;
@@ -71,7 +67,6 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         log.info("Processing archive " + archive.getName());
 //        if (isAdapterTest(testClass)) {
         modifyAdapterConfigs(archive, testClass);
-        attachAdapterLibs(archive, testClass);
         modifyWebXml(archive, testClass);
 //        } else {
 //            log.info(testClass.getJavaClass().getSimpleName() + " is not an AdapterTest");
@@ -142,30 +137,6 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     log.log(Level.FATAL, "Cannot serialize adapter config to JSON.", ex);
                 }
             }
-        }
-    }
-
-    protected void attachAdapterLibs(Archive<?> archive, TestClass testClass) {
-        AdapterLibsMode adapterType = AdapterLibsMode.getByType(System.getProperty("adapter.libs.mode",
-                AdapterLibsMode.PROVIDED.getType()));
-        log.info("Adapter type: " + adapterType);
-        if (adapterType.equals(AdapterLibsMode.BUNDLED)) {
-            log.info("Attaching keycloak adapter libs to " + archive.getName());
-
-            String libsLocationProperty = getAdapterLibsLocationProperty(testClass.getJavaClass());
-            assert libsLocationProperty != null;
-            File libsLocation = new File(System.getProperty(libsLocationProperty));
-            assert libsLocation.exists();
-            log.info("Libs location: " + libsLocation.getPath());
-
-            WebArchive war = (WebArchive) archive;
-
-            for (File lib : getAdapterLibs(libsLocation)) {
-                log.info(" attaching: " + lib.getName());
-                war.addAsLibrary(lib);
-            }
-        } else {
-            log.info("Expecting keycloak adapter libs to be provided by the server.");
         }
     }
 

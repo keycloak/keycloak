@@ -19,8 +19,8 @@
 package org.keycloak.testsuite.authorization;
 
 import org.junit.Test;
-import org.keycloak.authorization.admin.representation.ResourceRepresentation;
 import org.keycloak.authorization.model.Resource;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation.Builder;

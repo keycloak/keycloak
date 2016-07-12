@@ -271,6 +271,44 @@ public class UserFederationTest extends AbstractAdminTest {
         removeUserFederationProvider(id);
     }
 
+    @Test
+    public void testKerberosAuthenticatorChangedOnlyIfDisabled() {
+        // Change kerberos to REQUIRED
+        AuthenticationExecutionInfoRepresentation kerberosExecution = findKerberosExecution();
+        kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString());
+        realm.flows().updateExecutions("browser", kerberosExecution);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution);
+
+        // create LDAP provider with kerberos
+        UserFederationProviderRepresentation ldapRep = UserFederationProviderBuilder.create()
+                .displayName("ldap2")
+                .providerName("ldap")
+                .priority(2)
+                .configProperty(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "true")
+                .build();
+        String id = createUserFederationProvider(ldapRep);
+
+        // Assert kerberos authenticator still REQUIRED
+        kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.REQUIRED.toString());
+
+        // update LDAP provider with kerberos
+        ldapRep = userFederation().get(id).toRepresentation();
+        userFederation().get(id).update(ldapRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userFederationResourcePath(id), ldapRep);
+
+        // Assert kerberos authenticator still REQUIRED
+        kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.REQUIRED.toString());
+
+        // Cleanup
+        kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.toString());
+        realm.flows().updateExecutions("browser", kerberosExecution);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution);
+        removeUserFederationProvider(id);
+
+    }
+
 
     @Test (expected = NotFoundException.class)
     public void testLookupNotExistentProvider() {

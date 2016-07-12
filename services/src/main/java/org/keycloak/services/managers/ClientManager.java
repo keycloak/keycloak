@@ -103,7 +103,7 @@ public class ClientManager {
                 sessionsPersister.onClientRemoved(realm, client);
             }
 
-            UserModel serviceAccountUser = realmManager.getSession().users().getUserByServiceAccountClient(client);
+            UserModel serviceAccountUser = realmManager.getSession().users().getServiceAccount(client);
             if (serviceAccountUser != null) {
                 new UserManager(realmManager.getSession()).removeUser(realm, serviceAccountUser);
             }
@@ -150,7 +150,7 @@ public class ClientManager {
         client.setServiceAccountsEnabled(true);
 
         // Add dedicated user for this service account
-        if (realmManager.getSession().users().getUserByServiceAccountClient(client) == null) {
+        if (realmManager.getSession().users().getServiceAccount(client) == null) {
             String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId();
             logger.debugf("Creating service account user '%s'", username);
 

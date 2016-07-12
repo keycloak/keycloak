@@ -19,7 +19,7 @@ package org.keycloak;
 
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
-import org.keycloak.representations.authorization.Permission;
+import org.keycloak.representations.idm.authorization.Permission;
 
 import java.util.List;
 

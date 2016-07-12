@@ -70,6 +70,12 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("registration_endpoint")
     private String registrationEndpoint;
 
+    @JsonProperty("token_endpoint_auth_methods_supported")
+    private List<String> tokenEndpointAuthMethodsSupported;
+
+    @JsonProperty("token_endpoint_auth_signing_alg_values_supported")
+    private List<String> tokenEndpointAuthSigningAlgValuesSupported;
+
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
@@ -174,6 +180,22 @@ public class OIDCConfigurationRepresentation {
 
     public void setRegistrationEndpoint(String registrationEndpoint) {
         this.registrationEndpoint = registrationEndpoint;
+    }
+
+    public List<String> getTokenEndpointAuthMethodsSupported() {
+        return tokenEndpointAuthMethodsSupported;
+    }
+
+    public void setTokenEndpointAuthMethodsSupported(List<String> tokenEndpointAuthMethodsSupported) {
+        this.tokenEndpointAuthMethodsSupported = tokenEndpointAuthMethodsSupported;
+    }
+
+    public List<String> getTokenEndpointAuthSigningAlgValuesSupported() {
+        return tokenEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public void setTokenEndpointAuthSigningAlgValuesSupported(List<String> tokenEndpointAuthSigningAlgValuesSupported) {
+        this.tokenEndpointAuthSigningAlgValuesSupported = tokenEndpointAuthSigningAlgValuesSupported;
     }
 
     @JsonAnyGetter

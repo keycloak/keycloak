@@ -78,6 +78,7 @@ import java.util.Set;
  */
 public class TokenManager {
     protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final String JWT = "JWT";
 
     public static void applyScope(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
         if (visited.contains(scope)) return;
@@ -195,6 +196,11 @@ public class TokenManager {
 
         UserSessionModel userSession =  session.sessions().getUserSession(realm, token.getSessionState());
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
+            return false;
+        }
+
+        ClientSessionModel clientSession = session.sessions().getClientSession(realm, token.getClientSession());
+        if (clientSession == null) {
             return false;
         }
 
@@ -517,6 +523,12 @@ public class TokenManager {
         token.issuedFor(client.getClientId());
         token.issuer(clientSession.getNote(OIDCLoginProtocol.ISSUER));
         token.setNonce(clientSession.getNote(OIDCLoginProtocol.NONCE_PARAM));
+
+        String authTime = session.getNote(AuthenticationManager.AUTH_TIME);
+        if (authTime != null) {
+            token.setAuthTime(Integer.parseInt(authTime));
+        }
+
         if (session != null) {
             token.setSessionState(session.getId());
         }
@@ -570,6 +582,8 @@ public class TokenManager {
 
     public String encodeToken(RealmModel realm, Object token) {
         String encodedToken = new JWSBuilder()
+                .type(JWT)
+                .kid(realm.getKeyId())
                 .jsonContent(token)
                 .rsa256(realm.getPrivateKey());
         return encodedToken;
@@ -656,6 +670,7 @@ public class TokenManager {
             idToken.issuedFor(accessToken.getIssuedFor());
             idToken.issuer(accessToken.getIssuer());
             idToken.setNonce(accessToken.getNonce());
+            idToken.setAuthTime(accessToken.getAuthTime());
             idToken.setSessionState(accessToken.getSessionState());
             idToken.expiration(accessToken.getExpiration());
             transformIDToken(session, idToken, realm, client, userSession.getUser(), userSession, clientSession);
@@ -680,11 +695,11 @@ public class TokenManager {
 
             AccessTokenResponse res = new AccessTokenResponse();
             if (idToken != null) {
-                String encodedToken = new JWSBuilder().jsonContent(idToken).rsa256(realm.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(idToken).rsa256(realm.getPrivateKey());
                 res.setIdToken(encodedToken);
             }
             if (accessToken != null) {
-                String encodedToken = new JWSBuilder().jsonContent(accessToken).rsa256(realm.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(accessToken).rsa256(realm.getPrivateKey());
                 res.setToken(encodedToken);
                 res.setTokenType("bearer");
                 res.setSessionState(accessToken.getSessionState());
@@ -693,7 +708,7 @@ public class TokenManager {
                 }
             }
             if (refreshToken != null) {
-                String encodedToken = new JWSBuilder().jsonContent(refreshToken).rsa256(realm.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(refreshToken).rsa256(realm.getPrivateKey());
                 res.setRefreshToken(encodedToken);
                 if (refreshToken.getExpiration() != 0) {
                     res.setRefreshExpiresIn(refreshToken.getExpiration() - Time.currentTime());

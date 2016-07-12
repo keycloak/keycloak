@@ -20,6 +20,7 @@ package org.keycloak.models;
 import org.jboss.logging.Logger;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.UserManager;
+import org.keycloak.storage.StorageProviderModel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -175,6 +176,38 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
+    public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+        validateUser(realm, user);
+        session.userStorage().addConsent(realm, user, consent);
+
+    }
+
+    @Override
+    public UserConsentModel getConsentByClient(RealmModel realm, UserModel user, String clientInternalId) {
+        validateUser(realm, user);
+        return session.userStorage().getConsentByClient(realm, user, clientInternalId);
+    }
+
+    @Override
+    public List<UserConsentModel> getConsents(RealmModel realm, UserModel user) {
+        validateUser(realm, user);
+        return session.userStorage().getConsents(realm, user);
+    }
+
+    @Override
+    public void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+        validateUser(realm, user);
+        session.userStorage().updateConsent(realm, user, consent);
+
+    }
+
+    @Override
+    public boolean revokeConsentForClient(RealmModel realm, UserModel user, String clientInternalId) {
+        validateUser(realm, user);
+        return session.userStorage().revokeConsentForClient(realm, user, clientInternalId);
+    }
+
+    @Override
     public UserModel getUserById(String id, RealmModel realm) {
         UserModel user = session.userStorage().getUserById(id, realm);
         if (user != null) {
@@ -265,8 +298,8 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public UserModel getUserByServiceAccountClient(ClientModel client) {
-        UserModel user = session.userStorage().getUserByServiceAccountClient(client);
+    public UserModel getServiceAccount(ClientModel client) {
+        UserModel user = session.userStorage().getServiceAccount(client);
         if (user != null) {
             user = validateAndProxyUser(client.getRealm(), user);
         }
@@ -277,6 +310,16 @@ public class UserFederationManager implements UserProvider {
     public List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {
         return getUsers(realm, 0, Integer.MAX_VALUE - 1, includeServiceAccounts);
 
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm) {
+        return getUsers(realm, false);
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+        return getUsers(realm, firstResult, maxResults, false);
     }
 
     @Override
@@ -440,6 +483,11 @@ public class UserFederationManager implements UserProvider {
     @Override
     public void preRemove(ProtocolMapperModel protocolMapper) {
         session.userStorage().preRemove(protocolMapper);
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, StorageProviderModel link) {
+
     }
 
     public void updateCredential(RealmModel realm, UserModel user, UserCredentialModel credential) {

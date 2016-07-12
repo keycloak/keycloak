@@ -28,7 +28,10 @@ import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.policy.evaluation.Result.PolicyResult;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Permissions;
-import org.keycloak.representations.authorization.Permission;
+import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import java.util.ArrayList;
 import java.util.List;

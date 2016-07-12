@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
@@ -39,7 +40,7 @@ import java.util.List;
  */
 public class OIDCWellKnownProvider implements WellKnownProvider {
 
-    public static final List<String> DEFAULT_ID_TOKEN_SIGNING_ALG_VALUES_SUPPORTED = list("RS256");
+    public static final List<String> DEFAULT_ID_TOKEN_SIGNING_ALG_VALUES_SUPPORTED = list(Algorithm.RS256.toString());
 
     public static final List<String> DEFAULT_GRANT_TYPES_SUPPORTED = list(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD, OAuth2Constants.CLIENT_CREDENTIALS);
 
@@ -48,6 +49,11 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     public static final List<String> DEFAULT_SUBJECT_TYPES_SUPPORTED = list("public");
 
     public static final List<String> DEFAULT_RESPONSE_MODES_SUPPORTED = list("query", "fragment", "form_post");
+
+    // Should be rather retrieved dynamically based on available ClientAuthenticator providers?
+    public static final List<String> DEFAULT_CLIENT_AUTH_METHODS_SUPPORTED = list("client_secret_basic", "client_secret_post", "private_key_jwt");
+
+    public static final List<String> DEFAULT_CLIENT_AUTH_SIGNING_ALG_VALUES_SUPPORTED = list(Algorithm.RS256.toString());
 
     private KeycloakSession session;
 
@@ -77,6 +83,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setSubjectTypesSupported(DEFAULT_SUBJECT_TYPES_SUPPORTED);
         config.setResponseModesSupported(DEFAULT_RESPONSE_MODES_SUPPORTED);
         config.setGrantTypesSupported(DEFAULT_GRANT_TYPES_SUPPORTED);
+
+        config.setTokenEndpointAuthMethodsSupported(DEFAULT_CLIENT_AUTH_METHODS_SUPPORTED);
+        config.setTokenEndpointAuthSigningAlgValuesSupported(DEFAULT_CLIENT_AUTH_SIGNING_ALG_VALUES_SUPPORTED);
 
         return config;
     }

@@ -19,6 +19,7 @@
 package org.keycloak.models.authorization.infinispan.entities;
 
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

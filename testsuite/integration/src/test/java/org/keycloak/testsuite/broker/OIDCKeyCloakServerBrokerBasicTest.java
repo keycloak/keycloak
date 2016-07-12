@@ -170,4 +170,14 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
     public void testAccountManagementLinkIdentity() {
         super.testAccountManagementLinkIdentity();
     }
+
+    @Test
+    public void testWithLinkedFederationProvider() throws Exception {
+        super.testWithLinkedFederationProvider();
+    }
+
+    @Test
+    public void testAccountManagementLinkedIdentityAlreadyExists() {
+        super.testAccountManagementLinkedIdentityAlreadyExists();
+    }
 }

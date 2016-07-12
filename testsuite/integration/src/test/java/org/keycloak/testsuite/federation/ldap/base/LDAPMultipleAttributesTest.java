@@ -166,6 +166,14 @@ public class LDAPMultipleAttributesTest {
 
             postalCodes.add("77332");
             user.setAttribute("postal_code", postalCodes);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("bwilson", appRealm);
             assertPostalCodes(user.getAttribute("postal_code"), "88441", "77332");
         } finally {
             keycloakRule.stopSession(session, true);

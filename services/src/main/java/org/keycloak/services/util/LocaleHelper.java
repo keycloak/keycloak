@@ -135,21 +135,23 @@ public class LocaleHelper {
 
     private static Locale findLocale(Set<String> supportedLocales, String... localeStrings) {
         for (String localeString : localeStrings) {
-            Locale result = null;
-            Locale search = Locale.forLanguageTag(localeString);
-            for (String languageTag : supportedLocales) {
-                Locale locale = Locale.forLanguageTag(languageTag);
-                if (locale.getLanguage().equals(search.getLanguage())) {
-                    if (locale.getCountry().equals("") && result == null) {
-                        result = locale;
-                    }
-                    if (locale.getCountry().equals(search.getCountry())) {
-                        return locale;
+            if (localeString != null) {
+                Locale result = null;
+                Locale search = Locale.forLanguageTag(localeString);
+                for (String languageTag : supportedLocales) {
+                    Locale locale = Locale.forLanguageTag(languageTag);
+                    if (locale.getLanguage().equals(search.getLanguage())) {
+                        if (locale.getCountry().equals("") && result == null) {
+                            result = locale;
+                        }
+                        if (locale.getCountry().equals(search.getCountry())) {
+                            return locale;
+                        }
                     }
                 }
-            }
-            if (result != null) {
-                return result;
+                if (result != null) {
+                    return result;
+                }
             }
         }
         return null;

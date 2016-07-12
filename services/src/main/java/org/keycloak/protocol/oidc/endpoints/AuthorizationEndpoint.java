@@ -117,6 +117,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     private String loginHint;
     private String prompt;
     private String nonce;
+    private String maxAge;
     private String idpHint;
     protected Map<String, String> additionalReqParams = new HashMap<>();
 
@@ -139,6 +140,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         prompt = params.getFirst(OIDCLoginProtocol.PROMPT_PARAM);
         idpHint = params.getFirst(AdapterConstants.KC_IDP_HINT);
         nonce = params.getFirst(OIDCLoginProtocol.NONCE_PARAM);
+        maxAge = params.getFirst(OIDCLoginProtocol.MAX_AGE_PARAM);
 
         extractAdditionalReqParams(params);
 
@@ -309,6 +311,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         if (state != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, state);
         if (nonce != null) clientSession.setNote(OIDCLoginProtocol.NONCE_PARAM, nonce);
+        if (maxAge != null) clientSession.setNote(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
         if (scope != null) clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
         if (loginHint != null) clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         if (prompt != null) clientSession.setNote(OIDCLoginProtocol.PROMPT_PARAM, prompt);

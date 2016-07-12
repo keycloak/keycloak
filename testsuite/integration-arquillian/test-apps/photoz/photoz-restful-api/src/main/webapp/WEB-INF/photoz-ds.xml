@@ -1,0 +1,12 @@
+<datasources xmlns="http://www.jboss.org/ironjacamar/schema"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://www.jboss.org/ironjacamar/schema http://docs.jboss.org/ironjacamar/schema/datasources_1_0.xsd">
+    <datasource jndi-name="java:jboss/datasources/PhotozDS" pool-name="PhotozDS" enabled="true" use-java-context="true">
+        <connection-url>jdbc:h2:${jboss.server.data.dir}/kc-authz-photo;AUTO_SERVER=TRUE</connection-url>
+        <driver>h2</driver>
+        <security>
+            <user-name>sa</user-name>
+            <password>sa</password>
+        </security>
+    </datasource>
+</datasources>

@@ -7,22 +7,24 @@
             <div class="form-group">
                 <label for="import-file" class="col-sm-2 control-label">Import</label>
                 <div class="col-md-6">
-                    <div class="controls kc-button-input-file" data-ng-show="!files || files.length == 0">
+                    <div class="controls kc-button-input-file" data-ng-show="!importing">
                         <label for="import-file" class="btn btn-default">Select file <i class="pficon pficon-import"></i></label>
-                        <input id="import-file" type="file" class="hidden" ng-file-select="onFileSelect($files)">
+                        <input id="import-file" type="file" class="hidden" kc-on-read-file="onFileSelect($fileContent)">
                     </div>
-                    <span class="kc-uploaded-file" data-ng-show="files.length > 0">{{files[0].name}}</span>
+                    <div class="col-md-6" data-ng-show="importing">
+                        <input type="button" class="btn btn-default" data-ng-click="viewImportDetails()" value="{{:: 'view-details' | translate}}"/>
+                    </div>
                 </div>
                 <kc-tooltip>Import a JSON file containing all settings for this resource server.</kc-tooltip>
             </div>
             <div class="form-group">
-                <div class="col-md-10 col-md-offset-2">
-                    <button type="submit" data-ng-disabled="files.length == 0" data-ng-click="uploadFile()" class="btn btn-primary">Upload</button>
-                    <button type="submit" data-ng-disabled="files.length == 0" data-ng-click="clearFileSelect()" class="btn btn-default" data-ng-show="files.length > 0">Cancel</button>
+                <div class="col-md-10 col-md-offset-2" data-ng-show="importing">
+                    <button class="btn btn-default" data-ng-click="import()" data-ng-disabled="!changed">Import</button>
+                    <button kc-cancel data-ng-click="reset()">Cancel</button>
                 </div>
             </div>
         </fieldset>
-        <fieldset class="border-top" data-ng-hide="files.length > 0">
+        <fieldset class="border-top" data-ng-hide="importing">
             <div class="form-group">
                 <label class="col-md-2 control-label" for="server.policyEnforcementMode">Policy Enforcement Mode</label>
                 <div class="col-md-2">
@@ -54,7 +56,7 @@
             </div>
         </fieldset>
 
-        <fieldset class="border-top" data-ng-show="!files || files.length == 0">
+        <fieldset class="border-top" data-ng-show="server.id">
             <legend><span class="text">Export Settings</span>
                 <kc-tooltip>Here you can export all settings for this resource server.</kc-tooltip>
             </legend>

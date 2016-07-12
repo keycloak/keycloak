@@ -48,7 +48,7 @@ public class CredentialValidation {
 
     }
 
-    /**
+   /**
      * Will update password if hash iteration policy has changed
      *
      * @param realm
@@ -195,7 +195,7 @@ public class CredentialValidation {
         return true;
     }
 
-    private static boolean validCredential(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel credential) {
+    public static boolean validCredential(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel credential) {
         if (credential.getType().equals(UserCredentialModel.PASSWORD)) {
             if (!validPassword(session, realm, user, credential.getValue())) {
                 return false;

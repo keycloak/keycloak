@@ -26,6 +26,8 @@ public interface OAuth2Constants {
 
     String CLIENT_ID = "client_id";
 
+    String CLIENT_SECRET = "client_secret";
+
     String ERROR = "error";
 
     String ERROR_DESCRIPTION = "error_description";

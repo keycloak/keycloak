@@ -18,9 +18,9 @@
 package org.keycloak.authorization.protection.permission;
 
 import org.keycloak.TokenIdGenerator;
-import org.keycloak.authorization.admin.representation.ResourceRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 
 import java.util.ArrayList;
 import java.util.List;

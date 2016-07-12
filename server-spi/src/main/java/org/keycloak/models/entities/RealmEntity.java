@@ -19,6 +19,7 @@ package org.keycloak.models.entities;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -80,13 +81,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private String emailTheme;
 
     // We are using names of defaultRoles (not ids)
-    private List<String> defaultRoles = new ArrayList<String>();
-    private List<String> defaultGroups = new ArrayList<String>();
+    private List<String> defaultRoles = new LinkedList<String>();
+    private List<String> defaultGroups = new LinkedList<String>();
 
-    private List<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
-    private List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
-    private List<UserFederationMapperEntity> userFederationMappers = new ArrayList<UserFederationMapperEntity>();
-    private List<IdentityProviderEntity> identityProviders = new ArrayList<IdentityProviderEntity>();
+    private List<RequiredCredentialEntity> requiredCredentials = new LinkedList<>();
+    private List<StorageProviderEntity> storageProviders = new LinkedList<>();
+    private List<UserFederationProviderEntity> userFederationProviders = new LinkedList<UserFederationProviderEntity>();
+    private List<UserFederationMapperEntity> userFederationMappers = new LinkedList<UserFederationMapperEntity>();
+    private List<IdentityProviderEntity> identityProviders = new LinkedList<IdentityProviderEntity>();
 
     private Map<String, String> browserSecurityHeaders = new HashMap<String, String>();
     private Map<String, String> smtpConfig = new HashMap<String, String>();
@@ -681,6 +683,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setDefaultGroups(List<String> defaultGroups) {
         this.defaultGroups = defaultGroups;
+    }
+
+    public List<StorageProviderEntity> getStorageProviders() {
+        return storageProviders;
+    }
+
+    public void setStorageProviders(List<StorageProviderEntity> storageProviders) {
+        this.storageProviders = storageProviders;
     }
 }
 

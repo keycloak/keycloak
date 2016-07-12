@@ -4,6 +4,7 @@ module.factory('ResourceServer', function($resource) {
         client: '@client'
     }, {
         'update' : {method : 'PUT'},
+        'import' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/import', method : 'POST'},
         'settings' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/settings', method : 'GET'}
     });
 });

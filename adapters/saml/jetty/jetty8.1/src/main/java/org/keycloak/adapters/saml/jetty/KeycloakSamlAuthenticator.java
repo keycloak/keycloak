@@ -17,6 +17,7 @@
 
 package org.keycloak.adapters.saml.jetty;
 
+import org.bouncycastle.cert.ocsp.Req;
 import org.eclipse.jetty.server.AbstractHttpConnection;
 import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.Request;
@@ -48,7 +49,7 @@ public class KeycloakSamlAuthenticator extends AbstractSamlAuthenticator {
     }
 
     @Override
-    public Authentication createAuthentication(UserIdentity userIdentity) {
+    public Authentication createAuthentication(UserIdentity userIdentity, Request request) {
         return new KeycloakAuthentication(getAuthMethod(), userIdentity) {
             @Override
             public void logout() {

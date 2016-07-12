@@ -30,6 +30,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.authorization.infinispan.InfinispanStoreFactoryProvider.CacheTransaction;
 import org.keycloak.models.authorization.infinispan.entities.CachedPolicy;
 import org.keycloak.models.entities.AbstractIdentifiableEntity;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.Logic;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -68,7 +70,7 @@ public class CachedPolicyStore implements PolicyStore {
     @Override
     public void delete(String id) {
         getDelegate().delete(id);
-        this.transaction.whenComplete(() -> cache.remove(id));
+        this.transaction.whenComplete(() -> cache.remove(getCacheKeyForPolicy(id)));
     }
 
     @Override

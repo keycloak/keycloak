@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -54,8 +55,11 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
 
         CloseableHttpClient client = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
         try {
+            String redirectUri = URLEncoder.encode(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/admin/master/console", "UTF-8");
+
             HttpGet get = new HttpGet(
-                    suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/auth?response_type=code&client_id=" + Constants.ADMIN_CONSOLE_CLIENT_ID);
+                    suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/auth?response_type=code&client_id=" + Constants.ADMIN_CONSOLE_CLIENT_ID +
+                            "&redirect_uri=" + redirectUri);
 
             CloseableHttpResponse response = client.execute(get);
             String s = IOUtils.toString(response.getEntity().getContent());

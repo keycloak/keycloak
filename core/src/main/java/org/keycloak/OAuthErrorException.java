@@ -28,6 +28,8 @@ public class OAuthErrorException extends Exception {
     public static final String INVALID_SCOPE = "invalid_grant";
     public static final String UNAUTHORIZED_CLIENT = "unauthorized_client";
     public static final String UNSUPPORTED_GRANT_TYPE = "unsupported_grant_type";
+    public static final String INVALID_TOKEN = "invalid_token";
+    public static final String INSUFFICIENT_SCOPE = "insufficient_scope";
 
     public OAuthErrorException(String error, String description, String message, Throwable cause) {
         super(message, cause);

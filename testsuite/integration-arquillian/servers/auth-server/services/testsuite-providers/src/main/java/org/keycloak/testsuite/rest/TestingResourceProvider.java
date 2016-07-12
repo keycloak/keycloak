@@ -635,7 +635,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public UserRepresentation getUserByServiceAccountClient(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId) {
         RealmModel realm = getRealmByName(realmName);
         ClientModel client =  realm.getClientByClientId(clientId);
-        UserModel user = session.users().getUserByServiceAccountClient(client);
+        UserModel user = session.users().getServiceAccount(client);
         if (user == null) return null;
         return ModelToRepresentation.toRepresentation(user);
     }

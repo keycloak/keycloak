@@ -23,13 +23,13 @@ import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.ResourceServer.PolicyEnforcementMode;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 import java.util.HashMap;
 import java.util.List;

@@ -19,6 +19,7 @@
 package org.keycloak.authorization.jpa.entities;
 
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;

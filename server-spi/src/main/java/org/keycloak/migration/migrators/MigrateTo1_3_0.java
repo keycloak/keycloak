@@ -56,7 +56,7 @@ public class MigrateTo1_3_0 {
             if (fedProvider.getProviderName().equals(LDAPConstants.LDAP_PROVIDER)) {
                 Map<String, String> config = fedProvider.getConfig();
 
-                // Update config properties for LDAP federation provider
+                // Update config properties for LDAP federated provider
                 if (config.get(LDAPConstants.SEARCH_SCOPE) == null) {
                     config.put(LDAPConstants.SEARCH_SCOPE, String.valueOf(SearchControls.SUBTREE_SCOPE));
                 }

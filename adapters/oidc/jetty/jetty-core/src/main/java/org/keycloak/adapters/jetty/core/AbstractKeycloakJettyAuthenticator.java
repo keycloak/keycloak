@@ -340,13 +340,13 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         Authentication authentication = request.getAuthentication();
         if (!(authentication instanceof KeycloakAuthentication)) {
             UserIdentity userIdentity = createIdentity(principal);
-            authentication = createAuthentication(userIdentity);
+            authentication = createAuthentication(userIdentity, request);
             request.setAuthentication(authentication);
         }
         return authentication;
     }
 
-    protected abstract Authentication createAuthentication(UserIdentity userIdentity);
+    protected abstract Authentication createAuthentication(UserIdentity userIdentity, Request request);
 
     public static abstract class KeycloakAuthentication extends UserAuthentication {
         public KeycloakAuthentication(String method, UserIdentity userIdentity) {

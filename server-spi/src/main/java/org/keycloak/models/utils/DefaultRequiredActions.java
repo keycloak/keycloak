@@ -52,7 +52,7 @@ public class DefaultRequiredActions {
             RequiredActionProviderModel totp = new RequiredActionProviderModel();
             totp.setEnabled(true);
             totp.setAlias(UserModel.RequiredAction.CONFIGURE_TOTP.name());
-            totp.setName("Configure Totp");
+            totp.setName("Configure OTP");
             totp.setProviderId(UserModel.RequiredAction.CONFIGURE_TOTP.name());
             totp.setDefaultAction(false);
             realm.addRequiredActionProvider(totp);
