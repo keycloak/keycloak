@@ -56,13 +56,15 @@ public class CachedScopeStore implements ScopeStore {
     public Scope create(String name, ResourceServer resourceServer) {
         Scope scope = getDelegate().create(name, getStoreFactory().getResourceServerStore().findById(resourceServer.getId()));
 
+        this.transaction.whenRollback(() -> cache.remove(getCacheKeyForScope(scope.getId())));
+
         return createAdapter(new CachedScope(scope));
     }
 
     @Override
     public void delete(String id) {
         getDelegate().delete(id);
-        this.transaction.whenComplete(() -> cache.remove(getCacheKeyForScope(id)));
+        this.transaction.whenCommit(() -> cache.remove(getCacheKeyForScope(id)));
     }
 
     @Override
@@ -173,7 +175,7 @@ public class CachedScopeStore implements ScopeStore {
                 if (this.updated == null) {
                     this.updated = getDelegate().findById(getId());
                     if (this.updated == null) throw new IllegalStateException("Not found in database");
-                    transaction.whenComplete(() -> cache.evict(getCacheKeyForScope(getId())));
+                    transaction.whenCommit(() -> cache.evict(getCacheKeyForScope(getId())));
                 }
 
                 return this.updated;
@@ -188,7 +190,7 @@ public class CachedScopeStore implements ScopeStore {
 
         cache.add(cached);
 
-        this.transaction.whenComplete(() -> this.cache.put(getCacheKeyForScope(scope.getId()), cache));
+        this.transaction.whenCommit(() -> this.cache.put(getCacheKeyForScope(scope.getId()), cache));
 
         return cached;
     }
