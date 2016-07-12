@@ -17,14 +17,16 @@
 
 package org.keycloak.testsuite.page;
 
-import com.google.common.base.Predicate;
-import java.util.Arrays;
-import static org.jboss.arquillian.graphene.Graphene.waitModel;
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.jboss.logging.Logger;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+
+import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  *
@@ -37,33 +39,27 @@ public abstract class AbstractAlert {
     @Root
     protected WebElement root;
 
-    public void waitUntilPresent() {
-        waitUntilElement(root, "Flash message should be present.").is().present();
-    }
-
-    public void waitUntilPresentAndClassSet() {
-        waitUntilPresent();
-        waitModel().until(new Predicate<WebDriver>() {
-            @Override
-            public boolean apply(WebDriver input) {
-                return !Arrays.asList(getAttributeClass().split(" ")).contains("alert-");
-            }
-        });
-    }
+    @Drone
+    protected WebDriver driver;
 
     public String getText() {
         return root.getText();
     }
 
-    public String getAttributeClass() {
-        String attrClass = root.getAttribute("class");
-        log.debug("Alert @class = '" + attrClass + "'");
-        return attrClass;
-    }
-
     public boolean isSuccess() {
         log.debug("Alert.isSuccess()");
-        return getAttributeClass().contains("alert-success");
+        return checkAlertType("success");
+    }
+
+    protected boolean checkAlertType(String type) {
+        WaitUtils.waitForPageToLoad(driver);
+        try {
+            (new WebDriverWait(driver, 1)).until(ExpectedConditions.attributeContains(root, "class", "alert-" + type));
+        }
+        catch (TimeoutException e) {
+            return false;
+        }
+        return true;
     }
 
 }

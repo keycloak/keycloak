@@ -27,19 +27,19 @@ import org.openqa.selenium.support.FindBy;
  */
 public class AdminConsoleAlert extends AbstractAlert {
 
-    @FindBy(xpath = "//button[@class='close']")
+    @FindBy(xpath = ".//button[@class='close']")
     protected WebElement closeButton;
 
     public boolean isInfo() {
-        return getAttributeClass().contains("alert-info");
+        return checkAlertType("info");
     }
 
     public boolean isWarning() {
-        return getAttributeClass().contains("alert-warning");
+        return checkAlertType("waring");
     }
 
     public boolean isDanger() {
-        return getAttributeClass().contains("alert-danger");
+        return checkAlertType("danger");
     }
 
     public void close() {

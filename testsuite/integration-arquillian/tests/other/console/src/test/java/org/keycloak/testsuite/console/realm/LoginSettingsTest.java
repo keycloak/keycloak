@@ -75,7 +75,6 @@ public class LoginSettingsTest extends AbstractRealmTest {
     public void beforeLoginSettingsTest() {
 //        tabs().login();
         loginSettingsPage.navigateTo();
-        assertCurrentUrlEquals(loginSettingsPage);
     }
     
     @Test

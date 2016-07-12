@@ -31,6 +31,10 @@
 
     <name>Admin Console UI Tests</name>
 
+    <properties>
+        <keycloak.theme.dir>${auth.server.home}/themes</keycloak.theme.dir>
+    </properties>
+
     <build>
         <pluginManagement>
             <plugins>
@@ -53,6 +57,14 @@
                             </configuration>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <systemProperties>
+                            <keycloak.theme.dir>${keycloak.theme.dir}</keycloak.theme.dir>
+                        </systemProperties>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

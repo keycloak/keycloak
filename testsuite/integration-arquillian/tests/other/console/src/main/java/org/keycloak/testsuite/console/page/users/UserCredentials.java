@@ -42,7 +42,6 @@ public class UserCredentials extends User {
     }
 
     public void clickResetPasswordAndConfirm() {
-        waitUntilElement(resetPasswordButton);
         resetPasswordButton.click();
         modalDialog.ok();
     }
