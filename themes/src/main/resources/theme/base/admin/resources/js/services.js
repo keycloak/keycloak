@@ -158,6 +158,8 @@ module.factory('Notifications', function($rootScope, $timeout) {
     $rootScope.notification = notifications.current;
 
 	notifications.message = function(type, header, message) {
+        notifications.current.remove();
+        
         notifications.current.type = type;
         notifications.current.header = header;
         notifications.current.message = message;
