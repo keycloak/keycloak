@@ -243,6 +243,14 @@ Finally you need to add a translation for the language selector. This is done by
 locale_no=Norsk
 ----
 
+By default message properties files should be encoded using ISO-8859-1. It's also possible to specify the encoding using a special header. For example to use UTF-8 encoding:
+
+[source]
+----
+# encoding=UTF-8
+usernameOrEmail=....
+----
+
 ==== HTML Templates
 
 {{book.project.name}} uses http://freemarker.org[Freemarker Templates] in order to generate HTML. You can override individual templates in your own theme by
