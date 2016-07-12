@@ -32,6 +32,8 @@
     <description></description>
 
     <properties>
+        <cli.log.output>false</cli.log.output>
+        <test.intermittent>false</test.intermittent>
         <exclude.test>-</exclude.test>
         <exclude.console>-</exclude.console>
         <exclude.account>-</exclude.account>
@@ -149,7 +151,30 @@
                     </execution>
                 </executions>
             </plugin>
-            
+
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-client-cli-dist</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-client-cli-dist</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${containers.home}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
 
     </build>
