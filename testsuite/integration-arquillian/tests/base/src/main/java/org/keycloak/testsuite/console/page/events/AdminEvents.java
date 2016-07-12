@@ -50,17 +50,14 @@ public class AdminEvents extends Events {
         private AdminEventsTableFilterForm filterForm;
 
         public void update() {
-            waitForBody();
             clickHeaderButton("Update");
         }
 
         public void reset() {
-            waitForBody();
             clickHeaderButton("Reset");
         }
 
         public void filter() {
-            waitForBody();
             filterButton.click();
         }
 

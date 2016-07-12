@@ -28,7 +28,6 @@ public class RolesTable extends DataTable {
     }
 
     public void clickRole(String name) {
-        waitForBody();
         clickRowByLinkText(name);
     }
 

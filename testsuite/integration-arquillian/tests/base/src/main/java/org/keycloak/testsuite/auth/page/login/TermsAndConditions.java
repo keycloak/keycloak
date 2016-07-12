@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -35,7 +36,7 @@ public class TermsAndConditions extends LoginActions {
     
     @Override
     public boolean isCurrent() {
-        return driver.getTitle().equals("Terms and Conditions");
+        return UIUtils.currentTitleEquals(driver, "Terms and Conditions");
     }
 
     public void acceptTerms() {

@@ -25,7 +25,7 @@ import org.keycloak.testsuite.page.AbstractAlert;
 public class AccountManagementAlert extends AbstractAlert {
 
     public boolean isError() {
-        return getAttributeClass().contains("alert-error");
+        return checkAlertType("error");
     }
 
 }
