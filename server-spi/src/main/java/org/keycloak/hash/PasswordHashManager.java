@@ -18,7 +18,11 @@
 package org.keycloak.hash;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.*;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.policy.HashAlgorithmPasswordPolicyProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -32,17 +36,12 @@ public class PasswordHashManager {
     }
 
     public static UserCredentialValueModel encode(KeycloakSession session, PasswordPolicy passwordPolicy, String rawPassword) {
-        String algorithm = passwordPolicy.getHashAlgorithm();
-        int iterations = passwordPolicy.getHashIterations();
-        if (iterations < 1) {
-            iterations = 1;
-        }
         PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class, passwordPolicy.getHashAlgorithm());
         if (provider == null) {
-            log.warnv("Could not find hash provider {0} from password policy, using default provider {1}", algorithm, Constants.DEFAULT_HASH_ALGORITHM);
-            provider = session.getProvider(PasswordHashProvider.class, Constants.DEFAULT_HASH_ALGORITHM);
+            log.warnv("Could not find hash provider {0} from password policy, using default provider {1}", passwordPolicy.getHashAlgorithm(), HashAlgorithmPasswordPolicyProviderFactory.DEFAULT_VALUE);
+            provider = session.getProvider(PasswordHashProvider.class, HashAlgorithmPasswordPolicyProviderFactory.DEFAULT_VALUE);
         }
-        return provider.encode(rawPassword, iterations);
+        return provider.encode(rawPassword, passwordPolicy.getHashIterations());
     }
 
     public static boolean verify(KeycloakSession session, RealmModel realm, String password, UserCredentialValueModel credential) {

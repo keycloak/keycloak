@@ -280,7 +280,7 @@ public class RealmAdminResource {
                 }
             }
 
-            RepresentationToModel.updateRealm(rep, realm);
+            RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders
             List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();

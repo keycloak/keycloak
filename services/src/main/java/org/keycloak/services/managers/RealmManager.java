@@ -220,7 +220,7 @@ public class RealmManager implements RealmImporter {
 
         realm.setEventsListeners(Collections.singleton("jboss-logging"));
 
-        realm.setPasswordPolicy(new PasswordPolicy("hashIterations(20000)"));
+        realm.setPasswordPolicy(PasswordPolicy.parse(session, "hashIterations(20000)"));
     }
 
     public boolean removeRealm(RealmModel realm) {
