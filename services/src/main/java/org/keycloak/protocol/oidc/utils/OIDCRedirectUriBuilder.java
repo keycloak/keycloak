@@ -39,6 +39,7 @@ public abstract class OIDCRedirectUriBuilder {
     }
 
     public abstract OIDCRedirectUriBuilder addParam(String paramName, String paramValue);
+
     public abstract Response build();
 
 

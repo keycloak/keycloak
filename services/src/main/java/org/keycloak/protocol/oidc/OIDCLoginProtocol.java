@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oidc;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -193,14 +194,14 @@ public class OIDCLoginProtocol implements LoginProtocol {
         switch (error) {
             case CANCELLED_BY_USER:
             case CONSENT_DENIED:
-                return "access_denied";
+                return OAuthErrorException.ACCESS_DENIED;
             case PASSIVE_INTERACTION_REQUIRED:
-                return "interaction_required";
+                return OAuthErrorException.INTERACTION_REQUIRED;
             case PASSIVE_LOGIN_REQUIRED:
-                return "login_required";
+                return OAuthErrorException.LOGIN_REQUIRED;
             default:
                 logger.untranslatedProtocol(error.name());
-                return "access_denied";
+                return OAuthErrorException.SERVER_ERROR;
         }
     }
 

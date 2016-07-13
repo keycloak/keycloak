@@ -26,6 +26,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
@@ -40,6 +42,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -146,9 +149,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         checkSsl();
         checkRealm();
-        checkResponseType();
         checkClient();
         checkRedirectUri();
+        Response errorResponse = checkResponseType();
+        if (errorResponse != null) {
+            return errorResponse;
+        }
 
         createClientSession();
         // So back button doesn't work
@@ -236,28 +242,25 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             throw new ErrorPageException(session, Messages.CLIENT_NOT_FOUND);
         }
 
+        if (!client.isEnabled()) {
+            event.error(Errors.CLIENT_DISABLED);
+            throw new ErrorPageException(session, Messages.CLIENT_DISABLED);
+        }
+
         if (client.isBearerOnly()) {
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorPageException(session, Messages.BEARER_ONLY);
         }
 
-        if ((parsedResponseType.hasResponseType(OIDCResponseType.CODE) || parsedResponseType.hasResponseType(OIDCResponseType.NONE)) && !client.isStandardFlowEnabled()) {
-            event.error(Errors.NOT_ALLOWED);
-            throw new ErrorPageException(session, Messages.STANDARD_FLOW_DISABLED);
-        }
-
-        if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
-            event.error(Errors.NOT_ALLOWED);
-            throw new ErrorPageException(session, Messages.IMPLICIT_FLOW_DISABLED);
-        }
-
         session.getContext().setClient(client);
     }
 
-    private void checkResponseType() {
+    private Response checkResponseType() {
+        OIDCResponseMode defaultResponseMode = client.isImplicitFlowEnabled() ? OIDCResponseMode.FRAGMENT : OIDCResponseMode.QUERY;
+
         if (responseType == null) {
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+            return redirectErrorToClient(defaultResponseMode, OAuthErrorException.INVALID_REQUEST, "Missing parameter: response_type");
         }
 
         event.detail(Details.RESPONSE_TYPE, responseType);
@@ -270,24 +273,51 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         } catch (IllegalArgumentException iae) {
             logger.error(iae);
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+            return redirectErrorToClient(defaultResponseMode, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
 
+        OIDCResponseMode parsedResponseMode = null;
         try {
-            OIDCResponseMode parsedResponseMode = OIDCResponseMode.parse(responseMode, parsedResponseType);
-            event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
-
-            // Disallowed by OIDC specs
-            if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
-                logger.responseModeQueryNotAllowed();
-                event.error(Errors.INVALID_REQUEST);
-                throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_MODE_PARAM);
-            }
-
+            parsedResponseMode = OIDCResponseMode.parse(responseMode, parsedResponseType);
         } catch (IllegalArgumentException iae) {
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_MODE_PARAM);
+            return redirectErrorToClient(defaultResponseMode, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: response_mode");
         }
+
+        event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
+
+        // Disallowed by OIDC specs
+        if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(defaultResponseMode, OAuthErrorException.INVALID_REQUEST, "Response_mode 'query' not allowed for implicit or hybrid flow");
+        }
+
+        if ((parsedResponseType.hasResponseType(OIDCResponseType.CODE) || parsedResponseType.hasResponseType(OIDCResponseType.NONE)) && !client.isStandardFlowEnabled()) {
+            event.error(Errors.NOT_ALLOWED);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, "Client is not allowed to initiate browser login with given response_type. Standard flow is disabled for the client.");
+        }
+
+        if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
+            event.error(Errors.NOT_ALLOWED);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
+        }
+
+        return null;
+    }
+
+    private Response redirectErrorToClient(OIDCResponseMode responseMode, String error, String errorDescription) {
+        OIDCRedirectUriBuilder errorResponseBuilder = OIDCRedirectUriBuilder.fromUri(redirectUri, responseMode)
+                .addParam(OAuth2Constants.ERROR, error);
+
+        if (errorDescription != null) {
+            errorResponseBuilder.addParam(OAuth2Constants.ERROR_DESCRIPTION, errorDescription);
+        }
+
+        if (state != null) {
+            errorResponseBuilder.addParam(OAuth2Constants.STATE, state);
+        }
+
+        return errorResponseBuilder.build();
     }
 
     private void checkRedirectUri() {
