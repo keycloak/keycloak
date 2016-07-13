@@ -110,6 +110,14 @@ public class SamlClient extends ClientConfigResolver {
         client.setAttribute(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, Boolean.toString(val));
     }
 
+    public boolean singleAttributeStatement() {
+        return Boolean.TRUE.toString().equals(resolveAttribute(SamlConfigAttributes.SAML_SINGLE_ATTRIBUTE_STATEMENT));
+
+    }
+    public void setSingleAttributeStatement(final boolean val) {
+        client.setAttribute(SamlConfigAttributes.SAML_SINGLE_ATTRIBUTE_STATEMENT, Boolean.toString(val));
+    }
+
     public boolean requiresRealmSignature() {
         return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE));
     }

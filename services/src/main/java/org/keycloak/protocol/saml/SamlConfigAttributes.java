@@ -30,6 +30,7 @@ public interface SamlConfigAttributes {
     String SAML_NAME_ID_FORMAT_ATTRIBUTE = "saml_name_id_format";
     String SAML_AUTHNSTATEMENT = "saml.authnstatement";
     String SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE = "saml_force_name_id_format";
+    String SAML_SINGLE_ATTRIBUTE_STATEMENT = "saml_single_attribute_statement";
     String SAML_SERVER_SIGNATURE = "saml.server.signature";
     String SAML_FORCE_POST_BINDING = "saml.force.post.binding";
     String SAML_ASSERTION_SIGNATURE = "saml.assertion.signature";

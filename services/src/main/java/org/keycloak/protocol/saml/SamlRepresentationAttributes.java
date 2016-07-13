@@ -61,6 +61,11 @@ public class SamlRepresentationAttributes {
         return getAttributes().get(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE);
     }
 
+    public String getSingleAttributeStatement() {
+        if (getAttributes() == null) return null;
+        return getAttributes().get(SamlConfigAttributes.SAML_SINGLE_ATTRIBUTE_STATEMENT);
+    }
+
     public String getSamlServerSignature() {
         if (getAttributes() == null) return null;
         return getAttributes().get(SamlConfigAttributes.SAML_SERVER_SIGNATURE);

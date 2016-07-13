@@ -198,6 +198,13 @@
                 </div>
                 <kc-tooltip>{{:: 'force-name-id-format.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                <label class="col-md-2 control-label" for="samlSingleAttributeStatement">{{:: 'single-attribute-statement' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="samlSingleAttributeStatement" ng-click="switchChange()" name="samlSingleAttributeStatement" id="samlSingleAttributeStatement" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'single-attribute-statement.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="samlNameIdFormat">{{:: 'name-id-format' | translate}}</label>
                 <div class="col-sm-6">
