@@ -192,7 +192,7 @@ public class FilterSessionStore implements AdapterSessionStore {
                 @Override
                 public long getDateHeader(String name) {
                    if (!needRequestRestore) return super.getDateHeader(name);
-                   throw new RuntimeException("This method is not supported in a restored authenticated request");
+                   return -1;
                 }
 
                 @Override
