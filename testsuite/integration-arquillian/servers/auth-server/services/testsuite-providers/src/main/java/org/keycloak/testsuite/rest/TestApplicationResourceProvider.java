@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.rest;
 
+import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
@@ -25,7 +27,6 @@ import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.events.EventsListenerProvider;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -34,8 +35,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -108,6 +111,35 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         adminLogoutActions.clear();
         adminPushNotBeforeActions.clear();
         return Response.noContent().build();
+    }
+
+    @POST
+    @Produces(MediaType.TEXT_HTML)
+    @Path("/{action}")
+    public String post(@PathParam("action") String action) {
+        String title = "APP_REQUEST";
+        if (action.equals("auth")) {
+            title = "AUTH_RESPONSE";
+        } else if (action.equals("logout")) {
+            title = "LOGOUT_REQUEST";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("<html><head><title>" + title + "</title></head><body>");
+
+        sb.append("<b>Form parameters: </b><br>");
+        HttpRequest request = ResteasyProviderFactory.getContextData(HttpRequest.class);
+        MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
+        for (String paramName : formParams.keySet()) {
+            sb.append(paramName).append(": ").append("<span id=\"").append(paramName).append("\">").append(formParams.getFirst(paramName)).append("</span><br>");
+        }
+        sb.append("<br>");
+
+        UriBuilder base = UriBuilder.fromUri("http://localhost:8180/auth");
+        sb.append("<a href=\"" + RealmsResource.accountUrl(base).build("test").toString() + "\" id=\"account\">account</a>");
+
+        sb.append("</body></html>");
+        return sb.toString();
     }
 
     @GET

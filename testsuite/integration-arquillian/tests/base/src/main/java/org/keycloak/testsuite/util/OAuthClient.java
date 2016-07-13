@@ -36,9 +36,6 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -98,6 +95,10 @@ public class OAuthClient {
     private String clientSessionHost;
 
     private String maxAge;
+
+    private String responseType = OAuth2Constants.CODE;
+
+    private String responseMode;
 
     private Map<String, PublicKey> publicKeys = new HashMap<>();
 
@@ -486,7 +487,12 @@ public class OAuthClient {
 
     public String getLoginFormUrl() {
         UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(AUTH_SERVER_ROOT));
-        b.queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE);
+        if (responseType != null) {
+            b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
+        }
+        if (responseMode != null) {
+            b.queryParam(OIDCLoginProtocol.RESPONSE_MODE_PARAM, responseMode);
+        }
         if (clientId != null) {
             b.queryParam(OAuth2Constants.CLIENT_ID, clientId);
         }
@@ -595,6 +601,16 @@ public class OAuthClient {
 
     public OAuthClient maxAge(String maxAge) {
         this.maxAge = maxAge;
+        return this;
+    }
+
+    public OAuthClient responseType(String responseType) {
+        this.responseType = responseType;
+        return this;
+    }
+
+    public OAuthClient responseMode(String responseMode) {
+        this.responseMode = responseMode;
         return this;
     }
 
