@@ -44,8 +44,8 @@ public class UserInfoClientUtil {
 
     public static WebTarget getUserInfoWebTarget(Client client) {
         UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
-        UriBuilder uriBuilder = OIDCLoginProtocolService.tokenServiceBaseUrl(builder);
-        URI userInfoUri = uriBuilder.path(OIDCLoginProtocolService.class, "issueUserInfo").build("test");
+        UriBuilder uriBuilder = OIDCLoginProtocolService.userInfoUrl(builder);
+        URI userInfoUri = uriBuilder.build("test");
         return client.target(userInfoUri);
     }
 

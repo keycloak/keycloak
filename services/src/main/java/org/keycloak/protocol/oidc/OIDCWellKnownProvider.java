@@ -24,6 +24,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.representations.IDToken;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationProviderFactory;
 import org.keycloak.services.resources.RealmsResource;
@@ -54,6 +55,11 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     public static final List<String> DEFAULT_CLIENT_AUTH_METHODS_SUPPORTED = list("client_secret_basic", "client_secret_post", "private_key_jwt");
 
     public static final List<String> DEFAULT_CLIENT_AUTH_SIGNING_ALG_VALUES_SUPPORTED = list(Algorithm.RS256.toString());
+
+    // The exact list depends on protocolMappers
+    public static final List<String> DEFAULT_CLAIMS_SUPPORTED= list("sub", "iss", IDToken.AUTH_TIME, IDToken.NAME, IDToken.GIVEN_NAME, IDToken.FAMILY_NAME, IDToken.PREFERRED_USERNAME, IDToken.EMAIL);
+
+    public static final List<String> DEFAULT_CLAIM_TYPES_SUPPORTED= list("normal");
 
     private KeycloakSession session;
 
@@ -86,6 +92,10 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setTokenEndpointAuthMethodsSupported(DEFAULT_CLIENT_AUTH_METHODS_SUPPORTED);
         config.setTokenEndpointAuthSigningAlgValuesSupported(DEFAULT_CLIENT_AUTH_SIGNING_ALG_VALUES_SUPPORTED);
+
+        config.setClaimsSupported(DEFAULT_CLAIMS_SUPPORTED);
+        config.setClaimTypesSupported(DEFAULT_CLAIM_TYPES_SUPPORTED);
+        config.setClaimsParameterSupported(false);
 
         return config;
     }

@@ -104,6 +104,11 @@ public class OIDCLoginProtocolService {
         return uriBuilder.path(OIDCLoginProtocolService.class, "certs");
     }
 
+    public static UriBuilder userInfoUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(OIDCLoginProtocolService.class, "issueUserInfo");
+    }
+
     public static UriBuilder tokenIntrospectionUrl(UriBuilder baseUriBuilder) {
         return tokenUrl(baseUriBuilder).path(TokenEndpoint.class, "introspect");
     }
