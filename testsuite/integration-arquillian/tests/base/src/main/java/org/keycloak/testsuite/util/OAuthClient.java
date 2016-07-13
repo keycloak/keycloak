@@ -485,7 +485,7 @@ public class OAuthClient {
     }
 
     public String getLoginFormUrl() {
-        UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(SERVER_ROOT + "/auth"));
+        UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(AUTH_SERVER_ROOT));
         b.queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE);
         if (clientId != null) {
             b.queryParam(OAuth2Constants.CLIENT_ID, clientId);

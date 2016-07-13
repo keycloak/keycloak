@@ -76,6 +76,15 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("token_endpoint_auth_signing_alg_values_supported")
     private List<String> tokenEndpointAuthSigningAlgValuesSupported;
 
+    @JsonProperty("claims_supported")
+    private List<String> claimsSupported;
+
+    @JsonProperty("claim_types_supported")
+    private List<String> claimTypesSupported;
+
+    @JsonProperty("claims_parameter_supported")
+    private Boolean claimsParameterSupported;
+
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
@@ -196,6 +205,30 @@ public class OIDCConfigurationRepresentation {
 
     public void setTokenEndpointAuthSigningAlgValuesSupported(List<String> tokenEndpointAuthSigningAlgValuesSupported) {
         this.tokenEndpointAuthSigningAlgValuesSupported = tokenEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public List<String> getClaimsSupported() {
+        return claimsSupported;
+    }
+
+    public void setClaimsSupported(List<String> claimsSupported) {
+        this.claimsSupported = claimsSupported;
+    }
+
+    public List<String> getClaimTypesSupported() {
+        return claimTypesSupported;
+    }
+
+    public void setClaimTypesSupported(List<String> claimTypesSupported) {
+        this.claimTypesSupported = claimTypesSupported;
+    }
+
+    public Boolean getClaimsParameterSupported() {
+        return claimsParameterSupported;
+    }
+
+    public void setClaimsParameterSupported(Boolean claimsParameterSupported) {
+        this.claimsParameterSupported = claimsParameterSupported;
     }
 
     @JsonAnyGetter
