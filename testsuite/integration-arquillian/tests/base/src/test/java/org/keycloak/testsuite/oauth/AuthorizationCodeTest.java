@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
@@ -148,7 +149,12 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         oauth.responseType("token id_token");
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
-        assertEquals("Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.", errorPage.getError());
+
+        OAuthClient.AuthorizationCodeResponse errorResponse = new OAuthClient.AuthorizationCodeResponse(oauth, true);
+        Assert.assertTrue(errorResponse.isRedirected());
+        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+        Assert.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
+
         events.expectLogin().error(Errors.NOT_ALLOWED).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "token id_token").assertEvent();
     }
 
@@ -157,8 +163,12 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         oauth.responseType("tokenn");
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
-        assertEquals("Invalid parameter: response_type", errorPage.getError());
-        events.expectLogin().error(Errors.INVALID_REQUEST).client((String) null).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
+
+        OAuthClient.AuthorizationCodeResponse errorResponse = new OAuthClient.AuthorizationCodeResponse(oauth);
+        Assert.assertTrue(errorResponse.isRedirected());
+        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+
+        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
     }
 
     // KEYCLOAK-3281
