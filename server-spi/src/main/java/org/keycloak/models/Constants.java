@@ -41,8 +41,6 @@ public interface Constants {
     String AUTHZ_UMA_AUTHORIZATION = "uma_authorization";
     String[] AUTHZ_DEFAULT_AUTHORIZATION_ROLES = {AUTHZ_UMA_AUTHORIZATION};
 
-    String DEFAULT_HASH_ALGORITHM = "pbkdf2";
-
     // 15 minutes
     int DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT = 900;
     // 30 days

@@ -36,6 +36,17 @@ public class ProviderConfigProperty {
     protected String type;
     protected Object defaultValue;
 
+    public ProviderConfigProperty() {
+    }
+
+    public ProviderConfigProperty(String name, String label, String helpText, String type, Object defaultValue) {
+        this.name = name;
+        this.label = label;
+        this.helpText = helpText;
+        this.type = type;
+        this.defaultValue = defaultValue;
+    }
+
     public String getName() {
         return name;
     }

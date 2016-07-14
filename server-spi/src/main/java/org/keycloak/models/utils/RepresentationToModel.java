@@ -196,7 +196,7 @@ public class RepresentationToModel {
             newRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         }
 
-        if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
+        if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(PasswordPolicy.parse(session, rep.getPasswordPolicy()));
         if (rep.getOtpPolicyType() != null) newRealm.setOTPPolicy(toPolicy(rep));
         else newRealm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
 
@@ -661,7 +661,7 @@ public class RepresentationToModel {
         return url != null ? url.replace(target, replacement) : null;
     }
 
-    public static void updateRealm(RealmRepresentation rep, RealmModel realm) {
+    public static void updateRealm(RealmRepresentation rep, RealmModel realm, KeycloakSession session) {
         if (rep.getRealm() != null) {
             renameRealm(realm, rep.getRealm());
         }
@@ -709,7 +709,7 @@ public class RepresentationToModel {
         if (rep.isAdminEventsDetailsEnabled() != null) realm.setAdminEventsDetailsEnabled(rep.isAdminEventsDetailsEnabled());
 
 
-        if (rep.getPasswordPolicy() != null) realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
+        if (rep.getPasswordPolicy() != null) realm.setPasswordPolicy(PasswordPolicy.parse(session, rep.getPasswordPolicy()));
         if (rep.getOtpPolicyType() != null) realm.setOTPPolicy(toPolicy(rep));
 
         if (rep.getDefaultRoles() != null) {

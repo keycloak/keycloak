@@ -35,6 +35,11 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.policy.PasswordPolicyProvider;
+import org.keycloak.policy.PasswordPolicyProviderFactory;
+import org.keycloak.provider.*;
+import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
@@ -44,10 +49,6 @@ import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.ServerInfoAwareProviderFactory;
-import org.keycloak.provider.Spi;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
@@ -88,6 +89,7 @@ public class ServerInfoAdminResource {
         setProtocolMapperTypes(info);
         setBuiltinProtocolMappers(info);
         setClientInstallations(info);
+        setPasswordPolicies(info);
         info.setEnums(ENUMS);
         return info;
     }
@@ -245,6 +247,20 @@ public class ServerInfoAdminResource {
                 mappers.add(ModelToRepresentation.toRepresentation(mapper));
             }
             info.getBuiltinProtocolMappers().put(p.getId(), mappers);
+        }
+    }
+
+    private void setPasswordPolicies(ServerInfoRepresentation info) {
+        info.setPasswordPolicies(new LinkedList<>());
+        for (ProviderFactory f : session.getKeycloakSessionFactory().getProviderFactories(PasswordPolicyProvider.class)) {
+            PasswordPolicyProviderFactory factory = (PasswordPolicyProviderFactory) f;
+            PasswordPolicyTypeRepresentation rep = new PasswordPolicyTypeRepresentation();
+            rep.setId(factory.getId());
+            rep.setDisplayName(factory.getDisplayName());
+            rep.setConfigType(factory.getConfigType());
+            rep.setDefaultValue(factory.getDefaultConfigValue());
+            rep.setMultipleSupported(factory.isMultiplSupported());
+            info.getPasswordPolicies().add(rep);
         }
     }
 

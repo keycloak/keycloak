@@ -429,68 +429,84 @@ module.controller('RealmCacheCtrl', function($scope, realm, RealmClearUserCache,
 
 });
 
-module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, PasswordPolicy) {
-    console.log('RealmPasswordPolicyCtrl');
-
-    $scope.realm = realm;
-
-    var oldCopy = angular.copy($scope.realm);
-
-    $scope.allPolicies = PasswordPolicy.allPolicies;
-    $scope.policyMessages = PasswordPolicy.policyMessages;
-
-    $scope.policy = PasswordPolicy.parse(realm.passwordPolicy);
-    var oldPolicy = angular.copy($scope.policy);
-
-    $scope.addPolicy = function(policy){
-        if (!$scope.policy) {
-            $scope.policy = [];
+module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $http, $location, $route, Dialog, Notifications, serverInfo) {
+    var parse = function(policyString) {
+        var policies = [];
+        if (!policyString || policyString.length == 0){
+            return policies;
         }
-        if (policy.name === 'regexPattern') {
-            for (var i in $scope.allPolicies) {
-                var p = $scope.allPolicies[i];
-                if (p.name === 'regexPattern') {
-                    $scope.allPolicies[i] = { name: 'regexPattern', value: '' };
+
+        var policyArray = policyString.split(" and ");
+
+        for (var i = 0; i < policyArray.length; i ++){
+            var policyToken = policyArray[i];
+            var id;
+            var value;
+            if (policyToken.indexOf('(') == -1) {
+                id = policyToken.trim();
+            } else {
+                id = policyToken.substring(0, policyToken.indexOf('('));
+                value = policyToken.substring(policyToken.indexOf('(') + 1, policyToken.indexOf(')')).trim();
+            }
+
+            for (var j = 0; j < serverInfo.passwordPolicies.length; j++) {
+                if (serverInfo.passwordPolicies[j].id == id) {
+                    var p = serverInfo.passwordPolicies[j];
+                    p.value = value && value || p.defaultValue;
+                    policies.push(p);
                 }
             }
         }
+        return policies;
+    };
+
+    var toString = function(policies) {
+        if (!policies || policies.length == 0) {
+            return "";
+        }
+        var policyString = "";
+        for (var i = 0; i < policies.length; i++) {
+            policyString += policies[i].id;
+            if (policies[i].value && policies[i].value != policies[i].defaultValue) {
+                policyString += '(' + policies[i].value + ')';
+            }
+            policyString += " and ";
+        }
+        policyString = policyString.substring(0, policyString.length - 5);
+        return policyString;
+    }
+
+    $scope.realm = realm;
+    $scope.serverInfo = serverInfo;
+    $scope.changed = false; $scope.policy = parse(realm.passwordPolicy);
+
+    $scope.addPolicy = function(policy){
+        policy.value = policy.defaultValue;
+        if (!$scope.policy) {
+            $scope.policy = [];
+        }
         $scope.policy.push(policy);
+        $scope.changed = true;
     }
 
     $scope.removePolicy = function(index){
         $scope.policy.splice(index, 1);
+        $scope.changed = true;
     }
-
-    $scope.changed = false;
-
-    $scope.$watch('realm', function() {
-        if (!angular.equals($scope.realm, oldCopy)) {
-            $scope.changed = true;
-        }
-    }, true);
-
-    $scope.$watch('policy', function(oldVal, newVal) {
-        if (!angular.equals($scope.policy, oldPolicy)) {
-            $scope.realm.passwordPolicy = PasswordPolicy.toString($scope.policy);
-            $scope.changed = true;
-        }
-    }, true);
 
     $scope.save = function() {
         $scope.changed = false;
+        $scope.realm.passwordPolicy = toString($scope.policy);
+        console.debug($scope.realm.passwordPolicy);
 
         Realm.update($scope.realm, function () {
             $location.url("/realms/" + realm.realm + "/authentication/password-policy");
             Notifications.success("Your changes have been saved to the realm.");
-            oldCopy = angular.copy($scope.realm);
-            oldPolicy = angular.copy($scope.policy);
         });
     };
 
     $scope.reset = function() {
-        $scope.realm = angular.copy(oldCopy);
-        $scope.policy = angular.copy(oldPolicy);
-        $scope.changed = false;
+        $route.reload();
     };
 });
 
