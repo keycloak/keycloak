@@ -78,8 +78,6 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
         addCredential(addr, service, "secret", "secret1");
         addCredential(addr, service, "jwt.client-keystore-file", "/tmp/foo.jks");
         addCredential(addr, service, "jwt.token-timeout", "10");
-
-        System.out.println("Deployment: " + service.getJSON("foo"));
     }
 
     private void addCredential(PathAddress parent, KeycloakAdapterConfigService service, String key, String value) {

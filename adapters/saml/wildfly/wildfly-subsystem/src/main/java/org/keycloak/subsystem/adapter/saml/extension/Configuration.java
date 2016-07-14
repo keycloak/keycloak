@@ -16,8 +16,11 @@
  */
 package org.keycloak.subsystem.adapter.saml.extension;
 
+import org.jboss.as.server.deployment.DeploymentUnit;
+import org.jboss.as.web.common.WarMetaData;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.jboss.metadata.web.jboss.JBossWebMetaData;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -46,11 +49,31 @@ public class Configuration {
         return keymodel.get(key);
     }
 
-    public ModelNode getSecureDeployment(String name) {
+    public ModelNode getSecureDeployment(DeploymentUnit deploymentUnit) {
+        String name = preferredDeploymentName(deploymentUnit);
         ModelNode secureDeployment = config.get("subsystem").get("keycloak-saml").get(Constants.Model.SECURE_DEPLOYMENT);
         if (secureDeployment.hasDefined(name)) {
             return secureDeployment.get(name);
         }
         return null;
+    }
+    
+    // KEYCLOAK-3273: prefer module name if available
+    private String preferredDeploymentName(DeploymentUnit deploymentUnit) {
+        String deploymentName = deploymentUnit.getName();
+        WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
+        if (warMetaData == null) {
+            return deploymentName;
+        }
+        
+        JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
+        if (webMetaData == null) {
+            return deploymentName;
+        }
+        
+        String moduleName = webMetaData.getModuleName();
+        if (moduleName != null) return moduleName + ".war";
+        
+        return deploymentName;
     }
 }
