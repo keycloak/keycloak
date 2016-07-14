@@ -47,6 +47,8 @@ public class IDToken extends JsonWebToken {
     public static final String ADDRESS = "address";
     public static final String UPDATED_AT = "updated_at";
     public static final String CLAIMS_LOCALES = "claims_locales";
+    public static final String ACR = "acr";
+
     // NOTE!!!  WE used to use @JsonUnwrapped on a UserClaimSet object.  This screws up otherClaims and the won't work
     // anymore.  So don't have any @JsonUnwrapped!
     @JsonProperty(NONCE)
@@ -117,6 +119,9 @@ public class IDToken extends JsonWebToken {
 
     @JsonProperty(CLAIMS_LOCALES)
     protected String claimsLocales;
+
+    @JsonProperty(ACR)
+    protected String acr;
 
     public String getNonce() {
         return nonce;
@@ -302,4 +307,11 @@ public class IDToken extends JsonWebToken {
         this.claimsLocales = claimsLocales;
     }
 
+    public String getAcr() {
+        return acr;
+    }
+
+    public void setAcr(String acr) {
+        this.acr = acr;
+    }
 }
