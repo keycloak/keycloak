@@ -31,24 +31,25 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.RealmBuilder;
 
 /**
  * Test for supporting advanced parameters of OIDC specs (max_age, nonce, prompt, ...)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OIDCAdvancedRequestParamsTest extends AbstractKeycloakTest {
+public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
 
     @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
+    public void configureTestRealm(RealmRepresentation testRealm) {
     }
 
     @Before
@@ -76,7 +77,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-        IDToken idToken = retrieveIDToken(loginEvent);
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Check that authTime is available and set to current time
         int authTime = idToken.getAuthTime();
@@ -93,7 +94,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
         loginEvent = events.expectLogin().assertEvent();
 
-        idToken = retrieveIDToken(loginEvent);
+        idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime was updated
         int authTimeUpdated = idToken.getAuthTime();
@@ -106,7 +107,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-        IDToken idToken = retrieveIDToken(loginEvent);
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Check that authTime is available and set to current time
         int authTime = idToken.getAuthTime();
@@ -123,25 +124,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractKeycloakTest {
         oauth.openLoginForm();
         loginEvent = events.expectLogin().assertEvent();
 
-        idToken = retrieveIDToken(loginEvent);
+        idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime is still the same
         int authTimeUpdated = idToken.getAuthTime();
         Assert.assertEquals(authTime, authTimeUpdated);
-    }
-
-    private IDToken retrieveIDToken(EventRepresentation loginEvent) {
-        String sessionId = loginEvent.getSessionId();
-        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
-
-        Assert.assertEquals(200, response.getStatusCode());
-        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
-
-        events.expectCodeToToken(codeId, sessionId).assertEvent();
-        return idToken;
     }
 
 }

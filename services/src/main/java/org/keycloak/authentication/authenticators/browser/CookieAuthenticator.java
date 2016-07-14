@@ -54,7 +54,7 @@ public class CookieAuthenticator implements Authenticator {
                 context.attempted();
             } else {
                 ClientSessionModel clientSession = context.getClientSession();
-                clientSession.setNote(AuthenticationManager.SKIP_AUTH_TIME_UPDATE, "true");
+                clientSession.setNote(AuthenticationManager.SSO_AUTH, "true");
 
                 context.setUser(authResult.getUser());
                 context.attachUserSession(authResult.getSession());
