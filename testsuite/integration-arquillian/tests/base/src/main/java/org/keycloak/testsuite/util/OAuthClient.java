@@ -523,9 +523,10 @@ public class OAuthClient {
         if(uiLocales != null){
             b.queryParam(OAuth2Constants.UI_LOCALES_PARAM, uiLocales);
         }
-        if (scope != null) {
-            b.queryParam(OAuth2Constants.SCOPE, scope);
-        }
+
+        String scopeParam = TokenUtil.attachOIDCScope(scope);
+        b.queryParam(OAuth2Constants.SCOPE, scopeParam);
+
         if (maxAge != null) {
             b.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
         }

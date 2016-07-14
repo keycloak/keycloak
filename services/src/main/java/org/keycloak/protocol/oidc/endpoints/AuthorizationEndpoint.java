@@ -53,6 +53,7 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.util.TokenUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -98,6 +99,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.PROMPT_PARAM);
         KNOWN_REQ_PARAMS.add(AdapterConstants.KC_IDP_HINT);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.NONCE_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.MAX_AGE_PARAM);
     }
 
     private enum Action {
@@ -154,6 +156,10 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         Response errorResponse = checkResponseType();
         if (errorResponse != null) {
             return errorResponse;
+        }
+
+        if (!TokenUtil.isOIDCRequest(scope)) {
+            logger.oidcScopeMissing();
         }
 
         createClientSession();
