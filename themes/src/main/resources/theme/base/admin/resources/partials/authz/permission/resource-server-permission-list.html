@@ -8,14 +8,14 @@
                 <th class="kc-table-actions" colspan="5">
                     <div class="form-inline">
                         <div class="form-group">
-                            Filter by:&nbsp;&nbsp;
+                            {{:: 'filter' | translate}}:&nbsp;&nbsp;
                             <div class="input-group">
-                                <input type="text" placeholder="Name" data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                                <input type="text" placeholder="{{:: 'name' | translate}}" data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
                             </div>
                             <div class="input-group">
                                 <select class="form-control search" data-ng-model="search.type"
                                         ng-options="p.type as p.name group by p.group for p in policyProviders track by p.type">
-                                    <option value="" selected ng-click="search.type = ''">All types</option>
+                                    <option value="" selected ng-click="search.type = ''">{{:: 'authz-all-types' | translate}}</option>
                                 </select>
                             </div>
                         </div>
@@ -23,17 +23,17 @@
                             <select class="form-control" ng-model="policyType"
                                     ng-options="p.name for p in policyProviders track by p.type"
                                     data-ng-change="addPolicy(policyType);">
-                                <option value="" disabled selected>Create permission...</option>
+                                <option value="" disabled selected>{{:: 'authz-create-permission' | translate}}...</option>
                             </select>
                         </div>
                     </div>
                 </th>
             </tr>
             <tr data-ng-hide="policies.length == 0">
-                <th>Permission Name</th>
-                <th>Description</th>
-                <th>Type</th>
-                <th>Associated Policies</th>
+                <th>{{:: 'name' | translate}}</th>
+                <th>{{:: 'description' | translate}}</th>
+                <th>{{:: 'type' | translate}}</th>
+                <th>{{:: 'authz-associated-policies' | translate}}</th>
             </tr>
         </thead>
         <tbody>
@@ -42,7 +42,7 @@
                 <td>{{policy.description}}</td>
                 <td>{{policy.type}}</td>
                 <td>
-                    <span data-ng-show="!policy.associatedPolicies.length">No policies assigned.</span>
+                    <span data-ng-show="!policy.associatedPolicies.length">{{:: 'authz-no-policy-assigned' | translate}}</span>
                     <span data-ng-show="policy.associatedPolicies.length > 0">
                         <span ng-repeat="policy in policy.associatedPolicies">
                             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy/{{policy.type}}/{{policy.id}}">{{policy.name}}</a>{{$last ? '' : ', '}}
@@ -51,8 +51,8 @@
                 </td>
             </tr>
             <tr data-ng-show="(policies | filter:search).length == 0">
-                <td class="text-muted" colspan="3" data-ng-show="search.name">No results</td>
-                <td class="text-muted" colspan="3" data-ng-hide="search.name">No permissions available</td>
+                <td class="text-muted" colspan="3" data-ng-show="search.name">{{:: 'no-results' | translate}}</td>
+                <td class="text-muted" colspan="3" data-ng-hide="search.name">{{:: 'authz-no-permissions-available' | translate}}</td>
             </tr>
         </tbody>
     </table>
