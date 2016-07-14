@@ -110,8 +110,8 @@
         event('Auth Success');
     };
 
-    keycloak.onAuthError = function () {
-        event('Auth Error');
+    keycloak.onAuthError = function (errorData) {
+        event("Auth Error: " + JSON.stringify(errorData) );
     };
 
     keycloak.onAuthRefreshSuccess = function () {

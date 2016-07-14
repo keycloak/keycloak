@@ -265,6 +265,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         OIDCResponseMode defaultResponseMode = client.isImplicitFlowEnabled() ? OIDCResponseMode.FRAGMENT : OIDCResponseMode.QUERY;
 
         if (responseType == null) {
+            logger.missingParameter(OAuth2Constants.RESPONSE_TYPE);
             event.error(Errors.INVALID_REQUEST);
             return redirectErrorToClient(defaultResponseMode, OAuthErrorException.INVALID_REQUEST, "Missing parameter: response_type");
         }
@@ -277,7 +278,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
                 action = Action.CODE;
             }
         } catch (IllegalArgumentException iae) {
-            logger.error(iae);
+            logger.error(iae.getMessage());
             event.error(Errors.INVALID_REQUEST);
             return redirectErrorToClient(defaultResponseMode, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
@@ -286,6 +287,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         try {
             parsedResponseMode = OIDCResponseMode.parse(responseMode, parsedResponseType);
         } catch (IllegalArgumentException iae) {
+            logger.invalidParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
             event.error(Errors.INVALID_REQUEST);
             return redirectErrorToClient(defaultResponseMode, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: response_mode");
         }
@@ -294,16 +296,19 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         // Disallowed by OIDC specs
         if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
+            logger.responseModeQueryNotAllowed();
             event.error(Errors.INVALID_REQUEST);
             return redirectErrorToClient(defaultResponseMode, OAuthErrorException.INVALID_REQUEST, "Response_mode 'query' not allowed for implicit or hybrid flow");
         }
 
         if ((parsedResponseType.hasResponseType(OIDCResponseType.CODE) || parsedResponseType.hasResponseType(OIDCResponseType.NONE)) && !client.isStandardFlowEnabled()) {
+            logger.flowNotAllowed("Standard");
             event.error(Errors.NOT_ALLOWED);
             return redirectErrorToClient(parsedResponseMode, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, "Client is not allowed to initiate browser login with given response_type. Standard flow is disabled for the client.");
         }
 
         if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
+            logger.flowNotAllowed("Implicit");
             event.error(Errors.NOT_ALLOWED);
             return redirectErrorToClient(parsedResponseMode, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
         }
