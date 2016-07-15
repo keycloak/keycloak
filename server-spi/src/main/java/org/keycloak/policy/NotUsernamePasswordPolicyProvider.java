@@ -35,6 +35,9 @@ public class NotUsernamePasswordPolicyProvider implements PasswordPolicyProvider
 
     @Override
     public PolicyError validate(String username, String password) {
+        if (username == null) {
+            return null;
+        }
         return username.equals(password) ? new PolicyError(ERROR_MESSAGE) : null;
     }
 

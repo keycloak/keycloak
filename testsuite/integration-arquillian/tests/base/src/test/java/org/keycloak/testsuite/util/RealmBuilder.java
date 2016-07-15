@@ -172,6 +172,11 @@ public class RealmBuilder {
         return this;
     }
 
+    public RealmBuilder passwordPolicy(String passwordPolicy) {
+        rep.setPasswordPolicy(passwordPolicy);
+        return this;
+    }
+
     public RealmRepresentation build() {
         return rep;
     }
