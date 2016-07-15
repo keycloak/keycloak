@@ -34,6 +34,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -171,9 +172,9 @@ public class OAuthRequestAuthenticator {
         if (idpHint != null && idpHint.length() > 0) {
             redirectUriBuilder.queryParam(AdapterConstants.KC_IDP_HINT,idpHint);
         }
-        if (scope != null && scope.length() > 0) {
-            redirectUriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
-        }
+
+        scope = TokenUtil.attachOIDCScope(scope);
+        redirectUriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
 
         return redirectUriBuilder.build().toString();
     }
