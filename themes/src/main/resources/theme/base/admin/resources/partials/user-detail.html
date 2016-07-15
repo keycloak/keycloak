@@ -117,7 +117,7 @@
                 <label class="col-md-2 control-label" for="impersonate">{{:: 'impersonate-user' | translate}}</label>
 
                 <div class="col-md-6">
-                    <button id="impersonate" data-ng-show="access.impersonation" class="btn btn-default" data-ng-click="impersonate()">{{:: 'impersonate' | translate}}</button>
+                    <button id="impersonate" data-ng-show="access.impersonation" kc-read-only-ignore class="btn btn-default" data-ng-click="impersonate()">{{:: 'impersonate' | translate}}</button>
                 </div>
                 <kc-tooltip>{{:: 'impersonate-user.tooltip' | translate}}</kc-tooltip>
             </div>
