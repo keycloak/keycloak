@@ -27,7 +27,10 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
 
+import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -253,15 +256,35 @@ public class RegisterTest extends TestRealmKeycloakTest {
         assertEquals("lastName", user.getLastName());
     }
 
-    /*protected UserModel getUser(String userId) {
-        KeycloakSession samlServerSession = keycloakRule.startSession();
-        try {
-            RealmModel brokerRealm = samlServerSession.realms().getRealm("test");
-            return samlServerSession.users().getUserById(userId, brokerRealm);
-        } finally {
-            keycloakRule.stopSession(samlServerSession, false);
-        }
-    }*/
+    // KEYCLOAK-3266
+    @Test
+    public void registerUserNotUsernamePasswordPolicy() {
+        adminClient.realm("test").update(RealmBuilder.create().passwordPolicy("notUsername").build());
+
+        loginPage.open();
+
+        assertTrue(loginPage.isCurrent());
+
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", "registerUserNotUsername@email", "registerUserNotUsername", "registerUserNotUsername", "registerUserNotUsername");
+
+        assertTrue(registerPage.isCurrent());
+        assertEquals("Invalid password: must not be equal to the username.", registerPage.getError());
+
+        adminClient.realm("test").users().create(UserBuilder.create().username("registerUserNotUsername").build());
+
+        registerPage.register("firstName", "lastName", "registerUserNotUsername@email", "registerUserNotUsername", "registerUserNotUsername", "registerUserNotUsername");
+
+        assertTrue(registerPage.isCurrent());
+        assertEquals("Username already exists.", registerPage.getError());
+
+        registerPage.register("firstName", "lastName", "registerUserNotUsername@email", null, "password", "password");
+
+        assertTrue(registerPage.isCurrent());
+        assertEquals("Please specify username.", registerPage.getError());
+    }
 
     protected UserRepresentation getUser(String userId) {
         return testRealm().users().get(userId).toRepresentation();
