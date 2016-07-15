@@ -11,7 +11,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import static org.junit.Assert.*;
-import static org.keycloak.testsuite.util.WaitUtils.*;
 import static org.keycloak.testsuite.util.URLAssert.*;
 
 /**
@@ -32,7 +31,6 @@ public class InternationalizationTest extends AbstractRealmTest {
         themeSettingsPage.saveTheme();
         assertAlertSuccess();
         realmSettingsPage.setAdminRealm(AuthRealm.TEST);
-        accountPage.setAuthRealm(testRealmPage);
         deleteAllCookiesForTestRealm();
         deleteAllCookiesForMasterRealm();
     }
@@ -55,7 +53,7 @@ public class InternationalizationTest extends AbstractRealmTest {
         loginToTestRealmConsoleAs(testUser);
         assertConsoleLocale("Temas");
 
-        accountPage.navigateTo();
+        testRealmAccountPage.navigateTo();
         assertAccountLocale("Cuenta");
     }
 
@@ -64,11 +62,11 @@ public class InternationalizationTest extends AbstractRealmTest {
      */
     @Test
     public void accountInternationalization() {
-        accountPage.navigateTo();
+        testRealmAccountPage.navigateTo();
         loginPage.form().login(testUser);
 
         localeDropdown.selectByText("Français");
-        accountPage.navigateTo();
+        testRealmAccountPage.navigateTo();
         assertAccountLocale("Compte");
 
         deleteAllCookiesForTestRealm();
@@ -78,14 +76,12 @@ public class InternationalizationTest extends AbstractRealmTest {
     }
 
     private void assertConsoleLocale(String expected) {
-        pause(500);
         assertCurrentUrlEquals(realmSettingsPage);
         assertLocale(".//a[contains(@href,'/theme-settings')]", expected); // Themes
     }
 
     private void assertAccountLocale(String expected) {
-        pause(500);
-        assertCurrentUrlEquals(accountPage);
+        assertCurrentUrlEquals(testRealmAccountPage);
         assertLocale(".//div[contains(@class,'bs-sidebar')]/ul/li", expected); // Account
     }
 
@@ -95,7 +91,6 @@ public class InternationalizationTest extends AbstractRealmTest {
     }
 
     private void assertLocale(WebElement element, String expected) {
-        waitUntilElement(element);
         assertEquals(expected, element.getText());
     }
 }
