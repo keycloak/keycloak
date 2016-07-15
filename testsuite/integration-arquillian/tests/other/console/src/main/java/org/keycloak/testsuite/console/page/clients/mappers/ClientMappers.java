@@ -42,17 +42,14 @@ public class ClientMappers extends Client {
         }
 
         public void createMapper() {
-            waitForBody();
             clickHeaderLink(CREATE);
         }
 
         public void addBuiltin() {
-            waitForBody();
             clickHeaderLink(ADD_BUILTIN);
         }
 
         public void clickMapper(String mapperName) {
-            waitForBody();
             body().findElement(By.linkText(mapperName)).click();
         }
 
@@ -61,7 +58,6 @@ public class ClientMappers extends Client {
         }
 
         private void clickMapperActionButton(String mapperName, String buttonText) {
-            waitForBody();
             clickRowActionButton(getRowByLinkText(mapperName), buttonText);
         }
 

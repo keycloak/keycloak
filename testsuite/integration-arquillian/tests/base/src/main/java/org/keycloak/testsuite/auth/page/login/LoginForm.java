@@ -23,6 +23,7 @@ import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import org.keycloak.testsuite.auth.page.account.AccountFields;
 import org.keycloak.testsuite.auth.page.account.PasswordFields;
 import static org.keycloak.testsuite.util.WaitUtils.*;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -51,6 +52,9 @@ public class LoginForm extends Form {
     @FindBy(id = "rememberMe")
     private WebElement rememberMe;
 
+    @FindBy(xpath = ".//label[@for='password']")
+    private WebElement labelPassword;
+
     public void setUsername(String username) {
         accountFields.setUsername(username);
     }
@@ -70,26 +74,28 @@ public class LoginForm extends Form {
     }
 
     public void register() {
-        waitForUsernameInputPresent();
-        waitUntilElement(registerLink).is().present();
         registerLink.click();
+        waitForPageToLoad(driver);
     }
 
     public void login() {
-        waitUntilElement(loginButton).is().present();
+        labelPassword.click(); // This is a nasty trick for IE; As IE was "moving the cursor" towards the login button
+                               // it opened the internationalization menu (when present) and then clicked
+                               // one of the languages instead of the Login button
         loginButton.click();
+        waitForPageToLoad(driver);
     }
 
     public void forgotPassword() {
-        waitUntilElement(forgottenPassword).is().present();
         forgottenPassword.click();
+        waitForPageToLoad(driver);
     }
 
     public void rememberMe(boolean value) {
-        waitForRememberMePresent();
         boolean selected = rememberMe.isSelected();
         if ((value && !selected) || !value && selected) {
             rememberMe.click();
+            waitForPageToLoad(driver);
         }
     }
 
@@ -103,7 +109,7 @@ public class LoginForm extends Form {
     }
 
     public void waitForRegisterLinkNotPresent() {
-        waitUntilElement(registerLink).is().not().present();
+        waitUntilElementIsNotPresent(driver, registerLink);
     }
 
     public void waitForResetPasswordLinkNotPresent() {
@@ -115,7 +121,7 @@ public class LoginForm extends Form {
     }
 
     public void waitForRememberMeNotPresent() {
-        waitUntilElement(rememberMe).is().not().present();
+        waitUntilElementIsNotPresent(driver, rememberMe);
     }
 
     public void waitForLoginButtonPresent() {
@@ -150,6 +156,7 @@ public class LoginForm extends Form {
         
         public void submit() {
             submit.click();
+            waitForPageToLoad(driver);
         }
     }
 }

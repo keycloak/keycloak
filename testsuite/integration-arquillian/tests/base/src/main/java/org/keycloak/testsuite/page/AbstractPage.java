@@ -23,10 +23,8 @@ import java.util.Map;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
-import org.openqa.selenium.By;
+import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -88,17 +86,15 @@ public abstract class AbstractPage {
     }
 
     public void navigateTo() {
-        String uri = buildUri().toASCIIString();
-        log.debug("current URL:  " + driver.getCurrentUrl());
-        log.info("navigating to " + uri);
-        driver.navigate().to(uri);
-        pause(300); // this is needed for FF for some reason
-        waitUntilElement(By.tagName("body")).is().visible();
-        log.info("current URL:  " + driver.getCurrentUrl());
+        navigateTo(true);
+    }
+
+    public void navigateTo(boolean waitForMatch) {
+        URLUtils.navigateToUri(driver, buildUri().toASCIIString(), waitForMatch);
     }
 
     public boolean isCurrent() {
-        return driver.getCurrentUrl().equals(toString());
+        return URLUtils.currentUrlEqual(driver, toString());
     }
 
 }

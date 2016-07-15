@@ -52,12 +52,10 @@ public abstract class AbstractAccountManagementTest extends AbstractAuthTest {
     }
 
     public void assertAlertSuccess() {
-        alert.waitUntilPresentAndClassSet();
         assertTrue(alert.isSuccess());
     }
 
     public void assertAlertError() {
-        alert.waitUntilPresentAndClassSet();
         assertTrue(alert.isError());
     }
 

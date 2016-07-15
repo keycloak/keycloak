@@ -56,15 +56,18 @@ public class ClientCredentialsForm extends Form {
     public void regenerateSecret() {
         waitUntilElement(regenerateSecretButton).is().visible();
         regenerateSecretButton.click();
+        waitForPageToLoad(driver);
     }
 
     public void regenerateRegistrationAccessToken() {
         waitUntilElement(regenerateRegistrationAccessTokenButton).is().visible();
         regenerateRegistrationAccessTokenButton.click();
+        waitForPageToLoad(driver);
     }
 
     public void generateNewKeysAndCert() {
         waitUntilElement(generateNewKeysAndCert).is().visible();
         generateNewKeysAndCert.click();
+        waitForPageToLoad(driver);
     }
 }

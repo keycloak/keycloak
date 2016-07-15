@@ -62,32 +62,26 @@ public class Clients extends AdminConsoleRealm {
         }
 
         public void createClient() {
-            waitForBody();
             clickHeaderLink(CREATE);
         }
 
         public void importClient() {
-            waitForBody();
             clickHeaderLink(IMPORT);
         }
 
         public void clickClient(ClientRepresentation client) {
-            waitForBody();
             clickClient(client.getClientId());
         }
 
         public void clickClient(String clientId) {
-            waitForBody();
             body().findElement(linkText(clientId)).click();
         }
 
         public void editClient(String clientId) {
-            waitForBody();
             clickRowActionButton(getRowByLinkText(clientId), EDIT);
         }
 
         public void deleteClient(String clientId) {
-            waitForBody();
             clickRowActionButton(getRowByLinkText(clientId), DELETE);
         }
 
