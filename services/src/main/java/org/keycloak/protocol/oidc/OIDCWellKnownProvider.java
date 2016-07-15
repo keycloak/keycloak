@@ -61,6 +61,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
     public static final List<String> DEFAULT_CLAIM_TYPES_SUPPORTED= list("normal");
 
+    // TODO: Add more of OIDC scopes
+    public static final List<String> SCOPES_SUPPORTED= list(OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS);
+
     private KeycloakSession session;
 
     public OIDCWellKnownProvider(KeycloakSession session) {
@@ -96,6 +99,8 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setClaimsSupported(DEFAULT_CLAIMS_SUPPORTED);
         config.setClaimTypesSupported(DEFAULT_CLAIM_TYPES_SUPPORTED);
         config.setClaimsParameterSupported(false);
+
+        config.setScopesSupported(SCOPES_SUPPORTED);
 
         return config;
     }

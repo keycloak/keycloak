@@ -159,6 +159,19 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void authorizationRequestMissingResponseType() throws IOException {
+        oauth.responseType(null);
+        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+        driver.navigate().to(b.build().toURL());
+
+        OAuthClient.AuthorizationCodeResponse errorResponse = new OAuthClient.AuthorizationCodeResponse(oauth);
+        Assert.assertTrue(errorResponse.isRedirected());
+        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
+
+        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+    }
+
+    @Test
     public void authorizationRequestInvalidResponseType() throws IOException {
         oauth.responseType("tokenn");
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
