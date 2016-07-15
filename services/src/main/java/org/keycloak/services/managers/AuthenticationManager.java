@@ -570,6 +570,10 @@ public class AuthenticationManager {
                                                Set<String> requiredActions) {
         for (String action : requiredActions) {
             RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
+            if (!model.isEnabled()) {
+                continue;
+            }
+
             RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
             if (factory == null) {
                 throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
