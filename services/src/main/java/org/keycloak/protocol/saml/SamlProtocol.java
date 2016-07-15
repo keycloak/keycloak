@@ -17,23 +17,6 @@
 
 package org.keycloak.protocol.saml;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -76,6 +59,23 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.w3c.dom.Document;
+
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -375,8 +375,17 @@ public class SamlProtocol implements LoginProtocol {
         Document samlDocument = null;
         try {
             ResponseType samlModel = builder.buildModel();
-            transformAttributeStatement(attributeStatementMappers, samlModel, session, userSession, clientSession);
-            populateRoles(roleListMapper, samlModel, session, userSession, clientSession);
+            final Optional<AttributeStatementType> regularMapperAttributeStatements = transformAttributeStatement(attributeStatementMappers, samlModel, session, userSession, clientSession);
+
+            // Either add to existing or create a new AttributeStatement based on flag
+            final AttributeStatementType attributeStatement;
+            if (samlClient.singleAttributeStatement() && regularMapperAttributeStatements.isPresent()) {
+                attributeStatement = regularMapperAttributeStatements.get();
+            } else {
+                attributeStatement = new AttributeStatementType();
+            }
+            populateRoles(roleListMapper, samlModel, session, userSession, clientSession, attributeStatement);
+
             samlModel = transformLoginResponse(loginResponseMappers, samlModel, session, userSession, clientSession);
             samlDocument = builder.buildDocument(samlModel);
         } catch (Exception e) {
@@ -437,8 +446,8 @@ public class SamlProtocol implements LoginProtocol {
         }
     }
 
-    public void transformAttributeStatement(List<ProtocolMapperProcessor<SAMLAttributeStatementMapper>> attributeStatementMappers, ResponseType response, KeycloakSession session, UserSessionModel userSession,
-            ClientSessionModel clientSession) {
+    public Optional<AttributeStatementType> transformAttributeStatement(List<ProtocolMapperProcessor<SAMLAttributeStatementMapper>> attributeStatementMappers, ResponseType response, KeycloakSession session, UserSessionModel userSession,
+                                                                        ClientSessionModel clientSession) {
         AssertionType assertion = response.getAssertions().get(0).getAssertion();
         AttributeStatementType attributeStatement = new AttributeStatementType();
 
@@ -449,6 +458,9 @@ public class SamlProtocol implements LoginProtocol {
         // SAML Spec 2.7.3 AttributeStatement must contain one or more Attribute or EncryptedAttribute
         if (attributeStatement.getAttributes().size() > 0) {
             assertion.addStatement(attributeStatement);
+            return Optional.of(attributeStatement);
+        } else {
+            return Optional.empty();
         }
     }
 
@@ -459,15 +471,14 @@ public class SamlProtocol implements LoginProtocol {
         return response;
     }
 
-    public void populateRoles(ProtocolMapperProcessor<SAMLRoleListMapper> roleListMapper, ResponseType response, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
+    public void populateRoles(ProtocolMapperProcessor<SAMLRoleListMapper> roleListMapper, ResponseType response, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession, final AttributeStatementType attributeStatement) {
         if (roleListMapper == null)
             return;
-        AssertionType assertion = response.getAssertions().get(0).getAssertion();
-        AttributeStatementType attributeStatement = new AttributeStatementType();
         roleListMapper.mapper.mapRoles(attributeStatement, roleListMapper.model, session, userSession, clientSession);
 
         // SAML Spec 2.7.3 AttributeStatement must contain one or more Attribute or EncryptedAttribute
         if (attributeStatement.getAttributes().size() > 0) {
+            final AssertionType assertion = response.getAssertions().get(0).getAssertion();
             assertion.addStatement(attributeStatement);
         }
     }
