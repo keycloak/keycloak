@@ -23,6 +23,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -50,6 +51,9 @@ public class RegisterTest extends TestRealmKeycloakTest {
 
     @Page
     protected RegisterPage registerPage;
+
+    @Page
+    protected AccountUpdateProfilePage accountPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -254,6 +258,32 @@ public class RegisterTest extends TestRealmKeycloakTest {
         assertEquals("registerusersuccess@email", user.getEmail());
         assertEquals("firstName", user.getFirstName());
         assertEquals("lastName", user.getLastName());
+    }
+
+    @Test
+    public void registerUserUmlats() {
+        loginPage.open();
+
+        assertTrue(loginPage.isCurrent());
+
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("Äǜṳǚǘǖ", "Öṏṏ", "registeruserumlats@email", "registeruserumlats", "password", "password");
+
+        String userId = events.expectRegister("registeruserumlats", "registeruserumlats@email").assertEvent().getUserId();
+        events.expectLogin().detail("username", "registeruserumlats").user(userId).assertEvent();
+
+        accountPage.open();
+        assertTrue(accountPage.isCurrent());
+
+        UserRepresentation user = getUser(userId);
+        Assert.assertNotNull(user);
+        assertEquals("Äǜṳǚǘǖ", user.getFirstName());
+        assertEquals("Öṏṏ", user.getLastName());
+
+        assertEquals("Äǜṳǚǘǖ", accountPage.getFirstName());
+        assertEquals("Öṏṏ", accountPage.getLastName());
     }
 
     // KEYCLOAK-3266
