@@ -25,7 +25,7 @@ import java.net.URL;
 /**
  * @author mhajas
  */
-public class SalesPostPassiveServlet extends SAMLServletWithLogout {
+public class SalesPostPassiveServlet extends SAMLServlet {
     public static final String DEPLOYMENT_NAME = "sales-post-passive";
 
     @ArquillianResource

@@ -25,7 +25,9 @@ import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.testsuite.arquillian.annotation.UseServletFilter;
 import org.keycloak.testsuite.util.IOUtil;
 import org.keycloak.util.JsonSerialization;
 import org.w3c.dom.Document;
@@ -35,11 +37,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.hasAppServerContainerAnnotation;
-import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isRelative;
-import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isTomcatAppServer;
 
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.*;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.*;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.IOUtil.*;
 
 ;
@@ -125,7 +125,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                         adapterConfig.setAuthServerUrl(getAuthServerContextRoot() + "/auth");
                         adapterConfig.setRealmKey(REALM_KEY);
                     }
-                    
+
                     if ("true".equals(System.getProperty("app.server.ssl.required"))) {
                         adapterConfig.setSslRequired("all");
                     }
@@ -155,17 +155,46 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     }
 
     protected void modifyWebXml(Archive<?> archive, TestClass testClass) {
-        if (isTomcatAppServer(testClass.getJavaClass())) {
-            try {
-                String webXmlContent = IOUtils.toString(
-                        archive.get(WEBXML_PATH).getAsset().openStream());
-
+        try {
+            String webXmlContent = IOUtils.toString(
+                    archive.get(WEBXML_PATH).getAsset().openStream());
+            if (isTomcatAppServer(testClass.getJavaClass())) {
                 webXmlContent = webXmlContent.replace("<auth-method>KEYCLOAK</auth-method>", "<auth-method>BASIC</auth-method>");
-
-                archive.add(new StringAsset((webXmlContent)), WEBXML_PATH);
-            } catch (IOException ex) {
-                throw new RuntimeException("Cannot load web.xml from archive.");
             }
+
+            if (testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class)) {
+                //We need to add filter declaration to web.xml
+                log.info("Adding filter to " + testClass.getAnnotation(UseServletFilter.class).filterClass() + " with mapping " + testClass.getAnnotation(UseServletFilter.class).filterPattern() + " for " + archive.getName());
+                String filter = "\n<filter>\n" +
+                        "<filter-name>" + testClass.getAnnotation(UseServletFilter.class).filterName() + "</filter-name>\n" +
+                        "<filter-class>" + testClass.getAnnotation(UseServletFilter.class).filterClass() + "</filter-class>\n" +
+                        "</filter>\n" +
+                        "\n<filter-mapping>\n" +
+                        "<filter-name>" + testClass.getAnnotation(UseServletFilter.class).filterName() + "</filter-name>\n" +
+                        "<url-pattern>" + testClass.getAnnotation(UseServletFilter.class).filterPattern() + "</url-pattern>\n";
+                if (!testClass.getAnnotation(UseServletFilter.class).dispatcherType().isEmpty()) {
+                    filter += "<dispatcher>" + testClass.getAnnotation(UseServletFilter.class).dispatcherType() + "</dispatcher>\n";
+                }
+                filter += "</filter-mapping>\n";
+
+                webXmlContent = webXmlContent.replace("</module-name>", "</module-name> " + filter);
+
+                //Also we need to add all dependencies within war lib directory, because filter needs to work without installed adapter
+                log.info("Adding SAMLFilter dependencies to " + archive.getName());
+                ((WebArchive) archive).addAsLibraries(new SAMLFilterDependency().getDependencies());
+
+
+                //finally we need to remove all keycloak related configuration from web.xml
+                int start = webXmlContent.indexOf("<security-constraint>");
+                int end = webXmlContent.indexOf("</security-role>") + "</security-role>".length();
+
+
+                webXmlContent = webXmlContent.substring(0, start) + webXmlContent.substring(end);
+            }
+
+            archive.add(new StringAsset((webXmlContent)), WEBXML_PATH);
+        } catch (IOException ex) {
+            throw new RuntimeException("Cannot load web.xml from archive.");
         }
     }
 
