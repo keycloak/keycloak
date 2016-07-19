@@ -17,6 +17,8 @@
 
 package org.keycloak.adapters.springboot;
 
+import io.undertow.servlet.api.DeploymentInfo;
+import io.undertow.servlet.api.WebResourceCollection;
 import org.apache.catalina.Context;
 import org.apache.tomcat.util.descriptor.web.LoginConfig;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
@@ -28,6 +30,7 @@ import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.keycloak.adapters.jetty.KeycloakJettyAuthenticator;
 import org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve;
+import org.keycloak.adapters.undertow.KeycloakServletExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -108,7 +111,53 @@ public class KeycloakSpringBootConfiguration {
     @Bean
     @ConditionalOnClass(name = {"io.undertow.Undertow"})
     public UndertowDeploymentInfoCustomizer undertowKeycloakContextCustomizer() {
-        throw new IllegalArgumentException("Undertow Keycloak integration is not yet implemented");
+        return new KeycloakUndertowDeploymentInfoCustomizer(keycloakProperties);
+    }
+
+    static class KeycloakUndertowDeploymentInfoCustomizer implements UndertowDeploymentInfoCustomizer {
+
+        private final KeycloakSpringBootProperties keycloakProperties;
+
+        public KeycloakUndertowDeploymentInfoCustomizer(KeycloakSpringBootProperties keycloakProperties) {
+            this.keycloakProperties = keycloakProperties;
+        }
+
+        @Override
+        public void customize(DeploymentInfo deploymentInfo) {
+
+            io.undertow.servlet.api.LoginConfig loginConfig = new io.undertow.servlet.api.LoginConfig(keycloakProperties.getRealm());
+            loginConfig.addFirstAuthMethod("KEYCLOAK");
+
+            deploymentInfo.setLoginConfig(loginConfig);
+
+            deploymentInfo.addInitParameter("keycloak.config.resolver", KeycloakSpringBootConfigResolver.class.getName());
+            deploymentInfo.addSecurityConstraints(getSecurityConstraints());
+
+            deploymentInfo.addServletExtension(new KeycloakServletExtension());
+        }
+
+        private List<io.undertow.servlet.api.SecurityConstraint> getSecurityConstraints() {
+
+            List<io.undertow.servlet.api.SecurityConstraint> undertowSecurityConstraints = new ArrayList<io.undertow.servlet.api.SecurityConstraint>();
+            for (KeycloakSpringBootProperties.SecurityConstraint constraintDefinition : keycloakProperties.getSecurityConstraints()) {
+
+                for (KeycloakSpringBootProperties.SecurityCollection collectionDefinition : constraintDefinition.getSecurityCollections()) {
+
+                    io.undertow.servlet.api.SecurityConstraint undertowSecurityConstraint = new io.undertow.servlet.api.SecurityConstraint();
+                    undertowSecurityConstraint.addRolesAllowed(collectionDefinition.getAuthRoles());
+
+                    WebResourceCollection webResourceCollection = new WebResourceCollection();
+                    webResourceCollection.addHttpMethods(collectionDefinition.getMethods());
+                    webResourceCollection.addHttpMethodOmissions(collectionDefinition.getOmittedMethods());
+                    webResourceCollection.addUrlPatterns(collectionDefinition.getPatterns());
+
+                    undertowSecurityConstraint.addWebResourceCollections(webResourceCollection);
+
+                    undertowSecurityConstraints.add(undertowSecurityConstraint);
+                }
+            }
+            return undertowSecurityConstraints;
+        }
     }
 
     static class KeycloakJettyServerCustomizer implements JettyServerCustomizer {
