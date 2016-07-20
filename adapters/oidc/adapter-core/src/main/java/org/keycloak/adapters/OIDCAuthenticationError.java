@@ -35,7 +35,8 @@ public class OIDCAuthenticationError implements AuthenticationError {
         CODE_TO_TOKEN_FAILURE,
         INVALID_TOKEN,
         STALE_TOKEN,
-        NO_AUTHORIZATION_HEADER
+        NO_AUTHORIZATION_HEADER,
+        NO_QUERY_PARAMETER_ACCESS_TOKEN
     }
 
     private Reason reason;

@@ -157,6 +157,12 @@
             ]
         },
         {
+            "name": "customer-portal-public",
+            "enabled": true,
+            "publicClient": true,
+            "directAccessGrantsEnabled": true
+        },
+        {
             "name": "product-portal",
             "enabled": true,
             "adminUrl": "http://localhost:8081/product-portal",
