@@ -27,7 +27,6 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
@@ -41,6 +40,7 @@ import org.keycloak.models.jpa.entities.UserConsentProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.UserConsentRoleEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.utils.CredentialValidation;
+import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageProviderModel;
 
@@ -88,15 +88,7 @@ public class JpaUserProvider implements UserProvider {
         UserAdapter userModel = new UserAdapter(session, realm, em, entity);
 
         if (addDefaultRoles) {
-            for (String r : realm.getDefaultRoles()) {
-                userModel.grantRoleImpl(realm.getRole(r)); // No need to check if user has role as it's new user
-            }
-
-            for (ClientModel application : realm.getClients()) {
-                for (String r : application.getDefaultRoles()) {
-                    userModel.grantRoleImpl(application.getRole(r)); // No need to check if user has role as it's new user
-                }
-            }
+            DefaultRoles.addDefaultRoles(realm, userModel);
 
             for (GroupModel g : realm.getDefaultGroups()) {
                 userModel.joinGroupImpl(g); // No need to check if user has group as it's new user
