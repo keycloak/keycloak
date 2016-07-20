@@ -253,7 +253,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Test
     public void badClientSalesPostSigTest() {
         badClientSalesPostSigServletPage.navigateTo();
-        waitUntilElement(By.xpath("//body")).text().contains("invalidRequesterMessage");
+        waitUntilElement(By.xpath("//body")).text().contains("Invalid requester");
     }
 
     @Test

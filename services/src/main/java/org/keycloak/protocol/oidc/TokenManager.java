@@ -244,16 +244,23 @@ public class TokenManager {
     }
 
     public RefreshToken verifyRefreshToken(RealmModel realm, String encodedRefreshToken) throws OAuthErrorException {
+        return verifyRefreshToken(realm, encodedRefreshToken, true);
+    }
+
+    public RefreshToken verifyRefreshToken(RealmModel realm, String encodedRefreshToken, boolean checkExpiration) throws OAuthErrorException {
         try {
             RefreshToken refreshToken = toRefreshToken(realm, encodedRefreshToken);
 
-            if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
+            if (checkExpiration) {
+                if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
+                }
+
+                if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
+                }
             }
 
-            if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
-            }
             return refreshToken;
         } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);

@@ -17,34 +17,29 @@
 package org.keycloak.testsuite.adapter;
 
 import org.apache.http.conn.params.ConnManagerParams;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.OIDCAuthenticationError;
-import org.keycloak.common.Version;
-import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.common.Version;
+import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountSessionsPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.rule.AbstractKeycloakRule;
-import org.keycloak.testsuite.rule.ErrorServlet;
-import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.testsuite.KeycloakServer;
+import org.keycloak.testsuite.rule.*;
 import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.common.util.Time;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
@@ -59,7 +54,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.keycloak.representations.idm.UserRepresentation;
 
 /**
  * Tests Undertow Adapter
@@ -144,7 +138,8 @@ public class AdapterTestStrategy extends ExternalResource {
         System.out.println("insecure: ");
         System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getPageSource().contains("Insecure Page"));
-        if (System.getProperty("insecure.user.principal.unsupported") == null) Assert.assertTrue(driver.getPageSource().contains("UserPrincipal"));
+        if (System.getProperty("insecure.user.principal.unsupported") == null)
+            Assert.assertTrue(driver.getPageSource().contains("UserPrincipal"));
 
         // test logout
 
@@ -385,6 +380,26 @@ public class AdapterTestStrategy extends ExternalResource {
     }
 
     /**
+     * KEYCLOAK-1733
+     *
+     * @throws Exception
+     */
+    public void testNullQueryParameterAccessToken() throws Exception {
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(APP_SERVER_BASE_URL + "/customer-db/");
+        Response response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        target = client.target(APP_SERVER_BASE_URL + "/customer-db?access_token=");
+        response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        client.close();
+    }
+
+    /**
      * KEYCLOAK-1368
      * @throws Exception
      */
@@ -406,7 +421,7 @@ public class AdapterTestStrategy extends ExternalResource {
         Assert.assertTrue(errorPageResponse.contains("Error Page"));
         response.close();
         Assert.assertNotNull(ErrorServlet.authError);
-        OIDCAuthenticationError error = (OIDCAuthenticationError)ErrorServlet.authError;
+        OIDCAuthenticationError error = (OIDCAuthenticationError) ErrorServlet.authError;
         Assert.assertEquals(OIDCAuthenticationError.Reason.NO_BEARER_TOKEN, error.getReason());
 
         ErrorServlet.authError = null;
@@ -422,7 +437,7 @@ public class AdapterTestStrategy extends ExternalResource {
         Assert.assertTrue(errorPageResponse.contains("Error Page"));
         response.close();
         Assert.assertNotNull(ErrorServlet.authError);
-        error = (OIDCAuthenticationError)ErrorServlet.authError;
+        error = (OIDCAuthenticationError) ErrorServlet.authError;
         Assert.assertEquals(OIDCAuthenticationError.Reason.INVALID_TOKEN, error.getReason());
 
         client.close();
@@ -464,8 +479,8 @@ public class AdapterTestStrategy extends ExternalResource {
         String header = BasicAuthHelper.createHeader("customer-portal", "password");
         Form form = new Form();
         form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
-            .param("username", "monkey@redhat.com")
-            .param("password", "password");
+                .param("username", "monkey@redhat.com")
+                .param("password", "password");
         Response response = target.request()
                 .header(HttpHeaders.AUTHORIZATION, header)
                 .post(Entity.form(form));
@@ -496,7 +511,6 @@ public class AdapterTestStrategy extends ExternalResource {
     }
 
 
-
     public void testAuthenticated() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/secure-portal");
@@ -519,6 +533,53 @@ public class AdapterTestStrategy extends ExternalResource {
         Assert.assertTrue(currentUrl.startsWith(LOGIN_URL));
         driver.navigate().to(APP_SERVER_BASE_URL + "/secure-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+    }
+
+    /**
+     * KEYCLOAK-1733
+     *
+     * @throws Exception
+     */
+    public void testRestCallWithAccessTokenAsQueryParameter() throws Exception {
+        String accessToken = getAccessToken();
+        Client client = ClientBuilder.newClient();
+        try {
+            // test without token
+            Response response = client.target(APP_SERVER_BASE_URL + "/customer-db").request().get();
+            Assert.assertEquals(401, response.getStatus());
+            response.close();
+            // test with access_token as QueryParamter
+            response = client.target(APP_SERVER_BASE_URL + "/customer-db").queryParam("access_token", accessToken).request().get();
+            Assert.assertEquals(200, response.getStatus());
+            response.close();
+        } finally {
+            client.close();
+        }
+    }
+
+    private String getAccessToken() throws JSONException {
+        String tokenUrl = AUTH_SERVER_URL + "/realms/demo/protocol/openid-connect/token";
+
+        Client client = ClientBuilder.newClient();
+        try {
+            WebTarget webTarget = client.target(tokenUrl);
+
+            Form form = new Form();
+            form.param("grant_type", "password");
+            form.param("client_id", "customer-portal-public");
+            form.param("username", "bburke@redhat.com");
+            form.param("password", "password");
+            Response response = webTarget.request().post(Entity.form(form));
+
+            Assert.assertEquals(200, response.getStatus());
+
+            JSONObject jsonObject = new JSONObject(response.readEntity(String.class));
+            System.out.println(jsonObject);
+            response.close();
+            return jsonObject.getString("access_token");
+        } finally {
+            client.close();
+        }
     }
 
     /**

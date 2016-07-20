@@ -132,6 +132,11 @@ public class RealmBuilder {
         return this;
     }
 
+    public RealmBuilder notBefore(int i) {
+        rep.setNotBefore(i);
+        return this;
+    }
+
     public RealmBuilder otpLookAheadWindow(int i) {
         rep.setOtpPolicyLookAheadWindow(i);
         return this;
