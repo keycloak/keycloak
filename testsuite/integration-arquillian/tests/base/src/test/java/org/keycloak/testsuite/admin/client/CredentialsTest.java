@@ -147,8 +147,7 @@ public class CredentialsTest extends AbstractClientTest {
         // Get the certificate - to make sure cert was properly updated, and privateKey is null
         cert = certRsc.getKeyInfo();
         assertEquals("cert properly set", certificate2, cert.getCertificate());
-        // TODO: KEYCLOAK-2981
-        //assertNull("privateKey nullified", cert.getPrivateKey());
+        assertNull("privateKey nullified", cert.getPrivateKey());
 
         // Re-upload the private key
         certRsc.uploadJks(keyCertForm);
