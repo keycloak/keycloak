@@ -114,7 +114,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
             this.clientPage.login("alice", "alice");
-            this.clientPage.createAlbum("Alice Family Album");
+            this.clientPage.createAlbum("Alice-Family-Album");
             this.clientPage.login("admin", "admin");
             this.clientPage.navigateToAdminAlbum();
 
@@ -131,7 +131,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
             this.clientPage.login("admin", "admin");
             this.clientPage.navigateToAdminAlbum();
-            this.clientPage.deleteAlbum("Alice Family Album");
+            this.clientPage.deleteAlbum("Alice-Family-Album");
 
             resources = getAuthorizationResource().resources().resources();
 
@@ -146,7 +146,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
             this.clientPage.login("admin", "admin");
             this.clientPage.navigateToAdminAlbum();
-            this.clientPage.deleteAlbum("Alice Family Album");
+            this.clientPage.deleteAlbum("Alice-Family-Album");
 
             resources = getAuthorizationResource().resources().resources();
 
