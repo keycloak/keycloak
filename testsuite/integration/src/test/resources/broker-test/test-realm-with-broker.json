@@ -178,7 +178,6 @@
             "config": {
                 "clientId": "broker-app",
                 "clientSecret": "secret",
-                "prompt": "login",
                 "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/auth",
                 "tokenUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/token",
                 "userInfoUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/userinfo",
@@ -196,7 +195,6 @@
             "config": {
                 "clientId": "broker-app",
                 "clientSecret": "secret",
-                "prompt": "login",
                 "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/auth",
                 "tokenUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/token",
                 "userInfoUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/userinfo",
