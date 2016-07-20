@@ -39,6 +39,7 @@
                 <include>org/keycloak/keycloak-wf8-subsystem/**</include>
                 <include>org/keycloak/keycloak-adapter-subsystem/**</include>
                 <include>org/keycloak/keycloak-servlet-oauth-client/**</include>
+                <include>org/keycloak/keycloak-authz-client/**</include>
             </includes>
             <excludes>
                 <exclude>**/*.war</exclude>

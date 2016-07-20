@@ -172,11 +172,19 @@ public class BaseWriter {
                 if (attributeValue != null) {
                     if (attributeValue instanceof String) {
                         writeStringAttributeValue((String) attributeValue);
+                    } else if (attributeValue instanceof NameIDType) {
+                    	writeNameIDTypeAttributeValue((NameIDType) attributeValue);
                     } else
                         throw logger.writerUnsupportedAttributeValueError(attributeValue.getClass().getName());
                 }
             }
         }
+    }
+
+    public void writeNameIDTypeAttributeValue(NameIDType attributeValue) throws ProcessingException {
+        StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.ATTRIBUTE_VALUE.get(), ASSERTION_NSURI.get());
+    	write((NameIDType)attributeValue, new QName(ASSERTION_NSURI.get(), JBossSAMLConstants.NAMEID.get(), ASSERTION_PREFIX));
+        StaxUtil.writeEndElement(writer);
     }
 
     public void writeStringAttributeValue(String attributeValue) throws ProcessingException {
