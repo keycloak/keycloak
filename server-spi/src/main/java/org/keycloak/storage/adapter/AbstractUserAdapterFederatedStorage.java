@@ -16,7 +16,6 @@
  */
 package org.keycloak.storage.adapter;
 
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -30,68 +29,75 @@ import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.StorageProviderModel;
+import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * This abstract class provides implementations for everything but getUsername().  getId() returns a default value
- * of "f:" + providerId + ":" + getUsername().  isEnabled() returns true.  getRoleMappings() will return default roles.
- * getGroups() will return default groups.
+ * Assumes everything is managed by federated storage except for username.  getId() returns a default value
+ * of "f:" + providerId + ":" + getUsername().  UserModel properties like enabled, firstName, lastName, email, etc. are all
+ * stored as attributes in federated storage.
  *
- * All other read methods return null, an empty collection, or false depending
- * on the type.  All update methods throw a ReadOnlyException.
- *
- * Provider implementors should override the methods for attributes, properties, and mappings they support.
+ * isEnabled() defaults to true if the ENABLED_ATTRIBUTE isn't set in federated
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public abstract class AbstractUserAdapter implements UserModel {
-    public static class ReadOnlyException extends RuntimeException {
-        public ReadOnlyException(String message) {
-            super(message);
-        }
-    }
+public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
+    public static String FIRST_NAME_ATTRIBUTE = "FIRST_NAME";
+    public static String LAST_NAME_ATTRIBUTE = "LAST_NAME";
+    public static String EMAIL_ATTRIBUTE = "EMAIL";
+    public static String EMAIL_VERIFIED_ATTRIBUTE = "EMAIL_VERIFIED";
+    public static String CREATED_TIMESTAMP_ATTRIBUTE = "CREATED_TIMESTAMP";
+    public static String ENABLED_ATTRIBUTE = "ENABLED";
+    public static String OTP_ENABLED_ATTRIBUTE = "OTP_ENABLED";
+
+
     protected KeycloakSession session;
     protected RealmModel realm;
     protected StorageProviderModel storageProviderModel;
 
-    public AbstractUserAdapter(KeycloakSession session, RealmModel realm, StorageProviderModel storageProviderModel) {
+    public AbstractUserAdapterFederatedStorage(KeycloakSession session, RealmModel realm, StorageProviderModel storageProviderModel) {
         this.session = session;
         this.realm = realm;
         this.storageProviderModel = storageProviderModel;
     }
 
+    public UserFederatedStorageProvider getFederatedStorage() {
+        return session.userFederatedStorage();
+    }
+
     @Override
     public Set<String> getRequiredActions() {
-        return Collections.EMPTY_SET;
+        return getFederatedStorage().getRequiredActions(realm, this);
     }
 
     @Override
     public void addRequiredAction(String action) {
-        throw new ReadOnlyException("user is read only for this update");
+        getFederatedStorage().addRequiredAction(realm, this, action);
 
     }
 
     @Override
     public void removeRequiredAction(String action) {
-        throw new ReadOnlyException("user is read only for this update");
+        getFederatedStorage().removeRequiredAction(realm, this, action);
 
     }
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        throw new ReadOnlyException("user is read only for this update");
+        getFederatedStorage().addRequiredAction(realm, this, action.name());
 
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        throw new ReadOnlyException("user is read only for this update");
+        getFederatedStorage().removeRequiredAction(realm, this, action.name());
     }
 
     /**
@@ -117,6 +123,7 @@ public abstract class AbstractUserAdapter implements UserModel {
     @Override
     public Set<GroupModel> getGroups() {
         Set<GroupModel> set = new HashSet<>();
+        set.addAll(getFederatedStorage().getGroups(realm, this));
         if (appendDefaultGroups()) set.addAll(realm.getDefaultGroups());
         set.addAll(getGroupsInternal());
         return set;
@@ -124,13 +131,13 @@ public abstract class AbstractUserAdapter implements UserModel {
 
     @Override
     public void joinGroup(GroupModel group) {
-        throw new ReadOnlyException("user is read only for this update");
+        getFederatedStorage().joinGroup(realm, this, group);
 
     }
 
     @Override
     public void leaveGroup(GroupModel group) {
-        throw new ReadOnlyException("user is read only for this update");
+        getFederatedStorage().leaveGroup(realm, this, group);
 
     }
 
@@ -179,7 +186,7 @@ public abstract class AbstractUserAdapter implements UserModel {
 
     @Override
     public void grantRole(RoleModel role) {
-        throw new ReadOnlyException("user is read only for this update");
+        getFederatedStorage().grantRole(realm, this, role);
 
     }
 
@@ -201,36 +208,44 @@ public abstract class AbstractUserAdapter implements UserModel {
     @Override
     public Set<RoleModel> getRoleMappings() {
         Set<RoleModel> set = new HashSet<>();
+        set.addAll(getFederatedRoleMappings());
         if (appendDefaultRolesToRoleMappings()) set.addAll(DefaultRoles.getDefaultRoles(realm));
         set.addAll(getRoleMappingsInternal());
         return set;
     }
 
+    protected Set<RoleModel> getFederatedRoleMappings() {
+        return getFederatedStorage().getRoleMappings(realm, this);
+    }
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
-        throw new ReadOnlyException("user is read only for this update");
+        getFederatedStorage().deleteRoleMapping(realm, this, role);
 
     }
 
     @Override
     public boolean isEnabled() {
-        return true;
+        String val = getFirstAttribute(ENABLED_ATTRIBUTE);
+        if (val == null) return true;
+        else return Boolean.valueOf(val);
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        throw new ReadOnlyException("user is read only for this update");
+       setSingleAttribute(ENABLED_ATTRIBUTE, Boolean.toString(enabled));
     }
 
     @Override
     public boolean isOtpEnabled() {
-        return false;
+        String val = getFirstAttribute(OTP_ENABLED_ATTRIBUTE);
+        if (val == null) return false;
+        else return Boolean.valueOf(val);
     }
 
     @Override
     public void setOtpEnabled(boolean totp) {
-        throw new ReadOnlyException("user is read only for this update");
+        setSingleAttribute(OTP_ENABLED_ATTRIBUTE, Boolean.toString(totp));
 
     }
 
@@ -251,7 +266,6 @@ public abstract class AbstractUserAdapter implements UserModel {
      */
     @Override
     public void setFederationLink(String link) {
-        throw new ReadOnlyException("user is read only for this update");
 
     }
 
@@ -272,7 +286,6 @@ public abstract class AbstractUserAdapter implements UserModel {
      */
     @Override
     public void setServiceAccountClientLink(String clientInternalId) {
-        throw new ReadOnlyException("user is read only for this update");
 
     }
 
@@ -292,114 +305,115 @@ public abstract class AbstractUserAdapter implements UserModel {
     }
 
     @Override
-    public void setUsername(String username) {
-        throw new ReadOnlyException("user is read only for this update");
-    }
-
-    protected long created = System.currentTimeMillis();
-
-    @Override
     public Long getCreatedTimestamp() {
-        return created;
+        String val = getFirstAttribute(CREATED_TIMESTAMP_ATTRIBUTE);
+        if (val == null) return null;
+        else return Long.valueOf(val);
     }
 
     @Override
     public void setCreatedTimestamp(Long timestamp) {
-        throw new ReadOnlyException("user is read only for this update");
+        if (timestamp == null) {
+            setSingleAttribute(CREATED_TIMESTAMP_ATTRIBUTE, null);
+        } else {
+            setSingleAttribute(CREATED_TIMESTAMP_ATTRIBUTE, Long.toString(timestamp));
+        }
 
     }
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        throw new ReadOnlyException("user is read only for this update");
+        getFederatedStorage().setSingleAttribute(realm, this, name, value);
 
     }
 
     @Override
     public void removeAttribute(String name) {
-        throw new ReadOnlyException("user is read only for this update");
+        getFederatedStorage().removeAttribute(realm, this, name);
 
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        throw new ReadOnlyException("user is read only for this update");
+        getFederatedStorage().setAttribute(realm, this, name, values);
 
     }
 
     @Override
     public String getFirstAttribute(String name) {
-        return null;
+        return getFederatedStorage().getAttributes(realm, this).getFirst(name);
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return new MultivaluedHashMap<>();
+        return getFederatedStorage().getAttributes(realm, this);
     }
 
     @Override
     public List<String> getAttribute(String name) {
-        return null;
+        return getFederatedStorage().getAttributes(realm, this).get(name);
     }
 
     @Override
     public String getFirstName() {
-        return null;
+        return getFirstAttribute(FIRST_NAME_ATTRIBUTE);
     }
 
     @Override
     public void setFirstName(String firstName) {
-        throw new ReadOnlyException("user is read only for this update");
+        setSingleAttribute(FIRST_NAME_ATTRIBUTE, firstName);
 
     }
 
     @Override
     public String getLastName() {
-        return null;
+        return getFirstAttribute(LAST_NAME_ATTRIBUTE);
     }
 
     @Override
     public void setLastName(String lastName) {
-        throw new ReadOnlyException("user is read only for this update");
+        setSingleAttribute(LAST_NAME_ATTRIBUTE, lastName);
 
     }
 
     @Override
     public String getEmail() {
-        return null;
+        return getFirstAttribute(EMAIL_ATTRIBUTE);
     }
 
     @Override
     public void setEmail(String email) {
-        throw new ReadOnlyException("user is read only for this update");
+        setSingleAttribute(EMAIL_ATTRIBUTE, email);
 
     }
 
     @Override
     public boolean isEmailVerified() {
-        return false;
+        String val = getFirstAttribute(EMAIL_VERIFIED_ATTRIBUTE);
+        if (val == null) return false;
+        else return Boolean.valueOf(val);
     }
 
     @Override
     public void setEmailVerified(boolean verified) {
-        throw new ReadOnlyException("user is read only for this update");
+        setSingleAttribute(EMAIL_VERIFIED_ATTRIBUTE, Boolean.toString(verified));
 
     }
 
     @Override
     public void updateCredential(UserCredentialModel cred) {
-        throw new ReadOnlyException("user is read only for this update");
+        getFederatedStorage().updateCredential(realm, this, cred);
 
     }
 
     @Override
     public List<UserCredentialValueModel> getCredentialsDirectly() {
-        return Collections.EMPTY_LIST;
+        return getFederatedStorage().getCredentials(realm, this);
     }
 
     @Override
     public void updateCredentialDirectly(UserCredentialValueModel cred) {
-        throw new ReadOnlyException("user is read only for this update");
+        getFederatedStorage().updateCredential(realm, this, cred);
 
     }
 }

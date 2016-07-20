@@ -14,26 +14,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.storage;
+package org.keycloak.models.utils;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.provider.Provider;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface StorageProvider extends Provider {
+public class DefaultRoles {
+    public static Set<RoleModel> getDefaultRoles(RealmModel realm) {
+        Set<RoleModel> set = new HashSet<>();
+        for (String r : realm.getDefaultRoles()) {
+            set.add(realm.getRole(r));
+        }
 
-    void preRemove(RealmModel realm);
-    void preRemove(RealmModel realm, GroupModel group);
-    void preRemove(RealmModel realm, RoleModel role);
-    void preRemove(RealmModel realm, StorageProviderModel model);
+        for (ClientModel application : realm.getClients()) {
+            for (String r : application.getDefaultRoles()) {
+                set.add(application.getRole(r));
+            }
+        }
+        return set;
 
+    }
+    public static void addDefaultRoles(RealmModel realm, UserModel userModel) {
+        for (RoleModel role : getDefaultRoles(realm)) {
+            userModel.grantRole(role);
+        }
+    }
 }
-

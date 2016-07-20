@@ -14,7 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models;
+package org.keycloak.storage.user;
+
+import org.keycloak.models.CredentialValidationOutput;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
 
 import java.util.Set;
 
