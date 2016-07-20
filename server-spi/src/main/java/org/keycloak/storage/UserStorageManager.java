@@ -118,11 +118,6 @@ public class UserStorageManager implements UserProvider {
         return localStorage().addUser(realm, username.toLowerCase());
     }
 
-    public StorageProvider getStorageProvider(StorageProviderModel model) {
-        StorageProviderFactory factory = (StorageProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(StorageProvider.class, model.getProviderName());
-        return factory.getInstance(session, model);
-    }
-
     public StorageProvider getStorageProvider(RealmModel realm, String providerId) {
         StorageProviderModel model = realm.getStorageProvider(providerId);
         if (model == null) return null;

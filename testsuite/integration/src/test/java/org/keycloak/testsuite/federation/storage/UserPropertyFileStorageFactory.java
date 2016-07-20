@@ -48,7 +48,7 @@ public class UserPropertyFileStorageFactory implements StorageProviderFactory {
     public StorageProvider getInstance(KeycloakSession session, StorageProviderModel model) {
         Properties props = new Properties();
         try {
-            props.load(getClass().getResourceAsStream("/storage-test/user-password.properties"));
+            props.load(getClass().getResourceAsStream(model.getConfig().get("property.file")));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
