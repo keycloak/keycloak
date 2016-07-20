@@ -69,6 +69,22 @@ public class TokenUtil {
     }
 
 
+    public static boolean hasPrompt(String promptParam, String targetPrompt) {
+        if (promptParam == null || targetPrompt == null) {
+            return false;
+        }
+
+        String[] prompts = promptParam.split(" ");
+        for (String prompt : prompts) {
+            if (targetPrompt.equals(prompt)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+
     /**
      * Return refresh token or offline token
      *

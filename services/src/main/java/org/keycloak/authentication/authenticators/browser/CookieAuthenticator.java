@@ -28,6 +28,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.util.TokenUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -49,8 +50,8 @@ public class CookieAuthenticator implements Authenticator {
         if (authResult == null) {
             context.attempted();
         } else {
-            // Cookie re-authentication is skipped if authTime is too old.
-            if (isAuthTimeExpired(authResult.getSession(), context.getClientSession())) {
+            // Cookie re-authentication is skipped if re-authentication is required
+            if (requireReauthentication(authResult.getSession(), context.getClientSession())) {
                 context.attempted();
             } else {
                 ClientSessionModel clientSession = context.getClientSession();
@@ -81,6 +82,15 @@ public class CookieAuthenticator implements Authenticator {
     @Override
     public void close() {
 
+    }
+
+    protected boolean requireReauthentication(UserSessionModel userSession, ClientSessionModel clientSession) {
+        return isPromptLogin(clientSession) || isAuthTimeExpired(userSession, clientSession);
+    }
+
+    protected boolean isPromptLogin(ClientSessionModel clientSession) {
+        String prompt = clientSession.getNote(OIDCLoginProtocol.PROMPT_PARAM);
+        return TokenUtil.hasPrompt(prompt, OIDCLoginProtocol.PROMPT_VALUE_LOGIN);
     }
 
     protected boolean isAuthTimeExpired(UserSessionModel userSession, ClientSessionModel clientSession) {

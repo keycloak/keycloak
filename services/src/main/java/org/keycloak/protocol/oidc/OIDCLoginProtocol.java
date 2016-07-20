@@ -65,6 +65,11 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     public static final String RESPONSE_MODE_PARAM = "response_mode";
 
+    public static final String PROMPT_VALUE_NONE = "none";
+    public static final String PROMPT_VALUE_LOGIN = "login";
+    public static final String PROMPT_VALUE_CONSENT = "consent";
+    public static final String PROMPT_VALUE_SELECT_ACCOUNT = "select_account";
+
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     protected KeycloakSession session;
