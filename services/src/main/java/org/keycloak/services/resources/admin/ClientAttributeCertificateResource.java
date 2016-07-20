@@ -171,7 +171,7 @@ public class ClientAttributeCertificateResource {
      *
      * @param uriInfo
      * @param input
-     * @return
+     * @return information extracted from uploaded certificate - not necessarily the new state of certificate on the server
      * @throws IOException
      */
     @POST
@@ -189,6 +189,7 @@ public class ClientAttributeCertificateResource {
 
         if (info.getCertificate() != null) {
             client.setAttribute(certificateAttribute, info.getCertificate());
+            client.removeAttribute(privateAttribute);
         } else {
             throw new ErrorResponseException("certificate-not-found", "Certificate with given alias not found in the keystore", Response.Status.BAD_REQUEST);
         }
