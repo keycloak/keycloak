@@ -107,6 +107,8 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
         $scope.scopes = data;
     });
 
+    var $instance = this;
+
     ResourceServer.get({
         realm : $route.current.params.realm,
         client : client.id
@@ -131,9 +133,11 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
             }, true);
 
             $scope.save = function() {
-                ResourceServerResource.save({realm : realm.realm, client : $scope.client.id}, $scope.resource, function(data) {
-                    $location.url("/realms/" + realm.realm + "/clients/" + $scope.client.id + "/authz/resource-server/resource/" + data._id);
-                    Notifications.success("The resource has been created.");
+                $instance.checkNameAvailability(function () {
+                    ResourceServerResource.save({realm : realm.realm, client : $scope.client.id}, $scope.resource, function(data) {
+                        $location.url("/realms/" + realm.realm + "/clients/" + $scope.client.id + "/authz/resource-server/resource/" + data._id);
+                        Notifications.success("The resource has been created.");
+                    });
                 });
             }
 
@@ -153,6 +157,10 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                     $scope.resource.scopes[i] = $scope.resource.scopes[i].name;
                 }
 
+                data = angular.copy($scope.resource);
+
+                $scope.originalResource = data;
+
                 $scope.$watch('resource', function() {
                     if (!angular.equals($scope.resource, data)) {
                         $scope.changed = true;
@@ -160,9 +168,11 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                 }, true);
 
                 $scope.save = function() {
-                    ResourceServerResource.update({realm : realm.realm, client : $scope.client.id, rsrid : $scope.resource._id}, $scope.resource, function() {
-                        $route.reload();
-                        Notifications.success("The resource has been updated.");
+                    $instance.checkNameAvailability(function () {
+                        ResourceServerResource.update({realm : realm.realm, client : $scope.client.id, rsrid : $scope.resource._id}, $scope.resource, function() {
+                            $route.reload();
+                            Notifications.success("The resource has been updated.");
+                        });
                     });
                 }
 
@@ -188,12 +198,30 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                 }
 
                 $scope.reset = function() {
-                    $scope.resource = angular.copy(data);
-                    $scope.changed = false;
+                    $route.reload();
                 }
             });
         }
     });
+
+    $scope.checkNewNameAvailability = function () {
+        $instance.checkNameAvailability(function () {});
+    }
+
+    this.checkNameAvailability = function (onSuccess) {
+        ResourceServerResource.search({
+            realm : $route.current.params.realm,
+            client : client.id,
+            rsrid : $route.current.params.rsrid,
+            name: $scope.resource.name
+        }, function(data) {
+            if (data && data._id && data._id != $scope.resource._id) {
+                Notifications.error("Name already in use by another resource, please choose another one.");
+            } else {
+                onSuccess();
+            }
+        });
+    }
 });
 
 module.controller('ResourceServerScopeCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerScope, client) {
@@ -216,6 +244,8 @@ module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $rout
     $scope.realm = realm;
     $scope.client = client;
 
+    var $instance = this;
+
     ResourceServer.get({
         realm : $route.current.params.realm,
         client : client.id
@@ -230,7 +260,7 @@ module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $rout
 
             var scope = {};
 
-            $scope.resource = angular.copy(scope);
+            $scope.scope = angular.copy(scope);
 
             $scope.$watch('scope', function() {
                 if (!angular.equals($scope.scope, scope)) {
@@ -239,9 +269,11 @@ module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $rout
             }, true);
 
             $scope.save = function() {
-                ResourceServerScope.save({realm : realm.realm, client : $scope.client.id}, $scope.scope, function(data) {
-                    $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/scope/" + data.id);
-                    Notifications.success("The scope has been created.");
+                $instance.checkNameAvailability(function () {
+                    ResourceServerScope.save({realm : realm.realm, client : $scope.client.id}, $scope.scope, function(data) {
+                        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/scope/" + data.id);
+                        Notifications.success("The scope has been created.");
+                    });
                 });
             }
         } else {
@@ -259,10 +291,14 @@ module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $rout
                     }
                 }, true);
 
+                $scope.originalScope = angular.copy($scope.scope);
+
                 $scope.save = function() {
-                    ResourceServerScope.update({realm : realm.realm, client : $scope.client.id, id : $scope.scope.id}, $scope.scope, function() {
-                        $scope.changed = false;
-                        Notifications.success("The scope has been updated.");
+                    $instance.checkNameAvailability(function () {
+                        ResourceServerScope.update({realm : realm.realm, client : $scope.client.id, id : $scope.scope.id}, $scope.scope, function() {
+                            $scope.changed = false;
+                            Notifications.success("The scope has been updated.");
+                        });
                     });
                 }
 
@@ -288,12 +324,29 @@ module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $rout
                 }
 
                 $scope.reset = function() {
-                    $scope.scope = angular.copy(data);
-                    $scope.changed = false;
+                    $route.reload();
                 }
             });
         }
     });
+
+    $scope.checkNewNameAvailability = function () {
+        $instance.checkNameAvailability(function () {});
+    }
+
+    this.checkNameAvailability = function (onSuccess) {
+        ResourceServerScope.search({
+            realm : $route.current.params.realm,
+            client : client.id,
+            name: $scope.scope.name
+        }, function(data) {
+            if (data && data.id && data.id != $scope.scope.id) {
+                Notifications.error("Name already in use by another scope, please choose another one.");
+            } else {
+                onSuccess();
+            }
+        });
+    }
 });
 
 module.controller('ResourceServerPolicyCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerPolicy, PolicyProvider, client) {
@@ -845,6 +898,8 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
 
         delegate.onInit();
 
+        var $instance = this;
+
         ResourceServer.get({
             realm : $route.current.params.realm,
             client : client.id
@@ -876,17 +931,19 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                 }, true);
 
                 $scope.save = function() {
-                    if (delegate.onCreate) {
-                        delegate.onCreate();
-                    }
-                    ResourceServerPolicy.save({realm : realm.realm, client : client.id}, $scope.policy, function(data) {
-                        if (delegate.isPermission()) {
-                            $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission/" + $scope.policy.type + "/" + data.id);
-                            Notifications.success("The permission has been created.");
-                        } else {
-                            $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/" + $scope.policy.type + "/" + data.id);
-                            Notifications.success("The policy has been created.");
+                    $instance.checkNameAvailability(function () {
+                        if (delegate.onCreate) {
+                            delegate.onCreate();
                         }
+                        ResourceServerPolicy.save({realm : realm.realm, client : client.id}, $scope.policy, function(data) {
+                            if (delegate.isPermission()) {
+                                $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission/" + $scope.policy.type + "/" + data.id);
+                                Notifications.success("The permission has been created.");
+                            } else {
+                                $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/" + $scope.policy.type + "/" + data.id);
+                                Notifications.success("The policy has been created.");
+                            }
+                        });
                     });
                 }
 
@@ -903,6 +960,7 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                     client : client.id,
                     id : $route.current.params.id,
                 }, function(data) {
+                    $scope.originalPolicy = data;
                     var policy = angular.copy(data);
 
                     if (delegate.onInitUpdate) {
@@ -919,16 +977,18 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                     }, true);
 
                     $scope.save = function() {
-                        if (delegate.onUpdate) {
-                            delegate.onUpdate();
-                        }
-                        ResourceServerPolicy.update({realm : realm.realm, client : client.id, id : $scope.policy.id}, $scope.policy, function() {
-                            $route.reload();
-                            if (delegate.isPermission()) {
-                                Notifications.success("The permission has been updated.");
-                            } else {
-                                Notifications.success("The policy has been updated.");
+                        $instance.checkNameAvailability(function () {
+                            if (delegate.onUpdate) {
+                                delegate.onUpdate();
                             }
+                            ResourceServerPolicy.update({realm : realm.realm, client : client.id, id : $scope.policy.id}, $scope.policy, function() {
+                                $route.reload();
+                                if (delegate.isPermission()) {
+                                    Notifications.success("The permission has been updated.");
+                                } else {
+                                    Notifications.success("The policy has been updated.");
+                                }
+                            });
                         });
                     }
 
@@ -971,10 +1031,30 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                 }
             }
         });
+
+        $scope.checkNewNameAvailability = function () {
+            $instance.checkNameAvailability(function () {});
+        }
+
+        this.checkNameAvailability = function (onSuccess) {
+            ResourceServerPolicy.search({
+                realm: $route.current.params.realm,
+                client: client.id,
+                name: $scope.policy.name
+            }, function(data) {
+                if (data && data.id && data.id != $scope.policy.id) {
+                    Notifications.error("Name already in use by another policy or permission, please choose another one.");
+                } else {
+                    onSuccess();
+                }
+            });
+        }
     }
 
     return PolicyController;
 });
+
+
 
 module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $location, realm, clients, roles, ResourceServer, client, ResourceServerResource, ResourceServerScope, User, Notifications) {
     $scope.realm = realm;
