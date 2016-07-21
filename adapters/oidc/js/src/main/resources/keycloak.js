@@ -224,6 +224,10 @@
                 url += '&prompt=' + encodeURIComponent(options.prompt);
             }
 
+            if (options && options.maxAge) {
+                url += '&max_age=' + encodeURIComponent(options.maxAge);
+            }
+
             if (options && options.loginHint) {
                 url += '&login_hint=' + encodeURIComponent(options.loginHint);
             }

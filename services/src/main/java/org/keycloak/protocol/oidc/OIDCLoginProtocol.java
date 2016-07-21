@@ -18,6 +18,7 @@ package org.keycloak.protocol.oidc;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -33,8 +34,10 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -57,8 +60,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String REDIRECT_URI_PARAM = "redirect_uri";
     public static final String CLIENT_ID_PARAM = "client_id";
     public static final String NONCE_PARAM = "nonce";
-    public static final String MAX_AGE_PARAM = "max_age";
-    public static final String PROMPT_PARAM = "prompt";
+    public static final String MAX_AGE_PARAM = OAuth2Constants.MAX_AGE;
+    public static final String PROMPT_PARAM = OAuth2Constants.PROMPT;
     public static final String LOGIN_HINT_PARAM = "login_hint";
     public static final String LOGOUT_REDIRECT_URI = "OIDC_LOGOUT_REDIRECT_URI";
     public static final String ISSUER = "iss";
@@ -240,6 +243,36 @@ public class OIDCLoginProtocol implements LoginProtocol {
         } else {
             return Response.ok().build();
         }
+    }
+
+
+    @Override
+    public boolean requireReauthentication(UserSessionModel userSession, ClientSessionModel clientSession) {
+        return isPromptLogin(clientSession) || isAuthTimeExpired(userSession, clientSession);
+    }
+
+    protected boolean isPromptLogin(ClientSessionModel clientSession) {
+        String prompt = clientSession.getNote(OIDCLoginProtocol.PROMPT_PARAM);
+        return TokenUtil.hasPrompt(prompt, OIDCLoginProtocol.PROMPT_VALUE_LOGIN);
+    }
+
+    protected boolean isAuthTimeExpired(UserSessionModel userSession, ClientSessionModel clientSession) {
+        String authTime = userSession.getNote(AuthenticationManager.AUTH_TIME);
+        String maxAge = clientSession.getNote(OIDCLoginProtocol.MAX_AGE_PARAM);
+        if (maxAge == null) {
+            return false;
+        }
+
+        int authTimeInt = authTime==null ? 0 : Integer.parseInt(authTime);
+        int maxAgeInt = Integer.parseInt(maxAge);
+
+        if (authTimeInt + maxAgeInt < Time.currentTime()) {
+            logger.debugf("Authentication time is expired, needs to reauthenticate. userSession=%s, clientId=%s, maxAge=%d, authTime=%d", userSession.getId(),
+                    clientSession.getClient().getId(), maxAgeInt, authTimeInt);
+            return true;
+        }
+
+        return false;
     }
 
     @Override

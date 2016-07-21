@@ -629,6 +629,12 @@ public class SamlProtocol implements LoginProtocol {
         return logoutBuilder;
     }
 
+    @Override
+    public boolean requireReauthentication(UserSessionModel userSession, ClientSessionModel clientSession) {
+        // Not yet supported
+        return false;
+    }
+
     private JaxrsSAML2BindingBuilder createBindingBuilder(SamlClient samlClient) {
         JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder();
         if (samlClient.requiresRealmSignature()) {
