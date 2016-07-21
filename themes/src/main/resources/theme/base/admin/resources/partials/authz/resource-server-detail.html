@@ -43,13 +43,9 @@
                 </div>
                 <kc-tooltip>{{:: 'authz-remote-resource-management.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group">
-                <div class="col-md-10 col-md-offset-2" data-ng-show="create">
+            <div class="form-group" data-ng-show="access.manageAuthorization">
+                <div class="col-md-10 col-md-offset-2">
                     <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
-                    <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
-                </div>
-                <div class="col-md-10 col-md-offset-2" data-ng-show="!create">
-                    <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                     <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
                 </div>
             </div>

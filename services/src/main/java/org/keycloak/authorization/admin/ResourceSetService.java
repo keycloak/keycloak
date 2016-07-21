@@ -39,10 +39,13 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.keycloak.authorization.admin.util.Models.toRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -148,7 +151,28 @@ public class ResourceSetService {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        return Response.ok(Models.toRepresentation(model, this.resourceServer, authorization)).build();
+        return Response.ok(toRepresentation(model, this.resourceServer, authorization)).build();
+    }
+
+    @Path("/search")
+    @GET
+    @Produces("application/json")
+    @NoCache
+    public Response find(@QueryParam("name") String name) {
+        this.auth.requireView();
+        StoreFactory storeFactory = authorization.getStoreFactory();
+
+        if (name == null) {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
+
+        Resource model = storeFactory.getResourceStore().findByName(name, this.resourceServer.getId());
+
+        if (model == null) {
+            return Response.status(Status.OK).build();
+        }
+
+        return Response.ok(toRepresentation(model, this.resourceServer, authorization)).build();
     }
 
     @GET
@@ -160,7 +184,7 @@ public class ResourceSetService {
 
         return Response.ok(
                 storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream()
-                        .map(resource -> Models.toRepresentation(resource, this.resourceServer, authorization))
+                        .map(resource -> toRepresentation(resource, this.resourceServer, authorization))
                         .collect(Collectors.toList()))
                 .build();
     }

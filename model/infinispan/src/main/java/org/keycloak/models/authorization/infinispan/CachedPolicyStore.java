@@ -369,7 +369,7 @@ public class CachedPolicyStore implements PolicyStore {
 
                 if (getId() == null) return false;
 
-                if (o == null || getClass() != o.getClass()) return false;
+                if (!Policy.class.isInstance(o)) return false;
 
                 Policy that = (Policy) o;
 

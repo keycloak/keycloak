@@ -6,11 +6,11 @@
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope">{{:: 'authz-scope' | translate}}</a></li>
         <li data-ng-show="create">{{:: 'authz-add-scope' | translate}}</li>
-        <li data-ng-hide="create">{{scope.name}}</li>
+        <li data-ng-hide="create">{{originalScope.name}}</li>
     </ol>
 
     <h1 data-ng-show="create">{{:: 'authz-add-scope' | translate}}</h1>
-    <h1 data-ng-hide="create">{{scope.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create"
+    <h1 data-ng-hide="create">{{originalScope.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create"
                                                          data-ng-hide="changed" data-ng-click="remove()"></i></h1>
 
     <form class="form-horizontal" name="clientForm" novalidate>
@@ -18,7 +18,7 @@
             <div class="form-group">
                 <label class="col-md-2 control-label" for="name">{{:: 'name' | translate}} </label>
                 <div class="col-sm-6">
-                    <input class="form-control" type="text" id="name" name="name" data-ng-model="scope.name" autofocus>
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="scope.name" autofocus data-ng-blur="checkNewNameAvailability()">
                 </div>
                 <kc-tooltip>{{:: 'authz-scope-name.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -31,13 +31,9 @@
             </div>
         </fieldset>
 
-        <div class="form-group">
-            <div class="col-md-10 col-md-offset-2" data-ng-show="create">
+        <div class="form-group" data-ng-show="access.manageAuthorization">
+            <div class="col-md-10 col-md-offset-2">
                 <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
-                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
-            </div>
-            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageClients">
-                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                 <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
