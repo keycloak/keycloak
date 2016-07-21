@@ -25,7 +25,9 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.VersionRepresentation;
@@ -33,6 +35,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.*;
+import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.client.Client;
@@ -443,6 +446,33 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         token = tokenMinTTLPage.getAccessToken();
         int tokenIssued3 = token.getIssuedAt();
         Assert.assertTrue(tokenIssued3 > tokenIssued1);
+
+        // Revert times
+        setAdapterAndServerTimeOffset(0, tokenMinTTLPage.toString());
+    }
+
+    // Tests forwarding of parameters like "prompt"
+    @Test
+    public void testOIDCParamsForwarding() {
+        // test login to customer-portal which does a bearer request to customer-db
+        securePortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(securePortal);
+        String pageSource = driver.getPageSource();
+        assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+
+        int currentTime = Time.currentTime();
+        setAdapterAndServerTimeOffset(10, securePortal.toString());
+
+        // Test I need to reauthenticate with prompt=login
+        String appUri = tokenMinTTLPage.getUriBuilder().queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN).build().toString();
+        URLUtils.navigateToUri(driver, appUri, true);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        AccessToken token = tokenMinTTLPage.getAccessToken();
+        int authTime = token.getAuthTime();
+        Assert.assertTrue(currentTime + 10 <= authTime);
 
         // Revert times
         setAdapterAndServerTimeOffset(0, tokenMinTTLPage.toString());
