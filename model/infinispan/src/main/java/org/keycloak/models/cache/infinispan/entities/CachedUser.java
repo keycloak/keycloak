@@ -40,6 +40,7 @@ public class CachedUser extends AbstractRevisioned implements InRealm  {
     private String realm;
     private String username;
     private Long createdTimestamp;
+    private Long updatedTimestamp;
     private String firstName;
     private String lastName;
     private String email;
@@ -61,6 +62,7 @@ public class CachedUser extends AbstractRevisioned implements InRealm  {
         this.realm = realm.getId();
         this.username = user.getUsername();
         this.createdTimestamp = user.getCreatedTimestamp();
+        this.updatedTimestamp = user.getUpdatedTimestamp();
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
         this.attributes.putAll(user.getAttributes());
@@ -93,6 +95,10 @@ public class CachedUser extends AbstractRevisioned implements InRealm  {
 
     public Long getCreatedTimestamp() {
         return createdTimestamp;
+    }
+
+    public Long getUpdatedTimestamp() {
+        return updatedTimestamp;
     }
 
     public String getFirstName() {

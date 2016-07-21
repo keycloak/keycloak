@@ -28,6 +28,7 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
@@ -70,6 +71,8 @@ public class UserEntity {
     protected String firstName;
     @Column(name = "CREATED_TIMESTAMP")
     protected Long createdTimestamp;
+    @Column(name = "UPDATED_TIMESTAMP")
+    protected Long updatedTimestamp;
     @Column(name = "LAST_NAME")
     protected String lastName;
     @Column(name = "EMAIL")
@@ -125,6 +128,14 @@ public class UserEntity {
 
     public void setCreatedTimestamp(Long timestamp) {
         createdTimestamp = timestamp;
+    }
+
+    public Long getUpdatedTimestamp() {
+        return updatedTimestamp;
+    }
+
+    public void setUpdatedTimestamp(Long timestamp) {
+        this.updatedTimestamp = timestamp;
     }
 
     public String getFirstName() {
@@ -248,5 +259,12 @@ public class UserEntity {
     @Override
     public int hashCode() {
         return id.hashCode();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+
+        //TODO use appropriate time-source to derive updatedTimestamp
+        this.updatedTimestamp = System.currentTimeMillis();
     }
 }

@@ -84,7 +84,16 @@ public class UserDataAdapter implements UserModel {
     @Override
     public void setCreatedTimestamp(Long timestamp) {
         userData.setCreatedTimestamp(timestamp);
+    }
 
+    @Override
+    public Long getUpdatedTimestamp() {
+        return userData.getUpdatedTimestamp();
+    }
+
+    @Override
+    public void setUpdatedTimestamp(Long timestamp) {
+        userData.setUpdatedTimestamp(timestamp);
     }
 
     @Override

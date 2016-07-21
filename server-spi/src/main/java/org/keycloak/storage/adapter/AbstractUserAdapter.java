@@ -231,7 +231,16 @@ public abstract class AbstractUserAdapter implements UserModel {
     @Override
     public void setOtpEnabled(boolean totp) {
         throw new ReadOnlyException("user is read only for this update");
+    }
 
+    @Override
+    public Long getUpdatedTimestamp() {
+        return null;
+    }
+
+    @Override
+    public void setUpdatedTimestamp(Long timestamp) {
+        throw new ReadOnlyException("user is read only for this update");
     }
 
     /**

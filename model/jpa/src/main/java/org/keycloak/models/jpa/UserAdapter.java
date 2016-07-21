@@ -109,6 +109,16 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     }
 
     @Override
+    public Long getUpdatedTimestamp() {
+        return user.getUpdatedTimestamp();
+    }
+
+    @Override
+    public void setUpdatedTimestamp(Long timestamp) {
+        user.setUpdatedTimestamp(timestamp);
+    }
+
+    @Override
     public boolean isEnabled() {
         return user.isEnabled();
     }

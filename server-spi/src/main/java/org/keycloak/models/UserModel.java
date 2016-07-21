@@ -52,6 +52,13 @@ public interface UserModel extends RoleMapperModel {
     
     void setCreatedTimestamp(Long timestamp);
 
+    /**
+     * Get timestamp of the most recent user update. May be null for old users created before this feature introduction.
+     */
+    Long getUpdatedTimestamp();
+
+    void setUpdatedTimestamp(Long timestamp);
+
     boolean isEnabled();
 
     boolean isOtpEnabled();

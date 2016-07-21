@@ -101,6 +101,16 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
+    public Long getUpdatedTimestamp() {
+        return user.getUpdatedTimestamp();
+    }
+
+    @Override
+    public void setUpdatedTimestamp(Long timestamp) {
+        user.setUpdatedTimestamp(timestamp);
+    }
+
+    @Override
     public boolean isEnabled() {
         return user.isEnabled();
     }
@@ -454,6 +464,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     protected void updateUser() {
+        setUpdatedTimestamp(System.currentTimeMillis());
         super.updateMongoEntity();
     }
 

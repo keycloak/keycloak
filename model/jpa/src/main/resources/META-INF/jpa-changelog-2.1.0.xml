@@ -191,4 +191,12 @@
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="STORAGE_PROVIDER" constraintName="FK_STORAGE_PROVIDER_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
         -->
     </changeSet>
+
+    <changeSet author="thomas.darimont@gmail.com" id="2.1.0-1">
+        <addColumn tableName="USER_ENTITY">
+            <column name="UPDATED_TIMESTAMP" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
