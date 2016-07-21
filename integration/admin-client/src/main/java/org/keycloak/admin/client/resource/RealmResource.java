@@ -26,6 +26,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -115,6 +116,19 @@ public interface RealmResource {
     @Path("events/config")
     @Consumes(MediaType.APPLICATION_JSON)
     public void updateRealmEventsConfig(RealmEventsConfigRepresentation rep);
+
+    @GET
+    @Produces({"application/json"})
+    @Path("default-roles")
+    List<RoleRepresentation> getDefaultRoles();
+
+    @PUT
+    @Path("default-roles/{roleName}")
+    void addDefaultRole(@PathParam("roleName") String roleName);
+
+    @DELETE
+    @Path("default-roles/{roleName}")
+    void removeDefaultRole(@PathParam("roleName") String roleName);
 
     @GET
     @Path("group-by-path/{path: .*}")

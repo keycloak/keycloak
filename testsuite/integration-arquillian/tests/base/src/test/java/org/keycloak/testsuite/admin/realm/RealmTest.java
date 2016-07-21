@@ -278,30 +278,33 @@ public class RealmTest extends AbstractAdminTest {
     }
 
     @Test
-    // KEYCLOAK-1110
-    public void deleteDefaultRole() {
-        RoleRepresentation role = new RoleRepresentation("test", "test", false);
+    public void manageDefaultRoles() {
+        final String roleName = "test";
+
+        // create role
+        RoleRepresentation role = new RoleRepresentation(roleName, "test", false);
         realm.roles().create(role);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("test"), role);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(roleName), role);
+        assertNotNull(realm.roles().get(roleName).toRepresentation());
 
-        assertNotNull(realm.roles().get("test").toRepresentation());
+        // add created role to realm default roles
+        realm.addDefaultRole(roleName);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Matchers.containsString("default-roles/".concat(roleName)), null);
 
-        RealmRepresentation rep = realm.toRepresentation();
-        rep.setDefaultRoles(new LinkedList<String>());
-        rep.getDefaultRoles().add("test");
+        // assert default roles contain the role we just added above
+//        assertTrue(realm.getDefaultRoles().contains(roleName));
+        assertTrue(realm.toRepresentation().getDefaultRoles().contains(roleName));
 
-        realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+        // remove created role from realm default roles
+        realm.removeDefaultRole(roleName);
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, Matchers.containsString("default-roles/".concat(roleName)), null);
 
-        realm.roles().deleteRole("test");
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourcePath("test"));
+        // assert default roles doesn't contain the role we removed above
+        assertFalse(realm.toRepresentation().getDefaultRoles().contains(roleName));
 
-        try {
-            realm.roles().get("testsadfsadf").toRepresentation();
-            fail("Expected NotFoundException");
-        } catch (NotFoundException e) {
-            // Expected
-        }
+        // remove the role we created initially
+        realm.roles().deleteRole(roleName);
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourcePath(roleName));
     }
 
     @Test
