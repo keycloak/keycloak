@@ -139,7 +139,12 @@ public class UserFederationStorageTest {
         Assert.assertTrue(thor.hasRole(role));
 
         Set<GroupModel> groups = thor.getGroups();
-        Assert.assertEquals("my-group", groups.iterator().next().getName());
+        boolean foundGroup = false;
+        for (GroupModel g : groups) {
+            if (g.getName().equals("my-group")) foundGroup = true;
+
+        }
+        Assert.assertTrue(foundGroup);
         System.out.println("num groups " + groups.size());
         Assert.assertTrue(thor.getRequiredActions().iterator().next().equals("POOP"));
         thor.removeRequiredAction("POOP");
