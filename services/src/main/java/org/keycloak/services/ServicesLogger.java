@@ -419,6 +419,10 @@ public interface ServicesLogger extends BasicLogger {
     void invalidParameter(String paramName);
 
     @LogMessage(level = ERROR)
-    @Message(id=94, value="Client is not allowed to initiate browser login with given response_type. %s flow is disabled for the client.")
+    @Message(id=94, value="Unsupported parameter: %s")
+    void unsupportedParameter(String paramName);
+
+    @LogMessage(level = ERROR)
+    @Message(id=95, value="Client is not allowed to initiate browser login with given response_type. %s flow is disabled for the client.")
     void flowNotAllowed(String flowName);
 }

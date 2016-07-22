@@ -88,6 +88,12 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("scopes_supported")
     private List<String> scopesSupported;
 
+    @JsonProperty("request_parameter_supported")
+    private Boolean requestParameterSupported;
+
+    @JsonProperty("request_uri_parameter_supported")
+    private Boolean requestUriParameterSupported;
+
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
@@ -240,6 +246,22 @@ public class OIDCConfigurationRepresentation {
 
     public void setScopesSupported(List<String> scopesSupported) {
         this.scopesSupported = scopesSupported;
+    }
+
+    public Boolean getRequestParameterSupported() {
+        return requestParameterSupported;
+    }
+
+    public void setRequestParameterSupported(Boolean requestParameterSupported) {
+        this.requestParameterSupported = requestParameterSupported;
+    }
+
+    public Boolean getRequestUriParameterSupported() {
+        return requestUriParameterSupported;
+    }
+
+    public void setRequestUriParameterSupported(Boolean requestUriParameterSupported) {
+        this.requestUriParameterSupported = requestUriParameterSupported;
     }
 
     @JsonAnyGetter
