@@ -1,0 +1,32 @@
+
+==== Parameters Forwarding
+
+The {{book.project.name}}  initial authorization endpoint request has support for various parameters. Most of the parameters are described in
+http://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint[OIDC specification] . Some parameters are added automatically by adapter based
+on the adapter configuration. However there are also few parameters, which can be added on per-invocation basis. When you open the secured application URI,
+the particular parameter will be forwarded to the {{book.project.name}} authorization endpoint.
+
+For example, if you request offline token, then you can open the secured application URI with the `scope` parameter like:
+
+[source]
+----
+http://myappserver/mysecuredapp?scope=offline_access
+----
+
+and the parameter `scope=offline_access` will be automatically forwarded to the {{book.project.name}} authorization endpoint.
+
+The supported parameters are actually:
+
+* scope
+
+* prompt
+
+* max_age
+
+* login_hint
+
+* kc_idp_hint
+
+Most of the parameters are described in the http://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint[OIDC specification].
+The only exception is parameter `kc_idp_hint`, which is specific to {{book.project.name}} and contains the name of Identity provider to automatically use.
+More info in {{book.adminguide.link}}[{{book.adminguide.name}}] in `Identity Brokering` section.

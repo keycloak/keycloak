@@ -255,7 +255,8 @@ Redirects to login form on (options is an optional object with redirectUri and/o
 Options is an Object, where: 
 
 * redirectUri - Specifies the uri to redirect to after login.
-* prompt - By default the login screen is displayed if the user is not logged-in to {{book.project.name}}. To only authenticate to the application if the user is already logged-in and not display the login page if the user is not logged-in, set this option to `none`.
+* prompt - By default the login screen is displayed if the user is not logged-in to {{book.project.name}}. To only authenticate to the application if the user is already logged-in and not display the login page if the user is not logged-in, set this option to `none`. To always require re-authentication and ignore SSO, set this option to `login` .
+* maxAge - Used just if user is already authenticated. Specifies maximum time since the authentication of user happened. If user is already authenticated for longer time than `maxAge`, the SSO is ignored and he will need to re-authenticate again.
 * loginHint - Used to pre-fill the username/email field on the login form.
 * action - If value is 'register' then user is redirected to registration page, otherwise to login page.
 * locale - Specifies the desired locale for the UI.
@@ -264,10 +265,7 @@ Options is an Object, where:
 
 Returns the URL to login form on (options is an optional object with redirectUri and/or prompt fields).
 
-Options is an Object, where: 
-
-* redirectUri - Specifies the uri to redirect to after login.
-* prompt - Can be set to 'none' to check if the user is logged in already (if not logged in, a login form is not displayed).
+Options is an Object, which supports same options like the function `login` .
 
 ====== logout(options)
 
