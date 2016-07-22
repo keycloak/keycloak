@@ -28,6 +28,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -323,7 +324,7 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
 
     @Test
     public void nonSupportedParams() {
-        driver.navigate().to(oauth.getLoginFormUrl() + "&display=popup&foo=foobar");
+        driver.navigate().to(oauth.getLoginFormUrl() + "&display=popup&foo=foobar&claims_locales=fr");
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
@@ -361,6 +362,21 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
         OAuthClient.AuthorizationCodeResponse resp = new OAuthClient.AuthorizationCodeResponse(oauth);
         Assert.assertNull(resp.getCode());
         Assert.assertEquals(OAuthErrorException.REQUEST_URI_NOT_SUPPORTED, resp.getError());
+    }
+
+    // LOGIN_HINT
+
+    @Test
+    public void loginHint() {
+        // Assert need to re-authenticate with prompt=login
+        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.LOGIN_HINT_PARAM + "=test-user%40localhost");
+
+                loginPage.assertCurrent();
+        Assert.assertEquals("test-user@localhost", loginPage.getUsername());
+        loginPage.login("password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
 
 }

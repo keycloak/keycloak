@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.util;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -33,7 +34,6 @@ import java.util.Set;
 public class LocaleHelper {
 
     private static final String LOCALE_COOKIE = "KEYCLOAK_LOCALE";
-    private static final String UI_LOCALES_PARAM = "ui_locales";
     private static final String KC_LOCALE_PARAM = "kc_locale";
 
     public static Locale getLocale(KeycloakSession session, RealmModel realm, UserModel user) {
@@ -104,8 +104,8 @@ public class LocaleHelper {
         }
 
         // ui_locales query parameter
-        if (uriInfo != null && uriInfo.getQueryParameters().containsKey(UI_LOCALES_PARAM)) {
-            String localeString = uriInfo.getQueryParameters().getFirst(UI_LOCALES_PARAM);
+        if (uriInfo != null && uriInfo.getQueryParameters().containsKey(OAuth2Constants.UI_LOCALES_PARAM)) {
+            String localeString = uriInfo.getQueryParameters().getFirst(OAuth2Constants.UI_LOCALES_PARAM);
             Locale locale = findLocale(realm.getSupportedLocales(), localeString.split(" "));
             if (locale != null) {
                 return locale;
