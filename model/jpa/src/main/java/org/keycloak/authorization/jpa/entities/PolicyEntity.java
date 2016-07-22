@@ -236,9 +236,9 @@ public class PolicyEntity implements Policy {
 
         if (this.id == null) return false;
 
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!Policy.class.isInstance(o)) return false;
 
-        AbstractIdentifiableEntity that = (AbstractIdentifiableEntity) o;
+        Policy that = (Policy) o;
 
         if (!getId().equals(that.getId())) return false;
 

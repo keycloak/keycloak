@@ -102,6 +102,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setScopesSupported(SCOPES_SUPPORTED);
 
+        config.setRequestParameterSupported(false);
+        config.setRequestUriParameterSupported(false);
+
         return config;
     }
 

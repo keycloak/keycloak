@@ -10,19 +10,19 @@
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">{{:: 'authz-policies' | translate}}</a></li>
         <li data-ng-show="create">{{:: 'authz-add-time-policy' | translate}}</li>
         <li data-ng-hide="create">{{:: 'time' | translate}}</li>
-        <li data-ng-hide="create">{{policy.name}}</li>
+        <li data-ng-hide="create">{{originalPolicy.name}}</li>
     </ol>
 
 
     <h1 data-ng-show="create">{{:: 'authz-add-time-policy' | translate}}</h1>
-    <h1 data-ng-hide="create">{{policy.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-click="remove()"></i></h1>
+    <h1 data-ng-hide="create">{{originalPolicy.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-click="remove()"></i></h1>
 
     <form class="form-horizontal" name="clientForm" novalidate>
         <fieldset class="border-top">
             <div class="form-group">
                 <label class="col-md-2 control-label" for="name">{{:: 'name' | translate}} <span class="required">*</span></label>
                 <div class="col-sm-6">
-                    <input class="form-control" type="text" id="name" name="name" data-ng-model="policy.name" autofocus required>
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="policy.name" autofocus required data-ng-blur="checkNewNameAvailability()">
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-name.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -65,13 +65,9 @@
             <input type="hidden" data-ng-model="policy.type"/>
         </fieldset>
 
-        <div class="form-group">
-            <div class="col-md-10 col-md-offset-2" data-ng-show="create">
+        <div class="form-group" data-ng-show="access.manageAuthorization">
+            <div class="col-md-10 col-md-offset-2">
                 <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
-                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
-            </div>
-            <div class="col-md-10 col-md-offset-2" data-ng-show="!create">
-                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                 <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>
         </div>

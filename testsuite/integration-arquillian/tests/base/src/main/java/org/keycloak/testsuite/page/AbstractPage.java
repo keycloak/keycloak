@@ -72,6 +72,11 @@ public abstract class AbstractPage {
         return this;
     }
 
+    public AbstractPage removeUriParameter(String name) {
+        uriParameters.remove(name);
+        return this;
+    }
+
     public Object getUriParameter(String name) {
         return uriParameters.get(name);
     }

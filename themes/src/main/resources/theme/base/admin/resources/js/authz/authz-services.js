@@ -15,7 +15,8 @@ module.factory('ResourceServerResource', function($resource) {
         client: '@client',
         rsrid : '@rsrid'
     }, {
-        'update' : {method : 'PUT'}
+        'update' : {method : 'PUT'},
+        'search' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/resource/search', method : 'GET'}
     });
 });
 
@@ -25,7 +26,8 @@ module.factory('ResourceServerScope', function($resource) {
         client: '@client',
         id : '@id'
     }, {
-        'update' : {method : 'PUT'}
+        'update' : {method : 'PUT'},
+        'search' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/scope/search', method : 'GET'}
     });
 });
 
@@ -35,7 +37,8 @@ module.factory('ResourceServerPolicy', function($resource) {
         client: '@client',
         id : '@id'
     }, {
-        'update' : {method : 'PUT'}
+        'update' : {method : 'PUT'},
+        'search' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/policy/search', method : 'GET'}
     });
 });
 

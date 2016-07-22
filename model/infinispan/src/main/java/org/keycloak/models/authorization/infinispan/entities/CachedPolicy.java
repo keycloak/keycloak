@@ -200,7 +200,7 @@ public class CachedPolicy implements Policy {
 
         if (o == null || getClass() != o.getClass()) return false;
 
-        AbstractIdentifiableEntity that = (AbstractIdentifiableEntity) o;
+        Policy that = (Policy) o;
 
         if (!getId().equals(that.getId())) return false;
 

@@ -74,4 +74,11 @@ public interface LoginProtocol extends Provider {
     Response frontchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession);
     Response finishLogout(UserSessionModel userSession);
 
+    /**
+     * @param userSession
+     * @param clientSession
+     * @return true if SSO cookie authentication can't be used. User will need to "actively" reauthenticate
+     */
+    boolean requireReauthentication(UserSessionModel userSession, ClientSessionModel clientSession);
+
 }
