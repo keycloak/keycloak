@@ -34,18 +34,13 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserPropertyFileStorageFactory implements StorageProviderFactory {
+public class UserPropertyFileStorageFactory implements StorageProviderFactory<UserPropertyFileStorage> {
 
 
     public static final String PROVIDER_ID = "user-password-props";
 
     @Override
-    public boolean supports(Class<?> type) {
-        return type.isAssignableFrom(UserPropertyFileStorage.class);
-    }
-
-    @Override
-    public StorageProvider getInstance(KeycloakSession session, StorageProviderModel model) {
+    public UserPropertyFileStorage getInstance(KeycloakSession session, StorageProviderModel model) {
         Properties props = new Properties();
         try {
             props.load(getClass().getResourceAsStream(model.getConfig().get("property.file")));
@@ -53,11 +48,6 @@ public class UserPropertyFileStorageFactory implements StorageProviderFactory {
             throw new RuntimeException(e);
         }
         return new UserPropertyFileStorage(session, model, props);
-    }
-
-    @Override
-    public Set<String> getConfigurationOptions() {
-        return null;
     }
 
     @Override

@@ -402,4 +402,19 @@ public abstract class AbstractUserAdapter implements UserModel {
         throw new ReadOnlyException("user is read only for this update");
 
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof UserModel)) return false;
+
+        UserModel that = (UserModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
+
 }

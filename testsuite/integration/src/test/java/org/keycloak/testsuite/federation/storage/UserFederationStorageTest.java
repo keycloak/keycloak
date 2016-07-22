@@ -38,6 +38,8 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -144,6 +146,91 @@ public class UserFederationStorageTest {
         thor.updateCredential(UserCredentialModel.password("lightning"));
         keycloakRule.stopSession(session, true);
         loginSuccessAndLogout("thor", "lightning");
+    }
+
+    @Test
+    public void testQuery() {
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.realms().getRealmByName("test");
+
+        // Test paging
+        List<UserModel> localUsers = session.userLocalStorage().getUsers(realm, false);
+        Set<UserModel> queried = new HashSet<>();
+        // tests assumes that local storage is queried first
+        int first = localUsers.size();
+        while (queried.size() < 8) {
+            List<UserModel> results = session.users().getUsers(realm, first, 3);
+            if (results.size() == 0) break;
+            first += results.size();
+            queried.addAll(results);
+
+        }
+        Set<String> usernames = new HashSet<>();
+        for (UserModel user : queried) {
+            usernames.add(user.getUsername());
+            System.out.println(user.getUsername());
+
+        }
+        Assert.assertEquals(8, queried.size());
+        Assert.assertTrue(usernames.contains("thor"));
+        Assert.assertTrue(usernames.contains("zeus"));
+        Assert.assertTrue(usernames.contains("apollo"));
+        Assert.assertTrue(usernames.contains("perseus"));
+        Assert.assertTrue(usernames.contains("tbrady"));
+        Assert.assertTrue(usernames.contains("rob"));
+        Assert.assertTrue(usernames.contains("jules"));
+        Assert.assertTrue(usernames.contains("danny"));
+
+        // test searchForUser
+        List<UserModel> users = session.users().searchForUser("tbrady", realm);
+        Assert.assertTrue(users.size() == 1);
+        Assert.assertTrue(users.get(0).getUsername().equals("tbrady"));
+
+        // test getGroupMembers()
+        GroupModel gods = realm.createGroup("gods");
+        UserModel user = null;
+        user = session.users().getUserByUsername("apollo", realm);
+        user.joinGroup(gods);
+        user = session.users().getUserByUsername("zeus", realm);
+        user.joinGroup(gods);
+        user = session.users().getUserByUsername("thor", realm);
+        user.joinGroup(gods);
+        queried.clear();
+        usernames.clear();
+
+        first = 0;
+        while (queried.size() < 8) {
+            List<UserModel> results = session.users().getGroupMembers(realm, gods, first, 1);
+            if (results.size() == 0) break;
+            first += results.size();
+            queried.addAll(results);
+
+        }
+        for (UserModel u : queried) {
+            usernames.add(u.getUsername());
+            System.out.println(u.getUsername());
+
+        }
+        Assert.assertEquals(3, queried.size());
+        Assert.assertTrue(usernames.contains("apollo"));
+        Assert.assertTrue(usernames.contains("zeus"));
+        Assert.assertTrue(usernames.contains("thor"));
+
+        // search by single attribute
+        System.out.println("search by single attribute");
+        user = session.users().getUserByUsername("thor", realm);
+        user.setSingleAttribute("weapon", "hammer");
+
+        users = session.users().searchForUserByUserAttribute("weapon", "hammer", realm);
+        for (UserModel u : users) {
+            System.out.println(u.getUsername());
+
+        }
+        Assert.assertEquals(1, users.size());
+        Assert.assertEquals("thor", users.get(0).getUsername());
+
+
+        keycloakRule.stopSession(session, true);
     }
 
 }
