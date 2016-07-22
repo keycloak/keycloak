@@ -20,6 +20,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -28,9 +29,8 @@ import java.util.Set;
  */
 public interface UserGroupMembershipFederatedStorage {
     Set<GroupModel> getGroups(RealmModel realm, UserModel user);
-
     void joinGroup(RealmModel realm,UserModel user, GroupModel group);
-
     void leaveGroup(RealmModel realm,UserModel user, GroupModel group);
+    List<String> getMembership(RealmModel realm, GroupModel group, int firstResult, int max);
 
 }

@@ -22,6 +22,7 @@ import org.keycloak.models.UserModel;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -32,4 +33,5 @@ public interface UserAttributeFederatedStorage {
     void setAttribute(RealmModel realm, UserModel user, String name, List<String> values);
     void removeAttribute(RealmModel realm, UserModel user, String name);
     MultivaluedHashMap<String, String> getAttributes(RealmModel realm, UserModel user);
+    List<String> getUsersByUserAttribute(RealmModel realm, String name, String value);
 }
