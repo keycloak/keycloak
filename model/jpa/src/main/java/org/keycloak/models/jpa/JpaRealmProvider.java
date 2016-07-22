@@ -34,6 +34,7 @@ import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.StorageProviderModel;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -127,6 +128,9 @@ public class JpaRealmProvider implements RealmProvider {
         em.refresh(realm);
         final RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
+        for (StorageProviderModel provider : adapter.getStorageProviders()) {
+            adapter.removeStorageProvider(provider);
+        }
 
         realm.getDefaultGroups().clear();
         em.flush();
@@ -152,6 +156,7 @@ public class JpaRealmProvider implements RealmProvider {
         for (RoleModel role : adapter.getRoles()) {
             session.realms().removeRole(adapter, role);
         }
+
 
         em.remove(realm);
 
