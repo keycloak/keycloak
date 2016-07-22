@@ -100,6 +100,9 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         KNOWN_REQ_PARAMS.add(AdapterConstants.KC_IDP_HINT);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.NONCE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.MAX_AGE_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.UI_LOCALES_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REQUEST_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REQUEST_URI_PARAM);
     }
 
     private enum Action {
