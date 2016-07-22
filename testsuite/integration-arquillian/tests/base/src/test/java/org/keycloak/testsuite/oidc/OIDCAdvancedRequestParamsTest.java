@@ -289,6 +289,78 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
     }
 
 
-    // prompt=consent
+    // NONCE
+
+    @Test
+    public void nonceNotUsed() {
+        driver.navigate().to(oauth.getLoginFormUrl());
+
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+
+        Assert.assertNull(idToken.getNonce());
+    }
+
+    @Test
+    public void nonceMatches() {
+        driver.navigate().to(oauth.getLoginFormUrl() + "&nonce=abcdef123456");
+
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+
+        Assert.assertEquals("abcdef123456", idToken.getNonce());
+    }
+
+    // DISPLAY & OTHERS
+
+    @Test
+    public void nonSupportedParams() {
+        driver.navigate().to(oauth.getLoginFormUrl() + "&display=popup&foo=foobar");
+
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+
+        Assert.assertNotNull(idToken);
+    }
+
+    // REQUEST & REQUEST_URI
+
+    @Test
+    public void requestParam() {
+        driver.navigate().to(oauth.getLoginFormUrl() + "&request=abc");
+
+        assertFalse(loginPage.isCurrent());
+        assertTrue(appPage.isCurrent());
+
+        // Assert error response was sent because not logged in
+        OAuthClient.AuthorizationCodeResponse resp = new OAuthClient.AuthorizationCodeResponse(oauth);
+        Assert.assertNull(resp.getCode());
+        Assert.assertEquals(OAuthErrorException.REQUEST_NOT_SUPPORTED, resp.getError());
+    }
+
+    @Test
+    public void requestUriParam() {
+        driver.navigate().to(oauth.getLoginFormUrl() + "&request_uri=https%3A%2F%2Flocalhost%3A60784%2Fexport%2FqzHTG11W48.jwt");
+
+        assertFalse(loginPage.isCurrent());
+        assertTrue(appPage.isCurrent());
+
+        // Assert error response was sent because not logged in
+        OAuthClient.AuthorizationCodeResponse resp = new OAuthClient.AuthorizationCodeResponse(oauth);
+        Assert.assertNull(resp.getCode());
+        Assert.assertEquals(OAuthErrorException.REQUEST_URI_NOT_SUPPORTED, resp.getError());
+    }
 
 }

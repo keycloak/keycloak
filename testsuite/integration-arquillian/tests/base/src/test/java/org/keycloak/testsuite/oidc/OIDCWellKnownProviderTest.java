@@ -98,6 +98,10 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
             // Scopes supported
             Assert.assertNames(oidcConfig.getScopesSupported(), OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS);
+
+            // Request and Request_Uri
+            Assert.assertFalse(oidcConfig.getRequestParameterSupported());
+            Assert.assertFalse(oidcConfig.getRequestUriParameterSupported());
         } finally {
             client.close();
         }

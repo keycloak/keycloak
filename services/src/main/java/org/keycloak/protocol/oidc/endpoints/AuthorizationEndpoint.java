@@ -111,6 +111,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     private Action action;
     private OIDCResponseType parsedResponseType;
+    private OIDCResponseMode parsedResponseMode;
 
     private String clientId;
     private String redirectUri;
@@ -160,6 +161,11 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         if (!TokenUtil.isOIDCRequest(scope)) {
             logger.oidcScopeMissing();
+        }
+
+        errorResponse = checkOIDCParams(params);
+        if (errorResponse != null) {
+            return errorResponse;
         }
 
         createClientSession();
@@ -311,6 +317,24 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             logger.flowNotAllowed("Implicit");
             event.error(Errors.NOT_ALLOWED);
             return redirectErrorToClient(parsedResponseMode, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
+        }
+
+        this.parsedResponseMode = parsedResponseMode;
+
+        return null;
+    }
+
+    private Response checkOIDCParams(MultivaluedMap<String, String> params) {
+        if (params.getFirst(OIDCLoginProtocol.REQUEST_PARAM) != null) {
+            logger.unsupportedParameter(OIDCLoginProtocol.REQUEST_PARAM);
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.REQUEST_NOT_SUPPORTED, null);
+        }
+
+        if (params.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM) != null) {
+            logger.unsupportedParameter(OIDCLoginProtocol.REQUEST_URI_PARAM);
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.REQUEST_URI_NOT_SUPPORTED, null);
         }
 
         return null;
