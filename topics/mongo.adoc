@@ -9,7 +9,7 @@ To configure {{book.project.name}} to use Mongo, you need to edit the _keycloak-
 in standalone mode, this file is in the _.../standalone/configuration_ directory.  If you are running in domain mode
 this file will live in the _.../domain/servers/{server name}/configuration_ directory.
 
-Open the _keycloak-server.json_ file.  Look for the following JSON snippet  This is the area you will be modifying
+Open the _keycloak-server.json_ file.  Look for the following JSON snippets and replace all the _jpa_ providers with _mongo_ .   This is the area you will be modifying
 to use Mongo.
 
 [source,json]
@@ -27,7 +27,15 @@ to use Mongo.
 },
 
 "user": {
-    "provider": "${keycloak.user.provider:jpa}"
+    "provider": "jpa"
+},
+
+"userSessionPersister": {
+    "provider": "jpa"
+},
+
+"authorizationPersister": {
+    "provider": "jpa"
 },
 ----
 
@@ -48,6 +56,14 @@ Change that JSON snippet to use Mongo:
 },
 
 "user": {
+    "provider": "mongo"
+},
+
+"userSessionPersister": {
+    "provider": "mongo"
+},
+
+"authorizationPersister": {
     "provider": "mongo"
 },
 ----
