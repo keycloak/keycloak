@@ -873,6 +873,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
                 $scope.samlForceNameIdFormat = false;
             }
         }
+        if ($scope.client.attributes["saml_single_attribute_statement"]) {
+            if ($scope.client.attributes["saml_single_attribute_statement"] == "true") {
+                $scope.samlSingleAttributeStatement = true;
+            } else {
+                $scope.samlSingleAttributeStatement = false;
+            }
+        }
         if ($scope.client.attributes["saml.multivalued.roles"]) {
             if ($scope.client.attributes["saml.multivalued.roles"] == "true") {
                 $scope.samlMultiValuedRoles = true;
@@ -1052,6 +1059,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
             $scope.client.attributes["saml_force_name_id_format"] = "true";
         } else {
             $scope.client.attributes["saml_force_name_id_format"] = "false";
+
+        }
+        if ($scope.samlSingleAttributeStatement == true) {
+            $scope.client.attributes["saml_single_attribute_statement"] = "true";
+        } else {
+            $scope.client.attributes["saml_single_attribute_statement"] = "false";
 
         }
         if ($scope.samlMultiValuedRoles == true) {

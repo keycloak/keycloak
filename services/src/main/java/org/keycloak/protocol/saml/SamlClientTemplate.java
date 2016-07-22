@@ -83,6 +83,14 @@ public class SamlClientTemplate {
         clientTemplate.setAttribute(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, Boolean.toString(val));
     }
 
+    public boolean singleAttributeStatement() {
+        return Boolean.TRUE.toString().equals(clientTemplate.getAttribute(SamlConfigAttributes.SAML_SINGLE_ATTRIBUTE_STATEMENT));
+
+    }
+    public void setSingleAttributeStatement(boolean val) {
+        clientTemplate.setAttribute(SamlConfigAttributes.SAML_SINGLE_ATTRIBUTE_STATEMENT, Boolean.toString(val));
+    }
+
     public boolean requiresRealmSignature() {
         return "true".equals(clientTemplate.getAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE));
     }

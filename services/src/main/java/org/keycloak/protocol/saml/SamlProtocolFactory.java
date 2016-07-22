@@ -143,6 +143,10 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
             client.setForceNameIDFormat(false);
         }
 
+        if (rep.getSingleAttributeStatement() == null) {
+            client.setSingleAttributeStatement(false);
+        }
+
         if (rep.getSamlServerSignature() == null) {
             client.setRequiresRealmSignature(true);
         }
@@ -188,6 +192,10 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
 
         if (rep.getForceNameIDFormat() == null) {
             client.setForceNameIDFormat(false);
+        }
+
+        if (rep.getSingleAttributeStatement() == null) {
+            client.setSingleAttributeStatement(false);
         }
 
         if (rep.getSamlServerSignature() == null) {
