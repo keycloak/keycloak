@@ -26,8 +26,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface StorageProviderFactory extends ProviderFactory<StorageProvider> {
-    boolean supports(Class<?> type);
+public interface StorageProviderFactory<T extends StorageProvider> extends ProviderFactory<StorageProvider> {
     /**
      * called per Keycloak transaction.
      *
@@ -35,14 +34,7 @@ public interface StorageProviderFactory extends ProviderFactory<StorageProvider>
      * @param model
      * @return
      */
-    StorageProvider getInstance(KeycloakSession session, StorageProviderModel model);
-
-    /**
-     * Config options to display in generic admin console page for federated
-     *
-     * @return
-     */
-    Set<String> getConfigurationOptions();
+    T getInstance(KeycloakSession session, StorageProviderModel model);
 
     /**
      * This is the name of the provider and will be showed in the admin console as an option.

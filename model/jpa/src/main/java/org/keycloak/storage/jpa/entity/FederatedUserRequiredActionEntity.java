@@ -37,6 +37,7 @@ import java.io.Serializable;
  */
 @NamedQueries({
         @NamedQuery(name="getFederatedUserRequiredActionsByUser", query="select action from FederatedUserRequiredActionEntity action where action.userId = :userId and action.realmId=:realmId"),
+        @NamedQuery(name="deleteFederatedUserRequiredActionsByUser", query="delete from FederatedUserRequiredActionEntity action where action.realmId=:realmId and action.userId = :userId"),
         @NamedQuery(name="deleteFederatedUserRequiredActionsByRealm", query="delete from FederatedUserRequiredActionEntity action where action.realmId=:realmId"),
         @NamedQuery(name="deleteFederatedUserRequiredActionsByStorageProvider", query="delete from FederatedUserRequiredActionEntity e where e.storageProviderId=:storageProviderId"),
         @NamedQuery(name="deleteFederatedUserRequiredActionsByRealmAndLink", query="delete from FederatedUserRequiredActionEntity action where action.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")

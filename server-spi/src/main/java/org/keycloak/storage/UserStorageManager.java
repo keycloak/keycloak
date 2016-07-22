@@ -18,6 +18,7 @@
 package org.keycloak.storage;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.reflections.Types;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
@@ -42,6 +43,7 @@ import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -79,18 +81,20 @@ public class UserStorageManager implements UserProvider {
     protected <T> T getFirstStorageProvider(RealmModel realm, Class<T> type) {
         for (StorageProviderModel model : getStorageProviders(realm)) {
             StorageProviderFactory factory = (StorageProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(StorageProvider.class, model.getProviderName());
-            if (factory.supports(type)) {
+
+            if (Types.supports(type, factory, StorageProviderFactory.class)) {
                 return type.cast(factory.getInstance(session, model));
             }
         }
         return null;
     }
 
+
     protected <T> List<T> getStorageProviders(RealmModel realm, Class<T> type) {
         List<T> list = new LinkedList<>();
         for (StorageProviderModel model : getStorageProviders(realm)) {
             StorageProviderFactory factory = (StorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(StorageProvider.class, model.getProviderName());
-            if (factory.supports(type)) {
+            if (Types.supports(type, factory, StorageProviderFactory.class)) {
                 list.add(type.cast(factory.getInstance(session, model)));
             }
 
@@ -118,11 +122,6 @@ public class UserStorageManager implements UserProvider {
         return localStorage().addUser(realm, username.toLowerCase());
     }
 
-    public StorageProvider getStorageProvider(StorageProviderModel model) {
-        StorageProviderFactory factory = (StorageProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(StorageProvider.class, model.getProviderName());
-        return factory.getInstance(session, model);
-    }
-
     public StorageProvider getStorageProvider(RealmModel realm, String providerId) {
         StorageProviderModel model = realm.getStorageProvider(providerId);
         if (model == null) return null;
@@ -135,6 +134,7 @@ public class UserStorageManager implements UserProvider {
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
+        getFederatedStorage().preRemove(realm, user);
         StorageId storageId = new StorageId(user.getId());
         if (storageId.getProviderId() == null) {
             return localStorage().removeUser(realm, user);
@@ -304,29 +304,33 @@ public class UserStorageManager implements UserProvider {
         return size;
     }
 
+    @FunctionalInterface
     interface PaginatedQuery {
-        List<UserModel> query(UserQueryProvider provider, int first, int max);
+        List<UserModel> query(Object provider, int first, int max);
     }
 
     protected List<UserModel> query(PaginatedQuery pagedQuery, RealmModel realm, int firstResult, int maxResults) {
-        List<UserModel> results = new LinkedList<UserModel>();
-        if (maxResults == 0) return results;
+        if (maxResults == 0) return Collections.EMPTY_LIST;
+
 
 
         List<UserQueryProvider> storageProviders = getStorageProviders(realm, UserQueryProvider.class);
-        LinkedList<UserQueryProvider> providers = new LinkedList<>();
-        if (providers.isEmpty()) {
+        // we can skip rest of method if there are no storage providers
+        if (storageProviders.isEmpty()) {
             return pagedQuery.query(localStorage(), firstResult, maxResults);
         }
+        LinkedList<Object> providers = new LinkedList<>();
+        List<UserModel> results = new LinkedList<UserModel>();
         providers.add(localStorage());
         providers.addAll(storageProviders);
+        providers.add(getFederatedStorage());
 
         int leftToRead = maxResults;
         int leftToFirstResult = firstResult;
 
-        Iterator<UserQueryProvider> it = providers.iterator();
+        Iterator<Object> it = providers.iterator();
         while (it.hasNext() && leftToRead != 0) {
-            UserQueryProvider provider = it.next();
+            Object provider = it.next();
             boolean exhausted = false;
             int index = 0;
             if (leftToFirstResult > 0) {
@@ -346,20 +350,22 @@ public class UserStorageManager implements UserProvider {
             results.addAll(tmp);
             if (leftToRead > 0) leftToRead -= tmp.size();
         }
+
         return results;
     }
 
     @Override
     public List<UserModel> getUsers(final RealmModel realm, int firstResult, int maxResults, final boolean includeServiceAccounts) {
-        return query(new PaginatedQuery() {
-            @Override
-            public List<UserModel> query(UserQueryProvider provider, int first, int max) {
-                 if (provider instanceof UserProvider) { // it is local storage
-                     return ((UserProvider)provider).getUsers(realm, first, max, includeServiceAccounts);
-                 }
-                return provider.getUsers(realm, first, max);
+        return query((provider, first, max) -> {
+            if (provider instanceof UserProvider) { // it is local storage
+                return ((UserProvider) provider).getUsers(realm, first, max, includeServiceAccounts);
+            } else if (provider instanceof UserQueryProvider) {
+                return ((UserQueryProvider)provider).getUsers(realm, first, max);
+
             }
-        }, realm, firstResult, maxResults);
+            return Collections.EMPTY_LIST;
+        }
+        , realm, firstResult, maxResults);
     }
 
     @Override
@@ -368,12 +374,13 @@ public class UserStorageManager implements UserProvider {
     }
 
     @Override
-    public List<UserModel> searchForUser(final String search, final RealmModel realm, int firstResult, int maxResults) {
-         return query(new PaginatedQuery() {
-            @Override
-            public List<UserModel> query(UserQueryProvider provider, int first, int max) {
-                return provider.searchForUser(search, realm, first, max);
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+        return query((provider, first, max) -> {
+            if (provider instanceof UserQueryProvider) {
+                return ((UserQueryProvider)provider).searchForUser(search, realm, first, max);
+
             }
+            return Collections.EMPTY_LIST;
         }, realm, firstResult, maxResults);
     }
 
@@ -383,23 +390,36 @@ public class UserStorageManager implements UserProvider {
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(final Map<String, String> attributes, final RealmModel realm, int firstResult, int maxResults) {
-        return query(new PaginatedQuery() {
-            @Override
-            public List<UserModel> query(UserQueryProvider provider, int first, int max) {
-                return provider.searchForUserByAttributes(attributes, realm, first, max);
+    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+        return query((provider, first, max) -> {
+            if (provider instanceof UserQueryProvider) {
+                return ((UserQueryProvider)provider).searchForUserByAttributes(attributes, realm, first, max);
+
             }
-        }, realm, firstResult, maxResults);
+            return Collections.EMPTY_LIST;
+        }
+        , realm, firstResult, maxResults);
     }
 
     @Override
-    public List<UserModel> searchForUserByUserAttribute(final String attrName, final String attrValue, RealmModel realm) {
-        return query(new PaginatedQuery() {
-            @Override
-            public List<UserModel> query(UserQueryProvider provider, int first, int max) {
-                return provider.searchForUserByUserAttribute(attrName, attrValue, realm);
+    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+        List<UserModel> results = query((provider, first, max) -> {
+            if (provider instanceof UserQueryProvider) {
+                return ((UserQueryProvider)provider).searchForUserByUserAttribute(attrName, attrValue, realm);
+
+            } else if (provider instanceof UserFederatedStorageProvider) {
+                List<String> ids = ((UserFederatedStorageProvider)provider).getUsersByUserAttribute(realm, attrName, attrValue);
+                List<UserModel> rs = new LinkedList<>();
+                for (String id : ids) {
+                    UserModel user = getUserById(id, realm);
+                    if (user != null) rs.add(user);
+                }
+                return rs;
+
             }
+            return Collections.EMPTY_LIST;
         }, realm,0, Integer.MAX_VALUE - 1);
+        return results;
     }
 
     @Override
@@ -437,12 +457,23 @@ public class UserStorageManager implements UserProvider {
 
     @Override
     public List<UserModel> getGroupMembers(final RealmModel realm, final GroupModel group, int firstResult, int maxResults) {
-        return query(new PaginatedQuery() {
-            @Override
-            public List<UserModel> query(UserQueryProvider provider, int first, int max) {
-                return provider.getGroupMembers(realm, group, first, max);
+        List<UserModel> results = query((provider, first, max) -> {
+            if (provider instanceof UserQueryProvider) {
+                return ((UserQueryProvider)provider).getGroupMembers(realm, group, first, max);
+
+            } else if (provider instanceof UserFederatedStorageProvider) {
+                List<String> ids = ((UserFederatedStorageProvider)provider).getMembership(realm, group, first, max);
+                List<UserModel> rs = new LinkedList<UserModel>();
+                for (String id : ids) {
+                    UserModel user = getUserById(id, realm);
+                    if (user != null) rs.add(user);
+                }
+                return rs;
+
             }
+            return Collections.EMPTY_LIST;
         }, realm, firstResult, maxResults);
+        return results;
     }
 
 

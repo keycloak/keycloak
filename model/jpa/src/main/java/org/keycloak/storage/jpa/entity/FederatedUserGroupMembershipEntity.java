@@ -35,7 +35,7 @@ import java.io.Serializable;
 @NamedQueries({
         @NamedQuery(name="feduserMemberOf", query="select m from FederatedUserGroupMembershipEntity m where m.userId = :userId and m.groupId = :groupId"),
         @NamedQuery(name="feduserGroupMembership", query="select m from FederatedUserGroupMembershipEntity m where m.userId = :userId"),
-        @NamedQuery(name="fedgroupMembership", query="select g.userId from FederatedUserGroupMembershipEntity g where g.groupId = :groupId"),
+        @NamedQuery(name="fedgroupMembership", query="select g.userId from FederatedUserGroupMembershipEntity g where g.groupId = :groupId and g.realmId = :realmId"),
         @NamedQuery(name="feduserGroupIds", query="select m.groupId from FederatedUserGroupMembershipEntity m where m.userId = :userId"),
         @NamedQuery(name="deleteFederatedUserGroupMembershipByRealm", query="delete from  FederatedUserGroupMembershipEntity mapping where mapping.realmId=:realmId"),
         @NamedQuery(name="deleteFederatedUserGroupMembershipByStorageProvider", query="delete from FederatedUserGroupMembershipEntity e where e.storageProviderId=:storageProviderId"),

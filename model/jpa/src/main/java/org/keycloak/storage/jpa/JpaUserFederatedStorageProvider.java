@@ -148,6 +148,15 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
+    public List<String> getUsersByUserAttribute(RealmModel realm, String name, String value) {
+        TypedQuery<String> query = em.createNamedQuery("getFederatedAttributesByNameAndValue", String.class)
+                .setParameter("realmId", realm.getId())
+                .setParameter("name", name)
+                .setParameter("value", value);
+        return query.getResultList();
+    }
+
+    @Override
     public String getUserByFederatedIdentity(FederatedIdentityModel link, RealmModel realm) {
         TypedQuery<String> query = em.createNamedQuery("findUserByBrokerLinkAndRealm", String.class)
                 .setParameter("realmId", realm.getId())
@@ -508,6 +517,15 @@ public class JpaUserFederatedStorageProvider implements
 
     }
 
+    @Override
+    public List<String> getMembership(RealmModel realm, GroupModel group, int firstResult, int max) {
+        TypedQuery<String> query = em.createNamedQuery("fedgroupMembership", String.class)
+                .setParameter("realmId", realm.getId())
+                .setParameter("groupId", group.getId());
+        query.setFirstResult(firstResult);
+        query.setMaxResults(max);
+        return query.getResultList();
+    }
 
     @Override
     public Set<String> getRequiredActions(RealmModel realm, UserModel user) {
@@ -689,7 +707,7 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("userId", user.getId())
                 .setParameter("realmId", realm.getId())
                 .executeUpdate();
-        em.createNamedQuery("getFederatedUserRequiredActionsByUser")
+        em.createNamedQuery("deleteFederatedUserRequiredActionsByUser")
                 .setParameter("userId", user.getId())
                 .setParameter("realmId", realm.getId())
                 .executeUpdate();
