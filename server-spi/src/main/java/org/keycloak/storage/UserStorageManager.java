@@ -38,7 +38,7 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.storage.user.UserQueryProvider;
-import org.keycloak.storage.user.UserUpdateProvider;
+import org.keycloak.storage.user.UserRegistrationProvider;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
@@ -106,7 +106,7 @@ public class UserStorageManager implements UserProvider {
 
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
-        UserUpdateProvider registry = getFirstStorageProvider(realm, UserUpdateProvider.class);
+        UserRegistrationProvider registry = getFirstStorageProvider(realm, UserRegistrationProvider.class);
         if (registry != null) {
             return registry.addUser(realm, id, username, addDefaultRoles, addDefaultRequiredActions);
         }
@@ -115,7 +115,7 @@ public class UserStorageManager implements UserProvider {
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        UserUpdateProvider registry = getFirstStorageProvider(realm, UserUpdateProvider.class);
+        UserRegistrationProvider registry = getFirstStorageProvider(realm, UserRegistrationProvider.class);
         if (registry != null) {
             return registry.addUser(realm, username);
         }
@@ -139,7 +139,7 @@ public class UserStorageManager implements UserProvider {
         if (storageId.getProviderId() == null) {
             return localStorage().removeUser(realm, user);
         }
-        UserUpdateProvider registry = (UserUpdateProvider)getStorageProvider(realm, storageId.getProviderId());
+        UserRegistrationProvider registry = (UserRegistrationProvider)getStorageProvider(realm, storageId.getProviderId());
         if (registry == null) {
             throw new ModelException("Could not resolve StorageProvider: " + storageId.getProviderId());
         }
@@ -446,11 +446,11 @@ public class UserStorageManager implements UserProvider {
     @Override
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
         // not federation-aware for now
-        List<UserUpdateProvider> storageProviders = getStorageProviders(realm, UserUpdateProvider.class);
-        LinkedList<UserUpdateProvider> providers = new LinkedList<>();
+        List<UserRegistrationProvider> storageProviders = getStorageProviders(realm, UserRegistrationProvider.class);
+        LinkedList<UserRegistrationProvider> providers = new LinkedList<>();
         providers.add(localStorage());
         providers.addAll(storageProviders);
-        for (UserUpdateProvider provider : providers) {
+        for (UserRegistrationProvider provider : providers) {
             provider.grantToAllUsers(realm, role);
         }
     }

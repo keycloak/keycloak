@@ -18,6 +18,7 @@
 package org.keycloak.storage;
 
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +29,13 @@ import java.util.Map;
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
 public class StorageProviderModel implements Serializable {
+
+    public static Comparator<StorageProviderModel> comparator = new Comparator<StorageProviderModel>() {
+        @Override
+        public int compare(StorageProviderModel o1, StorageProviderModel o2) {
+            return o1.priority - o2.priority;
+        }
+    };
 
     private String id;
     private String providerName;
