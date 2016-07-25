@@ -82,6 +82,7 @@ public class CachedRealm extends AbstractRevisioned {
     //--- end brute force settings
 
     protected boolean revokeRefreshToken;
+    protected boolean includeIdTokenInRefreshTokenResponse;
     protected int ssoSessionIdleTimeout;
     protected int ssoSessionMaxLifespan;
     protected int offlineSessionIdleTimeout;
@@ -180,6 +181,7 @@ public class CachedRealm extends AbstractRevisioned {
         //--- end brute force settings
 
         revokeRefreshToken = model.isRevokeRefreshToken();
+        includeIdTokenInRefreshTokenResponse = model.isIncludeIdTokenInRefreshTokenResponse();
         ssoSessionIdleTimeout = model.getSsoSessionIdleTimeout();
         ssoSessionMaxLifespan = model.getSsoSessionMaxLifespan();
         offlineSessionIdleTimeout = model.getOfflineSessionIdleTimeout();
@@ -369,6 +371,14 @@ public class CachedRealm extends AbstractRevisioned {
 
     public boolean isRevokeRefreshToken() {
         return revokeRefreshToken;
+    }
+
+    public boolean isIncludeIdTokenInRefreshTokenResponse() {
+        return includeIdTokenInRefreshTokenResponse;
+    }
+
+    public void setIncludeIdTokenInRefreshTokenResponse(boolean includeIdTokenInRefreshTokenResponse) {
+        this.includeIdTokenInRefreshTokenResponse = includeIdTokenInRefreshTokenResponse;
     }
 
     public int getSsoSessionIdleTimeout() {

@@ -307,6 +307,18 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean isIncludeIdTokenInRefreshTokenResponse() {
+        if (isUpdated()) return updated.isIncludeIdTokenInRefreshTokenResponse();
+        return cached.isIncludeIdTokenInRefreshTokenResponse();
+    }
+
+    @Override
+    public void setIncludeIdTokenInRefreshTokenResponse(boolean includeIdTokenInRefreshTokenResponse) {
+        getDelegateForUpdate();
+        updated.setIncludeIdTokenInRefreshTokenResponse(includeIdTokenInRefreshTokenResponse);
+    }
+
+    @Override
     public int getSsoSessionIdleTimeout() {
         if (isUpdated()) return updated.getSsoSessionIdleTimeout();
         return cached.getSsoSessionIdleTimeout();

@@ -379,6 +379,16 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public boolean isIncludeIdTokenInRefreshTokenResponse() {
+        return realm.isIncludeIdTokenInRefreshResponse();
+    }
+
+    @Override
+    public void setIncludeIdTokenInRefreshTokenResponse(boolean includeIdTokenInRefreshTokenResponse) {
+        realm.setIncludeIdTokenInRefreshResponse(includeIdTokenInRefreshTokenResponse);
+    }
+
+    @Override
     public int getAccessTokenLifespan() {
         return realm.getAccessTokenLifespan();
     }

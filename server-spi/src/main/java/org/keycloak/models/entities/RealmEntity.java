@@ -60,6 +60,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     //--- end brute force settings
 
     private boolean revokeRefreshToken;
+    private boolean includeIdTokenInRefreshTokenResponse;
     private int ssoSessionIdleTimeout;
     private int ssoSessionMaxLifespan;
     private int offlineSessionIdleTimeout;
@@ -276,6 +277,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setRevokeRefreshToken(boolean revokeRefreshToken) {
         this.revokeRefreshToken = revokeRefreshToken;
+    }
+
+    public boolean isIncludeIdTokenInRefreshTokenResponse() {
+        return includeIdTokenInRefreshTokenResponse;
+    }
+
+    public void setIncludeIdTokenInRefreshTokenResponse(boolean includeIdTokenInRefreshTokenResponse) {
+        this.includeIdTokenInRefreshTokenResponse = includeIdTokenInRefreshTokenResponse;
     }
 
     public int getSsoSessionIdleTimeout() {

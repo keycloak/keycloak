@@ -15,6 +15,17 @@
         </div>
 
         <div class="form-group">
+            <label class="col-md-2 control-label" for="includeIdTokenInRefresh">{{:: 'include-idtoken-on-refresh' | translate}}</label>
+
+            <div class="col-md-6">
+                <input ng-model="realm.includeIdTokenOnTokenRefresh" name="includeIdTokenInRefresh" id="includeIdTokenInRefresh" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+            </div>
+
+            <kc-tooltip>{{:: 'include-idtoken-on-refresh.tooltip' | translate}}
+            </kc-tooltip>
+        </div>
+
+        <div class="form-group">
             <label class="col-md-2 control-label" for="ssoSessionIdleTimeout">{{:: 'sso-session-idle' | translate}}</label>
 
             <div class="col-md-6 time-selector">

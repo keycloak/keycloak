@@ -191,4 +191,16 @@
         <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="STORAGE_PROVIDER" constraintName="FK_STORAGE_PROVIDER_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
         -->
     </changeSet>
+
+    <changeSet author="thomas.darimont@gmail.com" id="2.1.0-1">
+        <addColumn tableName="REALM">
+            <column name="INCLUDE_ID_TOKEN_IN_REFRESH" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <update tableName="REALM">
+            <column name="INCLUDE_ID_TOKEN_IN_REFRESH" valueBoolean="true"></column>
+        </update>
+    </changeSet>
 </databaseChangeLog>
