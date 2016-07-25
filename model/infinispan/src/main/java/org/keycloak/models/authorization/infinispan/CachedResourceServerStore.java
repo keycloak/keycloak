@@ -56,13 +56,15 @@ public class CachedResourceServerStore implements ResourceServerStore {
     public ResourceServer create(String clientId) {
         ResourceServer resourceServer = getDelegate().create(clientId);
 
+        this.transaction.whenRollback(() -> cache.remove(getCacheKeyForResourceServer(resourceServer.getId())));
+
         return createAdapter(new CachedResourceServer(resourceServer));
     }
 
     @Override
     public void delete(String id) {
         getDelegate().delete(id);
-        this.transaction.whenComplete(() -> this.cache.remove(getCacheKeyForResourceServer(id)));
+        this.transaction.whenCommit(() -> this.cache.remove(getCacheKeyForResourceServer(id)));
     }
 
     @Override
@@ -167,7 +169,7 @@ public class CachedResourceServerStore implements ResourceServerStore {
                 if (this.updated == null) {
                     this.updated = getDelegate().findById(getId());
                     if (this.updated == null) throw new IllegalStateException("Not found in database");
-                    transaction.whenComplete(() -> cache.evict(getCacheKeyForResourceServer(getId())));
+                    transaction.whenCommit(() -> cache.evict(getCacheKeyForResourceServer(getId())));
                 }
 
                 return this.updated;

@@ -44,6 +44,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.representations.AccessToken;
@@ -244,16 +245,23 @@ public class TokenManager {
     }
 
     public RefreshToken verifyRefreshToken(RealmModel realm, String encodedRefreshToken) throws OAuthErrorException {
+        return verifyRefreshToken(realm, encodedRefreshToken, true);
+    }
+
+    public RefreshToken verifyRefreshToken(RealmModel realm, String encodedRefreshToken, boolean checkExpiration) throws OAuthErrorException {
         try {
             RefreshToken refreshToken = toRefreshToken(realm, encodedRefreshToken);
 
-            if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
+            if (checkExpiration) {
+                if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
+                }
+
+                if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
+                }
             }
 
-            if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
-            }
             return refreshToken;
         } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
@@ -498,6 +506,27 @@ public class TokenManager {
         }
         return token;
     }
+
+    public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken token, RealmModel realm, ClientModel client, UserModel user,
+                                            UserSessionModel userSession, ClientSessionModel clientSession) {
+        Set<ProtocolMapperModel> mappings = new ClientSessionCode(realm, clientSession).getRequestedProtocolMappers();
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        for (ProtocolMapperModel mapping : mappings) {
+
+            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
+            if (mapper == null || !(mapper instanceof OIDCAccessTokenMapper)) continue;
+
+            if(mapper instanceof UserInfoTokenMapper){
+                token = ((UserInfoTokenMapper)mapper).transformUserInfoToken(token, mapping, session, userSession, clientSession);
+                continue;
+            }
+
+            token = ((OIDCAccessTokenMapper)mapper).transformAccessToken(token, mapping, session, userSession, clientSession);
+
+        }
+        return token;
+    }
+
     public void transformIDToken(KeycloakSession session, IDToken token, RealmModel realm, ClientModel client, UserModel user,
                                       UserSessionModel userSession, ClientSessionModel clientSession) {
         Set<ProtocolMapperModel> mappings = new ClientSessionCode(realm, clientSession).getRequestedProtocolMappers();
@@ -523,6 +552,11 @@ public class TokenManager {
         token.issuedFor(client.getClientId());
         token.issuer(clientSession.getNote(OIDCLoginProtocol.ISSUER));
         token.setNonce(clientSession.getNote(OIDCLoginProtocol.NONCE_PARAM));
+
+        // Best effort for "acr" value. Use 0 if clientSession was authenticated through cookie ( SSO )
+        // TODO: Add better acr support. See KEYCLOAK-3314
+        String acr = (AuthenticationManager.isSSOAuthentication(clientSession)) ? "0" : "1";
+        token.setAcr(acr);
 
         String authTime = session.getNote(AuthenticationManager.AUTH_TIME);
         if (authTime != null) {
@@ -673,6 +707,7 @@ public class TokenManager {
             idToken.setAuthTime(accessToken.getAuthTime());
             idToken.setSessionState(accessToken.getSessionState());
             idToken.expiration(accessToken.getExpiration());
+            idToken.setAcr(accessToken.getAcr());
             transformIDToken(session, idToken, realm, client, userSession.getUser(), userSession, clientSession);
             return this;
         }

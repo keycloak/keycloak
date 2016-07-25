@@ -51,7 +51,6 @@ public class ThemeSettings extends RealmSettings {
     private OnOffSwitch internatEnabledSwitch;
 
     public void changeLoginTheme(String themeName) {
-        waitUntilElement(By.id("loginTheme")).is().present();
         loginThemeSelect.selectByVisibleText(themeName);
     }
 

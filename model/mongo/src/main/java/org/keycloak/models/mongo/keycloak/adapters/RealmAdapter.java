@@ -308,7 +308,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public PasswordPolicy getPasswordPolicy() {
         if (passwordPolicy == null) {
-            passwordPolicy = new PasswordPolicy(realm.getPasswordPolicy());
+            passwordPolicy = PasswordPolicy.parse(session, realm.getPasswordPolicy());
         }
         return passwordPolicy;
     }

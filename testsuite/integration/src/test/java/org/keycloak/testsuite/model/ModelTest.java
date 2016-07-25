@@ -42,7 +42,7 @@ public class ModelTest extends AbstractModelTest {
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setVerifyEmail(true);
         realm.setAccessTokenLifespan(1000);
-        realm.setPasswordPolicy(new PasswordPolicy("length"));
+        realm.setPasswordPolicy(PasswordPolicy.parse(realmManager.getSession(), "length"));
         realm.setAccessCodeLifespan(1001);
         realm.setAccessCodeLifespanUserAction(1002);
         KeycloakModelUtils.generateRealmKeys(realm);

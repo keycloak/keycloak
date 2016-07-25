@@ -14,15 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models;
+package org.keycloak.testsuite.adapter.example;
 
-import java.util.Set;
+import org.keycloak.testsuite.adapter.example.authorization.AbstractPhotozExampleAdapterTest;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ *
+ * @author tkyjovsk
  */
-public interface UserCredentialAuthenticationProvider {
-    Set<String> getSupportedCredentialAuthenticationTypes();
-    CredentialValidationOutput validCredential(KeycloakSession session, RealmModel realm, UserCredentialModel input);
+@AppServerContainer("app-server-tomcat8")
+//@AdapterLibsLocationProperty("adapter.libs.wildfly")
+public class Tomcat8PhotozExampleAdapterTest extends AbstractPhotozExampleAdapterTest {
+
 }

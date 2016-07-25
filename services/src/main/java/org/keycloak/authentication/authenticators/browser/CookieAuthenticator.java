@@ -25,17 +25,17 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.util.TokenUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class CookieAuthenticator implements Authenticator {
-
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     @Override
     public boolean requiresUser() {
@@ -49,12 +49,14 @@ public class CookieAuthenticator implements Authenticator {
         if (authResult == null) {
             context.attempted();
         } else {
-            // Cookie re-authentication is skipped if authTime is too old.
-            if (isAuthTimeExpired(authResult.getSession(), context.getClientSession())) {
+            ClientSessionModel clientSession = context.getClientSession();
+            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, clientSession.getAuthMethod());
+
+            // Cookie re-authentication is skipped if re-authentication is required
+            if (protocol.requireReauthentication(authResult.getSession(), clientSession)) {
                 context.attempted();
             } else {
-                ClientSessionModel clientSession = context.getClientSession();
-                clientSession.setNote(AuthenticationManager.SKIP_AUTH_TIME_UPDATE, "true");
+                clientSession.setNote(AuthenticationManager.SSO_AUTH, "true");
 
                 context.setUser(authResult.getUser());
                 context.attachUserSession(authResult.getSession());
@@ -81,24 +83,5 @@ public class CookieAuthenticator implements Authenticator {
     @Override
     public void close() {
 
-    }
-
-    protected boolean isAuthTimeExpired(UserSessionModel userSession, ClientSessionModel clientSession) {
-        String authTime = userSession.getNote(AuthenticationManager.AUTH_TIME);
-        String maxAge = clientSession.getNote(OIDCLoginProtocol.MAX_AGE_PARAM);
-        if (maxAge == null) {
-            return false;
-        }
-
-        int authTimeInt = authTime==null ? 0 : Integer.parseInt(authTime);
-        int maxAgeInt = Integer.parseInt(maxAge);
-
-        if (authTimeInt + maxAgeInt < Time.currentTime()) {
-            logger.debugf("Authentication time is expired in CookieAuthenticator. userSession=%s, clientId=%s, maxAge=%d, authTime=%d", userSession.getId(),
-                    clientSession.getClient().getId(), maxAgeInt, authTimeInt);
-            return true;
-        }
-
-        return false;
     }
 }

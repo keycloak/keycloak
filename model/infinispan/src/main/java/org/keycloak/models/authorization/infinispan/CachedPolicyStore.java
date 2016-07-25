@@ -29,7 +29,6 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.authorization.infinispan.InfinispanStoreFactoryProvider.CacheTransaction;
 import org.keycloak.models.authorization.infinispan.entities.CachedPolicy;
-import org.keycloak.models.entities.AbstractIdentifiableEntity;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
@@ -64,13 +63,15 @@ public class CachedPolicyStore implements PolicyStore {
     public Policy create(String name, String type, ResourceServer resourceServer) {
         Policy policy = getDelegate().create(name, type, getStoreFactory().getResourceServerStore().findById(resourceServer.getId()));
 
+        this.transaction.whenRollback(() -> cache.remove(getCacheKeyForPolicy(policy.getId())));
+
         return createAdapter(new CachedPolicy(policy));
     }
 
     @Override
     public void delete(String id) {
         getDelegate().delete(id);
-        this.transaction.whenComplete(() -> cache.remove(getCacheKeyForPolicy(id)));
+        this.transaction.whenCommit(() -> cache.remove(getCacheKeyForPolicy(id)));
     }
 
     @Override
@@ -368,7 +369,7 @@ public class CachedPolicyStore implements PolicyStore {
 
                 if (getId() == null) return false;
 
-                if (o == null || getClass() != o.getClass()) return false;
+                if (!Policy.class.isInstance(o)) return false;
 
                 Policy that = (Policy) o;
 
@@ -387,7 +388,7 @@ public class CachedPolicyStore implements PolicyStore {
                 if (this.updated == null) {
                     this.updated = getDelegate().findById(getId());
                     if (this.updated == null) throw new IllegalStateException("Not found in database");
-                    transaction.whenComplete(() -> cache.evict(getCacheKeyForPolicy(getId())));
+                    transaction.whenCommit(() -> cache.evict(getCacheKeyForPolicy(getId())));
                 }
 
                 return this.updated;

@@ -14,19 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models;
+
+package org.keycloak.policy;
+
+import org.keycloak.provider.ProviderFactory;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:roelof.naude@epiuse.com">Roelof Naude</a>
  */
-public interface UserUpdateProvider {
-    UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions);
+public interface PasswordPolicyProviderFactory extends ProviderFactory<PasswordPolicyProvider> {
 
-    UserModel addUser(RealmModel realm, String username);
-
-    boolean removeUser(RealmModel realm, UserModel user);
-
-    void grantToAllUsers(RealmModel realm, RoleModel role);
+    String getDisplayName();
+    String getConfigType();
+    String getDefaultConfigValue();
+    boolean isMultiplSupported();
 
 }

@@ -5,17 +5,17 @@
     <form class="form-horizontal" name="clientForm" novalidate>
         <fieldset>
             <div class="form-group">
-                <label for="import-file" class="col-sm-2 control-label">Import</label>
+                <label for="import-file" class="col-sm-2 control-label">{{:: 'import' | translate}}</label>
                 <div class="col-md-6">
                     <div class="controls kc-button-input-file" data-ng-show="!importing">
-                        <label for="import-file" class="btn btn-default">Select file <i class="pficon pficon-import"></i></label>
+                        <label for="import-file" class="btn btn-default">{{:: 'select-file' | translate}} <i class="pficon pficon-import"></i></label>
                         <input id="import-file" type="file" class="hidden" kc-on-read-file="onFileSelect($fileContent)">
                     </div>
                     <div class="col-md-6" data-ng-show="importing">
                         <input type="button" class="btn btn-default" data-ng-click="viewImportDetails()" value="{{:: 'view-details' | translate}}"/>
                     </div>
                 </div>
-                <kc-tooltip>Import a JSON file containing all settings for this resource server.</kc-tooltip>
+                <kc-tooltip>{{:: 'authz-import-config.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
                 <div class="col-md-10 col-md-offset-2" data-ng-show="importing">
@@ -26,53 +26,48 @@
         </fieldset>
         <fieldset class="border-top" data-ng-hide="importing">
             <div class="form-group">
-                <label class="col-md-2 control-label" for="server.policyEnforcementMode">Policy Enforcement Mode</label>
+                <label class="col-md-2 control-label" for="server.policyEnforcementMode">{{:: 'authz-policy-enforcement-mode' | translate}}</label>
                 <div class="col-md-2">
                     <select class="form-control" id="server.policyEnforcementMode" data-ng-model="server.policyEnforcementMode">
-                        <option value="ENFORCING">Enforcing</option>
-                        <option value="PERMISSIVE">Permissive</option>
-                        <option value="DISABLED">Disabled</option>
+                        <option value="ENFORCING">{{:: 'authz-policy-enforcement-mode-enforcing' | translate}}</option>
+                        <option value="PERMISSIVE">{{:: 'authz-policy-enforcement-mode-permissive' | translate}}</option>
+                        <option value="DISABLED">{{:: 'authz-policy-enforcement-mode-disabled' | translate}}</option>
                     </select>
                 </div>
-                <kc-tooltip>The policy enforcement mode dictates how policies are enforced when evaluating authorization requests. 'Enforcing' means requests are denied by default even when there is no policy associated with a given resource. 'Permissive' means requests
-                are allowed even when there is no policy associated with a given resource. 'Disabled' completely disables the evaluation of policies and allow access to any resource.</kc-tooltip>
+                <kc-tooltip>{{:: 'authz-policy-enforcement-mode.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="server.allowRemoteResourceManagement">Remote Resource Management</label>
+                <label class="col-md-2 control-label" for="server.allowRemoteResourceManagement">{{:: 'authz-remote-resource-management' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="server.allowRemoteResourceManagement" id="server.allowRemoteResourceManagement" onoffswitch />
                 </div>
-                <kc-tooltip>Should resources be managed remotely by the resource server? If false, resources can only be managed from this admin console.</kc-tooltip>
+                <kc-tooltip>{{:: 'authz-remote-resource-management.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group">
-                <div class="col-md-10 col-md-offset-2" data-ng-show="create">
-                    <button kc-save data-ng-disabled="!changed">Save</button>
-                    <button kc-cancel data-ng-click="cancel()">Cancel</button>
-                </div>
-                <div class="col-md-10 col-md-offset-2" data-ng-show="!create">
-                    <button kc-save  data-ng-disabled="!changed">Save</button>
-                    <button kc-reset data-ng-disabled="!changed">Cancel</button>
+            <div class="form-group" data-ng-show="access.manageAuthorization">
+                <div class="col-md-10 col-md-offset-2">
+                    <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                    <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
                 </div>
             </div>
         </fieldset>
 
         <fieldset class="border-top" data-ng-show="server.id">
-            <legend><span class="text">Export Settings</span>
-                <kc-tooltip>Here you can export all settings for this resource server.</kc-tooltip>
+            <legend><span class="text">{{:: 'authz-export-settings' | translate}}</span>
+                <kc-tooltip>{{:: 'authz-export-settings.tooltip' | translate}}</kc-tooltip>
             </legend>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="server.allowRemoteResourceManagement">Export Settings</label>
+                <label class="col-md-2 control-label" for="server.allowRemoteResourceManagement">{{:: 'authz-export-settings' | translate}}</label>
                 <div class="col-md-6">
-                    <button data-ng-click="export()" class="btn btn-primary" data-ng-hide="settings">Export</button>
-                    <button data-ng-click="downloadSettings()" class="btn btn-primary" data-ng-show="settings">Download</button>
-                    <button data-ng-click="cancelExport()" class="btn btn-primary" data-ng-show="settings">Cancel</button>
+                    <button data-ng-click="export()" class="btn btn-primary" data-ng-hide="settings">{{:: 'export' | translate}}</button>
+                    <button data-ng-click="downloadSettings()" class="btn btn-primary" data-ng-show="settings">{{:: 'download' | translate}}</button>
+                    <button data-ng-click="cancelExport()" class="btn btn-primary" data-ng-show="settings">{{:: 'cancel' | translate}}</button>
                 </div>
-                <kc-tooltip>Export and download all settings for this resource server.</kc-tooltip>
+                <kc-tooltip>{{:: 'authz-export-settings.tooltip' | translate}}</kc-tooltip>
             </div>
             <fieldset class="margin-top">
                 <div class="form-group" ng-show="settings">
                     <div class="col-sm-12">
-                        <a class="btn btn-primary btn-lg" data-ng-click="download()" type="submit" ng-show="installation">Download</a>
+                        <a class="btn btn-primary btn-lg" data-ng-click="download()" type="submit" ng-show="installation">{{:: 'download' | translate}}</a>
                         <textarea class="form-control" rows="20" kc-select-action="click">{{settings}}</textarea>
                     </div>
                 </div>

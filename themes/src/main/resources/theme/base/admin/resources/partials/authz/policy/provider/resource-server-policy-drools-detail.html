@@ -3,40 +3,40 @@
     <ol class="breadcrumb">
         <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
-        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">Authorization</a></li>
-        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">Policies</a></li>
-        <li data-ng-show="create">Add Drools Policy</li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">{{:: 'authz-policies' | translate}}</a></li>
+        <li data-ng-show="create">{{:: 'authz-add-drools-policy' | translate}}</li>
         <li data-ng-hide="create">Drools</li>
-        <li data-ng-hide="create">{{policy.name}}</li>
+        <li data-ng-hide="create">{{originalPolicy.name}}</li>
     </ol>
 
-    <h1 data-ng-show="create">Add Drools Policy</h1>
-    <h1 data-ng-hide="create">{{policy.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create"
+    <h1 data-ng-show="create">{{:: 'authz-add-drools-policy' | translate}}</h1>
+    <h1 data-ng-hide="create">{{originalPolicy.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create"
                                                          data-ng-click="remove()"></i></h1>
 
     <form class="form-horizontal" name="clientForm" novalidate>
         <fieldset class="border-top">
             <div class="form-group">
-                <label class="col-md-2 control-label" for="name">Name <span class="required" data-ng-show="create">*</span></label>
+                <label class="col-md-2 control-label" for="name">{{:: 'name' | translate}} <span class="required">*</span></label>
                 <div class="col-sm-6">
-                    <input class="form-control" type="text" id="name" name="name" data-ng-model="policy.name" autofocus required>
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="policy.name" autofocus required data-ng-blur="checkNewNameAvailability()">
                 </div>
-                <kc-tooltip>The name of this policy.</kc-tooltip>
+                <kc-tooltip>{{:: 'authz-policy-name.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="description">Description </label>
+                <label class="col-md-2 control-label" for="description">{{:: 'description' | translate}} </label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" id="description" name="description" data-ng-model="policy.description">
                 </div>
-                <kc-tooltip>A description for this policy.</kc-tooltip>
+                <kc-tooltip>{{:: 'authz-policy-description.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.mavenArtifactGroupId">Policy Maven Artifact <span class="required" data-ng-show="create">*</span></label>
-                <button data-ng-click="resolveModules()" class="btn btn-primary">Resolve</button>
+                <label class="col-md-2 control-label" for="policy.config.mavenArtifactGroupId">{{:: 'authz-policy-drools-maven-artifact' | translate}} <span class="required" data-ng-show="create">*</span></label>
+                <button data-ng-click="resolveModules()" class="btn btn-primary">{{:: 'authz-policy-drools-maven-artifact-resolve' | translate}}</button>
                 <div class="col-sm-3">
                     <input class="form-control" type="text" id="policy.config.mavenArtifactGroupId" name="policy.config.mavenArtifactGroupId" data-ng-model="policy.config.mavenArtifactGroupId" placeholder="Group Identifier" required>
                 </div>
-                <kc-tooltip>A Maven GAV pointing to an artifact from where the rules would be loaded from. Once you have provided the GAV, you can click *Resolve* to load both *Module* and *Session* fields.</kc-tooltip>
+                <kc-tooltip>{{:: 'authz-policy-drools-maven-artifact.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="policy.config.mavenArtifactId"></label>
@@ -51,7 +51,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.moduleName">Module <span class="required" data-ng-show="create">*</span></label>
+                <label class="col-md-2 control-label" for="policy.config.moduleName">{{:: 'authz-policy-drools-module' | translate}} <span class="required" data-ng-show="create">*</span></label>
                 <div class="col-sm-3">
                     <div>
                         <select class="form-control" id="policy.config.moduleName"
@@ -63,10 +63,10 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>The module used by this policy. You must provide a module in order to select a specific session from where rules will be loaded from.</kc-tooltip>
+                <kc-tooltip>{{:: 'authz-policy-drools-module.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.sessionName">Session <span class="required" data-ng-show="create">*</span></label>
+                <label class="col-md-2 control-label" for="policy.config.sessionName">{{:: 'authz-policy-drools-session' | translate}} <span class="required" data-ng-show="create">*</span></label>
                 <div class="col-sm-3">
                     <div>
                         <select class="form-control" id="policy.config.sessionName"
@@ -77,10 +77,10 @@
                         </select>
                     </div>
                 </div>
-                <kc-tooltip>The session used by this policy. The session provides all the rules to evaluate when processing the policy.</kc-tooltip>
+                <kc-tooltip>{{:: 'authz-policy-drools-session.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.scannerPeriod">Update Period</label>
+                <label class="col-md-2 control-label" for="policy.config.scannerPeriod">{{:: 'authz-policy-drools-update-period' | translate}}</label>
                 <div class="col-md-6 time-selector">
                     <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="policy.config.scannerPeriod" id="policy.config.scannerPeriod"
                            name="policy.config.scannerPeriod"
@@ -88,38 +88,34 @@
                     <select class="form-control" name="policy.config.scannerPeriodUnit"
                             data-ng-model="policy.config.scannerPeriodUnit"
                             ng-disabled="!policy.config.sessionName">
-                        <option>Seconds</option>
-                        <option>Minutes</option>
-                        <option>Hours</option>
-                        <option>Days</option>
+                        <option>{{:: 'seconds' | translate}}</option>
+                        <option>{{:: 'minutes' | translate}}</option>
+                        <option>{{:: 'hours' | translate}}</option>
+                        <option>{{:: 'days' | translate}}</option>
                     </select>
                 </div>
-                <kc-tooltip>Specifies an interval for scanning for artifact updates.</kc-tooltip>
+                <kc-tooltip>{{:: 'authz-policy-drools-update-period.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="policy.logic">Logic</label>
+                <label class="col-md-2 control-label" for="policy.logic">{{:: 'authz-policy-logic' | translate}}</label>
 
                 <div class="col-sm-1">
                     <select class="form-control" id="policy.logic"
                             data-ng-model="policy.logic">
-                        <option ng-repeat="logic in logics" value="{{logic}}">{{logic | toCamelCase}}</option>
+                        <option value="POSITIVE">{{:: 'authz-policy-logic-positive' | translate}}</option>
+                        <option value="NEGATIVE">{{:: 'authz-policy-logic-negative' | translate}}</option>
                     </select>
                 </div>
 
-                <kc-tooltip>The logic dictates how the policy decision should be made. If 'Positive', the resulting effect (permit or deny) obtained during the evaluation of this policy will
-                    be used to perform a decision. If 'Negative', the resulting effect will be negated, in other words, a permit becomes a deny and vice-versa.
+                <kc-tooltip>{{:: 'authz-policy-logic.tooltip' | translate}}</kc-tooltip>
             </div>
             <input type="hidden" data-ng-model="policy.type"/>
         </fieldset>
 
-        <div class="form-group">
-            <div class="col-md-10 col-md-offset-2" data-ng-show="create">
-                <button kc-save data-ng-disabled="!changed">Save</button>
-                <button kc-cancel data-ng-click="cancel()">Cancel</button>
-            </div>
-            <div class="col-md-10 col-md-offset-2" data-ng-show="!create">
-                <button kc-save  data-ng-disabled="!changed">Save</button>
-                <button kc-reset data-ng-disabled="!changed">Cancel</button>
+        <div class="form-group" data-ng-show="access.manageAuthorization">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
     </form>

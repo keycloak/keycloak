@@ -9,15 +9,21 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.pages.AccountPasswordPage;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
+import org.keycloak.testsuite.util.RealmBuilder;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.List;
 
+import static org.jgroups.util.Util.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 
@@ -42,8 +48,15 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
 
     @Page
     protected LoginPage accountLoginPage;
+
     @Page
     protected UpdateAccountInformationPage updateAccountInformationPage;
+
+    @Page
+    protected AccountPasswordPage accountPasswordPage;
+
+    @Page
+    protected ErrorPage errorPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -171,6 +184,60 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
         testSingleLogout();
     }
 
+    @Test
+    public void loginWithExistingUser() {
+        logInAsUserInIDP();
+
+        Integer userCount = adminClient.realm(consumerRealmName()).users().count();
+
+        driver.navigate().to(getAccountUrl(consumerRealmName()));
+
+        log.debug("Clicking social " + getIDPAlias());
+        accountLoginPage.clickSocial(getIDPAlias());
+
+        Assert.assertTrue("Driver should be on the provider realm page right now", driver.getCurrentUrl().contains("/auth/realms/" + providerRealmName() + "/"));
+
+        accountLoginPage.login(getUserLogin(), getUserPassword());
+
+        System.out.println(driver.getPageSource());
+        assertEquals(accountPage.buildUri().toASCIIString().replace("master", "consumer") + "/", driver.getCurrentUrl());
+
+        assertEquals(userCount, adminClient.realm(consumerRealmName()).users().count());
+    }
+
+    // KEYCLOAK-3267
+    @Test
+    public void loginWithExistingUserWithBruteForceEnabled() {
+        adminClient.realm(consumerRealmName()).update(RealmBuilder.create().bruteForceProtected(true).failureFactor(2).build());
+
+        loginWithExistingUser();
+
+        driver.navigate().to(getAccountPasswordUrl(consumerRealmName()));
+
+        accountPasswordPage.changePassword("password", "password");
+
+        driver.navigate().to(getAuthRoot()
+                + "/auth/realms/" + providerRealmName()
+                + "/protocol/" + "openid-connect"
+                + "/logout");
+
+        driver.navigate().to(getAccountUrl(consumerRealmName()));
+
+        accountLoginPage.login(getUserLogin(), "invalid");
+        accountLoginPage.login(getUserLogin(), "invalid");
+        accountLoginPage.login(getUserLogin(), "invalid");
+
+        assertEquals("Invalid username or password.", accountLoginPage.getError());
+
+        accountLoginPage.clickSocial(getIDPAlias());
+
+        Assert.assertTrue("Driver should be on the provider realm page right now", driver.getCurrentUrl().contains("/auth/realms/" + providerRealmName() + "/"));
+
+        accountLoginPage.login(getUserLogin(), getUserPassword());
+
+        assertEquals("Account is disabled, contact admin.", errorPage.getError());
+    }
+
     protected void testSingleLogout() {
         log.debug("Testing single log out");
 
@@ -202,5 +269,9 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
 
     private String getAccountUrl(String realmName) {
         return getAuthRoot() + "/auth/realms/" + realmName + "/account";
+    }
+
+    private String getAccountPasswordUrl(String realmName) {
+        return getAuthRoot() + "/auth/realms/" + realmName + "/account/password";
     }
 }

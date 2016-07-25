@@ -55,75 +55,42 @@ public class PolicyEvaluationResponse {
         PolicyEvaluationResponse response = new PolicyEvaluationResponse();
         List<EvaluationResultRepresentation> resultsRep = new ArrayList<>();
 
-        response.entitlements = evaluationRequest.isEntitlements();
-
-        if (response.entitlements) {
-            List<Permission> entitlements = Permissions.allPermits(results);
-
-            if (entitlements.isEmpty()) {
-                response.status = Effect.DENY;
-            } else {
-                StoreFactory storeFactory = authorization.getStoreFactory();
-
-                for (Permission permission : entitlements) {
-                    EvaluationResultRepresentation rep = new EvaluationResultRepresentation();
-
-                    rep.setStatus(Effect.PERMIT);
-                    resultsRep.add(rep);
-
-                    Resource resource = storeFactory.getResourceStore().findById(permission.getResourceSetId());
-
-                    if (resource != null) {
-                        rep.setResource(Models.toRepresentation(resource, resourceServer, authorization));
-                    } else {
-                        ResourceRepresentation representation = new ResourceRepresentation();
-
-                        representation.setName("Any Resource with Scopes " + permission.getScopes());
-
-                        rep.setResource(representation);
-                    }
-
-                    rep.setScopes(permission.getScopes().stream().map(ScopeRepresentation::new).collect(Collectors.toList()));
-                }
-            }
+        if (results.stream().anyMatch(evaluationResult -> evaluationResult.getEffect().equals(Effect.DENY))) {
+            response.status = Effect.DENY;
         } else {
-            if (results.stream().anyMatch(evaluationResult -> evaluationResult.getEffect().equals(Effect.DENY))) {
-                response.status = Effect.DENY;
+            response.status = Effect.PERMIT;
+        }
+
+        for (Result result : results) {
+            EvaluationResultRepresentation rep = new EvaluationResultRepresentation();
+
+            rep.setStatus(result.getEffect());
+            resultsRep.add(rep);
+
+            if (result.getPermission().getResource() != null) {
+                rep.setResource(Models.toRepresentation(result.getPermission().getResource(), resourceServer, authorization));
             } else {
-                response.status = Effect.PERMIT;
-            }
+                ResourceRepresentation resource = new ResourceRepresentation();
 
-            for (Result result : results) {
-                EvaluationResultRepresentation rep = new EvaluationResultRepresentation();
-
-                rep.setStatus(result.getEffect());
-                resultsRep.add(rep);
-
-                if (result.getPermission().getResource() != null) {
-                    rep.setResource(Models.toRepresentation(result.getPermission().getResource(), resourceServer, authorization));
-                } else {
-                    ResourceRepresentation resource = new ResourceRepresentation();
-
-                    resource.setName("Any Resource with Scopes " + result.getPermission().getScopes());
-
-                    rep.setResource(resource);
-                }
-
-                rep.setScopes(result.getPermission().getScopes().stream().map(new Function<Scope, ScopeRepresentation>() {
+                resource.setName("Any Resource with Scopes " + result.getPermission().getScopes().stream().map(new Function<Scope, String>() {
                     @Override
-                    public ScopeRepresentation apply(Scope scope) {
-                        return Models.toRepresentation(scope, authorization);
+                    public String apply(Scope scope) {
+                        return scope.getName();
                     }
                 }).collect(Collectors.toList()));
 
-                List<PolicyResultRepresentation> policies = new ArrayList<>();
-
-                for (PolicyResult policy : result.getResults()) {
-                    policies.add(toRepresentation(policy, authorization));
-                }
-
-                rep.setPolicies(policies);
+                rep.setResource(resource);
             }
+
+            rep.setScopes(result.getPermission().getScopes().stream().map(scope -> Models.toRepresentation(scope, authorization)).collect(Collectors.toList()));
+
+            List<PolicyResultRepresentation> policies = new ArrayList<>();
+
+            for (PolicyResult policy : result.getResults()) {
+                policies.add(toRepresentation(policy, authorization));
+            }
+
+            rep.setPolicies(policies);
         }
 
         response.results = resultsRep;

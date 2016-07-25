@@ -111,8 +111,8 @@
                 </div>
             </div>
             <div class="form-group" data-ng-show="protocol == 'openid-connect'">
-                <label class="col-md-2 control-label" for="authorizationServicesEnabled">Authorization Enabled</label>
-                <kc-tooltip>Enable/Disable fine-grained authorization support for a client</kc-tooltip>
+                <label class="col-md-2 control-label" for="authorizationServicesEnabled">{{:: 'authz-authorization-services-enabled' | translate}}</label>
+                <kc-tooltip>{{:: 'authz-authorization-services-enabled.tooltip' | translate}}</kc-tooltip>
                 <div class="col-md-6">
                     <input ng-model="client.authorizationServicesEnabled" name="authorizationServicesEnabled" id="authorizationServicesEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>

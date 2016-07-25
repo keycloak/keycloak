@@ -7,16 +7,16 @@
             <tr>
                 <th class="kc-table-actions" colspan="7">
                     <div class="form-inline">
-                        Filter by:&nbsp;&nbsp;
+                        {{:: 'filter' | translate}}:&nbsp;&nbsp;
                         <div class="form-group">
                             <div class="input-group">
-                                <input type="text" placeholder="Name" data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                                <input type="text" placeholder="{{:: 'name' | translate}}" data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
                                 <div class="input-group-addon">
                                     <i class="fa fa-search" type="submit"></i>
                                 </div>
                             </div>
                             <div class="input-group">
-                                <input type="text" placeholder="Owner" data-ng-model="search.owner.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                                <input type="text" placeholder="{{:: 'authz-owner' | translate}}" data-ng-model="search.owner.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
                                 <div class="input-group-addon">
                                     <i class="fa fa-search" type="submit"></i>
                                 </div>
@@ -24,25 +24,25 @@
                             <div class="input-group">
                                 <select class="form-control search" data-ng-model="search.type"
                                         ng-options="r.type as r.type for r in resources | unique : 'type'">
-                                    <option value="" selected ng-click="search.type = ''">All types</option>
+                                    <option value="" selected ng-click="search.type = ''">{{:: 'type' | translate}}</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="pull-right">
-                            <a id="createResource" class="btn btn-default" href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource/create">Create</a>
+                            <a id="createResource" class="btn btn-default" href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource/create">{{:: 'create' | translate}}</a>
                         </div>
                     </div>
                 </th>
             </tr>
             <tr data-ng-hide="resources.length == 0">
-                <th>Name</th>
-                <th>Type</th>
-                <th>Uri</th>
-                <th>Owner</th>
-                <th>Scopes</th>
-                <th>Permissions</th>
-                <th>Actions</th>
+                <th>{{:: 'name' | translate}}</th>
+                <th>{{:: 'type' | translate}}</th>
+                <th>{{:: 'authz-uri' | translate}}</th>
+                <th>{{:: 'authz-owner' | translate}}</th>
+                <th>{{:: 'authz-scopes' | translate}}</th>
+                <th>{{:: 'authz-permissions' | translate}}</th>
+                <th>{{:: 'actions' | translate}}</th>
             </tr>
         </thead>
         <tbody>
@@ -50,12 +50,12 @@
                 <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource/{{resource._id}}">{{resource.name}}</a></td>
                 <td>
                     <span data-ng-show="resource.type">{{resource.type}}</span>
-                    <span data-ng-show="!resource.type">No type defined.</span>
+                    <span data-ng-show="!resource.type">{{:: 'authz-no-type-defined' | translate}}</span>
                 </td>
                 <td>{{resource.uri}}</td>
                 <td>{{resource.owner.name}}</td>
                 <td>
-                    <span data-ng-show="!resource.scopes.length">No scopes assigned.</span>
+                    <span data-ng-show="!resource.scopes.length">{{:: 'authz-no-scopes-assigned' | translate}}</span>
                     <span data-ng-show="resource.scopes.length > 0">
                         <span ng-repeat="scope in resource.scopes">
                             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope/{{scope.id}}">{{scope.name}}</a>{{$last ? '' : ', '}}
@@ -63,7 +63,7 @@
                     </span>
                 </td>
                 <td>
-                    <span data-ng-show="!resource.policies.length">No permission assigned.</span>
+                    <span data-ng-show="!resource.policies.length">{{:: 'authz-no-permission-assigned' | translate}}</span>
                     <span data-ng-show="resource.policies.length > 0">
                         <span ng-repeat="policy in resource.policies">
                             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission/{{policy.type}}/{{policy.id}}">{{policy.name}}</a>{{$last ? '' : ', '}}
@@ -71,12 +71,12 @@
                     </span>
                 </td>
                 <td class="kc-action-cell" style="vertical-align: middle">
-                    <button class="btn btn-default btn-block btn-sm" ng-click="createPolicy(resource);">Create Permission</button>
+                    <button class="btn btn-default btn-block btn-sm" ng-click="createPolicy(resource);">{{:: 'authz-create-permission' | translate}}</button>
                 </td>
             </tr>
             <tr data-ng-show="(resources | filter:search).length == 0">
-                <td class="text-muted" colspan="6" data-ng-show="search.name">No results</td>
-                <td class="text-muted" colspan="6" data-ng-hide="search.name">No resources available</td>
+                <td class="text-muted" colspan="6" data-ng-show="search.name">{{:: 'no-results' | translate}}</td>
+                <td class="text-muted" colspan="6" data-ng-hide="search.name">{{:: 'authz-no-resources-available' | translate}}</td>
             </tr>
         </tbody>
     </table>

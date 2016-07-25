@@ -14,11 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.storage.federated;
+
+package org.keycloak.policy;
+
+import org.keycloak.models.UserModel;
+import org.keycloak.provider.Provider;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:roelof.naude@epiuse.com">Roelof Naude</a>
  */
-public class CredentialModel {
+public interface PasswordPolicyManagerProvider extends Provider {
+
+    PolicyError validate(UserModel user, String password);
+    PolicyError validate(String user, String password);
+
 }

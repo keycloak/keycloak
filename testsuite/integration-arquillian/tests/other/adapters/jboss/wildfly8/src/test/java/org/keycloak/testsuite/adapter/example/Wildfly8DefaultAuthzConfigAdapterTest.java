@@ -14,16 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models;
+package org.keycloak.testsuite.adapter.example;
+
+import org.keycloak.testsuite.adapter.example.authorization.AbstractDefaultAuthzConfigAdapterTest;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ *
+ * @author tkyjovsk
  */
-public interface UserLookupProvider {
-    UserModel getUserById(String id, RealmModel realm);
+@AppServerContainer("app-server-wildfly8")
+//@AdapterLibsLocationProperty("adapter.libs.wildfly")
+public class Wildfly8DefaultAuthzConfigAdapterTest extends AbstractDefaultAuthzConfigAdapterTest {
 
-    UserModel getUserByUsername(String username, RealmModel realm);
-
-    UserModel getUserByEmail(String email, RealmModel realm);
 }

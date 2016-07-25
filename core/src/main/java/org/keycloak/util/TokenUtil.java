@@ -38,19 +38,51 @@ public class TokenUtil {
     public static final String TOKEN_TYPE_OFFLINE = "Offline";
 
 
+    public static String attachOIDCScope(String scopeParam) {
+        if (scopeParam == null || scopeParam.isEmpty()) {
+            return OAuth2Constants.SCOPE_OPENID;
+        } else {
+            return OAuth2Constants.SCOPE_OPENID + " " + scopeParam;
+        }
+    }
+
+    public static boolean isOIDCRequest(String scopeParam) {
+        return hasScope(scopeParam, OAuth2Constants.SCOPE_OPENID);
+    }
+
     public static boolean isOfflineTokenRequested(String scopeParam) {
-        if (scopeParam == null) {
+        return hasScope(scopeParam, OAuth2Constants.OFFLINE_ACCESS);
+    }
+
+    public static boolean hasScope(String scopeParam, String targetScope) {
+        if (scopeParam == null || targetScope == null) {
             return false;
         }
 
         String[] scopes = scopeParam.split(" ");
         for (String scope : scopes) {
-            if (OAuth2Constants.OFFLINE_ACCESS.equals(scope)) {
+            if (targetScope.equals(scope)) {
                 return true;
             }
         }
         return false;
     }
+
+
+    public static boolean hasPrompt(String promptParam, String targetPrompt) {
+        if (promptParam == null || targetPrompt == null) {
+            return false;
+        }
+
+        String[] prompts = promptParam.split(" ");
+        for (String prompt : prompts) {
+            if (targetPrompt.equals(prompt)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
 
     /**

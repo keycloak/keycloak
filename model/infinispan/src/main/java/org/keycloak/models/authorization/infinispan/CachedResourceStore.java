@@ -30,6 +30,7 @@ import org.keycloak.models.authorization.infinispan.InfinispanStoreFactoryProvid
 import org.keycloak.models.authorization.infinispan.entities.CachedResource;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 public class CachedResourceStore implements ResourceStore {
 
     private static final String RESOURCE_ID_CACHE_PREFIX = "rsc-id-";
+    private static final String RESOURCE_OWNER_CACHE_PREFIX = "rsc-owner-";
 
     private final KeycloakSession session;
     private final CacheTransaction transaction;
@@ -58,6 +60,8 @@ public class CachedResourceStore implements ResourceStore {
     @Override
     public Resource create(String name, ResourceServer resourceServer, String owner) {
         Resource resource = getDelegate().create(name, getStoreFactory().getResourceServerStore().findById(resourceServer.getId()), owner);
+
+        this.transaction.whenRollback(() -> cache.remove(getCacheKeyForResource(resource.getId())));
 
         return createAdapter(new CachedResource(resource));
     }
@@ -77,6 +81,7 @@ public class CachedResourceStore implements ResourceStore {
             Resource resource = getDelegate().findById(id);
 
             if (resource != null) {
+                updateCachedIds(getResourceOwnerCacheKey(resource.getOwner()), resource, false);
                 return createAdapter(updateResourceCache(resource));
             }
 
@@ -88,26 +93,18 @@ public class CachedResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByOwner(String ownerId) {
-        List<Resource> cache = new ArrayList<>();
+        List<String> cachedIds = this.cache.get(getResourceOwnerCacheKey(ownerId));
 
-        for (Entry entry : this.cache.entrySet()) {
-            String cacheKey = (String) entry.getKey();
-
-            if (cacheKey.startsWith(RESOURCE_ID_CACHE_PREFIX)) {
-                List<Resource> value = (List<Resource>) entry.getValue();
-                Resource resource = value.get(0);
-
-                if (resource.getOwner().equals(ownerId)) {
-                    cache.add(findById(resource.getId()));
-                }
+        if (cachedIds == null) {
+            for (Resource resource : getDelegate().findByOwner(ownerId)) {
+                updateCachedIds(getResourceOwnerCacheKey(ownerId), resource, true);
             }
+            cachedIds = this.cache.getOrDefault(getResourceOwnerCacheKey(ownerId), Collections.emptyList());
         }
 
-        if (cache.isEmpty()) {
-            getDelegate().findByOwner(ownerId).forEach(resource -> cache.add(findById(updateResourceCache(resource).getId())));
-        }
-
-        return cache;
+        return  ((List<String>) this.cache.getOrDefault(getResourceOwnerCacheKey(ownerId), Collections.emptyList())).stream().map(this::findById)
+                        .filter(resource -> resource != null)
+                        .collect(Collectors.toList());
     }
 
     @Override
@@ -146,26 +143,7 @@ public class CachedResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByType(String type) {
-        List<Resource> cache = new ArrayList<>();
-
-        for (Entry entry : this.cache.entrySet()) {
-            String cacheKey = (String) entry.getKey();
-
-            if (cacheKey.startsWith(RESOURCE_ID_CACHE_PREFIX)) {
-                List<Resource> value = (List<Resource>) entry.getValue();
-                Resource resource = value.get(0);
-
-                if (resource.getType().equals(type)) {
-                    cache.add(findById(resource.getId()));
-                }
-            }
-        }
-
-        if (cache.isEmpty()) {
-            getDelegate().findByType(type).forEach(resource -> cache.add(findById(updateResourceCache(resource).getId())));
-        }
-
-        return cache;
+        return  getDelegate().findByType(type).stream().map(resource -> findById(resource.getId())).collect(Collectors.toList());
     }
 
     private String getCacheKeyForResource(String id) {
@@ -278,7 +256,7 @@ public class CachedResourceStore implements ResourceStore {
                 if (this.updated == null) {
                     this.updated = getDelegate().findById(getId());
                     if (this.updated == null) throw new IllegalStateException("Not found in database");
-                    transaction.whenComplete(() -> cache.evict(getCacheKeyForResource(getId())));
+                    transaction.whenCommit(() -> cache.evict(getCacheKeyForResource(getId())));
                 }
 
                 return this.updated;
@@ -295,5 +273,25 @@ public class CachedResourceStore implements ResourceStore {
         this.cache.put(getCacheKeyForResource(resource.getId()), cache);
 
         return cached;
+    }
+
+    private void updateCachedIds(String cacheKey, Resource resource, boolean create) {
+        List<String> cached = this.cache.get(cacheKey);
+
+        if (cached == null) {
+            if (!create) {
+                return;
+            }
+            cached = new ArrayList<>();
+            this.cache.put(getResourceOwnerCacheKey(resource.getOwner()), cached);
+        }
+
+        if (cached != null && !cached.contains(resource.getId())) {
+            cached.add(resource.getId());
+        }
+    }
+
+    private String getResourceOwnerCacheKey(String ownerId) {
+        return RESOURCE_OWNER_CACHE_PREFIX + ownerId;
     }
 }

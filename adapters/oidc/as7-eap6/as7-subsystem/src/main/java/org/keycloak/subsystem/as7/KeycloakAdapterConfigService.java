@@ -25,6 +25,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import org.jboss.as.server.deployment.DeploymentUnit;
+import org.jboss.as.web.deployment.WarMetaData;
+import org.jboss.metadata.web.jboss.JBossWebMetaData;
 
 /**
  * This service keeps track of the entire Keycloak management model so as to provide
@@ -154,13 +157,15 @@ public final class KeycloakAdapterConfigService {
         return null;
     }
 
-    public String getRealmName(String deploymentName) {
+    public String getRealmName(DeploymentUnit deploymentUnit) {
+        String deploymentName = preferredDeploymentName(deploymentUnit);
         ModelNode deployment = this.secureDeployments.get(deploymentName);
         return deployment.get(RealmDefinition.TAG_NAME).asString();
 
     }
 
-    public String getJSON(String deploymentName) {
+    public String getJSON(DeploymentUnit deploymentUnit) {
+        String deploymentName = preferredDeploymentName(deploymentUnit);
         ModelNode deployment = this.secureDeployments.get(deploymentName);
         String realmName = deployment.get(RealmDefinition.TAG_NAME).asString();
         ModelNode realm = this.realms.get(realmName);
@@ -184,9 +189,29 @@ public final class KeycloakAdapterConfigService {
         }
     }
 
-    public boolean isSecureDeployment(String deploymentName) {
+    public boolean isSecureDeployment(DeploymentUnit deploymentUnit) {
         //log.info("********* CHECK KEYCLOAK DEPLOYMENT: deployments.size()" + deployments.size());
 
+        String deploymentName = preferredDeploymentName(deploymentUnit);
         return this.secureDeployments.containsKey(deploymentName);
+    }
+    
+    // KEYCLOAK-3273: prefer module name if available
+    private String preferredDeploymentName(DeploymentUnit deploymentUnit) {
+        String deploymentName = deploymentUnit.getName();
+        WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
+        if (warMetaData == null) {
+            return deploymentName;
+        }
+        
+        JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
+        if (webMetaData == null) {
+            return deploymentName;
+        }
+        
+        String moduleName = webMetaData.getModuleName();
+        if (moduleName != null) return moduleName + ".war";
+        
+        return deploymentName;
     }
 }

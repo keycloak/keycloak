@@ -448,7 +448,7 @@ public class ResourceServerService {
     private PolicyRepresentation createDefaultPolicy() {
         PolicyRepresentation defaultPolicy = new PolicyRepresentation();
 
-        defaultPolicy.setName("Only From Realm Policy");
+        defaultPolicy.setName("Default Policy");
         defaultPolicy.setDescription("A policy that grants access only for users within this realm");
         defaultPolicy.setType("js");
         defaultPolicy.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
@@ -456,21 +456,7 @@ public class ResourceServerService {
 
         HashMap<String, String> defaultPolicyConfig = new HashMap<>();
 
-        defaultPolicyConfig.put("code", "var context = $evaluation.getContext();\n" +
-                "\n" +
-                "// using attributes from the evaluation context to obtain the realm\n" +
-                "var contextAttributes = context.getAttributes();\n" +
-                "var realmName = contextAttributes.getValue('kc.realm.name').asString(0);\n" +
-                "\n" +
-                "// using attributes from the identity to obtain the issuer\n" +
-                "var identity = context.getIdentity();\n" +
-                "var identityAttributes = identity.getAttributes();\n" +
-                "var issuer = identityAttributes.getValue('iss').asString(0);\n" +
-                "\n" +
-                "// only users from the realm have access granted \n" +
-                "if (issuer.endsWith(realmName)) {\n" +
-                "    $evaluation.grant();\n" +
-                "}");
+        defaultPolicyConfig.put("code", "// by default, grants any permission associated with this policy\n$evaluation.grant();\n");
 
         defaultPolicy.setConfig(defaultPolicyConfig);
 

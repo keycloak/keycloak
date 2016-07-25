@@ -18,6 +18,7 @@
 package org.keycloak.representations.adapters.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
@@ -30,24 +31,30 @@ import java.util.List;
 public class PolicyEnforcerConfig {
 
     @JsonProperty("create-resources")
-    private Boolean createResources;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean createResources = Boolean.FALSE;
 
     @JsonProperty("enforcement-mode")
     private EnforcementMode enforcementMode = EnforcementMode.ENFORCING;
 
     @JsonProperty("user-managed-access")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private UmaProtocolConfig umaProtocolConfig;
 
     @JsonProperty("entitlement")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private EntitlementProtocolConfig entitlementProtocolConfig;
 
     @JsonProperty("paths")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<PathConfig> paths = new ArrayList<>();
 
     @JsonProperty("online-introspection")
-    private Boolean onlineIntrospection;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean onlineIntrospection = Boolean.FALSE;
 
     @JsonProperty("on-deny-redirect-to")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String accessDeniedPath;
 
     public Boolean isCreateResources() {
@@ -55,10 +62,6 @@ public class PolicyEnforcerConfig {
     }
 
     public List<PathConfig> getPaths() {
-        if (this.paths == null) {
-            return null;
-        }
-
         return Collections.unmodifiableList(this.paths);
     }
 
@@ -80,6 +83,14 @@ public class PolicyEnforcerConfig {
 
     public Boolean isOnlineIntrospection() {
         return onlineIntrospection;
+    }
+
+    public void setCreateResources(Boolean createResources) {
+        this.createResources = createResources;
+    }
+
+    public void setOnlineIntrospection(Boolean onlineIntrospection) {
+        this.onlineIntrospection = onlineIntrospection;
     }
 
     public void setPaths(List<PathConfig> paths) {

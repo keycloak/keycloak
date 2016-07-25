@@ -53,7 +53,6 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
     }
 
     public void createClient(ClientRepresentation client) {
-        WaitUtils.waitUntilElement(By.tagName("body")).is().present();
         assertCurrentUrlEquals(clientsPage);
         clientsPage.table().createClient();
         createClientPage.form().setValues(client);

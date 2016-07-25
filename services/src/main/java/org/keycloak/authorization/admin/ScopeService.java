@@ -17,6 +17,7 @@
  */
 package org.keycloak.authorization.admin;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -36,6 +37,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
@@ -132,6 +134,27 @@ public class ScopeService {
         }
 
         return Response.ok(toRepresentation(model, this.authorization)).build();
+    }
+
+    @Path("/search")
+    @GET
+    @Produces("application/json")
+    @NoCache
+    public Response find(@QueryParam("name") String name) {
+        this.auth.requireView();
+        StoreFactory storeFactory = authorization.getStoreFactory();
+
+        if (name == null) {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
+
+        Scope model = storeFactory.getScopeStore().findByName(name, this.resourceServer.getId());
+
+        if (model == null) {
+            return Response.status(Status.OK).build();
+        }
+
+        return Response.ok(toRepresentation(model, authorization)).build();
     }
 
     @GET

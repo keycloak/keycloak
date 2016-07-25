@@ -50,17 +50,14 @@ public class LoginEvents extends Events {
         private LoginEventsTableFilterForm filterForm;
 
         public void update() {
-            waitForBody();
             clickHeaderButton("Update");
         }
 
         public void reset() {
-            waitForBody();
             clickHeaderButton("Reset");
         }
 
         public void filter() {
-            waitForBody();
             filterButton.click();
         }
 

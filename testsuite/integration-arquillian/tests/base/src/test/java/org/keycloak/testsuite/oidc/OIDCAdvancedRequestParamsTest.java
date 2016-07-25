@@ -19,36 +19,58 @@ package org.keycloak.testsuite.oidc;
 
 import java.util.List;
 
+
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
+import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for supporting advanced parameters of OIDC specs (max_age, nonce, prompt, ...)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OIDCAdvancedRequestParamsTest extends AbstractKeycloakTest {
+public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
+    @Page
+    protected AppPage appPage;
+
+    @Page
+    protected LoginPage loginPage;
+
+    @Page
+    protected AccountUpdateProfilePage profilePage;
+
+    @Page
+    protected OAuthGrantPage grantPage;
+
 
     @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
+    public void configureTestRealm(RealmRepresentation testRealm) {
     }
 
     @Before
@@ -70,13 +92,16 @@ public class OIDCAdvancedRequestParamsTest extends AbstractKeycloakTest {
         testRealms.add(realm);
     }
 
+
+    // Max_age
+
     @Test
     public void testMaxAge1() {
         // Open login form and login successfully
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-        IDToken idToken = retrieveIDToken(loginEvent);
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Check that authTime is available and set to current time
         int authTime = idToken.getAuthTime();
@@ -93,7 +118,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
         loginEvent = events.expectLogin().assertEvent();
 
-        idToken = retrieveIDToken(loginEvent);
+        idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime was updated
         int authTimeUpdated = idToken.getAuthTime();
@@ -106,7 +131,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-        IDToken idToken = retrieveIDToken(loginEvent);
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Check that authTime is available and set to current time
         int authTime = idToken.getAuthTime();
@@ -123,25 +148,235 @@ public class OIDCAdvancedRequestParamsTest extends AbstractKeycloakTest {
         oauth.openLoginForm();
         loginEvent = events.expectLogin().assertEvent();
 
-        idToken = retrieveIDToken(loginEvent);
+        idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime is still the same
         int authTimeUpdated = idToken.getAuthTime();
         Assert.assertEquals(authTime, authTimeUpdated);
     }
 
-    private IDToken retrieveIDToken(EventRepresentation loginEvent) {
-        String sessionId = loginEvent.getSessionId();
-        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+    // Prompt
 
-        Assert.assertEquals(200, response.getStatusCode());
-        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+    @Test
+    public void promptNoneNotLogged() {
+        // Send request with prompt=none
+        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
 
-        events.expectCodeToToken(codeId, sessionId).assertEvent();
-        return idToken;
+        assertFalse(loginPage.isCurrent());
+        assertTrue(appPage.isCurrent());
+
+        events.assertEmpty();
+
+        // Assert error response was sent because not logged in
+        OAuthClient.AuthorizationCodeResponse resp = new OAuthClient.AuthorizationCodeResponse(oauth);
+        Assert.assertNull(resp.getCode());
+        Assert.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
+
+
+    }
+
+    @Test
+    public void promptNoneSuccess() {
+        // Login user
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+        int authTime = idToken.getAuthTime();
+
+        // Set time offset
+        setTimeOffset(10);
+
+        // Assert user still logged with previous authTime
+        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        loginEvent = events.expectLogin().removeDetail(Details.USERNAME).assertEvent();
+        idToken = sendTokenRequestAndGetIDToken(loginEvent);
+        int authTime2 = idToken.getAuthTime();
+
+        Assert.assertEquals(authTime, authTime2);
+    }
+
+
+    // Prompt=none with consent required for client
+    @Test
+    public void promptNoneConsentRequired() throws Exception {
+        // Require consent
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").consentRequired(true);
+
+        try {
+            // login to account mgmt.
+            profilePage.open();
+            assertTrue(loginPage.isCurrent());
+            loginPage.login("test-user@localhost", "password");
+            profilePage.assertCurrent();
+
+            events.expectLogin().client(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
+                    .removeDetail(Details.REDIRECT_URI)
+                    .detail(Details.USERNAME, "test-user@localhost").assertEvent();
+
+            // Assert error shown when trying prompt=none and consent not yet retrieved
+            driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
+            assertTrue(appPage.isCurrent());
+            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            OAuthClient.AuthorizationCodeResponse resp = new OAuthClient.AuthorizationCodeResponse(oauth);
+            Assert.assertNull(resp.getCode());
+            Assert.assertEquals(OAuthErrorException.INTERACTION_REQUIRED, resp.getError());
+
+            // Confirm consent
+            driver.navigate().to(oauth.getLoginFormUrl());
+            grantPage.assertCurrent();
+            grantPage.accept();
+
+            events.expectLogin()
+                    .detail(Details.USERNAME, "test-user@localhost")
+                    .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                    .assertEvent();
+
+            // Consent not required anymore. Login with prompt=none should success
+            driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
+            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            resp = new OAuthClient.AuthorizationCodeResponse(oauth);
+            Assert.assertNotNull(resp.getCode());
+            Assert.assertNull(resp.getError());
+
+            events.expectLogin()
+                    .detail(Details.USERNAME, "test-user@localhost")
+                    .detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
+                    .assertEvent();
+
+        } finally {
+            //  revert require consent
+            ClientManager.realm(adminClient.realm("test")).clientId("test-app").consentRequired(false);
+        }
+    }
+
+
+    // prompt=login
+    @Test
+    public void promptLogin() {
+        // Login user
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+        int authTime = idToken.getAuthTime();
+
+        // Set time offset
+        setTimeOffset(10);
+
+        // Assert need to re-authenticate with prompt=login
+        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=login");
+
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        idToken = sendTokenRequestAndGetIDToken(loginEvent);
+        int authTimeUpdated = idToken.getAuthTime();
+
+        // Assert that authTime was updated
+        Assert.assertTrue(authTime + 10 <= authTimeUpdated);
+
+    }
+
+
+    // NONCE
+
+    @Test
+    public void nonceNotUsed() {
+        driver.navigate().to(oauth.getLoginFormUrl());
+
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+
+        Assert.assertNull(idToken.getNonce());
+    }
+
+    @Test
+    public void nonceMatches() {
+        driver.navigate().to(oauth.getLoginFormUrl() + "&nonce=abcdef123456");
+
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+
+        Assert.assertEquals("abcdef123456", idToken.getNonce());
+    }
+
+    // DISPLAY & OTHERS
+
+    @Test
+    public void nonSupportedParams() {
+        driver.navigate().to(oauth.getLoginFormUrl() + "&display=popup&foo=foobar&claims_locales=fr");
+
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+
+        Assert.assertNotNull(idToken);
+    }
+
+    // REQUEST & REQUEST_URI
+
+    @Test
+    public void requestParam() {
+        driver.navigate().to(oauth.getLoginFormUrl() + "&request=abc");
+
+        assertFalse(loginPage.isCurrent());
+        assertTrue(appPage.isCurrent());
+
+        // Assert error response was sent because not logged in
+        OAuthClient.AuthorizationCodeResponse resp = new OAuthClient.AuthorizationCodeResponse(oauth);
+        Assert.assertNull(resp.getCode());
+        Assert.assertEquals(OAuthErrorException.REQUEST_NOT_SUPPORTED, resp.getError());
+    }
+
+    @Test
+    public void requestUriParam() {
+        driver.navigate().to(oauth.getLoginFormUrl() + "&request_uri=https%3A%2F%2Flocalhost%3A60784%2Fexport%2FqzHTG11W48.jwt");
+
+        assertFalse(loginPage.isCurrent());
+        assertTrue(appPage.isCurrent());
+
+        // Assert error response was sent because not logged in
+        OAuthClient.AuthorizationCodeResponse resp = new OAuthClient.AuthorizationCodeResponse(oauth);
+        Assert.assertNull(resp.getCode());
+        Assert.assertEquals(OAuthErrorException.REQUEST_URI_NOT_SUPPORTED, resp.getError());
+    }
+
+    // LOGIN_HINT
+
+    @Test
+    public void loginHint() {
+        // Assert need to re-authenticate with prompt=login
+        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.LOGIN_HINT_PARAM + "=test-user%40localhost");
+
+                loginPage.assertCurrent();
+        Assert.assertEquals("test-user@localhost", loginPage.getUsername());
+        loginPage.login("password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
 
 }

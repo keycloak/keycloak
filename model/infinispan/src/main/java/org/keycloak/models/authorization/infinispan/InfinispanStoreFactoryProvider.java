@@ -71,6 +71,7 @@ public class InfinispanStoreFactoryProvider implements CachedStoreFactoryProvide
     static class CacheTransaction implements KeycloakTransaction {
 
         private List<Runnable> completeTasks = new ArrayList<>();
+        private List<Runnable> rollbackTasks = new ArrayList<>();
 
         @Override
         public void begin() {
@@ -84,7 +85,7 @@ public class InfinispanStoreFactoryProvider implements CachedStoreFactoryProvide
 
         @Override
         public void rollback() {
-            this.completeTasks.forEach(task -> task.run());
+            this.rollbackTasks.forEach(task -> task.run());
         }
 
         @Override
@@ -102,8 +103,12 @@ public class InfinispanStoreFactoryProvider implements CachedStoreFactoryProvide
             return false;
         }
 
-        protected void whenComplete(Runnable task) {
+        protected void whenCommit(Runnable task) {
             this.completeTasks.add(task);
+        }
+
+        protected void whenRollback(Runnable task) {
+            this.rollbackTasks.add(task);
         }
     }
 }

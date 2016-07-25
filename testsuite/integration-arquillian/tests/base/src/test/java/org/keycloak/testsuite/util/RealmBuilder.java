@@ -132,8 +132,23 @@ public class RealmBuilder {
         return this;
     }
 
+    public RealmBuilder notBefore(int i) {
+        rep.setNotBefore(i);
+        return this;
+    }
+
     public RealmBuilder otpLookAheadWindow(int i) {
         rep.setOtpPolicyLookAheadWindow(i);
+        return this;
+    }
+
+    public RealmBuilder bruteForceProtected(boolean bruteForceProtected) {
+        rep.setBruteForceProtected(bruteForceProtected);
+        return this;
+    }
+
+    public RealmBuilder failureFactor(int failureFactor) {
+        rep.setFailureFactor(failureFactor);
         return this;
     }
 
@@ -159,6 +174,11 @@ public class RealmBuilder {
 
     public RealmBuilder otpInitialCounter(int i) {
         rep.setOtpPolicyInitialCounter(i);
+        return this;
+    }
+
+    public RealmBuilder passwordPolicy(String passwordPolicy) {
+        rep.setPasswordPolicy(passwordPolicy);
         return this;
     }
 

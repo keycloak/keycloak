@@ -29,7 +29,6 @@ import org.keycloak.provider.Provider;
  * @version $Revision: 1 $
  */
 public interface StorageProvider extends Provider {
-    StorageProviderModel getModel();
 
     void preRemove(RealmModel realm);
     void preRemove(RealmModel realm, GroupModel group);

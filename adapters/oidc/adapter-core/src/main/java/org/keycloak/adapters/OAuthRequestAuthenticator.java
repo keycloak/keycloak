@@ -34,6 +34,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -159,6 +160,12 @@ public class OAuthRequestAuthenticator {
         String scope = getQueryParamValue(OAuth2Constants.SCOPE);
         url = UriUtils.stripQueryParam(url, OAuth2Constants.SCOPE);
 
+        String prompt = getQueryParamValue(OAuth2Constants.PROMPT);
+        url = UriUtils.stripQueryParam(url, OAuth2Constants.PROMPT);
+
+        String maxAge = getQueryParamValue(OAuth2Constants.MAX_AGE);
+        url = UriUtils.stripQueryParam(url, OAuth2Constants.MAX_AGE);
+
         KeycloakUriBuilder redirectUriBuilder = deployment.getAuthUrl().clone()
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
@@ -171,9 +178,15 @@ public class OAuthRequestAuthenticator {
         if (idpHint != null && idpHint.length() > 0) {
             redirectUriBuilder.queryParam(AdapterConstants.KC_IDP_HINT,idpHint);
         }
-        if (scope != null && scope.length() > 0) {
-            redirectUriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
+        if (prompt != null && prompt.length() > 0) {
+            redirectUriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
         }
+        if (maxAge != null && maxAge.length() > 0) {
+            redirectUriBuilder.queryParam(OAuth2Constants.MAX_AGE, maxAge);
+        }
+
+        scope = TokenUtil.attachOIDCScope(scope);
+        redirectUriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
 
         return redirectUriBuilder.build().toString();
     }

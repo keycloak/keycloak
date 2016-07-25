@@ -22,6 +22,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.policy.PasswordPolicyManagerProvider;
+import org.keycloak.policy.PolicyError;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
 
@@ -73,7 +75,7 @@ public class Validation {
         }
 
         if (formData.getFirst(FIELD_PASSWORD) != null) {
-            PasswordPolicy.Error err = policy.validate(session, realm.isRegistrationEmailAsUsername()?formData.getFirst(FIELD_EMAIL):formData.getFirst(FIELD_USERNAME), formData.getFirst(FIELD_PASSWORD));
+            PolicyError err = session.getProvider(PasswordPolicyManagerProvider.class).validate(realm.isRegistrationEmailAsUsername() ? formData.getFirst(FIELD_EMAIL) : formData.getFirst(FIELD_USERNAME), formData.getFirst(FIELD_PASSWORD));
             if (err != null)
                 errors.add(new FormMessage(FIELD_PASSWORD, err.getMessage(), err.getParameters()));
         }

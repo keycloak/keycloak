@@ -34,9 +34,16 @@ import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Permissions;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 
@@ -156,15 +163,17 @@ public class PolicyEvaluationService {
     }
 
     private KeycloakIdentity createIdentity(PolicyEvaluationRequest representation) {
-        RealmModel realm = this.authorization.getKeycloakSession().getContext().getRealm();
+        KeycloakSession keycloakSession = this.authorization.getKeycloakSession();
+        RealmModel realm = keycloakSession.getContext().getRealm();
         AccessToken accessToken = new AccessToken();
 
         accessToken.subject(representation.getUserId());
         accessToken.issuedFor(representation.getClientId());
         accessToken.audience(representation.getClientId());
-        accessToken.issuer(Urls.realmIssuer(this.authorization.getKeycloakSession().getContext().getUri().getBaseUri(), realm.getName()));
+        accessToken.issuer(Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
         accessToken.setRealmAccess(new AccessToken.Access());
 
+        AccessToken.Access realmAccess = accessToken.getRealmAccess();
         Map<String, Object> claims = accessToken.getOtherClaims();
         Map<String, String> givenAttributes = representation.getContext().get("attributes");
 
@@ -175,31 +184,60 @@ public class PolicyEvaluationService {
         String subject = accessToken.getSubject();
 
         if (subject != null) {
-            UserModel userModel = this.authorization.getKeycloakSession().users().getUserById(subject, realm);
+            UserModel userModel = keycloakSession.users().getUserById(subject, realm);
 
             if (userModel != null) {
-                Set<RoleModel> roleMappings = userModel.getRoleMappings();
+                userModel.getAttributes().forEach(claims::put);
 
-                roleMappings.stream().map(RoleModel::getName).forEach(roleName -> accessToken.getRealmAccess().addRole(roleName));
+                userModel.getRoleMappings().stream().map(RoleModel::getName).forEach(roleName -> realmAccess.addRole(roleName));
 
                 String clientId = representation.getClientId();
 
+                if (clientId == null) {
+                    clientId = resourceServer.getClientId();
+                }
+
                 if (clientId != null) {
                     ClientModel clientModel = realm.getClientById(clientId);
+                    ClientSessionModel clientSession = null;
+                    UserSessionModel userSession = null;
+                    try {
+                        clientSession = keycloakSession.sessions().createClientSession(realm, clientModel);
+                        userSession = keycloakSession.sessions().createUserSession(realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);
+
+                        UserSessionModel finalUserSession = userSession;
+                        ClientSessionModel finalClientSession = clientSession;
+
+                        for (ProtocolMapperModel mapping : clientModel.getProtocolMappers()) {
+                            KeycloakSessionFactory sessionFactory = keycloakSession.getKeycloakSessionFactory();
+                            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
+
+                            if (mapper != null && (mapper instanceof OIDCAccessTokenMapper)) {
+                                accessToken = ((OIDCAccessTokenMapper)mapper).transformAccessToken(accessToken, mapping, keycloakSession, finalUserSession, finalClientSession);
+                            }
+                        }
+                    } finally {
+                        if (clientSession != null) {
+                            keycloakSession.sessions().removeClientSession(realm, clientSession);
+                        }
+
+                        if (userSession != null) {
+                            keycloakSession.sessions().removeUserSession(realm, userSession);
+                        }
+                    }
 
                     accessToken.addAccess(clientModel.getClientId());
+                    AccessToken.Access resourceAccess = accessToken.getResourceAccess(clientModel.getClientId());
 
-                    userModel.getClientRoleMappings(clientModel).stream().map(RoleModel::getName).forEach(roleName -> accessToken.getResourceAccess(clientModel.getClientId()).addRole(roleName));
-
-                    //TODO: would be awesome if we could transform the access token using the configured protocol mappers. Tried, but without a clientSession and userSession is tuff.
+                    userModel.getClientRoleMappings(clientModel).stream().map(RoleModel::getName).forEach(roleName -> resourceAccess.addRole(roleName));
                 }
             }
         }
 
         if (representation.getRoleIds() != null) {
-            representation.getRoleIds().forEach(roleName -> accessToken.getRealmAccess().addRole(roleName));
+            representation.getRoleIds().forEach(roleName -> realmAccess.addRole(roleName));
         }
 
-        return new KeycloakIdentity(accessToken, this.authorization.getKeycloakSession());
+        return new KeycloakIdentity(accessToken, keycloakSession);
     }
 }

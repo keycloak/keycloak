@@ -351,8 +351,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     public void grantAccessTokenExpiredPassword() throws Exception {
 
         RealmResource realmResource = adminClient.realm("test");
-        RealmManager.realm(realmResource).passwordPolicy(
-                new PasswordPolicy("forceExpiredPasswordChange(1)").toString());
+        RealmManager.realm(realmResource).passwordPolicy("forceExpiredPasswordChange(1)");
 
         try {
             setTimeOffset(60 * 60 * 48);
@@ -376,7 +375,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                     .user((String) null)
                     .assertEvent();
         } finally {
-            RealmManager.realm(realmResource).passwordPolicy(new PasswordPolicy("").toString());
+            RealmManager.realm(realmResource).passwordPolicy("");
             UserManager.realm(realmResource).username("test-user@localhost")
                     .removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         }

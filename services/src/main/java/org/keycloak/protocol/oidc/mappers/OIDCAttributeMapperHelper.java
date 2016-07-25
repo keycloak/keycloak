@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -47,6 +48,10 @@ public class OIDCAttributeMapperHelper {
     public static final String INCLUDE_IN_ID_TOKEN = "id.token.claim";
     public static final String INCLUDE_IN_ID_TOKEN_LABEL = "includeInIdToken.label";
     public static final String INCLUDE_IN_ID_TOKEN_HELP_TEXT = "includeInIdToken.tooltip";
+
+    public static final String INCLUDE_IN_USERINFO = "userinfo.token.claim";
+    public static final String INCLUDE_IN_USERINFO_LABEL = "includeInUserInfo.label";
+    public static final String INCLUDE_IN_USERINFO_HELP_TEXT = "includeInUserInfo.tooltip";
 
     public static Object mapAttributeValue(ProtocolMapperModel mappingModel, Object attributeValue) {
         if (attributeValue == null) return null;
@@ -115,10 +120,19 @@ public class OIDCAttributeMapperHelper {
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,
+                                                        String userAttribute,
+                                                        String tokenClaimName, String claimType,
+                                                        boolean consentRequired, String consentText,
+                                                        boolean accessToken, boolean idToken,
+                                                        String mapperId) {
+        return createClaimMapper(name, userAttribute,tokenClaimName, claimType, consentRequired, consentText, accessToken, idToken, false, mapperId);
+    }
+
+    public static ProtocolMapperModel createClaimMapper(String name,
                                   String userAttribute,
                                   String tokenClaimName, String claimType,
                                   boolean consentRequired, String consentText,
-                                  boolean accessToken, boolean idToken,
+                                  boolean accessToken, boolean idToken, boolean userinfo,
                                   String mapperId) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
@@ -132,6 +146,7 @@ public class OIDCAttributeMapperHelper {
         config.put(JSON_TYPE, claimType);
         if (accessToken) config.put(INCLUDE_IN_ACCESS_TOKEN, "true");
         if (idToken) config.put(INCLUDE_IN_ID_TOKEN, "true");
+        if (userinfo) config.put(INCLUDE_IN_USERINFO, "true");
         mapper.setConfig(config);
         return mapper;
     }
@@ -144,9 +159,12 @@ public class OIDCAttributeMapperHelper {
         return "true".equals(mappingModel.getConfig().get(INCLUDE_IN_ACCESS_TOKEN));
     }
 
-
     public static boolean isMultivalued(ProtocolMapperModel mappingModel) {
         return "true".equals(mappingModel.getConfig().get(ProtocolMapperUtils.MULTIVALUED));
+    }
+
+    public static boolean includeInUserInfo(ProtocolMapperModel mappingModel){
+        return "true".equals(mappingModel.getConfig().get(INCLUDE_IN_USERINFO));
     }
 
     public static void addAttributeConfig(List<ProviderConfigProperty> configProperties) {
@@ -182,6 +200,13 @@ public class OIDCAttributeMapperHelper {
         property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue("true");
         property.setHelpText(INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT);
+        configProperties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(INCLUDE_IN_USERINFO);
+        property.setLabel(INCLUDE_IN_USERINFO_LABEL);
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue("false");
+        property.setHelpText(INCLUDE_IN_USERINFO_HELP_TEXT);
         configProperties.add(property);
     }
 }

@@ -203,4 +203,17 @@ public class AdapterTest {
         testStrategy.testAccountManagementSessionsLogout();
     }
 
+    /**
+     * KEYCLOAK-1733
+     */
+    @Test
+    public void testNullQueryParameterAccessToken() throws Exception {
+        testStrategy.testNullQueryParameterAccessToken();
+    }
+
+    @Test
+    public void testRestCallWithAccessTokenAsQueryParameter() throws Exception {
+        testStrategy.testRestCallWithAccessTokenAsQueryParameter();
+
+    }
 }

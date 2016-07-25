@@ -23,11 +23,15 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
 
+import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -47,6 +51,9 @@ public class RegisterTest extends TestRealmKeycloakTest {
 
     @Page
     protected RegisterPage registerPage;
+
+    @Page
+    protected AccountUpdateProfilePage accountPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -253,15 +260,61 @@ public class RegisterTest extends TestRealmKeycloakTest {
         assertEquals("lastName", user.getLastName());
     }
 
-    /*protected UserModel getUser(String userId) {
-        KeycloakSession samlServerSession = keycloakRule.startSession();
-        try {
-            RealmModel brokerRealm = samlServerSession.realms().getRealm("test");
-            return samlServerSession.users().getUserById(userId, brokerRealm);
-        } finally {
-            keycloakRule.stopSession(samlServerSession, false);
-        }
-    }*/
+    @Test
+    public void registerUserUmlats() {
+        loginPage.open();
+
+        assertTrue(loginPage.isCurrent());
+
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("Äǜṳǚǘǖ", "Öṏṏ", "registeruserumlats@email", "registeruserumlats", "password", "password");
+
+        String userId = events.expectRegister("registeruserumlats", "registeruserumlats@email").assertEvent().getUserId();
+        events.expectLogin().detail("username", "registeruserumlats").user(userId).assertEvent();
+
+        accountPage.open();
+        assertTrue(accountPage.isCurrent());
+
+        UserRepresentation user = getUser(userId);
+        Assert.assertNotNull(user);
+        assertEquals("Äǜṳǚǘǖ", user.getFirstName());
+        assertEquals("Öṏṏ", user.getLastName());
+
+        assertEquals("Äǜṳǚǘǖ", accountPage.getFirstName());
+        assertEquals("Öṏṏ", accountPage.getLastName());
+    }
+
+    // KEYCLOAK-3266
+    @Test
+    public void registerUserNotUsernamePasswordPolicy() {
+        adminClient.realm("test").update(RealmBuilder.create().passwordPolicy("notUsername").build());
+
+        loginPage.open();
+
+        assertTrue(loginPage.isCurrent());
+
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", "registerUserNotUsername@email", "registerUserNotUsername", "registerUserNotUsername", "registerUserNotUsername");
+
+        assertTrue(registerPage.isCurrent());
+        assertEquals("Invalid password: must not be equal to the username.", registerPage.getError());
+
+        adminClient.realm("test").users().create(UserBuilder.create().username("registerUserNotUsername").build());
+
+        registerPage.register("firstName", "lastName", "registerUserNotUsername@email", "registerUserNotUsername", "registerUserNotUsername", "registerUserNotUsername");
+
+        assertTrue(registerPage.isCurrent());
+        assertEquals("Username already exists.", registerPage.getError());
+
+        registerPage.register("firstName", "lastName", "registerUserNotUsername@email", null, "password", "password");
+
+        assertTrue(registerPage.isCurrent());
+        assertEquals("Please specify username.", registerPage.getError());
+    }
 
     protected UserRepresentation getUser(String userId) {
         return testRealm().users().get(userId).toRepresentation();

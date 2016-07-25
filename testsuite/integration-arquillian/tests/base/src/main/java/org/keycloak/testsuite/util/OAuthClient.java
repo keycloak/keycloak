@@ -36,9 +36,6 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -60,7 +57,9 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.security.PublicKey;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -98,6 +97,10 @@ public class OAuthClient {
     private String clientSessionHost;
 
     private String maxAge;
+
+    private String responseType = OAuth2Constants.CODE;
+
+    private String responseMode;
 
     private Map<String, PublicKey> publicKeys = new HashMap<>();
 
@@ -448,7 +451,11 @@ public class OAuthClient {
     }
 
     public String getCurrentRequest() {
-        return driver.getCurrentUrl().substring(0, driver.getCurrentUrl().indexOf('?'));
+        int index = driver.getCurrentUrl().indexOf('?');
+        if (index == -1) {
+            index = driver.getCurrentUrl().indexOf('#');
+        }
+        return driver.getCurrentUrl().substring(0, index);
     }
 
     public URI getCurrentUri() {
@@ -462,6 +469,18 @@ public class OAuthClient {
     public Map<String, String> getCurrentQuery() {
         Map<String, String> m = new HashMap<String, String>();
         List<NameValuePair> pairs = URLEncodedUtils.parse(getCurrentUri(), "UTF-8");
+        for (NameValuePair p : pairs) {
+            m.put(p.getName(), p.getValue());
+        }
+        return m;
+    }
+
+    public Map<String, String> getCurrentFragment() {
+        Map<String, String> m = new HashMap<String, String>();
+
+        String fragment = getCurrentUri().getRawFragment();
+        List<NameValuePair> pairs = (fragment == null || fragment.isEmpty()) ? Collections.emptyList() : URLEncodedUtils.parse(fragment, Charset.forName("UTF-8"));
+
         for (NameValuePair p : pairs) {
             m.put(p.getName(), p.getValue());
         }
@@ -485,8 +504,13 @@ public class OAuthClient {
     }
 
     public String getLoginFormUrl() {
-        UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(SERVER_ROOT + "/auth"));
-        b.queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE);
+        UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(AUTH_SERVER_ROOT));
+        if (responseType != null) {
+            b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
+        }
+        if (responseMode != null) {
+            b.queryParam(OIDCLoginProtocol.RESPONSE_MODE_PARAM, responseMode);
+        }
         if (clientId != null) {
             b.queryParam(OAuth2Constants.CLIENT_ID, clientId);
         }
@@ -499,9 +523,10 @@ public class OAuthClient {
         if(uiLocales != null){
             b.queryParam(OAuth2Constants.UI_LOCALES_PARAM, uiLocales);
         }
-        if (scope != null) {
-            b.queryParam(OAuth2Constants.SCOPE, scope);
-        }
+
+        String scopeParam = TokenUtil.attachOIDCScope(scope);
+        b.queryParam(OAuth2Constants.SCOPE, scopeParam);
+
         if (maxAge != null) {
             b.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
         }
@@ -598,6 +623,16 @@ public class OAuthClient {
         return this;
     }
 
+    public OAuthClient responseType(String responseType) {
+        this.responseType = responseType;
+        return this;
+    }
+
+    public OAuthClient responseMode(String responseMode) {
+        this.responseMode = responseMode;
+        return this;
+    }
+
     public String getRealm() {
         return realm;
     }
@@ -608,12 +643,20 @@ public class OAuthClient {
         private String code;
         private String state;
         private String error;
+        private String errorDescription;
 
         public AuthorizationCodeResponse(OAuthClient client) {
+            this(client, false);
+        }
+
+        public AuthorizationCodeResponse(OAuthClient client, boolean fragment) {
             isRedirected = client.getCurrentRequest().equals(client.getRedirectUri());
-            code = client.getCurrentQuery().get(OAuth2Constants.CODE);
-            state = client.getCurrentQuery().get(OAuth2Constants.STATE);
-            error = client.getCurrentQuery().get(OAuth2Constants.ERROR);
+            Map<String, String> params = fragment ? client.getCurrentFragment() : client.getCurrentQuery();
+
+            code = params.get(OAuth2Constants.CODE);
+            state = params.get(OAuth2Constants.STATE);
+            error = params.get(OAuth2Constants.ERROR);
+            errorDescription = params.get(OAuth2Constants.ERROR_DESCRIPTION);
         }
 
         public boolean isRedirected() {
@@ -632,6 +675,9 @@ public class OAuthClient {
             return error;
         }
 
+        public String getErrorDescription() {
+            return errorDescription;
+        }
     }
 
     public static class AccessTokenResponse {

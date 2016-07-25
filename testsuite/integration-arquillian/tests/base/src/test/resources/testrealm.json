@@ -105,7 +105,7 @@
       "redirectUris": [
         "http://localhost:8180/auth/realms/master/app/auth/*"
       ],
-      "adminUrl": "http://localhost:8180/auth/realms/master/app/logout",
+      "adminUrl": "http://localhost:8180/auth/realms/master/app/admin",
       "secret": "password"
     },
     {

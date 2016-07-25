@@ -103,8 +103,8 @@
             initPromise.promise.success(function() {
                 kc.onReady && kc.onReady(kc.authenticated);
                 promise.setSuccess(kc.authenticated);
-            }).error(function() {
-                promise.setError();
+            }).error(function(errorData) {
+                promise.setError(errorData);
             });
 
             var configPromise = loadConfig(config);
@@ -208,6 +208,8 @@
                 action = 'registrations';
             }
 
+            var scope = (options && options.scope) ? "openid " + options.scope : "openid";
+
             var url = getRealmUrl()
                 + '/protocol/openid-connect/' + action
                 + '?client_id=' + encodeURIComponent(kc.clientId)
@@ -215,10 +217,15 @@
                 + '&state=' + encodeURIComponent(state)
                 + '&nonce=' + encodeURIComponent(nonce)
                 + '&response_mode=' + encodeURIComponent(kc.responseMode)
-                + '&response_type=' + encodeURIComponent(kc.responseType);
+                + '&response_type=' + encodeURIComponent(kc.responseType)
+                + '&scope=' + encodeURIComponent(scope);
 
             if (options && options.prompt) {
                 url += '&prompt=' + encodeURIComponent(options.prompt);
+            }
+
+            if (options && options.maxAge) {
+                url += '&max_age=' + encodeURIComponent(options.maxAge);
             }
 
             if (options && options.loginHint) {
@@ -227,10 +234,6 @@
 
             if (options && options.idpHint) {
                 url += '&kc_idp_hint=' + encodeURIComponent(options.idpHint);
-            }
-
-            if (options && options.scope) {
-                url += '&scope=' + encodeURIComponent(options.scope);
             }
 
             if (options && options.locale) {
@@ -463,8 +466,9 @@
 
             if (error) {
                 if (prompt != 'none') {
-                    kc.onAuthError && kc.onAuthError();
-                    promise && promise.setError();
+                    var errorData = { error: error, error_description: oauth.error_description };
+                    kc.onAuthError && kc.onAuthError(errorData);
+                    promise && promise.setError(errorData);
                 } else {
                     promise && promise.setSuccess();
                 }
@@ -1155,7 +1159,7 @@
             }
 
             var handleQueryParam = function(paramName, paramValue, oauth) {
-                var supportedOAuthParams = [ 'code', 'error', 'state' ];
+                var supportedOAuthParams = [ 'code', 'state', 'error', 'error_description' ];
 
                 for (var i = 0 ; i< supportedOAuthParams.length ; i++) {
                     if (paramName === supportedOAuthParams[i]) {

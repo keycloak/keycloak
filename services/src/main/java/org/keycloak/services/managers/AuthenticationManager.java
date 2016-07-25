@@ -64,8 +64,8 @@ public class AuthenticationManager {
 
     // userSession note with authTime (time when authentication flow including requiredActions was finished)
     public static final String AUTH_TIME = "AUTH_TIME";
-    // clientSession note with flag that authTime update should be skipped
-    public static final String SKIP_AUTH_TIME_UPDATE = "SKIP_AUTH_TIME_UPDATE";
+    // clientSession note with flag that clientSession was authenticated through SSO cookie
+    public static final String SSO_AUTH = "SSO_AUTH";
 
     protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     public static final String FORM_USERNAME = "username";
@@ -410,9 +410,8 @@ public class AuthenticationManager {
         if (userSession.getState() != UserSessionModel.State.LOGGED_IN) userSession.setState(UserSessionModel.State.LOGGED_IN);
         if (userSession.isRememberMe()) createRememberMeCookie(realm, userSession.getUser().getUsername(), uriInfo, clientConnection);
 
-        // Update userSession note with authTime. But just if flag SKIP_AUTH_TIME_UPDATE is not set
-        String skipAuthTimeUpdate = clientSession.getNote(SKIP_AUTH_TIME_UPDATE);
-        if (skipAuthTimeUpdate == null || !Boolean.parseBoolean(skipAuthTimeUpdate)) {
+        // Update userSession note with authTime. But just if flag SSO_AUTH is not set
+        if (!isSSOAuthentication(clientSession)) {
             int authTime = Time.currentTime();
             userSession.setNote(AUTH_TIME, String.valueOf(authTime));
         }
@@ -420,6 +419,13 @@ public class AuthenticationManager {
         return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));
 
     }
+
+    public static boolean isSSOAuthentication(ClientSessionModel clientSession) {
+        String ssoAuth = clientSession.getNote(SSO_AUTH);
+        return Boolean.parseBoolean(ssoAuth);
+    }
+
+
     public static Response nextActionAfterAuthentication(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession,
                                                   ClientConnection clientConnection,
                                                   HttpRequest request, UriInfo uriInfo, EventBuilder event) {
@@ -564,6 +570,10 @@ public class AuthenticationManager {
                                                Set<String> requiredActions) {
         for (String action : requiredActions) {
             RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
+            if (!model.isEnabled()) {
+                continue;
+            }
+
             RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
             if (factory == null) {
                 throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");

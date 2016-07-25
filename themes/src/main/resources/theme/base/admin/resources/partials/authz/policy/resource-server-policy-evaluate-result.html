@@ -1,12 +1,11 @@
 <fieldset>
     <form class="form-horizontal" name="clientForm" novalidate>
-        <span data-ng-show="evaluationResult.results.length == 0"><strong>Could not obtain any result for the given authorization request. Check if the provided resource(s) or scope(s) are associated with any policy.</strong></span>
+        <span data-ng-show="evaluationResult.results.length == 0"><strong>{{:: 'authz-evaluation-no-result' | translate}}</strong></span>
         <fieldset class="border-top" data-ng-repeat="result in evaluationResult.results">
             <legend collapsed><span class="text">{{result.resource.name}}</span>
-                <kc-tooltip>Provides information about how policies were evaluated for this resource.</kc-tooltip>
             </legend>
             <div class="form-group">
-                <label class="col-md-2 control-label">Result</label>
+                <label class="col-md-2 control-label">{{:: 'authz-result' | translate}}</label>
 
                 <div class="col-sm-2">
                     <div>
@@ -16,13 +15,13 @@
                               data-ng-hide="result.status == 'PERMIT'"><strong>{{result.status}}</strong></span>
                     </div>
                 </div>
-                <kc-tooltip>The overall result for this permission request.</kc-tooltip>
+                <kc-tooltip>{{:: 'authz-evaluation-result.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label">Scopes</label>
+                <label class="col-md-2 control-label">{{:: 'authz-scopes' | translate}}</label>
 
                 <div class="col-sm-2">
-                    <span data-ng-show="result.scopes.length == 0">Any scope.</span>
+                    <span data-ng-show="result.scopes.length == 0">{{:: 'authz-any-scope' | translate}}</span>
 
                     <div>
                         <ul>
@@ -32,13 +31,13 @@
                         </ul>
                     </div>
                 </div>
-                <kc-tooltip>The requested scopes.</kc-tooltip>
+                <kc-tooltip>{{:: 'authz-evaluation-scopes.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="!evaluationResult.entitlements">
-                <label class="col-md-2 control-label">Policies</label>
+                <label class="col-md-2 control-label">{{:: 'authz-policies' | translate}}</label>
 
                 <div class="col-sm-6">
-                    <span data-ng-show="result.policies.length == 0">No policies were found for this resource.</span>
+                    <span data-ng-show="result.policies.length == 0">{{:: 'authz-evaluation-no-policies-resource' | translate}}</span>
 
                     <div>
                         <ul>
@@ -61,7 +60,7 @@
                         </ul>
                     </div>
                 </div>
-                <kc-tooltip>Details about which policies were evaluated and their decisions.</kc-tooltip>
+                <kc-tooltip>{{:: 'authz-evaluation-policies.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
     </form>

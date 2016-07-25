@@ -39,6 +39,7 @@ public abstract class OIDCRedirectUriBuilder {
     }
 
     public abstract OIDCRedirectUriBuilder addParam(String paramName, String paramValue);
+
     public abstract Response build();
 
 
@@ -125,7 +126,7 @@ public abstract class OIDCRedirectUriBuilder {
 
         @Override
         public OIDCRedirectUriBuilder addParam(String paramName, String paramValue) {
-            params.put(paramName, Encode.encodeQueryParam(paramValue));
+            params.put(paramName, paramValue);
             return this;
         }
 

@@ -9,7 +9,7 @@
                     <div class="form-inline">
                         <div class="form-group">
                             <div class="input-group">
-                                <input type="text" placeholder="Search..." data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                                <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
                                 <div class="input-group-addon">
                                     <i class="fa fa-search" type="submit"></i>
                                 </div>
@@ -17,13 +17,13 @@
                         </div>
 
                         <div class="pull-right">
-                            <a id="createScope" class="btn btn-default" href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope/create">Create</a>
+                            <a id="createScope" class="btn btn-default" href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope/create">{{:: 'create' | translate}}</a>
                         </div>
                     </div>
                 </th>
             </tr>
             <tr data-ng-hide="scopes.length == 0">
-                <th>Scope Name</th>
+                <th>{{:: 'name' | translate}}</th>
             </tr>
         </thead>
         <tbody>
@@ -31,8 +31,8 @@
                 <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope/{{scope.id}}">{{scope.name}}</a></td>
             </tr>
             <tr data-ng-show="(scopes | filter:search).length == 0">
-                <td class="text-muted" colspan="3" data-ng-show="search.name">No results</td>
-                <td class="text-muted" colspan="3" data-ng-hide="search.name">No scopes available</td>
+                <td class="text-muted" colspan="3" data-ng-show="search.name">{{:: 'no-results' | translate}}</td>
+                <td class="text-muted" colspan="3" data-ng-hide="search.name">{{:: 'authz-no-scopes-available' | translate}}</td>
             </tr>
         </tbody>
     </table>

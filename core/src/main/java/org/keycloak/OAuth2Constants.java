@@ -62,7 +62,20 @@ public interface OAuth2Constants {
     // http://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess
     String OFFLINE_ACCESS = "offline_access";
 
+    // http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest
+    String SCOPE_OPENID = "openid";
+
+    // http://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims
+    String SCOPE_PROFILE = "profile";
+    String SCOPE_EMAIL = "email";
+    String SCOPE_ADDRESS = "address";
+    String SCOPE_PHONE = "phone";
+
     String UI_LOCALES_PARAM = "ui_locales";
+
+    String PROMPT = "prompt";
+
+    String MAX_AGE = "max_age";
 
 
 }

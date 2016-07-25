@@ -42,6 +42,12 @@ public class StorageId implements Serializable {
 
     }
 
+    public StorageId(String providerId, String storageId) {
+        this.id = "f:" + providerId + ":" + storageId;
+        this.providerId = providerId;
+        this.storageId = storageId;
+    }
+
     public static String resolveProviderId(UserModel user) {
         return new StorageId(user.getId()).getProviderId();
     }

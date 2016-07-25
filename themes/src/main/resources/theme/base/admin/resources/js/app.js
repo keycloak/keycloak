@@ -1639,6 +1639,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
                 }
             },
             controller : 'RealmPasswordPolicyCtrl'
@@ -2123,18 +2126,22 @@ module.directive('kcReadOnly', function() {
                 }
             }
 
+            var filterIgnored = function(i, e){
+                return !e.attributes['kc-read-only-ignore'];
+            }
+
             scope.$watch(attrs.kcReadOnly, function(readOnly) {
                 if (readOnly) {
-                    element.find('input').each(disable);
-                    element.find('button').each(disable);
-                    element.find('select').each(disable);
-                    element.find('textarea').each(disable);
+                    element.find('input').filter(filterIgnored).each(disable);
+                    element.find('button').filter(filterIgnored).each(disable);
+                    element.find('select').filter(filterIgnored).each(disable);
+                    element.find('textarea').filter(filterIgnored).each(disable);
                 } else {
-                    element.find('input').each(enable);
-                    element.find('input').each(enable);
-                    element.find('button').each(enable);
-                    element.find('select').each(enable);
-                    element.find('textarea').each(enable);
+                    element.find('input').filter(filterIgnored).each(enable);
+                    element.find('input').filter(filterIgnored).each(enable);
+                    element.find('button').filter(filterIgnored).each(enable);
+                    element.find('select').filter(filterIgnored).each(enable);
+                    element.find('textarea').filter(filterIgnored).each(enable);
                 }
             });
         }

@@ -40,6 +40,7 @@ public class LoginEventsTest extends AbstractConsoleTest {
 
     @Test
     public void userAccessEventsTest() {
+        deleteAllCookiesForTestRealm();
         testRealmAdminConsolePage.navigateTo();
         Users.setPasswordFor(testUser, "Wrong_password");
         testRealmLoginPage.form().login(testUser);

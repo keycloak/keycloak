@@ -61,7 +61,7 @@ public abstract class RequestAuthenticator {
         if (log.isTraceEnabled()) {
             log.trace("try bearer");
         }
-        
+
         AuthOutcome outcome = bearer.authenticate(facade);
         if (outcome == AuthOutcome.FAILED) {
             challenge = bearer.getChallenge();
@@ -74,18 +74,36 @@ public abstract class RequestAuthenticator {
             return AuthOutcome.AUTHENTICATED;
         }
 
+        QueryParamterTokenRequestAuthenticator queryParamAuth = createQueryParamterTokenRequestAuthenticator();
+        if (log.isTraceEnabled()) {
+            log.trace("try query paramter auth");
+        }
+
+        outcome = queryParamAuth.authenticate(facade);
+        if (outcome == AuthOutcome.FAILED) {
+            challenge = queryParamAuth.getChallenge();
+            log.debug("QueryParamAuth auth FAILED");
+            return AuthOutcome.FAILED;
+        } else if (outcome == AuthOutcome.AUTHENTICATED) {
+            if (verifySSL()) return AuthOutcome.FAILED;
+            log.debug("QueryParamAuth AUTHENTICATED");
+            completeAuthentication(queryParamAuth, "KEYCLOAK");
+            return AuthOutcome.AUTHENTICATED;
+        }
+
         if (deployment.isEnableBasicAuth()) {
             BasicAuthRequestAuthenticator basicAuth = createBasicAuthAuthenticator();
             if (log.isTraceEnabled()) {
                 log.trace("try basic auth");
             }
-    
+
             outcome = basicAuth.authenticate(facade);
             if (outcome == AuthOutcome.FAILED) {
                 challenge = basicAuth.getChallenge();
                 log.debug("BasicAuth FAILED");
                 return AuthOutcome.FAILED;
             } else if (outcome == AuthOutcome.AUTHENTICATED) {
+                if (verifySSL()) return AuthOutcome.FAILED;
                 log.debug("BasicAuth AUTHENTICATED");
                 completeAuthentication(basicAuth, "BASIC");
                 return AuthOutcome.AUTHENTICATED;
@@ -150,6 +168,10 @@ public abstract class RequestAuthenticator {
         return new BasicAuthRequestAuthenticator(deployment);
     }
 
+    protected QueryParamterTokenRequestAuthenticator createQueryParamterTokenRequestAuthenticator() {
+        return new QueryParamterTokenRequestAuthenticator(deployment);
+    }
+
     protected void completeAuthentication(OAuthRequestAuthenticator oauth) {
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, tokenStore, oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), oauth.getRefreshToken());
         final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(AdapterUtils.getPrincipalName(deployment, oauth.getToken()), session);
@@ -158,10 +180,12 @@ public abstract class RequestAuthenticator {
     }
 
     protected abstract void completeOAuthAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
+
     protected abstract void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal, String method);
 
     /**
      * After code is received, we change the session id if possible to guard against https://www.owasp.org/index.php/Session_Fixation
+     *
      * @param create
      * @return
      */

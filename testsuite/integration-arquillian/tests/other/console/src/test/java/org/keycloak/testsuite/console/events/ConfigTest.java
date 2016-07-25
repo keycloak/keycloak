@@ -25,7 +25,9 @@ public class ConfigTest extends AbstractConsoleTest {
     @Test
     public void configLoginEventsTest() {
         configPage.form().setSaveEvents(true);
-        configPage.form().addSaveType("REGISTER_NODE");
+        // IE webdriver has problem with clicking not visible (scrolling is needed) items in the menu,
+        // so we need to select some type from the beginning of the menu
+        configPage.form().addSaveType("CLIENT_INFO");
         //after removeSavedType method stay input focused -> in phantomjs drop menu doesn't appear after first click
         configPage.form().removeSaveType("LOGIN");
         configPage.form().setExpiration("50", "Days");
@@ -35,7 +37,7 @@ public class ConfigTest extends AbstractConsoleTest {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         assertTrue(realm.isEventsEnabled());
         assertFalse(realm.getEnabledEventTypes().contains("LOGIN"));
-        assertTrue(realm.getEnabledEventTypes().contains("REGISTER_NODE"));
+        assertTrue(realm.getEnabledEventTypes().contains("CLIENT_INFO"));
         assertEquals(4320000L, realm.getEventsExpiration().longValue());
     }
 

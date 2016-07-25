@@ -17,12 +17,19 @@
 
 package org.keycloak.testsuite;
 
+import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.reflections.Reflections;
+import org.keycloak.events.Details;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.util.OAuthClient;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
@@ -73,5 +80,24 @@ public abstract class TestRealmKeycloakTest extends AbstractKeycloakTest {
      * @param testRealm The realm read from /testrealm.json.
      */
     public abstract void configureTestRealm(RealmRepresentation testRealm);
+
+
+    protected IDToken sendTokenRequestAndGetIDToken(EventRepresentation loginEvent) {
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+        Assert.assertEquals(200, response.getStatusCode());
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+        Field eventsField = Reflections.findDeclaredField(this.getClass(), "events");
+        if (eventsField != null) {
+            AssertEvents events = Reflections.getFieldValue(eventsField, this, AssertEvents.class);
+            events.expectCodeToToken(codeId, sessionId).assertEvent();
+        }
+        return idToken;
+    }
 
 }
