@@ -27,6 +27,9 @@ import org.keycloak.admin.client.resource.ServerInfoResource;
 import org.keycloak.admin.client.token.TokenManager;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
+
 import java.net.URI;
 import java.security.KeyStore;
 
@@ -46,6 +49,7 @@ public class Keycloak {
     private String authToken;
     private final ResteasyWebTarget target;
     private final ResteasyClient client;
+    private static final boolean authServerSslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
 
     Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, ResteasyClient resteasyClient, String authtoken) {
         config = new Config(serverUrl, realm, username, password, clientId, clientSecret, grantType);
@@ -68,6 +72,20 @@ public class Keycloak {
                 .connectionPoolSize(10).build();
 
         return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, client, null);
+    }
+
+    private static ResteasyClientBuilder newResteasyClientBuilder() {
+        if (authServerSslRequired) {
+            // Disable PKIX path validation errors when running tests using SSL
+            HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+                @Override
+                public boolean verify(String hostName, SSLSession session) {
+                    return true;
+                }
+            };
+            return new ResteasyClientBuilder().disableTrustManager().hostnameVerifier(hostnameVerifier);
+        }
+        return new ResteasyClientBuilder();
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret) {

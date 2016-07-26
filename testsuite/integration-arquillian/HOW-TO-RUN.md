@@ -296,3 +296,15 @@ To run the tests run:
 * **Supported version:** 11
 * **Driver download required:** [Internet Explorer Driver Server](http://www.seleniumhq.org/download/); recommended version [2.53.1 32-bit](http://selenium-release.storage.googleapis.com/2.53/IEDriverServer_Win32_2.53.1.zip)
 * **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe`
+ 
+## Run X.509 tests
+
+To run the X.509 client certificate authentication tests:
+
+    mvn -f testsuite/integration-arquillian/pom.xml \
+          clean install \
+	  -Pauth-server-wildfly \
+	  -Dauth.server.ssl.required \
+	  -Dbrowser=phantomjs \
+	  "-Dtest=*.x509.*"
+
