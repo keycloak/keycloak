@@ -174,7 +174,7 @@ public class UserInfoEndpoint {
         }
 
         AccessToken userInfo = new AccessToken();
-        tokenManager.transformAccessToken(session, userInfo, realm, clientModel, userModel, userSession, clientSession);
+        tokenManager.transformUserInfoAccessToken(session, userInfo, realm, clientModel, userModel, userSession, clientSession);
 
         event.success();
 

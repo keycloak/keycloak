@@ -39,7 +39,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
+public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -113,11 +113,22 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         return token;
     }
 
+    @Override
+    public AccessToken transformUserInfoToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
+
+        if (!OIDCAttributeMapperHelper.includeInUserInfo(mappingModel)) {
+            return token;
+        }
+
+        setClaim(token, mappingModel, userSession);
+        return token;
+    }
+
     public static ProtocolMapperModel createClaimMapper(String name,
-                                      String userAttribute,
-                                      String tokenClaimName, String claimType,
-                                      boolean consentRequired, String consentText,
-                                      boolean accessToken, boolean idToken, boolean multivalued) {
+                                                        String userAttribute,
+                                                        String tokenClaimName, String claimType,
+                                                        boolean consentRequired, String consentText,
+                                                        boolean accessToken, boolean idToken, boolean multivalued) {
         ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
                 tokenClaimName, claimType,
                 consentRequired, consentText,
