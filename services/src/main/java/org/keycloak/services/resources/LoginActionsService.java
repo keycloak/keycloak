@@ -895,7 +895,7 @@ public class LoginActionsService {
                 return AuthenticationManager.finishedRequiredActions(session, userSession, clientSession, clientConnection, request, uriInfo, event);
 
             }
-       }
+        }
         if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
             return context.getChallenge();
         }
