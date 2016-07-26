@@ -17,7 +17,8 @@ can identify them more easily and also know what they actually mean
 * *Description*
 +
 A string with more details about this policy
-+
+
+[[_apply_resource_type]]
 * *Apply To Resource Type*
 +
 Specifies if this permission would be applied to all resources with a given type. When you select this field, you'll be prompted to enter the resource type to protect.

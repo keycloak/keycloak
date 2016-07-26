@@ -65,4 +65,4 @@ if (identity.hasRole('admin') || email.endsWith('@keycloak.org')) {
 ```
 
 When writing your own rules, keep in mind that the *$evaluation* object is just a object implementing *org.keycloak.authorization.policy.evaluation.Evaluation*. For more details about what you can access from this interface,
-please take a look at link::/policy/evaluation-api.adoc[Evaluation API].
+please take a look at link:evaluation-api.adoc[Evaluation API].

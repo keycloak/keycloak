@@ -28,6 +28,7 @@
  .. link:topics/policy/evaluation-api.adoc[Policy Evaluation API]
  . link:topics/permission/overview.adoc[Managing Permissions]
  .. link:topics/permission/create-resource.adoc[Creating Resource-based Permissions]
+ ... link:topics/permission/typed-resource-permission.adoc[Typed Resource Permissions]
  .. link:topics/permission/create-scope.adoc[Creating Scope-based Permissions]
  .. link:topics/permission/decision-strategy.adoc[Policy Decision Strategies]
  . link:topics/policy-evaluation-tool/overview.adoc[Evaluating and Testing Policies]

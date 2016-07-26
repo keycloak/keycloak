@@ -10,8 +10,8 @@ http://${host}:${port}/auth/realms/${realm_name}/authz/authorize
 
 When asking for a RPT, you need to provide two main things:
 
-* A permission ticket with the resources you want to access
-* The AAT (as a bearer token) representing user's identity and his consent to access authorization data on his behalf.
+* A link:../protection/permission-api-papi.adoc[Permission Ticket] with the resources you want to access
+* The link:./whatis-obtain-aat.adoc[AAT] (as a bearer token) representing user's identity and his consent to access authorization data on his behalf.
 
 ```bash
 curl -X POST

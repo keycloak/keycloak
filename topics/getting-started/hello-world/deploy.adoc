@@ -57,3 +57,27 @@ policy that only grants access to users belonging to the realm of the client.
 
 You can start playing around by changing the default permissions and policies and check how your application will behave. Or even create new policies using the different
 link:../../policy/overview.html[Policy Types] provided by {{book.project.name}}.
+
+There are a plenty of things you can do now to test this application. For instance, try to change the `Default Policy` as follows:
+
+```js
+// let's see what happens when we call $evaluation.deny()
+$evaluation.grant();
+
+```
+
+Now, try to logout from the application and log in again. You should no longer be able to access the application.
+
+image:../../../images/getting-started/hello-world/access-denied-page.png[alt="Access Denied Page"]
+
+Let's fix that now, but instead of changing the `Default Policy` code we are just going to change the `Logic` to `Negative`. That should bring back access to the application
+as we are just negating the result of that policy, which is by default denying all requests for access. Again, before testing this change, please logout and log in again.
+
+=== Next Steps
+
+There are a lot of other things you can do from now on, such as:
+
+* Create a scope, define a policy and permission for it and check on the application side if the user is allowed to perform some action (or anything else represented by the scope you created)
+* Create different types of policies such as link:../../policy/role-policy.adoc[Role-Based], link:../../policy/user-policy.adoc[User-Based], link:../../policy/time-policy.adoc[Time-Based], link:../../policy/aggregated-policy.adoc[Aggregated Policies], link:../../policy/drools-policy.adoc[Drools-Based]. And associate these policies with the `Default Permission`
+* Apply multiple policies to the `Default Permission` and check behavior. For instance, try to mix multiple policies and change the `Decision Strategy` accordingly
+* Checkout the link:../../enforcer/authorization-context.adoc[Obtaining the Authorization Context] topic for more details about how to check for permissions inside your application
