@@ -6,7 +6,7 @@ to enforce authorization decisions at the resource server side.
 There are two main use cases where token introspection may help you:
 
 * When clients applications need to check the token validity in order to obtain a new one with the same or even additional permissions
-* When enforcing authorization decisions at the resource server side, specially when none of the built-in link:../enforcer/overview.html[Policy Enforcers] fits to your application
+* When enforcing authorization decisions at the resource server side, specially when none of the built-in link:../../enforcer/overview.html[Policy Enforcers] fits to your application
 
 === Obtaining information about a RPT
 
@@ -74,7 +74,7 @@ Not really. Both link:../../service/authorization/authorization-api.html[Authori
 In case you want to validate these tokens without a remote call to the introspection endpoint you can decode the RPT and check for its validity locally. Once you decode the token,
 you can also use the permissions within the token to enforce authorization decisions.
 
-This is pretty much what the link:../enforcer/overview.html[Policy enforcers] do, just make sure to:
+This is pretty much what the link:../../enforcer/overview.html[Policy Enforcers] do, just make sure to:
 
 * Validate RPT's signature (based on realm's public key)
 * Check for token validity based on its _exp_, _iat_ and _aud_ claims

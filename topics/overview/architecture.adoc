@@ -7,13 +7,13 @@ From a design perspective, the {{book.project.module}} are based on a well defin
 * **Policy Administration Point (PAP)**
 +
 Provides a set of UIs based on {{book.project.name}} Administration Console to manage resource servers, resources, scopes, permissions and policies.
-Part of this also accomplished remotely through the use of the link:../service/protection-api.html[Protection API].
+Part of this also accomplished remotely through the use of the link:../service/protection/protection-api.adoc[Protection API].
 +
 
 * **Policy Decision Point (PDP)**
 +
 Provides a distributable policy decision point to where authorization requests are sent and policies are evaluated accordingly with the permissions being requested. Part of this also accomplished remotely through the use of the
-link:../service/authorization-api.html[Authorization] and link:../service/entitlement-api.html[Entitlement] APIs.
+link:../service/authorization/authorization-api.adoc[Authorization] and link:../service/entitlement/entitlement-api.adoc[Entitlement] APIs.
 +
 
 * **Policy Enforcement Point (PEP)**
@@ -52,7 +52,7 @@ A Resource can be a web page, a RESTFul resource, a file in your filesystem, an 
 For instance, you may have a _Bank Account_ resource that represents all banking accounts and use it to define the authorization policies that are common to all banking accounts. However,
 you may want to define specific policies for _Alice Account_ (a resource instance that belongs to a customer), where only the owner is allowed to access some information or perform an operation.
 
-Resources can be managed using {{book.project.name}} Administration Console or the link:../service/protection-api.html[Protection API]. In the latter case, resource servers are able to
+Resources can be managed using {{book.project.name}} Administration Console or the link:../service/protection/protection-api.adoc[Protection API]. In the latter case, resource servers are able to
 manage their resources remotely.
 
 Scopes usually represent the actions that can be performed on a resource, but they are not limited to that. You can also use scopes to represent a single or multiple attributes within a resource.
@@ -120,11 +120,11 @@ When using the UMA protocol, the issuance of Permission Tickets by the Protectio
 being requested by client and that are sent to the server in order to obtain a final token with all permissions granted during the evaluation of the permissions and policies
 associated with the resources and scopes being requested.
 
-For more information, see link:../service/protection-api.html[Protection API].
+For more information, see link:../service/protection/protection-api.adoc[Protection API].
 
 ==== Authorization API
 
-The *Authorization API* is also a https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA-compliant] endpoint providing a single operation that exchanges an ID Token and _Permission Ticket_
+The *Authorization API* is also a https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA-compliant] endpoint providing a single operation that exchanges an Access Token and link:./terminology.adoc#_permission_ticket[Permission Ticket].
 with a *Requesting Party Token* or *RPT*.
 
 The RPT holds all permissions granted to a client and can be used to call a resource server in order to get access to its protected resources.
@@ -134,18 +134,18 @@ within a permission ticket.
 
 image:../../images/authz-calls.png[alt="Authorization API Overview"]
 
-For more information, see link:../service/authorization-api.html[Authorization API].
+For more information, see link:../service/authorization/authorization-api.adoc[Authorization API].
 
 === Entitlement API
 
-The *Entitlement API* provides a 1-legged protocol to issue RPTs. Unlike the _Authorization API_, the Entitlement API only expects an ID Token.
+The *Entitlement API* provides a 1-legged protocol to issue RPTs. Unlike the _Authorization API_, the Entitlement API only expects an Access Token.
 
 From this API you can obtain all the entitlements or permissions for an user (based on the resources managed by a given resource server) or just the entitlements for a set of
 one or more resources.
 
 image:../../images/entitlement-calls.png[alt="Entitlement API Overview"]
 
-For more informationm, see link:../service/entitlement-api.html[Entitlement API].
+For more informationm, see link:../service/entitlement/entitlement-api.adoc[Entitlement API].
 
 
 

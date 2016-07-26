@@ -1,4 +1,4 @@
-== Creating Resource-based Permissions
+== Creating Scope-based Permissions
 
 A Scope-based permission defines a set of one or more scopes to protect using a set of one or more authorization policies. Unlike the resource-based permissions, this permission type
 allows you to create permissions not only for a resource, but also for the scopes associated with it, providing more granularity when defining the permissions that govern your resources and the

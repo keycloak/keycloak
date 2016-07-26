@@ -13,7 +13,8 @@ In {{book.project.name}}, a resource defines a small set of information that is 
 * *Name*
 +
 A human-readable and unique string describing a set of one or more resources.
-+
+
+[[_type]]
 * *Type*
 +
 A string uniquely identifying the type of a set of one or more resources. Usually, the type is a URN that can be used to
@@ -40,7 +41,7 @@ However, resources can also be associated with your users, so you can create per
 
 === Managing Resources Remotely
 
-Resource management is also exposed through the link:../service/protection-api.html[Protection API] to allow resource servers to remotely manage their resources.
+Resource management is also exposed through the link:../service/protection/protection-api.html[Protection API] to allow resource servers to remotely manage their resources.
 
 When using the Protection API, resource servers can be implemented to manage resources owned by their users. In this case, you can
 specify the user identifier to configure a resource as belonging to a specific user.
