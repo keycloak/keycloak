@@ -138,7 +138,7 @@ For more information, see link:../service/authorization-api.html[Authorization A
 
 === Entitlement API
 
-The *Entitlement API* provides a 1-legged protocol to issue RPTs. Unlike the_Authorization API_, the Entitlement API only expects an ID Token.
+The *Entitlement API* provides a 1-legged protocol to issue RPTs. Unlike the _Authorization API_, the Entitlement API only expects an ID Token.
 
 From this API you can obtain all the entitlements or permissions for an user (based on the resources managed by a given resource server) or just the entitlements for a set of
 one or more resources.
