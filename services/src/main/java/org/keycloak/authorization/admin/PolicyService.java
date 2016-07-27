@@ -154,7 +154,11 @@ public class PolicyService {
         }
 
         policyStore.findDependentPolicies(id).forEach(dependentPolicy -> {
-            dependentPolicy.removeAssociatedPolicy(policy);
+            if (dependentPolicy.getAssociatedPolicies().size() == 1) {
+                policyStore.delete(dependentPolicy.getId());
+            } else {
+                dependentPolicy.removeAssociatedPolicy(policy);
+            }
         });
 
         policyStore.delete(policy.getId());
@@ -271,7 +275,6 @@ public class PolicyService {
             }
 
             StoreFactory storeFactory = authorization.getStoreFactory();
-            PolicyStore policyStore = storeFactory.getPolicyStore();
 
             for (String scopeId : scopeIds) {
                 boolean hasScope = false;

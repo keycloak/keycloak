@@ -53,7 +53,7 @@
         }
       ],
       "realmRoles": [
-        "user", "admin", "uma_authorization"
+        "admin", "uma_authorization"
       ],
       "clientRoles": {
         "realm-management": [

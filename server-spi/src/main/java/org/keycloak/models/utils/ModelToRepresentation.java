@@ -218,6 +218,8 @@ public class ModelToRepresentation {
         rep.setDescription(role.getDescription());
         rep.setScopeParamRequired(role.isScopeParamRequired());
         rep.setComposite(role.isComposite());
+        rep.setClientRole(role.isClientRole());
+        rep.setContainerId(role.getContainerId());
         return rep;
     }
 

@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -99,7 +100,7 @@ public class CachedPolicyStore implements PolicyStore {
 
     @Override
     public List<Policy> findByResourceServer(String resourceServerId) {
-        return getDelegate().findByResourceServer(resourceServerId);
+        return getDelegate().findByResourceServer(resourceServerId).stream().map(policy -> findById(policy.getId())).collect(Collectors.toList());
     }
 
     @Override
@@ -179,12 +180,12 @@ public class CachedPolicyStore implements PolicyStore {
 
     @Override
     public List<Policy> findByType(String type) {
-        return getDelegate().findByType(type);
+        return getDelegate().findByType(type).stream().map(policy -> findById(policy.getId())).collect(Collectors.toList());
     }
 
     @Override
     public List<Policy> findDependentPolicies(String id) {
-        return getDelegate().findDependentPolicies(id);
+        return getDelegate().findDependentPolicies(id).stream().map(policy -> findById(policy.getId())).collect(Collectors.toList());
     }
 
     private String getCacheKeyForPolicy(String policyId) {

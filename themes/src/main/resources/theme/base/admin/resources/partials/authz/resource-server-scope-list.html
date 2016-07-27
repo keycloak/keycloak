@@ -24,11 +24,33 @@
             </tr>
             <tr data-ng-hide="scopes.length == 0">
                 <th>{{:: 'name' | translate}}</th>
+                <th>{{:: 'authz-resources' | translate}}</th>
+                <th>{{:: 'authz-permissions' | translate}}</th>
+                <th>{{:: 'actions' | translate}}</th>
             </tr>
         </thead>
         <tbody>
             <tr ng-repeat="scope in scopes | filter:search | orderBy:'name'">
                 <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope/{{scope.id}}">{{scope.name}}</a></td>
+                <td>
+                    <span data-ng-show="!scope.resources.length">{{:: 'authz-no-resources-assigned' | translate}}</span>
+                    <span data-ng-show="scope.resources.length > 0">
+                        <span ng-repeat="resource in scope.resources">
+                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource/{{resource._id}}">{{resource.name}}</a>{{$last ? '' : ', '}}
+                        </span>
+                    </span>
+                </td>
+                <td>
+                    <span data-ng-show="!scope.policies.length">{{:: 'authz-no-permission-assigned' | translate}}</span>
+                    <span data-ng-show="scope.policies.length > 0">
+                        <span ng-repeat="policy in scope.policies">
+                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission/{{policy.type}}/{{policy.id}}">{{policy.name}}</a>{{$last ? '' : ', '}}
+                        </span>
+                    </span>
+                </td>
+                <td class="kc-action-cell" style="vertical-align: middle">
+                    <button class="btn btn-default btn-block btn-sm" ng-click="createPolicy(scope);">{{:: 'authz-create-permission' | translate}}</button>
+                </td>
             </tr>
             <tr data-ng-show="(scopes | filter:search).length == 0">
                 <td class="text-muted" colspan="3" data-ng-show="search.name">{{:: 'no-results' | translate}}</td>

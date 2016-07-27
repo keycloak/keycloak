@@ -76,17 +76,28 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         pause(500);
     }
 
-    public void login(String username, String password) {
+    public void login(String username, String password) throws InterruptedException {
         navigateTo();
-
+        Thread.sleep(2000);
         if (this.driver.getCurrentUrl().startsWith(getInjectedUrl().toString())) {
+            Thread.sleep(2000);
             logOut();
+            navigateTo();
         }
+
+        Thread.sleep(2000);
 
         this.loginPage.form().login(username, password);
     }
 
     public boolean wasDenied() {
         return this.driver.findElement(By.id("output")).getText().contains("You can not access");
+    }
+
+    public void viewAlbum(String name) {
+        By id = By.id("view-" + name);
+        WaitUtils.waitUntilElement(id);
+        this.driver.findElements(id).forEach(WebElement::click);
+        pause(500);
     }
 }

@@ -19,6 +19,10 @@ package org.keycloak.authorization.identity;
 
 import org.keycloak.authorization.attribute.Attributes;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.function.Predicate;
+
 /**
  * <p>Represents a security identity, which can be a person or non-person entity that was previously authenticated.
  *
@@ -45,13 +49,53 @@ public interface Identity {
     Attributes getAttributes();
 
     /**
-     * Indicates if this identity is granted with a role with the given <code>roleName</code>.
+     * Indicates if this identity is granted with a role (realm or client) with the given <code>roleName</code>.
      *
      * @param roleName the name of the role
      *
      * @return true if the identity has the given role. Otherwise, it returns false.
      */
     default boolean hasRole(String roleName) {
-        return getAttributes().containsValue("roles", roleName);
+        return hasRealmRole(roleName) || hasClientRole(roleName);
+    }
+
+    /**
+     * Indicates if this identity is granted with a realm role with the given <code>roleName</code>.
+     *
+     * @param roleName the name of the role
+     *
+     * @return true if the identity has the given role. Otherwise, it returns false.
+     */
+    default boolean hasRealmRole(String roleName) {
+        return getAttributes().containsValue("kc.realm.roles", roleName);
+    }
+
+    /**
+     * Indicates if this identity is granted with a client role with the given <code>roleName</code>.
+     *
+     * @param clientId the client id
+     * @param roleName the name of the role
+     *
+     * @return true if the identity has the given role. Otherwise, it returns false.
+     */
+    default boolean hasClientRole(String clientId, String roleName) {
+        return getAttributes().containsValue("kc.client." + clientId + ".roles", roleName);
+    }
+
+    /**
+     * Indicates if this identity is granted with a client role with the given <code>roleName</code>.
+     *
+     * @param roleName the name of the role
+     *
+     * @return true if the identity has the given role. Otherwise, it returns false.
+     */
+    default boolean hasClientRole(String roleName) {
+        return getAttributes().toMap().entrySet().stream().filter(entry -> {
+            String key = entry.getKey();
+            if (key.startsWith("kc.client") && key.endsWith(".roles")) {
+                return getAttributes().containsValue(key, roleName);
+            }
+            return false;
+        }).findFirst().isPresent();
     }
 }

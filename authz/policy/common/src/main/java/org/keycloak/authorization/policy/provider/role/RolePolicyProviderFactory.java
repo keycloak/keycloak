@@ -34,7 +34,9 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -81,11 +83,17 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory {
                 RoleModel removedRole = ((RoleRemovedEvent) event).getRole();
 
                 policyStore.findByType(getId()).forEach(policy -> {
-                    List<String> roles = new ArrayList<>();
+                    List<Map> roles = new ArrayList<>();
 
-                    for (String roleId : getRoles(policy)) {
-                        if (!roleId.equals(removedRole.getId())) {
-                            roles.add(roleId);
+                    for (Map<String,Object> role : getRoles(policy)) {
+                        if (!role.get("id").equals(removedRole.getId())) {
+                            Map updated = new HashMap();
+                            updated.put("id", role.get("id"));
+                            Object required = role.get("required");
+                            if (required != null) {
+                                updated.put("required", required);
+                            }
+                            roles.add(updated);
                         }
                     }
 
@@ -96,7 +104,9 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory {
                             });
                             policyStore.delete(policy.getId());
                         } else {
-                            policy.getConfig().put("roles", JsonSerialization.writeValueAsString(roles));
+                            Map<String, String> config = policy.getConfig();
+                            config.put("roles", JsonSerialization.writeValueAsString(roles));
+                            policy.setConfig(config);
                         }
                     } catch (IOException e) {
                         throw new RuntimeException("Error while synchronizing roles with policy [" + policy.getName() + "].", e);
@@ -116,17 +126,17 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory {
         return "role";
     }
 
-    static String[] getRoles(Policy policy) {
+    static Map<String, Object>[] getRoles(Policy policy) {
         String roles = policy.getConfig().get("roles");
 
         if (roles != null) {
             try {
-                return JsonSerialization.readValue(roles.getBytes(), String[].class);
+                return JsonSerialization.readValue(roles.getBytes(), Map[].class);
             } catch (IOException e) {
                 throw new RuntimeException("Could not parse roles [" + roles + "] from policy config [" + policy.getName() + ".", e);
             }
         }
 
-        return new String[]{};
+        return new Map[] {};
     }
 }

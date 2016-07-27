@@ -98,7 +98,7 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByScope(String... id) {
-        Query query = entityManager.createQuery("from ResourceEntity r inner join r.scopes s where s.id in (:scopeIds)");
+        Query query = entityManager.createQuery("select r from ResourceEntity r inner join r.scopes s where s.id in (:scopeIds)");
 
         query.setParameter("scopeIds", Arrays.asList(id));
 
