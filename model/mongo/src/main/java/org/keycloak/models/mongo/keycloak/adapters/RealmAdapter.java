@@ -1311,20 +1311,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             copy.add(entity);
 
         }
-        Collections.sort(copy, new Comparator<StorageProviderEntity>() {
-
-            @Override
-            public int compare(StorageProviderEntity o1, StorageProviderEntity o2) {
-                return o1.getPriority() - o2.getPriority();
-            }
-
-        });
         List<StorageProviderModel> result = new LinkedList<>();
         for (StorageProviderEntity entity : copy) {
             result.add(new StorageProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName()
                     ));
         }
 
+        Collections.sort(result, StorageProviderModel.comparator);
         return Collections.unmodifiableList(result);
     }
 
