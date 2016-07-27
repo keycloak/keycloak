@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.saml;
 
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.common.util.PemUtils;
@@ -74,6 +75,7 @@ public class ValidationTest {
         } catch (SAXException e) {
             System.out.println(xmlFile.getSystemId() + " is NOT valid");
             System.out.println("Reason: " + e.getLocalizedMessage());
+            Assert.fail();
         }
     }
     @Test
@@ -93,6 +95,7 @@ public class ValidationTest {
         } catch (SAXException e) {
             System.out.println(xmlFile.getSystemId() + " is NOT valid");
             System.out.println("Reason: " + e.getLocalizedMessage());
+            Assert.fail();
         }
     }
 }

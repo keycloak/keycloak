@@ -245,11 +245,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-federation</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-undertow</artifactId>
             <scope>test</scope>
