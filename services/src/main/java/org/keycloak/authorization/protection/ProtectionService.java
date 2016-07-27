@@ -28,6 +28,7 @@ import org.keycloak.authorization.protection.permission.PermissionService;
 import org.keycloak.authorization.protection.permission.PermissionsService;
 import org.keycloak.authorization.protection.resource.ResourceService;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ErrorResponseException;
 
@@ -48,16 +49,12 @@ public class ProtectionService {
     @Path("/resource_set")
     public Object resource() {
         KeycloakIdentity identity = createIdentity();
-
-        if (!identity.hasRole("uma_protection")) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_SCOPE, "Requires uma_protection scope.", Status.FORBIDDEN);
-        }
-
-        ResourceSetService resourceManager = new ResourceSetService(getResourceServer(identity), this.authorization, null);
+        ResourceServer resourceServer = getResourceServer(identity);
+        ResourceSetService resourceManager = new ResourceSetService(resourceServer, this.authorization, null);
 
         ResteasyProviderFactory.getInstance().injectProperties(resourceManager);
 
-        ResourceService resource = new ResourceService(getResourceServer(identity), identity, resourceManager, this.authorization);
+        ResourceService resource = new ResourceService(resourceServer, identity, resourceManager, this.authorization);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 
@@ -67,10 +64,6 @@ public class ProtectionService {
     @Path("/permission")
     public Object permission() {
         KeycloakIdentity identity = createIdentity();
-
-        if (!identity.hasRole("uma_protection")) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_SCOPE, "Requires uma_protection scope.", Status.FORBIDDEN);
-        }
 
         PermissionService resource = new PermissionService(identity, getResourceServer(identity), this.authorization);
 
@@ -83,10 +76,6 @@ public class ProtectionService {
     public Object permissions() {
         KeycloakIdentity identity = createIdentity();
 
-        if (!identity.hasRole("uma_protection")) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_SCOPE, "Requires uma_protection scope.", Status.FORBIDDEN);
-        }
-
         PermissionsService resource = new PermissionsService(identity, getResourceServer(identity), this.authorization);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
@@ -95,7 +84,17 @@ public class ProtectionService {
     }
 
     private KeycloakIdentity createIdentity() {
-        return new KeycloakIdentity(this.authorization.getKeycloakSession());
+        KeycloakIdentity identity = new KeycloakIdentity(this.authorization.getKeycloakSession());
+        ResourceServer resourceServer = getResourceServer(identity);
+        KeycloakSession keycloakSession = authorization.getKeycloakSession();
+        RealmModel realm = keycloakSession.getContext().getRealm();
+        ClientModel client = realm.getClientById(resourceServer.getClientId());
+
+        if (!identity.hasClientRole(client.getClientId(), "uma_protection")) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_SCOPE, "Requires uma_protection scope.", Status.FORBIDDEN);
+        }
+
+        return identity;
     }
 
     private ResourceServer getResourceServer(Identity identity) {

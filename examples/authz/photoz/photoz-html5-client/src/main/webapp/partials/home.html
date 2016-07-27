@@ -1,4 +1,4 @@
-<h2><span>Welcome To Photoz, {{Identity.claims.name}}</span> [<a href="" ng-click="Identity.logout()">Sign Out</a>]</h2>
+<h2><span>Welcome To Photoz, {{Identity.claims.name}}</span></h2>
 <div data-ng-show="Identity.isAdmin()"><b>Administration: </b> [<a href="#/admin/album" id="admin-albums">All Albums</a>]</div>
 <hr/>
 <br/>
@@ -15,7 +15,7 @@
     </thead>
     <tbody>
         <tr data-ng-repeat="p in albums">
-            <td><a href="#/album/{{p.id}}">{{p.name}}</a> - [<a href="#" id="delete-{{p.name}}" ng-click="deleteAlbum(p)">X</a>]</td>
+            <td><a id="view-{{p.name}}" href="#/album/{{p.id}}">{{p.name}}</a> - [<a href="#" id="delete-{{p.name}}" ng-click="deleteAlbum(p)">X</a>]</td>
         </tr>
     </tbody>
 </table>

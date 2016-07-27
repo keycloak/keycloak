@@ -95,7 +95,7 @@ public interface Attributes {
         private final String[] values;
         private final String name;
 
-        Entry(String name, Collection<String> values) {
+        public Entry(String name, Collection<String> values) {
             this.name = name;
             this.values = values.toArray(new String[values.size()]);
         }

@@ -17,8 +17,6 @@
  */
 package org.keycloak.authorization.admin;
 
-import org.jboss.resteasy.plugins.providers.multipart.InputPart;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.util.Models;
@@ -146,7 +144,11 @@ public class ResourceServerService {
                 .stream().map(resource -> {
                     ResourceRepresentation rep = Models.toRepresentation(resource, resourceServer, authorization);
 
-                    rep.getOwner().setId(null);
+                    if (rep.getOwner().getId().equals(this.resourceServer.getClientId())) {
+                        rep.setOwner(null);
+                    } else {
+                        rep.getOwner().setId(null);
+                    }
                     rep.setId(null);
                     rep.setPolicies(null);
                     rep.getScopes().forEach(scopeRepresentation -> {
@@ -175,15 +177,8 @@ public class ResourceServerService {
             ScopeRepresentation rep = Models.toRepresentation(scope, authorization);
 
             rep.setId(null);
-
-            rep.getPolicies().forEach(policyRepresentation -> {
-                policyRepresentation.setId(null);
-                policyRepresentation.setConfig(null);
-                policyRepresentation.setType(null);
-                policyRepresentation.setDecisionStrategy(null);
-                policyRepresentation.setDescription(null);
-                policyRepresentation.setDependentPolicies(null);
-            });
+            rep.setPolicies(null);
+            rep.setResources(null);
 
             return rep;
         }).collect(Collectors.toList());
@@ -258,131 +253,74 @@ public class ResourceServerService {
             String roles = config.get("roles");
 
             if (roles != null && !roles.isEmpty()) {
-                roles = roles.replace("[", "");
-                roles = roles.replace("]", "");
-
-                if (!roles.isEmpty()) {
-                    String roleNames = "";
-
-                    for (String role : roles.split(",")) {
-                        if (!roleNames.isEmpty()) {
-                            roleNames = roleNames + ",";
-                        }
-
-                        role = role.replace("\"", "");
-
-                        roleNames = roleNames + "\"" + this.realm.getRole(role).getId() + "\"";
-                    }
-
-                    config.put("roles", "[" + roleNames + "]");
+                try {
+                    List<Map> rolesMap = JsonSerialization.readValue(roles, List.class);
+                    config.put("roles", JsonSerialization.writeValueAsString(rolesMap.stream().map(roleConfig -> {
+                        roleConfig.put("id", realm.getRole(roleConfig.get("id").toString()).getId());
+                        return roleConfig;
+                    }).collect(Collectors.toList())));
+                } catch (Exception e) {
+                    throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
                 }
             }
 
             String users = config.get("users");
 
-            if (users != null) {
-                users = users.replace("[", "");
-                users = users.replace("]", "");
-
-                if (!users.isEmpty()) {
-                    String userNames = "";
-
-                    for (String user : users.split(",")) {
-                        if (!userNames.isEmpty()) {
-                            userNames =  userNames + ",";
-                        }
-
-                        user = user.replace("\"", "");
-
-                        userNames = userNames + "\"" + this.session.users().getUserByUsername(user, this.realm).getId() + "\"";
-                    }
-
-                    config.put("users", "[" + userNames + "]");
+            if (users != null && !users.isEmpty()) {
+                try {
+                    List<String> usersMap = JsonSerialization.readValue(users, List.class);
+                    config.put("users", JsonSerialization.writeValueAsString(usersMap.stream().map(userName -> this.session.users().getUserByUsername(userName, this.realm).getId()).collect(Collectors.toList())));
+                } catch (Exception e) {
+                    throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
                 }
             }
 
             String scopes = config.get("scopes");
 
             if (scopes != null && !scopes.isEmpty()) {
-                scopes = scopes.replace("[", "");
-                scopes = scopes.replace("]", "");
-
-                if (!scopes.isEmpty()) {
-                    String scopeNames = "";
-
-                    for (String scope : scopes.split(",")) {
-                        if (!scopeNames.isEmpty()) {
-                            scopeNames =  scopeNames + ",";
-                        }
-
-                        scope = scope.replace("\"", "");
-
-                        Scope newScope = scopeStore.findByName(scope, resourceServer.getId());
+                try {
+                    List<String> scopesMap = JsonSerialization.readValue(scopes, List.class);
+                    config.put("scopes", JsonSerialization.writeValueAsString(scopesMap.stream().map(scopeName -> {
+                        Scope newScope = scopeStore.findByName(scopeName, resourceServer.getId());
 
                         if (newScope == null) {
-                            throw new RuntimeException("Scope with name [" + scope + "] not defined.");
+                            throw new RuntimeException("Scope with name [" + scopeName + "] not defined.");
                         }
 
-                        scopeNames = scopeNames + "\"" + newScope.getId() + "\"";
-                    }
-
-                    config.put("scopes", "[" + scopeNames + "]");
+                        return newScope.getId();
+                    }).collect(Collectors.toList())));
+                } catch (Exception e) {
+                    throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
                 }
             }
 
             String policyResources = config.get("resources");
 
             if (policyResources != null && !policyResources.isEmpty()) {
-                policyResources = policyResources.replace("[", "");
-                policyResources = policyResources.replace("]", "");
-
-                if (!policyResources.isEmpty()) {
-                    String resourceNames = "";
-
-                    for (String resource : policyResources.split(",")) {
-                        if (!resourceNames.isEmpty()) {
-                            resourceNames =  resourceNames + ",";
-                        }
-
-                        resource = resource.replace("\"", "");
-
-                        if ("".equals(resource)) {
-                            continue;
-                        }
-
-                        resourceNames = resourceNames + "\"" + storeFactory.getResourceStore().findByName(resource, resourceServer.getId()).getId() + "\"";
-                    }
-
-                    config.put("resources", "[" + resourceNames + "]");
+                try {
+                    List<String> resources = JsonSerialization.readValue(policyResources, List.class);
+                    config.put("resources", JsonSerialization.writeValueAsString(resources.stream().map(resourceName -> storeFactory.getResourceStore().findByName(resourceName, resourceServer.getId()).getId()).collect(Collectors.toList())));
+                } catch (Exception e) {
+                    throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
                 }
             }
 
             String applyPolicies = config.get("applyPolicies");
 
             if (applyPolicies != null && !applyPolicies.isEmpty()) {
-                applyPolicies = applyPolicies.replace("[", "");
-                applyPolicies = applyPolicies.replace("]", "");
-
-                if (!applyPolicies.isEmpty()) {
-                    String policyNames = "";
-
-                    for (String pId : applyPolicies.split(",")) {
-                        if (!policyNames.isEmpty()) {
-                            policyNames = policyNames + ",";
-                        }
-
-                        pId = pId.replace("\"", "").trim();
-
-                        Policy policy = policyStore.findByName(pId, resourceServer.getId());
+                try {
+                    List<String> policies = JsonSerialization.readValue(applyPolicies, List.class);
+                    config.put("applyPolicies", JsonSerialization.writeValueAsString(policies.stream().map(policyName -> {
+                        Policy policy = policyStore.findByName(policyName, resourceServer.getId());
 
                         if (policy == null) {
-                            throw new RuntimeException("Policy with name [" + pId + "] not defined.");
+                            throw new RuntimeException("Policy with name [" + policyName + "] not defined.");
                         }
 
-                        policyNames = policyNames + "\"" + policy.getId() + "\"";
-                    }
-
-                    config.put("applyPolicies", "[" + policyNames + "]");
+                        return policy.getId();
+                    }).collect(Collectors.toList())));
+                } catch (Exception e) {
+                    throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
                 }
             }
 
@@ -491,123 +429,59 @@ public class ResourceServerService {
     }
 
     private PolicyRepresentation createPolicyRepresentation(StoreFactory storeFactory, Policy policy) {
-        PolicyRepresentation rep = Models.toRepresentation(policy, authorization);
+        try {
+            PolicyRepresentation rep = Models.toRepresentation(policy, authorization);
 
-        rep.setId(null);
-        rep.setDependentPolicies(null);
+            rep.setId(null);
+            rep.setDependentPolicies(null);
 
-        Map<String, String> config = rep.getConfig();
+            Map<String, String> config = rep.getConfig();
 
-        String roles = config.get("roles");
+            String roles = config.get("roles");
 
-        if (roles != null && !roles.isEmpty()) {
-            roles = roles.replace("[", "");
-            roles = roles.replace("]", "");
-
-            if (!roles.isEmpty()) {
-                String roleNames = "";
-
-                for (String role : roles.split(",")) {
-                    if (!roleNames.isEmpty()) {
-                        roleNames = roleNames + ",";
-                    }
-
-                    role = role.replace("\"", "");
-
-                    roleNames = roleNames + "\"" + this.realm.getRoleById(role).getName() + "\"";
-                }
-
-                config.put("roles", "[" + roleNames + "]");
+            if (roles != null && !roles.isEmpty()) {
+                List<Map> rolesMap = JsonSerialization.readValue(roles, List.class);
+                config.put("roles", JsonSerialization.writeValueAsString(rolesMap.stream().map(roleMap -> {
+                    roleMap.put("id", realm.getRoleById(roleMap.get("id").toString()).getName());
+                    return roleMap;
+                }).collect(Collectors.toList())));
             }
-        }
 
-        String users = config.get("users");
+            String users = config.get("users");
 
-        if (users != null) {
-            users = users.replace("[", "");
-            users = users.replace("]", "");
-
-            if (!users.isEmpty()) {
+            if (users != null && !users.isEmpty()) {
                 UserFederationManager userManager = this.session.users();
-                String userNames = "";
-
-                for (String user : users.split(",")) {
-                    if (!userNames.isEmpty()) {
-                        userNames =  userNames + ",";
-                    }
-
-                    user = user.replace("\"", "");
-
-                    userNames = userNames + "\"" + userManager.getUserById(user, this.realm).getUsername() + "\"";
-                }
-
-                config.put("users", "[" + userNames + "]");
+                List<String> userIds = JsonSerialization.readValue(users, List.class);
+                config.put("users", JsonSerialization.writeValueAsString(userIds.stream().map(userId -> userManager.getUserById(userId, this.realm).getUsername()).collect(Collectors.toList())));
             }
-        }
 
-        String scopes = config.get("scopes");
+            String scopes = config.get("scopes");
 
-        if (scopes != null && !scopes.isEmpty()) {
-            scopes = scopes.replace("[", "");
-            scopes = scopes.replace("]", "");
-
-            if (!scopes.isEmpty()) {
+            if (scopes != null && !scopes.isEmpty()) {
                 ScopeStore scopeStore = storeFactory.getScopeStore();
-                String scopeNames = "";
-
-                for (String scope : scopes.split(",")) {
-                    if (!scopeNames.isEmpty()) {
-                        scopeNames =  scopeNames + ",";
-                    }
-
-                    scope = scope.replace("\"", "");
-
-                    scopeNames = scopeNames + "\"" + scopeStore.findById(scope).getName() + "\"";
-                }
-
-                config.put("scopes", "[" + scopeNames + "]");
+                List<String> scopeIds = JsonSerialization.readValue(scopes, List.class);
+                config.put("scopes", JsonSerialization.writeValueAsString(scopeIds.stream().map(scopeId -> scopeStore.findById(scopeId).getName()).collect(Collectors.toList())));
             }
-        }
 
-        String policyResources = config.get("resources");
+            String policyResources = config.get("resources");
 
-        if (policyResources != null && !policyResources.isEmpty()) {
-            policyResources = policyResources.replace("[", "");
-            policyResources = policyResources.replace("]", "");
-
-            if (!policyResources.isEmpty()) {
+            if (policyResources != null && !policyResources.isEmpty()) {
                 ResourceStore resourceStore = storeFactory.getResourceStore();
-                String resourceNames = "";
-
-                for (String resource : policyResources.split(",")) {
-                    if (!resourceNames.isEmpty()) {
-                        resourceNames =  resourceNames + ",";
-                    }
-
-                    resource = resource.replace("\"", "");
-
-                    resourceNames = resourceNames + "\"" + resourceStore.findById(resource).getName() + "\"";
-                }
-
-                config.put("resources", "[" + resourceNames + "]");
-            }
-        }
-
-        String policyNames = "";
-        Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
-
-        if (!associatedPolicies.isEmpty()) {
-            for (Policy associatedPolicy : associatedPolicies) {
-                if (!policyNames.isEmpty()) {
-                    policyNames = policyNames + ",";
-                }
-
-                policyNames = policyNames + "\"" + associatedPolicy.getName() + "\"";
+                List<String> resourceIds = JsonSerialization.readValue(policyResources, List.class);
+                config.put("resources", JsonSerialization.writeValueAsString(resourceIds.stream().map(resourceId -> resourceStore.findById(resourceId).getName()).collect(Collectors.toList())));
             }
 
-            config.put("applyPolicies", "[" + policyNames + "]");
-        }
+            Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
 
-        return rep;
+            if (!associatedPolicies.isEmpty()) {
+                config.put("applyPolicies", JsonSerialization.writeValueAsString(associatedPolicies.stream().map(associated -> associated.getName()).collect(Collectors.toList())));
+            }
+
+            rep.setAssociatedPolicies(null);
+
+            return rep;
+        } catch (Exception e) {
+            throw new RuntimeException("Error while exporting policy [" + policy.getName() + "].", e);
+        }
     }
 }

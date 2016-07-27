@@ -136,11 +136,19 @@ public class PolicyEvaluationService {
     }
 
     private List<ResourcePermission> createPermissions(PolicyEvaluationRequest representation, EvaluationContext evaluationContext, AuthorizationProvider authorization) {
-        if (representation.isEntitlements()) {
+        List<PolicyEvaluationRequest.Resource> resources = representation.getResources();
+
+        for (PolicyEvaluationRequest.Resource resource : new ArrayList<>(resources)) {
+            if (resource.getId() == null && (resource.getScopes() == null || resource.getScopes().isEmpty())) {
+                resources.remove(resource);
+            }
+        }
+
+        if (representation.isEntitlements() || resources.isEmpty()) {
             return Permissions.all(this.resourceServer, evaluationContext.getIdentity(), authorization);
         }
 
-        return representation.getResources().stream().flatMap((Function<PolicyEvaluationRequest.Resource, Stream<ResourcePermission>>) resource -> {
+        return resources.stream().flatMap((Function<PolicyEvaluationRequest.Resource, Stream<ResourcePermission>>) resource -> {
             Set<String> givenScopes = resource.getScopes();
 
             if (givenScopes == null) {
@@ -157,7 +165,13 @@ public class PolicyEvaluationService {
             } else if (resource.getType() != null) {
                 return storeFactory.getResourceStore().findByType(resource.getType()).stream().map(resource1 -> new ResourcePermission(resource1, scopes, resourceServer));
             } else {
-                return scopes.stream().map(scope -> new ResourcePermission(null, asList(scope), resourceServer));
+                List<ResourcePermission> collect = scopes.stream().map(scope -> new ResourcePermission(null, asList(scope), resourceServer)).collect(Collectors.toList());
+
+                for (Scope scope : scopes) {
+                    collect.addAll(storeFactory.getResourceStore().findByScope(scope.getId()).stream().map(resource12 -> new ResourcePermission(resource12, asList(scope), resourceServer)).collect(Collectors.toList()));
+                }
+
+                return collect.stream();
             }
         }).collect(Collectors.toList());
     }

@@ -34,6 +34,7 @@ public class ScopeRepresentation {
     private String name;
     private String iconUri;
     private List<PolicyRepresentation> policies;
+    private List<ResourceRepresentation> resources;
 
     /**
      * Creates an instance.
@@ -92,6 +93,14 @@ public class ScopeRepresentation {
 
     public void setPolicies(List<PolicyRepresentation> policies) {
         this.policies = policies;
+    }
+
+    public List<ResourceRepresentation> getResources() {
+        return this.resources;
+    }
+
+    public void setResources(List<ResourceRepresentation> resources) {
+        this.resources = resources;
     }
 
     public boolean equals(Object o) {

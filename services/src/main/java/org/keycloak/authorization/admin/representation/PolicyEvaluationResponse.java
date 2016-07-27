@@ -21,14 +21,10 @@ package org.keycloak.authorization.admin.representation;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.admin.util.Models;
-import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.policy.evaluation.Result.PolicyResult;
-import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.authorization.util.Permissions;
-import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -90,8 +86,16 @@ public class PolicyEvaluationResponse {
                 policies.add(toRepresentation(policy, authorization));
             }
 
+            if (rep.getResource().getId() != null) {
+                if (!rep.getScopes().isEmpty()) {
+                    rep.getResource().setName(rep.getResource().getName() + " with scopes " + rep.getScopes().stream().map(ScopeRepresentation::getName).collect(Collectors.toList()));
+                }
+            }
+
             rep.setPolicies(policies);
         }
+
+        resultsRep.sort((o1, o2) -> o1.getResource().getName().compareTo(o2.getResource().getName()));
 
         response.results = resultsRep;
 

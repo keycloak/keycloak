@@ -109,13 +109,7 @@ public class AlbumService {
 
     private void createProtectedResource(Album album) {
         try {
-            HashSet<ScopeRepresentation> scopes = new HashSet<>();
-
-            scopes.add(new ScopeRepresentation(SCOPE_ALBUM_VIEW));
-            scopes.add(new ScopeRepresentation(SCOPE_ALBUM_CREATE));
-            scopes.add(new ScopeRepresentation(SCOPE_ALBUM_DELETE));
-
-            ResourceRepresentation albumResource = new ResourceRepresentation(album.getName(), scopes, "/album/" + album.getId(), "http://photoz.com/album");
+            ResourceRepresentation albumResource = new ResourceRepresentation(album.getName(), new HashSet(), "/album/" + album.getId(), "http://photoz.com/album");
 
             albumResource.setOwner(album.getUserId());
 

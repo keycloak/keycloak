@@ -16,12 +16,10 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -39,7 +37,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertFalse;
@@ -144,7 +141,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
                 }
             }
 
-            this.clientPage.login("admin", "admin");
             this.clientPage.navigateToAdminAlbum();
             this.clientPage.deleteAlbum("Alice-Family-Album");
 
@@ -186,10 +182,124 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
                 }
             }
 
-            this.clientPage.login("admin", "admin");
             this.clientPage.navigateToAdminAlbum();
 
             assertTrue(this.clientPage.wasDenied());
+        } finally {
+            this.deployer.undeploy(RESOURCE_SERVER_ID);
+        }
+    }
+
+    @Test
+    public void testAdminWithoutPermissionsToTypedResource() throws Exception {
+        try {
+            this.deployer.deploy(RESOURCE_SERVER_ID);
+            this.clientPage.login("alice", "alice");
+            this.clientPage.createAlbum("Alice Family Album");
+
+            this.clientPage.login("admin", "admin");
+            this.clientPage.navigateToAdminAlbum();
+
+            assertFalse(this.clientPage.wasDenied());
+
+            this.clientPage.viewAlbum("Alice Family Album");
+
+            assertFalse(this.clientPage.wasDenied());
+
+            for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
+                if ("Album Resource Permission".equals(policy.getName())) {
+                    policy.getConfig().put("applyPolicies", "[\"Any User Policy\"]");
+                    getAuthorizationResource().policies().policy(policy.getId()).update(policy);
+                }
+            }
+
+            this.clientPage.navigateToAdminAlbum();
+            this.clientPage.viewAlbum("Alice Family Album");
+
+            assertTrue(this.clientPage.wasDenied());
+
+            for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
+                if ("Album Resource Permission".equals(policy.getName())) {
+                    policy.getConfig().put("applyPolicies", "[\"Any User Policy\", \"Administration Policy\"]");
+                    getAuthorizationResource().policies().policy(policy.getId()).update(policy);
+                }
+            }
+
+            this.clientPage.navigateToAdminAlbum();
+            this.clientPage.viewAlbum("Alice Family Album");
+
+            assertFalse(this.clientPage.wasDenied());
+
+            this.clientPage.navigateToAdminAlbum();
+            this.clientPage.deleteAlbum("Alice Family Album");
+
+            List<ResourceRepresentation> resources = getAuthorizationResource().resources().resources();
+
+            assertTrue(resources.stream().filter(resource -> resource.getOwner().getName().equals("alice")).collect(Collectors.toList()).isEmpty());
+        } finally {
+            this.deployer.undeploy(RESOURCE_SERVER_ID);
+        }
+    }
+
+    @Test
+    public void testAdminWithoutPermissionsToDeleteScopePermission() throws Exception {
+        try {
+            this.deployer.deploy(RESOURCE_SERVER_ID);
+            this.clientPage.login("alice", "alice");
+            this.clientPage.createAlbum("Alice Family Album");
+
+            this.clientPage.login("admin", "admin");
+            this.clientPage.navigateToAdminAlbum();
+
+            assertFalse(this.clientPage.wasDenied());
+
+            this.clientPage.deleteAlbum("Alice Family Album");
+
+            assertFalse(this.clientPage.wasDenied());
+
+            List<ResourceRepresentation> resources = getAuthorizationResource().resources().resources();
+
+            assertTrue(resources.stream().filter(resource -> resource.getOwner().getName().equals("alice")).collect(Collectors.toList()).isEmpty());
+
+            for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
+                if ("Delete Album Permission".equals(policy.getName())) {
+                    policy.getConfig().put("applyPolicies", "[\"Only Owner Policy\"]");
+                    getAuthorizationResource().policies().policy(policy.getId()).update(policy);
+                }
+            }
+
+            this.clientPage.login("alice", "alice");
+            this.clientPage.createAlbum("Alice Family Album");
+
+            this.clientPage.login("admin", "admin");
+            this.clientPage.navigateToAdminAlbum();
+            this.clientPage.viewAlbum("Alice Family Album");
+
+            assertFalse(this.clientPage.wasDenied());
+            resources = getAuthorizationResource().resources().resources();
+
+            assertFalse(resources.stream().filter(resource -> resource.getOwner().getName().equals("alice")).collect(Collectors.toList()).isEmpty());
+
+            this.clientPage.navigateToAdminAlbum();
+
+            this.clientPage.deleteAlbum("Alice Family Album");
+            assertTrue(this.clientPage.wasDenied());
+
+            for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
+                if ("Delete Album Permission".equals(policy.getName())) {
+                    policy.getConfig().put("applyPolicies", "[\"Only Owner and Administrators Policy\"]");
+                    getAuthorizationResource().policies().policy(policy.getId()).update(policy);
+                }
+            }
+
+            this.clientPage.navigateToAdminAlbum();
+            this.clientPage.deleteAlbum("Alice Family Album");
+
+            assertFalse(this.clientPage.wasDenied());
+
+            resources = getAuthorizationResource().resources().resources();
+
+            assertTrue(resources.stream().filter(resource -> resource.getOwner().getName().equals("alice")).collect(Collectors.toList()).isEmpty());
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
         }
