@@ -45,6 +45,7 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.resources.admin.RealmAuth;
 import org.keycloak.util.JsonSerialization;
 
+import javax.management.relation.Role;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -61,6 +62,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -256,7 +259,35 @@ public class ResourceServerService {
                 try {
                     List<Map> rolesMap = JsonSerialization.readValue(roles, List.class);
                     config.put("roles", JsonSerialization.writeValueAsString(rolesMap.stream().map(roleConfig -> {
-                        roleConfig.put("id", realm.getRole(roleConfig.get("id").toString()).getId());
+                        String roleName = roleConfig.get("id").toString();
+                        String clientId = null;
+                        int clientIdSeparator = roleName.indexOf("/");
+
+                        if (clientIdSeparator != -1) {
+                            clientId = roleName.substring(0, clientIdSeparator);
+                            roleName = roleName.substring(clientIdSeparator + 1);
+                        }
+
+                        RoleModel role;
+
+                        if (clientId == null) {
+                            role = realm.getRole(roleName);
+                        } else {
+                            role = realm.getClientByClientId(clientId).getRole(roleName);
+                        }
+
+                        // fallback to find any client role with the given name
+                        if (role == null) {
+                            String finalRoleName = roleName;
+                            role = realm.getClients().stream().map(clientModel -> clientModel.getRole(finalRoleName)).filter(roleModel -> roleModel != null)
+                                    .findFirst().orElse(null);
+                        }
+
+                        if (role == null) {
+                            throw new RuntimeException("Error while importing configuration. Role [" + role + "] could not be found.");
+                        }
+
+                        roleConfig.put("id", role.getId());
                         return roleConfig;
                     }).collect(Collectors.toList())));
                 } catch (Exception e) {

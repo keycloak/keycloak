@@ -70,13 +70,13 @@
     },
     {
       "name": "Any User Policy",
-      "description": "Defines that any user can do something",
+      "description": "Defines that only users from well known clients are allowed to access",
       "type": "role",
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
         "applyPolicies": "[]",
-        "roles": "[{\"id\":\"user\"}]"
+        "roles": "[{\"id\":\"user\"},{\"id\":\"manage-albums\",\"required\":true}]"
       }
     },
     {
@@ -97,7 +97,7 @@
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "applyPolicies": "[\"Any Admin Policy\",\"Only From a Specific Client Address\"]"
+        "applyPolicies": "[\"Only From a Specific Client Address\",\"Any Admin Policy\"]"
       }
     },
     {
@@ -107,7 +107,7 @@
       "logic": "POSITIVE",
       "decisionStrategy": "AFFIRMATIVE",
       "config": {
-        "applyPolicies": "[\"Only Owner Policy\",\"Administration Policy\"]"
+        "applyPolicies": "[\"Administration Policy\",\"Only Owner Policy\"]"
       }
     },
     {
