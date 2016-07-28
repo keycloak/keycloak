@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.services.resources.AccountService;
@@ -168,22 +169,20 @@ public class AccountTest extends TestRealmKeycloakTest {
         EventRepresentation event = events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
         String sessionId = event.getSessionId();
         String userId = event.getUserId();
-        changePasswordPage.changePassword("", "new-password", "new-password");
 
+        changePasswordPage.changePassword("", "new-password", "new-password");
         Assert.assertEquals("Please specify password.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_MISSING).assertEvent();
 
         changePasswordPage.changePassword("password", "new-password", "new-password2");
-
         Assert.assertEquals("Password confirmation doesn't match.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_CONFIRM_ERROR).assertEvent();
 
         changePasswordPage.changePassword("password", "new-password", "new-password");
-
         Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
-
         events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
 
         changePasswordPage.logout();
-
         events.expectLogout(sessionId).detail(Details.REDIRECT_URI, changePasswordPage.getPath()).assertEvent();
 
         loginPage.open();
@@ -191,7 +190,7 @@ public class AccountTest extends TestRealmKeycloakTest {
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().session((String) null).error("invalid_user_credentials")
+        events.expectLogin().session((String) null).error(Errors.INVALID_USER_CREDENTIALS)
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
 
@@ -214,18 +213,14 @@ public class AccountTest extends TestRealmKeycloakTest {
 
         changePasswordPage.open();
         loginPage.login("test-user@localhost", "password");
-
-
         events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
 
         changePasswordPage.changePassword("", "new", "new");
-
         Assert.assertEquals("Please specify password.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_MISSING).assertEvent();
 
         changePasswordPage.changePassword("password", "new-password", "new-password");
-
         Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
-
         events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
     }
 
@@ -235,31 +230,26 @@ public class AccountTest extends TestRealmKeycloakTest {
 
         changePasswordPage.open();
         loginPage.login("test-user@localhost", "password");
-
         events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
 
         changePasswordPage.changePassword("password", "password", "password");
-
         Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
 
         changePasswordPage.changePassword("password", "password1", "password1");
-
         Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
-
         events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
 
         changePasswordPage.changePassword("password1", "password", "password");
-
         Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
 
         changePasswordPage.changePassword("password1", "password1", "password1");
-
         Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
 
         changePasswordPage.changePassword("password1", "password2", "password2");
-
         Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
-
         events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
     }
 
