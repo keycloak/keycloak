@@ -29,6 +29,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.infinispan.UserAdapter;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.storage.StorageId;
 import org.keycloak.storage.StorageProviderModel;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
@@ -47,12 +48,18 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class UserFederationStorageTest {
+    public static StorageProviderModel memoryProvider = null;
     @ClassRule
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             StorageProviderModel model = new StorageProviderModel();
+            model.setDisplayName("memory");
+            model.setPriority(0);
+            model.setProviderName(UserMapStorageFactory.PROVIDER_ID);
+            memoryProvider = appRealm.addStorageProvider(model);
+            model = new StorageProviderModel();
             model.setDisplayName("read-only-user-props");
             model.setPriority(1);
             model.setProviderName(UserPropertyFileStorageFactory.PROVIDER_ID);
@@ -236,6 +243,26 @@ public class UserFederationStorageTest {
 
 
         keycloakRule.stopSession(session, true);
+    }
+
+    @Test
+    public void testRegistration() {
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.realms().getRealmByName("test");
+        UserModel user = session.users().addUser(realm, "memuser");
+        user.updateCredential(UserCredentialModel.password("password"));
+        keycloakRule.stopSession(session, true);
+        loginSuccessAndLogout("memuser", "password");
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        user = session.users().getUserByUsername("memuser", realm);
+        Assert.assertEquals(memoryProvider.getId(), StorageId.resolveProviderId(user));
+        Assert.assertEquals(0, user.getCredentialsDirectly().size());
+        session.users().removeUser(realm, user);
+        Assert.assertNull(session.users().getUserByUsername("memuser", realm));
+        keycloakRule.stopSession(session, true);
+
     }
 
 }

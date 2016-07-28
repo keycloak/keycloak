@@ -1019,18 +1019,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
             copy.add(entity);
 
         }
-        Collections.sort(copy, new Comparator<StorageProviderEntity>() {
-
-            @Override
-            public int compare(StorageProviderEntity o1, StorageProviderEntity o2) {
-                return o1.getPriority() - o2.getPriority();
-            }
-
-        });
         List<StorageProviderModel> result = new LinkedList<>();
         for (StorageProviderEntity entity : copy) {
             result.add(toModel(entity));
         }
+        Collections.sort(result, StorageProviderModel.comparator);
 
         return Collections.unmodifiableList(result);
     }
