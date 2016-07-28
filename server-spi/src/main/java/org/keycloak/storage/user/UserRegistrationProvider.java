@@ -24,7 +24,7 @@ import org.keycloak.models.UserModel;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserUpdateProvider {
+public interface UserRegistrationProvider {
     UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions);
 
     UserModel addUser(RealmModel realm, String username);
