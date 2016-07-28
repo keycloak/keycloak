@@ -70,4 +70,8 @@ public interface Errors {
     String INVALID_EMAIL = "invalid_email";
     String IDENTITY_PROVIDER_LOGIN_FAILURE = "identity_provider_login_failure";
     String IDENTITY_PROVIDER_ERROR = "identity_provider_error";
+
+    String PASSWORD_CONFIRM_ERROR = "password_confirm_error";
+    String PASSWORD_MISSING = "password_missing";
+    String PASSWORD_REJECTED = "password_rejected";
 }
