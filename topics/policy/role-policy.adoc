@@ -3,6 +3,14 @@
 This type of policy allows you to define conditions for your permissions where only a set of one or more roles is allowed
 to access an object.
 
+By default, roles added to this policy are not marked as required and the policy will grant access if the user asking for access has any of these roles. However, {{book.project.name}} also allows you
+to mark a specific role as link:role-policy-required-role.adoc[required] in case you want to enforce the presence of a role. You can even mix required and non-required roles, regardles if they are realm
+or client roles.
+
+Role policies can be very useful when you need a more restricted RBAC, where specific roles must be present in order to grant access to an object. For instance,
+you may enforce that an user must consent to letting a client application (which is acting on his behalf) access his resources. Here you can benefit from {{book.project.name}} Client Scope Mapping to
+enable consent pages or even enforce clients to explicitly provide a scope when obtaining access tokens from a {{book.project.name}} server.
+
 To create a new policy select the option *Role-Based* in the dropdown located in the right upper corner of the permission listing.
 
 .Add Role-Based Policy
@@ -19,9 +27,13 @@ can identify them more easily and also know what they actually mean
 +
 A string with more details about this policy
 +
-* *Roles*
+* *Realm Roles*
 +
-Specifies which role(s) are allowed by this policy
+Specifies which *realm* role(s) are allowed by this policy.
++
+* *Client Roles*
++
+Specifies which *client* role(s) are allowed by this policy. To enable this field you need to select a `Client` first.
 +
 * *Logic*
 +

@@ -20,6 +20,7 @@
  . link:topics/policy/overview.adoc[Managing Policies]
  .. link:topics/policy/user-policy.adoc[User-Based Policy]
  .. link:topics/policy/role-policy.adoc[Role-Based Policy]
+ ... link:topics/policy/role-policy-required-role.adoc[Defining a Role as Required]
  .. link:topics/policy/js-policy.adoc[JavaScript-Based Policy]
  .. link:topics/policy/drools-policy.adoc[Drools-Based Policy]
  .. link:topics/policy/time-policy.adoc[Time-Based Policy]
