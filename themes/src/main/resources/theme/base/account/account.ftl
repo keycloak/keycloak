@@ -3,7 +3,7 @@
 
     <div class="row">
         <div class="col-md-10">
-            <h2>${msg("editAccountHtmlTtile")}</h2>
+            <h2>${msg("editAccountHtmlTitle")}</h2>
         </div>
         <div class="col-md-2 subtitle">
             <span class="subtitle"><span class="required">*</span> ${msg("requiredFields")}</span>
