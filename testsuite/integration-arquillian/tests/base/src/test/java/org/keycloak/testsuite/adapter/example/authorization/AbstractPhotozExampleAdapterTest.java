@@ -23,20 +23,30 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
+import org.keycloak.util.JsonSerialization;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertFalse;
@@ -84,7 +94,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         importResourceServerSettings();
     }
 
-    @Test
     public void testCreateDeleteAlbum() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
@@ -106,7 +115,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
     }
 
-    @Test
     public void testOnlyOwnerCanDeleteAlbum() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
@@ -152,7 +160,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
     }
 
-    @Test
     public void testRegularUserCanNotAccessAdminResources() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
@@ -165,7 +172,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
     }
 
-    @Test
     public void testAdminOnlyFromSpecificAddress() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
@@ -211,6 +217,23 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
                     policy.getConfig().put("applyPolicies", "[\"Any User Policy\"]");
                     getAuthorizationResource().policies().policy(policy.getId()).update(policy);
                 }
+                if ("Any User Policy".equals(policy.getName())) {
+                    ClientResource resourceServerClient = getClientResource(RESOURCE_SERVER_ID);
+                    RoleResource manageAlbumRole = resourceServerClient.roles().get("manage-albums");
+                    RoleRepresentation roleRepresentation = manageAlbumRole.toRepresentation();
+                    List<Map> roles = JsonSerialization.readValue(policy.getConfig().get("roles"), List.class);
+
+                    roles = roles.stream().filter(new Predicate<Map>() {
+                        @Override
+                        public boolean test(Map map) {
+                            return !map.get("id").equals(roleRepresentation.getId());
+                        }
+                    }).collect(Collectors.toList());
+
+                    policy.getConfig().put("roles", JsonSerialization.writeValueAsString(roles));
+
+                    getAuthorizationResource().policies().policy(policy.getId()).update(policy);
+                }
             }
 
             this.clientPage.navigateToAdminAlbum();
@@ -241,7 +264,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
     }
 
-    @Test
     public void testAdminWithoutPermissionsToDeleteScopePermission() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
@@ -305,13 +327,115 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
     }
 
+    public void testClientRoleRepresentingUserConsent() throws Exception {
+        try {
+            this.deployer.deploy(RESOURCE_SERVER_ID);
+            this.clientPage.login("alice", "alice");
+
+            assertFalse(this.clientPage.wasDenied());
+
+            UsersResource usersResource = realmsResouce().realm(REALM_NAME).users();
+            List<UserRepresentation> users = usersResource.search("alice", null, null, null, null, null);
+
+            assertFalse(users.isEmpty());
+
+            UserRepresentation userRepresentation = users.get(0);
+            UserResource userResource = usersResource.get(userRepresentation.getId());
+
+            ClientResource html5ClientApp = getClientResource("photoz-html5-client");
+
+            userResource.revokeConsent(html5ClientApp.toRepresentation().getClientId());
+
+            ClientResource resourceServerClient = getClientResource(RESOURCE_SERVER_ID);
+            RoleResource roleResource = resourceServerClient.roles().get("manage-albums");
+            RoleRepresentation roleRepresentation = roleResource.toRepresentation();
+
+            roleRepresentation.setScopeParamRequired(true);
+
+            roleResource.update(roleRepresentation);
+
+            this.clientPage.login("alice", "alice");
+
+            assertTrue(this.clientPage.wasDenied());
+
+            this.clientPage.loginWithScopes("alice", "alice", RESOURCE_SERVER_ID + "/manage-albums");
+
+            assertFalse(this.clientPage.wasDenied());
+        } finally {
+            this.deployer.undeploy(RESOURCE_SERVER_ID);
+        }
+    }
+
+    public void testClientRoleNotRequired() throws Exception {
+        try {
+            this.deployer.deploy(RESOURCE_SERVER_ID);
+            this.clientPage.login("alice", "alice");
+
+            assertFalse(this.clientPage.wasDenied());
+
+            UsersResource usersResource = realmsResouce().realm(REALM_NAME).users();
+            List<UserRepresentation> users = usersResource.search("alice", null, null, null, null, null);
+
+            assertFalse(users.isEmpty());
+
+            UserRepresentation userRepresentation = users.get(0);
+            UserResource userResource = usersResource.get(userRepresentation.getId());
+
+            ClientResource html5ClientApp = getClientResource("photoz-html5-client");
+
+            userResource.revokeConsent(html5ClientApp.toRepresentation().getClientId());
+
+            ClientResource resourceServerClient = getClientResource(RESOURCE_SERVER_ID);
+            RoleResource manageAlbumRole = resourceServerClient.roles().get("manage-albums");
+            RoleRepresentation roleRepresentation = manageAlbumRole.toRepresentation();
+
+            roleRepresentation.setScopeParamRequired(true);
+
+            manageAlbumRole.update(roleRepresentation);
+
+            this.clientPage.login("alice", "alice");
+
+            assertTrue(this.clientPage.wasDenied());
+
+            for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
+                if ("Any User Policy".equals(policy.getName())) {
+                    List<Map> roles = JsonSerialization.readValue(policy.getConfig().get("roles"), List.class);
+
+                    roles.forEach(new Consumer<Map>() {
+                        @Override
+                        public void accept(Map role) {
+                            String roleId = (String) role.get("id");
+                            if (roleId.equals(manageAlbumRole.toRepresentation().getId())) {
+                                role.put("required", false);
+                            }
+                        }
+                    });
+
+                    policy.getConfig().put("roles", JsonSerialization.writeValueAsString(roles));
+
+                    getAuthorizationResource().policies().policy(policy.getId()).update(policy);
+                }
+            }
+
+            this.clientPage.login("alice", "alice");
+
+            assertFalse(this.clientPage.wasDenied());
+        } finally {
+            this.deployer.undeploy(RESOURCE_SERVER_ID);
+        }
+    }
+
     private void importResourceServerSettings() throws FileNotFoundException {
         getAuthorizationResource().importSettings(loadJson(new FileInputStream(new File(TEST_APPS_HOME_DIR + "/photoz/photoz-restful-api-authz-service.json")), ResourceServerRepresentation.class));
     }
 
     private AuthorizationResource getAuthorizationResource() throws FileNotFoundException {
+        return getClientResource(RESOURCE_SERVER_ID).authorization();
+    }
+
+    private ClientResource getClientResource(String clientId) {
         ClientsResource clients = this.realmsResouce().realm(REALM_NAME).clients();
-        ClientRepresentation resourceServer = clients.findByClientId(RESOURCE_SERVER_ID).get(0);
-        return clients.get(resourceServer.getId()).authorization();
+        ClientRepresentation resourceServer = clients.findByClientId(clientId).get(0);
+        return clients.get(resourceServer.getId());
     }
 }
