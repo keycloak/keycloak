@@ -67,7 +67,8 @@ public interface Attributes {
      * @return true if any attribute with <code>name</code> and <code>value</code> exist. Otherwise, returns false.
      */
     default boolean containsValue(String name, String value) {
-        return toMap().getOrDefault(name, emptyList()).stream().anyMatch(value::equals);
+        Collection<String> values = toMap().get(name);
+        return values != null && values.stream().anyMatch(value::equals);
     }
 
     /**

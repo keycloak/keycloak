@@ -240,10 +240,16 @@ public class PolicyEvaluationService {
                         }
                     }
 
-                    accessToken.addAccess(clientModel.getClientId());
-                    AccessToken.Access resourceAccess = accessToken.getResourceAccess(clientModel.getClientId());
+                    AccessToken.Access clientAccess = accessToken.addAccess(clientModel.getClientId());
+                    clientAccess.roles(new HashSet<>());
 
-                    userModel.getClientRoleMappings(clientModel).stream().map(RoleModel::getName).forEach(roleName -> resourceAccess.addRole(roleName));
+                    userModel.getClientRoleMappings(clientModel).stream().map(RoleModel::getName).forEach(roleName -> clientAccess.addRole(roleName));
+
+                    ClientModel resourceServerClient = realm.getClientById(resourceServer.getClientId());
+                    AccessToken.Access resourceServerAccess = accessToken.addAccess(resourceServerClient.getClientId());
+                    resourceServerAccess.roles(new HashSet<>());
+
+                    userModel.getClientRoleMappings(resourceServerClient).stream().map(RoleModel::getName).forEach(roleName -> resourceServerAccess.addRole(roleName));
                 }
             }
         }

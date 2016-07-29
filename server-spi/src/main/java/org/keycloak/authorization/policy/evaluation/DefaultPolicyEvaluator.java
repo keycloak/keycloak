@@ -32,8 +32,10 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -130,27 +132,49 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
             return true;
         }
 
-        if (policy.getScopes().isEmpty()) {
-            return true;
-        }
+        Set<Scope> scopes = new HashSet<>(policy.getScopes());
 
-        boolean hasScope = true;
+        if (scopes.isEmpty()) {
+            Set<Resource> resources = new HashSet<>();
 
-        for (Scope givenScope : policy.getScopes()) {
-            boolean hasGivenScope = false;
+            resources.addAll(policy.getResources());
 
-            for (Scope scope : permission.getScopes()) {
-                if (givenScope.getId().equals(scope.getId())) {
-                    hasGivenScope = true;
-                    break;
+            for (Resource resource : resources) {
+                scopes.addAll(resource.getScopes());
+            }
+
+            if (!resources.isEmpty() && scopes.isEmpty()) {
+                return false;
+            }
+
+            if (scopes.isEmpty()) {
+                Resource resource = permission.getResource();
+                String type = resource.getType();
+
+                if (type != null) {
+                    List<Resource> resourcesByType = authorization.getStoreFactory().getResourceStore().findByType(type);
+
+                    for (Resource resourceType : resourcesByType) {
+                        if (resourceType.getOwner().equals(resource.getResourceServer().getClientId())) {
+                            resources.add(resourceType);
+                        }
+                    }
                 }
             }
 
-            if (!hasGivenScope) {
-                return false;
+            for (Resource resource : resources) {
+                scopes.addAll(resource.getScopes());
             }
         }
 
-        return hasScope;
+        for (Scope givenScope : scopes) {
+            for (Scope scope : permission.getScopes()) {
+                if (givenScope.getId().equals(scope.getId())) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
