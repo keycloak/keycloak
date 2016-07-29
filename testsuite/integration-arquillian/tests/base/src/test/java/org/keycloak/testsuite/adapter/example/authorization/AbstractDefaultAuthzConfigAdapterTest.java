@@ -59,29 +59,26 @@ public abstract class AbstractDefaultAuthzConfigAdapterTest extends AbstractExam
 
     @Test
     public void testDefaultAuthzConfig() throws Exception {
-        configureAuthorizationServices();
-        deploy();
-        navigateToResourceServer();
-        login();
+        try {
+            this.deployer.deploy(RESOURCE_SERVER_ID);
+            configureAuthorizationServices();
 
-        assertTrue(this.driver.getPageSource().contains("Your permissions are"));
-        assertTrue(this.driver.getPageSource().contains("Default Resource"));
+            login();
+
+            assertTrue(this.driver.getPageSource().contains("Your permissions are"));
+            assertTrue(this.driver.getPageSource().contains("Default Resource"));
+        } finally {
+            this.deployer.undeploy(RESOURCE_SERVER_ID);
+        }
     }
 
-    private void login() {
-        this.loginPage.form().login("alice", "alice");
-    }
-
-    private void navigateToResourceServer() throws MalformedURLException {
+    private void login() throws MalformedURLException {
         this.driver.navigate().to(getResourceServerUrl());
+        this.loginPage.form().login("alice", "alice");
     }
 
     private URL getResourceServerUrl() throws MalformedURLException {
         return this.appServerContextRootPage.getUriBuilder().path(RESOURCE_SERVER_ID).build().toURL();
-    }
-
-    private void deploy() {
-        this.deployer.deploy(RESOURCE_SERVER_ID);
     }
 
     private void configureAuthorizationServices() {

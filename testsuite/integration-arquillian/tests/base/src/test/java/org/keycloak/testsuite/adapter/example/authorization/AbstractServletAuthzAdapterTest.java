@@ -25,7 +25,6 @@ import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -49,9 +48,6 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -88,14 +84,12 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
     }
 
     @Test
-    public void testUserPermissions() throws Exception {
+    public void testRegularUserPermissions() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
             login("alice", "alice");
-
             assertFalse(wasDenied());
-
             assertTrue(hasLink("User Premium"));
             assertTrue(hasLink("Administration"));
             assertTrue(hasText("urn:servlet-authz:page:main:actionForUser"));
@@ -103,18 +97,14 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
             assertFalse(hasText("urn:servlet-authz:page:main:actionForPremiumUser"));
 
             navigateToDynamicMenuPage();
-
             assertTrue(hasText("Do user thing"));
             assertFalse(hasText("Do  user premium thing"));
             assertFalse(hasText("Do administration thing"));
 
-
             navigateToUserPremiumPage();
-
             assertTrue(wasDenied());
 
             navigateToAdminPage();
-
             assertTrue(wasDenied());
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
@@ -127,7 +117,6 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
             login("jdoe", "jdoe");
-
             assertFalse(wasDenied());
             assertTrue(hasLink("User Premium"));
             assertTrue(hasLink("Administration"));
@@ -136,10 +125,15 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
             assertFalse(hasText("urn:servlet-authz:page:main:actionForAdmin"));
 
             navigateToDynamicMenuPage();
-
             assertTrue(hasText("Do user thing"));
             assertTrue(hasText("Do  user premium thing"));
             assertFalse(hasText("Do administration thing"));
+
+            navigateToUserPremiumPage();
+            assertFalse(wasDenied());
+
+            navigateToAdminPage();
+            assertTrue(wasDenied());
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
         }
@@ -151,9 +145,7 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
             login("admin", "admin");
-
             assertFalse(wasDenied());
-
             assertTrue(hasLink("User Premium"));
             assertTrue(hasLink("Administration"));
             assertTrue(hasText("urn:servlet-authz:page:main:actionForUser"));
@@ -161,26 +153,29 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
             assertFalse(hasText("urn:servlet-authz:page:main:actionForPremiumUser"));
 
             navigateToDynamicMenuPage();
-
             assertTrue(hasText("Do user thing"));
             assertTrue(hasText("Do administration thing"));
             assertFalse(hasText("Do  user premium thing"));
+
+            navigateToUserPremiumPage();
+            assertTrue(wasDenied());
+
+            navigateToAdminPage();
+            assertFalse(wasDenied());
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
         }
     }
 
     @Test
-    public void testGrantPremiumAccess() throws Exception {
+    public void testGrantPremiumAccessToUser() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
             login("alice", "alice");
-
             assertFalse(wasDenied());
 
             navigateToUserPremiumPage();
-
             assertTrue(wasDenied());
 
             for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
@@ -193,7 +188,6 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
             login("alice", "alice");
 
             navigateToUserPremiumPage();
-
             assertFalse(wasDenied());
 
             for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
@@ -204,8 +198,8 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
             }
 
             login("alice", "alice");
-            navigateToUserPremiumPage();
 
+            navigateToUserPremiumPage();
             assertTrue(wasDenied());
 
             PolicyRepresentation onlyAlicePolicy = new PolicyRepresentation();
@@ -230,10 +224,9 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
                 }
             }
 
-            logOut();
             login("alice", "alice");
-            navigateToUserPremiumPage();
 
+            navigateToUserPremiumPage();
             assertFalse(wasDenied());
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);

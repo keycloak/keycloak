@@ -50,7 +50,10 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     protected ConsentPage consentPage;
 
     public void createAlbum(String name) {
-        this.driver.findElement(By.id("create-album")).click();
+        navigateTo();
+        By id = By.id("create-album");
+        WaitUtils.waitUntilElement(id);
+        this.driver.findElement(id).click();
         Form.setInputValue(this.driver.findElement(By.id("album.name")), name);
         this.driver.findElement(By.id("save-album")).click();
         pause(500);

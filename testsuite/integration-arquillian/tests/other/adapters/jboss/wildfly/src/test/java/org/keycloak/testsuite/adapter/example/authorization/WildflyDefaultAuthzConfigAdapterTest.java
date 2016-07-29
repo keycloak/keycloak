@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.adapter.example;
+package org.keycloak.testsuite.adapter.example.authorization;
 
 import org.keycloak.testsuite.adapter.example.authorization.AbstractDefaultAuthzConfigAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
