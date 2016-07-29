@@ -54,7 +54,7 @@
       "description": "Defines that adminsitrators can do something",
       "type": "role",
       "config": {
-        "roles": "[\"admin\"]"
+        "roles": "[{\"id\":\"admin\"}]"
       }
     },
     {
@@ -62,7 +62,7 @@
       "description": "Defines that any user can do something",
       "type": "role",
       "config": {
-        "roles": "[\"user\"]"
+        "roles": "[{\"id\":\"user\"}]"
       }
     },
     {
@@ -71,7 +71,7 @@
       "type": "role",
       "logic": "POSITIVE",
       "config": {
-        "roles": "[\"user_premium\"]"
+        "roles": "[{\"id\":\"user_premium\"}]"
       }
     },
     {

@@ -52,7 +52,6 @@
         "sessionName": "MainOwnerSession",
         "mavenArtifactGroupId": "org.keycloak",
         "moduleName": "PhotozAuthzOwnerPolicy",
-        "applyPolicies": "[]",
         "scannerPeriod": "1",
         "scannerPeriodUnit": "Hours"
       }
@@ -64,7 +63,6 @@
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "applyPolicies": "[]",
         "roles": "[{\"id\":\"admin\",\"required\":true}]"
       }
     },
@@ -75,7 +73,6 @@
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "applyPolicies": "[]",
         "roles": "[{\"id\":\"user\"},{\"id\":\"manage-albums\",\"required\":true}]"
       }
     },
@@ -86,7 +83,6 @@
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "applyPolicies": "[]",
         "code": "var contextAttributes = $evaluation.getContext().getAttributes();\n\nif (contextAttributes.containsValue('kc.client.network.ip_address', '127.0.0.1')) {\n    $evaluation.grant();\n}"
       }
     },
@@ -117,7 +113,6 @@
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "applyPolicies": "[]",
         "code": "var context = $evaluation.getContext();\nvar identity = context.getIdentity();\nvar attributes = identity.getAttributes();\nvar email = attributes.getValue('email').asString(0);\n\nif (identity.hasRole('admin') || email.endsWith('@keycloak.org')) {\n    $evaluation.grant();\n}"
       }
     },

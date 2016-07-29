@@ -94,6 +94,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         importResourceServerSettings();
     }
 
+    @Test
     public void testCreateDeleteAlbum() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
@@ -115,6 +116,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
     }
 
+    @Test
     public void testOnlyOwnerCanDeleteAlbum() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
@@ -160,6 +162,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
     }
 
+    @Test
     public void testRegularUserCanNotAccessAdminResources() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
@@ -172,6 +175,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
     }
 
+    @Test
     public void testAdminOnlyFromSpecificAddress() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
@@ -264,6 +268,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
     }
 
+    @Test
     public void testAdminWithoutPermissionsToDeleteScopePermission() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
@@ -327,6 +332,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
     }
 
+    @Test
     public void testClientRoleRepresentingUserConsent() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
@@ -366,6 +372,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
     }
 
+    @Test
     public void testClientRoleNotRequired() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
