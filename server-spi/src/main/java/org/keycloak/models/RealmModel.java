@@ -38,6 +38,11 @@ public interface RealmModel extends RoleContainerModel {
         RealmModel getCreatedRealm();
     }
 
+    interface RealmPostCreateEvent extends ProviderEvent {
+        RealmModel getCreatedRealm();
+        KeycloakSession getKeycloakSession();
+    }
+
     interface RealmRemovedEvent extends ProviderEvent {
         RealmModel getRealm();
         KeycloakSession getKeycloakSession();
@@ -342,19 +347,19 @@ public interface RealmModel extends RoleContainerModel {
     Set<String> getEventsListeners();
 
     void setEventsListeners(Set<String> listeners);
-    
+
     Set<String> getEnabledEventTypes();
 
     void setEnabledEventTypes(Set<String> enabledEventTypes);
-    
+
     boolean isAdminEventsEnabled();
 
     void setAdminEventsEnabled(boolean enabled);
-    
+
     boolean isAdminEventsDetailsEnabled();
 
     void setAdminEventsDetailsEnabled(boolean enabled);
-    
+
     ClientModel getMasterAdminClient();
 
     void setMasterAdminClient(ClientModel client);
