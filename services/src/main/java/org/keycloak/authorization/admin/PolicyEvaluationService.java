@@ -87,16 +87,17 @@ public class PolicyEvaluationService {
     @Consumes("application/json")
     @Produces("application/json")
     public void evaluate(PolicyEvaluationRequest evaluationRequest, @Suspended AsyncResponse asyncResponse) {
-        EvaluationContext evaluationContext = createEvaluationContext(evaluationRequest);
-        authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization), evaluationContext).evaluate(createDecisionCollector(evaluationRequest, authorization, asyncResponse));
+        KeycloakIdentity identity = createIdentity(evaluationRequest);
+        EvaluationContext evaluationContext = createEvaluationContext(evaluationRequest, identity);
+        authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization), evaluationContext).evaluate(createDecisionCollector(evaluationRequest, authorization, identity, asyncResponse));
     }
 
-    private DecisionResultCollector createDecisionCollector(PolicyEvaluationRequest evaluationRequest, AuthorizationProvider authorization, AsyncResponse asyncResponse) {
+    private DecisionResultCollector createDecisionCollector(PolicyEvaluationRequest evaluationRequest, AuthorizationProvider authorization, KeycloakIdentity identity, AsyncResponse asyncResponse) {
         return new DecisionResultCollector() {
             @Override
             protected void onComplete(List<Result> results) {
                 try {
-                    asyncResponse.resume(Response.ok(PolicyEvaluationResponse.build(evaluationRequest,  results, resourceServer,  authorization)).build());
+                    asyncResponse.resume(Response.ok(PolicyEvaluationResponse.build(evaluationRequest,  results, resourceServer,  authorization, identity)).build());
                 } catch (Throwable cause) {
                     asyncResponse.resume(cause);
                 }
@@ -109,8 +110,8 @@ public class PolicyEvaluationService {
         };
     }
 
-    private EvaluationContext createEvaluationContext(PolicyEvaluationRequest representation) {
-        return new KeycloakEvaluationContext(createIdentity(representation), this.authorization.getKeycloakSession()) {
+    private EvaluationContext createEvaluationContext(PolicyEvaluationRequest representation, KeycloakIdentity identity) {
+        return new KeycloakEvaluationContext(identity, this.authorization.getKeycloakSession()) {
             @Override
             public Attributes getAttributes() {
                 Map<String, Collection<String>> attributes = new HashMap<>(super.getAttributes().toMap());
@@ -137,17 +138,6 @@ public class PolicyEvaluationService {
 
     private List<ResourcePermission> createPermissions(PolicyEvaluationRequest representation, EvaluationContext evaluationContext, AuthorizationProvider authorization) {
         List<PolicyEvaluationRequest.Resource> resources = representation.getResources();
-
-        for (PolicyEvaluationRequest.Resource resource : new ArrayList<>(resources)) {
-            if (resource.getId() == null && (resource.getScopes() == null || resource.getScopes().isEmpty())) {
-                resources.remove(resource);
-            }
-        }
-
-        if (representation.isEntitlements() || resources.isEmpty()) {
-            return Permissions.all(this.resourceServer, evaluationContext.getIdentity(), authorization);
-        }
-
         return resources.stream().flatMap((Function<PolicyEvaluationRequest.Resource, Stream<ResourcePermission>>) resource -> {
             Set<String> givenScopes = resource.getScopes();
 
