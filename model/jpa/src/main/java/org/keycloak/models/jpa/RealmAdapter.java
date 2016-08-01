@@ -182,6 +182,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         em.flush();
     }
 
+    @Override
     public void setAttribute(String name, String value) {
         for (RealmAttributeEntity attr : realm.getAttributes()) {
             if (attr.getName().equals(name)) {
@@ -197,18 +198,22 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         realm.getAttributes().add(attr);
     }
 
+    @Override
     public void setAttribute(String name, Boolean value) {
         setAttribute(name, value.toString());
     }
 
+    @Override
     public void setAttribute(String name, Integer value) {
         setAttribute(name, value.toString());
     }
 
+    @Override
     public void setAttribute(String name, Long value) {
         setAttribute(name, value.toString());
     }
 
+    @Override
     public void removeAttribute(String name) {
         Iterator<RealmAttributeEntity> it = realm.getAttributes().iterator();
         while (it.hasNext()) {
@@ -220,6 +225,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
     }
 
+    @Override
     public String getAttribute(String name) {
         for (RealmAttributeEntity attr : realm.getAttributes()) {
             if (attr.getName().equals(name)) {
@@ -229,24 +235,28 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         return null;
     }
 
+    @Override
     public Integer getAttribute(String name, Integer defaultValue) {
         String v = getAttribute(name);
         return v != null ? Integer.parseInt(v) : defaultValue;
 
     }
 
+    @Override
     public Long getAttribute(String name, Long defaultValue) {
         String v = getAttribute(name);
         return v != null ? Long.parseLong(v) : defaultValue;
 
     }
 
+    @Override
     public Boolean getAttribute(String name, Boolean defaultValue) {
         String v = getAttribute(name);
         return v != null ? Boolean.parseBoolean(v) : defaultValue;
 
     }
 
+    @Override
     public Map<String, String> getAttributes() {
         // should always return a copy
         Map<String, String> result = new HashMap<String, String>();
@@ -255,6 +265,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
         return result;
     }
+
     @Override
     public boolean isBruteForceProtected() {
         return getAttribute("bruteForceProtected", false);
