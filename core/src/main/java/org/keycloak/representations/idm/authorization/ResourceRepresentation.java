@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -49,6 +50,7 @@ public class ResourceRepresentation {
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<PolicyRepresentation> policies;
+    private List<ScopeRepresentation> typedScopes;
 
     /**
      * Creates a new instance.
@@ -168,5 +170,13 @@ public class ResourceRepresentation {
 
     <T> T test(Predicate<T> t) {
         return null;
+    }
+
+    public void setTypedScopes(List<ScopeRepresentation> typedScopes) {
+        this.typedScopes = typedScopes;
+    }
+
+    public List<ScopeRepresentation> getTypedScopes() {
+        return typedScopes;
     }
 }

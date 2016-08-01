@@ -21,11 +21,11 @@
                 <label class="col-md-2 control-label">{{:: 'authz-scopes' | translate}}</label>
 
                 <div class="col-sm-2">
-                    <span data-ng-show="result.scopes.length == 0">{{:: 'authz-any-scope' | translate}}</span>
+                    <span data-ng-show="result.allowedScopes.length == 0">{{:: 'authz-no-scopes-available' | translate}}</span>
 
                     <div>
                         <ul>
-                            <li data-ng-repeat="scope in result.scopes">
+                            <li data-ng-repeat="scope in result.allowedScopes">
                                 {{scope.name}}
                             </li>
                         </ul>
@@ -38,15 +38,14 @@
 
                 <div class="col-sm-6">
                     <span data-ng-show="result.policies.length == 0">{{:: 'authz-evaluation-no-policies-resource' | translate}}</span>
-
                     <div>
-                        <ul>
+                        <div>
                             <li data-ng-repeat="policyResult in result.policies">
                                 <strong><a
                                         href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission/{{policyResult.policy.type}}/{{policyResult.policy.id}}">{{policyResult.policy.name}}</a></strong>
                                 decision was <span style="color: green" data-ng-show="policyResult.status == 'PERMIT'"><strong>{{policyResult.status}}</strong></span>
                                 <span style="color: red" data-ng-hide="policyResult.status == 'PERMIT'"><strong>{{policyResult.status}}</strong></span>
-                                by <strong>{{policyResult.policy.decisionStrategy}}</strong> decision.</a>
+                                by <strong>{{policyResult.policy.decisionStrategy}}</strong> decision. {{policyResult.scopes.length > 0 ? 'Denied Scopes:' : ''}} <span data-ng-repeat="scope in policyResult.scopes"><strong style="color: red">{{scope.name}}{{$last ? '' : ', '}}</strong></span>{{policyResult.scopes.length > 0 ? '.' : ''}}
                                 <ul>
                                     <li data-ng-repeat="subPolicy in policyResult.associatedPolicies">
                                         <strong><a

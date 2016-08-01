@@ -60,8 +60,8 @@ public abstract class AbstractDefaultAuthzConfigAdapterTest extends AbstractExam
     @Test
     public void testDefaultAuthzConfig() throws Exception {
         try {
-            this.deployer.deploy(RESOURCE_SERVER_ID);
             configureAuthorizationServices();
+            this.deployer.deploy(RESOURCE_SERVER_ID);
 
             login();
 
