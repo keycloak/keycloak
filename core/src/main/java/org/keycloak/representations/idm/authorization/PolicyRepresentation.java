@@ -16,6 +16,8 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +37,7 @@ public class PolicyRepresentation {
     private DecisionStrategy decisionStrategy = DecisionStrategy.UNANIMOUS;
     private Map<String, String> config = new HashMap();
     private List<PolicyRepresentation> dependentPolicies;
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<PolicyRepresentation> associatedPolicies = new ArrayList<>();
 
     public String getId() {

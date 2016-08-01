@@ -126,11 +126,13 @@ public abstract class AbstractPolicyEnforcer {
         List<Permission> permissions = authorization.getPermissions();
 
         for (Permission permission : permissions) {
-            Set<String> allowedScopes = permission.getScopes();
-
             if (permission.getResourceSetId() != null) {
                 if (isResourcePermission(actualPathConfig, permission)) {
-                    if (((allowedScopes == null || allowedScopes.isEmpty()) && requiredScopes.isEmpty()) || allowedScopes.containsAll(requiredScopes)) {
+                    if (actualPathConfig.isInstance() && !matchResourcePermission(actualPathConfig, permission)) {
+                        continue;
+
+                    }
+                    if (hasResourceScopePermission(requiredScopes, permission, actualPathConfig)) {
                         LOGGER.debugf("Authorization GRANTED for path [%s]. Permissions [%s].", actualPathConfig, permissions);
                         if (request.getMethod().equalsIgnoreCase("DELETE") && actualPathConfig.isInstance()) {
                             this.paths.remove(actualPathConfig);
@@ -138,17 +140,17 @@ public abstract class AbstractPolicyEnforcer {
                         return true;
                     }
                 }
-            } else {
-                if ((allowedScopes.isEmpty() && requiredScopes.isEmpty()) || allowedScopes.containsAll(requiredScopes)) {
-                    LOGGER.debugf("Authorization GRANTED for path [%s]. Permissions [%s].", actualPathConfig, permissions);
-                    return true;
-                }
             }
         }
 
         LOGGER.debugf("Authorization FAILED for path [%s]. No enough permissions [%s].", actualPathConfig, permissions);
 
         return false;
+    }
+
+    private boolean hasResourceScopePermission(Set<String> requiredScopes, Permission permission, PathConfig actualPathConfig) {
+        Set<String> allowedScopes = permission.getScopes();
+        return (allowedScopes.containsAll(requiredScopes) || allowedScopes.isEmpty());
     }
 
     protected AuthzClient getAuthzClient() {
@@ -210,7 +212,6 @@ public abstract class AbstractPolicyEnforcer {
                 config.setPath(targetResource.getUri());
                 config.setScopes(originalConfig.getScopes());
                 config.setMethods(originalConfig.getMethods());
-                config.setInstance(true);
                 config.setParentConfig(originalConfig);
 
                 this.paths.add(config);
@@ -244,13 +245,17 @@ public abstract class AbstractPolicyEnforcer {
 
     private boolean isResourcePermission(PathConfig actualPathConfig, Permission permission) {
         // first we try a match using resource id
-        boolean resourceMatch = permission.getResourceSetId().equals(actualPathConfig.getId());
+        boolean resourceMatch = matchResourcePermission(actualPathConfig, permission);
 
         // as a fallback, check if the current path is an instance and if so, check if parent's id matches the permission
         if (!resourceMatch && actualPathConfig.isInstance()) {
-            resourceMatch = permission.getResourceSetId().equals(actualPathConfig.getParentConfig().getId());
+            resourceMatch = matchResourcePermission(actualPathConfig.getParentConfig(), permission);
         }
 
         return resourceMatch;
+    }
+
+    private boolean matchResourcePermission(PathConfig actualPathConfig, Permission permission) {
+        return permission.getResourceSetId().equals(actualPathConfig.getId());
     }
 }

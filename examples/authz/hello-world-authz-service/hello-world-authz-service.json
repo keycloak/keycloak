@@ -1,4 +1,6 @@
 {
+  "allowRemoteResourceManagement": false,
+  "policyEnforcementMode": "ENFORCING",
   "resources": [
     {
       "name": "Default Resource",
@@ -8,22 +10,26 @@
   ],
   "policies": [
     {
-      "name": "Only From Realm Policy",
+      "name": "Default Policy",
       "description": "A policy that grants access only for users within this realm",
       "type": "js",
+      "logic": "POSITIVE",
+      "decisionStrategy": "AFFIRMATIVE",
       "config": {
         "applyPolicies": "[]",
-        "code": "var context = $evaluation.getContext();\n\n// using attributes from the evaluation context to obtain the realm\nvar contextAttributes = context.getAttributes();\nvar realmName = contextAttributes.getValue('kc.realm.name').asString(0);\n\n// using attributes from the identity to obtain the issuer\nvar identity = context.getIdentity();\nvar identityAttributes = identity.getAttributes();\nvar issuer = identityAttributes.getValue('iss').asString(0);\n\n// only users from the realm have access granted \nif (issuer.endsWith(realmName)) {\n    $evaluation.grant();\n}"
+        "code": "// by default, grants any permission associated with this policy\n$evaluation.grant();\n"
       }
     },
     {
       "name": "Default Permission",
       "description": "A permission that applies to the default resource type",
       "type": "resource",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
       "config": {
         "defaultResourceType": "urn:hello-world-authz-service:resources:default",
         "default": "true",
-        "applyPolicies": "[\"Only From Realm Policy\"]"
+        "applyPolicies": "[\"Default Policy\"]"
       }
     }
   ]

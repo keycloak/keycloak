@@ -64,6 +64,8 @@ module.controller('TokenCtrl', function ($scope, Identity) {
     $scope.requestEntitlements = function () {
         Identity.authorization.entitlement('photoz-restful-api').then(function (rpt) {});
     }
+
+    $scope.Identity = Identity;
 });
 
 module.controller('AlbumCtrl', function ($scope, $http, $routeParams, $location, Album) {
@@ -83,14 +85,13 @@ module.controller('ProfileCtrl', function ($scope, $http, $routeParams, $locatio
     $scope.profile = Profile.get();
 });
 
-module.controller('AdminAlbumCtrl', function ($scope, $http, $route, AdminAlbum, Album) {
+module.controller('AdminAlbumCtrl', function ($scope, $http, $route, $location, AdminAlbum, Album) {
     $scope.albums = {};
     $http.get(apiUrl + '/admin/album').success(function (data) {
         $scope.albums = data;
     });
     $scope.deleteAlbum = function (album) {
-        var newAlbum = new Album(album);
-        newAlbum.$delete({id: album.id}, function () {
+        new Album(album).$delete({id: album.id}, function () {
             $route.reload();
         });
     }

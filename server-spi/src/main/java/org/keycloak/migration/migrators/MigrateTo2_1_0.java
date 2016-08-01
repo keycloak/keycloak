@@ -17,11 +17,22 @@
 
 package org.keycloak.migration.migrators;
 
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.util.JsonSerialization;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -33,6 +44,7 @@ public class MigrateTo2_1_0 {
     public void migrate(KeycloakSession session) {
         for (RealmModel realm : session.realms().getRealms()) {
             migrateDefaultRequiredAction(realm);
+            migrateRolePolicies(realm, session);
         }
     }
     
@@ -45,5 +57,47 @@ public class MigrateTo2_1_0 {
         if (!otpAction.getName().equals("Configure Totp")) return;
 
         otpAction.setName("Configure OTP");
+    }
+
+    // KEYCLOAK-3338: Changes to how role policy config is stored"
+    private void migrateRolePolicies(RealmModel realm, KeycloakSession session) {
+        AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
+        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        realm.getClients().forEach(clientModel -> {
+            ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel.getId());
+
+            if (resourceServer != null) {
+                policyStore.findByType("role").forEach(policy -> {
+                    Map<String, String> config = policy.getConfig();
+                    String roles = config.get("roles");
+                    List roleConfig;
+
+                    try {
+                        roleConfig = JsonSerialization.readValue(roles, List.class);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Malformed configuration for role policy [" + policy.getName() + "].", e);
+                    }
+
+                    if (!roleConfig.isEmpty() && roleConfig.get(0) instanceof String) {
+                        try {
+                            config.put("roles", JsonSerialization.writeValueAsString(roleConfig.stream().map(new Function<String, Map>() {
+                                @Override
+                                public Map apply(String roleId) {
+                                    Map updated = new HashMap();
+
+                                    updated.put("id", roleId);
+
+                                    return updated;
+                                }
+                            }).collect(Collectors.toList())));
+                            policy.setConfig(config);
+                        } catch (Exception e) {
+                            throw new RuntimeException("Failed to migrate role policy [" + policy.getName() + "].", e);
+                        }
+                    }
+                });
+            }
+        });
     }
 }

@@ -173,6 +173,7 @@
                             <browser>${browser}</browser>
                             <firefox_binary>${firefox_binary}</firefox_binary>
 
+                            <project.version>${project.version}</project.version>
                         </systemPropertyVariables>
                         <properties>
                             <property>

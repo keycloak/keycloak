@@ -14,21 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.storage.user;
 
-package org.keycloak.testsuite.adapter.page;
-
-import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-
-import static org.keycloak.testsuite.util.WaitUtils.pause;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 
 /**
- * @author mhajas
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
  */
-public abstract class SAMLServletWithLogout extends AbstractPageWithInjectedUrl {
+public interface UserRegistrationProvider {
+    UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions);
 
-    public void logout() {
-        driver.navigate().to(getUriBuilder().queryParam("GLO", "true").build().toASCIIString());
-        getUriBuilder().replaceQueryParam("GLO", null);
-        pause(300);
-    }
+    UserModel addUser(RealmModel realm, String username);
+
+    boolean removeUser(RealmModel realm, UserModel user);
+
+    void grantToAllUsers(RealmModel realm, RoleModel role);
+
 }

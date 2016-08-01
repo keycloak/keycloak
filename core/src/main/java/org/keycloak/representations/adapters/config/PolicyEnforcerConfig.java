@@ -109,7 +109,6 @@ public class PolicyEnforcerConfig {
         private List<MethodConfig> methods = new ArrayList<>();
         private List<String> scopes = Collections.emptyList();
         private String id;
-        private boolean instance;
 
         @JsonIgnore
         private PathConfig parentConfig;
@@ -178,11 +177,7 @@ public class PolicyEnforcerConfig {
         }
 
         public boolean isInstance() {
-            return instance;
-        }
-
-        public void setInstance(boolean instance) {
-            this.instance = instance;
+            return this.parentConfig != null;
         }
 
         public void setParentConfig(PathConfig parentConfig) {

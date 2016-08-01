@@ -21,10 +21,10 @@
           "name": "urn:photoz.com:scopes:album:view"
         },
         {
-          "name": "urn:photoz.com:scopes:album:create"
+          "name": "urn:photoz.com:scopes:album:delete"
         },
         {
-          "name": "urn:photoz.com:scopes:album:delete"
+          "name": "urn:photoz.com:scopes:album:create"
         }
       ]
     },
@@ -44,6 +44,8 @@
       "name": "Only Owner Policy",
       "description": "Defines that only the resource owner is allowed to do something",
       "type": "drools",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
       "config": {
         "mavenArtifactVersion": "2.1.0-SNAPSHOT",
         "mavenArtifactId": "photoz-authz-policy",
@@ -58,16 +60,20 @@
       "name": "Any Admin Policy",
       "description": "Defines that adminsitrators can do something",
       "type": "role",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
       "config": {
-        "roles": "[\"admin\"]"
+        "roles": "[{\"id\":\"admin\",\"required\":true}]"
       }
     },
     {
       "name": "Any User Policy",
-      "description": "Defines that any user can do something",
+      "description": "Defines that only users from well known clients are allowed to access",
       "type": "role",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
       "config": {
-        "roles": "[\"user\"]"
+        "roles": "[{\"id\":\"user\"},{\"id\":\"manage-albums\",\"required\":true}]"
       }
     },
     {
@@ -84,14 +90,17 @@
       "name": "Administration Policy",
       "description": "Defines that only administrators from a specific network address can do something.",
       "type": "aggregate",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
       "config": {
-        "applyPolicies": "[\"Any Admin Policy\",\"Only From a Specific Client Address\"]"
+        "applyPolicies": "[\"Only From a Specific Client Address\",\"Any Admin Policy\"]"
       }
     },
     {
       "name": "Only Owner and Administrators Policy",
       "description": "Defines that only the resource owner and administrators can do something",
       "type": "aggregate",
+      "logic": "POSITIVE",
       "decisionStrategy": "AFFIRMATIVE",
       "config": {
         "applyPolicies": "[\"Administration Policy\",\"Only Owner Policy\"]"
@@ -101,26 +110,17 @@
       "name": "Only From @keycloak.org or Admin",
       "description": "Defines that only users from @keycloak.org",
       "type": "js",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
       "config": {
-        "applyPolicies": "[]",
         "code": "var context = $evaluation.getContext();\nvar identity = context.getIdentity();\nvar attributes = identity.getAttributes();\nvar email = attributes.getValue('email').asString(0);\n\nif (identity.hasRole('admin') || email.endsWith('@keycloak.org')) {\n    $evaluation.grant();\n}"
-      }
-    },
-    {
-      "name": "Only in the Period",
-      "description": "Access granted only during the morning",
-      "type": "time",
-      "config": {
-        "noa": "2016-01-03 23:59:59",
-        "expirationUnit": "Minutes",
-        "nbf": "2016-01-01 00:00:00",
-        "expirationTime": "1"
       }
     },
     {
       "name": "Album Resource Permission",
       "description": "General policies that apply to all album resources.",
       "type": "resource",
+      "logic": "POSITIVE",
       "decisionStrategy": "AFFIRMATIVE",
       "config": {
         "defaultResourceType": "http://photoz.com/album",

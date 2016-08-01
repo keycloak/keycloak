@@ -16,6 +16,7 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.net.URI;
@@ -39,12 +40,14 @@ public class ResourceRepresentation {
     private String name;
     private String uri;
     private String type;
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Set<ScopeRepresentation> scopes;
 
     @JsonProperty("icon_uri")
     private String iconUri;
     private ResourceOwnerRepresentation owner;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<PolicyRepresentation> policies;
 
     /**

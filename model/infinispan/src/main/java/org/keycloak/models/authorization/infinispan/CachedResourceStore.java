@@ -68,7 +68,21 @@ public class CachedResourceStore implements ResourceStore {
 
     @Override
     public void delete(String id) {
-        this.cache.remove(getCacheKeyForResource(id));
+        List<CachedResource> removed = this.cache.remove(getCacheKeyForResource(id));
+
+        if (removed != null) {
+            CachedResource cachedResource = removed.get(0);
+            List<String> byOwner = this.cache.get(getResourceOwnerCacheKey(cachedResource.getOwner()));
+
+            if (byOwner != null) {
+                byOwner.remove(id);
+
+                if (byOwner.isEmpty()) {
+                    this.cache.remove(getResourceOwnerCacheKey(cachedResource.getOwner()));
+                }
+            }
+        }
+
         getDelegate().delete(id);
     }
 
@@ -109,12 +123,12 @@ public class CachedResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByResourceServer(String resourceServerId) {
-        return getDelegate().findByResourceServer(resourceServerId);
+        return getDelegate().findByResourceServer(resourceServerId).stream().map(resource -> findById(resource.getId())).collect(Collectors.toList());
     }
 
     @Override
     public List<Resource> findByScope(String... id) {
-        return getDelegate().findByScope(id);
+        return getDelegate().findByScope(id).stream().map(resource -> findById(resource.getId())).collect(Collectors.toList());
     }
 
     @Override
@@ -283,7 +297,7 @@ public class CachedResourceStore implements ResourceStore {
                 return;
             }
             cached = new ArrayList<>();
-            this.cache.put(getResourceOwnerCacheKey(resource.getOwner()), cached);
+            this.cache.put(cacheKey, cached);
         }
 
         if (cached != null && !cached.contains(resource.getId())) {

@@ -20,5 +20,6 @@
         <module>js-database</module>
         <module>photoz</module>
         <module>hello-world-authz-service</module>
+        <module>servlet-authz</module>
     </modules>
 </project>

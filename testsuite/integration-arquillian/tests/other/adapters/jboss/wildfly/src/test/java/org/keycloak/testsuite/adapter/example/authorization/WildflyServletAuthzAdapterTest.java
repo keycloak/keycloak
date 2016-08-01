@@ -14,23 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.storage.user;
+package org.keycloak.testsuite.adapter.example.authorization;
 
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
+import org.jboss.arquillian.container.test.api.RunAsClient;
+import org.keycloak.testsuite.adapter.example.authorization.AbstractDefaultAuthzConfigAdapterTest;
+import org.keycloak.testsuite.adapter.example.authorization.AbstractServletAuthzAdapterTest;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ *
+ * @author tkyjovsk
  */
-public interface UserUpdateProvider {
-    UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions);
-
-    UserModel addUser(RealmModel realm, String username);
-
-    boolean removeUser(RealmModel realm, UserModel user);
-
-    void grantToAllUsers(RealmModel realm, RoleModel role);
+@RunAsClient
+@AppServerContainer("app-server-wildfly")
+//@AdapterLibsLocationProperty("adapter.libs.wildfly")
+public class WildflyServletAuthzAdapterTest extends AbstractServletAuthzAdapterTest {
 
 }

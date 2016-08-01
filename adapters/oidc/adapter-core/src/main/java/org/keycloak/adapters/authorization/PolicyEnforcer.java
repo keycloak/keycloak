@@ -45,7 +45,6 @@ public class PolicyEnforcer {
     private static Logger LOGGER = Logger.getLogger(PolicyEnforcer.class);
 
     private final KeycloakDeployment deployment;
-    private final PathMatcher pathMatcher;
     private final AuthzClient authzClient;
     private final PolicyEnforcerConfig enforcerConfig;
     private final List<PathConfig> paths;
@@ -54,7 +53,6 @@ public class PolicyEnforcer {
         this.deployment = deployment;
         this.enforcerConfig = adapterConfig.getPolicyEnforcerConfig();
         this.authzClient = AuthzClient.create(new Configuration(adapterConfig.getAuthServerUrl(), adapterConfig.getRealm(), adapterConfig.getResource(), adapterConfig.getCredentials(), deployment.getClient()));
-        this.pathMatcher = new PathMatcher();
         this.paths = configurePaths(this.authzClient.protection().resource(), this.enforcerConfig);
 
         if (LOGGER.isDebugEnabled()) {

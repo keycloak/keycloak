@@ -25,7 +25,7 @@ import java.net.URL;
 /**
  * @author mhajas
  */
-public class Employee2Servlet extends SAMLServletWithLogout {
+public class Employee2Servlet extends SAMLServlet {
     public static final String DEPLOYMENT_NAME = "employee2";
 
     @ArquillianResource
