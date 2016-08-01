@@ -1329,6 +1329,18 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
         }
     }
 
+    $scope.reevaluate = function() {
+        if ($scope.authzRequest.entitlements) {
+            $scope.entitlements();
+        } else {
+            $scope.save();
+        }
+    }
+
+    $scope.showAuthzData = function() {
+        $scope.showRpt = true;
+    }
+
     $scope.save = function() {
         $scope.authzRequest.entitlements = false;
         if ($scope.applyResourceType) {
@@ -1356,10 +1368,12 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
 
     $scope.showResultTab = function() {
         $scope.showResult = true;
+        $scope.showRpt = false;
     }
 
     $scope.showRequestTab = function() {
         $scope.showResult = false;
+        $scope.showRpt = false;
     }
 
     User.query({realm: $route.current.params.realm}, function(data) {

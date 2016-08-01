@@ -12,11 +12,25 @@
     <div data-ng-show="showResult">
         <br>
         <a href="" data-ng-click="showRequestTab()">{{:: 'authz-evaluation-new' | translate}}</a>
+        |
+        <a href="" data-ng-click="reevaluate()">{{:: 'authz-evaluation-re-evaluate' | translate}}</a>
+        |
+        <a href="" data-ng-click="showAuthzData()">{{:: 'authz-show-authorization-data' | translate}}</a>
     </div>
 
     <div data-ng-show="evaluationResult && !showResult">
         <br>
         <a href="" data-ng-click="showResultTab()">{{:: 'authz-evaluation-previous' | translate}}</a>
+    </div>
+
+    <div data-ng-show="showRpt">
+        <div class="form-group">
+            <label class="col-sm-1 control-label" for="rpt">{{:: 'authz-evaluation-authorization-data' | translate}}</label>
+            <div class="col-md-6">
+                <textarea id="rpt" class="form-control" rows="20">{{evaluationResult.rpt | json}}</textarea>
+            </div>
+            <kc-tooltip>{{:: 'authz-evaluation-authorization-data.tooltip' | translate}}</kc-tooltip>
+        </div>
     </div>
 
     <div data-ng-hide="showResult">
@@ -54,12 +68,6 @@
                         </div>
 
                         <kc-tooltip>{{:: 'authz-evaluation-user.tooltip' | translate}}</kc-tooltip>
-                    </div>
-
-                    <div class="form-group">
-                        <div class="col-md-10 col-md-offset-2">
-                            <button class="btn btn-primary" data-ng-click="entitlements()" data-ng-disabled="authzRequest.userId == null || authzRequest.clientId == null">{{:: 'authz-entitlements' | translate}}</button>
-                        </div>
                     </div>
 
                     <div class="form-group clearfix">
@@ -268,7 +276,7 @@
             </fieldset>
         </form>
     </div>
-    <div data-ng-include="resultUrl" data-ng-show="showResult"/>
+    <div data-ng-include="resultUrl" data-ng-show="showResult && !showRpt"/>
 </div>
 
 <kc-menu></kc-menu>
