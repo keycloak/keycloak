@@ -16,7 +16,7 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.logging.Logger;
+import org.keycloak.events.Errors;
 import org.keycloak.forms.account.AccountPages;
 import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.events.Details;
@@ -612,26 +612,34 @@ public class AccountService extends AbstractSecuredLocalService {
         String passwordNew = formData.getFirst("password-new");
         String passwordConfirm = formData.getFirst("password-confirm");
 
+        EventBuilder errorEvent = event.clone().event(EventType.UPDATE_PASSWORD_ERROR)
+                .client(auth.getClient())
+                .user(auth.getClientSession().getUserSession().getUser());
+
         if (requireCurrent) {
             if (Validation.isBlank(password)) {
                 setReferrerOnPage();
+                errorEvent.error(Errors.PASSWORD_MISSING);
                 return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
             }
 
             UserCredentialModel cred = UserCredentialModel.password(password);
             if (!session.users().validCredentials(session, realm, user, cred)) {
                 setReferrerOnPage();
+                errorEvent.error(Errors.INVALID_USER_CREDENTIALS);
                 return account.setError(Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
             }
         }
 
         if (Validation.isBlank(passwordNew)) {
             setReferrerOnPage();
+            errorEvent.error(Errors.PASSWORD_MISSING);
             return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         }
 
         if (!passwordNew.equals(passwordConfirm)) {
             setReferrerOnPage();
+            errorEvent.error(Errors.PASSWORD_CONFIRM_ERROR);
             return account.setError(Messages.INVALID_PASSWORD_CONFIRM).createResponse(AccountPages.PASSWORD);
         }
 
@@ -639,14 +647,17 @@ public class AccountService extends AbstractSecuredLocalService {
             session.users().updateCredential(realm, user, UserCredentialModel.password(passwordNew));
         } catch (ModelReadOnlyException mre) {
             setReferrerOnPage();
+            errorEvent.error(Errors.NOT_ALLOWED);
             return account.setError(Messages.READ_ONLY_PASSWORD).createResponse(AccountPages.PASSWORD);
-        }catch (ModelException me) {
+        } catch (ModelException me) {
             logger.failedToUpdatePassword(me);
             setReferrerOnPage();
+            errorEvent.detail(Details.REASON, me.getMessage()).error(Errors.PASSWORD_REJECTED);
             return account.setError(me.getMessage(), me.getParameters()).createResponse(AccountPages.PASSWORD);
-        }catch (Exception ape) {
+        } catch (Exception ape) {
             logger.failedToUpdatePassword(ape);
             setReferrerOnPage();
+            errorEvent.detail(Details.REASON, ape.getMessage()).error(Errors.PASSWORD_REJECTED);
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }
 

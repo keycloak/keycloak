@@ -50,7 +50,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
         int retry = 2;
         AccessToken original = accessToken;
 
-        while (retry >= 0) {
+        while (retry > 0) {
             if (super.isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade)) {
                 original.setAuthorization(accessToken.getAuthorization());
                 return true;

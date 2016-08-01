@@ -32,6 +32,8 @@ public class RoleRepresentation {
     protected Boolean scopeParamRequired;
     protected boolean composite;
     protected Composites composites;
+    private Boolean clientRole;
+    private String containerId;
 
     public static class Composites {
         protected Set<String> realm;
@@ -121,5 +123,21 @@ public class RoleRepresentation {
 
     public void setComposite(boolean composite) {
         this.composite = composite;
+    }
+
+    public Boolean getClientRole() {
+        return clientRole;
+    }
+
+    public void setClientRole(Boolean clientRole) {
+        this.clientRole = clientRole;
+    }
+
+    public String getContainerId() {
+        return containerId;
+    }
+
+    public void setContainerId(String containerId) {
+        this.containerId = containerId;
     }
 }

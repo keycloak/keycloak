@@ -63,13 +63,18 @@ public final class Models {
         scope.setId(model.getId());
         scope.setName(model.getName());
         scope.setIconUri(model.getIconUri());
+
+        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+
+        scope.setResources(new ArrayList<>());
+
+        storeFactory.getResourceStore().findByScope(model.getId()).forEach(resource -> scope.getResources().add(toRepresentation(resource, resource.getResourceServer(), authorizationProvider)));
+
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+
         scope.setPolicies(new ArrayList<>());
 
-        Set<Policy> policies = new HashSet<>();
-
-        policies.addAll(authorizationProvider.getStoreFactory().getPolicyStore().findByScopeIds(Arrays.asList(model.getId()), model.getResourceServer().getId()));
-
-        for (Policy policyModel : policies) {
+        policyStore.findByScopeIds(Arrays.asList(model.getId()), model.getResourceServer().getId()).forEach(policyModel -> {
             PolicyRepresentation policy = new PolicyRepresentation();
 
             policy.setId(policyModel.getId());
@@ -79,7 +84,7 @@ public final class Models {
             if (!scope.getPolicies().contains(policy)) {
                 scope.getPolicies().add(policy);
             }
-        }
+        });
 
         return scope;
     }

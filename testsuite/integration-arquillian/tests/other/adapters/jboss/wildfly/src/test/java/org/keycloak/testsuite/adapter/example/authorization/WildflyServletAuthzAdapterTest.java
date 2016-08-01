@@ -14,17 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.adapter.example;
+package org.keycloak.testsuite.adapter.example.authorization;
 
+import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.keycloak.testsuite.adapter.example.authorization.AbstractDefaultAuthzConfigAdapterTest;
+import org.keycloak.testsuite.adapter.example.authorization.AbstractServletAuthzAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
  *
  * @author tkyjovsk
  */
+@RunAsClient
 @AppServerContainer("app-server-wildfly")
 //@AdapterLibsLocationProperty("adapter.libs.wildfly")
-public class WildflyDefaultAuthzConfigAdapterTest extends AbstractDefaultAuthzConfigAdapterTest {
+public class WildflyServletAuthzAdapterTest extends AbstractServletAuthzAdapterTest {
 
 }

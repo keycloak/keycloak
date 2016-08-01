@@ -87,16 +87,17 @@ public class PolicyEvaluationService {
     @Consumes("application/json")
     @Produces("application/json")
     public void evaluate(PolicyEvaluationRequest evaluationRequest, @Suspended AsyncResponse asyncResponse) {
-        EvaluationContext evaluationContext = createEvaluationContext(evaluationRequest);
-        authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization), evaluationContext).evaluate(createDecisionCollector(evaluationRequest, authorization, asyncResponse));
+        KeycloakIdentity identity = createIdentity(evaluationRequest);
+        EvaluationContext evaluationContext = createEvaluationContext(evaluationRequest, identity);
+        authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization), evaluationContext).evaluate(createDecisionCollector(evaluationRequest, authorization, identity, asyncResponse));
     }
 
-    private DecisionResultCollector createDecisionCollector(PolicyEvaluationRequest evaluationRequest, AuthorizationProvider authorization, AsyncResponse asyncResponse) {
+    private DecisionResultCollector createDecisionCollector(PolicyEvaluationRequest evaluationRequest, AuthorizationProvider authorization, KeycloakIdentity identity, AsyncResponse asyncResponse) {
         return new DecisionResultCollector() {
             @Override
             protected void onComplete(List<Result> results) {
                 try {
-                    asyncResponse.resume(Response.ok(PolicyEvaluationResponse.build(evaluationRequest,  results, resourceServer,  authorization)).build());
+                    asyncResponse.resume(Response.ok(PolicyEvaluationResponse.build(evaluationRequest,  results, resourceServer,  authorization, identity)).build());
                 } catch (Throwable cause) {
                     asyncResponse.resume(cause);
                 }
@@ -109,8 +110,8 @@ public class PolicyEvaluationService {
         };
     }
 
-    private EvaluationContext createEvaluationContext(PolicyEvaluationRequest representation) {
-        return new KeycloakEvaluationContext(createIdentity(representation), this.authorization.getKeycloakSession()) {
+    private EvaluationContext createEvaluationContext(PolicyEvaluationRequest representation, KeycloakIdentity identity) {
+        return new KeycloakEvaluationContext(identity, this.authorization.getKeycloakSession()) {
             @Override
             public Attributes getAttributes() {
                 Map<String, Collection<String>> attributes = new HashMap<>(super.getAttributes().toMap());
@@ -136,11 +137,8 @@ public class PolicyEvaluationService {
     }
 
     private List<ResourcePermission> createPermissions(PolicyEvaluationRequest representation, EvaluationContext evaluationContext, AuthorizationProvider authorization) {
-        if (representation.isEntitlements()) {
-            return Permissions.all(this.resourceServer, evaluationContext.getIdentity(), authorization);
-        }
-
-        return representation.getResources().stream().flatMap((Function<PolicyEvaluationRequest.Resource, Stream<ResourcePermission>>) resource -> {
+        List<PolicyEvaluationRequest.Resource> resources = representation.getResources();
+        return resources.stream().flatMap((Function<PolicyEvaluationRequest.Resource, Stream<ResourcePermission>>) resource -> {
             Set<String> givenScopes = resource.getScopes();
 
             if (givenScopes == null) {
@@ -157,7 +155,13 @@ public class PolicyEvaluationService {
             } else if (resource.getType() != null) {
                 return storeFactory.getResourceStore().findByType(resource.getType()).stream().map(resource1 -> new ResourcePermission(resource1, scopes, resourceServer));
             } else {
-                return scopes.stream().map(scope -> new ResourcePermission(null, asList(scope), resourceServer));
+                List<ResourcePermission> collect = scopes.stream().map(scope -> new ResourcePermission(null, asList(scope), resourceServer)).collect(Collectors.toList());
+
+                for (Scope scope : scopes) {
+                    collect.addAll(storeFactory.getResourceStore().findByScope(scope.getId()).stream().map(resource12 -> new ResourcePermission(resource12, asList(scope), resourceServer)).collect(Collectors.toList()));
+                }
+
+                return collect.stream();
             }
         }).collect(Collectors.toList());
     }
@@ -226,10 +230,16 @@ public class PolicyEvaluationService {
                         }
                     }
 
-                    accessToken.addAccess(clientModel.getClientId());
-                    AccessToken.Access resourceAccess = accessToken.getResourceAccess(clientModel.getClientId());
+                    AccessToken.Access clientAccess = accessToken.addAccess(clientModel.getClientId());
+                    clientAccess.roles(new HashSet<>());
 
-                    userModel.getClientRoleMappings(clientModel).stream().map(RoleModel::getName).forEach(roleName -> resourceAccess.addRole(roleName));
+                    userModel.getClientRoleMappings(clientModel).stream().map(RoleModel::getName).forEach(roleName -> clientAccess.addRole(roleName));
+
+                    ClientModel resourceServerClient = realm.getClientById(resourceServer.getClientId());
+                    AccessToken.Access resourceServerAccess = accessToken.addAccess(resourceServerClient.getClientId());
+                    resourceServerAccess.roles(new HashSet<>());
+
+                    userModel.getClientRoleMappings(resourceServerClient).stream().map(RoleModel::getName).forEach(roleName -> resourceServerAccess.addRole(roleName));
                 }
             }
         }

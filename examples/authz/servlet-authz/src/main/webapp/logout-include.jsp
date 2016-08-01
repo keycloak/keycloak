@@ -7,5 +7,5 @@
     String contextPath = request.getContextPath();
     String redirectUri = scheme + "://" + host + ":" + port + contextPath;
 %>
-<h2>Click <a href="<%= KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
-            .queryParam("redirect_uri", redirectUri).build("servlet-authz").toString()%>">here</a> to logout.</h2>
+<h2>Click here <a href="<%= KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
+            .queryParam("redirect_uri", redirectUri).build("servlet-authz").toString()%>">Sign Out</a></h2>

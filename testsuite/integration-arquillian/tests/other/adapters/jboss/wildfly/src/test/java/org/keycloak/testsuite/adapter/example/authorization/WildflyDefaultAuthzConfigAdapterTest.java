@@ -14,21 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.testsuite.adapter.example.authorization;
 
-package org.keycloak.testsuite.adapter.page;
-
-import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-
-import static org.keycloak.testsuite.util.WaitUtils.pause;
+import org.keycloak.testsuite.adapter.example.authorization.AbstractDefaultAuthzConfigAdapterTest;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
- * @author mhajas
+ *
+ * @author tkyjovsk
  */
-public abstract class SAMLServletWithLogout extends AbstractPageWithInjectedUrl {
+@AppServerContainer("app-server-wildfly")
+//@AdapterLibsLocationProperty("adapter.libs.wildfly")
+public class WildflyDefaultAuthzConfigAdapterTest extends AbstractDefaultAuthzConfigAdapterTest {
 
-    public void logout() {
-        driver.navigate().to(getUriBuilder().queryParam("GLO", "true").build().toASCIIString());
-        getUriBuilder().replaceQueryParam("GLO", null);
-        pause(300);
-    }
 }

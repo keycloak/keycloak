@@ -28,6 +28,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.util.JsonSerialization;
 
@@ -37,6 +38,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -53,61 +55,59 @@ public class KeycloakIdentity implements Identity {
     }
 
     public KeycloakIdentity(AccessToken accessToken, KeycloakSession keycloakSession) {
-        this.accessToken = accessToken;
-
-        if (this.accessToken == null) {
+        if (accessToken == null) {
             throw new ErrorResponseException("invalid_bearer_token", "Could not obtain bearer access_token from request.", Status.FORBIDDEN);
         }
-
+        if (keycloakSession == null) {
+            throw new ErrorResponseException("no_keycloak_session", "No keycloak session", Status.FORBIDDEN);
+        }
+        this.accessToken = accessToken;
         this.keycloakSession = keycloakSession;
         this.realm = keycloakSession.getContext().getRealm();
 
-        HashMap<String, Collection<String>> attributes = new HashMap<>();
+        Map<String, Collection<String>> attributes = new HashMap<>();
 
         try {
             ObjectNode objectNode = JsonSerialization.createObjectNode(this.accessToken);
             Iterator<String> iterator = objectNode.fieldNames();
-            List<String> roleNames = new ArrayList<>();
 
             while (iterator.hasNext()) {
                 String fieldName = iterator.next();
                 JsonNode fieldValue = objectNode.get(fieldName);
                 List<String> values = new ArrayList<>();
 
-                values.add(fieldValue.asText());
+                if (fieldValue.isArray()) {
+                    Iterator<JsonNode> valueIterator = fieldValue.iterator();
 
-                if (fieldName.equals("realm_access")) {
-                    JsonNode grantedRoles = fieldValue.get("roles");
-
-                    if (grantedRoles != null) {
-                        Iterator<JsonNode> rolesIt = grantedRoles.iterator();
-
-                        while (rolesIt.hasNext()) {
-                            roleNames.add(rolesIt.next().asText());
-                        }
+                    while (valueIterator.hasNext()) {
+                        values.add(valueIterator.next().asText());
                     }
+                } else {
+                    String value = fieldValue.asText();
+
+                    if (StringUtil.isNullOrEmpty(value)) {
+                        continue;
+                    }
+
+                    values.add(value);
                 }
 
-                if (fieldName.equals("resource_access")) {
-                    Iterator<JsonNode> resourceAccessIt = fieldValue.iterator();
-
-                    while (resourceAccessIt.hasNext()) {
-                        JsonNode grantedRoles = resourceAccessIt.next().get("roles");
-
-                        if (grantedRoles != null) {
-                            Iterator<JsonNode> rolesIt = grantedRoles.iterator();
-
-                            while (rolesIt.hasNext()) {
-                                roleNames.add(rolesIt.next().asText());
-                            }
-                        }
-                    }
+                if (!values.isEmpty()) {
+                    attributes.put(fieldName, values);
                 }
-
-                attributes.put(fieldName, values);
             }
 
-            attributes.put("roles", roleNames);
+            AccessToken.Access realmAccess = accessToken.getRealmAccess();
+
+            if (realmAccess != null) {
+                attributes.put("kc.realm.roles", realmAccess.getRoles());
+            }
+
+            Map<String, AccessToken.Access> resourceAccess = accessToken.getResourceAccess();
+
+            if (resourceAccess != null) {
+                resourceAccess.forEach((clientId, access) -> attributes.put("kc.client." + clientId + ".roles", access.getRoles()));
+            }
         } catch (Exception e) {
             throw new RuntimeException("Error while reading attributes from security token.", e);
         }

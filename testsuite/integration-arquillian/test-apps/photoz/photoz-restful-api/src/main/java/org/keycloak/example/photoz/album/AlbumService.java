@@ -112,7 +112,6 @@ public class AlbumService {
             HashSet<ScopeRepresentation> scopes = new HashSet<>();
 
             scopes.add(new ScopeRepresentation(SCOPE_ALBUM_VIEW));
-            scopes.add(new ScopeRepresentation(SCOPE_ALBUM_CREATE));
             scopes.add(new ScopeRepresentation(SCOPE_ALBUM_DELETE));
 
             ResourceRepresentation albumResource = new ResourceRepresentation(album.getName(), scopes, "/album/" + album.getId(), "http://photoz.com/album");

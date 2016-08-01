@@ -22,7 +22,12 @@
       ],
       "realmRoles": [
         "user", "uma_authorization"
-      ]
+      ],
+      "clientRoles": {
+        "photoz-restful-api": [
+          "manage-albums"
+        ]
+      }
     },
     {
       "username": "jdoe",
@@ -38,7 +43,12 @@
       ],
       "realmRoles": [
         "user", "uma_authorization"
-      ]
+      ],
+      "clientRoles": {
+        "photoz-restful-api": [
+          "manage-albums"
+        ]
+      }
     },
     {
       "username": "admin",
@@ -53,11 +63,14 @@
         }
       ],
       "realmRoles": [
-        "user", "admin", "uma_authorization"
+        "admin", "uma_authorization"
       ],
       "clientRoles": {
         "realm-management": [
           "realm-admin"
+        ],
+        "photoz-restful-api": [
+          "manage-albums"
         ]
       }
     },
@@ -90,6 +103,8 @@
       "adminUrl": "/photoz-html5-client",
       "baseUrl": "/photoz-html5-client",
       "publicClient": true,
+      "consentRequired" : true,
+      "fullScopeAllowed" : true,
       "redirectUris": [
         "/photoz-html5-client/*"
       ],

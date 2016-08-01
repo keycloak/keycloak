@@ -23,8 +23,11 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+
+import java.util.Map;
 
 import static org.keycloak.authorization.policy.provider.role.RolePolicyProviderFactory.getRoles;
 
@@ -47,21 +50,39 @@ public class RolePolicyProvider implements PolicyProvider {
 
     @Override
     public void evaluate(Evaluation evaluation) {
-        EvaluationContext context = evaluation.getContext();
-        String[] roleIds = getRoles(this.policy);
+        Map<String, Object>[] roleIds = getRoles(this.policy);
 
         if (roleIds.length > 0) {
-            Identity identity = context.getIdentity();
+            Identity identity = evaluation.getContext().getIdentity();
 
-            for (String roleId : roleIds) {
-                RoleModel role = getCurrentRealm().getRoleById(roleId);
+            for (Map<String, Object> current : roleIds) {
+                RoleModel role = getCurrentRealm().getRoleById((String) current.get("id"));
 
-                if (role != null && identity.hasRole(role.getName())) {
-                    evaluation.grant();
-                    break;
+                if (role != null) {
+                    boolean hasRole = hasRole(identity, role);
+
+                    if (!hasRole && Boolean.valueOf(isRequired(current))) {
+                        evaluation.deny();
+                        return;
+                    } else if (hasRole) {
+                        evaluation.grant();
+                    }
                 }
             }
         }
+    }
+
+    private boolean isRequired(Map<String, Object> current) {
+        return (boolean) current.getOrDefault("required", false);
+    }
+
+    private boolean hasRole(Identity identity, RoleModel role) {
+        String roleName = role.getName();
+        if (role.isClientRole()) {
+            ClientModel clientModel = getCurrentRealm().getClientById(role.getContainerId());
+            return identity.hasClientRole(clientModel.getClientId(), roleName);
+        }
+        return identity.hasRealmRole(roleName);
     }
 
     private RealmModel getCurrentRealm() {

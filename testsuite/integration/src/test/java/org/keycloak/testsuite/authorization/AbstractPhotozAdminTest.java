@@ -49,12 +49,15 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.jboss.aesh.terminal.Key.e;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -279,8 +282,12 @@ public abstract class AbstractPhotozAdminTest extends AbstractAuthorizationTest 
             RealmModel realm = authorizationProvider.getKeycloakSession().realms().getRealmByName(TEST_REALM_NAME);
             RoleModel adminRole = realm.getRole("admin");
 
+            Map role = new HashMap();
+
+            role.put("id", adminRole.getId());
+
             try {
-                config.put("roles", JsonSerialization.writeValueAsString(new String[] {adminRole.getId()}));
+                config.put("roles", JsonSerialization.writeValueAsString(new Map[] {role}));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -352,10 +359,14 @@ public abstract class AbstractPhotozAdminTest extends AbstractAuthorizationTest 
             Policy policy = policyStore.create("Any User Policy", "role", resourceServer);
             HashedMap config = new HashedMap();
             RealmModel realm = authorizationProvider.getKeycloakSession().realms().getRealmByName(TEST_REALM_NAME);
-            RoleModel adminRole = realm.getRole("user");
+            RoleModel userRole = realm.getRole("user");
+
+            Map role = new HashMap();
+
+            role.put("id", userRole.getId());
 
             try {
-                config.put("roles", JsonSerialization.writeValueAsString(new String[] {adminRole.getId()}));
+                config.put("roles", JsonSerialization.writeValueAsString(new Map[] {role}));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
