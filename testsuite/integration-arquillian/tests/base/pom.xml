@@ -32,6 +32,7 @@
     <description></description>
 
     <properties>
+        <exclude.test>-</exclude.test>
         <exclude.console>-</exclude.console>
         <exclude.account>-</exclude.account>
         <exclude.client>-</exclude.client>
@@ -97,6 +98,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <excludes>
+                        <exclude>${exclude.test}</exclude>
                         <exclude>${exclude.console}</exclude>
                         <exclude>${exclude.account}</exclude>
                         <exclude>${exclude.client}</exclude>
