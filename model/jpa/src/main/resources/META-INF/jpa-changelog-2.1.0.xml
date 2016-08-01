@@ -175,7 +175,7 @@
         <addPrimaryKey columnNames="ID" constraintName="CONSTR_FED_USER_ATTR_PK" tableName="FED_USER_ATTRIBUTE"/>
         <addPrimaryKey columnNames="ID" constraintName="CONSTR_FED_USER_CONSENT_PK" tableName="FED_USER_CONSENT"/>
         <addPrimaryKey columnNames="USER_CONSENT_ID, ROLE_ID" constraintName="CONSTR_USER_CONSENT_ROLE_PK" tableName="FED_USER_CONSENT_ROLE"/>
-        <addPrimaryKey columnNames="USER_CONSENT_ID, PROTOCOL_MAPPER_ID" constraintName="CONSTR_USER_CONSENT_PROT_MAP_PK" tableName="FED_USER_CONSENT_PROT_MAPPER"/>
+        <addPrimaryKey columnNames="USER_CONSENT_ID, PROTOCOL_MAPPER_ID" constraintName="CONSTR_USER_CONSENT_PROTM_PK" tableName="FED_USER_CONSENT_PROT_MAPPER"/>
         <!--
         <addForeignKeyConstraint baseColumnNames="USER_CONSENT_ID" baseTableName="FED_USER_CONSENT_ROLE" constraintName="FK_FED_GRNTCSNT_ROLE_GR" referencedColumnNames="ID" referencedTableName="FED_USER_CONSENT"/>
         <addForeignKeyConstraint baseColumnNames="USER_CONSENT_ID" baseTableName="FED_USER_CONSENT_PROT_MAPPER" constraintName="FK_FED_GRNTCSNT_PRM_GR" referencedColumnNames="ID" referencedTableName="FED_USER_CONSENT"/>
