@@ -121,6 +121,8 @@ public class RealmManager implements RealmImporter {
         setupOfflineTokens(realm);
         setupAuthorizationServices(realm);
 
+        fireRealmPostCreate(realm);
+
         return realm;
     }
 
@@ -491,6 +493,7 @@ public class RealmManager implements RealmImporter {
         }
 
         setupAuthorizationServices(realm);
+        fireRealmPostCreate(realm);
 
         return realm;
     }
@@ -587,4 +590,19 @@ public class RealmManager implements RealmImporter {
     private void setupAuthorizationServices(RealmModel realm) {
         KeycloakModelUtils.setupAuthorizationServices(realm);
     }
+
+    private void fireRealmPostCreate(RealmModel realm) {
+        session.getKeycloakSessionFactory().publish(new RealmModel.RealmPostCreateEvent() {
+            @Override
+            public RealmModel getCreatedRealm() {
+                return realm;
+            }
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
+
+    }
+
 }
