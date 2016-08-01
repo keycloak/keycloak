@@ -50,46 +50,48 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
  */
 public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAdapterTest {
     @Page
-    private BadClientSalesPostSigServlet badClientSalesPostSigServletPage;
+    protected BadClientSalesPostSigServlet badClientSalesPostSigServletPage;
 
     @Page
-    private BadRealmSalesPostSigServlet badRealmSalesPostSigServletPage;
+    protected BadRealmSalesPostSigServlet badRealmSalesPostSigServletPage;
 
     @Page
-    private Employee2Servlet employee2ServletPage;
+    protected Employee2Servlet employee2ServletPage;
 
     @Page
-    private EmployeeSigServlet employeeSigServletPage;
+    protected EmployeeSigServlet employeeSigServletPage;
 
     @Page
-    private EmployeeSigFrontServlet employeeSigFrontServletPage;
+    protected EmployeeSigFrontServlet employeeSigFrontServletPage;
 
     @Page
-    private SalesMetadataServlet salesMetadataServletPage;
+    protected SalesMetadataServlet salesMetadataServletPage;
 
     @Page
-    private SalesPostServlet salesPostServletPage;
+    protected SalesPostServlet salesPostServletPage;
 
     @Page
-    private SalesPostEncServlet salesPostEncServletPage;
+    protected SalesPostEncServlet salesPostEncServletPage;
 
     @Page
-    private SalesPostPassiveServlet salesPostPassiveServletPage;
+    protected SalesPostPassiveServlet salesPostPassiveServletPage;
 
     @Page
-    private SalesPostSigServlet salesPostSigServletPage;
+    protected SalesPostSigServlet salesPostSigServletPage;
 
     @Page
-    private SalesPostSigEmailServlet salesPostSigEmailServletPage;
+    protected SalesPostSigEmailServlet salesPostSigEmailServletPage;
 
     @Page
-    private SalesPostSigPersistentServlet salesPostSigPersistentServletPage;
+    protected SalesPostSigPersistentServlet salesPostSigPersistentServletPage;
 
     @Page
-    private SalesPostSigTransientServlet salesPostSigTransientServletPage;
+    protected SalesPostSigTransientServlet salesPostSigTransientServletPage;
 
     @Page
-    private SAMLIDPInitiatedLogin samlidpInitiatedLogin;
+    protected SAMLIDPInitiatedLogin samlidpInitiatedLogin;
+
+    protected boolean forbiddenIfNotAuthenticated = true;
 
     @Deployment(name = BadClientSalesPostSigServlet.DEPLOYMENT_NAME)
     protected static WebArchive badClientSalesPostSig() {
@@ -196,7 +198,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
     }
 
-    private void testSuccessfulAndUnauthorizedLogin(SAMLServletWithLogout page, Login loginPage) {
+    private void testSuccessfulAndUnauthorizedLogin(SAMLServlet page, Login loginPage) {
         assertSuccessfulLogin(page, bburkeUser, loginPage);
         page.logout();
         assertForbiddenLogin(page, "unauthorized", "password", loginPage);
@@ -223,7 +225,6 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertForbidden(employee2ServletPage);
         assertForbidden(employeeSigFrontServletPage);
         assertForbidden(salesPostSigPersistentServletPage);
-
         salesPostServletPage.logout();
     }
 
@@ -243,8 +244,12 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
 
         salesPostPassiveServletPage.navigateTo();
-        waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().equals(""));
+        if (forbiddenIfNotAuthenticated) {
+            waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
+            assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().equals(""));
+        } else {
+            waitUntilElement(By.xpath("//body")).text().contains("principal=null");
+        }
 
         salesPostSigEmailServletPage.navigateTo();
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
@@ -320,9 +325,13 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     public void salesPostPassiveTest() {
         salesPostPassiveServletPage.navigateTo();
 
-        waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
-        //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().equals(""));
+        if (forbiddenIfNotAuthenticated) {
+            waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
+            //Different 403 status page on EAP and Wildfly
+            assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().equals(""));
+        } else {
+            waitUntilElement(By.xpath("//body")).text().contains("principal=null");
+        }
 
         assertSuccessfulLogin(salesPostServletPage, bburkeUser, testRealmSAMLPostLoginPage);
 
@@ -331,9 +340,13 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         salesPostPassiveServletPage.logout();
         salesPostPassiveServletPage.navigateTo();
 
-        waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
-        //Different 403 status page on EAP and Wildfly
-        assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().equals(""));
+        if (forbiddenIfNotAuthenticated) {
+            waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
+            //Different 403 status page on EAP and Wildfly
+            assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains("<body></body>") || driver.getPageSource().equals(""));
+        } else {
+            waitUntilElement(By.xpath("//body")).text().contains("principal=null");
+        }
         assertForbiddenLogin(salesPostServletPage, "unauthorized", "password", testRealmSAMLPostLoginPage);
         assertForbidden(salesPostPassiveServletPage);
 

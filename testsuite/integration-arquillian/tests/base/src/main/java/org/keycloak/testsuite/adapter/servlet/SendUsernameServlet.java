@@ -17,78 +17,91 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
+
+import org.jboss.resteasy.annotations.cache.NoCache;
+
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.Principal;
-import java.util.List;
 
 /**
-* @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
-* @version $Revision: 1 $
-*/
-public class SendUsernameServlet extends HttpServlet {
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author mhajas
+ * @version $Revision: 1 $
+ */
+@Path("/")
+public class SendUsernameServlet {
 
-    public static Principal sentPrincipal;
-    public static List<String> checkRoles;
+    private static boolean checkRoles = false;
 
-    @Override
-    protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-        System.out.println("In SendUsername Servlet doGet()");
-        if (checkRoles != null) {
-            for (String role : checkRoles) {
-                System.out.println("check role: " + role);
-                //Assert.assertTrue(req.isUserInRole(role));
-                if (!req.isUserInRole(role)) {
-                    resp.sendError(403);
-                    return;
-                }
-            }
+    @Context
+    private HttpServletRequest httpServletRequest;
 
+    @GET
+    @NoCache
+    public Response doGet(@QueryParam("checkRoles") boolean checkRolesFlag) throws ServletException, IOException {
+        System.out.println("In SendUsername Servlet doGet() check roles is " + (checkRolesFlag || checkRoles));
+        if (httpServletRequest.getUserPrincipal() != null && (checkRolesFlag || checkRoles) && !checkRoles()) {
+            return Response.status(Response.Status.FORBIDDEN).entity("Forbidden").build();
         }
-        resp.setContentType("text/plain");
-        OutputStream stream = resp.getOutputStream();
-        Principal principal = req.getUserPrincipal();
-        stream.write("request-path: ".getBytes());
-        stream.write(req.getServletPath().getBytes());
-        stream.write("\n".getBytes());
-        stream.write("principal=".getBytes());
-        if (principal == null) {
-            stream.write("null".getBytes());
-            return;
-        }
-        String name = principal.getName();
-        stream.write(name.getBytes());
-        sentPrincipal = principal;
 
+        return Response.ok(getOutput(), MediaType.TEXT_PLAIN).build();
     }
-    @Override
-    protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-        System.out.println("In SendUsername Servlet doPost()");
-        if (checkRoles != null) {
-            for (String role : checkRoles) {
-                System.out.println("check role: " + role);
-                if (!req.isUserInRole(role)) {
-                    throw new RuntimeException("User: " + req.getUserPrincipal() + " is not in Role: " + role);
-                }
-            }
+
+    @POST
+    @NoCache
+    public Response doPost(@QueryParam("checkRoles") boolean checkRolesFlag) throws ServletException, IOException {
+        System.out.println("In SendUsername Servlet doPost() check roles is " + (checkRolesFlag || checkRoles));
+
+        if (httpServletRequest.getUserPrincipal() != null && (checkRolesFlag || checkRoles) && !checkRoles()) {
+            throw new RuntimeException("User: " + httpServletRequest.getUserPrincipal() + " do not have required role");
         }
-        resp.setContentType("text/plain");
-        OutputStream stream = resp.getOutputStream();
-        Principal principal = req.getUserPrincipal();
-        stream.write("request-path: ".getBytes());
-        stream.write(req.getServletPath().getBytes());
-        stream.write("\n".getBytes());
-        stream.write("principal=".getBytes());
+
+        return Response.ok(getOutput(), MediaType.TEXT_PLAIN).build();
+    }
+
+    @GET
+    @Path("{path}")
+    public Response doGetElseWhere(@PathParam("path") String path, @QueryParam("checkRoles") boolean checkRolesFlag) throws ServletException, IOException {
+        System.out.println("In SendUsername Servlet doGetElseWhere() - path: " + path);
+        return doGet(checkRolesFlag);
+    }
+
+    @POST
+    @Path("{path}")
+    public Response doPostElseWhere(@PathParam("path") String path, @QueryParam("checkRoles") boolean checkRolesFlag) throws ServletException, IOException {
+        System.out.println("In SendUsername Servlet doPostElseWhere() - path: " + path);
+        return doPost(checkRolesFlag);
+    }
+
+    @GET
+    @Path("checkRoles")
+    public String checkRolesEndPoint() {
+        checkRoles = true;
+        System.out.println("Setting checkRoles to true");
+        return "Roles will be checked";
+    }
+
+    private boolean checkRoles() {
+        return httpServletRequest.isUserInRole("manager");
+    }
+
+    private String getOutput() {
+        String output = "request-path: ";
+        output += httpServletRequest.getServletPath();
+        output += "\n";
+        output += "principal=";
+        Principal principal = httpServletRequest.getUserPrincipal();
+
         if (principal == null) {
-            stream.write("null".getBytes());
-            return;
+            return output + "null";
         }
-        String name = principal.getName();
-        stream.write(name.getBytes());
-        sentPrincipal = principal;
+
+        return output + principal.getName();
     }
 }

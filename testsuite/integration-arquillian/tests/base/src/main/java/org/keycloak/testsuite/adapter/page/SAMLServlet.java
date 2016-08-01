@@ -24,11 +24,24 @@ import static org.keycloak.testsuite.util.WaitUtils.pause;
 /**
  * @author mhajas
  */
-public abstract class SAMLServletWithLogout extends AbstractPageWithInjectedUrl {
+public abstract class SAMLServlet extends AbstractPageWithInjectedUrl {
 
     public void logout() {
         driver.navigate().to(getUriBuilder().queryParam("GLO", "true").build().toASCIIString());
         getUriBuilder().replaceQueryParam("GLO", null);
+        pause(300);
+    }
+
+    public void checkRoles(boolean check) {
+        if (check) {
+            getUriBuilder().queryParam("checkRoles", true);
+        } else {
+            getUriBuilder().replaceQueryParam("checkRoles", null);
+        }
+    }
+
+    public void checkRolesEndPoint() {
+        driver.navigate().to(getUriBuilder().build().toASCIIString() + "/checkRoles");
         pause(300);
     }
 }
