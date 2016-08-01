@@ -17,6 +17,7 @@
 package org.keycloak.storage.adapter;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -29,7 +30,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
-import org.keycloak.storage.StorageProviderModel;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -58,9 +58,9 @@ public abstract class AbstractUserAdapter implements UserModel {
     }
     protected KeycloakSession session;
     protected RealmModel realm;
-    protected StorageProviderModel storageProviderModel;
+    protected ComponentModel storageProviderModel;
 
-    public AbstractUserAdapter(KeycloakSession session, RealmModel realm, StorageProviderModel storageProviderModel) {
+    public AbstractUserAdapter(KeycloakSession session, RealmModel realm, ComponentModel storageProviderModel) {
         this.session = session;
         this.realm = realm;
         this.storageProviderModel = storageProviderModel;

@@ -70,7 +70,7 @@ public abstract class TxAwareLDAPUserModelDelegate extends UserModelDelegate {
                 logger.trace("Starting and enlisting transaction for object " + ldapUser.getDn().toString());
             }
 
-            this.provider.getSession().getTransaction().enlistAfterCompletion(transaction);
+            this.provider.getSession().getTransactionManager().enlistAfterCompletion(transaction);
         }
     }
 

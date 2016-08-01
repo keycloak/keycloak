@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.federation.storage;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -23,8 +24,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.StorageId;
-import org.keycloak.storage.StorageProvider;
-import org.keycloak.storage.StorageProviderModel;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.user.UserCredentialValidatorProvider;
 import org.keycloak.storage.user.UserLookupProvider;
@@ -32,28 +32,33 @@ import org.keycloak.storage.user.UserRegistrationProvider;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserMapStorage implements UserLookupProvider, StorageProvider, UserCredentialValidatorProvider, UserRegistrationProvider {
+public class UserMapStorage implements UserLookupProvider, UserStorageProvider, UserCredentialValidatorProvider, UserRegistrationProvider {
 
     protected Map<String, String> userPasswords;
-    protected StorageProviderModel model;
+    protected ComponentModel model;
     protected KeycloakSession session;
 
-    public UserMapStorage(KeycloakSession session, StorageProviderModel model, Map<String, String> userPasswords) {
+    public static final AtomicInteger allocations = new AtomicInteger(0);
+    public static final AtomicInteger closings = new AtomicInteger(0);
+
+    public UserMapStorage(KeycloakSession session, ComponentModel model, Map<String, String> userPasswords) {
         this.session = session;
         this.model = model;
         this.userPasswords = userPasswords;
+        allocations.incrementAndGet();
     }
 
 
     @Override
     public UserModel getUserById(String id, RealmModel realm) {
         StorageId storageId = new StorageId(id);
-        final String username = storageId.getStorageId();
+        final String username = storageId.getExternalId();
         if (!userPasswords.containsKey(username)) return null;
 
         return createUser(realm, username);
@@ -95,12 +100,6 @@ public class UserMapStorage implements UserLookupProvider, StorageProvider, User
     }
 
     @Override
-    public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
-        userPasswords.put(username, "");
-        return createUser(realm, username);
-    }
-
-    @Override
     public UserModel addUser(RealmModel realm, String username) {
         userPasswords.put(username, "");
         return createUser(realm, username);
@@ -132,11 +131,6 @@ public class UserMapStorage implements UserLookupProvider, StorageProvider, User
     }
 
     @Override
-    public void preRemove(RealmModel realm, StorageProviderModel model) {
-
-    }
-
-    @Override
     public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> input) {
         for (UserCredentialModel cred : input) {
             if (!cred.getType().equals(UserCredentialModel.PASSWORD)) return false;
@@ -151,6 +145,7 @@ public class UserMapStorage implements UserLookupProvider, StorageProvider, User
 
     @Override
     public void close() {
+        closings.incrementAndGet();
 
     }
 }

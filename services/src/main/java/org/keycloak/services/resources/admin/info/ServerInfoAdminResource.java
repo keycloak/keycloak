@@ -25,7 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.WebApplicationException;
@@ -33,12 +32,13 @@ import javax.ws.rs.core.Context;
 
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.policy.PasswordPolicyProvider;
 import org.keycloak.policy.PasswordPolicyProviderFactory;
 import org.keycloak.provider.*;
+import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
@@ -115,11 +115,25 @@ public class ServerInfoAdminResource {
             Map<String, ProviderRepresentation> providers = new HashMap<>();
 
             if (providerIds != null) {
+                info.setComponentTypes(new HashMap<>());
                 for (String name : providerIds) {
                     ProviderRepresentation provider = new ProviderRepresentation();
                     ProviderFactory<?> pi = session.getKeycloakSessionFactory().getProviderFactory(spi.getProviderClass(), name);
                     if (ServerInfoAwareProviderFactory.class.isAssignableFrom(pi.getClass())) {
                         provider.setOperationalInfo(((ServerInfoAwareProviderFactory) pi).getOperationalInfo());
+                    }
+                    if (pi instanceof ConfiguredProvider) {
+                        ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
+                        rep.setId(pi.getId());
+                        ConfiguredProvider configured = (ConfiguredProvider)pi;
+                        rep.setHelpText(configured.getHelpText());
+                        rep.setProperties(ModelToRepresentation.toRepresentation(configured.getConfigProperties()));
+                        List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
+                        if (reps == null) {
+                            reps = new LinkedList<>();
+                            info.getComponentTypes().put(spi.getProviderClass().getName(), reps);
+                        }
+                        reps.add(rep);
                     }
                     providers.put(name, provider);
                 }
@@ -225,15 +239,7 @@ public class ServerInfoAdminResource {
             rep.setCategory(mapper.getDisplayCategory());
             rep.setProperties(new LinkedList<ConfigPropertyRepresentation>());
             List<ProviderConfigProperty> configProperties = mapper.getConfigProperties();
-            for (ProviderConfigProperty prop : configProperties) {
-                ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
-                propRep.setName(prop.getName());
-                propRep.setLabel(prop.getLabel());
-                propRep.setType(prop.getType());
-                propRep.setDefaultValue(prop.getDefaultValue());
-                propRep.setHelpText(prop.getHelpText());
-                rep.getProperties().add(propRep);
-            }
+            rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
             types.add(rep);
         }
     }

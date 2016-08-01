@@ -73,8 +73,8 @@ public class ClientInitialAccessResource {
 
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientInitialAccessModel.getId()).representation(config).success();
 
-        if (session.getTransaction().isActive()) {
-            session.getTransaction().commit();
+        if (session.getTransactionManager().isActive()) {
+            session.getTransactionManager().commit();
         }
 
         ClientInitialAccessPresentation rep = wrap(clientInitialAccessModel);

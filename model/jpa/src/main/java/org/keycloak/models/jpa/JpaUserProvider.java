@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
@@ -42,7 +43,6 @@ import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.storage.StorageProviderModel;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -712,7 +712,7 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
-    public void preRemove(RealmModel realm, StorageProviderModel link) {
+    public void preRemove(RealmModel realm, ComponentModel component) {
 
     }
 }

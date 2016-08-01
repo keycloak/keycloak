@@ -835,17 +835,17 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private void fireErrorEvent(String message, Throwable throwable) {
         if (!this.event.getEvent().getType().toString().endsWith("_ERROR")) {
-            boolean newTransaction = !this.session.getTransaction().isActive();
+            boolean newTransaction = !this.session.getTransactionManager().isActive();
 
             try {
                 if (newTransaction) {
-                    this.session.getTransaction().begin();
+                    this.session.getTransactionManager().begin();
                 }
 
                 this.event.error(message);
 
                 if (newTransaction) {
-                    this.session.getTransaction().commit();
+                    this.session.getTransactionManager().commit();
                 }
             } catch (Exception e) {
                 logger.couldNotFireEvent(e);
@@ -869,8 +869,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private void rollback() {
-        if (this.session.getTransaction().isActive()) {
-            this.session.getTransaction().rollback();
+        if (this.session.getTransactionManager().isActive()) {
+            this.session.getTransactionManager().rollback();
         }
     }
 

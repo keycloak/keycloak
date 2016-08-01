@@ -25,7 +25,8 @@
         <class>org.keycloak.models.jpa.entities.RealmEntity</class>
         <class>org.keycloak.models.jpa.entities.RealmAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.RequiredCredentialEntity</class>
-        <class>org.keycloak.models.jpa.entities.StorageProviderEntity</class>
+        <class>org.keycloak.models.jpa.entities.ComponentConfigEntity</class>
+        <class>org.keycloak.models.jpa.entities.ComponentEntity</class>
         <class>org.keycloak.models.jpa.entities.UserFederationProviderEntity</class>
         <class>org.keycloak.models.jpa.entities.UserFederationMapperEntity</class>
         <class>org.keycloak.models.jpa.entities.RoleEntity</class>

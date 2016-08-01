@@ -18,11 +18,11 @@
 package org.keycloak.models;
 
 import org.jboss.logging.Logger;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 import org.keycloak.services.managers.UserManager;
-import org.keycloak.storage.StorageProviderModel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -487,11 +487,6 @@ public class UserFederationManager implements UserProvider {
         session.userStorage().preRemove(protocolMapper);
     }
 
-    @Override
-    public void preRemove(RealmModel realm, StorageProviderModel link) {
-
-    }
-
     public void updateCredential(RealmModel realm, UserModel user, UserCredentialModel credential) {
         if (credential.getType().equals(UserCredentialModel.PASSWORD)) {
             if (realm.getPasswordPolicy() != null) {
@@ -602,6 +597,11 @@ public class UserFederationManager implements UserProvider {
 
         // For now, validCredentials(realm, input) is not supported for local userProviders
         return (result != null) ? result : CredentialValidationOutput.failed();
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, ComponentModel component) {
+
     }
 
     @Override

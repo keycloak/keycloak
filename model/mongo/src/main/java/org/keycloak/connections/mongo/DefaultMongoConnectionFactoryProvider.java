@@ -22,7 +22,6 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLSocketFactory;
 
@@ -142,7 +141,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
         lazyInit(session);
 
         TransactionMongoStoreInvocationContext invocationContext = new TransactionMongoStoreInvocationContext(mongoStore);
-        session.getTransaction().enlist(new MongoKeycloakTransaction(invocationContext));
+        session.getTransactionManager().enlist(new MongoKeycloakTransaction(invocationContext));
         return new DefaultMongoConnectionProvider(db, mongoStore, invocationContext);
     }
 

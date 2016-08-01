@@ -20,6 +20,7 @@ package org.keycloak.models.utils;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceServerStore;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.migration.migrators.MigrationUtils;
 import org.keycloak.models.ClientTemplateModel;
@@ -62,6 +63,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -1618,4 +1620,13 @@ public class RepresentationToModel {
     }
 
 
+    public static ComponentModel toModel(ComponentRepresentation rep) {
+        ComponentModel model = new ComponentModel();
+        model.setParentId(rep.getParentId());
+        model.setProviderType(rep.getProviderType());
+        model.setProviderId(rep.getProviderId());
+        model.setConfig(rep.getConfig());
+        model.setName(rep.getName());
+        return model;
+    }
 }

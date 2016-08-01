@@ -44,7 +44,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.PemUtils;
-import org.keycloak.storage.StorageProviderModel;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
@@ -282,7 +281,7 @@ public final class KeycloakModelUtils {
      */
     public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask task) {
         KeycloakSession session = factory.create();
-        KeycloakTransaction tx = session.getTransaction();
+        KeycloakTransaction tx = session.getTransactionManager();
         try {
             tx.begin();
             task.run(session);
@@ -341,43 +340,6 @@ public final class KeycloakModelUtils {
         return false;
     }
     // USER FEDERATION RELATED STUFF
-
-    /**
-     * Ensure that displayName of myProvider (if not null) is unique and there is no other provider with same displayName in the list.
-     *
-     * @param displayName         to check for duplications
-     * @param myProvider          provider, which is excluded from the list (if present)
-     * @param federationProviders
-     * @throws ModelDuplicateException if there is other provider with same displayName
-     */
-    public static void ensureUniqueDisplayName(String displayName, StorageProviderModel myProvider, List<StorageProviderModel> federationProviders) throws ModelDuplicateException {
-        if (displayName != null) {
-
-            for (StorageProviderModel federationProvider : federationProviders) {
-                if (myProvider != null && (myProvider.equals(federationProvider) || (myProvider.getId() != null && myProvider.getId().equals(federationProvider.getId())))) {
-                    continue;
-                }
-
-                if (displayName.equals(federationProvider.getDisplayName())) {
-                    throw new ModelDuplicateException("There is already existing federation provider with display name: " + displayName);
-                }
-            }
-        }
-    }
-
-
-    public static StorageProviderModel findStorageProviderByDisplayName(String displayName, RealmModel realm) {
-        if (displayName == null) {
-            return null;
-        }
-
-        for (StorageProviderModel provider : realm.getStorageProviders()) {
-            if (displayName.equals(provider.getDisplayName())) {
-                return provider;
-            }
-        }
-        return null;
-    }
 
     /**
      * Ensure that displayName of myProvider (if not null) is unique and there is no other provider with same displayName in the list.
